@@ -1,14 +1,72 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <commonlib/helpers.h>
 #include <console/console.h>
 #include <console/streams.h>
 #include <cpu/x86/mtrr.h>
+#include <fsp/debug.h>
 #include <fsp/util.h>
 
 asmlinkage size_t fsp_write_line(uint8_t *buffer, size_t number_of_bytes)
 {
 	console_write_line(buffer, number_of_bytes);
 	return number_of_bytes;
+}
+
+enum fsp_call_phase {
+	BEFORE_FSP_CALL,
+	AFTER_FSP_CALL,
+};
+
+static void fsp_gpio_config_check(enum fsp_call_phase phase, const char *call_str)
+{
+	switch (phase) {
+	case BEFORE_FSP_CALL:
+		printk(BIOS_SPEW, "Snapshot all GPIOs before %s.\n", call_str);
+		gpio_snapshot();
+		break;
+	case AFTER_FSP_CALL:
+		printk(BIOS_SPEW, "Verify GPIO snapshot after %s...", call_str);
+		printk(BIOS_SPEW, "%zd changes detected!\n", gpio_verify_snapshot());
+		break;
+	default:
+		break;
+	}
+}
+
+enum fsp_log_level fsp_map_console_log_level(void)
+{
+	enum fsp_log_level fsp_debug_level;
+
+	switch (get_log_level()) {
+	case BIOS_EMERG:
+	case BIOS_ALERT:
+	case BIOS_CRIT:
+	case BIOS_ERR:
+		fsp_debug_level = FSP_LOG_LEVEL_ERR;
+		break;
+	case BIOS_WARNING:
+		fsp_debug_level = FSP_LOG_LEVEL_ERR_WARN;
+		break;
+	case BIOS_NOTICE:
+		fsp_debug_level = FSP_LOG_LEVEL_ERR_WARN_INFO;
+		break;
+	case BIOS_INFO:
+		fsp_debug_level = FSP_LOG_LEVEL_ERR_WARN_INFO_EVENT;
+		break;
+	case BIOS_DEBUG:
+	case BIOS_SPEW:
+		fsp_debug_level = FSP_LOG_LEVEL_VERBOSE;
+		break;
+	default:
+		fsp_debug_level = FSP_LOG_LEVEL_DISABLE;
+		break;
+	}
+
+	if (!CONFIG(DEBUG_RAM_SETUP))
+		fsp_debug_level = MIN(fsp_debug_level, FSP_LOG_LEVEL_ERR_WARN_INFO);
+
+	return fsp_debug_level;
 }
 
 /*-----------
@@ -62,6 +120,9 @@ void fsp_debug_before_silicon_init(fsp_silicon_init_fn silicon_init,
 	const FSPS_UPD *fsps_old_upd,
 	const FSPS_UPD *fsps_new_upd)
 {
+	if (CONFIG(CHECK_GPIO_CONFIG_CHANGES))
+		fsp_gpio_config_check(BEFORE_FSP_CALL, "FSP Silicon Init");
+
 	display_mtrrs();
 
 	/* Display the UPD values */
@@ -77,6 +138,9 @@ void fsp_debug_before_silicon_init(fsp_silicon_init_fn silicon_init,
 
 void fsp_debug_after_silicon_init(uint32_t status)
 {
+	if (CONFIG(CHECK_GPIO_CONFIG_CHANGES))
+		fsp_gpio_config_check(AFTER_FSP_CALL, "FSP Silicon Init");
+
 	if (CONFIG(DISPLAY_FSP_CALLS_AND_STATUS))
 		printk(BIOS_SPEW, "FspSiliconInit returned 0x%08x\n", status);
 
@@ -94,6 +158,9 @@ void fsp_debug_after_silicon_init(uint32_t status)
 void fsp_before_debug_notify(fsp_notify_fn notify,
 	const struct fsp_notify_params *notify_params)
 {
+	if (CONFIG(CHECK_GPIO_CONFIG_CHANGES))
+		fsp_gpio_config_check(BEFORE_FSP_CALL, "FSP Notify");
+
 	/* Display the call to FspNotify */
 	if (!CONFIG(DISPLAY_FSP_CALLS_AND_STATUS))
 		return;
@@ -105,6 +172,9 @@ void fsp_before_debug_notify(fsp_notify_fn notify,
 
 void fsp_debug_after_notify(uint32_t status)
 {
+	if (CONFIG(CHECK_GPIO_CONFIG_CHANGES))
+		fsp_gpio_config_check(AFTER_FSP_CALL, "FSP Notify");
+
 	if (CONFIG(DISPLAY_FSP_CALLS_AND_STATUS))
 		printk(BIOS_SPEW, "FspNotify returned 0x%08x\n", status);
 

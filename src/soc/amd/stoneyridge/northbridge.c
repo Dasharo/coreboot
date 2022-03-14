@@ -4,6 +4,7 @@
 #include <amdblocks/biosram.h>
 #include <amdblocks/hda.h>
 #include <device/pci_ops.h>
+#include <arch/hpet.h>
 #include <arch/ioapic.h>
 #include <acpi/acpi.h>
 #include <acpi/acpigen.h>
@@ -26,7 +27,6 @@
 #include <soc/iomap.h>
 #include <stdint.h>
 #include <string.h>
-#include <arch/bert_storage.h>
 
 #include "chip.h"
 
@@ -229,7 +229,6 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 	acpi_header_t *alib;
 	acpi_header_t *ivrs;
 	acpi_hest_t *hest;
-	acpi_bert_t *bert;
 
 	/* HEST */
 	current = ALIGN(current, 8);
@@ -237,26 +236,6 @@ static unsigned long agesa_write_acpi_tables(const struct device *device,
 	acpi_write_hest(hest, acpi_fill_hest);
 	acpi_add_table(rsdp, (void *)current);
 	current += hest->header.length;
-
-	/* BERT */
-	if (CONFIG(ACPI_BERT) && bert_errors_present()) {
-		/* Skip the table if no errors are present.  ACPI driver reports
-		 * a table with a 0-length region:
-		 *   BERT: [Firmware Bug]: table invalid.
-		 */
-		void *rgn;
-		size_t size;
-		bert_errors_region(&rgn, &size);
-		if (!rgn) {
-			printk(BIOS_ERR, "Error: Can't find BERT storage area\n");
-		} else {
-			current = ALIGN(current, 8);
-			bert = (acpi_bert_t *)current;
-			acpi_write_bert(bert, (uintptr_t)rgn, size);
-			acpi_add_table(rsdp, (void *)current);
-			current += bert->header.length;
-		}
-	}
 
 	current = ALIGN(current, 8);
 	printk(BIOS_DEBUG, "ACPI:    * IVRS at %lx\n", current);
@@ -354,7 +333,7 @@ static const struct pci_driver family15_northbridge __pci_driver = {
  */
 void amd_initcpuio(void)
 {
-	uintptr_t topmem = bsp_topmem();
+	uintptr_t topmem = amd_topmem();
 	uintptr_t base, limit;
 
 	/* Enable legacy video routing: D18F1xF4 VGA Enable */
@@ -362,7 +341,7 @@ void amd_initcpuio(void)
 
 	/* Non-posted: range(HPET-LAPIC) or 0xfed00000 through 0xfee00000-1 */
 	base = (HPET_BASE_ADDRESS >> 8) | MMIO_WE | MMIO_RE;
-	limit = (ALIGN_DOWN(LOCAL_APIC_ADDR - 1, 64 * KiB) >> 8) | MMIO_NP;
+	limit = (ALIGN_DOWN(LAPIC_DEFAULT_BASE - 1, 64 * KiB) >> 8) | MMIO_NP;
 	pci_write_config32(SOC_ADDR_DEV, NB_MMIO_LIMIT_LO(0), limit);
 	pci_write_config32(SOC_ADDR_DEV, NB_MMIO_BASE_LO(0), base);
 
@@ -422,19 +401,19 @@ void domain_read_resources(struct device *dev)
 	reserved_ram_resource(dev, idx++, 0xc0000 / KiB, 0x40000 / KiB);
 
 	/*
-	 * 0x100000 (1MiB) -> low top useable RAM
+	 * 0x100000 (1MiB) -> low top usable RAM
 	 * cbmem_top() accounts for low UMA and TSEG if they are used.
 	 */
 	ram_resource(dev, idx++, (1 * MiB) / KiB,
 			(mem_useable - (1 * MiB)) / KiB);
 
-	/* Low top useable RAM -> Low top RAM (bottom pci mmio hole) */
+	/* Low top usable RAM -> Low top RAM (bottom pci mmio hole) */
 	reserved_ram_resource(dev, idx++, mem_useable / KiB,
 					(tom.lo - mem_useable) / KiB);
 
 	/* If there is memory above 4GiB */
 	if (high_tom.hi) {
-		/* 4GiB -> high top useable */
+		/* 4GiB -> high top usable */
 		if (uma_base >= (4ull * GiB))
 			high_mem_useable = uma_base;
 		else
@@ -444,7 +423,7 @@ void domain_read_resources(struct device *dev)
 		ram_resource(dev, idx++, (4ull * GiB) / KiB,
 				((high_mem_useable - (4ull * GiB)) / KiB));
 
-		/* High top useable RAM -> high top RAM */
+		/* High top usable RAM -> high top RAM */
 		if (uma_base >= (4ull * GiB)) {
 			reserved_ram_resource(dev, idx++, uma_base / KiB,
 						uma_size / KiB);

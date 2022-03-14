@@ -17,6 +17,7 @@
 #include <soc/iomap.h>
 #include <soc/cpu.h>
 #include <soc/gpio.h>
+#include <soc/soc_chip.h>
 #include <soc/systemagent.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
@@ -62,7 +63,7 @@ static void enable_pmcbar(void)
 	pci_devfn_t pmc = PCH_DEV_PMC;
 
 	/* Set PMC base addresses and enable decoding. */
-	pci_write_config32(pmc, PCI_BASE_ADDRESS_0, PMC_BAR0);
+	pci_write_config32(pmc, PCI_BASE_ADDRESS_0, PCH_PWRM_BASE_ADDRESS);
 	pci_write_config32(pmc, PCI_BASE_ADDRESS_1, 0);	/* 64-bit BAR */
 	pci_write_config32(pmc, PCI_BASE_ADDRESS_2, PMC_BAR1);
 	pci_write_config32(pmc, PCI_BASE_ADDRESS_3, 0);	/* 64-bit BAR */
@@ -85,8 +86,24 @@ void bootblock_soc_early_init(void)
 	/* Prepare UART for serial console. */
 	if (CONFIG(INTEL_LPSS_UART_FOR_CONSOLE))
 		uart_bootblock_init();
-	if (CONFIG(DRIVERS_UART_8250IO))
-		lpc_io_setup_comm_a_b();
+
+	uint16_t io_enables = LPC_IOE_SUPERIO_2E_2F | LPC_IOE_KBC_60_64 |
+		LPC_IOE_EC_62_66;
+
+	const config_t *config = config_of_soc();
+
+
+	if (config->lpc_ioe) {
+		io_enables = config->lpc_ioe & 0x3f0f;
+		lpc_set_fixed_io_ranges(config->lpc_iod, 0x1377);
+	} else {
+		/* IO Decode Range */
+		if (CONFIG(DRIVERS_UART_8250IO))
+			lpc_io_setup_comm_a_b();
+	}
+
+	/* IO Decode Enable */
+	lpc_enable_fixed_io_ranges(io_enables);
 
 	/* IO Decode Enable */
 	lpc_enable_fixed_io_ranges(io_enables);

@@ -108,6 +108,7 @@
 #define  MC_SMI_STS_BIT		12
 #define  GPIO_UNLOCK_SMI_STS_BIT	11
 #define  GPIO_STS_BIT		10
+#define  GPE0_STS_BIT		9	/* Datasheet says this is reserved */
 #define  PM1_STS_BIT		8
 #define  SWSMI_TMR_STS_BIT	6
 #define  APM_STS_BIT		5
@@ -151,6 +152,7 @@
 /* Memory mapped IO registers behind PMC_BASE_ADDRESS */
 #define PRSTS			0x1000
 #define GEN_PMCON1		0x1020
+#define GEN_PMCON_A		GEN_PMCON1
 #define  COLD_BOOT_STS		(1 << 27)
 #define  COLD_RESET_STS		(1 << 26)
 #define  WARM_RESET_STS		(1 << 25)
@@ -234,7 +236,13 @@ struct chipset_power_state {
 
 void pch_log_state(void);
 
+/* Get base address PMC memory mapped registers. */
+uint8_t *pmc_mmio_regs(void);
+
 /* STM Support */
 uint16_t get_pmbase(void);
+
+/* Clear PMCON status bits */
+void pmc_clear_pmcon_sts(void);
 
 #endif

@@ -9,18 +9,15 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOUTHBRIDGE_AMD_AGESA_HUDSON
 	select HAVE_OPTION_TABLE
 	select HAVE_PIRQ_TABLE
-	select HAVE_MP_TABLE
 	select HAVE_ACPI_TABLES
 	select SUPERIO_FINTEK_F71869AD
 	select BOARD_ROMSIZE_KB_8192
 	select GFXUMA
 
 config MAINBOARD_DIR
-	string
 	default "msi/ms7721"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "MS-7721"
 
 config HW_MEM_HOLE_SIZEK

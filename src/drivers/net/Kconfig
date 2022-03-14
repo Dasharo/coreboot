@@ -33,10 +33,17 @@ config RT8168_SET_LED_MODE
 	select REALTEK_8168_RESET
 	help
 	  This is to set a customized LED mode to distinguish 10/100/1000
-	  link and speed status with limited LEDs avaiable on a board.
+	  link and speed status with limited LEDs available on a board.
 	  Please refer to RTL811x datasheet section 7.2 Customizable LED
 	  Configuration for details. With this flag enabled, the
 	  customized_leds variable will be read from devicetree setting.
+
+config RT8168_GEN_ACPI_POWER_RESOURCE
+	bool
+	default n
+	depends on REALTEK_8168_RESET
+	help
+	  Select this if an ACPI power resource needs to be generated.
 
 config ATHEROS_ATL1E_SETMAC
 	bool

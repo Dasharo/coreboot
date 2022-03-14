@@ -17,7 +17,7 @@ chip northbridge/intel/sandybridge
 	device cpu_cluster 0 on
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 
 			register "acpi_c1" = "1"	# ACPI(C1) = MWAIT(C1)
@@ -25,8 +25,6 @@ chip northbridge/intel/sandybridge
 			register "acpi_c3" = "5"	# ACPI(C3) = MWAIT(C7)
 		end
 	end
-
-	register "pci_mmio_size" = "2048"
 
 	device domain 0 on
 		subsystemid 0x17aa 0x21fb inherit
@@ -60,8 +58,7 @@ chip northbridge/intel/sandybridge
 			register "xhci_overcurrent_mapping" = "0x4000201"
 
 			# Enable zero-based linear PCIe root port functions
-			register "pcie_port_coalesce" = "1"
-			register "c2_latency" = "101"  # c2 not supported
+			register "pcie_port_coalesce" = "true"
 			register "docking_supported" = "1"
 
 			register "spi_uvscc" = "0x2005"

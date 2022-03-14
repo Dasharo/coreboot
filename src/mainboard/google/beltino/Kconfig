@@ -1,30 +1,46 @@
 config BOARD_GOOGLE_BASEBOARD_BELTINO
 	def_bool n
-	select NORTHBRIDGE_INTEL_HASWELL
-	select SOUTHBRIDGE_INTEL_LYNXPOINT
-	select INTEL_LYNXPOINT_LP
 	select BOARD_ROMSIZE_KB_8192
-	select SUPERIO_ITE_IT8772F
+	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select HAVE_OPTION_TABLE
-	select HAVE_ACPI_RESUME
 	select INTEL_GMA_HAVE_VBT
+	select INTEL_LYNXPOINT_LP
 	select MAINBOARD_HAS_CHROMEOS
 	select MAINBOARD_HAS_LIBGFXINIT
 	select MAINBOARD_HAS_LPC_TPM
 	select MAINBOARD_HAS_TPM1
+	select NORTHBRIDGE_INTEL_HASWELL
+	select SOUTHBRIDGE_INTEL_LYNXPOINT
+	select SUPERIO_ITE_IT8772F
+
+config BOARD_GOOGLE_MCCLOUD
+	select BOARD_GOOGLE_BASEBOARD_BELTINO
+
+config BOARD_GOOGLE_MONROE
+	select BOARD_GOOGLE_BASEBOARD_BELTINO
+
+config BOARD_GOOGLE_PANTHER
+	select BOARD_GOOGLE_BASEBOARD_BELTINO
+
+config BOARD_GOOGLE_TRICKY
+	select BOARD_GOOGLE_BASEBOARD_BELTINO
+
+config BOARD_GOOGLE_ZAKO
+	select BOARD_GOOGLE_BASEBOARD_BELTINO
 
 if BOARD_GOOGLE_BASEBOARD_BELTINO
+
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
 
 config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "google/beltino"
 
 config VARIANT_DIR
-	string
 	default "mccloud" if BOARD_GOOGLE_MCCLOUD
 	default "monroe" if BOARD_GOOGLE_MONROE
 	default "panther" if BOARD_GOOGLE_PANTHER
@@ -32,7 +48,6 @@ config VARIANT_DIR
 	default "zako" if BOARD_GOOGLE_ZAKO
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Mccloud" if BOARD_GOOGLE_MCCLOUD
 	default "Monroe" if BOARD_GOOGLE_MONROE
 	default "Panther" if BOARD_GOOGLE_PANTHER
@@ -42,10 +57,6 @@ config MAINBOARD_PART_NUMBER
 config MAINBOARD_FAMILY
 	string
 	default "Google_Beltino"
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0406.rom"
 
 # Override the default variant behavior, since the data.vbt is the same
 # for all variants except monroe

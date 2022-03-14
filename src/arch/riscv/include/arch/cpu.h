@@ -6,21 +6,13 @@
 #include <arch/encoding.h>
 #include <device/device.h>
 
+static inline void cpu_relax(void) { }
+
 #define asmlinkage
 
 struct cpu_driver {
 	struct device_operations *ops;
 	const struct cpu_device_id *id_table;
-};
-
-struct thread;
-
-struct cpu_info {
-	struct device *cpu;
-	unsigned long index;
-#if CONFIG(COOP_MULTITASKING)
-	struct thread *thread;
-#endif
 };
 
 struct cpuinfo_riscv {
@@ -40,5 +32,4 @@ static inline int machine_xlen(void)
 	return (1 << mxl) * 16;
 }
 
-struct cpu_info *cpu_info(void);
 #endif /* __ARCH_CPU_H__ */

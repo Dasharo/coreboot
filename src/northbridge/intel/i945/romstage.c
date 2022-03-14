@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 #include <cf9_reset.h>
-#include <cpu/x86/lapic.h>
 #include <arch/romstage.h>
 #include <northbridge/intel/i945/i945.h>
 #include <northbridge/intel/i945/raminit.h>
@@ -30,11 +29,9 @@ void mainboard_romstage_entry(void)
 	int s3resume = 0;
 	u8 spd_map[4] = {};
 
-	enable_lapic();
-
 	mainboard_lpc_decode();
 
-	if (MCHBAR16(SSKPD) == 0xCAFE) {
+	if (mchbar_read16(SSKPD) == 0xcafe) {
 		system_reset();
 	}
 
@@ -48,10 +45,10 @@ void mainboard_romstage_entry(void)
 
 	mainboard_pre_raminit_config(s3resume);
 
-	if (CONFIG(DEBUG_RAM_SETUP))
-		dump_spd_registers();
-
 	mainboard_get_spd_map(spd_map);
+
+	if (CONFIG(DEBUG_RAM_SETUP))
+		dump_spd_registers(spd_map);
 
 	sdram_initialize(s3resume ? BOOT_PATH_RESUME : BOOT_PATH_NORMAL, spd_map);
 

@@ -29,24 +29,31 @@
 ## SUCH DAMAGE.
 ##
 
+ifneq ($(words $(CURDIR)),1)
+	$(error ERROR: Path to the main directory cannot contain spaces)
+endif
+
 ifeq ($(INNER_SCANBUILD),y)
 CC_real:=$(CC)
 endif
 
 export top := $(CURDIR)
+export coreboottop ?= $(abspath $(top)/../../)
 export src := src
 export srck := $(abspath $(top)/../../util/kconfig)
 export obj ?= build
 export objutil ?= $(obj)/util
 export objk := $(objutil)/lp_kconfig
+export absobj := $(abspath $(obj))
+VBOOT_SOURCE ?= $(coreboottop)/3rdparty/vboot
 
 export KCONFIG_AUTOHEADER := $(obj)/config.h
 export KCONFIG_AUTOCONFIG := $(obj)/auto.conf
 export KCONFIG_DEPENDENCIES := $(obj)/auto.conf.cmd
-export KCONFIG_SPLITCONFIG := $(obj)/config
+export KCONFIG_SPLITCONFIG := $(obj)/config/
 export KCONFIG_TRISTATE := $(obj)/tristate.conf
 export KCONFIG_NEGATIVES := 1
-export Kconfig := Kconfig
+export KBUILD_KCONFIG := Kconfig
 export CONFIG_ := CONFIG_LP_
 
 # directory containing the toplevel Makefile.inc
@@ -74,6 +81,14 @@ HOSTCC = gcc
 HOSTCXX = g++
 HOSTCFLAGS := -I$(srck) -I$(objk) -g
 HOSTCXXFLAGS := -I$(srck) -I$(objk)
+HOSTAS ?= as
+HOSTLD ?= ld
+HOSTNM ?= nm
+HOSTOBJCOPY ?= objcopy
+HOSTOBJDUMP ?= objdump
+HOSTREADELF ?= readelf
+HOSTSTRIP ?= strip
+HOSTAR ?= ar
 
 DOXYGEN := doxygen
 DOXYGEN_OUTPUT_DIR := doxygen
@@ -88,13 +103,14 @@ endif
 
 # This include must come _before_ the pattern rules below!
 # Order _does_ matter for pattern rules.
-include $(srck)/Makefile
+include $(srck)/Makefile.inc
 
 include $(HAVE_DOTCONFIG)
 
 ARCHDIR-$(CONFIG_LP_ARCH_ARM)     := arm
 ARCHDIR-$(CONFIG_LP_ARCH_ARM64)   := arm64
 ARCHDIR-$(CONFIG_LP_ARCH_X86)     := x86
+ARCHDIR-$(CONFIG_LP_ARCH_MOCK)    := mock
 
 ARCH-y := $(ARCHDIR-y)
 
@@ -103,18 +119,37 @@ ARCH-y := $(ARCHDIR-y)
 ARCH-$(CONFIG_LP_ARCH_ARM)     := arm
 ARCH-$(CONFIG_LP_ARCH_ARM64)   := arm64
 ARCH-$(CONFIG_LP_ARCH_X86)     := x86_32
+ARCH-$(CONFIG_LP_ARCH_MOCK)    := mock
 
-# Three cases where we don't need fully populated $(obj) lists:
+# Five cases where we don't need fully populated $(obj) lists:
 # 1. when no .config exists
 # 2. when make config (in any flavour) is run
 # 3. when make distclean is run
+# 4. when make help% or make clean% is run
+# 5. when make %-test or make %-tests or make %coverage-report is run
 # Don't waste time on reading all Makefile.incs in these cases
 ifeq ($(strip $(HAVE_DOTCONFIG)),)
-NOCOMPILE:=1
+NOCOMPILE := 1
 endif
 ifneq ($(MAKECMDGOALS),)
-ifneq ($(filter %config %clean,$(MAKECMDGOALS)),)
-NOCOMPILE:=1
+ifneq ($(filter %config %clean clean-% help%,$(MAKECMDGOALS)),)
+NOCOMPILE := 1
+endif
+ifneq ($(filter %clean help% clean%, $(MAKECMDGOALS)),)
+UNIT_TEST := 1
+endif
+endif
+
+ifneq ($(filter help%, $(MAKECMDGOALS)),)
+NOCOMPILE := 1
+UNIT_TEST := 1
+else
+ifneq ($(filter %-test %-tests %coverage-report, $(MAKECMDGOALS)),)
+ifneq ($(filter-out %-test %-tests %coverage-report, $(MAKECMDGOALS)),)
+$(error Cannot mix unit-tests targets with other targets)
+endif
+NOCOMPILE :=
+UNIT_TEST := 1
 endif
 endif
 
@@ -125,8 +160,34 @@ $(xcompile): $(top)/../../util/xcompile/xcompile
 
 ifeq ($(NOCOMPILE),1)
 include $(TOPLEVEL)/Makefile.inc
+include $(TOPLEVEL)/tests/Makefile.inc
 real-all: config
 
+else
+
+ifeq ($(CONFIG_LP_ARCH_MOCK),y)
+
+# Create empty xcompile to satisfy install script
+$(shell echo '' > $(xcompile))
+
+CC := $(HOSTCC)
+CC-mock := $(HOSTCC)
+AS := $(HOSTAS)
+AS-mock := $(HOSTAS)
+LD := $(HOSTLD)
+LD-mock := $(HOSTLD)
+NM := $(HOSTNM)
+NM-mock := $(HOSTNM)
+OBJCOPY := $(HOSTOBJCOPY)
+OBJCOPY-mock := $(HOSTOBJCOPY)
+OBJDUMP := $(HOSTOBJDUMP)
+OBJDUMP-mock := $(HOSTOBJDUMP)
+READELF := $(HOSTREADELF)
+READELF-mock := $(HOSTEADELF)
+STRIP := $(HOSTSTRIP)
+STRIP-mock := $(HOSTSTRIP)
+AR := $(HOSTAR)
+AR-mock := $(HOSTAR)
 else
 
 # in addition to the dependency below, create the file if it doesn't exist
@@ -152,12 +213,16 @@ OBJDUMP := $(OBJDUMP_$(ARCH-y))
 READELF := $(READELF_$(ARCH-y))
 STRIP := $(STRIP_$(ARCH-y))
 AR := $(AR_$(ARCH-y))
+endif
 
 CFLAGS += -std=gnu11 $(CFLAGS_$(ARCH-y))
 
 ifneq ($(INNER_SCANBUILD),y)
 ifeq ($(CONFIG_LP_COMPILER_LLVM_CLANG),y)
-CC:=clang -m32
+CC:=clang
+ifneq ($(CONFIG_LP_ARCH_MOCK),y)
+CC += -m32
+endif
 HOSTCC:=clang
 endif
 endif
@@ -202,7 +267,8 @@ endif
 .SECONDEXPANSION:
 
 $(KCONFIG_AUTOHEADER): $(KCONFIG_CONFIG)
-	$(MAKE) oldconfig
+	$(MAKE) CONFIG_=CONFIG_LP_ olddefconfig
+	$(MAKE) CONFIG_=CONFIG_LP_ syncconfig
 
 # Add a new class of source/object files to the build system
 add-class= \
@@ -230,9 +296,11 @@ includemakefiles= \
 		$(foreach item,$($(special)-y), $(call $(special)-handler,$(dir $(1)),$(item)))) \
 	$(foreach class,$(classes), \
 		$(eval $(class)-srcs+= \
+			$$(subst $(absobj)/,$(obj)/, \
 			$$(subst $(top)/,, \
-			$$(abspath $$(addprefix $(dir $(1)),$$($(class)-y)))))) \
-	$(eval subdirs+=$$(subst $(CURDIR)/,,$$(abspath $$(addprefix $(dir $(1)),$$(subdirs-y)))))
+			$$(abspath $$(subst $(dir $(1))/,/,$$(addprefix $(dir $(1)),$$($(class)-y)))))))) \
+	$(eval subdirs+=$$(subst $(CURDIR)/,,$$(wildcard $$(abspath $$(addprefix $(dir $(1)),$$(subdirs-y))))))
+
 
 # For each path in $(subdirs) call includemakefiles
 # Repeat until subdirs is empty
@@ -243,12 +311,23 @@ evaluate_subdirs= \
 		$(eval $(call includemakefiles,$(dir)/Makefile.inc))) \
 	$(if $(subdirs),$(eval $(call evaluate_subdirs)))
 
-# collect all object files eligible for building
+# collect all object files eligible for building or run unit-tests
+ifneq ($(UNIT_TEST),1)
 subdirs:=$(TOPLEVEL)
 $(eval $(call evaluate_subdirs))
+else
+include $(TOPLEVEL)/tests/Makefile.inc
+endif
 
-src-to-obj=$(addsuffix .$(1).o, $(basename $(addprefix $(obj)/, $($(1)-srcs))))
-$(foreach class,$(classes),$(eval $(class)-objs:=$(call src-to-obj,$(class))))
+# Converts one or more source file paths to the corresponding build/ paths.
+# $1 lib name
+# $2 file path (list)
+src-to-obj=\
+	$(addsuffix .$(1).o,\
+	$(basename \
+	$(addprefix $(obj)/,\
+	$(subst $(coreboottop)/,coreboot/,$(2)))))
+$(foreach class,$(classes),$(eval $(class)-objs+=$(call src-to-obj,$(class),$($(class)-srcs))))
 
 allsrcs:=$(foreach var, $(addsuffix -srcs,$(classes)), $($(var)))
 allobjs:=$(foreach var, $(addsuffix -objs,$(classes)), $($(var)))
@@ -262,9 +341,9 @@ define create_cc_template
 # $4 additional dependencies
 ifn$(EMPTY)def $(1)-objs_$(2)_template
 de$(EMPTY)fine $(1)-objs_$(2)_template
-$(obj)/$$(1).$(1).o: $$(1).$(2) $(obj)/libpayload-config.h $(4)
+$$(call src-to-obj,$(1), $$(1).$(2)): $$(1).$(2) $(obj)/libpayload-config.h $(4)
 	@printf "    CC         $$$$(subst $$$$(obj)/,,$$$$(@))\n"
-	$(CC) $(3) -MMD $$$$(CFLAGS) -c -o $$$$@ $$$$<
+	$(CC) $(3) -MMD $$$$(CFLAGS) $(EXTRA_CFLAGS) -c -o $$$$@ $$$$<
 en$(EMPTY)def
 end$(EMPTY)if
 endef
@@ -277,7 +356,7 @@ $(foreach class,$(classes), \
 foreach-src=$(foreach file,$($(1)-srcs),$(eval $(call $(1)-objs_$(subst .,,$(suffix $(file)))_template,$(basename $(file)))))
 $(eval $(foreach class,$(classes),$(call foreach-src,$(class))))
 
-DEPENDENCIES = $(allobjs:.o=.d)
+DEPENDENCIES = $($(filter %.o,%(allobjs)):.o=.d)
 -include $(DEPENDENCIES)
 
 printall:

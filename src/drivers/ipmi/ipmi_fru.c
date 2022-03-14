@@ -189,7 +189,7 @@ static enum cb_err read_fru_chassis_info_area(const int port, const uint8_t id,
 
 	info->chassis_custom = malloc(info->custom_count * sizeof(char *));
 	if (!info->chassis_custom) {
-		printk(BIOS_ERR, "%s failed to malloc %ld bytes for "
+		printk(BIOS_ERR, "%s failed to malloc %zu bytes for "
 			"chassis custom data array.\n", __func__,
 			info->custom_count * sizeof(char *));
 		ret = CB_ERR;
@@ -288,7 +288,7 @@ static enum cb_err read_fru_board_info_area(const int port, const uint8_t id,
 
 	info->board_custom = malloc(info->custom_count * sizeof(char *));
 	if (!info->board_custom) {
-		printk(BIOS_ERR, "%s failed to malloc %ld bytes for "
+		printk(BIOS_ERR, "%s failed to malloc %zu bytes for "
 			"board custom data array.\n", __func__,
 			info->custom_count * sizeof(char *));
 		ret = CB_ERR;
@@ -395,7 +395,7 @@ static enum cb_err read_fru_product_info_area(const int port, const uint8_t id,
 
 	info->product_custom = malloc(info->custom_count * sizeof(char *));
 	if (!info->product_custom) {
-		printk(BIOS_ERR, "%s failed to malloc %ld bytes for "
+		printk(BIOS_ERR, "%s failed to malloc %zu bytes for "
 			"product custom data array.\n", __func__,
 			info->custom_count * sizeof(char *));
 		ret = CB_ERR;
@@ -525,7 +525,7 @@ void print_fru_areas(struct fru_info_str *fru_info_str)
 	if (prod_info.product_name != NULL)
 		printk(BIOS_DEBUG, "product name: %s\n", prod_info.product_name);
 	if (prod_info.product_partnumber != NULL)
-		printk(BIOS_DEBUG, "product part numer: %s\n", prod_info.product_partnumber);
+		printk(BIOS_DEBUG, "product part number: %s\n", prod_info.product_partnumber);
 	if (prod_info.product_version != NULL)
 		printk(BIOS_DEBUG, "product version: %s\n", prod_info.product_version);
 	if (prod_info.serial_number != NULL)

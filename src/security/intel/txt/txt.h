@@ -18,13 +18,17 @@
 #define ACM_E_PLATFORM_IS_NOT_PROD          0x10
 
 void intel_txt_romstage_init(void);
-
+void __noreturn txt_reset_platform(void);
 void intel_txt_log_bios_acm_error(void);
 int intel_txt_log_acm_error(const uint32_t acm_error);
 void intel_txt_log_spad(void);
 bool intel_txt_memory_has_secrets(void);
+bool intel_txt_chipset_is_production_fused(void);
 void intel_txt_run_sclean(void);
 int intel_txt_run_bios_acm(const u8 input_params);
 bool intel_txt_prepare_txt_env(void);
+/* Allow platform override to skip TXT lockdown, e.g. required for RAS error injection. */
+bool skip_intel_txt_lockdown(void);
+const char *intel_txt_processor_error_type(uint8_t type);
 
 #endif /* SECURITY_INTEL_TXT_H_ */

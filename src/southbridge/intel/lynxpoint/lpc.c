@@ -17,43 +17,33 @@
 #include "pch.h"
 #include <acpi/acpigen.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <southbridge/intel/common/rcba_pirq.h>
 #include <southbridge/intel/common/rtc.h>
 #include <southbridge/intel/common/spi.h>
 #include <types.h>
 
 #define NMI_OFF	0
 
-typedef struct southbridge_intel_lynxpoint_config config_t;
-
 /**
- * Set miscellanous static southbridge features.
+ * Set miscellaneous static southbridge features.
  *
  * @param dev PCI device with I/O APIC control registers
  */
 static void pch_enable_ioapic(struct device *dev)
 {
-	u32 reg32;
-
 	/* Assign unique bus/dev/fn for I/O APIC */
 	pci_write_config16(dev, LPC_IBDF,
 		PCH_IOAPIC_PCI_BUS << 8 | PCH_IOAPIC_PCI_SLOT << 3);
 
-	set_ioapic_id(VIO_APIC_VADDR, 0x02);
-
 	/* affirm full set of redirection table entries ("write once") */
-	reg32 = io_apic_read(VIO_APIC_VADDR, 0x01);
-	if (pch_is_lp()) {
-		/* PCH-LP has 39 redirection entries */
-		reg32 &= ~0x00ff0000;
-		reg32 |= 0x00270000;
-	}
-	io_apic_write(VIO_APIC_VADDR, 0x01, reg32);
+	/* PCH-LP has 40 redirection entries */
+	if (pch_is_lp())
+		ioapic_set_max_vectors(VIO_APIC_VADDR, 40);
+	else
+		ioapic_lock_max_vectors(VIO_APIC_VADDR);
 
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
+	setup_ioapic(VIO_APIC_VADDR, 0x02);
+
 }
 
 static void pch_enable_serial_irqs(struct device *dev)
@@ -151,7 +141,8 @@ static void pch_pirq_init(struct device *dev)
 	}
 }
 
-static void pch_gpi_routing(struct device *dev, config_t *config)
+static void pch_gpi_routing(struct device *dev,
+			    struct southbridge_intel_lynxpoint_config *config)
 {
 	u32 reg32 = 0;
 
@@ -185,8 +176,6 @@ static void pch_power_options(struct device *dev)
 	u32 reg32;
 	const char *state;
 	u16 pmbase = get_pmbase();
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-	int nmi_option;
 
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
@@ -194,7 +183,8 @@ static void pch_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
+					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);
 	reg16 &= 0xfffe;
@@ -235,8 +225,7 @@ static void pch_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x70);
-	nmi_option = NMI_OFF;
-	get_option(&nmi_option, "nmi");
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */
@@ -253,7 +242,7 @@ static void pch_power_options(struct device *dev)
 	pci_write_config16(dev, GEN_PMCON_1, reg16);
 
 	if (dev->chip_info) {
-		config_t *config = dev->chip_info;
+		struct southbridge_intel_lynxpoint_config *config = dev->chip_info;
 
 		/*
 		 * Set the board's GPI routing on LynxPoint-H.
@@ -566,8 +555,6 @@ static void enable_lp_clock_gating(struct device *dev)
 
 	RCBA32_OR(0x3434, 0x7); // LP LPC
 
-	RCBA32_AND_OR(0x333c, 0xffcfffff, 0x00c00000); // SATA
-
 	RCBA32_OR(0x38c0, 0x3c07); // SPI Dynamic
 
 	pch_iobp_update(0xCF000000, ~0, 0x00007001);
@@ -732,7 +719,7 @@ static void pch_lpc_add_io_resources(struct device *dev)
 
 	/* LPC Generic IO Decode range. */
 	if (dev->chip_info) {
-		config_t *config = dev->chip_info;
+		struct southbridge_intel_lynxpoint_config *config = dev->chip_info;
 		pch_lpc_add_gen_io_resources(dev, config->gen1_dec, LPC_GEN1_DEC);
 		pch_lpc_add_gen_io_resources(dev, config->gen2_dec, LPC_GEN2_DEC);
 		pch_lpc_add_gen_io_resources(dev, config->gen3_dec, LPC_GEN3_DEC);

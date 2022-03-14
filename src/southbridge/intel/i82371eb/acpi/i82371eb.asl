@@ -1,9 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-/*
- * Declares assorted devices that falls under this southbridge.
- */
 #include "southbridge/intel/i82371eb/i82371eb.h"
+
+/* Declares assorted devices that fall under this southbridge. */
+Device (PX40)
+{
+	Name(_ADR, 0x00040000)
+	OperationRegion (PIRQ, PCI_Config, 0x60, 0x04)
+	Field (PIRQ, ByteAcc, NoLock, Preserve)
+	{
+		PIRA,   8,
+		PIRB,   8,
+		PIRC,   8,
+		PIRD,   8
+	}
 
 	OperationRegion (S1XX, PCI_Config, 0xB2, 0x01)
 	Field (S1XX, ByteAcc, NoLock, Preserve)
@@ -11,6 +21,35 @@
 		FXS1,   8
 	}
 
+	/* PNP Motherboard Resources */
+	Device (SYSR)
+	{
+		Name (_HID, EisaId ("PNP0C02"))
+		Name (_UID, 0x02)
+		Method (_CRS, 0, NotSerialized)
+		{
+			Name (BUF1, ResourceTemplate ()
+			{
+				/* PIIX4E ports */
+				/* Aliased DMA ports */
+				IO (Decode16, 0x0010, 0x0010, 0x01, 0x10, )
+				/* Aliased PIC ports */
+				IO (Decode16, 0x0022, 0x0022, 0x01, 0x1E, )
+				/* Aliased timer ports */
+				IO (Decode16, 0x0050, 0x0050, 0x01, 0x04, )
+				IO (Decode16, 0x0062, 0x0062, 0x01, 0x02, )
+				IO (Decode16, 0x0065, 0x0065, 0x01, 0x0B, )
+				IO (Decode16, 0x0074, 0x0074, 0x01, 0x0C, )
+				IO (Decode16, 0x0091, 0x0091, 0x01, 0x03, )
+				IO (Decode16, 0x00A2, 0x00A2, 0x01, 0x1E, )
+				IO (Decode16, 0x00E0, 0x00E0, 0x01, 0x10, )
+				IO (Decode16, 0x0294, 0x0294, 0x01, 0x04, )
+				IO (Decode16, 0x03F0, 0x03F0, 0x01, 0x02, )
+				IO (Decode16, 0x04D0, 0x04D0, 0x01, 0x02, )
+			})
+			Return (BUF1)
+		}
+	}
 	/* 8259-compatible Programmable Interrupt Controller */
 	Device (PIC)
 	{
@@ -78,3 +117,20 @@
 			IRQNoFlags () {13}
 		})
 	}
+}
+Device (PX43)
+{
+	Name (_ADR, 0x00040003)  // _ADR: Address
+
+	Method (_CRS, 0, NotSerialized)
+	{
+		Name (BUF1, ResourceTemplate ()
+		{
+			/* PM register ports */
+			IO (Decode16, PM_IO_BASE, PM_IO_BASE, 0x01, 0x40, )
+			/* SMBus register ports */
+			IO (Decode16, SMBUS_IO_BASE, SMBUS_IO_BASE, 0x01, 0x10, )
+		})
+		Return (BUF1)
+	}
+}

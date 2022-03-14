@@ -113,32 +113,18 @@ const char *const *soc_std_gpe_sts_array(size_t *gpe_arr)
 	return gpe_sts_bits;
 }
 
-int acpi_sci_irq(void)
+void pmc_set_disb(void)
 {
-	int scis = pci_read_config32(PCH_DEV_PMC, ACTL) & SCI_IRQ_SEL;
-	int sci_irq = 9;
+	/* Set the DISB after DRAM init */
+	u32 disb_val;
+	const pci_devfn_t dev = PCH_DEV_PMC;
 
-	/* Determine how SCI is routed. */
-	switch (scis) {
-	case SCIS_IRQ9:
-	case SCIS_IRQ10:
-	case SCIS_IRQ11:
-		sci_irq = scis - SCIS_IRQ9 + 9;
-		break;
-	case SCIS_IRQ20:
-	case SCIS_IRQ21:
-	case SCIS_IRQ22:
-	case SCIS_IRQ23:
-		sci_irq = scis - SCIS_IRQ20 + 20;
-		break;
-	default:
-		printk(BIOS_DEBUG, "Invalid SCI route! Defaulting to IRQ9.\n");
-		sci_irq = 9;
-		break;
-	}
+	disb_val = pci_read_config32(dev, GEN_PMCON_A);
+	disb_val |= DISB;
 
-	printk(BIOS_DEBUG, "SCI is IRQ%d\n", sci_irq);
-	return sci_irq;
+	/* Don't clear bits that are write-1-to-clear */
+	disb_val &= ~(GBL_RST_STS | MS4V);
+	pci_write_config32(dev, GEN_PMCON_A, disb_val);
 }
 
 uint8_t *pmc_mmio_regs(void)
@@ -261,4 +247,36 @@ void soc_fill_power_state(struct chipset_power_state *ps)
 uint16_t get_pmbase(void)
 {
 	return ACPI_BASE_ADDRESS;
+}
+
+/*
+ * Set which power state system will be after reapplying
+ * the power (from G3 State)
+ */
+void pmc_soc_set_afterg3_en(const bool on)
+{
+	uint8_t reg8;
+	const pci_devfn_t dev = PCH_DEV_PMC;
+
+	reg8 = pci_read_config8(dev, GEN_PMCON_B);
+	if (on)
+		reg8 &= ~SLEEP_AFTER_POWER_FAIL;
+	else
+		reg8 |= SLEEP_AFTER_POWER_FAIL;
+	pci_write_config8(dev, GEN_PMCON_B, reg8);
+}
+
+void pmc_clear_pmcon_sts(void)
+{
+	uint32_t reg_val;
+	const pci_devfn_t dev = PCH_DEV_PMC;
+
+	reg_val = pci_read_config32(dev, GEN_PMCON_A);
+	/*
+	 * Clear SUS_PWR_FLR, GBL_RST_STS, HOST_RST_STS, PWR_FLR bits
+	 * while retaining MS4V write-1-to-clear bit
+	 */
+	reg_val &= ~(MS4V);
+
+	pci_write_config32(dev, GEN_PMCON_A, reg_val);
 }

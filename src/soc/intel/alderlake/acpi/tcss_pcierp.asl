@@ -1,5 +1,25 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+/*
+ * The PCI-SIG engineering change requirement provides the ACPI additions for firmware latency
+ * optimization. Both of FW_RESET_TIME and FW_D3HOT_TO_D0_TIME are applicable to the upstream
+ * port of the USB4/TBT topology.
+ */
+/* Number of microseconds to wait after a conventional reset */
+#define FW_RESET_TIME			50000
+
+/* Number of microseconds to wait after data link layer active report */
+#define FW_DL_UP_TIME			1
+
+/* Number of microseconds to wait after a function level reset */
+#define FW_FLR_RESET_TIME		1
+
+/* Number of microseconds to wait from D3 hot to D0 transition */
+#define FW_D3HOT_TO_D0_TIME		50000
+
+/* Number of microseconds to wait after setting the VF enable bit  */
+#define FW_VF_ENABLE_TIME		1
+
 OperationRegion (PXCS, SystemMemory, BASE(_ADR), 0x800)
 Field (PXCS, AnyAcc, NoLock, Preserve)
 {
@@ -64,9 +84,48 @@ Method (_DSM, 4, Serialized)
 	Return (Buffer() { 0x00 })
 }
 
+/*
+ * A bitmask of functions support
+ */
+Name(OPTS, Buffer(2) {0, 0})
+
 Device (PXSX)
 {
 	Name (_ADR, 0x00000000)
+
+	/*
+	 * _DSM Device Specific Method
+	 *
+	 * Arg0: UUID: E5C937D0-3553-4d7a-9117-EA4D19C3434D
+	 * Arg1: Revision ID: 3
+	 * Arg2: Function index: 0, 9
+	 * Arg3: Empty package
+	 */
+	Method (_DSM, 4, Serialized)
+	{
+		If (Arg0 == ToUUID("E5C937D0-3553-4d7a-9117-EA4D19C3434D")) {
+			If (Arg1 >= 3) {
+				If (Arg2 == 0) {
+					/*
+					 * Function index: 0
+					 * Standard query - A bitmask of functions supported
+					 */
+					CreateBitField(OPTS, 9, FUN9)
+					FUN9 = 1
+					Return (OPTS)
+				} ElseIf (Arg2 == 9) {
+					/*
+					 * Function index: 9
+					 * Specifying device readiness durations
+					 */
+					Return (Package() { FW_RESET_TIME, FW_DL_UP_TIME,
+							FW_FLR_RESET_TIME, FW_D3HOT_TO_D0_TIME,
+							FW_VF_ENABLE_TIME })
+				}
+			}
+		}
+		Return (Buffer() { 0x0 })
+	}
 
 	Method (_PRW, 0)
 	{
@@ -76,10 +135,14 @@ Device (PXSX)
 
 Method (_DSW, 3)
 {
-	C2PM (Arg0, Arg1, Arg2, DCPM)
 	/* If entering Sx (Arg1 > 1), need to skip TCSS D3Cold & TBT RTD3/D3Cold. */
-	\_SB.PCI0.TDM0.SD3C = Arg1
-	\_SB.PCI0.TDM1.SD3C = Arg1
+	If ((TUID == 0) || (TUID == 1)) {
+		\_SB.PCI0.TDM0.SD3C = Arg1
+	} Else {
+		\_SB.PCI0.TDM1.SD3C = Arg1
+	}
+
+	C2PM (Arg0, Arg1, Arg2, DCPM)
 }
 
 Method (_PRW, 0)
@@ -140,18 +203,6 @@ Method (D3CX, 0, Serialized)
 		Local1 = L23R
 	}
 	STAT = 0x1
-
-	/* Wait for LA = 1 */
-	Local0 = 0
-	Local1 = LASX
-	While (Local1 == 0) {
-		If (Local0 > 20) {
-			Break
-		}
-		Sleep(5)
-		Local0++
-		Local1 = LASX
-	}
 }
 
 /*
@@ -192,8 +243,6 @@ Method (_PS0, 0, Serialized)
 	If (PMEX == 1) {
 		PMEX = 0  /* Disable Power Management SCI */
 	}
-
-	Sleep(100)  /* Wait for 100ms before return to OS starts any OS activities. */
 }
 
 Method (_PS3, 0, Serialized)
@@ -213,85 +262,6 @@ Method (_PS3, 0, Serialized)
 	If (PMEX == 0) {
 		PMEX = 1  /* Enable Power Management SCI. */
 		HPME ()   /* Check and handle PME SCI status. */
-	}
-}
-
-Method (_DSD, 0) {
-	If ((TUID == 0) || (TUID == 1)) {
-		Return ( Package() {
-			/* acpi_pci_bridge_d3 at ../drivers/pci/pci-acpi.c */
-			ToUUID("6211E2C0-58A3-4AF3-90E1-927A4E0C55A4"),
-			Package ()
-			{
-				Package (2) { "HotPlugSupportInD3", 1 },
-			},
-
-			/* pci_acpi_set_untrusted at ../drivers/pci/pci-acpi.c */
-			ToUUID("EFCC06CC-73AC-4BC3-BFF0-76143807C389"),
-			Package () {
-				Package (2) { "ExternalFacingPort", 1 },  /* TBT/CIO port */
-				/*
-				 * UID of the TBT RP on platform, range is: 0, 1 ...,
-				 * (NumOfTBTRP - 1).
-				 */
-				Package (2) { "UID", TUID },
-			},
-			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
-			Package () {
-				Package (2) { "usb4-host-interface", \_SB.PCI0.TDM0 },
-				Package (2) { "usb4-port-number", TUID },
-			}
-		})
-	} ElseIf (TUID == 2) {
-		Return ( Package () {
-			/* acpi_pci_bridge_d3 at ../drivers/pci/pci-acpi.c */
-			ToUUID("6211E2C0-58A3-4AF3-90E1-927A4E0C55A4"),
-			Package ()
-			{
-				Package (2) { "HotPlugSupportInD3", 1 },
-			},
-
-			/* pci_acpi_set_untrusted at ../drivers/pci/pci-acpi.c */
-			ToUUID("EFCC06CC-73AC-4BC3-BFF0-76143807C389"),
-			Package () {
-				Package (2) { "ExternalFacingPort", 1 },  /* TBT/CIO port */
-				/*
-				 * UID of the TBT RP on platform, range is: 0, 1 ...,
-				 * (NumOfTBTRP - 1).
-				 */
-				Package (2) { "UID", TUID },
-			},
-			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
-			Package () {
-				Package (2) { "usb4-host-interface", \_SB.PCI0.TDM1 },
-				Package (2) { "usb4-port-number", 0 },
-			}
-		})
-	} Else {  /* TUID == 3 */
-		Return ( Package () {
-			/* acpi_pci_bridge_d3 at ../drivers/pci/pci-acpi.c */
-			ToUUID("6211E2C0-58A3-4AF3-90E1-927A4E0C55A4"),
-			Package ()
-			{
-				Package (2) { "HotPlugSupportInD3", 1 },
-			},
-
-			/* pci_acpi_set_untrusted at ../drivers/pci/pci-acpi.c */
-			ToUUID("EFCC06CC-73AC-4BC3-BFF0-76143807C389"),
-			Package () {
-				Package (2) { "ExternalFacingPort", 1 },  /* TBT/CIO port */
-				/*
-				 * UID of the TBT RP on platform, range is: 0, 1 ...,
-				 * (NumOfTBTRP - 1).
-				 */
-				Package (2) { "UID", TUID },
-			},
-			ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
-			Package () {
-				Package (2) { "usb4-host-interface", \_SB.PCI0.TDM1 },
-				Package (2) { "usb4-port-number", 1 },
-			}
-		})
 	}
 }
 

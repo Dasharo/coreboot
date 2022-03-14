@@ -9,8 +9,9 @@ if SOC_INTEL_QUARK
 
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
-	select ARCH_ALL_STAGES_X86_32
-	select NO_MMCONF_SUPPORT
+	select ARCH_X86
+	select NO_ECAM_MMCONF_SUPPORT
+	select NO_SMM
 	select REG_SCRIPT
 	select PLATFORM_USES_FSP2_0
 	select SOC_INTEL_COMMON
@@ -21,8 +22,10 @@ config CPU_SPECIFIC_OPTIONS
 	select UDELAY_TSC
 	select TSC_MONOTONIC_TIMER
 	select UNCOMPRESSED_RAMSTAGE
+	select USE_FSP_NOTIFY_PHASE_POST_PCI_ENUM
+	select USE_FSP_NOTIFY_PHASE_READY_TO_BOOT
+	select USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE
 	select USE_MARCH_586
-	select NO_SMM
 
 #####
 # Debug serial output
@@ -151,7 +154,6 @@ config DISPLAY_ESRAM_LAYOUT
 #####
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 	help
 	  Specify the size of the coreboot file system in the read-only (recovery)
@@ -223,7 +225,7 @@ config STORAGE_TEST
 	select COMMONLIB_STORAGE
 	select SDHCI_CONTROLLER
 	help
-	  Read block 0 from each parition of the storage device.  User
+	  Read block 0 from each partition of the storage device.  User
 	  must also enable one or both of COMMONLIB_STORAGE_SD or
 	  COMMONLIB_STORAGE_MMC.
 

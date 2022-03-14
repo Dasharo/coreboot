@@ -173,7 +173,7 @@ static const io_register_t ich10_gpio_registers[] = {
 	{ 0x3C, 4, "RESERVED" },
 	{ 0x40, 4, "GPIO_USE_SEL3" },
 	{ 0x44, 4, "GP_IO_SEL3" },
-	{ 0x48, 4, "GPIO_LVL3" },
+	{ 0x48, 4, "GP_LVL3" },
 	{ 0x4c, 4, "RESERVED" },
 	{ 0x50, 4, "RESERVED" },
 	{ 0x54, 4, "RESERVED" },
@@ -227,7 +227,7 @@ static const io_register_t pch_gpio_registers[] = {
 	{ 0x3c, 4, "RESERVED" },
 	{ 0x40, 4, "GPIO_USE_SEL3" },
 	{ 0x44, 4, "GP_IO_SEL3" },
-	{ 0x48, 4, "GPIO_LVL3" },
+	{ 0x48, 4, "GP_LVL3" },
 	{ 0x4c, 4, "RESERVED" },
 	{ 0x50, 4, "RESERVED" },
 	{ 0x54, 4, "RESERVED" },
@@ -943,6 +943,7 @@ int print_gpios(struct pci_dev *sb, int show_all, int show_diffs)
 		defaults_size = ARRAY_SIZE(pp_pch_mobile_defaults);
 		break;
 	case PCI_DEVICE_ID_INTEL_ICH10:
+	case PCI_DEVICE_ID_INTEL_ICH10D:
 	case PCI_DEVICE_ID_INTEL_ICH10DO:
 	case PCI_DEVICE_ID_INTEL_ICH10R:
 		gpiobase = pci_read_word(sb, 0x48) & 0xfffc;
@@ -1039,6 +1040,11 @@ int print_gpios(struct pci_dev *sb, int show_all, int show_diffs)
 	case PCI_DEVICE_ID_INTEL_CANNONPOINT_LP_U_PREM:
 	case PCI_DEVICE_ID_INTEL_COMETPOINT_LP_U_PREM:
 	case PCI_DEVICE_ID_INTEL_COMETPOINT_LP_U_BASE:
+	case PCI_DEVICE_ID_INTEL_TIGERPOINT_U_SUPER:
+	case PCI_DEVICE_ID_INTEL_TIGERPOINT_U_PREM:
+	case PCI_DEVICE_ID_INTEL_TIGERPOINT_U_BASE:
+	case PCI_DEVICE_ID_INTEL_TIGERPOINT_Y_SUPER:
+	case PCI_DEVICE_ID_INTEL_TIGERPOINT_Y_PREM:
 	case PCI_DEVICE_ID_INTEL_C621:
 	case PCI_DEVICE_ID_INTEL_C622:
 	case PCI_DEVICE_ID_INTEL_C624:
@@ -1058,6 +1064,14 @@ int print_gpios(struct pci_dev *sb, int show_all, int show_diffs)
 	case PCI_DEVICE_ID_INTEL_C621A_SUPER:
 	case PCI_DEVICE_ID_INTEL_C627A_SUPER:
 	case PCI_DEVICE_ID_INTEL_C629A_SUPER:
+	case PCI_DEVICE_ID_INTEL_H270:
+	case PCI_DEVICE_ID_INTEL_Z270:
+	case PCI_DEVICE_ID_INTEL_Q270:
+	case PCI_DEVICE_ID_INTEL_Q250:
+	case PCI_DEVICE_ID_INTEL_B250:
+	case PCI_DEVICE_ID_INTEL_Z370:
+	case PCI_DEVICE_ID_INTEL_H310C:
+	case PCI_DEVICE_ID_INTEL_X299:
 	case PCI_DEVICE_ID_INTEL_H310:
 	case PCI_DEVICE_ID_INTEL_H370:
 	case PCI_DEVICE_ID_INTEL_Z390:
@@ -1068,6 +1082,17 @@ int print_gpios(struct pci_dev *sb, int show_all, int show_diffs)
 	case PCI_DEVICE_ID_INTEL_QM370:
 	case PCI_DEVICE_ID_INTEL_HM370:
 	case PCI_DEVICE_ID_INTEL_CM246:
+	case PCI_DEVICE_ID_INTEL_Q570:
+	case PCI_DEVICE_ID_INTEL_Z590:
+	case PCI_DEVICE_ID_INTEL_H570:
+	case PCI_DEVICE_ID_INTEL_B560:
+	case PCI_DEVICE_ID_INTEL_H510:
+	case PCI_DEVICE_ID_INTEL_WM590:
+	case PCI_DEVICE_ID_INTEL_QM580:
+	case PCI_DEVICE_ID_INTEL_HM570:
+	case PCI_DEVICE_ID_INTEL_C252:
+	case PCI_DEVICE_ID_INTEL_C256:
+	case PCI_DEVICE_ID_INTEL_W580:
 	case PCI_DEVICE_ID_INTEL_ICELAKE_LP_U:
 		print_gpio_groups(sb);
 		return 0;

@@ -197,93 +197,70 @@ enum spd_memory_type {
 #define MODULE_BUFFERED                  1
 #define MODULE_REGISTERED                2
 
-/* DIMM SPD addresses */
-#define DIMM0                            0x50
-#define DIMM1                            0x51
-#define DIMM2                            0x52
-#define DIMM3                            0x53
-#define DIMM4                            0x54
-#define DIMM5                            0x55
-#define DIMM6                            0x56
-#define DIMM7                            0x57
-
-#define RC00 0
-#define RC01 1
-#define RC02 2
-#define RC03 3
-#define RC04 4
-#define RC05 5
-#define RC06 6
-#define RC07 7
-#define RC08 8
-#define RC09 9
-#define RC10 10
-#define RC11 11
-#define RC12 12
-#define RC13 13
-#define RC14 14
-#define RC15 15
-#define RC16 16
-#define RC17 17
-#define RC18 18
-#define RC19 19
-#define RC20 20
-#define RC21 21
-#define RC22 22
-#define RC23 23
-#define RC24 24
-#define RC25 25
-#define RC26 26
-#define RC27 27
-#define RC28 28
-#define RC29 29
-#define RC30 30
-#define RC31 31
-
-#define RC32 32
-#define RC33 33
-#define RC34 34
-#define RC35 35
-#define RC36 36
-#define RC37 37
-#define RC38 38
-#define RC39 39
-#define RC40 40
-#define RC41 41
-#define RC42 42
-#define RC43 43
-#define RC44 44
-#define RC45 45
-#define RC46 46
-#define RC47 47
-#define RC48 48
-#define RC49 49
-#define RC50 50
-#define RC51 51
-#define RC52 52
-#define RC53 53
-#define RC54 54
-#define RC55 55
-#define RC56 56
-#define RC57 57
-#define RC58 58
-#define RC59 59
-#define RC60 60
-#define RC61 61
-#define RC62 62
-#define RC63 63
+#define SPD_UNDEFINED 0x00
+#define SPD_ECC_8BIT (1<<3)
+#define SPD_ECC_8BIT_LP5_DDR5 (1<<4)
 
 /* Byte 3: Module type information */
-#define SPD_UNDEFINED 0x00
-#define SPD_RDIMM 0x01
-#define SPD_UDIMM 0x02
-#define SPD_SODIMM 0x04
-#define SPD_72B_SO_CDIMM 0x06
-#define SPD_72B_SO_RDIMM 0x07
-#define SPD_MICRO_DIMM 0x08
-#define SPD_MINI_RDIMM 0x10
-#define SPD_MINI_UDIMM 0x20
+enum ddr2_module_type {
+	DDR2_SPD_RDIMM = 0x01,
+	DDR2_SPD_UDIMM = 0x02,
+	DDR2_SPD_SODIMM = 0x04,
+	DDR2_SPD_72B_SO_CDIMM = 0x06,
+	DDR2_SPD_72B_SO_RDIMM = 0x07,
+	DDR2_SPD_MICRO_DIMM = 0x08,
+	DDR2_SPD_MINI_RDIMM = 0x10,
+	DDR2_SPD_MINI_UDIMM = 0x20,
+};
 
-#define SPD_ECC_8BIT (1<<3)
+enum ddr3_module_type {
+	DDR3_SPD_RDIMM = 0x01,
+	DDR3_SPD_UDIMM = 0x02,
+	DDR3_SPD_SODIMM = 0x03,
+	DDR3_SPD_MICRO_DIMM = 0x04,
+	DDR3_SPD_MINI_RDIMM = 0x05,
+	DDR3_SPD_MINI_UDIMM = 0x06,
+	DDR3_SPD_MINI_CDIMM = 0x07,
+	DDR3_SPD_72B_SO_UDIMM = 0x08,
+	DDR3_SPD_72B_SO_RDIMM = 0x09,
+	DDR3_SPD_72B_SO_CDIMM = 0x0a,
+	DDR3_SPD_LRDIMM = 0x0b,
+	DDR3_SPD_16B_SO_DIMM = 0x0c,
+	DDR3_SPD_32B_SO_RDIMM = 0x0d,
+};
+
+enum ddr4_module_type {
+	DDR4_SPD_RDIMM = 0x01,
+	DDR4_SPD_UDIMM = 0x02,
+	DDR4_SPD_SODIMM = 0x03,
+	DDR4_SPD_LRDIMM = 0x04,
+	DDR4_SPD_MINI_RDIMM = 0x05,
+	DDR4_SPD_MINI_UDIMM = 0x06,
+	DDR4_SPD_72B_SO_UDIMM = 0x08,
+	DDR4_SPD_72B_SO_RDIMM = 0x09,
+	DDR4_SPD_16B_SO_DIMM = 0x0c,
+	DDR4_SPD_32B_SO_RDIMM = 0x0d,
+};
+
+enum ddr5_module_type {
+	DDR5_SPD_RDIMM = 0x01,
+	DDR5_SPD_UDIMM = 0x02,
+	DDR5_SPD_SODIMM = 0x03,
+	DDR5_SPD_LRDIMM = 0x04,
+	DDR5_SPD_MINI_RDIMM = 0x05,
+	DDR5_SPD_MINI_UDIMM = 0x06,
+	DDR5_SPD_72B_SO_UDIMM = 0x08,
+	DDR5_SPD_72B_SO_RDIMM = 0x09,
+	DDR5_SPD_SOLDERED_DOWN = 0x0b,
+	DDR5_SPD_16B_SO_DIMM = 0x0c,
+	DDR5_SPD_32B_SO_RDIMM = 0x0d,
+	DDR5_SPD_1DPC = 0x0e,
+	DDR5_SPD_2DPC = 0x0f,
+};
+
+enum lpx_module_type {
+	LPX_SPD_LPDIMM = 0x07,
+	LPX_SPD_NONDIMM = 0x0e,
+};
 
 #endif

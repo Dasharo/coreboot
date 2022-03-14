@@ -1,15 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/acpi.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/amd_pci_util.h>
+#include <amdblocks/gpio.h>
 #include <amdblocks/smi.h>
 #include <assert.h>
 #include <bootstate.h>
 #include <cpu/x86/smm.h>
+#include <amdblocks/i2c.h>
 #include <soc/amd_pci_int_defs.h>
 #include <soc/iomap.h>
+#include <soc/i2c.h>
 #include <soc/smi.h>
 #include <soc/southbridge.h>
+#include "chip.h"
 
 /*
  * Table of APIC register index and associated IRQ name. Using IDX_XXX_NAME
@@ -68,6 +73,16 @@ const struct irq_idx_name *sb_get_apic_reg_association(size_t *size)
 	return irq_association;
 }
 
+static void fch_clk_output_48Mhz(void)
+{
+	uint32_t ctrl = misc_read32(MISC_CLK_CNTL0);
+	/* Enable BP_X48M0 Clock Output */
+	ctrl |= BP_X48M0_OUTPUT_EN;
+	/* Disable clock output in S0i3 */
+	ctrl |= BP_X48M0_S0I3_DIS;
+	misc_write32(MISC_CLK_CNTL0, ctrl);
+}
+
 static void fch_init_acpi_ports(void)
 {
 	u32 reg;
@@ -109,9 +124,87 @@ static void fch_init_acpi_ports(void)
 				PM_ACPI_TIMER_EN_EN);
 }
 
+static void fch_init_resets(void)
+{
+	pm_write16(PWR_RESET_CFG, pm_read16(PWR_RESET_CFG) | TOGGLE_ALL_PWR_GOOD);
+}
+
+/* configure the general purpose PCIe clock outputs according to the devicetree settings */
+static void gpp_clk_setup(void)
+{
+	const struct soc_amd_cezanne_config *cfg = config_of_soc();
+
+	/* look-up table to be able to iterate over the PCIe clock output settings */
+	const uint8_t gpp_clk_shift_lut[GPP_CLK_OUTPUT_COUNT] = {
+		GPP_CLK0_REQ_SHIFT,
+		GPP_CLK1_REQ_SHIFT,
+		GPP_CLK2_REQ_SHIFT,
+		GPP_CLK3_REQ_SHIFT,
+		GPP_CLK4_REQ_SHIFT,
+		GPP_CLK5_REQ_SHIFT,
+		GPP_CLK6_REQ_SHIFT,
+	};
+
+	uint32_t gpp_clk_ctl = misc_read32(GPP_CLK_CNTRL);
+
+	for (int i = 0; i < GPP_CLK_OUTPUT_COUNT; i++) {
+		gpp_clk_ctl &= ~GPP_CLK_REQ_MASK(gpp_clk_shift_lut[i]);
+		/*
+		 * The remapping of values is done so that the default of the enum used for the
+		 * devicetree settings is the clock being enabled, so that a missing devicetree
+		 * configuration for this will result in an always active clock and not an
+		 * inactive PCIe clock output.
+		 */
+		switch (cfg->gpp_clk_config[i]) {
+		case GPP_CLK_REQ:
+			gpp_clk_ctl |= GPP_CLK_REQ_EXT(gpp_clk_shift_lut[i]);
+			break;
+		case GPP_CLK_OFF:
+			gpp_clk_ctl |= GPP_CLK_REQ_OFF(gpp_clk_shift_lut[i]);
+			break;
+		case GPP_CLK_ON:
+		default:
+			gpp_clk_ctl |= GPP_CLK_REQ_ON(gpp_clk_shift_lut[i]);
+		}
+	}
+
+	misc_write32(GPP_CLK_CNTRL, gpp_clk_ctl);
+}
+
+static void cgpll_clock_gate_init(void)
+{
+	uint32_t t;
+
+	t = misc_read32(MISC_CLKGATEDCNTL);
+	t |= ALINKCLK_GATEOFFEN;
+	t |= BLINKCLK_GATEOFFEN;
+	t |= XTAL_PAD_S3_TURNOFF_EN;
+	t |= XTAL_PAD_S5_TURNOFF_EN;
+	misc_write32(MISC_CLKGATEDCNTL, t);
+
+	t = misc_read32(MISC_CGPLL_CONFIGURATION0);
+	t |= USB_PHY_CMCLK_S3_DIS;
+	t |= USB_PHY_CMCLK_S0I3_DIS;
+	t |= USB_PHY_CMCLK_S5_DIS;
+	misc_write32(MISC_CGPLL_CONFIGURATION0, t);
+
+	t = pm_read32(PM_ISACONTROL);
+	t |= ABCLKGATEEN;
+	pm_write32(PM_ISACONTROL, t);
+}
+
 void fch_init(void *chip_info)
 {
+	fch_init_resets();
+	i2c_soc_init();
 	fch_init_acpi_ports();
+
+	acpi_pm_gpe_add_events_print_events();
+	gpio_add_events();
+
+	gpp_clk_setup();
+	fch_clk_output_48Mhz();
+	cgpll_clock_gate_init();
 }
 
 void fch_final(void *chip_info)
@@ -122,6 +215,12 @@ static void set_pci_irqs(void *unused)
 {
 	/* Write PCI_INTR regs 0xC00/0xC01 */
 	write_pci_int_table();
+
+	/* pirq_data is consumed by `write_pci_cfg_irqs` */
+	populate_pirq_data();
+
+	/* Write IRQs for all devicetree enabled devices */
+	write_pci_cfg_irqs();
 }
 
 /*

@@ -16,10 +16,9 @@ struct memset_test_state {
 static int setup_test(void **state)
 {
 	struct memset_test_state *s = malloc(sizeof(struct memset_test_state));
-
 	u8 *buf = malloc(MEMSET_BUFFER_SZ);
 	u8 *helper_buf = malloc(MEMSET_BUFFER_SZ);
-	if (!buf || !helper_buf)
+	if (!s || !buf || !helper_buf)
 		goto error;
 
 	s->base_buffer = buf;
@@ -31,6 +30,7 @@ static int setup_test(void **state)
 error:
 	free(buf);
 	free(helper_buf);
+	free(s);
 	return -1;
 }
 
@@ -85,7 +85,7 @@ static void test_memset_zero_size(void **state)
 	}
 
 	/* Expect no change in buffer after calling memset with zero size */
-	memset(s->base_buffer, 0xAA, 0);
+	memset(s->base_buffer, 0xAA, (0));
 	assert_memory_equal(s->base_buffer, s->helper_buffer, MEMSET_BUFFER_SZ);
 }
 
@@ -106,15 +106,15 @@ static void test_memset_one_byte(void **state)
 int main(void)
 {
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test_setup_teardown(test_memset_full_range,
-				setup_test, teardown_test),
-		cmocka_unit_test_setup_teardown(test_memset_subrange,
-				setup_test, teardown_test),
-		cmocka_unit_test_setup_teardown(test_memset_zero_size,
-				setup_test, teardown_test),
-		cmocka_unit_test_setup_teardown(test_memset_one_byte,
-				setup_test, teardown_test),
+		cmocka_unit_test_setup_teardown(test_memset_full_range, setup_test,
+						teardown_test),
+		cmocka_unit_test_setup_teardown(test_memset_subrange, setup_test,
+						teardown_test),
+		cmocka_unit_test_setup_teardown(test_memset_zero_size, setup_test,
+						teardown_test),
+		cmocka_unit_test_setup_teardown(test_memset_one_byte, setup_test,
+						teardown_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	return cb_run_group_tests(tests, NULL, NULL);
 }

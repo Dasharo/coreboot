@@ -3,16 +3,19 @@
 #include <console/console.h>
 #include <device/path.h>
 #include <device/pci_ids.h>
+#include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
 #include <string.h>
 #include <arch/cpu.h>
+#include <cpu/cpu.h>
 #include <cpu/x86/lapic.h>
 #include <drivers/generic/ioapic/chip.h>
 
 /* Initialize the specified "mc" struct with initial values. */
-void mptable_init(struct mp_config_table *mc, u32 lapic_addr)
+void mptable_init(struct mp_config_table *mc)
 {
 	int i;
+	u32 lapic_addr = cpu_get_lapic_addr();
 
 	memset(mc, 0, sizeof(*mc));
 
@@ -217,6 +220,14 @@ void smp_write_ioapic(struct mp_config_table *mc,
 	mpc->mpc_flags = MPC_APIC_USABLE;
 	mpc->mpc_apicaddr = apicaddr;
 	smp_add_mpc_entry(mc, sizeof(*mpc));
+}
+
+u8 smp_write_ioapic_from_hw(struct mp_config_table *mc, void *apicaddr)
+{
+	u8 id = get_ioapic_id(apicaddr);
+	u8 ver = get_ioapic_version(apicaddr);
+	smp_write_ioapic(mc, id, ver, apicaddr);
+	return id;
 }
 
 /*
@@ -533,7 +544,7 @@ unsigned long __weak write_smp_table(unsigned long addr)
 	v = smp_write_floating_table(addr, 0);
 	mc = (void *)(((char *)v) + SMP_FLOATING_TABLE_LEN);
 
-	mptable_init(mc, LOCAL_APIC_ADDR);
+	mptable_init(mc);
 
 	smp_write_processors(mc);
 

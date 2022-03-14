@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <console/console.h>
+#include <mipi/panel.h>
 #include <device/mmio.h>
 #include <delay.h>
 #include <edid.h>
@@ -204,7 +205,7 @@ static void mtk_dsi_config_vdo_timing(u32 mode_flags, u32 format, u32 lanes,
 	data_phy_cycles = phy_timing->lpx + phy_timing->da_hs_prepare +
 			  phy_timing->da_hs_zero + phy_timing->da_hs_exit + 3;
 
-	u32 delta = 12;
+	u32 delta = 10;
 
 	if (mode_flags & MIPI_DSI_MODE_EOT_PACKET)
 		delta += 2;
@@ -222,6 +223,13 @@ static void mtk_dsi_config_vdo_timing(u32 mode_flags, u32 format, u32 lanes,
 	} else {
 		printk(BIOS_ERR, "HFP plus HBP is not greater than d_phy, "
 		       "the panel may not work properly.\n");
+	}
+
+	if (mode_flags & MIPI_DSI_MODE_LINE_END) {
+		hsync_active_byte = DIV_ROUND_UP(hsync_active_byte, lanes) * lanes - 2;
+		hbp_byte = DIV_ROUND_UP(hbp_byte, lanes) * lanes - 2;
+		hfp_byte = DIV_ROUND_UP(hfp_byte, lanes) * lanes - 2;
+		hbp_byte -= (edid->mode.ha * bytes_per_pixel + 2) % lanes;
 	}
 
 	if (hfp_byte + hbp_byte < MIN_HFP_BYTE + MIN_HBP_BYTE) {
@@ -282,7 +290,7 @@ static void mtk_dsi_start(void)
 	write32(&dsi0->dsi_start, 1);
 }
 
-static bool mtk_dsi_is_read_command(u32 type)
+static bool mtk_dsi_is_read_command(enum mipi_dsi_transaction type)
 {
 	switch (type) {
 	case MIPI_DSI_GENERIC_READ_REQUEST_0_PARAM:
@@ -290,11 +298,12 @@ static bool mtk_dsi_is_read_command(u32 type)
 	case MIPI_DSI_GENERIC_READ_REQUEST_2_PARAM:
 	case MIPI_DSI_DCS_READ:
 		return true;
+	default:
+		return false;
 	}
-	return false;
 }
 
-static void mtk_dsi_cmdq(const u8 *data, u8 len, u32 type)
+static cb_err_t mtk_dsi_cmdq(enum mipi_dsi_transaction type, const u8 *data, u8 len)
 {
 	const u8 *tx_buf = data;
 	u32 config;
@@ -304,7 +313,7 @@ static void mtk_dsi_cmdq(const u8 *data, u8 len, u32 type)
 		printk(BIOS_ERR, "%s: cannot get DSI ready for sending commands"
 		       " after 20ms and the panel may not work properly.\n",
 		       __func__);
-		return;
+		return CB_ERR;
 	}
 	write32(&dsi0->dsi_intsta, 0);
 
@@ -336,79 +345,10 @@ static void mtk_dsi_cmdq(const u8 *data, u8 len, u32 type)
 	if (!wait_us(400, read32(&dsi0->dsi_intsta) & CMD_DONE_INT_FLAG)) {
 		printk(BIOS_ERR, "%s: failed sending DSI command, "
 		       "panel may not work.\n", __func__);
-		return;
+		return CB_ERR;
 	}
-}
 
-static void mtk_dsi_send_init_commands(const u8 *buf)
-{
-	if (!buf)
-		return;
-	const struct lcm_init_command *init = (const void *)buf;
-
-	/*
-	 * The given commands should be in a buffer containing a packed array of
-	 * lcm_init_command and each element may be in variable size so we have
-	 * to parse and scan.
-	 */
-
-	for (; init->cmd != LCM_END_CMD; init = (const void *)buf) {
-		/*
-		 * For some commands like DELAY, the init->len should not be
-		 * counted for buf.
-		 */
-		buf += sizeof(*init);
-
-		u32 cmd = init->cmd, len = init->len;
-		u32 type;
-
-		switch (cmd) {
-		case LCM_DELAY_CMD:
-			mdelay(len);
-			continue;
-
-		case LCM_DCS_CMD:
-			switch (len) {
-			case 0:
-				return;
-			case 1:
-				type = MIPI_DSI_DCS_SHORT_WRITE;
-				break;
-			case 2:
-				type = MIPI_DSI_DCS_SHORT_WRITE_PARAM;
-				break;
-			default:
-				type = MIPI_DSI_DCS_LONG_WRITE;
-				break;
-			}
-			break;
-
-		case LCM_GENERIC_CMD:
-			switch (len) {
-			case 0:
-				type = MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM;
-				break;
-			case 1:
-				type = MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM;
-				break;
-			case 2:
-				type = MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM;
-				break;
-			default:
-				type = MIPI_DSI_GENERIC_LONG_WRITE;
-				break;
-			}
-			break;
-
-		default:
-			printk(BIOS_ERR, "%s: Unknown cmd: %d, "
-			       "abort panel initialization.\n", __func__, cmd);
-			return;
-
-		}
-		buf += len;
-		mtk_dsi_cmdq(init->data, len, type);
-	}
+	return CB_SUCCESS;
 }
 
 static void mtk_dsi_reset_dphy(void)
@@ -437,7 +377,8 @@ int mtk_dsi_init(u32 mode_flags, u32 format, u32 lanes, const struct edid *edid,
 	mtk_dsi_clk_hs_mode_disable();
 	mtk_dsi_config_vdo_timing(mode_flags, format, lanes, edid, &phy_timing);
 	mtk_dsi_clk_hs_mode_enable();
-	mtk_dsi_send_init_commands(init_commands);
+	if (init_commands)
+		mipi_panel_parse_init_commands(init_commands, mtk_dsi_cmdq);
 	mtk_dsi_set_mode(mode_flags);
 	mtk_dsi_start();
 

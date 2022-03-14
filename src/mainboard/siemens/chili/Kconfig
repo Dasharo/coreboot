@@ -17,24 +17,20 @@ config BOARD_SIEMENS_CHILI_COMMON
 	select SOC_INTEL_CANNONLAKE_PCH_H
 	select SOC_INTEL_COFFEELAKE
 
-config BOARD_SIEMENS_CHILI_BASE_OPTIONS
-	bool
+config BOARD_SIEMENS_CHILI_BASE
 	select BOARD_SIEMENS_CHILI_COMMON
 	select DRIVERS_UART_8250IO
 
-config BOARD_SIEMENS_CHILI_CHILI_OPTIONS
-	bool
+config BOARD_SIEMENS_CHILI_CHILI
 	select BOARD_SIEMENS_CHILI_COMMON
 	select DRIVERS_I2C_LM96000
 	select INTEL_LPSS_UART_FOR_CONSOLE
 	select SECUNET_DMI
-	select SMBIOS_PROVIDED_BY_MOBO
 	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
 
 if BOARD_SIEMENS_CHILI_COMMON
 
 config MAINBOARD_DIR
-	string
 	default "siemens/chili"
 
 config MAINBOARD_FAMILY
@@ -42,29 +38,21 @@ config MAINBOARD_FAMILY
 	default "Chili"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Chili base board" if BOARD_SIEMENS_CHILI_BASE
 	default "Chili" if BOARD_SIEMENS_CHILI_CHILI
 
 config VARIANT_DIR
-	string
 	default "base" if BOARD_SIEMENS_CHILI_BASE
 	default "chili" if BOARD_SIEMENS_CHILI_CHILI
 
 config DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config INTEL_GMA_VBT_FILE
 	string
-	default "src/mainboard/$(MAINBOARDDIR)/variants/$(CONFIG_VARIANT_DIR)/data.vbt"
-
-config DIMM_SPD_SIZE
-	int
-	default 512
+	default "src/mainboard/\$(MAINBOARDDIR)/variants/\$(CONFIG_VARIANT_DIR)/data.vbt"
 
 config CBFS_SIZE
-	hex
 	default 0xb00000
 
 config POST_DEVICE

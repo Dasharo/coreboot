@@ -72,7 +72,7 @@ static int lpss_i2c_early_init_bus(unsigned int bus)
 	lpss_set_power_state(dev, STATE_D0);
 
 	/* Initialize the controller */
-	if (dw_i2c_init(bus, config) < 0) {
+	if (dw_i2c_init(bus, config) != CB_SUCCESS) {
 		printk(BIOS_ERR, "I2C%u failed to initialize\n", bus);
 		return -1;
 	}
@@ -123,11 +123,16 @@ uintptr_t dw_i2c_base_address(unsigned int bus)
 		return (uintptr_t)NULL;
 
 	/* dev -> bar0 */
-	res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (res)
 		return res->base;
 
-	return (uintptr_t)NULL;
+	/* No resource found yet, it's possible this is running in the
+	 * PAYLOAD_LOADER stage before resources have been assigned yet,
+	 * therefore, any early init BAR should still be valid. */
+
+	/* Read the first base address for this device */
+	return (uintptr_t)ALIGN_DOWN(pci_read_config32(dev, PCI_BASE_ADDRESS_0), 16);
 }
 
 /*
@@ -176,10 +181,10 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SPT_I2C3,
 	PCI_DEVICE_ID_INTEL_SPT_I2C4,
 	PCI_DEVICE_ID_INTEL_SPT_I2C5,
-	PCI_DEVICE_ID_INTEL_KBP_H_I2C0,
-	PCI_DEVICE_ID_INTEL_KBP_H_I2C1,
-	PCI_DEVICE_ID_INTEL_KBP_H_I2C2,
-	PCI_DEVICE_ID_INTEL_KBP_H_I2C3,
+	PCI_DEVICE_ID_INTEL_UPT_H_I2C0,
+	PCI_DEVICE_ID_INTEL_UPT_H_I2C1,
+	PCI_DEVICE_ID_INTEL_UPT_H_I2C2,
+	PCI_DEVICE_ID_INTEL_UPT_H_I2C3,
 	PCI_DEVICE_ID_INTEL_APL_I2C0,
 	PCI_DEVICE_ID_INTEL_APL_I2C1,
 	PCI_DEVICE_ID_INTEL_APL_I2C2,
@@ -230,6 +235,13 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGP_I2C5,
 	PCI_DEVICE_ID_INTEL_TGP_I2C6,
 	PCI_DEVICE_ID_INTEL_TGP_I2C7,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C0,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C1,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C2,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C3,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C4,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C5,
+	PCI_DEVICE_ID_INTEL_TGP_H_I2C6,
 	PCI_DEVICE_ID_INTEL_MCC_I2C0,
 	PCI_DEVICE_ID_INTEL_MCC_I2C1,
 	PCI_DEVICE_ID_INTEL_MCC_I2C2,
@@ -250,18 +262,20 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_ADP_P_I2C3,
 	PCI_DEVICE_ID_INTEL_ADP_P_I2C4,
 	PCI_DEVICE_ID_INTEL_ADP_P_I2C5,
+	PCI_DEVICE_ID_INTEL_ADP_P_I2C6,
+	PCI_DEVICE_ID_INTEL_ADP_P_I2C7,
 	PCI_DEVICE_ID_INTEL_ADP_S_I2C0,
 	PCI_DEVICE_ID_INTEL_ADP_S_I2C1,
 	PCI_DEVICE_ID_INTEL_ADP_S_I2C2,
 	PCI_DEVICE_ID_INTEL_ADP_S_I2C3,
 	PCI_DEVICE_ID_INTEL_ADP_S_I2C4,
 	PCI_DEVICE_ID_INTEL_ADP_S_I2C5,
-	PCI_DEVICE_ID_INTEL_ADP_M_I2C0,
-	PCI_DEVICE_ID_INTEL_ADP_M_I2C1,
-	PCI_DEVICE_ID_INTEL_ADP_M_I2C2,
-	PCI_DEVICE_ID_INTEL_ADP_M_I2C3,
-	PCI_DEVICE_ID_INTEL_ADP_M_I2C4,
-	PCI_DEVICE_ID_INTEL_ADP_M_I2C5,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_I2C0,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_I2C1,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_I2C2,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_I2C3,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_I2C4,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_I2C5,
 	0,
 };
 

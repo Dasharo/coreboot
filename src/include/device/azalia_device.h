@@ -23,6 +23,8 @@ int azalia_enter_reset(u8 *base);
 int azalia_exit_reset(u8 *base);
 u32 azalia_find_verb(const u32 *verb_table, u32 verb_table_bytes, u32 viddid, const u32 **verb);
 int azalia_program_verb_table(u8 *base, const u32 *verbs, u32 verb_size);
+void azalia_codec_init(u8 *base, int addr, const u32 *verb_table, u32 verb_table_bytes);
+void azalia_codecs_init(u8 *base, u16 codec_mask);
 void azalia_audio_init(struct device *dev);
 extern struct device_operations default_azalia_audio_ops;
 
@@ -126,26 +128,27 @@ enum azalia_pin_location_2 {
 	ARRAY_SIZE(pc_beep_verbs);				\
 	const u32 cim_verb_data_size = sizeof(cim_verb_data)
 
-#define AZALIA_PIN_CFG(codec, pin, val)			\
-	(((codec) << 28) | ((pin) << 20) | (0x71c << 8)	\
-		| ((val) & 0xff)),			\
-	(((codec) << 28) | ((pin) << 20) | (0x71d << 8)	\
-		| (((val) >> 8) & 0xff)),		\
-	(((codec) << 28) | ((pin) << 20) | (0x71e << 8)	\
-		| (((val) >> 16) & 0xff)),		\
-	(((codec) << 28) | ((pin) << 20) | (0x71f << 8)	\
-		| (((val) >> 24) & 0xff))
+#define AZALIA_VERB_12B(codec, pin, verb, val)		\
+	((codec) << 28 | (pin) << 20 | (verb) << 8 | (val))
 
-#define AZALIA_PIN_CFG_NC(n)   (0x411111f0 | (n & 0xf))
+#define AZALIA_PIN_CFG(codec, pin, val)					\
+	AZALIA_VERB_12B(codec, pin, 0x71c, ((val) >>  0) & 0xff),	\
+	AZALIA_VERB_12B(codec, pin, 0x71d, ((val) >>  8) & 0xff),	\
+	AZALIA_VERB_12B(codec, pin, 0x71e, ((val) >> 16) & 0xff),	\
+	AZALIA_VERB_12B(codec, pin, 0x71f, ((val) >> 24) & 0xff)
 
-#define AZALIA_RESET(pin)					\
-	(((pin) << 20) | 0x7ff00), (((pin) << 20) | 0x7ff00),	\
-	(((pin) << 20) | 0x7ff00), (((pin) << 20) | 0x7ff00)
+#define AZALIA_PIN_CFG_NC(n)   (0x411111f0 | ((n) & 0xf))
 
-#define AZALIA_SUBVENDOR(codec, val)		    \
-	(((codec) << 28) | (0x01720 << 8) | ((val) & 0xff)),	\
-	(((codec) << 28) | (0x01721 << 8) | (((val) >> 8) & 0xff)), \
-	(((codec) << 28) | (0x01722 << 8) | (((val) >> 16) & 0xff)), \
-	(((codec) << 28) | (0x01723 << 8) | (((val) >> 24) & 0xff))
+#define AZALIA_RESET(pin)			\
+	AZALIA_VERB_12B(0, pin, 0x7ff, 0),	\
+	AZALIA_VERB_12B(0, pin, 0x7ff, 0),	\
+	AZALIA_VERB_12B(0, pin, 0x7ff, 0),	\
+	AZALIA_VERB_12B(0, pin, 0x7ff, 0)
+
+#define AZALIA_SUBVENDOR(codec, val)				\
+	AZALIA_VERB_12B(codec, 1, 0x720, ((val) >>  0) & 0xff),	\
+	AZALIA_VERB_12B(codec, 1, 0x721, ((val) >>  8) & 0xff),	\
+	AZALIA_VERB_12B(codec, 1, 0x722, ((val) >> 16) & 0xff),	\
+	AZALIA_VERB_12B(codec, 1, 0x723, ((val) >> 24) & 0xff)
 
 #endif /* DEVICE_AZALIA_H */

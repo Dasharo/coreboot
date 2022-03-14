@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <commonlib/helpers.h>
+#include <console/cbmem_console.h>
 #include <console/console.h>
 #include <console/uart.h>
 #include <console/streams.h>
@@ -13,7 +14,7 @@
 static int console_inited;
 static int console_loglevel;
 
-static inline int get_log_level(void)
+int get_log_level(void)
 {
 	if (console_inited == 0)
 		return -1;
@@ -26,7 +27,7 @@ static void init_log_level(void)
 	console_loglevel = get_console_loglevel();
 
 	if (!FIRST_CONSOLE)
-		get_option(&console_loglevel, "debug_level");
+		console_loglevel = get_uint_option("debug_level", console_loglevel);
 }
 
 int console_log_level(int msg_level)
@@ -45,7 +46,7 @@ int console_log_level(int msg_level)
 	return 0;
 }
 
-asmlinkage void console_init(void)
+void console_init(void)
 {
 	init_log_level();
 
@@ -58,6 +59,9 @@ asmlinkage void console_init(void)
 	console_hw_init();
 
 	console_inited = 1;
+
+	if (ENV_BOOTBLOCK && CONFIG(CONSOLE_CBMEM_PRINT_PRE_BOOTBLOCK_CONTENTS))
+		cbmem_dump_console();
 
 	printk(BIOS_NOTICE, "\n\ncoreboot-%s%s %s " ENV_STRING " starting (log level: %i)...\n",
 	       coreboot_version, coreboot_extra_version, coreboot_build,

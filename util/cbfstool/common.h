@@ -10,10 +10,9 @@
 #include <assert.h>
 
 #include <commonlib/bsd/cbfs_serialized.h>
+#include <commonlib/bsd/sysincludes.h>
 #include <commonlib/helpers.h>
 #include <console/console.h>
-
-#include "swab.h"
 
 /*
  * There are two address spaces that this tool deals with - SPI flash address space and host
@@ -52,6 +51,11 @@ static inline size_t buffer_size(const struct buffer *b)
 static inline size_t buffer_offset(const struct buffer *b)
 {
 	return b->offset;
+}
+
+static inline void *buffer_end(const struct buffer *b)
+{
+	return b->data + b->size;
 }
 
 /*
@@ -127,6 +131,11 @@ int buffer_create(struct buffer *buffer, size_t size, const char *name);
 /* Loads a file into memory buffer. Returns 0 on success, otherwise non-zero. */
 int buffer_from_file(struct buffer *buffer, const char *filename);
 
+/* Loads a file into memory buffer (with buffer size rounded up to a multiple of
+   size_granularity). Returns 0 on success, otherwise non-zero. */
+int buffer_from_file_aligned_size(struct buffer *buffer, const char *filename,
+				  size_t size_granularity);
+
 /* Writes memory buffer content into file.
  * Returns 0 on success, otherwise non-zero. */
 int buffer_write_file(struct buffer *buffer, const char *filename);
@@ -174,10 +183,12 @@ int parse_flat_binary_to_payload(const struct buffer *input,
 				 enum cbfs_compression algo);
 /* cbfs-mkstage.c */
 int parse_elf_to_stage(const struct buffer *input, struct buffer *output,
-		       enum cbfs_compression algo, const char *ignore_section);
+		       const char *ignore_section,
+		       struct cbfs_file_attr_stageheader *stageheader);
 /* location is TOP aligned. */
 int parse_elf_to_xip_stage(const struct buffer *input, struct buffer *output,
-				uint32_t *location, const char *ignore_section);
+			   uint32_t location, const char *ignore_section,
+			   struct cbfs_file_attr_stageheader *stageheader);
 
 void print_supported_architectures(void);
 void print_supported_filetypes(void);

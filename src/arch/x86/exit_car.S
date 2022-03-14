@@ -11,7 +11,7 @@ post_car_stack_top:
 .long	0
 .long	0
 
-#if defined(__x86_64__)
+#if ENV_X86_64
 .code64
 .macro pop_eax_edx
 	pop	%rax
@@ -42,14 +42,15 @@ _start:
 	   is expected to be implemented in assembly. */
 
 	/* Migrate GDT to this text segment */
-#if defined(__x86_64__)
+#if ENV_X86_64
 	call	gdt_init64
 #else
 	call	gdt_init
 #endif
 
-#ifdef	__x86_64__
-	mov	%rdi, _cbmem_top_ptr
+#if ENV_X86_64
+	mov	%rdi, %rax
+	movabs %rax, _cbmem_top_ptr
 #else
 	/* The return argument is at 0(%esp), the calling argument at 4(%esp) */
 	movl	4(%esp), %eax
@@ -60,28 +61,40 @@ _start:
 	cpuid
 	btl	$CPUID_FEATURE_CLFLUSH_BIT, %edx
 	jnc	skip_clflush
+#if ENV_X86_64
+	movabs	$_cbmem_top_ptr, %rax
+	clflush	(%rax)
+#else
 	clflush	_cbmem_top_ptr
+#endif
 
 skip_clflush:
 	/* chipset_teardown_car() is expected to disable cache-as-ram. */
 	call	chipset_teardown_car
 
 	/* Enable caching if not already enabled. */
-#ifdef  __x86_64__
+#if ENV_X86_64
 	mov	%cr0, %rax
 	and     $(~(CR0_CD | CR0_NW)), %eax
 	mov	%rax, %cr0
+
+	/* Ensure cache is clean. */
+	invd
+
+	/* Set up new stack. */
+	movabs	post_car_stack_top, %rax
+	mov	%rax, %rsp
 #else
 	mov	%cr0, %eax
 	and	$(~(CR0_CD | CR0_NW)), %eax
 	mov	%eax, %cr0
-#endif
+
 	/* Ensure cache is clean. */
 	invd
 
 	/* Set up new stack. */
 	mov	post_car_stack_top, %esp
-
+#endif
 	/*
 	 * Honor variable MTRR information pushed on the stack with the
 	 * following layout:
@@ -102,7 +115,7 @@ skip_clflush:
 	/* Need to align stack to 16 bytes at the call instruction. Therefore
 	   account for the 1 push. */
 	andl	$0xfffffff0, %esp
-#if defined(__x86_64__)
+#if ENV_X86_64
 	mov	%rbp, %rdi
 #else
 	sub	$12, %esp

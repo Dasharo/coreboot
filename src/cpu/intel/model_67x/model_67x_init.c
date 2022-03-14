@@ -3,7 +3,6 @@
 #include <device/device.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/mtrr.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/x86/cache.h>
 #include <cpu/intel/l2_cache.h>
@@ -17,14 +16,11 @@ static void model_67x_init(struct device *cpu)
 	p6_configure_l2_cache();
 
 	/* Turn on caching if we haven't already */
-	x86_enable_cache();
+	enable_cache();
 
 	/* Setup MTRRs */
 	x86_setup_mtrrs();
 	x86_mtrr_check();
-
-	/* Enable the local CPU APICs */
-	setup_lapic();
 }
 
 static struct device_operations cpu_dev_ops = {

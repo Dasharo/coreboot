@@ -1,0 +1,333 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+fw_config
+	field KB_BL 0
+		option KB_BL_ABSENT 0
+		option KB_BL_PRESENT 1
+	end
+	field FP 1
+		option FP_ABSENT 0
+		option FP_PRESENT 1
+	end
+	field WLAN 2 3
+		option WLAN_WCN6856 0
+		option WLAN_RTL8852 1
+	end
+	field WWAN 4 5
+		option WWAN_DIASABLED 0
+		option WWAN_L850GL 1
+	end
+	field STORAGE 6
+		option STORAGE_EMMC 0
+		option STORAGE_SSD 1
+	end
+	field KB_MAP 7
+		option KB_MAP_PRIVACY 0
+		option KB_MAP_NO_PRIVACY 1
+	end
+end
+
+chip soc/amd/cezanne
+
+	register "usb_phy_custom" = "1"
+	register "usb_phy" = "{
+		/* Left USB C0 Port */
+		.Usb2PhyPort[0] = {
+			.compdstune = 5,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 9,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* Left USB A0 Port or WWAN */
+		.Usb2PhyPort[1] = {
+			.compdstune = 5,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 9,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* User facing camera */
+		.Usb2PhyPort[2] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* World facing camera */
+		.Usb2PhyPort[3] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* Right USB C1 Port */
+		.Usb2PhyPort[4] = {
+			.compdstune = 6,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 0xe,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* Right USB A1 Port */
+		.Usb2PhyPort[5] = {
+			.compdstune = 5,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 1,
+			.txpreemppulsetune = 0,
+			.txrisetune = 1,
+			.txvreftune = 9,
+			.txhsxvtune = 3,
+			.txrestune = 1,
+		},
+		/* WiFi / Bluetooth */
+		.Usb2PhyPort[6] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* Smart Card */
+		.Usb2PhyPort[7] = {
+			.compdstune = 1,
+			.sqrxtune = 3,
+			.txfslstune = 3,
+			.txpreempamptune = 2,
+			.txpreemppulsetune = 0,
+			.txrisetune = 2,
+			.txvreftune = 3,
+			.txhsxvtune = 3,
+			.txrestune = 2,
+		},
+		/* Left USB C0 Port */
+		.Usb3PhyPort[0] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		/* Left USB A0 Port or WWAN */
+		.Usb3PhyPort[1] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		/* Right USB C1 Port */
+		.Usb3PhyPort[2] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		/* Right USB A1 Port */
+		.Usb3PhyPort[3] = {
+			.tx_term_ctrl=2,
+			.rx_term_ctrl=2,
+			.tx_vboost_lvl_en=1,
+			.tx_vboost_lvl=5,
+		},
+		.ComboPhyStaticConfig[0] = 0,
+		.ComboPhyStaticConfig[1] = 0,
+		.BatteryChargerEnable = 0,
+		.PhyP3CpmP4Support = 0,
+	}"
+
+	device domain 0 on
+		device ref gpp_bridge_2 on
+			# Required so the NVMe gets placed into D3 when entering S0i3.
+			chip drivers/pcie/rtd3/device
+				register "name" = ""NVME""
+				device pci 00.0 on end
+			end
+			probe STORAGE STORAGE_EMMC
+		end # EMMC
+		device ref gpp_bridge_3 on
+			# Required so the NVMe gets placed into D3 when entering S0i3.
+			chip drivers/pcie/rtd3/device
+				register "name" = ""NVME""
+				device pci 00.0 on end
+			end
+			probe STORAGE STORAGE_SSD
+		end # NVMe
+		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
+			device ref gfx on
+				chip drivers/gfx/generic
+					register "device_count" = "1"
+					register "device[0].name" = ""LCD""
+					# Use Chrome OS privacy screen _HID
+					register "device[0].hid" = ""GOOG0010""
+					# Internal panel on the first port of the graphics chip
+					register "device[0].addr" = "0x80010400"
+					register "device[0].privacy.enabled" = "1"
+					register "device[0].privacy.gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_5)"
+					device generic 0.0 on end
+				end
+			end
+			device ref acp on
+				chip drivers/amd/i2s_machine_dev
+					register "hid" = ""10029836""
+					device generic 0.0 on end
+				end
+			end # Audio
+		end
+	end # domain
+
+	register "slow_ppt_limit_mW"         = "25000"
+	register "fast_ppt_limit_mW"         = "30000"
+	register "slow_ppt_time_constant_s"  = "5"
+	register "stapm_time_constant_s"     = "275"
+	register "sustained_power_limit_mW"  = "15000"
+	register "thermctl_limit_degreeC"    = "100"
+
+	register "telemetry_vddcrvddfull_scale_current_mA" = "73331" #mA
+	register "telemetry_vddcrvddoffset" =  "1893"
+	register "telemetry_vddcrsocfull_scale_current_mA" = "31955" #mA
+	register "telemetry_vddcrsocoffset" =  "852"
+
+	# I2C Config
+	#+-------------------+---------------------------+
+	#| Field             |  Value                    |
+	#+-------------------+---------------------------+
+	#| I2C0              | Trackpad                  |
+	#| I2C1              | Touchscreen               |
+	#| I2C2              | Speaker, Codec, P-SAR     |
+	#| I2C3              | H1 TPM                 |
+	#+-------------------+---------------------------+
+	register "i2c[0]" = "{
+		.speed = I2C_SPEED_FAST,
+	}"
+
+	register "i2c[1]" = "{
+		.speed = I2C_SPEED_FAST,
+	}"
+
+	register "i2c[2]" = "{
+		.speed = I2C_SPEED_FAST,
+	}"
+
+	register "i2c[3]" = "{
+		.speed = I2C_SPEED_FAST,
+		.early_init = true,
+	}"
+
+	register "edp_phy_override" = "1"
+
+	# bit vector of phy, bit0=1: DP0, bit1=1: DP1, bit2=1: DP2, bit3=1: DP3
+	register "edp_physel" = "0x1"
+
+	register "edp_tuningset" = "{
+		.dp_vs_pemph_level = 0x00,
+		.tx_eq_main = 0x1f,
+		.tx_eq_pre = 0x0,
+		.tx_eq_post = 0x0,
+		.tx_vboost_lvl = 0x5,
+	}"
+
+	device ref i2c_0 on
+		chip drivers/i2c/generic
+			register "hid" = ""ELAN0000""
+			register "desc" = ""ELAN Touchpad""
+			register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_LOW(GPIO_9)"
+			register "wake" = "GEVENT_22"
+			register "probed" = "1"
+			device i2c 15 on end
+		end
+	end # I2C0
+
+	device ref i2c_1 on
+		chip drivers/i2c/generic
+			register "hid" = ""ELAN0001""
+			register "desc" = ""ELAN Touchscreen""
+			register "probed" = "1"
+			register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_89)"
+			register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_68)"
+			register "enable_delay_ms" = "1"
+			register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPIO_121)"
+			register "reset_delay_ms" = "20"
+			register "has_power_resource" = "1"
+			device i2c 10 on end
+		end
+		chip drivers/i2c/hid
+			register "generic.hid" = ""GTCH7503""
+			register "generic.desc" = ""G2TOUCH Touchscreen""
+			register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_89)"
+			register "generic.probed" = "1"
+			register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_68)"
+			register "generic.enable_delay_ms" = "1"
+			register "generic.reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPIO_121)"
+			register "generic.reset_delay_ms" = "50"
+			register "generic.has_power_resource" = "1"
+			register "hid_desc_reg_offset" = "0x01"
+			device i2c 40 on end
+		end
+	end # I2C1
+
+	device ref i2c_2 on
+		chip drivers/i2c/generic
+			register "hid" = ""RTL5682""
+			register "name" = ""RT58""
+			register "desc" = ""Realtek RT5682""
+			register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_BOTH(GPIO_90)"
+			register "property_count" = "1"
+			register "property_list[0].type" = "ACPI_DP_TYPE_INTEGER"
+			register "property_list[0].name" = ""realtek,jd-src""
+			register "property_list[0].integer" = "1"
+			device i2c 1a on end
+		end
+	end # I2C2
+
+	device ref uart_1 on
+		chip drivers/uart/acpi
+			register "name" = ""CRFP""
+			register "desc" = ""Fingerprint Reader""
+			register "hid" = "ACPI_DT_NAMESPACE_HID"
+			register "compat_string" = ""google,cros-ec-uart""
+			register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_21)"
+			register "wake" = "GEVENT_5"
+			register "uart" = "ACPI_UART_RAW_DEVICE(3000000, 64)"
+			register "has_power_resource" = "1"
+			register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPIO_11)"
+			register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_3)"
+			register "enable_delay_ms" = "3"
+			device generic 0 alias fpmcu on
+				probe FP FP_PRESENT
+			end
+		end
+	end
+
+	chip drivers/generic/max98357a
+			register "hid" = ""MX98360A""
+			register "sdmode_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_70)"
+			register "sdmode_delay" = "5"
+			device generic 0.1 on end
+	end
+
+end	# chip soc/amd/cezanne

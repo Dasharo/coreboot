@@ -6,7 +6,6 @@
 #include <cpu/x86/smi_deprecated.h>
 #include <acpi/acpi.h>
 #include <delay.h>
-#include <halt.h>
 #include <lib.h>
 #include <string.h>
 #include <symbols.h>
@@ -39,7 +38,7 @@ static int  lowmem_backup_size;
 static inline void setup_secondary_gdt(void)
 {
 	u16 *gdt_limit;
-#ifdef __x86_64__
+#if ENV_X86_64
 	u64 *gdt_base;
 #else
 	u32 *gdt_base;
@@ -88,9 +87,25 @@ static void recover_lowest_1M(void)
 		memcpy(lowmem_backup_ptr, lowmem_backup, lowmem_backup_size);
 }
 
+static uint32_t wait_for_ipi_completion(const int timeout_ms)
+{
+	int loops = timeout_ms * 10;
+	uint32_t send_status;
+
+	/* wait for the ipi send to finish */
+	printk(BIOS_SPEW, "Waiting for send to finish...\n");
+	do {
+		printk(BIOS_SPEW, "+");
+		udelay(100);
+		send_status = lapic_busy();
+	} while (send_status && (--loops > 0));
+
+	return send_status;
+}
+
 static int lapic_start_cpu(unsigned long apicid)
 {
-	int timeout;
+	const int timeout_100ms = 100;
 	uint32_t send_status, accept_status;
 	int j, maxlvt;
 
@@ -103,30 +118,17 @@ static int lapic_start_cpu(unsigned long apicid)
 	/*
 	 * Turn INIT on target chip
 	 */
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(apicid));
+	lapic_send_ipi(LAPIC_INT_LEVELTRIG | LAPIC_INT_ASSERT | LAPIC_DM_INIT, apicid);
 
-	/*
-	 * Send IPI
-	 */
-
-	lapic_write_around(LAPIC_ICR, LAPIC_INT_LEVELTRIG | LAPIC_INT_ASSERT
-				| LAPIC_DM_INIT);
-
-	printk(BIOS_SPEW, "Waiting for send to finish...\n");
-	timeout = 0;
-	do {
-		printk(BIOS_SPEW, "+");
-		udelay(100);
-		send_status = lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY;
-	} while (send_status && (timeout++ < 1000));
-	if (timeout >= 1000) {
+	send_status = wait_for_ipi_completion(timeout_100ms);
+	if (send_status) {
 		printk(BIOS_ERR, "CPU %ld: First APIC write timed out. "
 			"Disabling\n", apicid);
 		// too bad.
 		printk(BIOS_ERR, "ESR is 0x%x\n", lapic_read(LAPIC_ESR));
 		if (lapic_read(LAPIC_ESR)) {
 			printk(BIOS_ERR, "Try to reset ESR\n");
-			lapic_write_around(LAPIC_ESR, 0);
+			lapic_write(LAPIC_ESR, 0);
 			printk(BIOS_ERR, "ESR is 0x%x\n",
 				lapic_read(LAPIC_ESR));
 		}
@@ -136,20 +138,10 @@ static int lapic_start_cpu(unsigned long apicid)
 
 	printk(BIOS_SPEW, "Deasserting INIT.\n");
 
-	/* Target chip */
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(apicid));
+	lapic_send_ipi(LAPIC_INT_LEVELTRIG | LAPIC_DM_INIT, apicid);
 
-	/* Send IPI */
-	lapic_write_around(LAPIC_ICR, LAPIC_INT_LEVELTRIG | LAPIC_DM_INIT);
-
-	printk(BIOS_SPEW, "Waiting for send to finish...\n");
-	timeout = 0;
-	do {
-		printk(BIOS_SPEW, "+");
-		udelay(100);
-		send_status = lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY;
-	} while (send_status && (timeout++ < 1000));
-	if (timeout >= 1000) {
+	send_status = wait_for_ipi_completion(timeout_100ms);
+	if (send_status) {
 		printk(BIOS_ERR, "CPU %ld: Second APIC write timed out. "
 			"Disabling\n", apicid);
 		// too bad.
@@ -165,7 +157,7 @@ static int lapic_start_cpu(unsigned long apicid)
 
 	for (j = 1; j <= CONFIG_NUM_IPI_STARTS; j++) {
 		printk(BIOS_SPEW, "Sending STARTUP #%d to %lu.\n", j, apicid);
-		lapic_read_around(LAPIC_SPIV);
+		lapic_read(LAPIC_SPIV);
 		lapic_write(LAPIC_ESR, 0);
 		lapic_read(LAPIC_ESR);
 		printk(BIOS_SPEW, "After apic_write.\n");
@@ -174,13 +166,7 @@ static int lapic_start_cpu(unsigned long apicid)
 		 * STARTUP IPI
 		 */
 
-		/* Target chip */
-		lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(apicid));
-
-		/* Boot on the stack */
-		/* Kick the second */
-		lapic_write_around(LAPIC_ICR, LAPIC_DM_STARTUP
-					| (AP_SIPI_VECTOR >> 12));
+		lapic_send_ipi(LAPIC_DM_STARTUP | (AP_SIPI_VECTOR >> 12), apicid);
 
 		/*
 		 * Give the other CPU some time to accept the IPI.
@@ -189,13 +175,7 @@ static int lapic_start_cpu(unsigned long apicid)
 
 		printk(BIOS_SPEW, "Startup point 1.\n");
 
-		printk(BIOS_SPEW, "Waiting for send to finish...\n");
-		timeout = 0;
-		do {
-			printk(BIOS_SPEW, "+");
-			udelay(100);
-			send_status = lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY;
-		} while (send_status && (timeout++ < 1000));
+		send_status = wait_for_ipi_completion(timeout_100ms);
 
 		/*
 		 * Give the other CPU some time to accept the IPI.
@@ -205,7 +185,7 @@ static int lapic_start_cpu(unsigned long apicid)
 		 * Due to the Pentium erratum 3AP.
 		 */
 		if (maxlvt > 3) {
-			lapic_read_around(LAPIC_SPIV);
+			lapic_read(LAPIC_SPIV);
 			lapic_write(LAPIC_ESR, 0);
 		}
 		accept_status = (lapic_read(LAPIC_ESR) & 0xEF);
@@ -241,7 +221,7 @@ static void *stacks[CONFIG_MAX_CPUS];
 volatile unsigned long secondary_stack;
 volatile unsigned int secondary_cpu_index;
 
-int start_cpu(struct device *cpu)
+static int start_cpu(struct device *cpu)
 {
 	struct cpu_info *info;
 	uintptr_t stack_top;
@@ -273,7 +253,6 @@ int start_cpu(struct device *cpu)
 	info->index = index;
 	info->cpu   = cpu;
 	cpu_add_map_entry(info->index);
-	thread_init_cpu_info_non_bsp(info);
 
 	/* Advertise the new stack and index to start_cpu */
 	secondary_stack = stack_top;
@@ -302,96 +281,12 @@ int start_cpu(struct device *cpu)
 	return result;
 }
 
-#if CONFIG(AP_IN_SIPI_WAIT)
-
-/**
- * Sending INIT IPI to self is equivalent of asserting #INIT with a bit of
- * delay.
- * An undefined number of instruction cycles will complete. All global locks
- * must be released before INIT IPI and no printk is allowed after this.
- * De-asserting INIT IPI is a no-op on later Intel CPUs.
- *
- * If you set DEBUG_HALT_SELF to 1, printk's after INIT IPI are enabled
- * but running thread may halt without releasing the lock and effectively
- * deadlock other CPUs.
- */
-#define DEBUG_HALT_SELF 0
-
-/**
- * Normally this function is defined in lapic.h as an always inline function
- * that just keeps the CPU in a hlt() loop. This does not work on all CPUs.
- * I think all hyperthreading CPUs might need this version, but I could only
- * verify this on the Intel Core Duo
- */
-void stop_this_cpu(void)
-{
-	int timeout;
-	unsigned long send_status;
-	unsigned long id;
-
-	id = lapicid();
-
-	printk(BIOS_DEBUG, "CPU %ld going down...\n", id);
-
-	/* send an LAPIC INIT to myself */
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(id));
-	lapic_write_around(LAPIC_ICR, LAPIC_INT_LEVELTRIG |
-				LAPIC_INT_ASSERT | LAPIC_DM_INIT);
-
-	/* wait for the ipi send to finish */
-#if DEBUG_HALT_SELF
-	printk(BIOS_SPEW, "Waiting for send to finish...\n");
-#endif
-	timeout = 0;
-	do {
-#if DEBUG_HALT_SELF
-		printk(BIOS_SPEW, "+");
-#endif
-		udelay(100);
-		send_status = lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY;
-	} while (send_status && (timeout++ < 1000));
-	if (timeout >= 1000) {
-#if DEBUG_HALT_SELF
-		printk(BIOS_ERR, "timed out\n");
-#endif
-	}
-	mdelay(10);
-
-#if DEBUG_HALT_SELF
-	printk(BIOS_SPEW, "Deasserting INIT.\n");
-#endif
-	/* Deassert the LAPIC INIT */
-	lapic_write_around(LAPIC_ICR2, SET_LAPIC_DEST_FIELD(id));
-	lapic_write_around(LAPIC_ICR, LAPIC_INT_LEVELTRIG | LAPIC_DM_INIT);
-
-#if DEBUG_HALT_SELF
-	printk(BIOS_SPEW, "Waiting for send to finish...\n");
-#endif
-	timeout = 0;
-	do {
-#if DEBUG_HALT_SELF
-		printk(BIOS_SPEW, "+");
-#endif
-		udelay(100);
-		send_status = lapic_read(LAPIC_ICR) & LAPIC_ICR_BUSY;
-	} while (send_status && (timeout++ < 1000));
-	if (timeout >= 1000) {
-#if DEBUG_HALT_SELF
-		printk(BIOS_ERR, "timed out\n");
-#endif
-	}
-
-	halt();
-}
-#endif
-
 /* C entry point of secondary cpus */
 asmlinkage void secondary_cpu_init(unsigned int index)
 {
 	atomic_inc(&active_cpus);
 
-	if (!CONFIG(PARALLEL_CPU_INIT))
-		spin_lock(&start_cpu_lock);
+	spin_lock(&start_cpu_lock);
 
 #ifdef __SSE3__
 	/*
@@ -403,10 +298,14 @@ asmlinkage void secondary_cpu_init(unsigned int index)
 	cr4_val |= (CR4_OSFXSR | CR4_OSXMMEXCPT);
 	write_cr4(cr4_val);
 #endif
+
+	/* Ensure the local APIC is enabled */
+	enable_lapic();
+	setup_lapic_interrupts();
+
 	cpu_initialize(index);
 
-	if (!CONFIG(PARALLEL_CPU_INIT))
-		spin_unlock(&start_cpu_lock);
+	spin_unlock(&start_cpu_lock);
 
 	atomic_dec(&active_cpus);
 
@@ -422,9 +321,6 @@ static void start_other_cpus(struct bus *cpu_bus, struct device *bsp_cpu)
 		if (cpu->path.type != DEVICE_PATH_APIC)
 			continue;
 
-		if (CONFIG(PARALLEL_CPU_INIT) && (cpu == bsp_cpu))
-			continue;
-
 		if (!cpu->enabled)
 			continue;
 
@@ -436,41 +332,9 @@ static void start_other_cpus(struct bus *cpu_bus, struct device *bsp_cpu)
 			printk(BIOS_ERR, "CPU 0x%02x would not start!\n",
 				cpu->path.apic.apic_id);
 
-		if (!CONFIG(PARALLEL_CPU_INIT))
-			udelay(10);
+		udelay(10);
 	}
 
-}
-
-static void smm_other_cpus(struct bus *cpu_bus, struct device *bsp_cpu)
-{
-	struct device *cpu;
-	int pre_count = atomic_read(&active_cpus);
-
-	/* Loop through the cpus once to let them run through SMM relocator */
-
-	for (cpu = cpu_bus->children; cpu; cpu = cpu->sibling) {
-		if (cpu->path.type != DEVICE_PATH_APIC)
-			continue;
-
-		printk(BIOS_ERR, "considering CPU 0x%02x for SMM init\n",
-			cpu->path.apic.apic_id);
-
-		if (cpu == bsp_cpu)
-			continue;
-
-		if (!cpu->enabled)
-			continue;
-
-		if (!start_cpu(cpu))
-			/* Record the error in cpu? */
-			printk(BIOS_ERR, "CPU 0x%02x would not start!\n",
-				cpu->path.apic.apic_id);
-
-		/* FIXME: endless loop */
-		while (atomic_read(&active_cpus) != pre_count)
-			;
-	}
 }
 
 static void wait_other_cpus_stop(struct bus *cpu_bus)
@@ -516,18 +380,17 @@ void initialize_cpus(struct bus *cpu_bus)
 	/* Find the info struct for this CPU */
 	info = cpu_info();
 
-	if (need_lapic_init()) {
-		/* Ensure the local APIC is enabled */
+	/* Ensure the local APIC is enabled */
+	if (is_smp_boot()) {
 		enable_lapic();
-
-		/* Get the device path of the boot CPU */
-		cpu_path.type           = DEVICE_PATH_APIC;
-		cpu_path.apic.apic_id = lapicid();
+		setup_lapic_interrupts();
 	} else {
-		/* Get the device path of the boot CPU */
-		cpu_path.type = DEVICE_PATH_CPU;
-		cpu_path.cpu.id       = 0;
+		disable_lapic();
 	}
+
+	/* Get the device path of the boot CPU */
+	cpu_path.type = DEVICE_PATH_APIC;
+	cpu_path.apic.apic_id = lapicid();
 
 	/* Find the device structure for the boot CPU */
 	info->cpu = alloc_find_dev(cpu_bus, &cpu_path);
@@ -537,36 +400,21 @@ void initialize_cpus(struct bus *cpu_bus)
 	if (is_smp_boot())
 		copy_secondary_start_to_lowest_1M();
 
-	if (!CONFIG(SERIALIZED_SMM_INITIALIZATION))
+	if (CONFIG(SMM_LEGACY_ASEG))
 		smm_init();
-
-	/* start all aps at first, so we can init ECC all together */
-	if (is_smp_boot() && CONFIG(PARALLEL_CPU_INIT))
-		start_other_cpus(cpu_bus, info->cpu);
 
 	/* Initialize the bootstrap processor */
 	cpu_initialize(0);
 
-	if (is_smp_boot() && !CONFIG(PARALLEL_CPU_INIT))
+	if (is_smp_boot())
 		start_other_cpus(cpu_bus, info->cpu);
 
 	/* Now wait the rest of the cpus stop*/
 	if (is_smp_boot())
 		wait_other_cpus_stop(cpu_bus);
 
-	if (CONFIG(SERIALIZED_SMM_INITIALIZATION)) {
-		/* At this point, all APs are sleeping:
-		 * smm_init() will queue a pending SMI on all cpus
-		 * and smm_other_cpus() will start them one by one */
-		smm_init();
-
-		if (is_smp_boot()) {
-			last_cpu_index = 0;
-			smm_other_cpus(cpu_bus, info->cpu);
-		}
-	}
-
-	smm_init_completion();
+	if (CONFIG(SMM_LEGACY_ASEG))
+		smm_init_completion();
 
 	if (is_smp_boot())
 		recover_lowest_1M();

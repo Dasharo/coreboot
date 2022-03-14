@@ -3,7 +3,7 @@
 #include <security/vboot/vbnv_layout.h>
 
 /* GPIO package generated at run time. */
-External (OIPG)
+External (OIPG, PkgObj)
 
 Device (CRHW)
 {
@@ -96,5 +96,7 @@ Device (CRHW)
 		Return (TSLM)
 	}
 }
+
+#include <vendorcode/google/chromeos/acpi/gnvs.asl>
 
 #include "ramoops.asl"

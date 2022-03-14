@@ -12,24 +12,21 @@ config NORTHBRIDGE_SPECIFIC_OPTIONS
 	select INTEL_EDID
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_SSC_ALTERNATE_REF
-	select PARALLEL_MP
 
 config VBOOT
 	select VBOOT_STARTS_IN_BOOTBLOCK
-	select VBOOT_SEPARATE_VERSTAGE
 
 config CBFS_SIZE
-	hex
 	default 0x100000
 
 config VGA_BIOS_ID
 	string
 	default "8086,2a42"
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xf0000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	int
 	default 64
 

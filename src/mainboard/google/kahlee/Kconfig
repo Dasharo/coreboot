@@ -37,8 +37,10 @@ config BOARD_GOOGLE_BASEBOARD_KAHLEE
 
 if BOARD_GOOGLE_BASEBOARD_KAHLEE
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config MAINBOARD_DIR
-	string
 	default "google/kahlee"
 
 config VGA_BIOS_FILE
@@ -48,7 +50,6 @@ config VGA_BIOS_FILE
 	default "3rdparty/blobs/mainboard/google/kahlee/VBIOS_015_049_000_017.bin"
 
 config VARIANT_DIR
-	string
 	default "aleena" if BOARD_GOOGLE_ALEENA
 	default "careena" if BOARD_GOOGLE_CAREENA
 	default "grunt" if BOARD_GOOGLE_GRUNT
@@ -57,11 +58,14 @@ config VARIANT_DIR
 	default "treeya" if BOARD_GOOGLE_TREEYA
 
 config MAINBOARD_PART_NUMBER
-	string
-	default "Grunt"
+	default "Aleena" if BOARD_GOOGLE_ALEENA
+	default "Careena" if BOARD_GOOGLE_CAREENA
+	default "Grunt" if BOARD_GOOGLE_GRUNT
+	default "Liara" if BOARD_GOOGLE_LIARA
+	default "Nuwani" if BOARD_GOOGLE_NUWANI
+	default "Treeya" if BOARD_GOOGLE_TREEYA
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config MAINBOARD_FAMILY
@@ -69,7 +73,6 @@ config MAINBOARD_FAMILY
 	default "Google_Kahlee"
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/variants/baseboard/chromeos.fmd" if CHROMEOS
 	default ""
 	help
@@ -122,6 +125,24 @@ config OEM_BIN_FILE
 	string "OEM ID table"
 	depends on USE_OEM_BIN
 	default ""
+
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
+config EFS_SPI_READ_MODE
+	default 4          # Dual IO (1-2-2)
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 0	# 66MHz
+
+config TPM_SPI_SPEED
+	default 0	# 66MHz
+
+endif
 
 # Don't use AMD's Secure OS
 config USE_PSPSECUREOS

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 #include <console/console.h>
 #include <ec/google/chromeec/ec.h>
 #include "ec.h"
@@ -23,7 +22,7 @@ void mainboard_ec_init(void)
 	google_chromeec_events_init(&info, s3_wakeup);
 	if (s3_wakeup) {
 		/* Clear pending events. */
-		while (google_chromeec_get_event() != 0)
+		while (google_chromeec_get_event() != EC_HOST_EVENT_NONE)
 			;
 	}
 

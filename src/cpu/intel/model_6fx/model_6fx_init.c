@@ -4,7 +4,6 @@
 #include <device/device.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/msr.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/intel/speedstep.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/name.h>
@@ -111,7 +110,7 @@ static void model_6fx_init(struct device *cpu)
 	char processor_name[49];
 
 	/* Turn on caching if we haven't already */
-	x86_enable_cache();
+	enable_cache();
 
 	/* Print processor name */
 	fill_processor_name(processor_name);
@@ -119,9 +118,6 @@ static void model_6fx_init(struct device *cpu)
 
 	/* Setup Page Attribute Tables (PAT) */
 	// TODO set up PAT
-
-	/* Enable the local CPU APICs */
-	setup_lapic();
 
 	/* Configure C States */
 	configure_c_states();

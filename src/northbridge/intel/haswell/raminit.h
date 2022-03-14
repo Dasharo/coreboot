@@ -1,25 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#ifndef RAMINIT_H
-#define RAMINIT_H
+#ifndef NORTHBRIDGE_INTEL_HASWELL_RAMINIT_H
+#define NORTHBRIDGE_INTEL_HASWELL_RAMINIT_H
 
-#include <stdint.h>
-#include "pei_data.h"
+#include <types.h>
 
-/* Mainboard-specific USB configuration */
-extern const struct usb2_port_setting mainboard_usb2_ports[MAX_USB2_PORTS];
-extern const struct usb3_port_setting mainboard_usb3_ports[MAX_USB3_PORTS];
+#define SPD_MEMORY_DOWN	0xff
 
-/* Optional function to copy SPD data for on-board memory */
-void copy_spd(struct pei_data *peid);
+struct spd_info {
+	uint8_t addresses[4];
+	unsigned int spd_index;
+};
 
-/* Mainboard callback to fill in the SPD addresses in MRC format */
-void mb_get_spd_map(uint8_t spd_map[4]);
+/* Mainboard callback to fill in the SPD addresses */
+void mb_get_spd_map(struct spd_info *spdi);
 
-void sdram_initialize(struct pei_data *pei_data);
-void setup_sdram_meminfo(struct pei_data *pei_data);
+void perform_raminit(const int s3resume);
 
-/* save_mrc_data() must be called after cbmem has been initialized. */
-void save_mrc_data(struct pei_data *pei_data);
-
-#endif				/* RAMINIT_H */
+#endif	/* NORTHBRIDGE_INTEL_HASWELL_RAMINIT_H */

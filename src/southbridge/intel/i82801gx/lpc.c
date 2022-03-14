@@ -16,6 +16,7 @@
 #include <acpi/acpigen.h>
 #include <arch/smp/mpspec.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <southbridge/intel/common/rcba_pirq.h>
 #include <southbridge/intel/common/hpet.h>
 #include <southbridge/intel/common/pmbase.h>
 #include <southbridge/intel/common/spi.h>
@@ -32,13 +33,7 @@
  */
 static void i82801gx_enable_ioapic(struct device *dev)
 {
-	set_ioapic_id(VIO_APIC_VADDR, 0x02);
-
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
+	setup_ioapic(VIO_APIC_VADDR, 0x02);
 }
 
 static void i82801gx_enable_serial_irqs(struct device *dev)
@@ -150,17 +145,13 @@ static void i82801gx_power_options(struct device *dev)
 	/* Get the chip configuration */
 	const struct southbridge_intel_i82801gx_config *config = dev->chip_info;
 
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-	int nmi_option;
-
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
 	 * 1 == S5 Soft Off
 	 *
 	 * If the option is not existent (Laptops), use MAINBOARD_POWER_ON.
 	 */
-	pwr_on = MAINBOARD_POWER_ON;
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail", MAINBOARD_POWER_ON);
 
 	reg8 = pci_read_config8(dev, GEN_PMCON_3);
 	reg8 &= 0xfe;
@@ -196,8 +187,7 @@ static void i82801gx_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x70);
-	nmi_option = NMI_OFF;
-	get_option(&nmi_option, "nmi");
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */

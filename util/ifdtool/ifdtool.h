@@ -35,9 +35,13 @@ enum ich_chipset {
 	CHIPSET_8_SERIES_WELLSBURG,
 	CHIPSET_9_SERIES_WILDCAT_POINT,
 	CHIPSET_9_SERIES_WILDCAT_POINT_LP,
-	CHIPSET_N_J_SERIES, /* Gemini Lake: N5xxx, J5xxx, N4xxx, J4xxx */
+	CHIPSET_N_J_SERIES_APOLLO_LAKE, /* Apollo Lake: N3xxx, J3xxx */
+	CHIPSET_N_J_SERIES_GEMINI_LAKE, /* Gemini Lake: N5xxx, J5xxx, N4xxx, J4xxx */
+	CHIPSET_N_SERIES_JASPER_LAKE, /* Jasper Lake: N6xxx, N51xx, N45xx */
+	CHIPSET_x6000_SERIES_ELKHART_LAKE, /* Elkhart Lake: x6000 */
 	CHIPSET_100_200_SERIES_SUNRISE_POINT, /* 6th-7th gen Core i/o (LP) variants */
-	CHIPSET_300_400_SERIES_CANNON_ICE_POINT, /* 8th-10th gen Core i/o (LP) variants */
+	CHIPSET_300_SERIES_CANNON_POINT, /* 8th-9th gen Core i/o (LP) variants */
+	CHIPSET_400_SERIES_ICE_POINT, /* 10th gen Core i/o (LP) variants */
 	CHIPSET_500_600_SERIES_TIGER_ALDER_POINT, /* 11th-12th gen Core i/o (LP)
 						   * variants onwards */
 	CHIPSET_C620_SERIES_LEWISBURG,
@@ -46,12 +50,15 @@ enum ich_chipset {
 enum platform {
 	PLATFORM_APL,
 	PLATFORM_CNL,
+	PLATFORM_LBG,
+	PLATFORM_EHL,
 	PLATFORM_GLK,
 	PLATFORM_ICL,
 	PLATFORM_JSL,
 	PLATFORM_SKLKBL,
 	PLATFORM_TGL,
 	PLATFORM_ADL,
+	PLATFORM_IFD2,
 };
 
 #define LAYOUT_LINELEN 80
@@ -111,7 +118,7 @@ typedef struct {
 } __attribute__((packed)) fdbar_t;
 
 // regions
-#define MAX_REGIONS 9
+#define MAX_REGIONS 16
 #define MAX_REGIONS_OLD 5
 
 enum flash_regions {
@@ -120,7 +127,14 @@ enum flash_regions {
 	REGION_ME,
 	REGION_GBE,
 	REGION_PDR,
+	REGION_DEV_EXP1,
+	REGION_BIOS2,
 	REGION_EC = 8,
+	REGION_DEV_EXP2,
+	REGION_IE,
+	REGION_10GB_0,
+	REGION_10GB_1,
+	REGION_PTT = 15,
 };
 
 typedef struct {

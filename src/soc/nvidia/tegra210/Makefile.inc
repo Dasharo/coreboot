@@ -79,7 +79,6 @@ ramstage-y += i2c6.c
 ramstage-y += ape.c
 ramstage-y += power.c
 ramstage-y += dma.c
-ramstage-y += gic.c
 ramstage-y += monotonic_timer.c
 ramstage-y += padconfig.c
 ramstage-y += funitcfg.c
@@ -138,7 +137,7 @@ req_tz_size=$(shell expr $(ttb_size) + $(sec_size))
 tz_size=$(shell printf "%d" $(CONFIG_TRUSTZONE_CARVEOUT_SIZE_MB))
 
 ifeq ($(shell test $(tz_size) -lt $(req_tz_size) && echo 1), 1)
-     $(error "TRUSTZONE_CARVEOUT_SIZE_MB should be atleast as big as TTB_SIZE_MB + SEC_COMPONENT_SIZE_MB")
+     $(error "TRUSTZONE_CARVEOUT_SIZE_MB should be at least as big as TTB_SIZE_MB + SEC_COMPONENT_SIZE_MB")
 endif
 
 # BL31 component is placed towards the end of 32-bit address space. This assumes

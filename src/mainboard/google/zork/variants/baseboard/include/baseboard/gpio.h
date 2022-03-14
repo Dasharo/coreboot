@@ -4,8 +4,8 @@
 #define __BASEBOARD_GPIO_H__
 
 #ifndef __ACPI__
+#include <amdblocks/gpio_defs.h>
 #include <soc/gpio.h>
-#include <platform_descriptors.h>
 
 #if CONFIG(BOARD_GOOGLE_BASEBOARD_TREMBYLE)
 #define EC_IN_RW_OD		GPIO_130
@@ -20,10 +20,10 @@
 #endif /* _ACPI__ */
 
 /* These define the GPE, not the GPIO. */
-#define EC_SCI_GPI		3	/* eSPI system event -> GPE 3 */
-#define EC_WAKE_GPI		15	/* AGPIO 24 -> GPE 15 */
+#define EC_SCI_GPI		GEVENT_3	/* AGPIO 22 -> GPE 3 */
+#define EC_WAKE_GPI		GEVENT_15	/* AGPIO 24 -> GPE 15 */
 
 /* EC sync irq */
-#define EC_SYNC_IRQ		31
+#define EC_SYNC_IRQ		GPIO_31
 
 #endif /* __BASEBOARD_GPIO_H__ */

@@ -28,6 +28,7 @@ $$(VBOOT_LIB_$(1)): $(obj)/config.h
 	CC="$$(CC_$(1))" \
 	CFLAGS="$$(VBOOT_CFLAGS_$(1))" VBOOT2="y" \
 	EC_EFS="$(CONFIG_VBOOT_EC_EFS)" \
+	X86_SHA_EXT="$(CONFIG_VBOOT_X86_SHA256_ACCELERATION)" \
 	$(MAKE) -C $(VBOOT_SOURCE) \
 		BUILD=$$(abspath $$(dir $$(VBOOT_LIB_$(1)))) \
 		V=$(V) \
@@ -109,9 +110,7 @@ romstage-y += secdata_tpm.c
 ramstage-y += secdata_tpm.c
 endif
 
-ifneq ($(CONFIG_TPM1)$(CONFIG_TPM2),)
-verstage-y += tpm_common.c
-endif
+verstage-$(CONFIG_TPM) += tpm_common.c
 
 romstage-y += common.c
 
@@ -185,6 +184,9 @@ regions-for-file = $(subst $(spc),$(comma),$(sort \
 		rmu.bin \
 		cmos_layout.bin \
 		cmos.default \
+		intel_fit \
+		intel_fit_ts \
+		fspt.bin \
 		$(call strip_quotes,$(CONFIG_RO_REGION_ONLY)) \
 		,$(1)),COREBOOT,\
 		$(if $(filter \

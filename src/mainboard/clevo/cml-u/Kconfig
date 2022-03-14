@@ -17,7 +17,7 @@ config BOARD_CLEVO_CMLU_COMMON
 	select SPD_READ_BY_WORD
 	select SYSTEM_TYPE_LAPTOP
 
-config BOARD_CLEVO_L140CU_OPTIONS
+config BOARD_CLEVO_L140CU_BASE
 	bool
 	select BOARD_CLEVO_CMLU_COMMON
 	select EC_SYSTEM76_EC
@@ -26,24 +26,20 @@ config BOARD_CLEVO_L140CU_OPTIONS
 if BOARD_CLEVO_CMLU_COMMON
 
 config MAINBOARD_DIR
-	string
 	default "clevo/cml-u"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "L140CU" if BOARD_CLEVO_L140CU
 
 config MAINBOARD_VERSION
 	string
-	default "2.1A" if BOARD_CLEVO_L140CU
+	default "2.1A" if BOARD_CLEVO_L140CU_BASE
 
 config DEVICETREE
-	string
-	default "variants/$(CONFIG_VARIANT_DIR)/devicetree.cb"
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config CBFS_SIZE
-	hex
-	default 0xc00000 if BOARD_CLEVO_L140CU
+	default 0xc00000 if BOARD_CLEVO_L140CU_BASE
 
 config CONSOLE_POST
 	bool
@@ -55,15 +51,10 @@ config UART_FOR_CONSOLE
 
 config MAX_CPUS
 	int
-	default 8 if BOARD_CLEVO_L140CU
+	default 8 if BOARD_CLEVO_L140CU_BASE
 
 config DIMM_MAX
-	int
-	default 2 if BOARD_CLEVO_L140CU
-
-config DIMM_SPD_SIZE
-	int
-	default 512
+	default 2 if BOARD_CLEVO_L140CU_BASE
 
 config VGA_BIOS_ID
 	string
@@ -71,15 +62,14 @@ config VGA_BIOS_ID
 
 config TPM_PIRQ
 	hex
-	default 0x10 if BOARD_CLEVO_L140CU # GPP_A7/PIRQA#
+	default 0x10 if BOARD_CLEVO_L140CU_BASE # GPP_A7/PIRQA#
 
 config POST_DEVICE
 	bool
 	default n
 
 config VARIANT_DIR
-	string
-	default "l140cu" if BOARD_CLEVO_L140CU
+	default "l140cu" if BOARD_CLEVO_L140CU_BASE
 
 config SEABIOS_PS2_TIMEOUT
 	int

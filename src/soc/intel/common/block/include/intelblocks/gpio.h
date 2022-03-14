@@ -6,6 +6,10 @@
 #include <soc/gpio.h>
 #include "gpio_defs.h"
 
+/* GPIO community IOSF sideband VNNREQ/ACK handshake */
+#define MISCCFG_GPVNNREQEN	(1 << 7)
+/* GPIO community PGCB clock gating */
+#define MISCCFG_GPPGCBDPCGEN	(1 << 6)
 /* GPIO community IOSF sideband clock gating */
 #define MISCCFG_GPSIDEDPCGEN	(1 << 5)
 /* GPIO community RCOMP clock gating */
@@ -18,10 +22,6 @@
 #define MISCCFG_GPDPCGEN	(1 << 1)
 /* GPIO community local clock gating */
 #define MISCCFG_GPDLCGEN	(1 << 0)
-/* Enable GPIO community power management configuration */
-#define MISCCFG_ENABLE_GPIO_PM_CONFIG (MISCCFG_GPSIDEDPCGEN | \
-	MISCCFG_GPRCOMPCDLCGEN | MISCCFG_GPRTCDLCGEN | MISCCFG_GSXSLCGEN \
-	| MISCCFG_GPDPCGEN | MISCCFG_GPDLCGEN)
 
 #ifndef __ACPI__
 #include <types.h>
@@ -65,10 +65,18 @@
 
 typedef uint32_t gpio_t;
 
+enum gpio_lock_action {
+	GPIO_UNLOCK		 = 0x0,
+	GPIO_LOCK_CONFIG	 = 0x1,
+	GPIO_LOCK_TX		 = 0x2,
+	GPIO_LOCK_FULL		 = GPIO_LOCK_CONFIG | GPIO_LOCK_TX,
+};
+
 struct pad_config {
-	int		pad;/* offset of pad within community */
+	gpio_t		pad;/* offset of pad within community */
 	uint32_t	pad_config[GPIO_NUM_PAD_CFG_REGS];/*
 			Pad config data corresponding to DW0, DW1,.... */
+	enum gpio_lock_action	lock_action; /* Pad lock configuration */
 };
 
 /*
@@ -96,6 +104,12 @@ struct pad_group {
 	int		acpi_pad_base;
 };
 
+/* A range of consecutive virtual-wire entries in a community */
+struct vw_entries {
+	gpio_t first_pad;
+	gpio_t last_pad;
+};
+
 /* This structure will be used to describe a community or each group within a
  * community when multiple groups exist inside a community
  */
@@ -115,14 +129,23 @@ struct pad_community {
 	uint16_t	gpi_nmi_sts_reg_0; /* offset to GPI NMI STS Reg 0 */
 	uint16_t	gpi_nmi_en_reg_0; /* offset to GPI NMI EN Reg 0 */
 	uint16_t	pad_cfg_base; /* offset to first PAD_GFG_DW0 Reg */
+	uint16_t	pad_cfg_lock_offset; /* offset to first PADCFGLOCK Reg */
 	uint8_t		gpi_status_offset;  /* specifies offset in struct
 						gpi_status */
 	uint8_t		port;	/* PCR Port ID */
+	uint8_t		cpu_port; /* CPU Port ID */
 	const struct reset_mapping	*reset_map; /* PADRSTCFG logical to
 			chipset mapping */
 	size_t		num_reset_vals;
 	const struct pad_group	*groups;
 	size_t		num_groups;
+	unsigned int	vw_base;
+	/*
+	 * Note: The entries must be in the same order here as the order in
+	 * which they map to VW indexes (beginning with VW base)
+	 */
+	const struct vw_entries	*vw_entries;
+	size_t		num_vw_entries;
 };
 
 /*
@@ -171,7 +194,8 @@ void gpio_configure_pads(const struct pad_config *cfg, size_t num_pads);
  * This function configures raw pads in base config and applies override in
  * override config if any. Thus, for every GPIO_x in base config, this function
  * looks up the GPIO in override config and if it is present there, then applies
- * the configuration from override config.
+ * the configuration from override config. GPIOs that are only specified in the
+ * override, but not in the base configuration, will be ignored.
  */
 void gpio_configure_pads_with_override(const struct pad_config *base_cfg,
 					size_t base_num_pads,
@@ -182,6 +206,58 @@ void gpio_configure_pads_with_override(const struct pad_config *base_cfg,
  * Calculate Address of DW0 register for given GPIO
  */
 void *gpio_dwx_address(const gpio_t pad);
+
+struct gpio_lock_config {
+	gpio_t			pad;
+	enum gpio_lock_action	lock_action;
+};
+
+/*
+ * Lock a GPIO's configuration.
+ *
+ * The caller may specify if they wish to only lock the pad configuration, only
+ * the TX state, or both.  When the configuration is locked, the following
+ * registers become Read-Only and software writes to these registers have no
+ * effect.
+ *
+ *	Pad Configuration registers,
+ *	GPI_NMI_EN,
+ *	GPI_SMI_EN,
+ *	GPI_GPE_EN
+ *
+ * Note that this is only effective if the pad is owned by the host and this
+ * function may only be called in SMM.
+ *
+ * @param pad: GPIO pad number
+ * @param lock_action: Which register to lock.
+ * @return 0 if successful,
+ * 1 - unsuccessful
+ * 2 - powered down
+ * 3 - multi-cast mixed
+ * -1 - sideband message failed or other error
+ */
+int gpio_lock_pad(const gpio_t pad, enum gpio_lock_action lock_action);
+
+/*
+ * gpio_lock_pads() can be used to lock an array of gpio pads, avoiding
+ * the p2sb_unhide() and p2sb_hide() calls between each gpio lock that would
+ * occur if gpio_lock_pad() were used to lock each pad in the list.
+ *
+ * @param pad_list: array of gpio_lock_config structures, one for each gpio to lock
+ * @param count: number of gpio_lock_config structs in the pad_list array
+ * @return 0 if successful,
+ * 1 - unsuccessful
+ * 2 - powered down
+ * 3 - multi-cast mixed
+ * -1 - sideband message failed or other error
+ */
+int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count);
+
+/*
+ * Returns an array of gpio_lock_config entries that the SoC
+ * deems security risks that should be locked down.
+ */
+const struct gpio_lock_config *soc_gpio_lock_config(size_t *num);
 
 /*
  * Returns the pmc_gpe to gpio_gpe mapping table
@@ -234,6 +310,17 @@ void block_gpio_enable(struct device *dev);
  * route IRQs to IOAPIC.
  */
 bool gpio_routes_ioapic_irq(unsigned int irq);
+
+size_t gpio_get_index_in_group(gpio_t pad);
+
+/*
+ * Returns true and stuffs out params for virtual-wire index and bit position
+ * for the given GPIO, otherwise false if there is no VW index for the pad.
+ */
+bool gpio_get_vw_info(gpio_t pad, unsigned int *vw_index, unsigned int *vw_bit);
+
+/* Returns PCR port ID for this pad for the CPU; will be 0 if not available */
+unsigned int gpio_get_pad_cpu_portid(gpio_t pad);
 
 #endif
 #endif /* _SOC_INTELBLOCKS_GPIO_H_ */

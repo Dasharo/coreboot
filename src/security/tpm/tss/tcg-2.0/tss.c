@@ -242,6 +242,9 @@ uint32_t tlcl_read(uint32_t index, void *data, uint32_t length)
 	case TPM_RC_CR50_NV_UNDEFINED:
 		return TPM_E_BADINDEX;
 
+	case TPM_RC_NV_RANGE:
+		return TPM_E_RANGE;
+
 	default:
 		return TPM_E_READ_FAILURE;
 	}
@@ -273,7 +276,7 @@ uint32_t tlcl_self_test_full(void)
 uint32_t tlcl_lock_nv_write(uint32_t index)
 {
 	struct tpm2_response *response;
-	/* TPM Wll reject attempts to write at non-defined index. */
+	/* TPM Will reject attempts to write at non-defined index. */
 	struct tpm2_nv_write_lock_cmd nv_wl = {
 		.nvIndex = HR_NV_INDEX + index,
 	};
@@ -317,6 +320,29 @@ uint32_t tlcl_write(uint32_t index, const void *data, uint32_t length)
 	return TPM_SUCCESS;
 }
 
+uint32_t tlcl_set_bits(uint32_t index, uint64_t bits)
+{
+	struct tpm2_nv_setbits_cmd nvsb_cmd;
+	struct tpm2_response *response;
+
+	/* Prepare the command structure */
+	memset(&nvsb_cmd, 0, sizeof(nvsb_cmd));
+
+	nvsb_cmd.nvIndex = HR_NV_INDEX + index;
+	nvsb_cmd.bits = bits;
+
+	response = tpm_process_command(TPM2_NV_SetBits, &nvsb_cmd);
+
+	printk(BIOS_INFO, "%s: response is %x\n",
+	       __func__, response ? response->hdr.tpm_code : -1);
+
+	/* Need to map tpm error codes into internal values. */
+	if (!response || response->hdr.tpm_code)
+		return TPM_E_WRITE_FAILURE;
+
+	return TPM_SUCCESS;
+}
+
 uint32_t tlcl_define_space(uint32_t space_index, size_t space_size,
 			   const TPMA_NV nv_attributes,
 			   const uint8_t *nv_policy, size_t nv_policy_size)
@@ -349,7 +375,7 @@ uint32_t tlcl_define_space(uint32_t space_index, size_t space_size,
 	if (!response)
 		return TPM_E_NO_DEVICE;
 
-	/* Map TPM2 retrun codes into common vboot represenation. */
+	/* Map TPM2 return codes into common vboot representation. */
 	switch (response->hdr.tpm_code) {
 	case TPM2_RC_SUCCESS:
 		return TPM_SUCCESS;

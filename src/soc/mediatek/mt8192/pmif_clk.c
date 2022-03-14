@@ -8,8 +8,10 @@
 #include <soc/pll.h>
 #include <soc/pll_common.h>
 #include <soc/pmif.h>
+#include <soc/pmif_clk_common.h>
 #include <soc/pmif_sw.h>
 #include <soc/pmif_spmi.h>
+#include <soc/spm.h>
 
 /* APMIXED, ULPOSC1_CON0 */
 DEFINE_BITFIELD(OSC1_CALI, 6, 0)
@@ -71,7 +73,7 @@ static void pmif_ulposc_config(void)
 	SET32_BITFIELDS(&mtk_apmixed->ulposc1_con2, OSC1_BIAS, 0x40);
 }
 
-static u32 pmif_get_ulposc_freq_mhz(u32 cali_val)
+u32 pmif_get_ulposc_freq_mhz(u32 cali_val)
 {
 	u32 result = 0;
 
@@ -83,55 +85,14 @@ static u32 pmif_get_ulposc_freq_mhz(u32 cali_val)
 	return result / 1000;
 }
 
-static int pmif_ulposc_cali(void)
-{
-	u32 current_val = 0, min = 0, max = CAL_MAX_VAL, middle;
-	int ret = 0, diff_by_min, diff_by_max, cal_result;
-
-	do {
-		middle = (min + max) / 2;
-		if (middle == min)
-			break;
-
-		current_val = pmif_get_ulposc_freq_mhz(middle);
-		if (current_val > FREQ_260MHZ)
-			max = middle;
-		else
-			min = middle;
-	} while (min <= max);
-
-	diff_by_min = pmif_get_ulposc_freq_mhz(min) - FREQ_260MHZ;
-	diff_by_min = ABS(diff_by_min);
-
-	diff_by_max = pmif_get_ulposc_freq_mhz(max) - FREQ_260MHZ;
-	diff_by_max = ABS(diff_by_max);
-
-	if (diff_by_min < diff_by_max) {
-		cal_result = min;
-		current_val = pmif_get_ulposc_freq_mhz(min);
-	} else {
-		cal_result = max;
-		current_val = pmif_get_ulposc_freq_mhz(max);
-	}
-
-	/* check if calibrated value is in the range of target value +- 15% */
-	if (current_val < (FREQ_260MHZ * (1000 - CAL_TOL_RATE) / 1000) ||
-		current_val > (FREQ_260MHZ * (1000 + CAL_TOL_RATE) / 1000)) {
-		printk(BIOS_ERR, "[%s] calibration fail: %dM\n", __func__, current_val);
-		ret = 1;
-	}
-
-	return ret;
-}
-
 static int pmif_init_ulposc(void)
 {
 	/* calibrate ULPOSC1 */
 	pmif_ulposc_config();
 
 	/* enable spm swinf */
-	if (!READ32_BITFIELD(&mtk_spm->poweron_config_en, BCLK_CG_EN))
-		SET32_BITFIELDS(&mtk_spm->poweron_config_en, BCLK_CG_EN, 1,
+	if (!READ32_BITFIELD(&mtk_spm->poweron_config_set, BCLK_CG_EN))
+		SET32_BITFIELDS(&mtk_spm->poweron_config_set, BCLK_CG_EN, 1,
 				PROJECT_CODE, 0xb16);
 
 	/* turn on ulposc */
@@ -139,7 +100,7 @@ static int pmif_init_ulposc(void)
 	udelay(100);
 	SET32_BITFIELDS(&mtk_spm->ulposc_con, ULPOSC_CG_EN, 1);
 
-	return pmif_ulposc_cali();
+	return pmif_ulposc_cali(FREQ_260MHZ);
 }
 
 int pmif_clk_init(void)

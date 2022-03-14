@@ -5,8 +5,8 @@
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
+#include <option.h>
 #include <intelblocks/lpss.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
@@ -15,6 +15,7 @@
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
 #include <string.h>
+#include <types.h>
 
 /*
  * ME End of Post configuration
@@ -23,25 +24,10 @@
  * 2 - Send in DXE (Not applicable for FSP in API mode)
  */
 enum {
-	EOP_DISABLE,
-	EOP_PEI,
-	EOP_DXE,
+	EOP_DISABLE = 0,
+	EOP_PEI = 1,
+	EOP_DXE = 2,
 } EndOfPost;
-
-static const pci_devfn_t serial_io_dev[] = {
-	PCH_DEVFN_I2C0,
-	PCH_DEVFN_I2C1,
-	PCH_DEVFN_I2C2,
-	PCH_DEVFN_I2C3,
-	PCH_DEVFN_I2C4,
-	PCH_DEVFN_I2C5,
-	PCH_DEVFN_GSPI0,
-	PCH_DEVFN_GSPI1,
-	PCH_DEVFN_GSPI2,
-	PCH_DEVFN_UART0,
-	PCH_DEVFN_UART1,
-	PCH_DEVFN_UART2
-};
 
 static void parse_devicetree(FSP_S_CONFIG *params)
 {
@@ -50,39 +36,21 @@ static void parse_devicetree(FSP_S_CONFIG *params)
 	/* LPSS controllers configuration */
 
 	/* I2C */
-	_Static_assert(ARRAY_SIZE(params->SerialIoI2cMode) >=
-			ARRAY_SIZE(config->SerialIoI2cMode), "copy buffer overflow!");
-	memcpy(params->SerialIoI2cMode, config->SerialIoI2cMode,
-		sizeof(config->SerialIoI2cMode));
+	FSP_ARRAY_LOAD(params->SerialIoI2cMode, config->SerialIoI2cMode);
 
 	/* GSPI */
-	_Static_assert(ARRAY_SIZE(params->SerialIoSpiMode) >=
-			ARRAY_SIZE(config->SerialIoGSpiMode), "copy buffer overflow!");
-	memcpy(params->SerialIoSpiMode, config->SerialIoGSpiMode,
-		sizeof(config->SerialIoGSpiMode));
-
-	_Static_assert(ARRAY_SIZE(params->SerialIoSpiCsMode) >=
-			ARRAY_SIZE(config->SerialIoGSpiCsMode), "copy buffer overflow!");
-	memcpy(params->SerialIoSpiCsMode, config->SerialIoGSpiCsMode,
-		sizeof(config->SerialIoGSpiCsMode));
-
-	_Static_assert(ARRAY_SIZE(params->SerialIoSpiCsState) >=
-			ARRAY_SIZE(config->SerialIoGSpiCsState), "copy buffer overflow!");
-	memcpy(params->SerialIoSpiCsState, config->SerialIoGSpiCsState,
-		sizeof(config->SerialIoGSpiCsState));
+	FSP_ARRAY_LOAD(params->SerialIoSpiMode, config->SerialIoGSpiMode);
+	FSP_ARRAY_LOAD(params->SerialIoSpiCsMode, config->SerialIoGSpiCsMode);
+	FSP_ARRAY_LOAD(params->SerialIoSpiCsState, config->SerialIoGSpiCsState);
 
 	/* UART */
-	_Static_assert(ARRAY_SIZE(params->SerialIoUartMode) >=
-			ARRAY_SIZE(config->SerialIoUartMode), "copy buffer overflow!");
-	memcpy(params->SerialIoUartMode, config->SerialIoUartMode,
-		sizeof(config->SerialIoUartMode));
+	FSP_ARRAY_LOAD(params->SerialIoUartMode, config->SerialIoUartMode);
 }
 
 /* UPD parameters to be initialized before SiliconInit */
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 {
 	unsigned int i;
-	struct device *dev;
 	FSP_S_CONFIG *params = &supd->FspsConfig;
 	struct soc_intel_jasperlake_config *config = config_of_soc();
 
@@ -93,8 +61,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->GraphicsConfigPtr = (uintptr_t)vbt_get();
 
 	/* Check if IGD is present and fill Graphics init param accordingly */
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
+	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	params->PavpEnable = CONFIG(PAVP);
 
@@ -103,24 +70,29 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->CpuMpPpi = (uintptr_t) mp_fill_ppi_services_data();
 
 	/* Chipset Lockdown */
-	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
-		params->PchLockDownGlobalSmi = 0;
-		params->PchLockDownBiosInterface = 0;
-		params->PchUnlockGpioPads = 1;
-		params->RtcMemoryLock = 0;
-	} else {
-		params->PchLockDownGlobalSmi = 1;
-		params->PchLockDownBiosInterface = 1;
-		params->PchUnlockGpioPads = 0;
-		params->RtcMemoryLock = 1;
-	}
+	const bool lockdown_by_fsp = get_lockdown_config() == CHIPSET_LOCKDOWN_FSP;
+	params->PchLockDownGlobalSmi = lockdown_by_fsp;
+	params->PchLockDownBiosInterface = lockdown_by_fsp;
+	params->PchUnlockGpioPads = !lockdown_by_fsp;
+	params->RtcMemoryLock = lockdown_by_fsp;
+	params->SkipPamLock = !lockdown_by_fsp;
 
-	/* Enable End of Post in PEI phase */
-	params->EndOfPostMessage = EOP_PEI;
+	/* coreboot will send EOP before loading payload */
+	params->EndOfPostMessage = EOP_DISABLE;
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	params->Enable8254ClockGating = !use_8254;
 	params->Enable8254ClockGatingOnS3 = 1;
+
+	/*
+	 * Legacy PM ACPI Timer (and TCO Timer)
+	 * This *must* be 1 in any case to keep FSP from
+	 *  1) enabling PM ACPI Timer emulation in uCode.
+	 *  2) disabling the PM ACPI Timer.
+	 * We handle both by ourself!
+	 */
+	params->EnableTcoTimer = 1;
 
 	/* disable Legacy PME */
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
@@ -162,21 +134,13 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* SATA */
-	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
-	params->SataEnable = is_dev_enabled(dev);
+	params->SataEnable = is_devfn_enabled(PCH_DEVFN_SATA);
 	if (params->SataEnable) {
 		params->SataMode = config->SataMode;
 		params->SataSalpSupport = config->SataSalpSupport;
 
-		_Static_assert(ARRAY_SIZE(params->SataPortsEnable) >=
-				ARRAY_SIZE(config->SataPortsEnable), "copy buffer overflow!");
-		memcpy(params->SataPortsEnable, config->SataPortsEnable,
-				sizeof(params->SataPortsEnable));
-
-		_Static_assert(ARRAY_SIZE(params->SataPortsDevSlp) >=
-				ARRAY_SIZE(config->SataPortsDevSlp), "copy buffer overflow!");
-		memcpy(params->SataPortsDevSlp, config->SataPortsDevSlp,
-				sizeof(params->SataPortsDevSlp));
+		FSP_ARRAY_LOAD(params->SataPortsEnable, config->SataPortsEnable);
+		FSP_ARRAY_LOAD(params->SataPortsDevSlp, config->SataPortsDevSlp);
 	}
 
 	/* VR Configuration */
@@ -184,34 +148,22 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->ImonOffset[0] = config->ImonOffset;
 
 	/* SDCard related configuration */
-	dev = pcidev_path_on_root(PCH_DEVFN_SDCARD);
-	params->ScsSdCardEnabled = is_dev_enabled(dev);
+	params->ScsSdCardEnabled = is_devfn_enabled(PCH_DEVFN_SDCARD);
 	if (params->ScsSdCardEnabled)
 		params->SdCardPowerEnableActiveHigh = config->SdCardPowerEnableActiveHigh;
 
 	/* Enable Processor Thermal Control */
-	dev = pcidev_path_on_root(SA_DEVFN_DPTF);
-	params->Device4Enable = is_dev_enabled(dev);
+	params->Device4Enable = is_devfn_enabled(SA_DEVFN_DPTF);
 
 	/* Set TccActivationOffset */
 	params->TccActivationOffset = config->tcc_offset;
 
 	/* eMMC configuration */
-	dev = pcidev_path_on_root(PCH_DEVFN_EMMC);
-	params->ScsEmmcEnabled = is_dev_enabled(dev);
+	params->ScsEmmcEnabled = is_devfn_enabled(PCH_DEVFN_EMMC);
 	if (params->ScsEmmcEnabled)
 		params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
-	if (dev) {
-		if (!xdci_can_enable())
-			dev->enabled = 0;
-
-		params->XdciEnable = dev->enabled;
-	} else {
-		params->XdciEnable = 0;
-	}
+	params->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 
 	/* Provide correct UART number for FSP debug logs */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
@@ -251,25 +203,27 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		params->RampDown = config->RampDown;
 	}
 
+	if (config->disable_external_bypass_vr) {
+		params->PchFivrExtV1p05RailEnabledStates = 0;
+		params->PchFivrExtVnnRailSxEnabledStates = 0;
+		params->PchFivrExtVnnRailEnabledStates = 0;
+	}
+
+	/*
+	 * We intentionally want the default to be maximum value(0xff) to align with
+	 * FSP, so we reserve the `0` value here to mean auto instead, and shift the
+	 * other values by 1.
+	 *
+	 * Please refer to src/soc/intel/jasperlake/chip.h for the detail definition.
+	 */
+	params->CdClock = config->cd_clock ? config->cd_clock - 1 : 0xff;
+
 	/* Override/Fill FSP Silicon Param for mainboard */
 	mainboard_silicon_init_params(params);
-}
-
-/* Disable Multiphase Si init */
-int soc_fsp_multi_phase_init_is_enable(void)
-{
-	return 0;
 }
 
 /* Mainboard GPIO Configuration */
 __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
-}
-
-/* Return list of SOC LPSS controllers */
-const pci_devfn_t *soc_lpss_controllers_list(size_t *size)
-{
-	*size = ARRAY_SIZE(serial_io_dev);
-	return serial_io_dev;
 }

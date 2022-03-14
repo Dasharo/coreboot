@@ -306,6 +306,15 @@ void enable_power_aware_intr(void)
 	MCHBAR8(MCH_PAIR) = pair;
 }
 
+void sa_lock_pam(void)
+{
+	const struct device *dev = pcidev_path_on_root(SA_DEVFN_ROOT);
+	if (!dev)
+		return;
+
+	pci_or_config8(dev, PAM0, PAM_LOCK);
+}
+
 static struct device_operations systemagent_ops = {
 	.read_resources   = systemagent_read_resources,
 	.set_resources    = pci_dev_set_resources,
@@ -375,10 +384,15 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGL_ID_U_4_2,
 	PCI_DEVICE_ID_INTEL_TGL_ID_Y_2_2,
 	PCI_DEVICE_ID_INTEL_TGL_ID_Y_4_2,
-	PCI_DEVICE_ID_INTEL_JSL_EHL,
+	PCI_DEVICE_ID_INTEL_TGL_ID_H_6_1,
+	PCI_DEVICE_ID_INTEL_TGL_ID_H_8_1,
+	PCI_DEVICE_ID_INTEL_EHL_ID_0,
 	PCI_DEVICE_ID_INTEL_EHL_ID_1,
+	PCI_DEVICE_ID_INTEL_EHL_ID_1A,
 	PCI_DEVICE_ID_INTEL_EHL_ID_2,
+	PCI_DEVICE_ID_INTEL_EHL_ID_2_1,
 	PCI_DEVICE_ID_INTEL_EHL_ID_3,
+	PCI_DEVICE_ID_INTEL_EHL_ID_3A,
 	PCI_DEVICE_ID_INTEL_EHL_ID_4,
 	PCI_DEVICE_ID_INTEL_EHL_ID_5,
 	PCI_DEVICE_ID_INTEL_EHL_ID_6,
@@ -388,6 +402,9 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_EHL_ID_10,
 	PCI_DEVICE_ID_INTEL_EHL_ID_11,
 	PCI_DEVICE_ID_INTEL_EHL_ID_12,
+	PCI_DEVICE_ID_INTEL_EHL_ID_13,
+	PCI_DEVICE_ID_INTEL_EHL_ID_14,
+	PCI_DEVICE_ID_INTEL_EHL_ID_15,
 	PCI_DEVICE_ID_INTEL_JSL_ID_1,
 	PCI_DEVICE_ID_INTEL_JSL_ID_2,
 	PCI_DEVICE_ID_INTEL_JSL_ID_3,
@@ -409,7 +426,6 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_ADL_S_ID_14,
 	PCI_DEVICE_ID_INTEL_ADL_S_ID_15,
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_1,
-	PCI_DEVICE_ID_INTEL_ADL_P_ID_2,
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_3,
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_4,
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_5,
@@ -417,6 +433,13 @@ static const unsigned short systemagent_ids[] = {
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_7,
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_8,
 	PCI_DEVICE_ID_INTEL_ADL_P_ID_9,
+	PCI_DEVICE_ID_INTEL_ADL_P_ID_10,
+	PCI_DEVICE_ID_INTEL_ADL_M_ID_1,
+	PCI_DEVICE_ID_INTEL_ADL_M_ID_2,
+	PCI_DEVICE_ID_INTEL_ADL_N_ID_1,
+	PCI_DEVICE_ID_INTEL_ADL_N_ID_2,
+	PCI_DEVICE_ID_INTEL_ADL_N_ID_3,
+	PCI_DEVICE_ID_INTEL_ADL_N_ID_4,
 	0
 };
 

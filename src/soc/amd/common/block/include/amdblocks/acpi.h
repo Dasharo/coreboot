@@ -4,7 +4,7 @@
 #define AMD_BLOCK_ACPI_H
 
 #include <acpi/acpi.h>
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
 #include <types.h>
 
 /* ACPI MMIO registers 0xfed80800 */
@@ -12,7 +12,7 @@
 #define  MMIO_ACPI_PM1_STS		0x00
 #define  MMIO_ACPI_PM1_EN		0x02
 #define MMIO_ACPI_PM1_CNT_BLK		0x04
-	  /* sleep types defined in arch/x86/include/acpi/acpi.h */
+	  /* sleep types defined in include/acpi/acpi.h */
 #define   ACPI_PM1_CNT_SCIEN		BIT(0)
 #define MMIO_ACPI_PM_TMR_BLK		0x08
 #define MMIO_ACPI_CPU_CONTROL		0x0c
@@ -55,5 +55,11 @@ unsigned long southbridge_write_acpi_tables(const struct device *device, unsigne
 
 unsigned long acpi_fill_madt_irqoverride(unsigned long current);
 void acpi_fill_root_complex_tom(const struct device *device);
+
+uintptr_t add_agesa_fsp_acpi_table(guid_t guid, const char *name, acpi_rsdp_t *rsdp,
+				   uintptr_t current);
+
+void acpi_log_events(const struct chipset_power_state *ps);
+unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current);
 
 #endif /* AMD_BLOCK_ACPI_H */

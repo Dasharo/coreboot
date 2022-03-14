@@ -9,6 +9,8 @@
 #include <device/pci.h>
 #include <intelblocks/pmc.h>
 #include <intelblocks/pmc_ipc.h>
+#include <intelblocks/pcie_rp.h>
+#include <soc/iomap.h>
 #include "chip.h"
 
 /*
@@ -42,6 +44,14 @@
 #define ACPI_REG_PCI_L23_RDY_DETECT "L23R" /* L23_Rdy Detect Transition */
 #define ACPI_REG_PCI_L23_SAVE_STATE "NCB7" /* Scratch bit to save L23 state */
 
+/* ACPI path to the mutex that protects accesses to PMC ModPhy power gating registers */
+#define RTD3_MUTEX_PATH "\\_SB.PCI0.R3MX"
+
+enum modphy_pg_state {
+	PG_DISABLE = 0,
+	PG_ENABLE = 1,
+};
+
 /* Called from _ON to get PCIe link back to active state. */
 static void pcie_rtd3_acpi_l23_exit(void)
 {
@@ -74,11 +84,79 @@ static void pcie_rtd3_acpi_l23_entry(void)
 	acpigen_write_store_int_to_namestr(1, ACPI_REG_PCI_L23_SAVE_STATE);
 }
 
+/* Called from _ON/_OFF to disable/enable ModPHY power gating */
+static void pcie_rtd3_enable_modphy_pg(unsigned int pcie_rp, enum modphy_pg_state state)
+{
+	/* Enter the critical section */
+	acpigen_emit_ext_op(ACQUIRE_OP);
+	acpigen_emit_namestring(RTD3_MUTEX_PATH);
+	acpigen_emit_word(ACPI_MUTEX_NO_TIMEOUT);
+
+	acpigen_write_store_int_to_namestr(state, "EMPG");
+	acpigen_write_delay_until_namestr_int(100, "AMPG", state);
+
+	/* Exit the critical section */
+	acpigen_emit_ext_op(RELEASE_OP);
+	acpigen_emit_namestring(RTD3_MUTEX_PATH);
+}
+
+/* Method to enter L2/L3 */
+static void pcie_rtd3_acpi_method_dl23(void)
+{
+	acpigen_write_method_serialized("DL23", 0);
+	pcie_rtd3_acpi_l23_entry();
+	acpigen_pop_len(); /* Method */
+}
+
+/* Method to exit L2/L3 */
+static void pcie_rtd3_acpi_method_l23d(void)
+{
+	acpigen_write_method_serialized("L23D", 0);
+	pcie_rtd3_acpi_l23_exit();
+	acpigen_pop_len(); /* Method */
+}
+
+/* Method to disable PCH modPHY power gating */
+static void pcie_rtd3_acpi_method_pds0(unsigned int pcie_rp)
+{
+	acpigen_write_method_serialized("PSD0", 0);
+	pcie_rtd3_enable_modphy_pg(pcie_rp, PG_DISABLE);
+	acpigen_pop_len(); /* Method */
+}
+
+/* Method to enable/disable the source clock */
+static void pcie_rtd3_acpi_method_srck(unsigned int pcie_rp,
+	const struct soc_intel_common_block_pcie_rtd3_config *config)
+{
+	acpigen_write_method_serialized("SRCK", 1);
+
+	if (config->srcclk_pin >= 0) {
+		acpigen_write_if_lequal_op_op(ARG0_OP, 0);
+		pmc_ipc_acpi_set_pci_clock(pcie_rp, config->srcclk_pin, false);
+		acpigen_write_else();
+		pmc_ipc_acpi_set_pci_clock(pcie_rp, config->srcclk_pin, true);
+		acpigen_pop_len(); /* If */
+	}
+	acpigen_pop_len(); /* Method */
+}
+
 static void
 pcie_rtd3_acpi_method_on(unsigned int pcie_rp,
-			 const struct soc_intel_common_block_pcie_rtd3_config *config)
+			 const struct soc_intel_common_block_pcie_rtd3_config *config,
+			 enum pcie_rp_type rp_type)
 {
 	acpigen_write_method_serialized("_ON", 0);
+
+	/* When this feature is enabled, ONSK indicates if the previous _OFF was
+	 * skipped. If so, since the device was not in Off state, and the current
+	 * _ON can be skipped as well.
+	 */
+	if (config->skip_on_off_support)
+		acpigen_write_if_lequal_namestr_int("ONSK", 0);
+
+	/* Disable modPHY power gating for PCH RPs. */
+	if (rp_type == PCIE_RP_PCH)
+		pcie_rtd3_enable_modphy_pg(pcie_rp, PG_DISABLE);
 
 	/* Assert enable GPIO to turn on device power. */
 	if (config->enable_gpio.pin_count) {
@@ -98,18 +176,37 @@ pcie_rtd3_acpi_method_on(unsigned int pcie_rp,
 			acpigen_write_sleep(config->reset_delay_ms);
 	}
 
-	/* Trigger L23 ready exit flow unless disabld by config. */
+	/* Trigger L23 ready exit flow unless disabled by config. */
 	if (!config->disable_l23)
 		pcie_rtd3_acpi_l23_exit();
 
+	if (config->skip_on_off_support) {
+		/* If current _ON is skipped, ONSK is decremented so that _ON will be
+		 * executed normally until _OFF is skipped again.
+		 */
+		acpigen_write_else();
+		acpigen_emit_byte(DECREMENT_OP);
+		acpigen_emit_namestring("ONSK");
+
+		acpigen_pop_len(); /* Else */
+	}
 	acpigen_pop_len(); /* Method */
 }
 
 static void
 pcie_rtd3_acpi_method_off(int pcie_rp,
-			  const struct soc_intel_common_block_pcie_rtd3_config *config)
+			  const struct soc_intel_common_block_pcie_rtd3_config *config,
+			  enum pcie_rp_type rp_type)
 {
 	acpigen_write_method_serialized("_OFF", 0);
+
+	/* When this feature is enabled, ONSK is checked to see if the device
+	 * wants _OFF to be skipped for once. ONSK is normally incremented in the
+	 * device method, such as reset _RST, which is invoked during driver reload.
+	 * In such case, _OFF needs to be avoided at the end of driver removal.
+	 */
+	if (config->skip_on_off_support)
+		acpigen_write_if_lequal_namestr_int("OFSK", 0);
 
 	/* Trigger L23 ready entry flow unless disabled by config. */
 	if (!config->disable_l23)
@@ -122,6 +219,10 @@ pcie_rtd3_acpi_method_off(int pcie_rp,
 			acpigen_write_sleep(config->reset_off_delay_ms);
 	}
 
+	/* Enable modPHY power gating for PCH RPs */
+	if (rp_type == PCIE_RP_PCH)
+		pcie_rtd3_enable_modphy_pg(pcie_rp, PG_ENABLE);
+
 	/* Disable SRCCLK for this root port if pin is defined. */
 	if (config->srcclk_pin >= 0)
 		pmc_ipc_acpi_set_pci_clock(pcie_rp, config->srcclk_pin, false);
@@ -133,12 +234,27 @@ pcie_rtd3_acpi_method_off(int pcie_rp,
 			acpigen_write_sleep(config->enable_off_delay_ms);
 	}
 
+	if (config->skip_on_off_support) {
+		/* If current _OFF is skipped, ONSK is incremented so that the
+		 * following _ON will also be skipped. In addition, OFSK is decremented
+		 * so that next _OFF will be executed normally until the device method
+		 * increments OFSK again.
+		 */
+		acpigen_write_else();
+		/* OFSK-- */
+		acpigen_emit_byte(DECREMENT_OP);
+		acpigen_emit_namestring("OFSK");
+		/* ONSK++ */
+		acpigen_emit_byte(INCREMENT_OP);
+		acpigen_emit_namestring("ONSK");
+
+		acpigen_pop_len(); /* Else */
+	}
 	acpigen_pop_len(); /* Method */
 }
 
 static void
-pcie_rtd3_acpi_method_status(int pcie_rp,
-			     const struct soc_intel_common_block_pcie_rtd3_config *config)
+pcie_rtd3_acpi_method_status(const struct soc_intel_common_block_pcie_rtd3_config *config)
 {
 	const struct acpi_gpio *gpio;
 
@@ -158,7 +274,6 @@ pcie_rtd3_acpi_method_status(int pcie_rp,
 
 	acpigen_write_if_lequal_op_op(LOCAL0_OP, LOCAL1_OP);
 	acpigen_write_return_op(ZERO_OP);
-	acpigen_pop_len(); /* If */
 	acpigen_write_else();
 	acpigen_write_return_op(ONE_OP);
 	acpigen_pop_len(); /* Else */
@@ -166,8 +281,54 @@ pcie_rtd3_acpi_method_status(int pcie_rp,
 	acpigen_pop_len(); /* Method */
 }
 
+static void write_modphy_opregion(unsigned int pcie_rp)
+{
+	/* The register containing the Power Gate enable sequence bits is at
+	   PCH_PWRM_BASE + 0x10D0, and the bits to check for sequence completion are at
+	   PCH_PWRM_BASE + 0x10D4. */
+	const struct opregion opregion = OPREGION("PMCP", SYSTEMMEMORY,
+						  PCH_PWRM_BASE_ADDRESS + 0x1000, 0xff);
+	const struct fieldlist fieldlist[] = {
+		FIELDLIST_OFFSET(0xD0),
+		FIELDLIST_RESERVED(pcie_rp),
+		FIELDLIST_NAMESTR("EMPG", 1),	/* Enable ModPHY Power Gate */
+		FIELDLIST_OFFSET(0xD4),
+		FIELDLIST_RESERVED(pcie_rp),
+		FIELDLIST_NAMESTR("AMPG", 1),	/* Is ModPHY Power Gate active? */
+	};
+
+	acpigen_write_opregion(&opregion);
+	acpigen_write_field("PMCP", fieldlist, ARRAY_SIZE(fieldlist),
+			    FIELD_DWORDACC | FIELD_NOLOCK | FIELD_PRESERVE);
+}
+
+static int get_pcie_rp_pmc_idx(enum pcie_rp_type rp_type, const struct device *dev)
+{
+	int idx = -1;
+
+	switch (rp_type) {
+	case PCIE_RP_PCH:
+		/* Read port number of root port that this device is attached to. */
+		idx = pci_read_config8(dev, PCH_PCIE_CFG_LCAP_PN);
+
+		/* Port number is 1-based, PMC IPC method expects 0-based. */
+		idx--;
+		break;
+	case PCIE_RP_CPU:
+		/* CPU RPs are indexed by their "virtual wire index" to the PCH */
+		idx = soc_get_cpu_rp_vw_idx(dev);
+		break;
+	default:
+		break;
+	}
+
+	return idx;
+}
+
 static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 {
+	static bool mutex_created = false;
+
 	const struct soc_intel_common_block_pcie_rtd3_config *config = config_of(dev);
 	static const char *const power_res_states[] = {"_PR0"};
 	const struct device *parent = dev->bus->dev;
@@ -185,7 +346,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_RDY_ENTRY, 1),
 		FIELDLIST_NAMESTR(ACPI_REG_PCI_L23_RDY_DETECT, 1),
 	};
-	uint8_t pcie_rp;
+	int pcie_rp;
 	struct acpi_dp *dsd, *pkg;
 
 	if (!is_dev_enabled(parent)) {
@@ -201,23 +362,47 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		       __func__, scope);
 		return;
 	}
-	if (config->srcclk_pin > CONFIG_MAX_PCIE_CLOCKS) {
+	if (config->srcclk_pin > CONFIG_MAX_PCIE_CLOCK_SRC) {
 		printk(BIOS_ERR, "%s: Invalid clock pin %u for %s.\n", __func__,
 		       config->srcclk_pin, scope);
 		return;
 	}
 
-	/* Read port number of root port that this device is attached to. */
-	pcie_rp = pci_read_config8(parent, PCH_PCIE_CFG_LCAP_PN);
-	if (pcie_rp == 0 || pcie_rp > CONFIG_MAX_ROOT_PORTS) {
-		printk(BIOS_ERR, "%s: Invalid root port number: %u\n", __func__, pcie_rp);
+	const enum pcie_rp_type rp_type = soc_get_pcie_rp_type(parent);
+	pcie_rp = get_pcie_rp_pmc_idx(rp_type, parent);
+	if (pcie_rp < 0) {
+		printk(BIOS_ERR, "%s: Unknown PCIe root port\n", __func__);
 		return;
 	}
-	/* Port number is 1-based, PMC IPC method expects 0-based. */
-	pcie_rp--;
+	if (config->disable_l23) {
+		if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_L23) {
+			printk(BIOS_ERR, "%s: Can not export L23 methods\n", __func__);
+			return;
+		}
+	}
+	if (rp_type != PCIE_RP_PCH) {
+		if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_PSD0) {
+			printk(BIOS_ERR, "%s: Can not export PSD0 method\n", __func__);
+			return;
+		}
+	}
+	if (config->srcclk_pin == 0) {
+		if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_SRCK) {
+			printk(BIOS_ERR, "%s: Can not export SRCK method\n", __func__);
+			return;
+		}
+	}
 
 	printk(BIOS_INFO, "%s: Enable RTD3 for %s (%s)\n", scope, dev_path(parent),
 	       config->desc ?: dev->chip_ops->name);
+
+	/* Create a mutex for exclusive access to the PMC registers. */
+	if (rp_type == PCIE_RP_PCH && !mutex_created) {
+		acpigen_write_scope("\\_SB.PCI0");
+		acpigen_write_mutex("R3MX", 0);
+		acpigen_write_scope_end();
+		mutex_created = true;
+	}
 
 	/* The RTD3 power resource is added to the root port, not the device. */
 	acpigen_write_scope(scope);
@@ -225,15 +410,46 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 	if (config->desc)
 		acpigen_write_name_string("_DDN", config->desc);
 
+	/* Create OpRegions for MMIO accesses. */
 	acpigen_write_opregion(&opregion);
 	acpigen_write_field("PXCS", fieldlist, ARRAY_SIZE(fieldlist),
 			    FIELD_ANYACC | FIELD_NOLOCK | FIELD_PRESERVE);
 
+	if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_L23) {
+		pcie_rtd3_acpi_method_dl23();
+		pcie_rtd3_acpi_method_l23d();
+	}
+
+	/* Create the OpRegion to access the ModPHY PG registers (PCH RPs only) */
+	if (rp_type == PCIE_RP_PCH)
+		write_modphy_opregion(pcie_rp);
+
+	if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_PSD0)
+		pcie_rtd3_acpi_method_pds0(pcie_rp);
+
+	if (config->ext_pm_support & ACPI_PCIE_RP_EMIT_SRCK)
+		pcie_rtd3_acpi_method_srck(pcie_rp, config);
+
 	/* ACPI Power Resource for controlling the attached device power. */
 	acpigen_write_power_res("RTD3", 0, 0, power_res_states, ARRAY_SIZE(power_res_states));
-	pcie_rtd3_acpi_method_status(pcie_rp, config);
-	pcie_rtd3_acpi_method_on(pcie_rp, config);
-	pcie_rtd3_acpi_method_off(pcie_rp, config);
+
+	if (config->skip_on_off_support) {
+		/* OFSK:  0 = _OFF Method will be executed normally when called;
+		 *       >1 = _OFF will be skipped.
+		 *       _OFF Method to decrement OFSK and increment ONSK if the
+		 *       current execution is skipped.
+		 * ONSK:  0 = _ON Method will be executed normally when called;
+		 *       >1 = _ONF will be skipped.
+		 *       _ON Method to decrement ONSK if the current execution is
+		 *       skipped.
+		 */
+		acpigen_write_name_integer("ONSK", 0);
+		acpigen_write_name_integer("OFSK", 0);
+	}
+
+	pcie_rtd3_acpi_method_status(config);
+	pcie_rtd3_acpi_method_on(pcie_rp, config, rp_type);
+	pcie_rtd3_acpi_method_off(pcie_rp, config, rp_type);
 	acpigen_pop_len(); /* PowerResource */
 
 	/* Indicate to the OS that device supports hotplug in D3. */
@@ -259,7 +475,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_write_device(acpi_device_name(dev));
 		acpigen_write_ADR(0);
 		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
-		acpigen_write_name_integer("_S0W", 4);
+		acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
 
 		dsd = acpi_dp_new_table("_DSD");
 		pkg = acpi_dp_new_table(PCIE_RTD3_STORAGE_UUID);

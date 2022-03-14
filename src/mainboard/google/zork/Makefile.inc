@@ -4,14 +4,17 @@ bootblock-y += bootblock.c
 
 romstage-y += chromeos.c
 romstage-y += sku_id.c
+romstage-y += romstage.c
 
 ramstage-y += chromeos.c
 ramstage-y += ec.c
 ramstage-y += sku_id.c
 
+verstage-y += chromeos.c
 verstage-y += verstage.c
 
 subdirs-y += variants/baseboard
+subdirs-y += variants/$(VARIANT_DIR)/spd
 subdirs-y += spd
 
 CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/variants/baseboard/include

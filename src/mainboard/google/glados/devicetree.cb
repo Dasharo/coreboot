@@ -36,15 +36,13 @@ chip soc/intel/skylake
 
 	# FSP Configuration
 	register "SataSalpSupport" = "0"
-	register "SataMode" = "0"
 	register "SataPortsEnable[0]" = "0"
 	register "DspEnable" = "1"
 	register "IoBufferOwnership" = "3"
 	register "SsicPortEnable" = "0"
 	register "ScsEmmcHs400Enabled" = "1"
 	register "SkipExtGfxScan" = "1"
-	register "HeciEnabled" = "0"
-	register "SaGv" = "3"
+	register "SaGv" = "SaGv_Enabled"
 	register "PmConfigSlpS3MinAssert" = "2"        # 50ms
 	register "PmConfigSlpS4MinAssert" = "4"        # 4s
 	register "PmConfigSlpSusMinAssert" = "3"       # 4s
@@ -82,11 +80,6 @@ chip soc/intel/skylake
 
 	# Send an extra VR mailbox command for the PS4 exit issue
 	register "SendVrMbxCmd" = "2"
-
-	# Lock Down
-	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
-	}"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end

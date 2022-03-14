@@ -856,10 +856,8 @@ int google_chromeec_cbi_get_fw_config(uint64_t *fw_config)
 	if (CONFIG(EC_GOOGLE_CHROMEEC_INCLUDE_SSFC_IN_FW_CONFIG)) {
 		uint32_t ssfc;
 
-		if (google_chromeec_cbi_get_ssfc(&ssfc))
-			return -1;
-
-		*fw_config |= (uint64_t)ssfc << 32;
+		if (!google_chromeec_cbi_get_ssfc(&ssfc))
+			*fw_config |= (uint64_t)ssfc << 32;
 	}
 	return 0;
 }
@@ -977,7 +975,7 @@ int google_chromeec_vbnv_context(int is_read, uint8_t *data, int len)
 retry:
 
 	if (google_chromeec_command(&cmd)) {
-		printk(BIOS_ERR, "ERROR: failed to %s vbnv_ec context: %d\n",
+		printk(BIOS_ERR, "failed to %s vbnv_ec context: %d\n",
 			is_read ? "read" : "write", (int)cmd.cmd_code);
 		mdelay(10);	/* just in case */
 		if (--retries)
@@ -1479,7 +1477,9 @@ int google_ec_running_ro(void)
 	return (google_chromeec_get_current_image() == EC_IMAGE_RO);
 }
 
-int google_chromeec_usb_pd_control(int port, bool *ufp, bool *dbg_acc, uint8_t *dp_mode)
+/* Returns data role and type of device connected */
+static int google_chromeec_usb_pd_get_info(int port, bool *ufp, bool *dbg_acc,
+				    bool *active_cable, uint8_t *dp_mode)
 {
 	struct ec_params_usb_pd_control pd_control = {
 		.port = port,
@@ -1503,7 +1503,35 @@ int google_chromeec_usb_pd_control(int port, bool *ufp, bool *dbg_acc, uint8_t *
 
 	*ufp = (resp.cc_state == PD_CC_DFP_ATTACHED);
 	*dbg_acc = (resp.cc_state == PD_CC_DFP_DEBUG_ACC);
+	*active_cable = !!(resp.control_flags & USB_PD_CTRL_ACTIVE_CABLE);
 	*dp_mode = resp.dp_mode;
+
+	return 0;
+}
+
+int google_chromeec_typec_control_enter_dp_mode(int port)
+{
+	if (!google_chromeec_check_feature(EC_FEATURE_TYPEC_REQUIRE_AP_MODE_ENTRY))
+		return 0;
+
+	struct ec_params_typec_control typec_control = {
+		.port = port,
+		.command = TYPEC_CONTROL_COMMAND_ENTER_MODE,
+		.mode_to_enter = TYPEC_MODE_DP,
+	};
+
+	struct chromeec_command cmd = {
+		.cmd_code = EC_CMD_TYPEC_CONTROL,
+		.cmd_version = 0,
+		.cmd_data_in = &typec_control,
+		.cmd_size_in = sizeof(typec_control),
+		.cmd_data_out = NULL,
+		.cmd_size_out = 0,
+		.cmd_dev_index = 0,
+	};
+
+	if (google_chromeec_command(&cmd) < 0)
+		return -1;
 
 	return 0;
 }
@@ -1538,13 +1566,50 @@ int google_chromeec_usb_get_pd_mux_info(int port, uint8_t *flags)
 	return 0;
 }
 
+/*
+ * Obtain any USB-C mux data needed for the specified port
+ * in: physical port number of the type-c port
+ * out: struct usbc_mux_info mux_info stores USB-C mux data
+ * Return: 0 on success, -1 on error
+*/
+int google_chromeec_get_usbc_mux_info(int port, struct usbc_mux_info *mux_info)
+{
+	uint8_t mux_flags;
+	uint8_t dp_pin_mode;
+	bool ufp, dbg_acc, active_cable;
+
+	if (google_chromeec_usb_get_pd_mux_info(port, &mux_flags) < 0) {
+		printk(BIOS_ERR, "Port C%d: get_pd_mux_info failed\n", port);
+		return -1;
+	}
+
+	if (google_chromeec_usb_pd_get_info(port, &ufp, &dbg_acc,
+					    &active_cable, &dp_pin_mode) < 0) {
+		printk(BIOS_ERR, "Port C%d: pd_control failed\n", port);
+		return -1;
+	}
+
+	mux_info->usb = !!(mux_flags & USB_PD_MUX_USB_ENABLED);
+	mux_info->dp = !!(mux_flags & USB_PD_MUX_DP_ENABLED);
+	mux_info->polarity = !!(mux_flags & USB_PD_MUX_POLARITY_INVERTED);
+	mux_info->hpd_irq = !!(mux_flags & USB_PD_MUX_HPD_IRQ);
+	mux_info->hpd_lvl = !!(mux_flags & USB_PD_MUX_HPD_LVL);
+	mux_info->ufp = !!ufp;
+	mux_info->dbg_acc = !!dbg_acc;
+	mux_info->cable = !!active_cable;
+	mux_info->dp_pin_mode = dp_pin_mode;
+
+	return 0;
+}
+
 /**
  * Check if EC/TCPM is in an alternate mode or not.
  *
  * @param svid SVID of the alternate mode to check
- * @return     0: Not in the mode. -1: Error. 1: Yes.
+ * @return	0: Not in the mode. -1: Error.
+ *		>=1: bitmask of the ports that are in the mode.
  */
-int google_chromeec_pd_get_amode(uint16_t svid)
+static int google_chromeec_pd_get_amode(uint16_t svid)
 {
 	struct ec_response_usb_pd_ports resp;
 	struct chromeec_command cmd = {
@@ -1557,6 +1622,7 @@ int google_chromeec_pd_get_amode(uint16_t svid)
 		.cmd_dev_index = 0,
 	};
 	int i;
+	int ret = 0;
 
 	if (google_chromeec_command(&cmd) < 0)
 		return -1;
@@ -1582,12 +1648,12 @@ int google_chromeec_pd_get_amode(uint16_t svid)
 			if (google_chromeec_command(&cmd) < 0)
 				return -1;
 			if (resp2.svid == svid)
-				return 1;
+				ret |= BIT(i);
 			svid_idx++;
 		} while (resp2.svid);
 	}
 
-	return 0;
+	return ret;
 }
 
 #define USB_SID_DISPLAYPORT 0xff01
@@ -1595,20 +1661,31 @@ int google_chromeec_pd_get_amode(uint16_t svid)
 /**
  * Wait for DisplayPort to be ready
  *
- * @param timeout Wait aborts after <timeout> ms.
- * @return 1: Success or 0: Timeout.
+ * @param timeout_ms Wait aborts after <timeout_ms> ms.
+ * @return	-1: Error. 0: Timeout.
+ *		>=1: Bitmask of the ports that DP device is connected
  */
-int google_chromeec_wait_for_displayport(long timeout)
+int google_chromeec_wait_for_displayport(long timeout_ms)
 {
 	struct stopwatch sw;
+	int ret = 0;
 
 	printk(BIOS_INFO, "Waiting for DisplayPort\n");
-	stopwatch_init_msecs_expire(&sw, timeout);
-	while (google_chromeec_pd_get_amode(USB_SID_DISPLAYPORT) != 1) {
+	stopwatch_init_msecs_expire(&sw, timeout_ms);
+	while (1) {
+		ret = google_chromeec_pd_get_amode(USB_SID_DISPLAYPORT);
+		if (ret > 0)
+			break;
+
+		if (ret < 0) {
+			printk(BIOS_ERR, "Can't get alternate mode!\n");
+			return ret;
+		}
+
 		if (stopwatch_expired(&sw)) {
 			printk(BIOS_WARNING,
 			       "DisplayPort not ready after %ldms. Abort.\n",
-			       timeout);
+			       timeout_ms);
 			return 0;
 		}
 		mdelay(200);
@@ -1616,7 +1693,26 @@ int google_chromeec_wait_for_displayport(long timeout)
 	printk(BIOS_INFO, "DisplayPort ready after %lu ms\n",
 	       stopwatch_duration_msecs(&sw));
 
-	return 1;
+	return ret;
+}
+
+int google_chromeec_wait_for_dp_hpd(int port, long timeout_ms)
+{
+	uint8_t mux_flags;
+	struct stopwatch sw;
+
+	stopwatch_init_msecs_expire(&sw, timeout_ms);
+	do {
+		google_chromeec_usb_get_pd_mux_info(port, &mux_flags);
+		if (stopwatch_expired(&sw)) {
+			printk(BIOS_WARNING, "HPD not ready after %ldms. Abort.\n", timeout_ms);
+			return -1;
+		}
+		mdelay(100);
+	} while (!(mux_flags & USB_PD_MUX_HPD_LVL) || !(mux_flags & USB_PD_MUX_DP_ENABLED));
+	printk(BIOS_INFO, "HPD ready after %lu ms\n", stopwatch_duration_msecs(&sw));
+
+	return 0;
 }
 
 int google_chromeec_get_keybd_config(struct ec_response_keybd_config *keybd)
@@ -1679,7 +1775,6 @@ int google_chromeec_regulator_enable(uint32_t index, uint8_t enable)
 
 int google_chromeec_regulator_is_enabled(uint32_t index, uint8_t *enabled)
 {
-
 	struct ec_params_regulator_is_enabled params = {
 		.index = index,
 	};

@@ -44,7 +44,7 @@ chip soc/intel/cannonlake
 	register "tcc_offset" = "10"	# TCC of 90C
 	# Unlock GPIO pads
 	register "PchUnlockGpioPads" = "1"
-	# SD card WP pin confguration
+	# SD card WP pin configuration
 	register "ScsSdCardWpPinEnabled" = "0"
 
 	# NOTE: if any variant wants to override this value, use the same format
@@ -195,12 +195,6 @@ chip soc/intel/cannonlake
 	register "gpio_pm[COMM_3]" = "0"
 	register "gpio_pm[COMM_4]" = "0"
 
-	# chipset_lockdown configuration
-	# Use below format to override value in overridetree.cb if required
-	# format:
-	# register "common_soc_config.<variable_name>" = "value"
-	register "common_soc_config.chipset_lockdown" = CHIPSET_LOCKDOWN_COREBOOT
-
 	device cpu_cluster 0 on
 		device lapic 0 on end
 	end
@@ -302,7 +296,7 @@ chip soc/intel/cannonlake
 		device pci 15.1 on  end # I2C #1
 		device pci 15.2 on  end # I2C #2
 		device pci 15.3 on  end # I2C #3
-		device pci 16.0 off end # Management Engine Interface 1
+		device pci 16.0 on  end # Management Engine Interface 1
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
@@ -352,7 +346,7 @@ chip soc/intel/cannonlake
 			end
 		end # eSPI Interface
 		device pci 1f.1 on  end # P2SB
-		device pci 1f.2 on  end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on  end # Intel HDA
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI

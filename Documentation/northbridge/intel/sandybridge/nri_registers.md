@@ -1,9 +1,9 @@
-# Inoffical Documentation of Intel MCHBAR register space.
+# Unofficial Documentation of Intel MCHBAR register space.
 
 The MCHBAR can be enabled by using register 0x48 of PCI(0:0:0) device.
 
 This documentation is incomplete and might be incorrect.
-Please handle with care !
+Please handle with care!
 
 **MCHBAR + 0x4**
 
@@ -1947,7 +1947,7 @@ Please handle with care !
 +-----------+------------------------------------------------------------------+
 | Bit       | Description                                                      |
 +===========+==================================================================+
-|        0:7|  OREF_RI, Rank idle period that defines an oppertunity for       |
+|        0:7|  OREF_RI, Rank idle period that defines an opportunity for       |
 |           |  refresh                                                         |
 +-----------+------------------------------------------------------------------+
 |       8:11|  Refresh_HP_WM, tREFI count level that turns the refresh         |

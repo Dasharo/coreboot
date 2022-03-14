@@ -34,10 +34,6 @@ static const char *northbridge_acpi_name(const struct device *dev)
 	return NULL;
 }
 
-/*
- * TODO: We could determine how many PCIe busses we need in the bar.
- *       For now, that number is hardcoded to a max of 64.
- */
 static struct device_operations pci_domain_ops = {
 	.read_resources    = pci_domain_read_resources,
 	.set_resources     = pci_domain_set_resources,
@@ -66,7 +62,7 @@ static int get_bar(struct device *dev, unsigned int index, u32 *base, u32 *len)
  */
 static int get_bar_in_mchbar(struct device *dev, unsigned int index, u32 *base, u32 *len)
 {
-	u32 bar = MCHBAR32(index);
+	u32 bar = mchbar_read32(index);
 
 	/* If not enabled don't report it */
 	if (!(bar & 0x1))
@@ -85,15 +81,13 @@ struct fixed_mmio_descriptor {
 	const char *description;
 };
 
-#define SIZE_KB(x) ((x) * 1024)
 struct fixed_mmio_descriptor mc_fixed_resources[] = {
-	{ MCHBAR,   SIZE_KB(32), get_bar,           "MCHBAR"   },
-	{ DMIBAR,   SIZE_KB(4),  get_bar,           "DMIBAR"   },
-	{ EPBAR,    SIZE_KB(4),  get_bar,           "EPBAR"    },
-	{ GDXCBAR,  SIZE_KB(4),  get_bar_in_mchbar, "GDXCBAR"  },
-	{ EDRAMBAR, SIZE_KB(16), get_bar_in_mchbar, "EDRAMBAR" },
+	{ MCHBAR,   MCH_BASE_SIZE,   get_bar,           "MCHBAR"   },
+	{ DMIBAR,   DMI_BASE_SIZE,   get_bar,           "DMIBAR"   },
+	{ EPBAR,    EP_BASE_SIZE,    get_bar,           "EPBAR"    },
+	{ GDXCBAR,  GDXC_BASE_SIZE,  get_bar_in_mchbar, "GDXCBAR"  },
+	{ EDRAMBAR, EDRAM_BASE_SIZE, get_bar_in_mchbar, "EDRAMBAR" },
 };
-#undef SIZE_KB
 
 /* Add all known fixed MMIO ranges that hang off the host bridge/memory controller device. */
 static void mc_add_fixed_mmio_resources(struct device *dev)
@@ -253,7 +247,7 @@ static void mc_add_dram_resources(struct device *dev, int *resource_cnt)
 
 	/*
 	 * DMA Protected Range can be reserved below TSEG for PCODE patch
-	 * or TXT/BootGuard related data.  Rather than report a base address,
+	 * or TXT/Boot Guard related data.  Rather than report a base address,
 	 * the DPR register reports the TOP of the region, which is the same
 	 * as TSEG base. The region size is reported in MiB in bits 11:4.
 	 */
@@ -399,16 +393,16 @@ static void disable_devices(void)
 static void init_egress(void)
 {
 	/* VC0: Enable, ID0, TC0 */
-	EPBAR32(EPVC0RCTL) = (1 << 31) | (0 << 24) | (1 << 0);
+	epbar_write32(EPVC0RCTL, 1 << 31 | 0 << 24 | 1 << 0);
 
 	/* No Low Priority Extended VCs, one Extended VC */
-	EPBAR32(EPPVCCAP1) = (0 << 4) | (1 << 0);
+	epbar_write32(EPPVCCAP1, 0 << 4 | 1 << 0);
 
 	/* VC1: Enable, ID1, TC1 */
-	EPBAR32(EPVC1RCTL) = (1 << 31) | (1 << 24) | (1 << 1);
+	epbar_write32(EPVC1RCTL, 1 << 31 | 1 << 24 | 1 << 1);
 
 	/* Poll the VC1 Negotiation Pending bit */
-	while ((EPBAR16(EPVC1RSTS) & (1 << 1)) != 0)
+	while ((epbar_read16(EPVC1RSTS) & (1 << 1)) != 0)
 		;
 }
 
@@ -416,39 +410,24 @@ static void northbridge_dmi_init(void)
 {
 	const bool is_haswell_h = !CONFIG(INTEL_LYNXPOINT_LP);
 
-	u16 reg16;
-	u32 reg32;
-
 	/* Steps prior to DMI ASPM */
 	if (is_haswell_h) {
 		/* Configure DMI De-Emphasis */
-		reg16 = DMIBAR16(DMILCTL2);
-		reg16 |= (1 << 6);	/* 0b: -6.0 dB, 1b: -3.5 dB */
-		DMIBAR16(DMILCTL2) = reg16;
+		dmibar_setbits16(DMILCTL2, 1 << 6);	/* 0b: -6.0 dB, 1b: -3.5 dB */
 
-		reg32 = DMIBAR32(DMIL0SLAT);
-		reg32 |= (1 << 31);
-		DMIBAR32(DMIL0SLAT) = reg32;
+		dmibar_setbits32(DMIL0SLAT, 1 << 31);
+		dmibar_setbits32(DMILLTC, 1 << 29);
 
-		reg32 = DMIBAR32(DMILLTC);
-		reg32 |= (1 << 29);
-		DMIBAR32(DMILLTC) = reg32;
-
-		reg32 = DMIBAR32(DMI_AFE_PM_TMR);
-		reg32 &= ~0x1f;
-		reg32 |= 0x13;
-		DMIBAR32(DMI_AFE_PM_TMR) = reg32;
+		dmibar_clrsetbits32(DMI_AFE_PM_TMR, 0x1f, 0x13);
 	}
 
 	/* Clear error status bits */
-	DMIBAR32(DMIUESTS) = 0xffffffff;
-	DMIBAR32(DMICESTS) = 0xffffffff;
+	dmibar_write32(DMIUESTS, 0xffffffff);
+	dmibar_write32(DMICESTS, 0xffffffff);
 
 	if (is_haswell_h) {
 		/* Enable ASPM L0s and L1 on SA link, should happen before PCH link */
-		reg16 = DMIBAR16(DMILCTL);
-		reg16 |= (1 << 1) | (1 << 0);
-		DMIBAR16(DMILCTL) = reg16;
+		dmibar_setbits16(DMILCTL, 1 << 1 | 1 << 0);
 	}
 }
 
@@ -457,19 +436,12 @@ static void northbridge_topology_init(void)
 	const u32 eple_a[3] = { EPLE2A, EPLE3A, EPLE4A };
 	const u32 eple_d[3] = { EPLE2D, EPLE3D, EPLE4D };
 
-	u32 reg32;
-
 	/* Set the CID1 Egress Port 0 Root Topology */
-	reg32 = EPBAR32(EPESD);
-	reg32 &= ~(0xff << 16);
-	reg32 |= 1 << 16;
-	EPBAR32(EPESD) = reg32;
+	epbar_clrsetbits32(EPESD, 0xff << 16, 1 << 16);
 
-	reg32 = EPBAR32(EPLE1D);
-	reg32 &= ~(0xff << 16);
-	reg32 |= 1 | (1 << 16);
-	EPBAR32(EPLE1D) = reg32;
-	EPBAR64(EPLE1A) = CONFIG_FIXED_DMIBAR_MMIO_BASE;
+	epbar_clrsetbits32(EPLE1D, 0xff << 16, 1 | 1 << 16);
+	epbar_write32(EPLE1A, CONFIG_FIXED_DMIBAR_MMIO_BASE);
+	epbar_write32(EPLE1A + 4, 0);
 
 	for (unsigned int i = 0; i <= 2; i++) {
 		const struct device *const dev = pcidev_on_root(1, i);
@@ -477,12 +449,10 @@ static void northbridge_topology_init(void)
 		if (!dev || !dev->enabled)
 			continue;
 
-		EPBAR64(eple_a[i]) = (u64)PCI_DEV(0, 1, i);
+		epbar_write32(eple_a[i], (u32)PCI_DEV(0, 1, i));
+		epbar_write32(eple_a[i] + 4, 0);
 
-		reg32 = EPBAR32(eple_d[i]);
-		reg32 &= ~(0xff << 16);
-		reg32 |= 1 | (1 << 16);
-		EPBAR32(eple_d[i]) = reg32;
+		epbar_clrsetbits32(eple_d[i], 0xff << 16, 1 | 1 << 16);
 
 		pci_update_config32(dev, PEG_ESD, ~(0xff << 16), (1 << 16));
 		pci_write_config32(dev, PEG_LE1A, CONFIG_FIXED_EPBAR_MMIO_BASE);
@@ -494,41 +464,29 @@ static void northbridge_topology_init(void)
 	}
 
 	/* Set the CID1 DMI Port Root Topology */
-	reg32 = DMIBAR32(DMIESD);
-	reg32 &= ~(0xff << 16);
-	reg32 |= 1 << 16;
-	DMIBAR32(DMIESD) = reg32;
+	dmibar_clrsetbits32(DMIESD, 0xff << 16, 1 << 16);
 
-	reg32 = DMIBAR32(DMILE1D);
-	reg32 &= ~(0xffff << 16);
-	reg32 |= 1 | (2 << 16);
-	DMIBAR32(DMILE1D) = reg32;
-	DMIBAR64(DMILE1A) = CONFIG_FIXED_RCBA_MMIO_BASE;
+	dmibar_clrsetbits32(DMILE1D, 0xffff << 16, 1 | 2 << 16);
+	dmibar_write32(DMILE1A, CONFIG_FIXED_RCBA_MMIO_BASE);
+	dmibar_write32(DMILE1A + 4, 0);
 
-	DMIBAR64(DMILE2A) = CONFIG_FIXED_EPBAR_MMIO_BASE;
-	reg32 = DMIBAR32(DMILE2D);
-	reg32 &= ~(0xff << 16);
-	reg32 |= 1 | (1 << 16);
-	DMIBAR32(DMILE2D) = reg32;
+	dmibar_write32(DMILE2A, CONFIG_FIXED_EPBAR_MMIO_BASE);
+	dmibar_write32(DMILE2A + 4, 0);
+	dmibar_clrsetbits32(DMILE2D, 0xff << 16, 1 | 1 << 16);
 
 	/* Program RO and Write-Once Registers */
-	DMIBAR32(DMIPVCCAP1) = DMIBAR32(DMIPVCCAP1);
-	DMIBAR32(DMILCAP)    = DMIBAR32(DMILCAP);
+	dmibar_setbits32(DMIPVCCAP1, 0);
+	dmibar_setbits32(DMILCAP, 0);
 }
 
 static void northbridge_init(struct device *dev)
 {
-	u8 bios_reset_cpl, pair;
-
 	init_egress();
 	northbridge_dmi_init();
 	northbridge_topology_init();
 
 	/* Enable Power Aware Interrupt Routing. */
-	pair = MCHBAR8(INTRDIRCTL);
-	pair &= ~0x7;	/* Clear 2:0 */
-	pair |= 0x4;	/* Fixed Priority */
-	MCHBAR8(INTRDIRCTL) = pair;
+	mchbar_clrsetbits8(INTRDIRCTL, 0x7, 0x4);	/* Clear 2:0, set Fixed Priority */
 
 	disable_devices();
 
@@ -536,9 +494,7 @@ static void northbridge_init(struct device *dev)
 	 * Set bits 0 + 1 of BIOS_RESET_CPL to indicate to the CPU
 	 * that BIOS has initialized memory and power management.
 	 */
-	bios_reset_cpl = MCHBAR8(BIOS_RESET_CPL);
-	bios_reset_cpl |= 3;
-	MCHBAR8(BIOS_RESET_CPL) = bios_reset_cpl;
+	mchbar_setbits8(BIOS_RESET_CPL, 3);
 	printk(BIOS_DEBUG, "Set BIOS_RESET_CPL\n");
 
 	/* Configure turbo power limits 1ms after reset complete bit. */
@@ -546,13 +502,46 @@ static void northbridge_init(struct device *dev)
 	set_power_limits(28);
 }
 
+static void northbridge_final(struct device *dev)
+{
+	pci_or_config16(dev, GGC,         1 << 0);
+	pci_or_config32(dev, DPR,         1 << 0);
+	pci_or_config32(dev, MESEG_LIMIT, 1 << 10);
+	pci_or_config32(dev, REMAPBASE,   1 << 0);
+	pci_or_config32(dev, REMAPLIMIT,  1 << 0);
+	pci_or_config32(dev, TOM,         1 << 0);
+	pci_or_config32(dev, TOUUD,       1 << 0);
+	pci_or_config32(dev, BDSM,        1 << 0);
+	pci_or_config32(dev, BGSM,        1 << 0);
+	pci_or_config32(dev, TSEG,        1 << 0);
+	pci_or_config32(dev, TOLUD,       1 << 0);
+
+	/* Memory Controller Lockdown */
+	mchbar_setbits32(MC_LOCK, 0x8f);
+
+	mchbar_setbits32(MMIO_PAVP_MSG, 1 << 0);	/* PAVP */
+	mchbar_setbits32(PCU_DDR_PTM_CTL, 1 << 5);	/* DDR PTM */
+	mchbar_setbits32(DMIVCLIM, 1 << 31);
+	mchbar_setbits32(CRDTLCK, 1 << 0);
+	mchbar_setbits32(MCARBLCK, 1 << 0);
+	mchbar_setbits32(REQLIM, 1 << 31);
+	mchbar_setbits32(UMAGFXCTL, 1 << 0);		/* UMA GFX */
+	mchbar_setbits32(VTDTRKLCK, 1 << 0);		/* VTDTRK */
+
+	/* Read+write the following */
+	mchbar_setbits32(VDMBDFBARKVM, 0);
+	mchbar_setbits32(VDMBDFBARPAVP, 0);
+	mchbar_setbits32(HDAUDRID, 0);
+}
+
 static struct device_operations mc_ops = {
-	.read_resources         = mc_read_resources,
-	.set_resources          = pci_dev_set_resources,
-	.enable_resources       = pci_dev_enable_resources,
-	.init                   = northbridge_init,
+	.read_resources		= mc_read_resources,
+	.set_resources		= pci_dev_set_resources,
+	.enable_resources	= pci_dev_enable_resources,
+	.init			= northbridge_init,
+	.final			= northbridge_final,
 	.acpi_fill_ssdt		= generate_cpu_entries,
-	.ops_pci                = &pci_dev_ops_pci,
+	.ops_pci		= &pci_dev_ops_pci,
 };
 
 static const unsigned short mc_pci_device_ids[] = {

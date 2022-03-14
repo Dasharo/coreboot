@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <acpi/acpi.h>
+#include <arch/hpet.h>
 #include <device/pci_ops.h>
 #include <stdint.h>
 #include <cpu/intel/model_2065x/model_2065x.h>
@@ -48,7 +49,7 @@ static void add_fixed_resources(struct device *dev, int index)
 	   0xff800000-0xffffffff ROM. */
 
 	resource = new_resource(dev, index++);
-	resource->base = (resource_t) 0xfed00000;
+	resource->base = (resource_t) HPET_BASE_ADDRESS;
 	resource->size = (resource_t) 0x00100000;
 	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE | IORESOURCE_FIXED |
 			  IORESOURCE_STORED | IORESOURCE_ASSIGNED;
@@ -146,23 +147,15 @@ static void mc_read_resources(struct device *dev)
 
 static void northbridge_init(struct device *dev)
 {
-	u32 reg32;
-
 	/* Clear error status bits */
-	DMIBAR32(DMIUESTS) = 0xffffffff;
-	DMIBAR32(DMICESTS) = 0xffffffff;
+	dmibar_write32(DMIUESTS, 0xffffffff);
+	dmibar_write32(DMICESTS, 0xffffffff);
 
-	reg32 = DMIBAR32(DMILLTC);
-	reg32 |= (1 << 29);
-	DMIBAR32(DMILLTC) = reg32;
+	dmibar_setbits32(DMILLTC, 1 << 29);
 
-	reg32 = DMIBAR32(0x1f8);
-	reg32 |= (1 << 16);
-	DMIBAR32(0x1f8) = reg32;
+	dmibar_setbits32(0x1f8, 1 << 16);
 
-	reg32 = DMIBAR32(DMILCTL);
-	reg32 |= (1 << 1) | (1 << 0);
-	DMIBAR32(DMILCTL) = reg32;
+	dmibar_setbits32(DMILCTL, 1 << 1 | 1 << 0);
 }
 
 /* Disable unused PEG devices based on devicetree before PCI enumeration */

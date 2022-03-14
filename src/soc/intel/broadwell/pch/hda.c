@@ -7,26 +7,9 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/mmio.h>
-#include <soc/intel/common/hda_verb.h>
 #include <soc/pch.h>
-#include <soc/ramstage.h>
 #include <soc/rcba.h>
-
-static void codecs_init(u8 *base, u32 codec_mask)
-{
-	int i;
-
-	/* Can support up to 4 codecs */
-	for (i = 3; i >= 0; i--) {
-		if (codec_mask & (1 << i))
-			hda_codec_init(base, i,
-				       cim_verb_data_size,
-				       cim_verb_data);
-	}
-
-	if (pc_beep_verbs_size)
-		hda_codec_write(base, pc_beep_verbs_size, pc_beep_verbs);
-}
+#include <southbridge/intel/lynxpoint/hda_verb.h>
 
 static void hda_pch_init(struct device *dev, u8 *base)
 {
@@ -60,10 +43,6 @@ static void hda_pch_init(struct device *dev, u8 *base)
 	reg32 |= (1 << 24);
 	pci_write_config32(dev, 0xc4, reg32);
 
-	reg8 = pci_read_config8(dev, 0x40); // Audio Control
-	reg8 |= 1; // Select HDA mode
-	pci_write_config8(dev, 0x40, reg8);
-
 	reg8 = pci_read_config8(dev, 0x4d); // Docking Status
 	reg8 &= ~(1 << 7); // Docking not supported
 	pci_write_config8(dev, 0x4d, reg8);
@@ -85,7 +64,7 @@ static void hda_init(struct device *dev)
 	u32 codec_mask;
 
 	/* Find base address */
-	res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (!res)
 		return;
 
@@ -101,7 +80,7 @@ static void hda_init(struct device *dev)
 
 	if (codec_mask) {
 		printk(BIOS_DEBUG, "HDA: codec_mask = %02x\n", codec_mask);
-		codecs_init(base, codec_mask);
+		azalia_codecs_init(base, codec_mask);
 	}
 }
 
@@ -133,12 +112,19 @@ static void hda_enable(struct device *dev)
 	}
 }
 
+static void hda_final(struct device *dev)
+{
+	/* Set HDCFG.BCLD */
+	pci_or_config16(dev, 0x40, 1 << 1);
+}
+
 static struct device_operations hda_ops = {
 	.read_resources		= &pci_dev_read_resources,
 	.set_resources		= &pci_dev_set_resources,
 	.enable_resources	= &pci_dev_enable_resources,
 	.init			= &hda_init,
 	.enable			= &hda_enable,
+	.final			= &hda_final,
 	.ops_pci		= &pci_dev_ops_pci,
 };
 

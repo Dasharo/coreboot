@@ -22,6 +22,7 @@
 #define PWRMBASE		0x48
 #define GEN_PMCON_A		0xa0
 #define  DISB			(1 << 23)
+#define  MS4V			(1 << 18)
 #define  GBL_RST_STS		(1 << 16)
 #define  SMI_LOCK		(1 << 4)
 #define GEN_PMCON_B		0xa4
@@ -34,6 +35,10 @@
 #define  SLEEP_AFTER_POWER_FAIL	(1 << 0)
 
 /* Memory mapped IO registers in PMC */
+#define PMSYNC_TPR_CFG		0xc8
+#define  PMSYNC_LOCK		(1 << 15)
+#define PCH_PWRM_ACPI_TMR_CTL	0xfc
+#define  ACPI_TIM_DIS		(1 << 1)
 #define GPIO_GPE_CFG		0x120
 #define  GPE0_DWX_MASK		0xf
 #define GPE0_DW_SHIFT(x)	(4 * (x))

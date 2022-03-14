@@ -19,6 +19,7 @@
 #include <device/pci_ids.h>
 #include <device/pcix.h>
 #include <device/pciexp.h>
+#include <lib.h>
 #include <pc80/i8259.h>
 #include <security/vboot/vbnv.h>
 #include <timestamp.h>
@@ -149,8 +150,7 @@ struct resource *pci_get_resource(struct device *dev, unsigned long index)
 	 */
 	if (moving == 0) {
 		if (value != 0) {
-			printk(BIOS_DEBUG, "%s register %02lx(%08lx), "
-			       "read-only ignoring it\n",
+			printk(BIOS_DEBUG, "%s register %02lx(%08lx), read-only ignoring it\n",
 			       dev_path(dev), index, value);
 		}
 		resource->flags = 0;
@@ -234,8 +234,7 @@ static void pci_get_rom_resource(struct device *dev, unsigned long index)
 		resource->flags |= IORESOURCE_MEM | IORESOURCE_READONLY;
 	} else {
 		if (value != 0) {
-			printk(BIOS_DEBUG, "%s register %02lx(%08lx), "
-			       "read-only ignoring it\n",
+			printk(BIOS_DEBUG, "%s register %02lx(%08lx), read-only ignoring it\n",
 			       dev_path(dev), index, value);
 		}
 		resource->flags = 0;
@@ -311,6 +310,127 @@ struct msix_entry *pci_msix_get_table(struct device *dev)
 	return (struct msix_entry *)((uintptr_t)res->base + offset);
 }
 
+static unsigned int get_rebar_offset(const struct device *dev, unsigned long index)
+{
+	uint32_t offset = pciexp_find_extended_cap(dev, PCIE_EXT_CAP_RESIZABLE_BAR);
+	if (!offset)
+		return 0;
+
+	/* Convert PCI_BASE_ADDRESS_0, ..._1, ..._2 into 0, 1, 2... */
+	const unsigned int find_bar_idx = (index - PCI_BASE_ADDRESS_0) /
+		sizeof(uint32_t);
+
+	/* Although all of the Resizable BAR Control Registers contain an
+	   "NBARs" field, it is only valid in the Control Register for BAR 0 */
+	const uint32_t rebar_ctrl0 = pci_read_config32(dev, offset + PCI_REBAR_CTRL_OFFSET);
+	const unsigned int nbars = (rebar_ctrl0 & PCI_REBAR_CTRL_NBARS_MASK) >>
+		PCI_REBAR_CTRL_NBARS_SHIFT;
+
+	for (unsigned int i = 0; i < nbars; i++, offset += sizeof(uint64_t)) {
+		const uint32_t rebar_ctrl = pci_read_config32(
+			dev, offset + PCI_REBAR_CTRL_OFFSET);
+		const uint32_t bar_idx = rebar_ctrl & PCI_REBAR_CTRL_IDX_MASK;
+		if (bar_idx == find_bar_idx)
+			return offset;
+	}
+
+	return 0;
+}
+
+/* Bit 20 = 1 MiB, bit 21 = 2 MiB, bit 22 = 4 MiB, ... bit 63 = 8 EiB */
+static uint64_t get_rebar_sizes_mask(const struct device *dev,
+				     unsigned long index)
+{
+	uint64_t size_mask = 0ULL;
+	const uint32_t offset = get_rebar_offset(dev, index);
+	if (!offset)
+		return 0;
+
+	/* Get 1 MB - 128 TB support from CAP register */
+	const uint32_t cap = pci_read_config32(dev, offset + PCI_REBAR_CAP_OFFSET);
+	/* Shift the bits from 4-31 to 0-27 (i.e., down by 4 bits) */
+	size_mask |= ((cap & PCI_REBAR_CAP_SIZE_MASK) >> 4);
+
+	/* Get 256 TB - 8 EB support from CTRL register and store it in bits 28-43 */
+	const uint64_t ctrl = pci_read_config32(dev, offset + PCI_REBAR_CTRL_OFFSET);
+	/* Shift ctrl mask from bit 16 to bit 28, so that the two
+	   masks (fom cap and ctrl) form a contiguous bitmask when
+	   concatenated (i.e., up by 12 bits). */
+	size_mask |= ((ctrl & PCI_REBAR_CTRL_SIZE_MASK) << 12);
+
+	/* Now that the mask occupies bits 0-43, shift it up to 20-63, so they
+	   represent the actual powers of 2. */
+	return size_mask << 20;
+}
+
+static void pci_store_rebar_size(const struct device *dev,
+				 const struct resource *resource)
+{
+	const unsigned int num_bits = __fls64(resource->size);
+	const uint32_t offset = get_rebar_offset(dev, resource->index);
+	if (!offset)
+		return;
+
+	pci_update_config32(dev, offset + PCI_REBAR_CTRL_OFFSET,
+			    ~PCI_REBAR_CTRL_SIZE_MASK,
+			    num_bits << PCI_REBAR_CTRL_SIZE_SHIFT);
+}
+
+static void configure_adjustable_base(const struct device *dev,
+				      unsigned long index,
+				      struct resource *res)
+{
+	/*
+	 * Excerpt from an implementation note from the PCIe spec:
+	 *
+	 * System software uses this capability in place of the above mentioned
+	 * method of determining the resource size[0], and prior to assigning
+	 * the base address to the BAR. Potential usable resource sizes are
+	 * reported by the Function via its Resizable BAR Capability and Control
+	 * registers. It is intended that the software allocate the largest of
+	 * the reported sizes that it can, since allocating less address space
+	 * than the largest reported size can result in lower
+	 * performance. Software then writes the size to the Resizable BAR
+	 * Control register for the appropriate BAR for the Function. Following
+	 * this, the base address is written to the BAR.
+	 *
+	 * [0] Referring to using the moving bits in the BAR to determine the
+	 *     requested size of the MMIO region
+	 */
+	const uint64_t size_mask = get_rebar_sizes_mask(dev, index);
+	if (!size_mask)
+		return;
+
+	int max_requested_bits = __fls64(size_mask);
+	if (max_requested_bits > CONFIG_PCIEXP_DEFAULT_MAX_RESIZABLE_BAR_BITS) {
+		printk(BIOS_WARNING, "WARNING: Device %s requests a BAR with"
+		       "%u bits of address space, which coreboot is not"
+		       "configured to hand out, truncating to %u bits\n",
+		       dev_path(dev), max_requested_bits,
+		       CONFIG_PCIEXP_DEFAULT_MAX_RESIZABLE_BAR_BITS);
+		max_requested_bits = CONFIG_PCIEXP_DEFAULT_MAX_RESIZABLE_BAR_BITS;
+	}
+
+	if (!(res->flags & IORESOURCE_PCI64) && max_requested_bits > 32) {
+		printk(BIOS_ERR, "ERROR: Resizable BAR requested"
+		       "above 32 bits, but PCI function reported a"
+		       "32-bit BAR.");
+		return;
+	}
+
+	/* Configure the resource parameters for the adjustable BAR */
+	res->size = 1ULL << max_requested_bits;
+	res->align = max_requested_bits;
+	res->gran = max_requested_bits;
+	res->limit = (res->flags & IORESOURCE_PCI64) ? UINT64_MAX : UINT32_MAX;
+	res->flags |= IORESOURCE_PCIE_RESIZABLE_BAR;
+
+	printk(BIOS_INFO, "%s: Adjusting resource index %lu: base: %llx size: %llx "
+	       "align: %d gran: %d limit: %llx\n",
+	       dev_path(dev), res->index, res->base, res->size,
+	       res->align, res->gran, res->limit);
+}
+
 /**
  * Read the base address registers for a given device.
  *
@@ -325,6 +445,11 @@ static void pci_read_bases(struct device *dev, unsigned int howmany)
 	     (index < PCI_BASE_ADDRESS_0 + (howmany << 2));) {
 		struct resource *resource;
 		resource = pci_get_resource(dev, index);
+
+		const bool is_pcie = pci_find_capability(dev, PCI_CAP_ID_PCIE) != 0;
+		if (CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS) && is_pcie)
+			configure_adjustable_base(dev, index, resource);
+
 		index += (resource->flags & IORESOURCE_PCI64) ? 8 : 4;
 	}
 
@@ -499,7 +624,7 @@ static void pci_store_bridge_resource(const struct device *const dev,
 	} else {
 		/* Don't let me think I stored the resource. */
 		resource->flags &= ~IORESOURCE_STORED;
-		printk(BIOS_ERR, "ERROR: invalid resource->index %lx\n", resource->index);
+		printk(BIOS_ERR, "invalid resource->index %lx\n", resource->index);
 	}
 }
 
@@ -512,8 +637,8 @@ static void pci_set_resource(struct device *dev, struct resource *resource)
 			   we can treat it like an empty resource. */
 			resource->size = 0;
 		} else {
-			printk(BIOS_ERR, "ERROR: %s %02lx %s size: 0x%010llx not "
-			       "assigned\n", dev_path(dev), resource->index,
+			printk(BIOS_ERR, "%s %02lx %s size: 0x%010llx not assigned\n",
+			       dev_path(dev), resource->index,
 			       resource_type(resource), resource->size);
 			return;
 		}
@@ -549,10 +674,16 @@ static void pci_set_resource(struct device *dev, struct resource *resource)
 	/* Now store the resource. */
 	resource->flags |= IORESOURCE_STORED;
 
-	if (resource->flags & IORESOURCE_PCI_BRIDGE)
-		pci_store_bridge_resource(dev, resource);
-	else
+	if (!(resource->flags & IORESOURCE_PCI_BRIDGE)) {
+		if (CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS) &&
+		    (resource->flags & IORESOURCE_PCIE_RESIZABLE_BAR))
+			pci_store_rebar_size(dev, resource);
+
 		pci_store_resource(dev, resource);
+
+	} else {
+		pci_store_bridge_resource(dev, resource);
+	}
 
 	report_resource_stored(dev, resource, "");
 }
@@ -882,14 +1013,15 @@ static struct device_operations *get_pci_bridge_ops(struct device *dev)
 		case PCI_EXP_TYPE_DOWNSTREAM:
 			printk(BIOS_DEBUG, "%s subordinate bus PCI Express\n",
 			       dev_path(dev));
-#if CONFIG(PCIEXP_HOTPLUG)
-			u16 sltcap;
-			sltcap = pci_read_config16(dev, pciexpos + PCI_EXP_SLTCAP);
-			if (sltcap & PCI_EXP_SLTCAP_HPC) {
-				printk(BIOS_DEBUG, "%s hot-plug capable\n", dev_path(dev));
-				return &default_pciexp_hotplug_ops_bus;
+			if (CONFIG(PCIEXP_HOTPLUG)) {
+				u16 sltcap;
+				sltcap = pci_read_config16(dev, pciexpos + PCI_EXP_SLTCAP);
+				if (sltcap & PCI_EXP_SLTCAP_HPC) {
+					printk(BIOS_DEBUG, "%s hot-plug capable\n",
+					       dev_path(dev));
+					return &default_pciexp_hotplug_ops_bus;
+				}
 			}
-#endif /* CONFIG(PCIEXP_HOTPLUG) */
 			return &default_pciexp_ops_bus;
 		case PCI_EXP_TYPE_PCI_BRIDGE:
 			printk(BIOS_DEBUG, "%s subordinate PCI\n",
@@ -979,9 +1111,9 @@ static void set_pci_ops(struct device *dev)
 	default:
 bad:
 		if (dev->enabled) {
-			printk(BIOS_ERR, "%s [%04x/%04x/%06x] has unknown "
-			       "header type %02x, ignoring.\n", dev_path(dev),
-			       dev->vendor, dev->device,
+			printk(BIOS_ERR,
+			       "%s [%04x/%04x/%06x] has unknown header type %02x, ignoring.\n",
+			       dev_path(dev), dev->vendor, dev->device,
 			       dev->class >> 8, dev->hdr_type);
 		}
 	}
@@ -1106,8 +1238,9 @@ struct device *pci_probe_dev(struct device *dev, struct bus *bus,
 		if ((id == 0xffffffff) || (id == 0x00000000) ||
 		    (id == 0x0000ffff) || (id == 0xffff0000)) {
 			if (dev->enabled) {
-				printk(BIOS_INFO, "PCI: Static device %s not "
-				       "found, disabling it.\n", dev_path(dev));
+				printk(BIOS_INFO,
+				       "PCI: Static device %s not found, disabling it.\n",
+				       dev_path(dev));
 				dev->enabled = 0;
 			}
 			return dev;
@@ -1204,6 +1337,33 @@ static void pci_scan_hidden_device(struct device *dev)
 }
 
 /**
+ * A PCIe Downstream Port normally leads to a Link with only Device 0 on it
+ * (PCIe spec r5.0, sec 7.3.1).  As an optimization, scan only for Device 0 in
+ * that situation.
+ *
+ * @param bus Pointer to the bus structure.
+ */
+static bool pci_bus_only_one_child(struct bus *bus)
+{
+	struct device *bridge = bus->dev;
+	u16 pcie_pos, pcie_flags_reg;
+	int pcie_type;
+
+	if (!bridge)
+		return false;
+
+	pcie_pos = pci_find_capability(bridge, PCI_CAP_ID_PCIE);
+	if (!pcie_pos)
+		return false;
+
+	pcie_flags_reg = pci_read_config16(bridge, pcie_pos + PCI_EXP_FLAGS);
+
+	pcie_type = (pcie_flags_reg & PCI_EXP_FLAGS_TYPE) >> 4;
+
+	return pciexp_is_downstream_port(pcie_type);
+}
+
+/**
  * Scan a PCI bus.
  *
  * Determine the existence of devices and bridges on a PCI bus. If there are
@@ -1231,6 +1391,9 @@ void pci_scan_bus(struct bus *bus, unsigned int min_devfn,
 	}
 
 	post_code(0x24);
+
+	if (pci_bus_only_one_child(bus))
+		max_devfn = MIN(max_devfn, 0x07);
 
 	/*
 	 * Probe all devices/functions on this bus with some optimization for
@@ -1445,6 +1608,11 @@ void pci_domain_scan_bus(struct device *dev)
 	pci_scan_bus(link, PCI_DEVFN(0, 0), 0xff);
 }
 
+void pci_dev_disable_bus_master(const struct device *dev)
+{
+	pci_update_config16(dev, PCI_COMMAND, ~PCI_COMMAND_MASTER, 0x0);
+}
+
 /**
  * Take an INT_PIN number (0, 1 - 4) and convert
  * it to a string ("NO PIN", "PIN A" - "PIN D")
@@ -1582,8 +1750,7 @@ int get_pci_irq_pins(struct device *dev, struct device **parent_bdg)
 
 		/* Make sure the swizzle returned valid structures */
 		if (parent_bdg == NULL) {
-			printk(BIOS_WARNING,
-				"Warning: Could not find parent bridge for this device!\n");
+			printk(BIOS_WARNING, "Could not find parent bridge for this device!\n");
 			return -2;
 		}
 	} else {	/* Device is not behind a bridge */
@@ -1632,18 +1799,10 @@ void pci_assign_irqs(struct device *dev, const unsigned char pIntAtoD[4])
 
 		printk(BIOS_DEBUG, "Assigning IRQ %d to %s\n", irq, dev_path(dev));
 
-		pci_write_config8(dev, PCI_INTERRUPT_LINE, pIntAtoD[line - 1]);
+		pci_write_config8(dev, PCI_INTERRUPT_LINE, irq);
 
-#if CONFIG(PC80_SYSTEM)
 		/* Change to level triggered. */
-		i8259_configure_irq_trigger(pIntAtoD[line - 1],
-					    IRQ_LEVEL_TRIGGERED);
-#endif
+		i8259_configure_irq_trigger(irq, IRQ_LEVEL_TRIGGERED);
 	}
-}
-
-void pci_dev_disable_bus_master(const struct device *dev)
-{
-	pci_update_config16(dev, PCI_COMMAND, ~PCI_COMMAND_MASTER, 0x0);
 }
 #endif

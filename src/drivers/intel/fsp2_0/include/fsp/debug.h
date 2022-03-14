@@ -5,7 +5,17 @@
 
 #include <fsp/util.h>
 
+enum fsp_log_level {
+	FSP_LOG_LEVEL_DISABLE = 0,
+	FSP_LOG_LEVEL_ERR,
+	FSP_LOG_LEVEL_ERR_WARN,
+	FSP_LOG_LEVEL_ERR_WARN_INFO,
+	FSP_LOG_LEVEL_ERR_WARN_INFO_EVENT,
+	FSP_LOG_LEVEL_VERBOSE
+};
+
 /* FSP debug API */
+enum fsp_log_level fsp_map_console_log_level(void);
 void fsp_debug_before_memory_init(fsp_memory_init_fn memory_init,
 	const FSPM_UPD *fspm_old_upd,
 	const FSPM_UPD *fspm_new_upd);
@@ -56,5 +66,10 @@ void fsp_print_guid_extension_hob(const struct hob_header *hob);
  * the console has output all data, then return 0.
  */
 asmlinkage size_t fsp_write_line(uint8_t *buffer, size_t number_of_bytes);
+
+/* Callback to snapshot all GPIO configurations. */
+void gpio_snapshot(void);
+/* Callback to verify that current GPIO configuration matches the saved snapshot */
+size_t gpio_verify_snapshot(void);
 
 #endif /* _FSP2_0_DEBUG_H_ */

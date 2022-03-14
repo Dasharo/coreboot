@@ -14,7 +14,6 @@ config HASWELL_VBOOT_IN_BOOTBLOCK
 	bool "Start verstage in bootblock"
 	default y
 	select VBOOT_STARTS_IN_BOOTBLOCK
-	select VBOOT_SEPARATE_VERSTAGE
 	help
 	  Haswell can either start verstage in a separate stage
 	  right after the bootblock has run or it can start it
@@ -33,10 +32,10 @@ config VGA_BIOS_ID
 	string
 	default "8086,0166"
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xf0000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	int
 	default 64
 

@@ -13,7 +13,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select MISSING_BOARD_RESET
 
 config MAINBOARD_DIR
-	string
 	default "cavium/cn8100_sff_evb"
 
 config DRAM_SIZE_MB
@@ -35,7 +34,6 @@ config UART_FOR_CONSOLE
 	default 0
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 config MAX_CPUS
@@ -46,7 +44,6 @@ config MAX_CPUS
 ##########################################################
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "CN8100_SFF_EVB"
 
 endif

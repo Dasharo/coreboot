@@ -4,12 +4,13 @@ if SOC_INTEL_COOPERLAKE_SP
 
 config SOC_SPECIFIC_OPTIONS
 	def_bool y
-	select MICROCODE_BLOB_NOT_HOOKED_UP
+	select HAVE_INTEL_FSP_REPO
 
 config FSP_HEADER_PATH
-	  string "Location of FSP headers"
-	  depends on MAINBOARD_USES_FSP2_0
-	  default "src/vendorcode/intel/fsp/fsp2_0/cooperlake_sp"
+	default "3rdparty/fsp/CedarIslandFspBinPkg/Include"
+
+config FSP_FD_PATH
+	default "3rdparty/fsp/CedarIslandFspBinPkg/Fsp.fd"
 
 config MAX_SOCKET
 	int
@@ -18,10 +19,6 @@ config MAX_SOCKET
 config MAX_CPUS
 	int
 	default 255
-
-config CPU_ADDR_BITS
-	int
-	default 46
 
 config PCR_BASE_ADDRESS
 	hex
@@ -91,6 +88,10 @@ config IED_REGION_SIZE
 	hex
 	default 0x400000
 
+config IFD_CHIPSET
+	string
+	default "lbg"
+
 config SOC_INTEL_COMMON_BLOCK_P2SB
 	def_bool y
 
@@ -101,12 +102,10 @@ config CPU_BCLK_MHZ
 # CPX-SP has 2 IMCs, 3 channels per IMC, 2 DIMMs per channel
 # Default value is set to one socket, full config.
 config DIMM_MAX
-	int
 	default 12
 
 # DDR4
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 if INTEL_TXT

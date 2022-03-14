@@ -37,8 +37,10 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	       sizeof(memory_params->RcompTarget));
 
 	memory_params->DqPinsInterleaved = true;
+	memory_params->CaVrefConfig = 2;
 
-	get_option(&memory_params->HyperThreading, "hyper_threading");
+	const uint8_t ht = get_uint_option("hyper_threading", memory_params->HyperThreading);
+	memory_params->HyperThreading = ht;
 
 	variant_memory_init_params(mupd);
 }

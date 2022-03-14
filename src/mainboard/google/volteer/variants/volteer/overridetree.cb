@@ -3,7 +3,6 @@ chip soc/intel/tigerlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI0             | cr50 TPM. Early init is   |
 	#|                   | required to set up a BAR  |
 	#|                   | for TPM communication     |
@@ -16,7 +15,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[0] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -44,23 +42,27 @@ chip soc/intel/tigerlake
 		},
 	}"
 	register "TcssAuxOri" = "1"
-	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
-	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
+	register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_E10, .pad_auxn_dc = GPP_E13}"
 
 	register "HybridStorageMode" = "1"
 
-	# Acoustic settings
-	register "AcousticNoiseMitigation" = "1"
-	register "SlowSlewRate[VR_DOMAIN_IA]" = "SLEW_FAST_8"
-	register "SlowSlewRate[VR_DOMAIN_GT]" = "SLEW_FAST_8"
-	register "SlowSlewRate[VR_DOMAIN_SA]" = "SLEW_FAST_8"
-	register "SlowSlewRate[VR_DOMAIN_VLCC]" = "SLEW_FAST_8"
-	register "FastPkgCRampDisable[VR_DOMAIN_IA]" = "1"
-	register "FastPkgCRampDisable[VR_DOMAIN_GT]" = "1"
-	register "FastPkgCRampDisable[VR_DOMAIN_SA]" = "1"
-	register "FastPkgCRampDisable[VR_DOMAIN_VLCC]" = "1"
-
 	device domain 0 on
+		# Volteer reference design does not have PCIe on Type-C port C0 so it should
+		# not have hotplug resources allocated.  Marking the device hidden will ensure
+		# it is still enabled so it can participate in power management.
+		device ref tbt_pcie_rp0 hidden
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_pcie_rp1 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_dma0 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+
 		device ref ipu on end
 		device ref i2c0 on
 			chip drivers/i2c/generic
@@ -155,29 +157,14 @@ chip soc/intel/tigerlake
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_F14_IRQ)"
 				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "0"
-				register "reg_prox_ctrl0" = "0x10"
-				register "reg_prox_ctrl1" = "0x00"
-				register "reg_prox_ctrl2" = "0x84"
-				register "reg_prox_ctrl3" = "0x0e"
-				register "reg_prox_ctrl4" = "0x07"
-				register "reg_prox_ctrl5" = "0xc6"
-				register "reg_prox_ctrl6" = "0x20"
-				register "reg_prox_ctrl7" = "0x0d"
-				register "reg_prox_ctrl8" = "0x8d"
-				register "reg_prox_ctrl9" = "0x43"
-				register "reg_prox_ctrl10" = "0x1f"
-				register "reg_prox_ctrl11" = "0x00"
-				register "reg_prox_ctrl12" = "0x00"
-				register "reg_prox_ctrl13" = "0x00"
-				register "reg_prox_ctrl14" = "0x00"
-				register "reg_prox_ctrl15" = "0x00"
-				register "reg_prox_ctrl16" = "0x00"
-				register "reg_prox_ctrl17" = "0x00"
-				register "reg_prox_ctrl18" = "0x00"
-				register "reg_prox_ctrl19" = "0x00"
-				register "reg_sar_ctrl0" = "0x50"
-				register "reg_sar_ctrl1" = "0x8a"
-				register "reg_sar_ctrl2" = "0x3c"
+				register "cs0_ground" = "0x0"
+				register "combined_sensors_count" = "2"
+				register "combined_sensors[0]" = "1"
+				register "combined_sensors[1]" = "2"
+				register "resolution" = "SX9310_FINEST"
+				register "avg_pos_strength" = "512"
+				register "startup_sensor" = "1"
+				register "proxraw_strength" = "0"
 				device i2c 28 on end
 			end
 		end
@@ -234,14 +221,14 @@ chip soc/intel/tigerlake
 			chip drivers/intel/pmc_mux
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "9"
-						register "usb3_port_number" = "1"
+						use usb2_port9 as usb2_port
+						use tcss_usb3_port1 as usb3_port
 						# SBU & HSL follow CC
 						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "4"
-						register "usb3_port_number" = "2"
+						use usb2_port4 as usb2_port
+						use tcss_usb3_port2 as usb3_port
 						device generic 1 alias conn1 on end
 					end
 				end

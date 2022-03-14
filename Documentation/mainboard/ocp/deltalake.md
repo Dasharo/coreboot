@@ -1,36 +1,56 @@
 # OCP Delta Lake
 
 This page describes coreboot support status for the [OCP] (Open Compute Project)
-Delta Lake server platform. This page is updated following each 4-weeks
-build/test/release cycle.
+Delta Lake server platform.
 
 ## Introduction
 
 OCP Delta Lake server platform is a component of multi-host server system
-Yosemite-V3. Both were announced by Facebook and Intel in [OCP virtual summit 2020].
+Yosemite-V3. Both [Delta Lake server design spec] and [Yosemite-V3 design
+spec] were [OCP] accepted.
+
+On the other hand, Wiwynn's Yosemite-V3 system and Delta Lake server product
+along with its OSF implementation, which is based on FSP/coreboot/LinuxBoot
+stack, was [OCP] accepted; For details, check:
+- [The OCP blog]
+- [The Wiwynn Press Release]
+- [The Wiwynn's Yosemite-V3 product in OCP market place]
+Wiwynn and 9Elements formed a partnership to offer the Wiwynn's Yosemite-V3
+product and OSF for it.
 
 Delta Lake server is a single socket Cooper Lake Scalable Processor (CPX-SP) server.
+Intel Cooper Lake Scalable Processor was launched in Q2 2020.
 
 Yosemite-V3 has multiple configurations. Depending on configurations, it may
-host up to 4 Delta Lake servers in one sled.
+host up to 4 Delta Lake servers (blades) in one sled.
 
-The Yosemite-V3 program is in PVT phase. Facebook, Intel and partners
-jointly develop FSP/coreboot/LinuxBoot stack on Delta Lake as an alternative
-solution. This development reached EVT exit equivalent status.
+The Yosemite-V3 system is in mass production. Meta, Intel and partners
+jointly develop Open System Firmware (OSF) solution on Delta Lake as an alternative
+solution. The OSF solution is based on FSP/coreboot/LinuxBoot stack. The
+OSF solution reached production quality for some use cases in July, 2021.
 
-## Required blobs
+## How to build
 
-This board currently requires:
+OSF code base is public at
+https://github.com/opencomputeproject/OpenSystemFirmware
+
+Run following commands to build Delta Lake OSF image from scratch:
+    git clone https://github.com/opencomputeproject/OpenSystemFirmware.git
+    cd OpenSystemFirmware/Wiwynn/deltalake && ./download_and_build.sh
+
+The Delta Lake OSF code base leverages [osf-builder] to sync down coreboot,
+Linux kernel and u-root code from their upstream repo, and sync down needed
+binary blobs. [osf-builder] also provides the top level build system.
+
+Delta Lake server OSF solution requires following binary blobs:
 - FSP blob: The blob (Intel Cooper Lake Scalable Processor Firmware Support Package)
-  is not yet available to the public. It will be made public some time after the MP
-  (Mass Production) of CPX-SP.
-- Microcode: Available through github.com:otcshare/Intel-Generic-Microcode.git.
-- ME binary: Ignition binary will be made public some time after the MP
-  of CPX-SP.
-- ACM binaries: only required for CBnT enablement.
-
-## Payload
-- LinuxBoot: This is necessary only if you use LinuxBoot as coreboot payload.
+  can be downloaded from https://github.com/intel/FSP/tree/master/CedarIslandFspBinPkg.
+- Microcode: Available through github.com/intel/Intel-Linux-Processor-Microcode-Data-Files.
+  coreboot.org mirrors this repo and by default the correct binary is included.
+- ME binary: Ignition binary can be downloaded from
+	https://github.com/tianocore/edk2-non-osi/tree/master/Silicon/Intel/PurleySiliconBinPkg/MeFirmware
+- ACM binaries: only required for CBnT enablement. Available under NDA with Intel.
+- Payload: LinuxBoot is necessary when LinuxBoot is used as the coreboot payload.
   U-root as initramfs, is used in the joint development. It can be built
   following [All about u-root].
 
@@ -61,13 +81,13 @@ VPD variables supported are:
 - bmc_bootorder_override: When it's set to 1 IPMI OEM command can override boot
   order. The boot order override is done in the u-root LinuxBoot payload.
 - systemboot_log_level: u-root package systemboot log levels, would be mapped to
-  quiet/verbose in systemboot as that is all we have for now. 5 to 8 would be mapped
-  to verbose, 0 to 4 and 9 would be mapped to quiet.
-- DeltaLake specific VPDs: check mb/ocp/deltalake/vpd.h.
+  quiet/verbose in systemboot as that is all we have for now. 5 to 8 would be
+  mapped to verbose, 0 to 4 and 9 would be mapped to quiet.
+- VPDs affecting coreboot are listed/documented in [src/mainboard/ocp/deltalake/vpd.h].
 
-## Working features
-The solution is developed using LinuxBoot payload with Linux kernel 5.2.9, and [u-root]
-as initramfs.
+## Features
+The solution is developed using LinuxBoot payload with Linux kernel 5.2.9,
+and [u-root] as initramfs.
 - SMBIOS:
     - Type 0 -- BIOS Information
     - Type 1 -- System Information
@@ -96,11 +116,14 @@ as initramfs.
     - TPM
     - Bootguard profile 0T
     - TXT
-    - SRTM (verified through tboot)
-    - memory secret clearance upon ungraceful shutdown
+    - SRTM
+    - DRTM (verified through tboot)
+		- unsigned KM/BPM generation
+		- KM/BPM signing
+		- memory secret clearance upon ungraceful shutdown
 - Early serial output
 - port 80h direct to GPIO
-- ACPI tables: APIC/DMAR/DSDT/FACP/FACS/HPET/MCFG/SPMI/SRAT/SLIT/SSDT
+- ACPI tables: APIC/DMAR/DSDT/EINJ/FACP/FACS/HEST/HPET/MCFG/SPMI/SRAT/SLIT/SSDT
 - Skipping memory training upon subsequent reboots by using MRC cache
 - BMC crash dump
 - Error injection through ITP
@@ -109,13 +132,17 @@ as initramfs.
     - Check Microcode version: cat /proc/cpuinfo | grep microcode
 - Devices:
     - Boot drive
-    - NIC card
     - All 5 data drives
+    - NIC card
 - Power button
 - localboot
 - netboot from IPv6
-- basic memory hardware error injection/detection (SMI handler not upstreamed)
-- basic PCIe hardware error injection/detection (SMI handler not upstreamed)
+- RAS (SMI handlers not upstreamed)
+    - EINJ/HEST
+    - error injection through ITP
+    - memory error handling
+    - PCIe error handling
+    - PCIe live error recovery (LER)
 
 ## Stress/performance tests passed
 - OS warm reboot (1000 cycles)
@@ -125,28 +152,32 @@ as initramfs.
 - StressAppTest (6 hours)
 - Ptugen (6 hours)
 
-## Performance tests on par with traditional firmware
+## Performance on par with traditional firmware
 - coremark
-- SpecCPU
-- Linkpack
-- Iperf(IPv6)
 - FIO
+- Iperf(IPv6)
+- Linpack
+- Intel MLC (memory latency and bandwidth)
+- SpecCPU
+- stream
 
 ## Other tests passed
 - Power
 - Thermal
+- coreboot address sanitizer (both romstage and ramstage)
+- Intel selftest tool (all errors analyzed; applicable errors clean)
 
 ## Known issues
-- MLC (Intel Memory Latency Check) and stream performance issue
 - HECI access at OS run time:
     - spsInfoLinux64 command fail to return ME version
     - ptugen command fail to get memory power
+- CLTT (Closed Loop Thermal Throttling, eg. thermal protection for DIMMs)
+- ProcHot (thermal protection for processors)
 
 ## Feature gaps
 - flashrom command not able to update ME region
-- ACPI APEI tables
-- PCIe hotplug, Virtual Pin Ports
-- PCIe Live Error Recovery
+- ACPI BERT table
+- PCIe hotplug through VPP (Virtual Pin Ports)
 - RO_VPD region as well as other RO regions are not write protected
 - Not able to selectively enable/disable core
 
@@ -163,8 +194,15 @@ as initramfs.
 ```
 
 [OCP]: https://www.opencompute.org
+[Delta Lake server design spec]: https://www.opencompute.org/documents/delta-lake-1s-server-design-specification-1v05-pdf
+[Yosemite-V3 design spec]: https://www.opencompute.org/documents/ocp-yosemite-v3-platform-design-specification-1v16-pdf
+[The OCP blog]: https://www.opencompute.org/blog/open-system-firmware-for-ocp-server-deltalake-is-published
+[The Wiwynn Press Release]: https://www.prnewswire.com/news-releases/wiwynn-successfully-implemented-open-system-firmware-on-its-ocp-yosemite-v3-server-301417374.html?tc=eml_cleartime
+[The Wiwynn's Yosemite-V3 product in OCP market place]: https://www.opencompute.org/products/423/wiwynn-yosemite-v3-server
+[osf-builder]: https://github.com/facebookincubator/osf-builder
 [OCP virtual summit 2020]: https://www.opencompute.org/summit/virtual-summit/schedule
 [flashrom]: https://flashrom.org/Flashrom
 [All about u-root]: https://github.com/linuxboot/book/tree/master/u-root
 [u-root]: https://u-root.org/
 [ChromeOS VPD]: https://chromium.googlesource.com/chromiumos/platform/vpd/+/master/README.md
+[src/mainboard/ocp/deltalake/vpd.h]: https://review.coreboot.org/plugins/gitiles/coreboot/+/refs/heads/master/src/mainboard/ocp/deltalake/vpd.h

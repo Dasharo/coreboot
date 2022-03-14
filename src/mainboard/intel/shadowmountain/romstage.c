@@ -1,16 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
+
 #include <assert.h>
-#include <console/console.h>
 #include <fsp/api.h>
 #include <soc/romstage.h>
 #include <spd_bin.h>
-#include <string.h>
 #include <soc/meminit.h>
 #include <baseboard/variants.h>
-#include <cbfs.h>
 
-void mainboard_memory_init_params(FSPM_UPD *mupd)
+void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
+	FSP_M_CONFIG *m_cfg = &memupd->FspmConfig;
 	const struct mb_cfg *mem_config = variant_memory_params();
 	const bool half_populated = false;
 
@@ -19,5 +18,5 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 		.cbfs_index = variant_memory_sku(),
 	};
 
-	memcfg_init(&mupd->FspmConfig, mem_config, &lp5_spd_info, half_populated);
+	memcfg_init(m_cfg, mem_config, &lp5_spd_info, half_populated);
 }

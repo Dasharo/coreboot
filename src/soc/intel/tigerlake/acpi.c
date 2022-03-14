@@ -18,7 +18,6 @@
 #include <soc/pm.h>
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
-#include <string.h>
 
 /*
  * List of supported C-states in this processor.
@@ -110,7 +109,7 @@ static int cstate_set_s0ix[] = {
 	C_STATE_C10
 };
 
-acpi_cstate_t *soc_get_cstate_map(size_t *entries)
+const acpi_cstate_t *soc_get_cstate_map(size_t *entries)
 {
 	static acpi_cstate_t map[MAX(ARRAY_SIZE(cstate_set_s0ix),
 				ARRAY_SIZE(cstate_set_non_s0ix))];
@@ -130,7 +129,7 @@ acpi_cstate_t *soc_get_cstate_map(size_t *entries)
 	}
 
 	for (i = 0; i < *entries; i++) {
-		memcpy(&map[i], &cstate_map[set[i]], sizeof(acpi_cstate_t));
+		map[i] = cstate_map[set[i]];
 		map[i].ctype = i + 1;
 	}
 	return map;
@@ -166,36 +165,48 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 
 uint32_t soc_read_sci_irq_select(void)
 {
-	uintptr_t pmc_bar = soc_read_pmc_base();
-	return read32((void *)pmc_bar + IRQ_REG);
+	return read32p(soc_read_pmc_base() + IRQ_REG);
 }
 
 static unsigned long soc_fill_dmar(unsigned long current)
 {
-	const struct device *const igfx_dev = pcidev_path_on_root(SA_DEVFN_IGD);
 	uint64_t gfxvtbar = MCHBAR64(GFXVTBAR) & VTBAR_MASK;
 	bool gfxvten = MCHBAR32(GFXVTBAR) & VTBAR_ENABLED;
 
-	if (is_dev_enabled(igfx_dev) && gfxvtbar && gfxvten) {
+	if (is_devfn_enabled(SA_DEVFN_IGD) && gfxvtbar && gfxvten) {
 		unsigned long tmp = current;
 
 		current += acpi_create_dmar_drhd(current, 0, 0, gfxvtbar);
-		current += acpi_create_dmar_ds_pci(current, 0, 2, 0);
+		current += acpi_create_dmar_ds_pci(current, 0, SA_DEV_SLOT_IGD, 0);
 
 		acpi_dmar_drhd_fixup(tmp, current);
 	}
 
-	const struct device *const ipu_dev = pcidev_path_on_root(SA_DEVFN_IPU);
 	uint64_t ipuvtbar = MCHBAR64(IPUVTBAR) & VTBAR_MASK;
 	bool ipuvten = MCHBAR32(IPUVTBAR) & VTBAR_ENABLED;
 
-	if (is_dev_enabled(ipu_dev) && ipuvtbar && ipuvten) {
+	if (is_devfn_enabled(SA_DEVFN_IPU) && ipuvtbar && ipuvten) {
 		unsigned long tmp = current;
 
 		current += acpi_create_dmar_drhd(current, 0, 0, ipuvtbar);
-		current += acpi_create_dmar_ds_pci(current, 0, 5, 0);
+		current += acpi_create_dmar_ds_pci(current, 0, SA_DEV_SLOT_IPU, 0);
 
 		acpi_dmar_drhd_fixup(tmp, current);
+	}
+
+	/* TCSS Thunderbolt root ports */
+	for (unsigned int i = 0; i < MAX_TBT_PCIE_PORT; i++) {
+		uint64_t tbtbar = MCHBAR64(TBT0BAR + i * 8) & VTBAR_MASK;
+		bool tbten = MCHBAR32(TBT0BAR + i * 8) & VTBAR_ENABLED;
+		if (tbtbar && tbten) {
+			unsigned long tmp = current;
+
+			current += acpi_create_dmar_drhd(current, 0, 0, tbtbar);
+			current += acpi_create_dmar_ds_pci_br(current, 0,
+							      SA_DEV_SLOT_TBT, i);
+
+			acpi_dmar_drhd_fixup(tmp, current);
+		}
 	}
 
 	uint64_t vtvc0bar = MCHBAR64(VTVC0BAR) & VTBAR_MASK;
@@ -216,25 +227,11 @@ static unsigned long soc_fill_dmar(unsigned long current)
 		acpi_dmar_drhd_fixup(tmp, current);
 	}
 
-	/* TCSS Thunderbolt root ports */
-	for (unsigned int i = 0; i < MAX_TBT_PCIE_PORT; i++) {
-		uint64_t tbtbar = MCHBAR64(TBT0BAR + i * 8) & VTBAR_MASK;
-		bool tbten = MCHBAR32(TBT0BAR + i * 8) & VTBAR_ENABLED;
-		if (tbtbar && tbten) {
-			unsigned long tmp = current;
-
-			current += acpi_create_dmar_drhd(current, 0, 0, tbtbar);
-			current += acpi_create_dmar_ds_pci_br(current, 0, 7, i);
-
-			acpi_dmar_drhd_fixup(tmp, current);
-		}
-	}
-
 	/* Add RMRR entry */
 	const unsigned long tmp = current;
 	current += acpi_create_dmar_rmrr(current, 0,
 		sa_get_gsm_base(), sa_get_tolud_base() - 1);
-	current += acpi_create_dmar_ds_pci(current, 0, 2, 0);
+	current += acpi_create_dmar_ds_pci(current, 0, SA_DEV_SLOT_IGD, 0);
 	acpi_dmar_rmrr_fixup(tmp, current);
 
 	return current;
@@ -275,21 +272,6 @@ void soc_fill_gnvs(struct global_nvs *gnvs)
 
 	/* Fill in Above 4GB MMIO resource */
 	sa_fill_gnvs(gnvs);
-}
-
-uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
-			    const struct chipset_power_state *ps)
-{
-	/*
-	 * WAK_STS bit is set when the system is in one of the sleep states
-	 * (via the SLP_EN bit) and an enabled wake event occurs. Upon setting
-	 * this bit, the PMC will transition the system to the ON state and
-	 * can only be set by hardware and can only be cleared by writing a one
-	 * to this bit position.
-	 */
-
-	generic_pm1_en |= WAK_STS | RTC_EN | PWRBTN_EN;
-	return generic_pm1_en;
 }
 
 int soc_madt_sci_irq_polarity(int sci)

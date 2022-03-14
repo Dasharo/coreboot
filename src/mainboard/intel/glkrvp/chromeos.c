@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <baseboard/variants.h>
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <ec/google/chromeec/ec.h>
 #include <gpio.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <soc/gpio.h>
 #include <variant/gpio.h>
@@ -36,4 +38,11 @@ void mainboard_chromeos_acpi_generate(void)
 int __weak get_lid_switch(void)
 {
 	return -1;
+}
+
+int get_ec_is_trusted(void)
+{
+	/* Do not have a Chrome EC involved in entering recovery mode;
+	   Always return trusted. */
+	return 1;
 }

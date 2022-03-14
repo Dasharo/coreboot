@@ -44,7 +44,6 @@ static enum fuse_flash_state {
 static int read_cse_file(const char *path, void *buff, size_t *size,
 						size_t offset, uint32_t flags)
 {
-	int res;
 	size_t reply_size;
 
 	struct mca_command {
@@ -77,18 +76,10 @@ static int read_cse_file(const char *path, void *buff, size_t *size,
 	msg.data_size = *size;
 	msg.offset = offset;
 
-	res = heci_send(&msg, sizeof(msg), BIOS_HOST_ADDR, HECI_MKHI_ADDR);
-
-	if (!res) {
-		printk(BIOS_ERR, "failed to send HECI message\n");
-		return 0;
-	}
-
 	reply_size = sizeof(rmsg);
-	res = heci_receive(&rmsg, &reply_size);
 
-	if (!res) {
-		printk(BIOS_ERR, "failed to receive HECI reply\n");
+	if (!heci_send_receive(&msg, sizeof(msg), &rmsg, &reply_size, HECI_MKHI_ADDR)) {
+		printk(BIOS_ERR, "HECI: Failed to read file\n");
 		return 0;
 	}
 
@@ -201,7 +192,7 @@ static void dump_cse_state(void)
 #define PCR_PSFX_T0_SHDW_PCIEN		0x1C
 #define PCR_PSFX_T0_SHDW_PCIEN_FUNDIS	(1 << 8)
 
-static void disable_heci1(void)
+void soc_disable_heci1_using_pcr(void)
 {
 	pcr_or32(PID_PSF3, PSF3_BASE_ADDRESS + PCR_PSFX_T0_SHDW_PCIEN,
 		 PCR_PSFX_T0_SHDW_PCIEN_FUNDIS);
@@ -215,7 +206,8 @@ void heci_cse_lockdown(void)
 	 * It is safe to disable HECI1 now since we won't be talking to the ME
 	 * anymore.
 	 */
-	disable_heci1();
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+		heci1_disable();
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_ENTRY, fpf_blown, NULL);

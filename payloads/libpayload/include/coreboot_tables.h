@@ -81,6 +81,8 @@ enum {
 	CB_TAG_FMAP			= 0x0037,
 	CB_TAG_SMMSTOREV2		= 0x0039,
 	CB_TAG_BOARD_CONFIG		= 0x0040,
+	CB_TAG_ACPI_CNVS		= 0x0041,
+	CB_TAG_TYPE_C_INFO		= 0x0042,
 	CB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	CB_TAG_OPTION			= 0x00c9,
 	CB_TAG_OPTION_ENUM		= 0x00ca,
@@ -139,6 +141,33 @@ struct cb_mainboard {
 	u8 vendor_idx;
 	u8 part_number_idx;
 	u8 strings[0];
+};
+
+enum type_c_orientation {
+	TYPEC_ORIENTATION_NONE,
+	TYPEC_ORIENTATION_NORMAL,
+	TYPEC_ORIENTATION_REVERSE,
+};
+
+struct type_c_port_info {
+	/*
+	 * usb2_port_number and usb3_port_number are expected to be
+	 * the port numbers as seen by the USB controller in the SoC.
+	 */
+	uint8_t usb2_port_number;
+	uint8_t usb3_port_number;
+
+	/*
+	 * Valid sbu_orientation and data_orientation values will be of
+	 * type enum type_c_orienation.
+	 */
+	uint8_t sbu_orientation;
+	uint8_t data_orientation;
+};
+
+struct type_c_info {
+	u32 port_count;
+	struct type_c_port_info port_info[0];
 };
 
 struct cb_string {
@@ -292,6 +321,16 @@ struct cb_boot_media_params {
 	uint64_t boot_media_size;
 };
 
+
+struct cb_cbmem_entry {
+	uint32_t tag;
+	uint32_t size;
+
+	uint64_t address;
+	uint32_t entry_size;
+	uint32_t id;
+};
+
 struct cb_tsc_info {
 	uint32_t tag;
 	uint32_t size;
@@ -414,6 +453,4 @@ static inline const char *cb_mb_part_string(const struct cb_mainboard *cbm)
 	(void *)(((u8 *) (_rec)) + sizeof(*(_rec)) \
 		+ (sizeof((_rec)->map[0]) * (_idx)))
 
-/* Helper functions */
-uintptr_t get_cbmem_addr(const void *cbmem_tab_entry);
 #endif

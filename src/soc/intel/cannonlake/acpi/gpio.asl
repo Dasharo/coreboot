@@ -61,38 +61,38 @@ Device (GPIO)
 Method (GADD, 1, NotSerialized)
 {
 	/* GPIO Community 0 */
-	If (LAnd (LGreaterEqual (Arg0, GPP_A0), LLessEqual (Arg0, SPI0_CLK_LOOPBK)))
+	If (LGreaterEqual (Arg0, GPP_A0) && LLessEqual (Arg0, SPI0_CLK_LOOPBK))
 	{
 		Store (PID_GPIOCOM0, Local0)
-		Subtract (Arg0, GPP_A0, Local1)
+		Local1 = Arg0 - GPP_A0
 	}
 	/* GPIO Community 1 */
-	If (LAnd (LGreaterEqual (Arg0, GPP_D0), LLessEqual (Arg0, vSD3_CD_B)))
+	If (LGreaterEqual (Arg0, GPP_D0) && LLessEqual (Arg0, vSD3_CD_B))
 	{
 		Store (PID_GPIOCOM1, Local0)
-		Subtract (Arg0, GPP_D0, Local1)
+		Local1 = Arg0 - GPP_D0
 	}
 	/* GPIO Community 2 */
-	If (LAnd (LGreaterEqual (Arg0, GPD0), LLessEqual (Arg0, DRAM_RESET_B)))
+	If (LGreaterEqual (Arg0, GPD0) && LLessEqual (Arg0, DRAM_RESET_B))
 	{
 		Store (PID_GPIOCOM2, Local0)
-		Subtract (Arg0, GPD0, Local1)
+		Local1 = Arg0 - GPD0
 	}
 	/* GPIO Community 3 */
-	If (LAnd (LGreaterEqual (Arg0, HDA_BCLK), LLessEqual (Arg0, TRIGGER_OUT)))
+	If (LGreaterEqual (Arg0, HDA_BCLK) && LLessEqual (Arg0, TRIGGER_OUT))
 	{
 		Store (PID_GPIOCOM3, Local0)
-		Subtract (Arg0, HDA_BCLK, Local1)
+		Local1 = Arg0 - HDA_BCLK
 	}
 	/* GPIO Community 4*/
-	If (LAnd (LGreaterEqual (Arg0, GPP_C0), LLessEqual (Arg0, CL_RST_B)))
+	If (LGreaterEqual (Arg0, GPP_C0) && LLessEqual (Arg0, CL_RST_B))
 	{
 		Store (PID_GPIOCOM4, Local0)
-		Subtract (Arg0, GPP_C0, Local1)
+		Local1 = Arg0 - GPP_C0
 	}
 	Store (PCRB (Local0), Local2)
-	Add (Local2, PAD_CFG_BASE, Local2)
-	Return (Add (Local2, Multiply (Local1, 16)))
+	Local2 += PAD_CFG_BASE
+	Return (Local2 + Local1 * 16)
 }
 
 /*
@@ -138,9 +138,9 @@ Method (CGPM, 2, Serialized)
 	Store (GPID (Arg0), Local0)
 	If (LNotEqual (Local0, 0)) {
 		/* Mask off current PM bits */
-		PCRA (Local0, GPIO_MISCCFG, Not (MISCCFG_ENABLE_GPIO_PM_CONFIG))
+		PCRA (Local0, GPIO_MISCCFG, Not (MISCCFG_GPIO_PM_CONFIG_BITS))
 		/* Mask in requested bits */
-		PCRO (Local0, GPIO_MISCCFG, And (Arg1, MISCCFG_ENABLE_GPIO_PM_CONFIG))
+		PCRO (Local0, GPIO_MISCCFG, And (Arg1, MISCCFG_GPIO_PM_CONFIG_BITS))
 	}
 }
 
@@ -181,6 +181,6 @@ Method (EGPM, 0, Serialized)
 	/* Enable PM bits */
 	For (Local0 = 0, Local0 < TOTAL_GPIO_COMM, Local0++)
 	{
-		CGPM (Local0, MISCCFG_ENABLE_GPIO_PM_CONFIG)
+		CGPM (Local0, MISCCFG_GPIO_PM_CONFIG_BITS)
 	}
 }

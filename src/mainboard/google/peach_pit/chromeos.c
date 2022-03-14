@@ -6,6 +6,7 @@
 #include <ec/google/chromeec/ec_commands.h>
 #include <soc/cpu.h>
 #include <soc/gpio.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
 void fill_lb_gpios(struct lb_gpios *gpios)
@@ -36,4 +37,10 @@ int get_recovery_mode_switch(void)
 int get_write_protect_state(void)
 {
 	return !gpio_get_value(GPIO_X30);
+}
+
+int get_ec_is_trusted(void)
+{
+	/* EC is trusted if not in RW. */
+	return !gpio_get_value(GPIO_X23);
 }

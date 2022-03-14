@@ -2,6 +2,7 @@
 
 #include <amdblocks/agesawrapper.h>
 #include <amdblocks/BiosCallOuts.h>
+#include <soc/gpio.h>
 #include <soc/southbridge.h>
 #include "gpio.h"
 
@@ -28,8 +29,8 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	/* WLAND */
 	PAD_WAKE(GPIO_137, PULL_UP, LEVEL_LOW, S3),
 #else
-	/* PCIE_WAKE */
-	PAD_GPI(GPIO_2, PULL_DOWN),
+	/* PCIE_WAKE, SCI */
+	PAD_NF_SCI(GPIO_2, WAKE_L, PULL_UP, EDGE_LOW),
 	/* DEVSLP1 - default as GPIO, do not program */
 
 	/* WLAND - default as GPIO, do not program */

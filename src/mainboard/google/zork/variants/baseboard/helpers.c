@@ -43,12 +43,21 @@ enum {
 	/* SAR presence */
 	FW_CONFIG_MASK_SAR = 0x7,
 	FW_CONFIG_SHIFT_SAR = 23,
+	/* Mainboard Type for VCORE IC */
+	FW_CONFIG_MASK_MB_TYPE = 0x1,
+	FW_CONFIG_SHIFT_MB_TYPE = 26,
 	/* Fan information */
 	FW_CONFIG_MASK_FAN = 0x3,
 	FW_CONFIG_SHIFT_FAN = 27,
 	/* WWAN presence */
 	FW_CONFIG_MASK_WWAN = 0x1,
 	FW_CONFIG_SHIFT_WWAN = 29,
+	/* Audio AMP type */
+	FW_CONFIG_MASK_AUDIO_AMP = 0x1,
+	FW_CONFIG_SHIFT_AUDIO_AMP = 35,
+	/* Audio codec type */
+	FW_CONFIG_MASK_AUDIO_CODEC_SOURCE = 0x3,
+	FW_CONFIG_SHIFT_AUDIO_CODEC_SOURCE = 36,
 };
 
 static int get_fw_config(uint64_t *val)
@@ -86,6 +95,11 @@ int variant_gets_sar_config(void)
 	return extract_field(FW_CONFIG_MASK_SAR, FW_CONFIG_SHIFT_SAR);
 }
 
+int variant_gets_mb_type_config(void)
+{
+	return extract_field(FW_CONFIG_MASK_MB_TYPE, FW_CONFIG_SHIFT_MB_TYPE);
+}
+
 int variant_has_emmc(void)
 {
 	return !!extract_field(FW_CONFIG_MASK_EMMC, FW_CONFIG_SHIFT_EMMC);
@@ -99,6 +113,12 @@ int variant_has_nvme(void)
 int variant_has_wwan(void)
 {
 	return !!extract_field(FW_CONFIG_MASK_WWAN, FW_CONFIG_SHIFT_WWAN);
+}
+
+int variant_is_convertible(void)
+{
+	return !!extract_field(FW_CONFIG_MASK_LID_ANGLE_TABLET_MODE,
+			       FW_CONFIG_LID_ANGLE_TABLET_MODE_SHIFT);
 }
 
 bool variant_uses_v3_schematics(void)

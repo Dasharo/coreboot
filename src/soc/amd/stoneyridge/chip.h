@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <commonlib/helpers.h>
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <gpio.h>
 #include <soc/i2c.h>
 #include <acpi/acpi_device.h>
 
@@ -43,10 +44,10 @@ struct soc_amd_stoneyridge_config {
 	size_t uma_size;
 
 	/*
-	 * If sb_reset_i2c_slaves() is called, this devicetree register
+	 * If sb_reset_i2c_peripherals() is called, this devicetree register
 	 * defines which I2C SCL will be toggled 9 times at 100 KHz.
-	 * For example, should we need I2C0 and  I2C3 have their slave
-	 * devices reseted by toggling SCL, use:
+	 * For example, should we need I2C0 and  I2C3 have their peripheral
+	 * devices reset by toggling SCL, use:
 	 *
 	 * register i2c_scl_reset = (GPIO_I2C0_SCL | GPIO_I2C3_SCL)
 	 */

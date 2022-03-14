@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include "../haswell.h"
+#include <northbridge/intel/haswell/memmap.h>
 
 Name (_HID, EISAID ("PNP0A08"))	// PCIe
 Name (_CID, EISAID ("PNP0A03"))	// PCI
@@ -125,7 +125,7 @@ Name (MCRS, ResourceTemplate()
 			0x00000000, 0x000f0000, 0x000fffff, 0x00000000,
 			0x00010000,,, FSEG)
 
-	// PCI Memory Region (Top of memory-CONFIG_MMCONF_BASE_ADDRESS)
+	// PCI Memory Region (Top of memory-CONFIG_ECAM_MMCONF_BASE_ADDRESS)
 	DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
 			Cacheable, ReadWrite,
 			0x00000000, 0x00000000, 0x00000000, 0x00000000,
@@ -161,7 +161,7 @@ Method (_CRS, 0, Serialized)
 	}
 
 	PMIN = Local0
-	PMAX = CONFIG_MMCONF_BASE_ADDRESS - 1
+	PMAX = CONFIG_ECAM_MMCONF_BASE_ADDRESS - 1
 	PLEN = (PMAX - PMIN) + 1
 
 	Return (MCRS)
@@ -175,13 +175,15 @@ Device (PDRC)
 
 	Name (PDRS, ResourceTemplate () {
 		Memory32Fixed (ReadWrite, CONFIG_FIXED_RCBA_MMIO_BASE, CONFIG_RCBA_LENGTH)
-		Memory32Fixed (ReadWrite, CONFIG_FIXED_MCHBAR_MMIO_BASE, 0x00008000)
-		Memory32Fixed (ReadWrite, CONFIG_FIXED_DMIBAR_MMIO_BASE, 0x00001000)
-		Memory32Fixed (ReadWrite, CONFIG_FIXED_EPBAR_MMIO_BASE,  0x00001000)
-		Memory32Fixed (ReadWrite, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_MMCONF_LENGTH)
-		Memory32Fixed (ReadWrite, 0xfed20000, 0x00020000) // Misc ICH
-		Memory32Fixed (ReadWrite, 0xfed40000, 0x00005000) // Misc ICH
+		Memory32Fixed (ReadWrite, CONFIG_FIXED_MCHBAR_MMIO_BASE, MCH_BASE_SIZE)
+		Memory32Fixed (ReadWrite, CONFIG_FIXED_DMIBAR_MMIO_BASE, DMI_BASE_SIZE)
+		Memory32Fixed (ReadWrite, CONFIG_FIXED_EPBAR_MMIO_BASE, EP_BASE_SIZE)
+		Memory32Fixed (ReadWrite, CONFIG_ECAM_MMCONF_BASE_ADDRESS, CONFIG_ECAM_MMCONF_LENGTH)
+		Memory32Fixed (ReadWrite, 0xfed20000, 0x00020000) // TXT
+		Memory32Fixed (ReadWrite, 0xfed40000, 0x00005000) // TPM
 		Memory32Fixed (ReadWrite, 0xfed45000, 0x0004b000) // Misc ICH
+		Memory32Fixed (ReadWrite, EDRAM_BASE_ADDRESS, EDRAM_BASE_SIZE)
+		Memory32Fixed (ReadWrite, GDXC_BASE_ADDRESS, GDXC_BASE_SIZE)
 	})
 
 	// Current Resource Settings
@@ -201,3 +203,9 @@ Device (PDRC)
 
 /* Integrated graphics 0:2.0 */
 #include <drivers/intel/gma/acpi/gfx.asl>
+
+/* Intel Mini-HD 0:03.0 */
+Device (HDAU)
+{
+	Name (_ADR, 0x00030000)
+}

@@ -5,35 +5,83 @@ config BOARD_GOOGLE_BASEBOARD_GUYBRUSH
 
 if BOARD_GOOGLE_BASEBOARD_GUYBRUSH
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select AMD_SOC_CONSOLE_UART
 	select BOARD_ROMSIZE_KB_16384
+	select CONSOLE_CBMEM_DUMP_TO_UART if !CONSOLE_SERIAL
+	select DISABLE_KEYBOARD_RESET_PIN
+	select DISABLE_SPI_FLASH_ROM_SHARING
+	select DRIVERS_ACPI_THERMAL_ZONE
+	select DRIVERS_AMD_I2S_MACHINE_DEV
+	select DRIVERS_GENERIC_GPIO_KEYS
+	select DRIVERS_GENERIC_MAX98357A
+	select DRIVERS_I2C_GENERIC
+	select DRIVERS_I2C_HID
+	select DRIVERS_PCIE_RTD3_DEVICE
+	select DRIVERS_UART_ACPI
+	select DRIVERS_WIFI_GENERIC
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_BOARDID
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select EC_GOOGLE_CHROMEEC_SKUID
+	select ELOG
+	select ELOG_GSMI
 	select FW_CONFIG
+	select FW_CONFIG_SOURCE_CHROMEEC_CBI
+	select GOOGLE_SMBIOS_MAINBOARD_VERSION
+	select HAVE_EM100_SUPPORT
+	select HAVE_SPD_IN_CBFS
 	select MAINBOARD_HAS_CHROMEOS
+	select MAINBOARD_HAS_I2C_TPM_CR50
+	select MAINBOARD_HAS_TPM2
+	select PCIEXP_ASPM
+	select PCIEXP_CLK_PM
+	select PCIEXP_COMMON_CLOCK
+	select PCIEXP_L1_SUB_STATE
+	select PSP_DISABLE_POSTCODES if !VBOOT_STARTS_BEFORE_BOOTBLOCK
+	select PSP_S0I3_RESUME_VERSTAGE if VBOOT_STARTS_BEFORE_BOOTBLOCK
 	select SOC_AMD_CEZANNE
+	select SOC_AMD_COMMON_BLOCK_GRAPHICS_ATIF
+	select SOC_AMD_COMMON_BLOCK_I2C3_TPM_SHARED_WITH_PSP
 	select SOC_AMD_COMMON_BLOCK_USE_ESPI
+	select SOC_AMD_COMMON_BLOCK_PSP_FUSE_SPL
 
 config CHROMEOS
-	select EC_GOOGLE_CHROMEEC
-	select EC_GOOGLE_CHROMEEC_ESPI
 	select EC_GOOGLE_CHROMEEC_SWITCHES
 
 config VBOOT
+	select VBOOT_LID_SWITCH
 	select VBOOT_SEPARATE_VERSTAGE
-	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config VBOOT_STARTS_BEFORE_BOOTBLOCK
+	bool "Enable PSP_verstage"
+	default y if VBOOT
+
+config VBOOT_STARTS_IN_BOOTBLOCK
+	bool
+	default y if VBOOT && !VBOOT_STARTS_BEFORE_BOOTBLOCK
+
+config VBOOT_STARTS_IN_BOOTBLOCK
+	select NO_EARLY_BOOTBLOCK_POSTCODES
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x2A
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd"
 
 config MAINBOARD_DIR
-	string
 	default "google/guybrush"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Guybrush" if BOARD_GOOGLE_GUYBRUSH
+	default "Nipperkin" if BOARD_GOOGLE_NIPPERKIN
+	default "Dewatt" if BOARD_GOOGLE_DEWATT
 
 config AMD_FWM_POSITION_INDEX
 	int
@@ -41,27 +89,75 @@ config AMD_FWM_POSITION_INDEX
 	help
 	  TODO: might need to be adapted for better placement of files in cbfs
 
-config VARIANT_DIR
+config DRIVER_TPM_I2C_BUS
+	hex
+	default 0x03
+
+config DRIVER_TPM_I2C_ADDR
+	hex
+	default 0x50
+
+config AMDFW_CONFIG_FILE
 	string
+	default "src/mainboard/google/guybrush/variants/baseboard/amdfw.cfg"
+
+config HAVE_SPL_FILE
+	bool
+	default y
+
+config SPL_TABLE_FILE
+	string
+	depends on HAVE_SPL_FILE
+	default "3rdparty/blobs/mainboard/google/guybrush/TypeId0x55_SplTable_Prod_CZN_Chrome.sbin"
+
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
+config EFS_SPI_READ_MODE
+	default 4          # Dual IO (1-2-2)
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+
+config EFS_SPI_MICRON_FLAG
+	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 0	# 66MHz
+
+endif # !EM100
+
+config OVERRIDE_EFS_SPI_SPEED
+	int
+	default 3 if EM100
+	default 4	# 100MHz
+	help
+	  Override EFS SPI Speed Configuration to be applied based on certain
+	  board version.
+
+config OVERRIDE_EFS_SPI_SPEED_MIN_BOARD
+	hex
+	default 0x4 if BOARD_GOOGLE_GUYBRUSH
+	default 0x2 if BOARD_GOOGLE_NIPPERKIN
+	default 0xffffffff
+	help
+	  Minimum board version starting which the Override EFS SPI Speed
+	  configuration has to be applied.
+
+config VARIANT_DIR
 	default "guybrush" if BOARD_GOOGLE_GUYBRUSH
+	default "nipperkin" if BOARD_GOOGLE_NIPPERKIN
+	default "dewatt" if BOARD_GOOGLE_DEWATT
 
 config DEVICETREE
-	string
 	default "variants/baseboard/devicetree.cb"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_FAMILY
 	string
 	default "Google_Guybrush"
-
-config GPIO_SIGN_OF_LIFE
-	def_bool n
-	help
-	  Enable toggling GPIO 31 as a sign of life on Guybrush
-
-	  TODO: Remove this option when board is booting
 
 endif # BOARD_GOOGLE_BASEBOARD_GUYBRUSH

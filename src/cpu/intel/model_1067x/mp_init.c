@@ -7,6 +7,7 @@
 #include <cpu/intel/smm_reloc.h>
 #include <cpu/intel/common/common.h>
 #include <device/device.h>
+#include <types.h>
 
 /* Parallel MP initialization support. */
 static void pre_mp_init(void)
@@ -22,7 +23,7 @@ static void pre_mp_init(void)
 static int get_cpu_count(void)
 {
 	const struct cpuid_result cpuid1 = cpuid(1);
-	const char cores = (cpuid1.ebx >> 16) & 0xf;
+	const unsigned int cores = (cpuid1.ebx >> 16) & 0xf;
 
 	printk(BIOS_DEBUG, "CPU has %u cores.\n", cores);
 
@@ -97,6 +98,6 @@ static const struct mp_ops mp_ops = {
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }

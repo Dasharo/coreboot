@@ -51,6 +51,7 @@ static const struct pad_group icl_community2_groups[] = {
 
 static const struct pad_group icl_community4_groups[] = {
 	INTEL_GPP_BASE(GPP_C0, GPP_C0, GPP_C23, 224),		/* GPP_C */
+	INTEL_GPP(GPP_C0, EDP_BKLTEN, MLK_RST_B),		/* HVCMOS */
 	INTEL_GPP_BASE(GPP_C0, GPP_E0, GPP_E23, 256),		/* GPP_E */
 	INTEL_GPP(GPP_C0, GPIO_RSVD_3, GPIO_RSVD_8),
 };
@@ -73,6 +74,8 @@ static const struct pad_community icl_communities[TOTAL_GPIO_COMM] = {
 		.gpi_int_en_reg_0 = GPI_INT_EN_0,
 		.gpi_smi_sts_reg_0 = GPI_SMI_STS_0,
 		.gpi_smi_en_reg_0 = GPI_SMI_EN_0,
+		.gpi_nmi_sts_reg_0 = GPI_NMI_STS_0,
+		.gpi_nmi_en_reg_0 = GPI_NMI_EN_0,
 		.max_pads_per_group = GPIO_MAX_NUM_PER_GROUP,
 		.name = "GPP_GBA",
 		.acpi_path = "\\_SB.PCI0.GPIO",
@@ -93,6 +96,8 @@ static const struct pad_community icl_communities[TOTAL_GPIO_COMM] = {
 		.gpi_int_en_reg_0 = GPI_INT_EN_0,
 		.gpi_smi_sts_reg_0 = GPI_SMI_STS_0,
 		.gpi_smi_en_reg_0 = GPI_SMI_EN_0,
+		.gpi_nmi_sts_reg_0 = GPI_NMI_STS_0,
+		.gpi_nmi_en_reg_0 = GPI_NMI_EN_0,
 		.max_pads_per_group = GPIO_MAX_NUM_PER_GROUP,
 		.name = "GPP_HDF",
 		.acpi_path = "\\_SB.PCI0.GPIO",
@@ -113,6 +118,8 @@ static const struct pad_community icl_communities[TOTAL_GPIO_COMM] = {
 		.gpi_int_en_reg_0 = GPI_INT_EN_0,
 		.gpi_smi_sts_reg_0 = GPI_SMI_STS_0,
 		.gpi_smi_en_reg_0 = GPI_SMI_EN_0,
+		.gpi_nmi_sts_reg_0 = GPI_NMI_STS_0,
+		.gpi_nmi_en_reg_0 = GPI_NMI_EN_0,
 		.max_pads_per_group = GPIO_MAX_NUM_PER_GROUP,
 		.name = "GPD",
 		.acpi_path = "\\_SB.PCI0.GPIO",
@@ -133,6 +140,8 @@ static const struct pad_community icl_communities[TOTAL_GPIO_COMM] = {
 		.gpi_int_en_reg_0 = GPI_INT_EN_0,
 		.gpi_smi_sts_reg_0 = GPI_SMI_STS_0,
 		.gpi_smi_en_reg_0 = GPI_SMI_EN_0,
+		.gpi_nmi_sts_reg_0 = GPI_NMI_STS_0,
+		.gpi_nmi_en_reg_0 = GPI_NMI_EN_0,
 		.max_pads_per_group = GPIO_MAX_NUM_PER_GROUP,
 		.name = "GPP_CE",
 		.acpi_path = "\\_SB.PCI0.GPIO",
@@ -153,6 +162,8 @@ static const struct pad_community icl_communities[TOTAL_GPIO_COMM] = {
 		.gpi_int_en_reg_0 = GPI_INT_EN_0,
 		.gpi_smi_sts_reg_0 = GPI_SMI_STS_0,
 		.gpi_smi_en_reg_0 = GPI_SMI_EN_0,
+		.gpi_nmi_sts_reg_0 = GPI_NMI_STS_0,
+		.gpi_nmi_en_reg_0 = GPI_NMI_EN_0,
 		.max_pads_per_group = GPIO_MAX_NUM_PER_GROUP,
 		.name = "GPP_RS",
 		.acpi_path = "\\_SB.PCI0.GPIO",

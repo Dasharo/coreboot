@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <console/console.h>
 #include <device/mmio.h>
 #include <bootstate.h>
 #include <cpu/amd/msr.h>
@@ -13,6 +12,8 @@
 #include <amdblocks/reset.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/acpi.h>
+#include <amdblocks/gpio.h>
+#include <amdblocks/i2c.h>
 #include <amdblocks/smi.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
@@ -21,7 +22,6 @@
 #include <soc/southbridge.h>
 #include <soc/smi.h>
 #include <soc/amd_pci_int_defs.h>
-#include <soc/pci.h>
 #include <soc/pci_devs.h>
 #include <types.h>
 #include "chip.h"
@@ -85,15 +85,15 @@ const struct irq_idx_name *sb_get_apic_reg_association(size_t *size)
 	return irq_association;
 }
 
-void sb_clk_output_48Mhz(void)
+static void fch_clk_output_48Mhz(void)
 {
 	u32 ctrl;
-	const struct soc_amd_picasso_config *cfg;
-	cfg = config_of_soc();
+	const struct soc_amd_picasso_config *cfg = config_of_soc();
 
 	ctrl = misc_read32(MISC_CLK_CNTL1);
 	/* If used external clock source for I2S, disable the internal clock output */
-	if (cfg->acp_i2s_use_external_48mhz_osc && cfg->acp_pin_cfg == I2S_PINS_I2S_TDM)
+	if (cfg->acp_i2s_use_external_48mhz_osc &&
+			cfg->common_config.acp_config.acp_pin_cfg == I2S_PINS_I2S_TDM)
 		ctrl &= ~BP_X48M0_OUTPUT_EN;
 	else
 		ctrl |= BP_X48M0_OUTPUT_EN;
@@ -174,7 +174,7 @@ static void al2ahb_clock_gate(void)
 	write8((void *)(al2ahb_base + AL2AHB_CONTROL_HCLK_OFFSET), al2ahb_val);
 }
 
-/* configure the genral purpose PCIe clock outputs according to the devicetree settings */
+/* configure the general purpose PCIe clock outputs according to the devicetree settings */
 static void gpp_clk_setup(void)
 {
 	const struct soc_amd_picasso_config *cfg = config_of_soc();
@@ -224,24 +224,17 @@ void fch_init(void *chip_info)
 	acpi_pm_gpe_add_events_print_events();
 	gpio_add_events();
 
-	acpi_clear_pm_gpe_status();
-
 	al2ahb_clock_gate();
 
 	gpp_clk_setup();
 
-	sb_clk_output_48Mhz();
+	fch_clk_output_48Mhz();
 
 	sb_rfmux_config_override();
 }
 
 void fch_final(void *chip_info)
 {
-	uint8_t restored_power = PM_S5_AT_POWER_RECOVERY;
-
-	if (CONFIG(MAINBOARD_POWER_RESTORE))
-		restored_power = PM_RESTORE_S0_IF_PREV_S0;
-	pm_write8(PM_RTC_SHADOW, restored_power);
 }
 
 /*

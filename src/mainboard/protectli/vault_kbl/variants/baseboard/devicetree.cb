@@ -16,16 +16,13 @@ chip soc/intel/skylake
 	register "gen2_dec" = "0x007c0a01"
 	register "gen3_dec" = "0x000c03e1"
 	register "gen4_dec" = "0x001c02e1"
-	
+
 	# Enable "Intel Speed Shift Technology"
 	register "speed_shift_enable" = "1"
 	register "eist_enable" = "1"
 
 	# Disable DPTF
 	register "dptf_enable" = "0"
-
-	# Enable VT-d
-	register "ignore_vtd" = "0"
 
 	# Enable SERIRQ continuous
 	register "serirq_mode" = "SERIRQ_CONTINUOUS"
@@ -34,13 +31,11 @@ chip soc/intel/skylake
 
 	# FSP Configuration
 	register "SataSalpSupport" = "0"
-	register "SataMode" = "0"
 	register "DspEnable" = "0"
 	register "IoBufferOwnership" = "0"
 	register "SsicPortEnable" = "0"
 	register "ScsEmmcHs400Enabled" = "0"
 	register "SkipExtGfxScan" = "1"
-	register "HeciEnabled" = "1"
 	register "SaGv" = "SaGv_Enabled"
 	register "IslVrCmd" = "2"
 	register "PmConfigSlpS3MinAssert" = "2"		# 50ms
@@ -159,7 +154,7 @@ chip soc/intel/skylake
 	register "PcieRpLtrEnable[4]" = "1"
 	register "PcieRpLtrEnable[5]" = "1"
 	register "PcieRpLtrEnable[8]" = "1"
-	
+
 
 	# Clocks 0-5 for RP 1-6
 	register "PcieRpClkSrcNumber[0]" = "0"
@@ -184,7 +179,7 @@ chip soc/intel/skylake
 	register "usb2_ports[10]" = "USB2_PORT_EMPTY"		# Disabled
 	register "usb2_ports[11]" = "USB2_PORT_EMPTY"		# Disabled
 
- 
+
 	# USB 3.0 enable ports 1-4, disable ports 5-6
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# TYPE-A Port
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# TYPE-A Port

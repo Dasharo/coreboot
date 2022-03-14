@@ -4,26 +4,31 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <arch/pci_io_cfg.h>
+#include <cpu/intel/cpu_ids.h>
 #include <device/pci_ops.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
 #include <fsp/util.h>
+#include <option.h>
 #include <intelblocks/cse.h>
+#include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
-#include <intelblocks/mp_init.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/tcss.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
 #include <security/vboot/vboot_common.h>
-#include <soc/early_tcss.h>
-#include <soc/gpio_soc_defs.h>
+#include <soc/gpio.h>
 #include <soc/intel/common/vbt.h>
+#include <soc/lpm.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
+#include <soc/tcss.h>
 #include <string.h>
+#include <types.h>
 
 /* THC assignment definition */
 #define THC_NONE	0
@@ -41,10 +46,10 @@
  * 2 - Send in DXE (Not applicable for FSP in API mode)
  */
 enum {
-	EOP_DISABLE,
-	EOP_PEI,
-	EOP_DXE,
-} EndOfPost;
+	EOP_DISABLE = 0,
+	EOP_PEI = 1,
+	EOP_DXE = 2,
+};
 
 /*
  * Chip config parameter PcieRpL1Substates uses (UPD value + 1)
@@ -65,55 +70,6 @@ static int get_l1_substate_control(enum L1_substates_control ctl)
 	return ctl - 1;
 }
 
-/* Function returns true if the platform is TGL-UP3 */
-static bool platform_is_up3(void)
-{
-	const struct device *dev = pcidev_path_on_root(SA_DEVFN_ROOT);
-	u32 cpu_id = cpu_get_cpuid();
-	uint16_t mchid = pci_read_config16(dev, PCI_DEVICE_ID);
-
-	if ((cpu_id != CPUID_TIGERLAKE_A0) && (cpu_id != CPUID_TIGERLAKE_B0))
-		return false;
-
-	return ((mchid == PCI_DEVICE_ID_INTEL_TGL_ID_U_2_2) ||
-		(mchid == PCI_DEVICE_ID_INTEL_TGL_ID_U_4_2));
-}
-
-static int get_disable_mask(struct soc_intel_tigerlake_config *config)
-{
-	int disable_mask;
-
-	/* Disable any sub-states requested by mainboard */
-	disable_mask = config->LpmStateDisableMask;
-
-	/* UP3 does not support S0i2.2/S0i3.3/S0i3.4 */
-	if (platform_is_up3())
-		disable_mask |= LPM_S0i3_3 | LPM_S0i3_4 | LPM_S0i2_2;
-
-	/* If external bypass is not used, S0i3 isn't recommended. */
-	if (config->external_bypass == false)
-		disable_mask |= LPM_S0i3_0 | LPM_S0i3_1 | LPM_S0i3_2 | LPM_S0i3_3 | LPM_S0i3_4;
-
-	/* If external clock gating is not implemented, S0i3.4 isn't recommended. */
-	if (config->external_clk_gated == false)
-		disable_mask |= LPM_S0i3_4;
-
-	/*
-	 * If external phy gating is not implemented,
-	 * S0i3.3/S0i3.4/S0i2.2 are not recommended.
-	 */
-	if (config->external_phy_gated == false)
-		disable_mask |= LPM_S0i3_3 | LPM_S0i3_4 | LPM_S0i2_2;
-
-	/* If CNVi or ISH is used, S0i3.2/S0i3.3/S0i3.4 cannot be achieved. */
-	if (is_dev_enabled(pcidev_path_on_root(PCH_DEVFN_CNVI_BT)) ||
-		is_dev_enabled(pcidev_path_on_root(PCH_DEVFN_CNVI_WIFI)) ||
-		is_dev_enabled(pcidev_path_on_root(PCH_DEVFN_ISH)))
-		disable_mask |= LPM_S0i3_2 | LPM_S0i3_3 | LPM_S0i3_4;
-
-	return disable_mask;
-}
-
 static void parse_devicetree(FSP_S_CONFIG *params)
 {
 	const struct soc_intel_tigerlake_config *config;
@@ -132,25 +88,204 @@ static void parse_devicetree(FSP_S_CONFIG *params)
 		params->SerialIoUartMode[i] = config->SerialIoUartMode[i];
 }
 
-static const pci_devfn_t serial_io_dev[] = {
-	PCH_DEVFN_I2C0,
-	PCH_DEVFN_I2C1,
-	PCH_DEVFN_I2C2,
-	PCH_DEVFN_I2C3,
-	PCH_DEVFN_I2C4,
-	PCH_DEVFN_I2C5,
-	PCH_DEVFN_GSPI0,
-	PCH_DEVFN_GSPI1,
-	PCH_DEVFN_GSPI2,
-	PCH_DEVFN_GSPI3,
-	PCH_DEVFN_UART0,
-	PCH_DEVFN_UART1,
-	PCH_DEVFN_UART2
+/*
+ * The FSP expects a certain list of PCI devices to be in the DevIntConfig table,
+ * regardless of whether or not they are used by the mainboard.
+ */
+static const struct slot_irq_constraints irq_constraints[] = {
+	{
+		.slot = SA_DEV_SLOT_IGD,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_IGD),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_DPTF,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_DPTF),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_IPU,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_IPU),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_CPU_PCIE,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_CPU_PCIE),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_TBT,
+		.fns = {
+			FIXED_INT_ANY_PIRQ(SA_DEVFN_TBT0, PCI_INT_A),
+			FIXED_INT_ANY_PIRQ(SA_DEVFN_TBT1, PCI_INT_B),
+			FIXED_INT_ANY_PIRQ(SA_DEVFN_TBT2, PCI_INT_C),
+			FIXED_INT_ANY_PIRQ(SA_DEVFN_TBT3, PCI_INT_D),
+		},
+	},
+	{
+		.slot = SA_DEV_SLOT_TCSS,
+		.fns = {
+			ANY_PIRQ(SA_DEVFN_TCSS_XHCI),
+			ANY_PIRQ(SA_DEVFN_TCSS_DMA0),
+			ANY_PIRQ(SA_DEVFN_TCSS_DMA1),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO0,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_THC0),
+			ANY_PIRQ(PCH_DEVFN_THC1),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO1,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_UART3),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_ISH,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_ISH),
+			DIRECT_IRQ(PCH_DEVFN_GSPI2),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO2,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_GSPI3),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_XHCI,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_XHCI),
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_CNVI_WIFI, PCI_INT_A),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO3,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_I2C0),
+			DIRECT_IRQ(PCH_DEVFN_I2C1),
+			DIRECT_IRQ(PCH_DEVFN_I2C2),
+			DIRECT_IRQ(PCH_DEVFN_I2C3),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_CSE,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_CSE),
+			ANY_PIRQ(PCH_DEVFN_CSE_2),
+			ANY_PIRQ(PCH_DEVFN_CSE_IDER),
+			ANY_PIRQ(PCH_DEVFN_CSE_KT),
+			ANY_PIRQ(PCH_DEVFN_CSE_3),
+			ANY_PIRQ(PCH_DEVFN_CSE_4),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SATA,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_SATA),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO4,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_I2C4),
+			DIRECT_IRQ(PCH_DEVFN_I2C5),
+			DIRECT_IRQ(PCH_DEVFN_UART2),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_PCIE,
+		.fns = {
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE1, PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE2,	PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE3,	PCI_INT_C, PIRQ_C),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE4,	PCI_INT_D, PIRQ_D),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE5,	PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE6,	PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE7,	PCI_INT_C, PIRQ_C),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE8,	PCI_INT_D, PIRQ_D),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_PCIE_1,
+		.fns = {
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE9,  PCI_INT_A, PIRQ_A),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE10, PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE11, PCI_INT_C, PIRQ_C),
+			FIXED_INT_PIRQ(PCH_DEVFN_PCIE12, PCI_INT_D, PIRQ_D),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_SIO5,
+		.fns = {
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_UART0, PCI_INT_A),
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_UART1, PCI_INT_B),
+			DIRECT_IRQ(PCH_DEVFN_GSPI0),
+			DIRECT_IRQ(PCH_DEVFN_GSPI1),
+		},
+	},
+	{
+		.slot = PCH_DEV_SLOT_ESPI,
+		.fns = {
+			ANY_PIRQ(PCH_DEVFN_HDA),
+			ANY_PIRQ(PCH_DEVFN_SMBUS),
+			ANY_PIRQ(PCH_DEVFN_GBE),
+			FIXED_INT_ANY_PIRQ(PCH_DEVFN_TRACEHUB, PCI_INT_A),
+		},
+	},
 };
 
 __weak void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config)
 {
 	/* Override settings per board. */
+}
+
+static const SI_PCH_DEVICE_INTERRUPT_CONFIG *pci_irq_to_fsp(size_t *out_count)
+{
+	const struct pci_irq_entry *entry = get_cached_pci_irqs();
+	SI_PCH_DEVICE_INTERRUPT_CONFIG *config;
+	size_t pch_total = 0;
+	size_t cfg_count = 0;
+
+	if (!entry)
+		return NULL;
+
+	/* Count PCH devices */
+	while (entry) {
+		if (PCI_SLOT(entry->devfn) >= MIN_PCH_SLOT)
+			++pch_total;
+		entry = entry->next;
+	}
+
+	/* Convert PCH device entries to FSP format */
+	config = calloc(pch_total, sizeof(*config));
+	entry = get_cached_pci_irqs();
+	while (entry) {
+		if (PCI_SLOT(entry->devfn) < MIN_PCH_SLOT) {
+			entry = entry->next;
+			continue;
+		}
+
+		config[cfg_count].Device = PCI_SLOT(entry->devfn);
+		config[cfg_count].Function = PCI_FUNC(entry->devfn);
+		config[cfg_count].IntX = (SI_PCH_INT_PIN)entry->pin;
+		config[cfg_count].Irq = entry->irq;
+		++cfg_count;
+
+		entry = entry->next;
+	}
+
+	*out_count = cfg_count;
+
+	return config;
 }
 
 /* UPD parameters to be initialized before SiliconInit */
@@ -159,7 +294,6 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	int i;
 	uint32_t cpu_id;
 	FSP_S_CONFIG *params = &supd->FspsConfig;
-
 	struct device *dev;
 	struct soc_intel_tigerlake_config *config;
 	config = config_of_soc();
@@ -172,8 +306,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->GraphicsConfigPtr = (uintptr_t)vbt_get();
 
 	/* Check if IGD is present and fill Graphics init param accordingly */
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_dev_enabled(dev);
+	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	/* Use coreboot MP PPI services if Kconfig is enabled */
 	if (CONFIG(USE_INTEL_FSP_TO_CALL_COREBOOT_PUBLISH_MP_PPI))
@@ -189,8 +322,20 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	params->UsbTcPortEn = config->UsbTcPortEn;
 	params->TcssAuxOri = config->TcssAuxOri;
-	for (i = 0; i < 8; i++)
-		params->IomTypeCPortPadCfg[i] = config->IomTypeCPortPadCfg[i];
+
+	/* Explicitly clear this field to avoid using defaults */
+	memset(params->IomTypeCPortPadCfg, 0, sizeof(params->IomTypeCPortPadCfg));
+
+
+	/* Assign PCI IRQs */
+	if (!assign_pci_irqs(irq_constraints, ARRAY_SIZE(irq_constraints)))
+		die("ERROR: Unable to assign PCI IRQs, and no ACPI _PRT table is defined\n");
+
+	size_t pch_count = 0;
+	const SI_PCH_DEVICE_INTERRUPT_CONFIG *upd_irqs = pci_irq_to_fsp(&pch_count);
+	params->DevIntConfigPtr = (UINT32)((uintptr_t)upd_irqs);
+	params->NumOfDevIntConfig = pch_count;
+	printk(BIOS_INFO, "IRQ: Using dynamically assigned PCI IO-APIC IRQs\n");
 
 	/*
 	 * Set FSPS UPD ITbtConnectTopologyTimeoutInMs with value 0. FSP will
@@ -203,20 +348,15 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->DisableTccoldOnUsbConnected = 1;
 
 	/* Chipset Lockdown */
-	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT) {
-		params->PchLockDownGlobalSmi = 0;
-		params->PchLockDownBiosInterface = 0;
-		params->PchUnlockGpioPads = 1;
-		params->RtcMemoryLock = 0;
-	} else {
-		params->PchLockDownGlobalSmi = 1;
-		params->PchLockDownBiosInterface = 1;
-		params->PchUnlockGpioPads = 0;
-		params->RtcMemoryLock = 1;
-	}
+	const bool lockdown_by_fsp = get_lockdown_config() == CHIPSET_LOCKDOWN_FSP;
+	params->PchLockDownGlobalSmi = lockdown_by_fsp;
+	params->PchLockDownBiosInterface = lockdown_by_fsp;
+	params->PchUnlockGpioPads = !lockdown_by_fsp;
+	params->RtcMemoryLock = lockdown_by_fsp;
+	params->SkipPamLock = !lockdown_by_fsp;
 
-	/* Enable End of Post in PEI phase */
-	params->EndOfPostMessage = EOP_PEI;
+	/* coreboot will send EOP before loading payload */
+	params->EndOfPostMessage = EOP_DISABLE;
 
 	/* USB */
 	for (i = 0; i < ARRAY_SIZE(config->usb2_ports); i++) {
@@ -262,21 +402,20 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 			config->PcieRpAdvancedErrorReporting[i];
 		params->PcieRpHotPlug[i] = config->PcieRpHotPlug[i];
 		params->PciePtm[i] = config->PciePtm[i];
+		params->PcieRpSlotImplemented[i] = config->PcieRpSlotImplemented[i];
 	}
 
 	/* Enable ClkReqDetect for enabled port */
 	memcpy(params->PcieRpClkReqDetect, config->PcieRpClkReqDetect,
 		sizeof(config->PcieRpClkReqDetect));
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = pcidev_path_on_root(PCH_DEVFN_USBOTG);
-	if (dev) {
-		if (!xdci_can_enable())
-			dev->enabled = 0;
-		params->XdciEnable = dev->enabled;
-	} else {
-		params->XdciEnable = 0;
+	for (i = 0; i < ARRAY_SIZE(config->tcss_ports); i++) {
+		if (config->tcss_ports[i].enable)
+			params->CpuUsb3OverCurrentPin[i] =
+					config->tcss_ports[i].ocpin;
 	}
+
+	params->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 
 	/* PCH UART selection for FSP Debug */
 	params->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
@@ -284,8 +423,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->SerialIoUartAutoFlow[CONFIG_UART_FOR_CONSOLE] = 0;
 
 	/* SATA */
-	dev = pcidev_path_on_root(PCH_DEVFN_SATA);
-	params->SataEnable = is_dev_enabled(dev);
+	params->SataEnable = is_devfn_enabled(PCH_DEVFN_SATA);
 	if (params->SataEnable) {
 		params->SataMode = config->SataMode;
 		params->SataSalpSupport = config->SataSalpSupport;
@@ -301,7 +439,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 * LPM0-s0i2.0, LPM1-s0i2.1, LPM2-s0i2.2, LPM3-s0i3.0,
 	 * LPM4-s0i3.1, LPM5-s0i3.2, LPM6-s0i3.3, LPM7-s0i3.4
 	 */
-	params->LpmStateEnableMask = LPM_S0iX_ALL & ~get_disable_mask(config);
+	params->PmcLpmS0ixSubStateEnableMask = get_supported_lpm_mask(config);
 
 	/*
 	 * Power Optimizer for DMI and SATA.
@@ -333,48 +471,47 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	params->AcousticNoiseMitigation = config->AcousticNoiseMitigation;
-	memcpy(&params->SlowSlewRate, &config->SlowSlewRate,
-		ARRAY_SIZE(config->SlowSlewRate) * sizeof(config->SlowSlewRate[0]));
-
-	memcpy(&params->FastPkgCRampDisable, &config->FastPkgCRampDisable,
-		ARRAY_SIZE(config->FastPkgCRampDisable) *
-			sizeof(config->FastPkgCRampDisable[0]));
+	params->FastPkgCRampDisable[0] = config->FastPkgCRampDisable;
+	params->SlowSlewRate[0] = config->SlowSlewRate;
 
 	/* Enable TCPU for processor thermal control */
-	params->Device4Enable = config->Device4Enable;
+	params->Device4Enable = is_devfn_enabled(SA_DEVFN_DPTF);
 
 	/* Set TccActivationOffset */
 	params->TccActivationOffset = config->tcc_offset;
 
 	/* LAN */
-	dev = pcidev_path_on_root(PCH_DEVFN_GBE);
-	params->PchLanEnable = is_dev_enabled(dev);
+	params->PchLanEnable = is_devfn_enabled(PCH_DEVFN_GBE);
 
 	/* CNVi */
-	dev = pcidev_path_on_root(PCH_DEVFN_CNVI_WIFI);
-	params->CnviMode = is_dev_enabled(dev);
-
-	/* CNVi BT Core */
-	dev = pcidev_path_on_root(PCH_DEVFN_CNVI_BT);
-	params->CnviBtCore = is_dev_enabled(dev);
-
-	/* CNVi BT Audio Offload */
+	params->CnviMode = is_devfn_enabled(PCH_DEVFN_CNVI_WIFI);
+	params->CnviBtCore = config->CnviBtCore;
 	params->CnviBtAudioOffload = config->CnviBtAudioOffload;
+	/* Assert if CNVi BT is enabled without CNVi being enabled. */
+	assert(params->CnviMode || !params->CnviBtCore);
+	/* Assert if CNVi BT offload is enabled without CNVi BT being enabled. */
+	assert(params->CnviBtCore || !params->CnviBtAudioOffload);
 
 	/* VMD */
-	dev = pcidev_path_on_root(SA_DEVFN_VMD);
-	params->VmdEnable = is_dev_enabled(dev);
+	params->VmdEnable = is_devfn_enabled(SA_DEVFN_VMD);
 
 	/* THC */
-	dev = pcidev_path_on_root(PCH_DEVFN_THC0);
-	params->ThcPort0Assignment = is_dev_enabled(dev) ? THC_0 : THC_NONE;
-
-	dev =  pcidev_path_on_root(PCH_DEVFN_THC1);
-	params->ThcPort1Assignment = is_dev_enabled(dev) ? THC_1 : THC_NONE;
+	params->ThcPort0Assignment = is_devfn_enabled(PCH_DEVFN_THC0) ? THC_0 : THC_NONE;
+	params->ThcPort1Assignment = is_devfn_enabled(PCH_DEVFN_THC1) ? THC_1 : THC_NONE;
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
-	params->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	params->Enable8254ClockGating = !use_8254;
+	params->Enable8254ClockGatingOnS3 = !use_8254;
+
+	/*
+	 * Legacy PM ACPI Timer (and TCO Timer)
+	 * This *must* be 1 in any case to keep FSP from
+	 *  1) enabling PM ACPI Timer emulation in uCode.
+	 *  2) disabling the PM ACPI Timer.
+	 * We handle both by ourself!
+	 */
+	params->EnableTcoTimer = 1;
 
 	/* Enable Hybrid storage auto detection */
 	if (CONFIG(SOC_INTEL_CSE_LITE_SKU) && cse_is_hfs3_fw_sku_lite()
@@ -394,10 +531,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* USB4/TBT */
 	for (i = 0; i < ARRAY_SIZE(params->ITbtPcieRootPortEn); i++) {
 		dev = pcidev_on_root(SA_DEV_SLOT_TBT, i);
-		if (dev)
-			params->ITbtPcieRootPortEn[i] = dev->enabled;
-		else
-			params->ITbtPcieRootPortEn[i] = 0;
+		params->ITbtPcieRootPortEn[i] = is_dev_enabled(dev);
 	}
 
 	/* PCH FIVR settings override */
@@ -439,11 +573,72 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 				config->PchPmSlpS3MinAssert, config->PchPmSlpAMinAssert,
 				config->PchPmPwrCycDur);
 
-	/* EnableMultiPhaseSiliconInit for running MultiPhaseSiInit */
-	params->EnableMultiPhaseSiliconInit = 1;
+	/* Override EnableMultiPhaseSiliconInit prior calling MultiPhaseSiInit */
+	params->EnableMultiPhaseSiliconInit = fsp_is_multi_phase_init_enabled();
 
 	/* Disable C1 C-state Demotion */
 	params->C1StateAutoDemotion = 0;
+
+	/* USB2 Phy Sus power gating setting override */
+	params->PmcUsb2PhySusPgEnable = !config->usb2_phy_sus_pg_disable;
+
+	/*
+	 * Prevent FSP from programming write-once subsystem IDs by providing
+	 * a custom SSID table. Must have at least one entry for the FSP to
+	 * use the table.
+	 */
+	struct svid_ssid_init_entry {
+		union {
+			struct {
+				uint64_t reg:12;	/* Register offset */
+				uint64_t function:3;
+				uint64_t device:5;
+				uint64_t bus:8;
+				uint64_t :4;
+				uint64_t segment:16;
+				uint64_t :16;
+			};
+			uint64_t segbusdevfuncregister;
+		};
+		struct {
+			uint16_t svid;
+			uint16_t ssid;
+		};
+		uint32_t reserved;
+	};
+
+	/*
+	 * The xHCI and HDA devices have RW/L rather than RW/O registers for
+	 * subsystem IDs and so must be written before FspSiliconInit locks
+	 * them with their default values.
+	 */
+	const pci_devfn_t devfn_table[] = { PCH_DEVFN_XHCI, PCH_DEVFN_HDA };
+	static struct svid_ssid_init_entry ssid_table[ARRAY_SIZE(devfn_table)];
+
+	for (i = 0; i < ARRAY_SIZE(devfn_table); i++) {
+		ssid_table[i].reg	= PCI_SUBSYSTEM_VENDOR_ID;
+		ssid_table[i].device	= PCI_SLOT(devfn_table[i]);
+		ssid_table[i].function	= PCI_FUNC(devfn_table[i]);
+		dev = pcidev_path_on_root(devfn_table[i]);
+		if (dev) {
+			ssid_table[i].svid = dev->subsystem_vendor;
+			ssid_table[i].ssid = dev->subsystem_device;
+		}
+	}
+
+	params->SiSsidTablePtr = (uintptr_t)ssid_table;
+	params->SiNumberOfSsidTableEntry = ARRAY_SIZE(ssid_table);
+
+	/*
+	 * Replace the default SVID:SSID value with the values specified in
+	 * the devicetree for the root device.
+	 */
+	dev = pcidev_path_on_root(SA_DEVFN_ROOT);
+	params->SiCustomizedSvid = dev->subsystem_vendor;
+	params->SiCustomizedSsid = dev->subsystem_device;
+
+	/* Ensure FSP will program the registers */
+	params->SiSkipSsidProgramming = 0;
 
 	mainboard_silicon_init_params(params);
 }
@@ -462,9 +657,11 @@ void platform_fsp_multi_phase_init_cb(uint32_t phase_index)
 		/* TCSS specific initialization here */
 		printk(BIOS_DEBUG, "FSP MultiPhaseSiInit %s/%s called\n",
 			__FILE__, __func__);
-		if (CONFIG(EARLY_TCSS_DISPLAY) && (vboot_recovery_mode_enabled() ||
-			vboot_developer_mode_enabled()))
-			mainboard_early_tcss_enable();
+
+		if (CONFIG(SOC_INTEL_COMMON_BLOCK_TCSS)) {
+			const config_t *config = config_of_soc();
+			tcss_configure(config->typec_aux_bias_pads);
+		}
 		break;
 	default:
 		break;
@@ -475,11 +672,4 @@ void platform_fsp_multi_phase_init_cb(uint32_t phase_index)
 __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
-}
-
-/* Return list of SOC LPSS controllers */
-const pci_devfn_t *soc_lpss_controllers_list(size_t *size)
-{
-	*size = ARRAY_SIZE(serial_io_dev);
-	return serial_io_dev;
 }

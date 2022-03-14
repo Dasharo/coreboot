@@ -7,6 +7,7 @@
 #include <bootstate.h>
 #include <console/console.h>
 #include <amdblocks/acpi.h>
+#include <types.h>
 
 static void per_core_finalize(void *unused)
 {
@@ -29,11 +30,9 @@ static void per_core_finalize(void *unused)
 
 static void finalize_cores(void)
 {
-	int r;
 	printk(BIOS_SPEW, "Lock SMM configuration\n");
 
-	r = mp_run_on_all_cpus(per_core_finalize, NULL);
-	if (r)
+	if (mp_run_on_all_cpus(per_core_finalize, NULL) != CB_SUCCESS)
 		printk(BIOS_WARNING, "Failed to finalize all cores\n");
 }
 
@@ -42,6 +41,8 @@ static void soc_finalize(void *unused)
 	finalize_cores();
 
 	if (!acpi_is_wakeup_s3()) {
+		acpi_clear_pm_gpe_status();
+
 		if (CONFIG(HAVE_SMI_HANDLER))
 			acpi_disable_sci();
 		else

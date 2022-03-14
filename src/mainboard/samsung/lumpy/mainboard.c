@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <types.h>
-#include <string.h>
 #include <device/device.h>
 #include <drivers/intel/gma/int15.h>
 #include <acpi/acpi.h>
@@ -10,7 +9,6 @@
 #include "onboard.h"
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <smbios.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 
 void mainboard_suspend_resume(void)
 {
@@ -28,13 +26,10 @@ static void mainboard_init(struct device *dev)
 static int lumpy_smbios_type41_irq(int *handle, unsigned long *current,
 				   const char *name, u8 irq, u8 addr)
 {
-	struct smbios_type41 *t = (struct smbios_type41 *)*current;
-	int len = sizeof(struct smbios_type41);
+	struct smbios_type41 *t = smbios_carve_table(*current,
+						SMBIOS_ONBOARD_DEVICES_EXTENDED_INFORMATION,
+						sizeof(*t), *handle);
 
-	memset(t, 0, sizeof(struct smbios_type41));
-	t->type = SMBIOS_ONBOARD_DEVICES_EXTENDED_INFORMATION;
-	t->handle = *handle;
-	t->length = len - 2;
 	t->reference_designation = smbios_add_string(t->eos, name);
 	t->device_type = SMBIOS_DEVICE_TYPE_OTHER;
 	t->device_status = 1;
@@ -44,7 +39,7 @@ static int lumpy_smbios_type41_irq(int *handle, unsigned long *current,
 	t->function_number = 0;
 	t->device_number = 0;
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	*handle += 1;
 	return len;
@@ -76,7 +71,6 @@ static void mainboard_enable(struct device *dev)
 {
 	dev->ops->init = mainboard_init;
 	dev->ops->get_smbios_data = lumpy_onboard_smbios_data;
-	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
 	install_intel_vga_int15_handler(GMA_INT15_ACTIVE_LFP_INT_LVDS, GMA_INT15_PANEL_FIT_DEFAULT, GMA_INT15_BOOT_DISPLAY_DEFAULT, 0);
 }
 

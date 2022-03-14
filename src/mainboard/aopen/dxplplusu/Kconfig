@@ -11,11 +11,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select BOARD_ROMSIZE_KB_2048
 
 config MAINBOARD_DIR
-	string
 	default "aopen/dxplplusu"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "DXPL Plus-U"
 
 config IRQ_SLOT_COUNT

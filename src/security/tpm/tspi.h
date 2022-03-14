@@ -51,11 +51,11 @@ void tcpa_log_dump(void *unused);
  * @return TPM_SUCCESS on success. If not a tpm error is returned
  */
 uint32_t tpm_extend_pcr(int pcr, enum vb2_hash_algorithm digest_algo,
-			uint8_t *digest, size_t digest_len,
+			const uint8_t *digest, size_t digest_len,
 			const char *name);
 
 /**
- * Issue a TPM_Clear and reenable/reactivate the TPM.
+ * Issue a TPM_Clear and re-enable/reactivate the TPM.
  * @return TPM_SUCCESS on success. If not a tpm error is returned
  */
 uint32_t tpm_clear_and_reenable(void);

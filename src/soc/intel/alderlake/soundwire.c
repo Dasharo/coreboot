@@ -6,7 +6,6 @@
 #include <device/soundwire.h>
 #include <drivers/intel/soundwire/soundwire.h>
 #include <intelblocks/pmclib.h>
-#include <soc/pmc.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -37,7 +36,7 @@ static const struct soundwire_link link_xtal_24 = {
 static struct intel_soundwire_controller intel_controller = {
 	.acpi_address = 0x40000000,
 	.sdw = {
-		.master_list_count = 1
+		.master_list_count = 4
 	}
 };
 

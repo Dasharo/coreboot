@@ -6,12 +6,10 @@ chip northbridge/intel/sandybridge
 			register "acpi_c2" = "3"
 			register "acpi_c3" = "5"
 			# Magic APIC ID to locate this chip
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 		end
 	end
-
-	register "pci_mmio_size" = "2048"
 
 	device domain 0 on
 		subsystemid 0x1458 0x5000 inherit
@@ -33,7 +31,6 @@ chip northbridge/intel/sandybridge
 			register "xhci_switchable_ports" = "0xf"
 			register "superspeed_capable_ports" = "0xf"
 
-			register "c2_latency" = "0x0065"
 
 			device pci 14.0 on	# USB 3.0 Controller
 				subsystemid 0x1458 0x5007

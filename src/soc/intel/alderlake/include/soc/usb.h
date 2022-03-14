@@ -31,6 +31,7 @@ struct usb2_port_config {
 	uint8_t tx_emp_enable;
 	uint8_t pre_emp_bias;
 	uint8_t pre_emp_bit;
+	uint8_t type_c;
 };
 
 /* USB Overcurrent pins definition */
@@ -103,6 +104,17 @@ enum {
 	.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP, \
 }
 
+/* Type-C Port, Max TX and Pre-emp settings */
+#define USB2_PORT_MAX_TYPE_C(pin) { \
+	.enable        = 1, \
+	.ocpin         = (pin), \
+	.tx_bias       = USB2_BIAS_56P3MV, \
+	.tx_emp_enable = USB2_PRE_EMP_ON, \
+	.pre_emp_bias  = USB2_BIAS_56P3MV, \
+	.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP, \
+	.type_c        = 1, \
+}
+
 /* Type-C Port, no BC1.2 charge detect module / MUX
  * Length  = 3.0" - 9.00" */
 #define USB2_PORT_TYPE_C(pin) { \
@@ -112,6 +124,7 @@ enum {
 	.tx_emp_enable = USB2_PRE_EMP_ON, \
 	.pre_emp_bias  = USB2_BIAS_56P3MV, \
 	.pre_emp_bit   = USB2_HALF_BIT_PRE_EMP, \
+	.type_c	       = 1, \
 }
 
 struct usb3_port_config {
@@ -134,5 +147,21 @@ struct usb3_port_config {
 	.tx_de_emp        = 0x0, \
 	.tx_downscale_amp = 0x00, \
 }
+
+struct tcss_port_config {
+	uint8_t enable;
+	uint8_t ocpin;
+};
+
+#define TCSS_PORT_EMPTY { \
+	.enable           = 0, \
+	.ocpin            = OC_SKIP, \
+}
+
+#define TCSS_PORT_DEFAULT(pin) { \
+	.enable           = 1, \
+	.ocpin            = (pin), \
+}
+
 
 #endif

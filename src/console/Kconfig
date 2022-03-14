@@ -47,7 +47,7 @@ config FIXED_UART_FOR_CONSOLE
 	  specific UART has to be used (e.g. when the platform code
 	  performs dangerous configurations).
 
-if CONSOLE_SERIAL
+if CONSOLE_SERIAL || CONSOLE_CBMEM_DUMP_TO_UART
 
 	comment "I/O mapped, 8250-compatible"
 	depends on DRIVERS_UART_8250IO
@@ -193,7 +193,7 @@ config CONSOLE_NE2K
 	help
 	  Send coreboot debug output to a Ethernet console, it works
 	  same way as Linux netconsole, packets are received to UDP
-	  port 6666 on IP/MAC specified with options bellow.
+	  port 6666 on IP/MAC specified with options below.
 	  Use following netcat command: nc -u -l -p 6666
 
 config CONSOLE_NE2K_DST_MAC
@@ -255,6 +255,14 @@ config CONSOLE_CBMEM_DUMP_TO_UART
 	  serial output in case serial console is disabled and the device
 	  resets itself while trying to boot the payload.
 
+config CONSOLE_CBMEM_PRINT_PRE_BOOTBLOCK_CONTENTS
+	bool
+	help
+	  Pre-bootblock stages (i.e., VBOOT_STARTS_BEFORE_BOOTBLOCK) might not
+	  have the ability to log to the UART, so their console messages are
+	  inaccessible until the boot processes gets into the payload or OS.
+	  This feature will dump the pre-bootblock CBMEM console immediately
+	  after the bootblock console is initialized.
 endif
 
 config CONSOLE_SPI_FLASH
@@ -387,6 +395,15 @@ config DEFAULT_CONSOLE_LOGLEVEL
 
 endif
 
+config CONSOLE_USE_ANSI_ESCAPES
+	bool "Use ANSI escape sequences for console highlighting"
+	default y
+	help
+	  If enabled, certain consoles (e.g. UART) that are meant to be read on
+	  a terminal will use ANSI escape sequences (like `ESC [1m`) to
+	  highlight lines based on their log level. Disable this if your
+	  terminal does not support ANSI escape sequences.
+
 config NO_POST
 	bool "Don't show any POST codes"
 	default n
@@ -464,10 +481,12 @@ config NO_EARLY_BOOTBLOCK_POSTCODES
 	def_bool n
 	help
 	  Some chipsets require that the routing for the port 80h POST
-	  code be configured before any POST codes are sent out.
-	  This can be done in the boot block, but there are a couple of
-	  POST codes that go out before the chipset's bootblock initialization
-	  can happen.  This option suppresses those POST codes.
+	  code be configured before any POST codes are sent out.  If this is
+	  not done, the system can hang on the first POST code.  This
+	  initialization can be done in the boot block, but there are a couple
+	  of POST codes that go out before the chipset's C bootblock
+	  initialization can happen.  This option suppresses all postcodes in
+	  the early assembly code.
 
 config HWBASE_DEBUG_CB
 	bool

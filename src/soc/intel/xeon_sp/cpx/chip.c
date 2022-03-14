@@ -3,8 +3,10 @@
 #include <arch/ioapic.h>
 #include <console/console.h>
 #include <console/debug.h>
-#include <cpu/x86/lapic.h>
+#include <cpu/x86/mp.h>
 #include <device/pci.h>
+#include <device/pci_ids.h>
+#include <intelblocks/acpi.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/p2sb.h>
@@ -25,7 +27,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 }
 
 #if CONFIG(HAVE_ACPI_TABLES)
-static const char *soc_acpi_name(const struct device *dev)
+const char *soc_acpi_name(const struct device *dev)
 {
 	if (dev->path.type == DEVICE_PATH_DOMAIN)
 		return "PC00";
@@ -110,6 +112,50 @@ static void iio_enable_masks(void)
 	}
 	iio_dmi_en_masks();
 }
+
+static void set_pcu_locks(void)
+{
+	for (uint32_t socket = 0; socket < soc_get_num_cpus(); ++socket) {
+		uint32_t bus = get_socket_stack_busno(socket, PCU_IIO_STACK);
+
+		/* configure PCU_CR0_FUN csrs */
+		const struct device *cr0_dev = PCU_DEV_CR0(bus);
+		pci_or_config32(cr0_dev, PCU_CR0_P_STATE_LIMITS, P_STATE_LIMITS_LOCK);
+		pci_or_config32(cr0_dev, PCU_CR0_PACKAGE_RAPL_LIMIT_UPR, PKG_PWR_LIM_LOCK_UPR);
+		pci_or_config32(cr0_dev, PCU_CR0_TURBO_ACTIVATION_RATIO, TURBO_ACTIVATION_RATIO_LOCK);
+
+
+		/* configure PCU_CR1_FUN csrs */
+		const struct device *cr1_dev = PCU_DEV_CR1(bus);
+		pci_or_config32(cr1_dev, PCU_CR1_SAPMCTL, SAPMCTL_LOCK_MASK);
+
+		/* configure PCU_CR2_FUN csrs */
+		const struct device *cr2_dev = PCU_DEV_CR2(bus);
+		pci_or_config32(cr2_dev, PCU_CR2_DRAM_PLANE_POWER_LIMIT, PP_PWR_LIM_LOCK);
+		pci_or_config32(cr2_dev, PCU_CR2_DRAM_POWER_INFO_UPR, DRAM_POWER_INFO_LOCK_UPR);
+
+		/* configure PCU_CR3_FUN csrs */
+		const struct device *cr3_dev = PCU_DEV_CR3(bus);
+		pci_or_config32(cr3_dev, PCU_CR3_CONFIG_TDP_CONTROL, TDP_LOCK);
+		pci_or_config32(cr3_dev, PCU_CR3_FLEX_RATIO, OC_LOCK);
+	}
+
+}
+
+static void set_imc_locks(void)
+{
+	struct device *dev = 0;
+	while ((dev = dev_find_device(PCI_VENDOR_ID_INTEL, IMC_M2MEM_DEVID, dev)))
+		pci_or_config32(dev, IMC_M2MEM_TIMEOUT, TIMEOUT_LOCK);
+}
+
+static void set_upi_locks(void)
+{
+	struct device *dev = 0;
+	while ((dev = dev_find_device(PCI_VENDOR_ID_INTEL, UPI_LL_CR_DEVID, dev)))
+		pci_or_config32(dev, UPI_LL_CR_KTIMISCMODLCK, KTIMISCMODLCK_LOCK);
+}
+
 static void chip_final(void *data)
 {
 	/* Lock SBI */
@@ -118,13 +164,9 @@ static void chip_final(void *data)
 	/* LOCK PAM */
 	pci_or_config32(pcidev_path_on_root(PCI_DEVFN(0, 0)), 0x80, 1 << 0);
 
-	/*
-	 * LOCK SMRAM
-	 * According to the CedarIsland FSP Integration Guide this needs to
-	 * be done with legacy 0xCF8/0xCFC IO ops.
-	 */
-	uint8_t reg8 = pci_io_read_config8(PCI_DEV(0, 0, 0), 0x88);
-	pci_io_write_config8(PCI_DEV(0, 0, 0), 0x88, reg8 | (1 << 4));
+	set_pcu_locks();
+	set_imc_locks();
+	set_upi_locks();
 
 	p2sb_hide();
 	iio_enable_masks();
@@ -138,12 +180,11 @@ static void chip_init(void *data)
 	override_hpet_ioapic_bdf();
 	pch_enable_ioapic();
 	pch_lock_dmictl();
-	setup_lapic();
 	p2sb_unhide();
 }
 
 struct chip_operations soc_intel_xeon_sp_cpx_ops = {
-	CHIP_NAME("Intel Cooperlake-SP")
+	CHIP_NAME("Intel Cooper Lake-SP")
 	.enable_dev = chip_enable_dev,
 	.init = chip_init,
 	.final = chip_final,

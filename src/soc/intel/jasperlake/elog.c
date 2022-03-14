@@ -8,11 +8,10 @@
 #include <intelblocks/xhci.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
-#include <stdint.h>
 #include <types.h>
 
 struct pme_map {
-	pci_devfn_t devfn;
+	unsigned int devfn;
 	unsigned int wake_source;
 };
 
@@ -48,11 +47,8 @@ static void pch_log_rp_wake_source(void)
 	};
 
 	for (i = 0; i < MIN(CONFIG_MAX_ROOT_PORTS, ARRAY_SIZE(pme_map)); ++i) {
-		const struct device *dev = pcidev_path_on_root(pme_map[i].devfn);
-		if (!dev)
-			continue;
-
-		if (pci_dev_is_wake_source(dev))
+		if (pci_dev_is_wake_source(PCI_DEV(0, PCI_SLOT(pme_map[i].devfn),
+						   PCI_FUNC(pme_map[i].devfn))))
 			elog_add_event_wake(pme_map[i].wake_source, 0);
 	}
 }
@@ -75,11 +71,8 @@ static void pch_log_pme_internal_wake_source(void)
 	};
 
 	for (i = 0; i < ARRAY_SIZE(ipme_map); i++) {
-		const struct device *dev = pcidev_path_on_root(ipme_map[i].devfn);
-		if (!dev)
-			continue;
-
-		if (pci_dev_is_wake_source(dev)) {
+		if (pci_dev_is_wake_source(PCI_DEV(0, PCI_SLOT(ipme_map[i].devfn),
+						   PCI_FUNC(ipme_map[i].devfn)))) {
 			elog_add_event_wake(ipme_map[i].wake_source, 0);
 			dev_found = true;
 		}

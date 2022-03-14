@@ -36,7 +36,7 @@ static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 
 	mrc_data = fsp_find_nv_storage_data(&mrc_data_size);
 	if (!mrc_data) {
-		printk(BIOS_ERR, "ERROR: FSP_NON_VOLATILE_STORAGE_HOB missing!\n");
+		printk(BIOS_ERR, "FSP_NON_VOLATILE_STORAGE_HOB missing!\n");
 		return;
 	}
 
@@ -48,7 +48,7 @@ static void save_memory_training_data(bool s3wake, uint32_t fsp_version)
 	 */
 	if (mrc_cache_stash_data(MRC_TRAINING_DATA, fsp_version, mrc_data,
 				mrc_data_size) < 0)
-		printk(BIOS_ERR, "ERROR: Failed to stash MRC data\n");
+		printk(BIOS_ERR, "Failed to stash MRC data\n");
 }
 
 static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
@@ -64,7 +64,7 @@ static void do_fsp_post_memory_init(bool s3wake, uint32_t fsp_version)
 	} else if (cbmem_initialize_id_size(CBMEM_ID_FSP_RESERVED_MEMORY,
 				range_entry_size(&fsp_mem))) {
 		if (CONFIG(HAVE_ACPI_RESUME)) {
-			printk(BIOS_ERR, "ERROR: Failed to recover CBMEM in S3 resume.\n");
+			printk(BIOS_ERR, "Failed to recover CBMEM in S3 resume.\n");
 			/* Failed S3 resume, reset to come up cleanly */
 			/* FIXME: A "system" reset is likely enough: */
 			full_reset();
@@ -206,7 +206,7 @@ uint8_t fsp_memory_soc_version(void)
 static uint32_t fsp_memory_settings_version(const struct fsp_header *hdr)
 {
 	/* Use the full FSP version by default. */
-	uint32_t ver = hdr->fsp_revision;
+	uint32_t ver = hdr->image_revision;
 
 	if (!CONFIG(FSP_PLATFORM_MEMORY_SETTINGS_VERSIONS))
 		return ver;
@@ -266,21 +266,6 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 	/* Reserve enough memory under TOLUD to save CBMEM header */
 	arch_upd->BootLoaderTolumSize = cbmem_overhead_size();
 
-	/*
-	 * If ACPI APEI BERT region size is defined, reserve memory for it.
-	 * +------------------------+ range_entry_top(tolum)
-	 * | Other reserved regions |
-	 * | APEI BERT region       |
-	 * +------------------------+ cbmem_top()
-	 * | CBMEM IMD ROOT         |
-	 * | CBMEM IMD SMALL        |
-	 * +------------------------+ range_entry_base(tolum), TOLUM
-	 * | CBMEM FSP MEMORY       |
-	 * | Other CBMEM regions... |
-	 */
-	if (CONFIG(ACPI_BERT))
-		arch_upd->BootLoaderTolumSize += CONFIG_ACPI_BERT_SIZE;
-
 	/* Fill common settings on behalf of chipset. */
 	if (fsp_fill_common_arch_params(arch_upd, s3wake, fsp_version,
 					memmap) != CB_SUCCESS)
@@ -306,7 +291,7 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 	post_code(POST_MEM_PREINIT_PREP_END);
 
 	/* Call FspMemoryInit */
-	fsp_raminit = (void *)(uintptr_t)(hdr->image_base + hdr->memory_init_entry_offset);
+	fsp_raminit = (void *)(uintptr_t)(hdr->image_base + hdr->fsp_memory_init_entry_offset);
 	fsp_debug_before_memory_init(fsp_raminit, upd, &fspm_upd);
 
 	post_code(POST_FSP_MEMORY_INIT);
@@ -324,9 +309,8 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 	/* Handle any errors returned by FspMemoryInit */
 	fsp_handle_reset(status);
 	if (status != FSP_SUCCESS) {
-		printk(BIOS_CRIT, "FspMemoryInit returned 0x%08x\n", status);
 		die_with_post_code(POST_RAM_FAILURE,
-			"FspMemoryInit returned an error!\n");
+			"FspMemoryInit returned with error 0x%08x!\n", status);
 	}
 
 	do_fsp_post_memory_init(s3wake, fsp_version);
@@ -339,40 +323,29 @@ static void do_fsp_memory_init(const struct fspm_context *context, bool s3wake)
 	fsp_debug_after_memory_init(status);
 }
 
-static int fspm_get_dest(const struct fsp_load_descriptor *fspld, void **dest,
-				size_t size, const struct region_device *source)
+static void *fspm_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
 {
+	const struct fsp_load_descriptor *fspld = arg;
 	struct fspm_context *context = fspld->arg;
-	struct fsp_header *hdr = &context->header;
 	struct memranges *memmap = &context->memmap;
-	uintptr_t fspm_begin;
-	uintptr_t fspm_end;
-
-	if (CONFIG(FSP_M_XIP)) {
-		if (fsp_validate_component(hdr, source) != CB_SUCCESS)
-			return -1;
-
-		*dest = rdev_mmap_full(source);
-		if ((uintptr_t)*dest != hdr->image_base) {
-			printk(BIOS_CRIT, "FSPM XIP base does not match: %p vs %p\n",
-				(void *)(uintptr_t)hdr->image_base, *dest);
-			return -1;
-		}
-		/* Since the component is XIP it's already in the address space.
-		   Thus, there's no need to rdev_munmap(). */
-		return 0;
-	}
 
 	/* Non XIP FSP-M uses FSP-M address */
-	fspm_begin = (uintptr_t)CONFIG_FSP_M_ADDR;
-	fspm_end = fspm_begin + size;
+	uintptr_t fspm_begin = (uintptr_t)CONFIG_FSP_M_ADDR;
+	uintptr_t fspm_end = fspm_begin + size;
 
 	if (check_region_overlap(memmap, "FSPM", fspm_begin, fspm_end) != CB_SUCCESS)
-		return -1;
+		return NULL;
 
-	*dest = (void *)fspm_begin;
+	return (void *)fspm_begin;
+}
 
-	return 0;
+void preload_fspm(void)
+{
+	if (!CONFIG(CBFS_PRELOAD))
+		return;
+
+	printk(BIOS_DEBUG, "Preloading %s\n", CONFIG_FSP_M_CBFS);
+	cbfs_preload(CONFIG_FSP_M_CBFS);
 }
 
 void fsp_memory_init(bool s3wake)
@@ -381,11 +354,14 @@ void fsp_memory_init(bool s3wake)
 	struct fspm_context context;
 	struct fsp_load_descriptor fspld = {
 		.fsp_prog = PROG_INIT(PROG_REFCODE, CONFIG_FSP_M_CBFS),
-		.get_destination = fspm_get_dest,
 		.arg = &context,
 	};
 	struct fsp_header *hdr = &context.header;
 	struct memranges *memmap = &context.memmap;
+
+	/* For FSP-M XIP we leave alloc NULL to get a direct mapping to flash. */
+	if (!CONFIG(FSP_M_XIP))
+		fspld.alloc = fspm_allocator;
 
 	elog_boot_notify(s3wake);
 
@@ -396,8 +372,13 @@ void fsp_memory_init(bool s3wake)
 			_car_unallocated_start - _car_region_start, 0);
 	memranges_insert(memmap, (uintptr_t)_program, REGION_SIZE(program), 0);
 
+	timestamp_add_now(TS_FSP_MEMORY_INIT_LOAD);
 	if (fsp_load_component(&fspld, hdr) != CB_SUCCESS)
 		die("FSPM not available or failed to load!\n");
+
+	if (CONFIG(FSP_M_XIP) && (uintptr_t)prog_start(&fspld.fsp_prog) != hdr->image_base)
+		die("FSPM XIP base does not match: %p vs %p\n",
+		    (void *)(uintptr_t)hdr->image_base, prog_start(&fspld.fsp_prog));
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 

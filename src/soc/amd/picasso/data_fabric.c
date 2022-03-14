@@ -2,6 +2,7 @@
 
 #include <acpi/acpi_device.h>
 #include <amdblocks/data_fabric.h>
+#include <arch/hpet.h>
 #include <console/console.h>
 #include <cpu/x86/lapic_def.h>
 #include <device/device.h>
@@ -37,14 +38,14 @@ void data_fabric_set_mmio_np(void)
 	int reg;
 	uint32_t base, limit, ctrl;
 	const uint32_t np_bot = HPET_BASE_ADDRESS >> D18F0_MMIO_SHIFT;
-	const uint32_t np_top = (LOCAL_APIC_ADDR - 1) >> D18F0_MMIO_SHIFT;
+	const uint32_t np_top = (LAPIC_DEFAULT_BASE - 1) >> D18F0_MMIO_SHIFT;
 
 	data_fabric_print_mmio_conf();
 
 	for (i = 0; i < NUM_NB_MMIO_REGS; i++) {
 		/* Adjust all registers that overlap */
 		ctrl = data_fabric_broadcast_read32(0, NB_MMIO_CONTROL(i));
-		if (!(ctrl & (MMIO_WE | MMIO_RE)))
+		if (!(ctrl & (DF_MMIO_WE | DF_MMIO_RE)))
 			continue; /* not enabled */
 
 		base = data_fabric_broadcast_read32(0, NB_MMIO_BASE(i));
@@ -66,8 +67,7 @@ void data_fabric_set_mmio_np(void)
 				/* Although a pair could be freed later, this condition is
 				 * very unusual and deserves analysis.  Flag an error and
 				 * leave the topmost part unconfigured. */
-				printk(BIOS_ERR,
-				       "Error: Not enough NB MMIO routing registers\n");
+				printk(BIOS_ERR, "Not enough NB MMIO routing registers\n");
 				continue;
 			}
 			data_fabric_broadcast_write32(0, NB_MMIO_BASE(reg), np_top + 1);
@@ -85,15 +85,15 @@ void data_fabric_set_mmio_np(void)
 
 	reg = data_fabric_find_unused_mmio_reg();
 	if (reg < 0) {
-		printk(BIOS_ERR, "Error: cannot configure region as NP\n");
+		printk(BIOS_ERR, "cannot configure region as NP\n");
 		return;
 	}
 
 	data_fabric_broadcast_write32(0, NB_MMIO_BASE(reg), np_bot);
 	data_fabric_broadcast_write32(0, NB_MMIO_LIMIT(reg), np_top);
 	data_fabric_broadcast_write32(0, NB_MMIO_CONTROL(reg),
-			   (IOMS0_FABRIC_ID << MMIO_DST_FABRIC_ID_SHIFT) | MMIO_NP | MMIO_WE
-				   | MMIO_RE);
+			   (IOMS0_FABRIC_ID << DF_MMIO_DST_FABRIC_ID_SHIFT) | DF_MMIO_NP
+				   | DF_MMIO_WE | DF_MMIO_RE);
 
 	data_fabric_print_mmio_conf();
 }

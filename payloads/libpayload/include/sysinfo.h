@@ -109,6 +109,7 @@ struct sysinfo_t {
 	uintptr_t cbmem_cons;
 	uintptr_t mrc_cache;
 	uintptr_t acpi_gnvs;
+	uintptr_t acpi_cnvs;
 
 #define UNDEFINED_STRAPPING_ID	(~0)
 #define UNDEFINED_FW_CONFIG	~((uint64_t)0)
@@ -147,6 +148,14 @@ struct sysinfo_t {
 #if CONFIG(LP_PCI)
 	struct pci_access pacc;
 #endif
+	/* USB Type-C Port Configuration Info */
+	uintptr_t type_c_info;
+
+	/* CBFS RW/RO Metadata Cache */
+	uintptr_t cbfs_ro_mcache_offset;
+	uint32_t cbfs_ro_mcache_size;
+	uintptr_t cbfs_rw_mcache_offset;
+	uint32_t cbfs_rw_mcache_size;
 };
 
 extern struct sysinfo_t lib_sysinfo;

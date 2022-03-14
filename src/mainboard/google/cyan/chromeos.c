@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <device/mmio.h>
 #include <gpio.h>
 #include <soc/gpio.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
 /* The WP status pin lives on MF_ISH_GPIO_4 */
@@ -61,4 +63,11 @@ static const struct cros_gpio cros_gpios[] = {
 void mainboard_chromeos_acpi_generate(void)
 {
 	chromeos_acpi_gpio_generate(cros_gpios, ARRAY_SIZE(cros_gpios));
+}
+
+int get_ec_is_trusted(void)
+{
+	/* Do not have a Chrome EC involved in entering recovery mode;
+	   Always return trusted. */
+	return 1;
 }

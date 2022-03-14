@@ -9,19 +9,18 @@
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
+#include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/uart.h>
 #include <soc/pci_devs.h>
 #include <soc/iomap.h>
-#include <soc/irq.h>
 #include <soc/nvs.h>
 #include "chip.h"
 
 #define UART_PCI_ENABLE	(PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER)
-#define UART_CONSOLE_INVALID_INDEX	0xFF
 
-extern const struct uart_controller_config uart_ctrlr_config[];
-extern const int uart_ctrlr_config_size;
+extern const unsigned int uart_devices[];
+extern const int uart_devices_size;
 
 static void uart_lpss_init(pci_devfn_t dev, uintptr_t baseaddr)
 {
@@ -45,23 +44,9 @@ uintptr_t uart_platform_base(unsigned int idx)
 }
 #endif
 
-static int uart_get_valid_index(void)
-{
-	int index;
-
-	for (index = 0; index < uart_ctrlr_config_size; index++) {
-		if (uart_ctrlr_config[index].console_index ==
-				CONFIG_UART_FOR_CONSOLE)
-			return index;
-	}
-	/* For valid index, code should not reach here */
-	return UART_CONSOLE_INVALID_INDEX;
-}
-
 static pci_devfn_t uart_console_get_pci_bdf(void)
 {
 	int devfn;
-	int index;
 
 	/*
 	 * This function will get called even if INTEL_LPSS_UART_FOR_CONSOLE
@@ -71,11 +56,13 @@ static pci_devfn_t uart_console_get_pci_bdf(void)
 	if (!CONFIG(INTEL_LPSS_UART_FOR_CONSOLE))
 		return PCI_DEV_INVALID;
 
-	index = uart_get_valid_index();
-	if (index == UART_CONSOLE_INVALID_INDEX)
+	if (CONFIG_UART_FOR_CONSOLE > uart_devices_size)
 		return PCI_DEV_INVALID;
 
-	devfn = uart_ctrlr_config[index].devfn;
+	devfn = uart_devices[CONFIG_UART_FOR_CONSOLE];
+	if (devfn == PCI_DEVFN_INVALID)
+		return PCI_DEV_INVALID;
+
 	return PCI_DEV(0, PCI_SLOT(devfn), PCI_FUNC(devfn));
 }
 
@@ -107,15 +94,6 @@ bool uart_is_controller_initialized(void)
 	return !lpss_is_controller_in_reset(base);
 }
 
-static void uart_configure_gpio_pads(void)
-{
-	int index = uart_get_valid_index();
-
-	if (index != UART_CONSOLE_INVALID_INDEX)
-		gpio_configure_pads(uart_ctrlr_config[index].gpios,
-				MAX_GPIO_PAD_PER_UART);
-}
-
 void uart_bootblock_init(void)
 {
 	const uint32_t baseaddr = CONFIG_CONSOLE_UART_BASE_ADDRESS;
@@ -131,9 +109,6 @@ void uart_bootblock_init(void)
 	pci_s_write_config16(dev, PCI_COMMAND, UART_PCI_ENABLE);
 
 	uart_lpss_init(dev, baseaddr);
-
-	/* Configure the 2 pads per UART. */
-	uart_configure_gpio_pads();
 }
 
 #if ENV_RAMSTAGE
@@ -151,6 +126,11 @@ static void uart_read_resources(struct device *dev)
 		res->size = 0x1000;
 		res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED |
 				IORESOURCE_FIXED;
+	}
+	/* In ACPI mode mark the decoded region as reserved */
+	if (dev->hidden) {
+		struct resource *res = find_resource(dev, PCI_BASE_ADDRESS_0);
+		res->flags |= IORESOURCE_RESERVE;
 	}
 }
 
@@ -223,23 +203,13 @@ static void uart_common_enable_resources(struct device *dev)
 
 static void uart_acpi_write_irq(const struct device *dev)
 {
-	struct acpi_irq irq;
-
-	switch (dev->path.pci.devfn) {
-	case PCH_DEVFN_UART0:
-		irq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(LPSS_UART0_IRQ);
-		break;
-	case PCH_DEVFN_UART1:
-		irq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(LPSS_UART1_IRQ);
-		break;
-	case PCH_DEVFN_UART2:
-		irq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(LPSS_UART2_IRQ);
-		break;
-	default:
-		return;
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_IRQ)) {
+		const int irq = get_pci_devfn_irq(dev->path.pci.devfn);
+		if (irq != INVALID_IRQ) {
+			struct acpi_irq airq = (struct acpi_irq)ACPI_IRQ_LEVEL_LOW(irq);
+			acpi_device_write_interrupt(&airq);
+		}
 	}
-
-	acpi_device_write_interrupt(&irq);
 }
 
 /*
@@ -380,9 +350,9 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SPT_H_UART0,
 	PCI_DEVICE_ID_INTEL_SPT_H_UART1,
 	PCI_DEVICE_ID_INTEL_SPT_H_UART2,
-	PCI_DEVICE_ID_INTEL_KBP_H_UART0,
-	PCI_DEVICE_ID_INTEL_KBP_H_UART1,
-	PCI_DEVICE_ID_INTEL_KBP_H_UART2,
+	PCI_DEVICE_ID_INTEL_UPT_H_UART0,
+	PCI_DEVICE_ID_INTEL_UPT_H_UART1,
+	PCI_DEVICE_ID_INTEL_UPT_H_UART2,
 	PCI_DEVICE_ID_INTEL_APL_UART0,
 	PCI_DEVICE_ID_INTEL_APL_UART1,
 	PCI_DEVICE_ID_INTEL_APL_UART2,
@@ -409,6 +379,10 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGP_UART0,
 	PCI_DEVICE_ID_INTEL_TGP_UART1,
 	PCI_DEVICE_ID_INTEL_TGP_UART2,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART0,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART1,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART2,
+	PCI_DEVICE_ID_INTEL_TGP_H_UART3,
 	PCI_DEVICE_ID_INTEL_MCC_UART0,
 	PCI_DEVICE_ID_INTEL_MCC_UART1,
 	PCI_DEVICE_ID_INTEL_MCC_UART2,
@@ -429,10 +403,10 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_ADP_P_UART4,
 	PCI_DEVICE_ID_INTEL_ADP_P_UART5,
 	PCI_DEVICE_ID_INTEL_ADP_P_UART6,
-	PCI_DEVICE_ID_INTEL_ADP_M_UART0,
-	PCI_DEVICE_ID_INTEL_ADP_M_UART1,
-	PCI_DEVICE_ID_INTEL_ADP_M_UART2,
-	PCI_DEVICE_ID_INTEL_ADP_M_UART3,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_UART0,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_UART1,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_UART2,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_UART3,
 	0,
 };
 

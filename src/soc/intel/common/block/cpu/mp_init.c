@@ -15,17 +15,6 @@
 #include <intelblocks/msr.h>
 #include <soc/cpu.h>
 
-/* SoC override function */
-__weak void soc_core_init(struct device *dev)
-{
-	/* no-op */
-}
-
-__weak void soc_init_cpus(struct bus *cpu_bus)
-{
-	/* no-op */
-}
-
 static void init_one_cpu(struct device *dev)
 {
 	soc_core_init(dev);
@@ -74,12 +63,16 @@ static const struct cpu_device_id cpu_table[] = {
 	{ X86_VENDOR_INTEL, CPUID_COMETLAKE_H_S_10_2_Q0_P1 },
 	{ X86_VENDOR_INTEL, CPUID_TIGERLAKE_A0 },
 	{ X86_VENDOR_INTEL, CPUID_TIGERLAKE_B0 },
+	{ X86_VENDOR_INTEL, CPUID_TIGERLAKE_R0 },
 	{ X86_VENDOR_INTEL, CPUID_ELKHARTLAKE_A0 },
 	{ X86_VENDOR_INTEL, CPUID_ELKHARTLAKE_B0 },
 	{ X86_VENDOR_INTEL, CPUID_JASPERLAKE_A0 },
 	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_S_A0 },
-	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_P_A0 },
-	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_M_A0 },
+	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_A0 },
+	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_A1 },
+	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_A2 },
+	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_A3 },
+	{ X86_VENDOR_INTEL, CPUID_ALDERLAKE_N_A0 },
 	{ 0, 0 },
 };
 
@@ -125,14 +118,25 @@ void get_microcode_info(const void **microcode, int *parallel)
  *    this call if user has selected USE_INTEL_FSP_MP_INIT).
  * 2. coreboot would like to take APs control back after FSP-S has done with MP
  *    initialization based on user select USE_INTEL_FSP_MP_INIT.
+ *
+ * This function would use cpu_cluster as a device and APIC device as a linked list to
+ * the cpu cluster. This function adds a node in case the mainboard doesn't have a lapic id
+ * hardcoded in devicetree, and then fills with the actual BSP APIC ID.
+ * This allows coreboot to dynamically detect the LAPIC ID of BSP.
+ * In case the mainboard has an APIC ID defined in devicetree, a link will be present and
+ * creation of the new node will be skipped. This node will have the APIC ID defined
+ * in devicetree.
  */
 void init_cpus(void)
 {
 	struct device *dev = dev_find_path(NULL, DEVICE_PATH_CPU_CLUSTER);
 	assert(dev != NULL);
 
-	if (dev && dev->link_list)
-		soc_init_cpus(dev->link_list);
+	/* In case link to APIC device is not found, create the one */
+	if (!dev->link_list)
+		add_more_links(dev, 1);
+
+	soc_init_cpus(dev->link_list);
 }
 
 static void coreboot_init_cpus(void *unused)
@@ -154,7 +158,7 @@ static void wrapper_x86_setup_mtrrs(void *unused)
 /* Ensure to re-program all MTRRs based on DRAM resource settings */
 static void post_cpus_init(void *unused)
 {
-	if (mp_run_on_all_cpus(&wrapper_x86_setup_mtrrs, NULL) < 0)
+	if (mp_run_on_all_cpus(&wrapper_x86_setup_mtrrs, NULL) != CB_SUCCESS)
 		printk(BIOS_ERR, "MTRR programming failure\n");
 
 	x86_mtrr_check();

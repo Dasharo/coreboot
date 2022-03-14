@@ -1,10 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE)
 Scope(\_SB)
 {
 	// Secure Enclave memory
 	Device (EPC)
 	{
+		External (EPCS, IntObj)
+		External (EMNA, IntObj)
+		External (ELNG, IntObj)
 		Name (_HID, EISAID ("INT0E0C"))
 		Name (_STR, Unicode ("Enclave Page Cache 1.0"))
 		Name (_MLS, Package () {
@@ -54,3 +58,4 @@ Scope(\_SB)
 
 	} // end EPC Device
 } // End of Scope(\_SB)
+#endif

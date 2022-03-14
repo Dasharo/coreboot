@@ -28,6 +28,12 @@ static void gl9755_enable(struct device *dev)
 	reg |= CFG2_LAT_L1_64US;
 	pci_write_config32(dev, CFG2, reg);
 
+	/* Disable ASPM L0s support */
+	pci_and_config32(dev, CFG2, ~CFG2_L0S_SUPPORT);
+
+	/* Turn off debug mode to enable SCP/OCP */
+	pci_and_config32(dev, CFG3, ~SCP_DEBUG);
+
 	/* Set Vendor Config to be non-configurable */
 	pci_and_config32(dev, CFG, ~CFG_EN);
 }

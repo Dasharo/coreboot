@@ -2,6 +2,9 @@
 
 if BOARD_BIOSTAR_AM1ML
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_4096
@@ -10,7 +13,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select GFXUMA
 	select HAVE_OPTION_TABLE
 	select HAVE_PIRQ_TABLE
-	select HAVE_MP_TABLE
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select NORTHBRIDGE_AMD_AGESA_FAMILY16_KB
@@ -19,11 +21,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_IT8728F
 
 config MAINBOARD_DIR
-	string
 	default "biostar/am1ml"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "AM1ML"
 
 config HW_MEM_HOLE_SIZEK

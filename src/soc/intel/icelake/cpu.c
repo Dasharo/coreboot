@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <console/console.h>
 #include <device/pci.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
 #include <cpu/intel/smm_reloc.h>
@@ -16,6 +14,15 @@
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/soc_chip.h>
+#include <types.h>
+
+bool cpu_soc_is_in_untrusted_mode(void)
+{
+	msr_t msr;
+
+	msr = rdmsr(MSR_BIOS_DONE);
+	return !!(msr.lo & ENABLE_IA_UNTRUSTED);
+}
 
 static void soc_fsp_load(void)
 {
@@ -48,7 +55,7 @@ static void configure_misc(void)
 
 	/* Enable PROCHOT */
 	msr = rdmsr(MSR_POWER_CTL);
-	msr.lo |= (1 << 0);	/* Enable Bi-directional PROCHOT as an input*/
+	msr.lo |= (1 << 0);	/* Enable Bi-directional PROCHOT as an input */
 	msr.lo |= (1 << 23);	/* Lock it */
 	wrmsr(MSR_POWER_CTL, msr);
 }
@@ -95,9 +102,7 @@ void soc_core_init(struct device *cpu)
 	 * every bank. */
 	mca_configure();
 
-	/* Enable the local CPU apics */
 	enable_lapic_tpr();
-	setup_lapic();
 
 	/* Configure c-state interrupt response time */
 	configure_c_states();
@@ -153,6 +158,6 @@ static const struct mp_ops mp_ops = {
 
 void soc_init_cpus(struct bus *cpu_bus)
 {
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }

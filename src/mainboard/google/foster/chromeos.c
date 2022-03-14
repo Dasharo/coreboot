@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <gpio.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
@@ -25,4 +25,11 @@ int get_recovery_mode_switch(void)
 int get_write_protect_state(void)
 {
 	return 0;
+}
+
+int get_ec_is_trusted(void)
+{
+	/* Do not have a Chrome EC involved in entering recovery mode;
+	   Always return trusted. */
+	return 1;
 }

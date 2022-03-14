@@ -16,25 +16,18 @@
 #define PMBASE		0x40
 #define PMSIZE		0x80
 
-/* PCI Configuration Space (D31:F0): LPC */
-#if defined(__SIMPLE_DEVICE__)
-#define PCH_LPC_DEV	PCI_DEV(0, 0x1f, 0)
-#else
-#define PCH_LPC_DEV	pcidev_on_root(0x1f, 0)
-#endif
-
 u16 lpc_get_pmbase(void)
 {
 #ifdef __SIMPLE_DEVICE__
 	/* Don't assume PMBASE is still the same */
-	return pci_read_config16(PCH_LPC_DEV, PMBASE) & 0xfffc;
+	return pci_read_config16(PCI_DEV(0, 0x1f, 0), PMBASE) & 0xfffc;
 #else
 	static u16 pmbase;
 
 	if (pmbase)
 		return pmbase;
 
-	pmbase = pci_read_config16(PCH_LPC_DEV, PMBASE) & 0xfffc;
+	pmbase = pci_read_config16(pcidev_on_root(0x1f, 0), PMBASE) & 0xfffc;
 
 	return pmbase;
 #endif
@@ -82,6 +75,15 @@ u8 read_pmbase8(const u8 addr)
 	return inb(lpc_get_pmbase() + addr);
 }
 
+int acpi_get_sleep_type(void)
+{
+	return acpi_sleep_from_pm1(read_pmbase32(PM1_CNT));
+}
+
+/*
+ * Note that southbridge_detect_s3_resume clears the sleep state,
+ * so this may not be used reliable throughout romstage.
+ */
 int platform_is_resuming(void)
 {
 	u16 reg16 = read_pmbase16(PM1_STS);
@@ -89,5 +91,5 @@ int platform_is_resuming(void)
 	if (!(reg16 & WAK_STS))
 		return 0;
 
-	return acpi_sleep_from_pm1(reg16) == ACPI_S3;
+	return acpi_get_sleep_type() == ACPI_S3;
 }

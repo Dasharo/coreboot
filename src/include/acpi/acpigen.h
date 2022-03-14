@@ -235,6 +235,8 @@ struct dsm_uuid {
 #define CPPC_VERSION_2	2
 #define CPPC_VERSION_3	3
 
+#define CPPC_PACKAGE_NAME "GCPC"
+
 /*version 1 has 15 fields, version 2 has 19, and version 3 has 21 */
 enum cppc_fields {
 	CPPC_HIGHEST_PERF, /* can be DWORD */
@@ -265,25 +267,40 @@ enum cppc_fields {
 	CPPC_MAX_FIELDS_VER_3,
 };
 
+typedef struct cppc_entry {
+	enum { CPPC_TYPE_REG, CPPC_TYPE_DWORD } type;
+	union {
+		acpi_addr_t reg;
+		uint32_t dword;
+	};
+} cppc_entry_t;
+
+#define CPPC_DWORD(_dword) \
+	(cppc_entry_t){ \
+		.type  = CPPC_TYPE_DWORD, \
+		.dword = _dword, \
+	}
+
+#define CPPC_REG(_reg) \
+	(cppc_entry_t){ \
+		.type = CPPC_TYPE_REG, \
+		.reg  = _reg, \
+	}
+
+#define CPPC_REG_MSR(address, offset, width) CPPC_REG(ACPI_REG_MSR(address, offset, width))
+#define CPPC_UNSUPPORTED CPPC_REG(ACPI_REG_UNSUPPORTED)
+
 struct cppc_config {
 	u32 version; /* must be 1, 2, or 3 */
 	/*
 	 * The generic acpi_addr_t structure is being used, though
 	 * anything besides PPC or FFIXED generally requires checking
 	 * if the OS has advertised support for it (via _OSC).
-	 *
-	 * NOTE: some fields permit DWORDs to be used.  If you
-	 * provide a System Memory register with all zeros (which
-	 * represents unsupported) then this will be used as-is.
-	 * Otherwise, a System Memory register with a 32-bit
-	 * width will be converted into a DWORD field (the value
-	 * of which will be the value of 'addrl'.  Any other use
-	 * of System Memory register is currently undefined.
-	 * (i.e., if you have an actual need for System Memory
-	 * then you'll need to adjust this kludge).
 	 */
-	acpi_addr_t regs[CPPC_MAX_FIELDS_VER_3];
+	cppc_entry_t entries[CPPC_MAX_FIELDS_VER_3];
 };
+
+#define ACPI_MUTEX_NO_TIMEOUT		0xffff
 
 void acpigen_write_return_integer(uint64_t arg);
 void acpigen_write_return_namestr(const char *arg);
@@ -293,6 +310,10 @@ void acpigen_pop_len(void);
 void acpigen_set_current(char *curr);
 char *acpigen_get_current(void);
 char *acpigen_write_package(int nr_el);
+inline void acpigen_write_package_end(void)
+{
+	acpigen_pop_len();
+}
 void acpigen_write_zero(void);
 void acpigen_write_one(void);
 void acpigen_write_ones(void);
@@ -319,9 +340,27 @@ void acpigen_write_name_byte(const char *name, uint8_t val);
 void acpigen_write_name_integer(const char *name, uint64_t val);
 void acpigen_write_coreboot_hid(enum coreboot_acpi_ids id);
 void acpigen_write_scope(const char *name);
+inline void acpigen_write_scope_end(void)
+{
+	acpigen_pop_len();
+}
 void acpigen_write_method(const char *name, int nargs);
 void acpigen_write_method_serialized(const char *name, int nargs);
+inline void acpigen_write_method_end(void)
+{
+	acpigen_pop_len();
+}
 void acpigen_write_device(const char *name);
+inline void acpigen_write_device_end(void)
+{
+	acpigen_pop_len();
+}
+void acpigen_write_thermal_zone(const char *name);
+inline void acpigen_write_thermal_zone_end(void)
+{
+	acpigen_pop_len();
+}
+void acpigen_write_LPI_package(u64 level, const struct acpi_lpi_state *states, u16 nentries);
 void acpigen_write_PPC(u8 nr);
 void acpigen_write_PPC_NVS(void);
 void acpigen_write_empty_PCT(void);
@@ -335,8 +374,8 @@ void acpigen_write_PSS_package(u32 coreFreq, u32 power, u32 transLat,
 void acpigen_write_pss_object(const struct acpi_sw_pstate *pstate_values, size_t nentries);
 typedef enum { SW_ALL = 0xfc, SW_ANY = 0xfd, HW_ALL = 0xfe } PSD_coord;
 void acpigen_write_PSD_package(u32 domain, u32 numprocs, PSD_coord coordtype);
-void acpigen_write_CST_package_entry(acpi_cstate_t *cstate);
-void acpigen_write_CST_package(acpi_cstate_t *entry, int nentries);
+void acpigen_write_CST_package_entry(const acpi_cstate_t *cstate);
+void acpigen_write_CST_package(const acpi_cstate_t *entry, int nentries);
 typedef enum { CSD_HW_ALL = 0xfe } CSD_coord;
 void acpigen_write_CSD_package(u32 domain, u32 numprocs, CSD_coord coordtype,
 				u32 index);
@@ -345,6 +384,10 @@ void acpigen_write_xpss_package(const struct acpi_xpss_sw_pstate *pstate_value);
 void acpigen_write_xpss_object(const struct acpi_xpss_sw_pstate *pstate_values,
 			       size_t nentries);
 void acpigen_write_processor(u8 cpuindex, u32 pblock_addr, u8 pblock_len);
+inline void acpigen_write_processor_end(void)
+{
+	acpigen_pop_len();
+}
 void acpigen_write_processor_package(const char *name,
 				     unsigned int first_core,
 				     unsigned int core_count);
@@ -362,6 +405,10 @@ void acpigen_write_irq(u16 mask);
 void acpigen_write_uuid(const char *uuid);
 void acpigen_write_power_res(const char *name, uint8_t level, uint16_t order,
 			     const char * const dev_states[], size_t dev_states_count);
+inline void acpigen_write_power_res_end(void)
+{
+	acpigen_pop_len();
+}
 void acpigen_write_sleep(uint64_t sleep_ms);
 void acpigen_write_store(void);
 void acpigen_write_store_int_to_namestr(uint64_t src, const char *dst);
@@ -381,6 +428,12 @@ void acpigen_write_if_and(uint8_t arg1, uint8_t arg2);
 void acpigen_write_if_lequal_op_op(uint8_t op, uint8_t val);
 void acpigen_write_if_lequal_op_int(uint8_t op, uint64_t val);
 void acpigen_write_if_lequal_namestr_int(const char *namestr, uint64_t val);
+inline void acpigen_write_if_end(void)
+{
+	acpigen_pop_len();
+}
+/* Emits If (CondRefOf(NAME)) */
+void acpigen_write_if_cond_ref_of(const char *namestring);
 void acpigen_write_else(void);
 void acpigen_write_shiftleft_op_int(uint8_t src_result, uint64_t count);
 void acpigen_write_to_buffer(uint8_t src, uint8_t dst);
@@ -405,11 +458,14 @@ void acpigen_write_create_qword_field(uint8_t op, size_t byte_offset, const char
  * This function takes as input uuid for the device, set of callbacks and
  * argument to pass into the callbacks. Callbacks should ensure that Local0 and
  * Local1 are left untouched. Use of Local2-Local7 is permitted in callbacks.
+ * If the first callback is NULL, then a default implementation of Function 0
+ * will be autogenerated, returning a package of bits corresponding to the
+ * function callbacks that are non-NULL.
  */
 void acpigen_write_dsm(const char *uuid, void (**callbacks)(void *),
 		       size_t count, void *arg);
-void acpigen_write_dsm_uuid_arr(struct dsm_uuid *ids, size_t count);
 
+void acpigen_write_dsm_uuid_arr(struct dsm_uuid *ids, size_t count);
 /*
  * Generate ACPI AML code for _CPC (Continuous Performance Control).
  * Execute the package function once to create a global table, then
@@ -460,7 +516,7 @@ void acpigen_write_field(const char *name, const struct fieldlist *l, size_t cou
 void acpigen_write_indexfield(const char *idx, const char *data,
 			      struct fieldlist *l, size_t count, uint8_t flags);
 
-int get_cst_entries(acpi_cstate_t **);
+int get_cst_entries(const acpi_cstate_t **);
 
 /*
  * Get element from package into specified destination op:

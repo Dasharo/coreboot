@@ -82,16 +82,24 @@ static void kempld_enable_dev(struct device *const dev)
 				dev->ops = &kempld_uart_ops;
 				break;
 			}
-			/* Fall through. */
+			__fallthrough;
 		case 1:
 			if (dev->path.generic.subid == 0) {
 				kempld_i2c_device_init(dev);
 				break;
 			}
-			/* Fall through. */
+			__fallthrough;
 		default:
 			printk(BIOS_WARNING, "KEMPLD: Spurious device %s.\n", dev_path(dev));
 			break;
+		}
+	} else if (dev->path.type == DEVICE_PATH_GPIO) {
+		if (dev->path.gpio.id == 0) {
+			if (kempld_gpio_pads_config(dev) < 0)
+				printk(BIOS_ERR, "KEMPLD: GPIO configuration failed!\n");
+		} else {
+			printk(BIOS_WARNING, "KEMPLD: Spurious GPIO device %s.\n",
+			       dev_path(dev));
 		}
 	}
 }

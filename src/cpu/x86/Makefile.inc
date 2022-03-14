@@ -1,10 +1,17 @@
+subdirs-y += lapic
+subdirs-y += mtrr
 subdirs-y += pae
+subdirs-$(CONFIG_HAVE_SMI_HANDLER) += smm
+subdirs-$(CONFIG_UDELAY_TSC) += tsc
 
 all-$(CONFIG_ARCH_ALL_STAGES_X86_64) += 64bit/mode_switch.S
 
 subdirs-$(CONFIG_PARALLEL_MP) += name
 ramstage-$(CONFIG_PARALLEL_MP) += mp_init.c
+
 ramstage-y += backup_default_smm.c
+ramstage-y += smi_trigger.c
+smm-y += smi_trigger.c
 
 subdirs-$(CONFIG_CPU_INTEL_COMMON_SMM) += ../intel/smm
 

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <acpi/acpi.h>
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
 #include <commonlib/helpers.h>
@@ -18,13 +19,11 @@ static const struct pad_config override_gpio_table[] = {
 	PAD_NC(GPP_A15, NONE),
 	/* A16 : USB_OC3# ==> USB_C0_OC_ODL */
 	PAD_CFG_NF(GPP_A16, NONE, DEEP, NF1),
-	/* A21 : DDPC_CTRCLK ==> EN_FP_PWR */
-	PAD_CFG_GPO(GPP_A21, 1, DEEP),
 	/* A23 : I2S1_SCLK ==> I2S1_SPKR_SCLK */
 	PAD_CFG_NF(GPP_A23, NONE, DEEP, NF1),
 
 	/* B2  : VRALERT# ==> EN_PP3300_SSD */
-	PAD_CFG_GPO(GPP_B2, 1, DEEP),
+	PAD_CFG_GPO(GPP_B2, 1, PLTRST),
 	/* B7  : ISH_12C1_SDA ==> ISH_I2C0_SENSOR_SDA */
 	PAD_CFG_NF(GPP_B7, NONE, DEEP, NF1),
 	/* B8  : ISH_I2C1_SCL ==> ISH_I2C0_SENSOR_SCL */
@@ -59,8 +58,6 @@ static const struct pad_config override_gpio_table[] = {
 	PAD_CFG_GPI_INT(GPP_C20, NONE, PLTRST, LEVEL),
 	/* C22 : UART2_RTS# ==> PCH_FPMCU_BOOT0 */
 	PAD_CFG_GPO(GPP_C22, 0, DEEP),
-	/* C23 : UART2_CTS# ==> FPMCU_RST_ODL */
-	PAD_CFG_GPO(GPP_C23, 1, DEEP),
 
 	/* D4  : IMGCLKOUT0# ==> CAMMERA_SWITCH */
 	PAD_CFG_GPI_INT(GPP_D4, NONE, PLTRST, EDGE_BOTH),
@@ -164,11 +161,6 @@ static const struct pad_config override_gpio_table[] = {
 
 /* Early pad configuration in bootblock */
 static const struct pad_config early_gpio_table[] = {
-	/* C8 : UART0 RX */
-	PAD_CFG_NF(GPP_C8, NONE, DEEP, NF1),
-	/* C9 : UART0 TX */
-	PAD_CFG_NF(GPP_C9, NONE, DEEP, NF1),
-
 	/* A12 : SATAXPCIE1 ==> M2_SSD_PEDET */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
 	/* A13 : PMC_I2C_SCL ==> BT_DISABLE_L */
@@ -177,6 +169,8 @@ static const struct pad_config early_gpio_table[] = {
 	/* A17 : DDSP_HPDC ==> MEM_CH_SEL */
 	PAD_CFG_GPI(GPP_A17, NONE, DEEP),
 
+	/* B2  : VRALERT# ==> EN_PP3300_SSD */
+	PAD_CFG_GPO(GPP_B2, 1, PLTRST),
 	/* B11 : PMCALERT# ==> PCH_WP_OD */
 	PAD_CFG_GPI_GPIO_DRIVER(GPP_B11, NONE, DEEP),
 	/* B15 : GSPI0_CS0# ==> PCH_GSPI0_H1_TPM_CS_L */
@@ -190,6 +184,10 @@ static const struct pad_config early_gpio_table[] = {
 
 	/* C0  : SMBCLK ==> EN_PP3300_WLAN */
 	PAD_CFG_GPO(GPP_C0, 1, DEEP),
+	/* C8 : UART0 RX */
+	PAD_CFG_NF(GPP_C8, NONE, DEEP, NF1),
+	/* C9 : UART0 TX */
+	PAD_CFG_NF(GPP_C9, NONE, DEEP, NF1),
 	/* C21 : UART2_TXD ==> H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, PLTRST, LEVEL, INVERT),
 	/* C22 : UART2_RTS# ==> PCH_FPMCU_BOOT0 */
@@ -218,4 +216,20 @@ const struct pad_config *variant_early_gpio_table(size_t *num)
 {
 	*num = ARRAY_SIZE(early_gpio_table);
 	return early_gpio_table;
+}
+
+/* GPIO settings before entering S5 */
+static const struct pad_config s5_sleep_gpio_table[] = {
+	PAD_CFG_GPO(GPP_C23, 0, DEEP), /* FPMCU_RST_ODL */
+	PAD_CFG_GPO(GPP_A21, 0, DEEP), /* EN_FP_PWR */
+};
+
+const struct pad_config *variant_sleep_gpio_table(u8 slp_typ, size_t *num)
+{
+	if (slp_typ == ACPI_S5) {
+		*num = ARRAY_SIZE(s5_sleep_gpio_table);
+		return s5_sleep_gpio_table;
+	}
+	*num = 0;
+	return NULL;
 }

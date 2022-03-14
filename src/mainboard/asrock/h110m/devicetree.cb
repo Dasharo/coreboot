@@ -19,7 +19,6 @@ chip soc/intel/skylake
 
 	# FSP Configuration
 	register "PrimaryDisplay" = "Display_PEG"
-	register "SaGv" = "SaGv_Enabled"
 
 	# Enabling SLP_S3#, SLP_S4#, SLP_SUS and SLP_A Stretch
 	# SLP_S3 Minimum Assertion Width. Values 0: 60us, 1: 1ms, 2: 50ms, 3: 2s
@@ -102,9 +101,6 @@ chip soc/intel/skylake
 		device pci 15.3 off end # I2C #3
 		device pci 16.0 on      # Management Engine Interface 1
 			subsystemid 0x1849 0xa131
-
-			# FIXME: does not match devicetree!
-			register "HeciEnabled" = "0"
 		end
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R

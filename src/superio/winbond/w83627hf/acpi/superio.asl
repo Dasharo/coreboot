@@ -33,10 +33,10 @@
  * NO_W83627HF_GAME:     don't expose the game port
  * NO_W83627HF_MIDI:     don't expose the MIDI port
  * NO_W83627HF_HWMON:    don't expose the hardware monitor as
- *                       PnP "Motherboard Ressource"
+ *                       PnP "Motherboard Resource"
  * W83627HF_KBC_COMPAT:  show the keyboard controller and the PS/2 mouse as
  *                       enabled if it is disabled but an address is assigned
- *                       to it. This may be neccessary in some cases.
+ *                       to it. This may be necessary in some cases.
  *
  * Datasheet: "W83627HF/F WINBOND I/O" rev. 6.0
  * http://www.itox.com/pages/support/wdt/W83627HF.pdf
@@ -115,14 +115,14 @@ Device(SIO) {
 		Offset (0x74),
 		DMA0,	8,	/* DMA */
 		Offset (0xE0),
-		/* CRE0-CRE4: function logical device dependant, seems to be reserved for ACPI settings */
+		/* CRE0-CRE4: function logical device dependent, seems to be reserved for ACPI settings */
 		CRE0,	8,
 		CRE1,	8,
 		CRE2,	8,
 		CRE3,	8,
 		CRE4,	8,
 		Offset (0xF0),
-		/* OPT1-OPTA aka CRF0-CRF9: function logical device dependant */
+		/* OPT1-OPTA aka CRF0-CRF9: function logical device dependent */
 		OPT1,	8,
 		OPT2,	8,
 		OPT3,	8,
@@ -143,7 +143,7 @@ Device(SIO) {
 		})
 	}
 
-	/* Enter configuration mode (and aquire mutex)
+	/* Enter configuration mode (and acquire mutex)
 	   Method must be run before accessing the configuration region.
 	   Parameter is the LDN which should be accessed. Values >= 0xFF mean
 	   no LDN switch should be done.
@@ -204,7 +204,7 @@ Device(SIO) {
 			If (ACTR) {
 				Store (0x0F, Local0)
 			}
-			ElseIf (LOr (IO1H, IO1L))
+			ElseIf (IO1H || IO1L)
 			{
 				Store (0x0D, Local0)
 			}
@@ -306,7 +306,7 @@ Device(SIO) {
 			EXIT_CONFIG_MODE ()
 			ShiftLeft(Local1, 8, Local1)
 			Or(Local1, Local2, Local1)
-			If (LNot(Local0)) {
+			If (!Local0) {
 				Return (FDE)
 			}
 
@@ -428,7 +428,7 @@ Device(SIO) {
 					Store (0x0D, Local0)
 				}
 			}
-			ElseIf (LOr (IO1H, IO1L))
+			ElseIf (IO1H || IO1L)
 			{
 				Store (0x0D, Local0)
 			}
@@ -583,7 +583,7 @@ Device(SIO) {
 			/* DMA off */
 			Store (0x04, DMA0)
 			/* IRQ */
-			Subtract(FindSetLeftBit (IRQL), 1, IRQ0)
+			IRQ0 = FindSetLeftBit (IRQL) - 1
 			/* Activate */
 			Store (One, ACTR)
 			EXIT_CONFIG_MODE ()
@@ -605,7 +605,7 @@ Device(SIO) {
 			If (ACTR) {
 				Store (0x0F, Local0)
 			}
-			ElseIf (LOr (IO1H, IO1L))
+			ElseIf (IO1H || IO1L)
 			{
 				Store (0x0D, Local0)
 			}
@@ -701,7 +701,7 @@ Device(SIO) {
 
 			Divide(IOA0, 256, Local0, Local1)
 
-			Subtract(FindSetLeftBit (IRQL), 1, Local3)
+			Local3 = FindSetLeftBit (IRQL) - 1
 
 			ENTER_CONFIG_MODE (2)
 			Store (Local0, IO1L)
@@ -724,12 +724,12 @@ Device(SIO) {
 		{
 			Store (0x00, Local0)
 			ENTER_CONFIG_MODE (3)
-			If (LNot(And(OPT2, 0x30)))
+			If (!And(OPT2, 0x30))
 			{
 				If (ACTR) {
 					Store (0x0F, Local0)
 				}
-				ElseIf (LOr (IO1H, IO1L))
+				ElseIf (IO1H || IO1L)
 				{
 					Store (0x0D, Local0)
 				}
@@ -826,7 +826,7 @@ Device(SIO) {
 
 			Divide(IOA0, 256, Local0, Local1)
 
-			Subtract(FindSetLeftBit (IRQL), 1, Local3)
+			Local3 = FindSetLeftBit (IRQL) - 1
 
 			ENTER_CONFIG_MODE (3)
 			Store (Local0, IO1L)
@@ -854,7 +854,7 @@ Device(SIO) {
 				If (ACTR) {
 					Store (0x0F, Local0)
 				}
-				ElseIf (LOr (IO1H, IO1L))
+				ElseIf (IO1H || IO1L)
 				{
 					Store (0x0D, Local0)
 				}
@@ -951,7 +951,7 @@ Device(SIO) {
 
 			Divide(IOA0, 256, Local0, Local1)
 
-			Subtract(FindSetLeftBit (IRQL), 1, Local3)
+			Local3 = FindSetLeftBit (IRQL) - 1
 
 			ENTER_CONFIG_MODE (3)
 			Store (Local0, IO1L)
@@ -978,7 +978,7 @@ Device(SIO) {
 			If (ACTR) {
 				Store (0x0F, Local0)
 			}
-			ElseIf (LOr (IO1H, IO1L))
+			ElseIf (IO1H || IO1L)
 			{
 				Store (0x0D, Local0)
 			}
@@ -1038,7 +1038,7 @@ Device(SIO) {
 
 			Divide(IOA0, 256, Local0, Local1)
 
-			Subtract(FindSetLeftBit (IRQL), 1, Local3)
+			Local3 = FindSetLeftBit (IRQL) - 1
 
 			ENTER_CONFIG_MODE (6)
 			Store (Local0, IO1L)
@@ -1064,7 +1064,7 @@ Device(SIO) {
 			If (ACTR) {
 				Store (0x0F, Local0)
 			}
-			ElseIf (Lor(LOr (IO1H, IO1L), LOr (IO2H, IO2L)))
+			ElseIf (IO1H || IO1L || IO2H || IO2L)
 			{
 				#ifdef W83627HF_KBC_COMPAT
 				Store (0x0F, Local0)
@@ -1143,7 +1143,7 @@ Device(SIO) {
 			Divide(IOA0, 256, Local0, Local1)
 			Divide(IOA1, 256, Local2, Local3)
 
-			Subtract(FindSetLeftBit (IRQL), 1, Local4)
+			Local4 = FindSetLeftBit (IRQL) - 1
 
 			ENTER_CONFIG_MODE (5)
 			Store (Local0, IO1L)
@@ -1166,10 +1166,10 @@ Device(SIO) {
 		{
 			Store (0x00, Local0)
 			ENTER_CONFIG_MODE (5)
-			If (LAnd(ACTR, IRQ1) ) {
+			If (ACTR && IRQ1) {
 				Store (0x0F, Local0)
 			}
-			ElseIf (Lor(LOr (IO1H, IO1L), LOr (IO2H, IO2L)))
+			ElseIf (IO1H || IO1L || IO2H || IO2L)
 			{
 				#ifdef W83627HF_KBC_COMPAT
 				Store (0x0F, Local0)
@@ -1222,7 +1222,7 @@ Device(SIO) {
 			})
 			CreateWordField (Arg0, IRQX._INT, IRQL)
 
-			Subtract(FindSetLeftBit (IRQL), 1, Local0)
+			Local0 = FindSetLeftBit (IRQL) - 1
 
 			ENTER_CONFIG_MODE (5)
 			Store (Local0, IRQ1)
@@ -1244,8 +1244,8 @@ Device(SIO) {
 		Method (_STA) {
 			Store(0, Local0)
 			ENTER_CONFIG_MODE (7)
-			If (LOr(IO1L, IO1H)) {
-				If (LOr(ACTR, ACT1)) {
+			If (IO1L || IO1H) {
+				If (ACTR || ACT1) {
 					Store (0x0F, Local0)
 				}
 				Else {
@@ -1299,8 +1299,8 @@ Device(SIO) {
 		{
 			Store(0, Local0)
 			ENTER_CONFIG_MODE (7)
-			If (LOr(IO2L, IO2H)) {
-				If (LOr(ACTR, ACT2)) {
+			If (IO2L || IO2H) {
+				If (ACTR || ACT2) {
 					Store (0x0F, Local0)
 				}
 				Else {
@@ -1377,7 +1377,7 @@ Device(SIO) {
 			If (ACTR) {
 				Store (0x0F, Local0)
 			}
-			ElseIf (LOr (IO1H, IO1L))
+			ElseIf (IO1H || IO1L)
 			{
 				Store (0x0D, Local0)
 			}

@@ -11,11 +11,12 @@ smm-y += lpc_util.c
 
 endif # CONFIG_SOC_AMD_COMMON_BLOCK_LPC
 
-ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_USE_ESPI),y)
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA),y)
+bootblock-y += spi_dma.c
+verstage_x86-y += spi_dma.c
+romstage-y += spi_dma.c
+ramstage-y += spi_dma.c
+smm-y += spi_dma.c
+endif # CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA
 
-bootblock-y += espi_util.c
-romstage-y += espi_util.c
-ramstage-y += espi_util.c
-verstage-y += espi_util.c
-
-endif # CONFIG_SOC_AMD_COMMON_BLOCK_USE_ESPI
+all-$(CONFIG_SOC_AMD_COMMON_BLOCK_USE_ESPI) += espi_util.c

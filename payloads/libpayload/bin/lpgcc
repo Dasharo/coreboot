@@ -91,13 +91,24 @@ if [ "$CONFIG_LP_ARCH_X86" = "y" ]; then
   _ARCHEXTRA="-m32 "
   _ARCH=x86
 fi
+if [ "$CONFIG_LP_ARCH_MOCK" = "y" ]; then
+  _ARCHINCDIR=$_INCDIR/mock
+  _ARCHLIBDIR=$_LIBDIR/mock
+  _ARCHEXTRA=""
+  _ARCH=mock
+fi
 
 if [ -f $_LIBDIR/libpayload.ldscript ]; then
 	_LDDIR=$_LIBDIR
 elif [ -f $BASE/../arch/$_ARCH/libpayload.ldscript ]; then
 	_LDDIR=$BASE/../arch/$_ARCH
 fi
-_LDSCRIPT="-Wl,-T,$_LDDIR/libpayload.ldscript"
+# Host arch should youse default linker script
+if [ "$CONFIG_LP_ARCH_MOCK" = "y" ]; then
+  _LDSCRIPT=""
+else
+  _LDSCRIPT="-Wl,-T,$_LDDIR/libpayload.ldscript"
+fi
 
 trygccoption() {
 	$DEFAULT_CC $1 -S -xc /dev/null -o /dev/null &> /dev/null
@@ -156,6 +167,11 @@ if [ $_LIBDIR = $_OBJ ]; then
     if [ "$CONFIG_LP_TINYCURSES" = y ]; then
 	_CFLAGS="$_CFLAGS -I$BASE/../curses"
     fi
+
+    _CFLAGS="$_CFLAGS -I$BASE/../../../src/commonlib/bsd/include"
+    _CFLAGS="$_CFLAGS -I$BASE/../../../3rdparty/vboot/firmware/include"
+else
+    _CFLAGS="$_CFLAGS -I$_VBOOTINCDIR"
 fi
 
 # Check for the -fno-stack-protector silliness
@@ -166,7 +182,7 @@ trygccoption -fno-stack-protector
 _CFLAGS="$_CFLAGS -include $BASE/../include/kconfig.h -include $BASE/../include/compiler.h"
 _CFLAGS="$_CFLAGS -I`$DEFAULT_CC $_ARCHEXTRA -print-search-dirs | head -n 1 | cut -d' ' -f2`include"
 
-_LDFLAGS="-L$_LIBDIR $_LDSCRIPT -static"
+_LDFLAGS="-L$_LIBDIR $_LDSCRIPT -static -Wl,--gc-sections"
 
 if [ $DOLINK -eq 0 ]; then
     if [ $DEBUGME -eq 1 ]; then

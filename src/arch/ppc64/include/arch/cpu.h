@@ -5,6 +5,8 @@
 
 #include <device/device.h>
 
+static inline void cpu_relax(void) { }
+
 #define asmlinkage
 
 struct cpu_driver {
@@ -12,22 +14,10 @@ struct cpu_driver {
 	const struct cpu_device_id *id_table;
 };
 
-struct thread;
-
-struct cpu_info {
-	struct device *cpu;
-	unsigned long index;
-#if CONFIG(COOP_MULTITASKING)
-	struct thread *thread;
-#endif
-};
-
 struct cpuinfo_ppc64 {
 	uint8_t    ppc64;            /* CPU family */
 	uint8_t    ppc64_vendor;     /* CPU vendor */
 	uint8_t    ppc64_model;
 };
-
-struct cpu_info *cpu_info(void);
 
 #endif /* __ARCH_CPU_H__ */

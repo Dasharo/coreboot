@@ -6,15 +6,20 @@
 #include <device/pci_ops.h>
 #include <intelblocks/power_limit.h>
 #include <intelblocks/systemagent.h>
+#include <option.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/systemagent.h>
+#include <types.h>
 #include "chip.h"
 
-bool soc_is_vtd_capable(void)
+bool soc_vtd_enabled(void)
 {
+	const unsigned int vtd = get_uint_option("vtd", 1);
+	if (!vtd)
+		return false;
 	struct device *const root_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
 	return root_dev &&
 		!(pci_read_config32(root_dev, CAPID0_A) & VTD_DISABLE);
@@ -28,10 +33,8 @@ bool soc_is_vtd_capable(void)
  */
 void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 {
-	struct device *const igd_dev = pcidev_path_on_root(SA_DEVFN_IGD);
-
 	static const struct sa_mmio_descriptor soc_fixed_resources[] = {
-		{ PCIEXBAR, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_MMCONF_LENGTH,
+		{ PCIEXBAR, CONFIG_ECAM_MMCONF_BASE_ADDRESS, CONFIG_ECAM_MMCONF_LENGTH,
 				"PCIEXBAR" },
 		{ MCHBAR, MCH_BASE_ADDRESS, MCH_BASE_SIZE, "MCHBAR" },
 		{ DMIBAR, DMI_BASE_ADDRESS, DMI_BASE_SIZE, "DMIBAR" },
@@ -39,13 +42,12 @@ void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 		{ GDXCBAR, GDXC_BASE_ADDRESS, GDXC_BASE_SIZE, "GDXCBAR" },
 		{ EDRAMBAR, EDRAM_BASE_ADDRESS, EDRAM_BASE_SIZE, "EDRAMBAR" },
 	};
-	const struct soc_intel_skylake_config *const config = config_of(dev);
 
 	sa_add_fixed_mmio_resources(dev, index, soc_fixed_resources,
 			ARRAY_SIZE(soc_fixed_resources));
 
-	if (!config->ignore_vtd && soc_is_vtd_capable()) {
-		if (igd_dev && igd_dev->enabled)
+	if (soc_vtd_enabled()) {
+		if (is_devfn_enabled(SA_DEVFN_IGD))
 			sa_add_fixed_mmio_resources(dev, index,
 					&soc_gfxvt_mmio_descriptor, 1);
 

@@ -12,24 +12,27 @@
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/romstage.h>
-#include <vendorcode/google/chromeos/chromeos.h>
+#include <types.h>
 
 #include "../chip.h"
 
-static void soc_memory_init_params(FSPM_UPD *mupd, const config_t *config)
+void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
+	const struct device *dev = pcidev_path_on_root(PCH_DEVFN_LPC);
+	assert(dev != NULL);
+	const config_t *config = config_of(dev);
 	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
 	FSP_M_TEST_CONFIG *tconfig = &mupd->FspmTestConfig;
-
 	unsigned int i;
 	uint32_t mask = 0;
-	const struct device *dev = pcidev_path_on_root(SA_DEVFN_IGD);
 
 	/*
 	 * Probe for no IGD and disable InternalGfx and panel power to prevent a
 	 * crash in FSP-M.
 	 */
-	if (dev && dev->enabled && pci_read_config16(SA_DEV_IGD, PCI_VENDOR_ID) != 0xffff) {
+	dev = pcidev_path_on_root(SA_DEVFN_IGD);
+	const bool igd_on = !CONFIG(SOC_INTEL_DISABLE_IGD) && dev && dev->enabled;
+	if (igd_on && pci_read_config16(SA_DEV_IGD, PCI_VENDOR_ID) != 0xffff) {
 		/* Set IGD stolen size to 64MB. */
 		m_cfg->InternalGfx = 1;
 		m_cfg->IgdDvmt50PreAlloc = 2;
@@ -56,6 +59,7 @@ static void soc_memory_init_params(FSPM_UPD *mupd, const config_t *config)
 	m_cfg->EnableC6Dram = config->enable_c6dram;
 #if CONFIG(SOC_INTEL_COMETLAKE)
 	m_cfg->SerialIoUartDebugControllerNumber = CONFIG_UART_FOR_CONSOLE;
+	memcpy(tconfig->PcieRpHotPlug, config->PcieRpHotPlug, sizeof(tconfig->PcieRpHotPlug));
 #else
 	m_cfg->PcdSerialIoUartNumber = CONFIG_UART_FOR_CONSOLE;
 #endif
@@ -129,24 +133,13 @@ static void soc_memory_init_params(FSPM_UPD *mupd, const config_t *config)
 	if (config->DisableHeciRetry)
 		tconfig->DisableHeciRetry = config->DisableHeciRetry;
 #endif
-}
-
-void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
-{
-	const struct device *dev = pcidev_path_on_root(PCH_DEVFN_LPC);
-	const struct device *smbus = pcidev_path_on_root(PCH_DEVFN_SMBUS);
-	assert(dev != NULL);
-	const config_t *config = config_of(dev);
-	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
-	FSP_M_TEST_CONFIG *tconfig = &mupd->FspmTestConfig;
-
-	soc_memory_init_params(mupd, config);
 
 	/* Enable SMBus controller based on config */
-	if (!smbus)
+	dev = pcidev_path_on_root(PCH_DEVFN_SMBUS);
+	if (!dev)
 		m_cfg->SmbusEnable = 0;
 	else
-		m_cfg->SmbusEnable = smbus->enabled;
+		m_cfg->SmbusEnable = dev->enabled;
 
 	/* Set debug probe type */
 	m_cfg->PlatformDebugConsent =

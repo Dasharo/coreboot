@@ -59,37 +59,90 @@ void do_putchar(unsigned char byte)
 	console_time_stop();
 }
 
+union log_state {
+	void *as_ptr;
+	struct {
+		uint8_t level;
+		uint8_t speed;
+	};
+};
+
+#define LOG_FAST(state) (HAS_ONLY_FAST_CONSOLES || ((state).speed == CONSOLE_LOG_FAST))
+
+static void wrap_interactive_printf(const char *fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vtxprintf(console_interactive_tx_byte, fmt, args, NULL);
+	va_end(args);
+}
+
+static void line_start(union log_state state)
+{
+	if (state.level > BIOS_LOG_PREFIX_MAX_LEVEL)
+		return;
+
+	/* Stored consoles just get a single control char marker to save space. If we are in
+	   LOG_FAST mode, just write the marker to CBMC and exit -- the rest of this function
+	   implements the LOG_ALL case. */
+	unsigned char marker = BIOS_LOG_LEVEL_TO_MARKER(state.level);
+	if (LOG_FAST(state)) {
+		__cbmemc_tx_byte(marker);
+		return;
+	}
+	console_stored_tx_byte(marker, NULL);
+
+	/* Interactive consoles get a `[DEBUG]  ` style readable prefix,
+	   and potentially an escape sequence for highlighting. */
+	if (CONFIG(CONSOLE_USE_ANSI_ESCAPES))
+		wrap_interactive_printf(BIOS_LOG_ESCAPE_PATTERN, bios_log_escape[state.level]);
+	wrap_interactive_printf(BIOS_LOG_PREFIX_PATTERN, bios_log_prefix[state.level]);
+}
+
+static void line_end(union log_state state)
+{
+	if (CONFIG(CONSOLE_USE_ANSI_ESCAPES) && !LOG_FAST(state))
+		wrap_interactive_printf(BIOS_LOG_ESCAPE_RESET);
+}
+
 static void wrap_putchar(unsigned char byte, void *data)
 {
-	console_tx_byte(byte);
+	union log_state state = { .as_ptr = data };
+	static bool line_started = false;
+
+	if (byte == '\n') {
+		line_end(state);
+		line_started = false;
+	} else if (!line_started) {
+		line_start(state);
+		line_started = true;
+	}
+
+	if (LOG_FAST(state))
+		__cbmemc_tx_byte(byte);
+	else
+		console_tx_byte(byte);
 }
 
-static void wrap_putchar_cbmemc(unsigned char byte, void *data)
+int vprintk(int msg_level, const char *fmt, va_list args)
 {
-	__cbmemc_tx_byte(byte);
-}
-
-int do_vprintk(int msg_level, const char *fmt, va_list args)
-{
-	int i, log_this;
+	union log_state state = { .level = msg_level };
+	int i;
 
 	if (CONFIG(SQUELCH_EARLY_SMP) && ENV_ROMSTAGE_OR_BEFORE && !boot_cpu())
 		return 0;
 
-	log_this = console_log_level(msg_level);
-	if (log_this < CONSOLE_LOG_FAST)
+	state.speed = console_log_level(msg_level);
+	if (state.speed < CONSOLE_LOG_FAST)
 		return 0;
 
 	spin_lock(&console_lock);
 
 	console_time_run();
 
-	if (log_this == CONSOLE_LOG_FAST) {
-		i = vtxprintf(wrap_putchar_cbmemc, fmt, args, NULL);
-	} else {
-		i = vtxprintf(wrap_putchar, fmt, args, NULL);
+	i = vtxprintf(wrap_putchar, fmt, args, state.as_ptr);
+	if (LOG_FAST(state))
 		console_tx_flush();
-	}
 
 	console_time_stop();
 
@@ -98,13 +151,13 @@ int do_vprintk(int msg_level, const char *fmt, va_list args)
 	return i;
 }
 
-int do_printk(int msg_level, const char *fmt, ...)
+int printk(int msg_level, const char *fmt, ...)
 {
 	va_list args;
 	int i;
 
 	va_start(args, fmt);
-	i = do_vprintk(msg_level, fmt, args);
+	i = vprintk(msg_level, fmt, args);
 	va_end(args);
 
 	return i;

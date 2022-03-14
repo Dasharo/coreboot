@@ -19,7 +19,6 @@ config SOUTH_BRIDGE_OPTIONS
 	select SOUTHBRIDGE_INTEL_COMMON_PMBASE
 	select SOUTHBRIDGE_INTEL_COMMON_RTC
 	select SOUTHBRIDGE_INTEL_COMMON_RESET
-	select IOAPIC
 	select HAVE_SMI_HANDLER
 	select HAVE_USBDEBUG_OPTIONS
 	select USE_WATCHDOG_ON_BOOT
@@ -40,7 +39,7 @@ config INTEL_LYNXPOINT_LP
 	bool
 	default n
 	help
-	  Set this option to y for Lynxpont LP (Haswell ULT).
+	  Set this option to y for LynxPoint LP (Haswell ULT).
 
 config EHCI_BAR
 	hex
@@ -54,7 +53,6 @@ config SERIRQ_CONTINUOUS_MODE
 	  operated in continuous mode.
 
 config HPET_MIN_TICKS
-	hex
 	default 0x80
 
 config FINALIZE_USB_ROUTE_XHCI
@@ -67,5 +65,22 @@ config FINALIZE_USB_ROUTE_XHCI
 config PCIEXP_AER
 	bool
 	default y
+
+config PCIEXP_CLK_PM
+	default y
+
+config PCIEXP_L1_SUB_STATE
+	default y
+
+config SERIALIO_UART_CONSOLE
+	bool "Use SerialIO UART for console"
+	depends on INTEL_LYNXPOINT_LP
+	select DRIVERS_UART_8250MEM_32
+	help
+	  Selected by mainboards where SerialIO UARTs can be used to retrieve
+	  coreboot logs. Boards also need to set UART_FOR_CONSOLE accordingly.
+
+config CONSOLE_UART_BASE_ADDRESS
+	default 0xd6000000 if SERIALIO_UART_CONSOLE
 
 endif

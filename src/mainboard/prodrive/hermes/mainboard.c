@@ -1,18 +1,33 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <arch/cpu.h>
 #include <acpi/acpigen.h>
+#include <arch/cpu.h>
+#include <bootstate.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <crc_byte.h>
-#include <bootstate.h>
 #include <device/device.h>
 #include <device/dram/spd.h>
+#include <drivers/intel/gma/opregion.h>
+#include <gpio.h>
+#include <intelblocks/gpio.h>
 #include <intelblocks/pmclib.h>
-#include <types.h>
 #include <smbios.h>
-#include "variants/baseboard/include/eeprom.h"
+#include <soc/gpio.h>
+#include <types.h>
+
+#include "eeprom.h"
 #include "gpio.h"
+
+const char *mainboard_vbt_filename(void)
+{
+	const struct eeprom_bmc_settings *bmc_cfg = get_bmc_settings();
+
+	if (bmc_cfg && bmc_cfg->efp3_displayport)
+		return "vbt-avalanche.bin";
+	else
+		return "vbt.bin"; /* Poseidon */
+}
 
 /* FIXME: Example code below */
 
@@ -138,7 +153,7 @@ static void mainboard_init(void *chip_info)
 		return;
 
 	/* Enable internal speaker amplifier */
-	if (board_cfg->internal_audio_connection == 2)
+	if (board_cfg->front_panel_audio == 2)
 		mb_hda_amp_enable(1);
 	else
 		mb_hda_amp_enable(0);
@@ -177,16 +192,12 @@ static void mainboard_acpi_fill_ssdt(const struct device *dev)
 	else
 		acpigen_write_soc_gpio_op = acpigen_soc_clear_tx_gpio;
 
-	acpigen_write_scope("\\_SB");
+	acpigen_write_method("\\_SB.MPTS", 1);
 	{
-		acpigen_write_method("MPTS", 1);
+		acpigen_write_if_lequal_op_int(ARG0_OP, 5);
 		{
-			acpigen_write_if_lequal_op_int(ARG0_OP, 5);
-			{
-				for (size_t i = 0; i < ARRAY_SIZE(usb_power_gpios); i++)
-					acpigen_write_soc_gpio_op(usb_power_gpios[i]);
-			}
-			acpigen_pop_len();
+			for (size_t i = 0; i < ARRAY_SIZE(usb_power_gpios); i++)
+				acpigen_write_soc_gpio_op(usb_power_gpios[i]);
 		}
 		acpigen_pop_len();
 	}
@@ -229,6 +240,8 @@ static void mainboard_early(void *unused)
 		/* Set Deep Sx */
 		config->deep_s5_enable_ac = board_cfg->deep_sx_enabled;
 		config->deep_s5_enable_dc = board_cfg->deep_sx_enabled;
+
+		config->disable_vmx = board_cfg->vtx_disabled;
 	}
 
 	if (check_signature(offsetof(struct eeprom_layout, supd), FSPS_UPD_SIGNATURE)) {

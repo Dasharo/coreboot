@@ -15,12 +15,11 @@ chip soc/intel/tigerlake
 	register "TcssAuxOri" = "1"
 	register "DdiPort1Hpd" = "0"
 	register "DdiPort2Hpd" = "0"
-	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
-	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
+	register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_E10, .pad_auxn_dc = GPP_E13}"
+
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI0             | cr50 TPM. Early init is   |
 	#|                   | required to set up a BAR  |
 	#|                   | for TPM communication     |
@@ -33,7 +32,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[0] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -213,14 +211,14 @@ chip soc/intel/tigerlake
 			chip drivers/intel/pmc_mux
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "9"
-						register "usb3_port_number" = "1"
+						use usb2_port9 as usb2_port
+						use tcss_usb3_port1 as usb3_port
 						# SBU & HSL follow CC
 						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "4"
-						register "usb3_port_number" = "2"
+						use usb2_port4 as usb2_port
+						use tcss_usb3_port2 as usb3_port
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 1 alias conn1 on end

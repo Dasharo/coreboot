@@ -1,10 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <ec/google/chromeec/ec.h>
 #include <ec/google/chromeec/ec_commands.h>
 #include <gpio.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 
 #include "board.h"
 
@@ -55,4 +55,10 @@ int get_recovery_mode_switch(void)
 int get_write_protect_state(void)
 {
 	return !gpio_get(GPIO_WP);
+}
+
+int get_ec_is_trusted(void)
+{
+	/* EC is trusted if not in RW. */
+	return !gpio_get(GPIO_ECINRW);
 }

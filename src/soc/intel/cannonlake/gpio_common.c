@@ -5,7 +5,7 @@
 
 /*
  * Routine to perform below operations:
- * 1. SoC rotine to fill GPIO PM mask and value for GPIO_MISCCFG register
+ * 1. SoC routine to fill GPIO PM mask and value for GPIO_MISCCFG register
  * 2. Program GPIO PM configuration based on PM mask and value
  */
 void soc_gpio_pm_configuration(void)
@@ -14,11 +14,9 @@ void soc_gpio_pm_configuration(void)
 	const config_t *config = config_of_soc();
 
 	if (config->gpio_override_pm)
-		memcpy(value, config->gpio_pm, sizeof(uint8_t) *
-				TOTAL_GPIO_COMM);
+		memcpy(value, config->gpio_pm, sizeof(value));
 	else
-		memset(value, MISCCFG_ENABLE_GPIO_PM_CONFIG, sizeof(uint8_t) *
-				TOTAL_GPIO_COMM);
+		memset(value, MISCCFG_GPIO_PM_CONFIG_BITS, sizeof(value));
 
 	gpio_pm_configure(value, TOTAL_GPIO_COMM);
 }

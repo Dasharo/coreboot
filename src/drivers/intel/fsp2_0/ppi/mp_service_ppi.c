@@ -9,6 +9,7 @@
 #include <fsp/ppi/mp_service_ppi.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/mp_init.h>
+#include <types.h>
 
 #define BSP_CPU_SLOT 0
 
@@ -64,7 +65,7 @@ efi_return_status_t mp_get_processor_info(efi_uintn_t processor_number,
 }
 
 efi_return_status_t mp_startup_all_aps(efi_ap_procedure procedure,
-	efi_uintn_t timeout_usec, void *argument)
+	bool run_serial, efi_uintn_t timeout_usec, void *argument)
 {
 	if (cpu_index() < 0)
 		return FSP_DEVICE_ERROR;
@@ -72,8 +73,8 @@ efi_return_status_t mp_startup_all_aps(efi_ap_procedure procedure,
 	if (procedure == NULL)
 		return FSP_INVALID_PARAMETER;
 
-	if (mp_run_on_aps((void *)procedure, argument,
-			MP_RUN_ON_ALL_CPUS, timeout_usec)) {
+	if (mp_run_on_all_aps((void *)procedure, argument, timeout_usec, !run_serial) !=
+				CB_SUCCESS) {
 		printk(BIOS_DEBUG, "%s: Exit with Failure\n", __func__);
 		return FSP_NOT_STARTED;
 	}
@@ -93,9 +94,22 @@ efi_return_status_t mp_startup_all_cpus(efi_ap_procedure procedure,
 	/* Run on BSP */
 	procedure(argument);
 
-	/* Run on APs */
-	if (mp_run_on_aps((void *)procedure, argument,
-			MP_RUN_ON_ALL_CPUS, timeout_usec)) {
+	/*
+	 * Run on APs Serially
+	 *
+	 * FIXME: As per MP service specification, EDK2 is allowed to specify the mode
+	 * in which a 'func' routine should be executed on APs (i.e. execute serially
+	 * or concurrently).
+	 *
+	 * MP service API `StartupAllCPUs` doesn't specify such requirement.
+	 * Hence, running the `CpuCacheInfoCollectCoreAndCacheData`
+	 * (UefiCpuPkg/Library/CpuCacheInfoLib/CpuCacheInfoLib.c#194)
+	 * simultaneously on APs results in a coherency issue (hang while executing `func`)
+	 * due to lack of acquiring a spin lock while accessing common data structure in
+	 * multiprocessor environment.
+	 */
+	if (mp_run_on_all_aps((void *)procedure, argument, timeout_usec, false) !=
+				CB_SUCCESS) {
 		printk(BIOS_DEBUG, "%s: Exit with Failure\n", __func__);
 		return FSP_NOT_STARTED;
 	}
@@ -119,7 +133,7 @@ efi_return_status_t mp_startup_this_ap(efi_ap_procedure procedure,
 		return FSP_INVALID_PARAMETER;
 
 	if (mp_run_on_aps((void *)procedure, argument,
-			processor_number, timeout_usec)) {
+			processor_number, timeout_usec) != CB_SUCCESS) {
 		printk(BIOS_DEBUG, "%s: Exit with Failure\n", __func__);
 		return FSP_NOT_STARTED;
 	}

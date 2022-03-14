@@ -32,10 +32,6 @@
 #define   PM_SERIRQ_MODE		BIT(6)
 #define   PM_SERIRQ_ENABLE		BIT(7)
 
-#define PM_RTC_SHADOW			0x5b	/* state when power resumes */
-#define   PM_S5_AT_POWER_RECOVERY	0x04	/* S5 */
-#define   PM_RESTORE_S0_IF_PREV_S0	0x07	/* S0 if previously at S0 */
-
 #define PM_EVT_BLK			0x60
 #define   WAK_STS			BIT(15) /*AcpiPmEvtBlkx00 Pm1Status */
 #define   PCIEXPWAK_STS			BIT(14)
@@ -68,8 +64,6 @@
 #define   PM_ACPI_WAKE_AS_GEVENT	BIT(27)
 #define   PM_ACPI_NB_PME_GEVENT		BIT(28)
 #define   PM_ACPI_RTC_WAKE_EN		BIT(29)
-#define PM_RST_CTRL1			0xbe
-#define   SLPTYPE_CONTROL_EN		BIT(5)
 #define PM_LPC_GATING			0xec
 #define   PM_LPC_AB_NO_BYPASS_EN	BIT(2)
 #define   PM_LPC_A20_EN			BIT(1)
@@ -98,44 +92,6 @@
 #define   CG1PLL_SPREAD_SPECTRUM_ENABLE	BIT(0)
 #define MISC_CLK_CNTL1			0x40
 #define   BP_X48M0_OUTPUT_EN		BIT(2) /* 1=En, unlike Hudson, Kern */
-#define MISC_I2C0_PAD_CTRL		0xd8
-#define MISC_I2C1_PAD_CTRL		0xdc
-#define MISC_I2C2_PAD_CTRL		0xe0
-#define MISC_I2C3_PAD_CTRL		0xe4
-#define   I2C_PAD_CTRL_NG_MASK		(BIT(0) + BIT(1) + BIT(2) + BIT(3))
-#define     I2C_PAD_CTRL_NG_NORMAL	0xc
-#define   I2C_PAD_CTRL_RX_SEL_MASK	(BIT(4) + BIT(5))
-#define     I2C_PAD_CTRL_RX_SHIFT	4
-#define     I2C_PAD_CTRL_RX_SEL_OFF	(0 << I2C_PAD_CTRL_RX_SHIFT)
-#define     I2C_PAD_CTRL_RX_SEL_3_3V	(1 << I2C_PAD_CTRL_RX_SHIFT)
-#define     I2C_PAD_CTRL_RX_SEL_1_8V	(3 << I2C_PAD_CTRL_RX_SHIFT)
-#define   I2C_PAD_CTRL_PULLDOWN_EN	BIT(6)
-#define   I2C_PAD_CTRL_FALLSLEW_MASK	(BIT(7) + BIT(8))
-#define     I2C_PAD_CTRL_FALLSLEW_SHIFT	7
-#define     I2C_PAD_CTRL_FALLSLEW_STD	(0 << I2C_PAD_CTRL_FALLSLEW_SHIFT)
-#define     I2C_PAD_CTRL_FALLSLEW_LOW	(1 << I2C_PAD_CTRL_FALLSLEW_SHIFT)
-#define   I2C_PAD_CTRL_FALLSLEW_EN	BIT(9)
-#define   I2C_PAD_CTRL_SPIKE_RC_EN	BIT(10)
-#define   I2C_PAD_CTRL_SPIKE_RC_SEL	BIT(11) /* 0 = 50ns, 1 = 20ns */
-#define   I2C_PAD_CTRL_CAP_DOWN		BIT(12)
-#define   I2C_PAD_CTRL_CAP_UP		BIT(13)
-#define   I2C_PAD_CTRL_RES_DOWN		BIT(14)
-#define   I2C_PAD_CTRL_RES_UP		BIT(15)
-#define   I2C_PAD_CTRL_BIOS_CRT_EN	BIT(16)
-#define   I2C_PAD_CTRL_SPARE0		BIT(17)
-#define   I2C_PAD_CTRL_SPARE1		BIT(18)
-
-/* FCH AOAC device offsets for AOAC_DEV_D3_CTL/AOAC_DEV_D3_STATE */
-#define FCH_AOAC_DEV_CLK_GEN		0
-#define FCH_AOAC_DEV_I2C2		7
-#define FCH_AOAC_DEV_I2C3		8
-#define FCH_AOAC_DEV_I2C4		9
-#define FCH_AOAC_DEV_UART0		11
-#define FCH_AOAC_DEV_UART1		12
-#define FCH_AOAC_DEV_UART2		16
-#define FCH_AOAC_DEV_AMBA		17
-#define FCH_AOAC_DEV_UART3		26
-#define FCH_AOAC_DEV_ESPI		27
 
 #define FCH_LEGACY_UART_DECODE		(ALINK_AHB_ADDRESS + 0x20) /* 0xfedc0020 */
 
@@ -146,32 +102,6 @@
 #define SATA_CAPABILITIES_REG		0xfc
 #define SATA_CAPABILITY_SPM		BIT(12)
 
-/* IO 0xf0 NCP Error */
-#define   NCP_WARM_BOOT			BIT(7) /* Write-once */
-
-/* this is for the devicetree setting and not the values written to the register */
-enum gpp_clk_req_setting {
-	GPP_CLK_ON,	/* GPP clock always on; default */
-	GPP_CLK_REQ,	/* GPP clock controlled by corresponding #CLK_REQx pin */
-	GPP_CLK_OFF,	/* GPP clk off */
-};
-
-typedef struct aoac_devs {
-	unsigned int :7;
-	unsigned int ic2e:1; /* 7: I2C2 */
-	unsigned int ic3e:1; /* 8: I2C3 */
-	unsigned int ic4e:1; /* 9: I2C4 */
-	unsigned int :1;
-	unsigned int ut0e:1; /* 11: UART0 */
-	unsigned int ut1e:1; /* 12: UART1 */
-	unsigned int :3;
-	unsigned int ut2e:1; /* 16: UART2 */
-	unsigned int :9;
-	unsigned int ut3e:1; /* 26: UART3 */
-	unsigned int espi:1; /* 27: ESPI */
-	unsigned int :4;
-} __packed aoac_devs_t;
-
 void fch_pre_init(void);
 void fch_early_init(void);
 void fch_init(void *chip_info);
@@ -179,15 +109,5 @@ void fch_final(void *chip_info);
 
 void enable_aoac_devices(void);
 void wait_for_aoac_enabled(unsigned int dev);
-void sb_clk_output_48Mhz(void);
-
-/* Initialize all the i2c buses that are marked with early init. */
-void i2c_soc_early_init(void);
-
-/* Initialize all the i2c buses that are not marked with early init. */
-void i2c_soc_init(void);
-
-/* Allow the board to change the default I2C pad configuration */
-void mainboard_i2c_override(int bus, uint32_t *pad_settings);
 
 #endif /* AMD_PICASSO_SOUTHBRIDGE_H */

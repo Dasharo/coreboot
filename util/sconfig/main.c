@@ -398,42 +398,77 @@ static void append_fw_config_field(struct fw_config_field *add)
 	}
 }
 
-struct fw_config_field *new_fw_config_field(const char *name,
-					    unsigned int start_bit, unsigned int end_bit)
+void append_fw_config_bits(struct fw_config_field_bits **bits,
+			   unsigned int start_bit, unsigned int end_bit)
+{
+	struct fw_config_field_bits *new_bits = S_ALLOC(sizeof(*new_bits));
+	new_bits->start_bit = start_bit;
+	new_bits->end_bit = end_bit;
+	new_bits->next = NULL;
+
+	if (*bits == NULL) {
+		*bits = new_bits;
+		return;
+	}
+
+	struct fw_config_field_bits *tmp = *bits;
+	while (tmp->next)
+		tmp = tmp->next;
+
+	tmp->next = new_bits;
+}
+
+int fw_config_masks_overlap(struct fw_config_field *existing,
+			     unsigned int start_bit, unsigned int end_bit)
+{
+	struct fw_config_field_bits *bits = existing->bits;
+	while (bits) {
+		if (start_bit <= bits->end_bit && end_bit >= bits->start_bit) {
+			printf("ERROR: fw_config field [%u-%u] overlaps %s[%u-%u]\n",
+			       start_bit, end_bit,
+			       existing->name, bits->start_bit, bits->end_bit);
+			return 1;
+		}
+		bits = bits->next;
+	}
+
+	return 0;
+}
+
+struct fw_config_field *new_fw_config_field(const char *name, struct fw_config_field_bits *bits)
 {
 	struct fw_config_field *field = find_fw_config_field(name);
-
-	/* Check that field is within 64 bits. */
-	if (start_bit > end_bit || end_bit > 63) {
-		printf("ERROR: fw_config field %s has invalid range %u-%u\n", name,
-		       start_bit, end_bit);
-		exit(1);
-	}
+	struct fw_config_field_bits *tmp;
 
 	/* Don't allow re-defining a field, only adding new fields. */
 	if (field) {
-		printf("ERROR: fw_config field %s[%u-%u] already exists with range %u-%u\n",
-		       name, start_bit, end_bit, field->start_bit, field->end_bit);
+		printf("ERROR: fw_config field %s already exists\n", name);
 		exit(1);
 	}
 
-	/* Check for overlap with an existing field. */
-	field = fw_config_fields;
-	while (field) {
-		/* Check if the mask overlaps. */
-		if (start_bit <= field->end_bit && end_bit >= field->start_bit) {
-			printf("ERROR: fw_config field %s[%u-%u] overlaps %s[%u-%u]\n",
-			       name, start_bit, end_bit,
-			       field->name, field->start_bit, field->end_bit);
+	/* Check that each field is within 64 bits. */
+	tmp = bits;
+	while (tmp) {
+		if (tmp->start_bit > tmp->end_bit || tmp->end_bit > 63) {
+			printf("ERROR: fw_config field %s has invalid range %u-%u\n", name,
+			       tmp->start_bit, tmp->end_bit);
 			exit(1);
 		}
-		field = field->next;
+
+		/* Check for overlap with an existing field. */
+		struct fw_config_field *existing = fw_config_fields;
+		while (existing) {
+			if (fw_config_masks_overlap(existing, tmp->start_bit, tmp->end_bit))
+				exit(1);
+			existing = existing->next;
+		}
+
+		tmp = tmp->next;
 	}
 
 	field = S_ALLOC(sizeof(*field));
 	field->name = name;
-	field->start_bit = start_bit;
-	field->end_bit = end_bit;
+	field->bits = bits;
 	append_fw_config_field(field);
 
 	return field;
@@ -453,13 +488,25 @@ static void append_fw_config_option_to_field(struct fw_config_field *field,
 	}
 }
 
+static uint64_t calc_max_field_value(const struct fw_config_field *field)
+{
+	unsigned int bit_count = 0;
+
+	const struct fw_config_field_bits *bits = field->bits;
+	while (bits) {
+		bit_count += 1 + bits->end_bit - bits->start_bit;
+		bits = bits->next;
+	};
+
+	return (1ull << bit_count) - 1ull;
+}
+
 void add_fw_config_option(struct fw_config_field *field, const char *name, uint64_t value)
 {
 	struct fw_config_option *option;
-	uint64_t field_max_value;
 
 	/* Check that option value fits within field mask. */
-	field_max_value = (1ull << (1ull + field->end_bit - field->start_bit)) - 1ull;
+	uint64_t field_max_value = calc_max_field_value(field);
 	if (value > field_max_value) {
 		printf("ERROR: fw_config option %s:%s value %" PRIx64 " larger than field max %"
 		       PRIx64 "\n",
@@ -505,17 +552,26 @@ static void append_fw_config_probe_to_dev(struct device *dev, struct fw_config_p
 	}
 }
 
+static int check_probe_exists(struct fw_config_probe *probe, const char *field,
+			      const char *option)
+{
+	while (probe) {
+		if (!strcmp(probe->field, field) && !strcmp(probe->option, option)) {
+			return 1;
+		}
+		probe = probe->next;
+	}
+
+	return 0;
+}
+
 void add_fw_config_probe(struct bus *bus, const char *field, const char *option)
 {
 	struct fw_config_probe *probe;
 
-	probe = bus->dev->probe;
-	while (probe) {
-		if (!strcmp(probe->field, field) && !strcmp(probe->option, option)) {
-			printf("ERROR: fw_config probe %s:%s already exists\n", field, option);
-			exit(1);
-		}
-		probe = probe->next;
+	if (check_probe_exists(bus->dev->probe, field, option)) {
+		printf("ERROR: fw_config probe %s:%s already exists\n", field, option);
+		exit(1);
 	}
 
 	probe = S_ALLOC(sizeof(*probe));
@@ -523,6 +579,46 @@ void add_fw_config_probe(struct bus *bus, const char *field, const char *option)
 	probe->option = option;
 
 	append_fw_config_probe_to_dev(bus->dev, probe);
+}
+
+static uint64_t compute_fw_config_mask(const struct fw_config_field_bits *bits)
+{
+	uint64_t mask = 0;
+
+	while (bits) {
+		/* Compute mask from start and end bit. */
+		uint64_t tmp = ((1ull << (1ull + bits->end_bit - bits->start_bit)) - 1ull);
+		tmp <<= bits->start_bit;
+		mask |= tmp;
+		bits = bits->next;
+	}
+
+	return mask;
+}
+
+static unsigned int bits_width(const struct fw_config_field_bits *bits)
+{
+	return 1 + bits->end_bit - bits->start_bit;
+}
+
+static uint64_t calc_option_value(const struct fw_config_field *field,
+				  const struct fw_config_option *option)
+{
+	uint64_t value = 0;
+	uint64_t original = option->value;
+
+	struct fw_config_field_bits *bits = field->bits;
+	while (bits) {
+		const unsigned int width = bits_width(bits);
+		const uint64_t orig_mask = (1ull << width) - 1ull;
+		const uint64_t orig = (original & orig_mask);
+		value |= (orig << bits->start_bit);
+
+		original >>= width;
+		bits = bits->next;
+	}
+
+	return value;
 }
 
 static void emit_fw_config(FILE *fil)
@@ -539,20 +635,16 @@ static void emit_fw_config(FILE *fil)
 		fprintf(fil, "#define FW_CONFIG_FIELD_%s_NAME \"%s\"\n",
 			field->name, field->name);
 
-		/* Compute mask from start and end bit. */
-		mask = ((1ull << (1ull + field->end_bit - field->start_bit)) - 1ull);
-		mask <<= field->start_bit;
-
+		mask = compute_fw_config_mask(field->bits);
 		fprintf(fil, "#define FW_CONFIG_FIELD_%s_MASK 0x%" PRIx64 "\n",
 			field->name, mask);
 
 		while (option) {
+			const uint64_t value = calc_option_value(field, option);
 			fprintf(fil, "#define FW_CONFIG_FIELD_%s_OPTION_%s_NAME \"%s\"\n",
 				field->name, option->name, option->name);
 			fprintf(fil, "#define FW_CONFIG_FIELD_%s_OPTION_%s_VALUE 0x%"
-				PRIx64 "\n", field->name, option->name,
-				option->value << field->start_bit);
-
+				PRIx64 "\n", field->name, option->name, value);
 			option = option->next;
 		}
 
@@ -786,14 +878,6 @@ static struct device *new_device_with_path(struct bus *parent,
 		new_d->path = ".type=DEVICE_PATH_MMIO,{.mmio={ .addr = 0x%x }}";
 		break;
 
-	case ESPI:
-		new_d->path = ".type=DEVICE_PATH_ESPI,{.espi={ .addr = 0x%x }}";
-		break;
-
-	case LPC:
-		new_d->path = ".type=DEVICE_PATH_LPC,{.lpc={ .addr = 0x%x }}";
-		break;
-
 	case GPIO:
 		new_d->path = ".type=DEVICE_PATH_GPIO,{.gpio={ .id = 0x%x }}";
 		break;
@@ -939,6 +1023,25 @@ void add_slot_desc(struct bus *bus, char *type, char *length, char *designation,
 	dev->smbios_slot_designation = designation;
 }
 
+void add_smbios_dev_info(struct bus *bus, long instance_id, const char *refdes)
+{
+	struct device *dev = bus->dev;
+
+	if (dev->bustype != PCI && dev->bustype != DOMAIN) {
+		printf("ERROR: 'dev_info' only allowed for PCI devices\n");
+		exit(1);
+	}
+
+	if (instance_id < 0 || instance_id > UINT8_MAX) {
+		printf("ERROR: SMBIOS dev info instance ID '%ld' out of range\n", instance_id);
+		exit(1);
+	}
+
+	dev->smbios_instance_id_valid = 1;
+	dev->smbios_instance_id = (unsigned int)instance_id;
+	dev->smbios_refdes = refdes;
+}
+
 void add_pci_subsystem_ids(struct bus *bus, int vendor, int device,
 			   int inherit)
 {
@@ -1004,8 +1107,16 @@ static void pass0(FILE *fil, FILE *head, struct device *ptr, struct device *next
 		return;
 	}
 
-	char *name = S_ALLOC(10);
-	sprintf(name, "_dev%d", dev_id++);
+	char *name;
+
+	if (ptr->alias) {
+		name = S_ALLOC(6 + strlen(ptr->alias));
+		sprintf(name, "_dev_%s", ptr->alias);
+	} else {
+		name = S_ALLOC(11);
+		sprintf(name, "_dev_%d", dev_id++);
+	}
+
 	ptr->name = name;
 
 	fprintf(fil, "STORAGE struct device %s;\n", ptr->name);
@@ -1022,6 +1133,37 @@ static void pass0(FILE *fil, FILE *head, struct device *ptr, struct device *next
 	fprintf(fil,
 		"DEVTREE_CONST struct device * DEVTREE_CONST last_dev = &%s;\n",
 		ptr->name);
+}
+
+static void emit_smbios_data(FILE *fil, struct device *ptr)
+{
+	fprintf(fil, "#if !DEVTREE_EARLY\n");
+	fprintf(fil, "#if CONFIG(GENERATE_SMBIOS_TABLES)\n");
+
+	/* SMBIOS types start at 1, if zero it hasn't been set */
+	if (ptr->smbios_slot_type)
+		fprintf(fil, "\t.smbios_slot_type = %s,\n",
+			ptr->smbios_slot_type);
+	if (ptr->smbios_slot_data_width)
+		fprintf(fil, "\t.smbios_slot_data_width = %s,\n",
+			ptr->smbios_slot_data_width);
+	if (ptr->smbios_slot_designation)
+		fprintf(fil, "\t.smbios_slot_designation = \"%s\",\n",
+			ptr->smbios_slot_designation);
+	if (ptr->smbios_slot_length)
+		fprintf(fil, "\t.smbios_slot_length = %s,\n",
+			ptr->smbios_slot_length);
+
+	/* Fill in SMBIOS type41 fields */
+	if (ptr->smbios_instance_id_valid) {
+		fprintf(fil, "\t.smbios_instance_id_valid = true,\n");
+		fprintf(fil, "\t.smbios_instance_id = %u,\n", ptr->smbios_instance_id);
+		if (ptr->smbios_refdes)
+			fprintf(fil, "\t.smbios_refdes = \"%s\",\n", ptr->smbios_refdes);
+	}
+
+	fprintf(fil, "#endif\n");
+	fprintf(fil, "#endif\n");
 }
 
 static void emit_resources(FILE *fil, struct device *ptr)
@@ -1158,9 +1300,9 @@ static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next
 		fprintf(fil, "\t.sibling = &%s,\n", ptr->sibling->name);
 	else
 		fprintf(fil, "\t.sibling = NULL,\n");
-	fprintf(fil, "#if !DEVTREE_EARLY\n");
 	if (ptr->probe)
 		fprintf(fil, "\t.probe_list = %s_probe_list,\n", ptr->name);
+	fprintf(fil, "#if !DEVTREE_EARLY\n");
 	for (pin = 0; pin < 4; pin++) {
 		if (ptr->pci_irq_info[pin].ioapic_irq_pin > 0)
 			fprintf(fil,
@@ -1182,29 +1324,9 @@ static void pass1(FILE *fil, FILE *head, struct device *ptr, struct device *next
 			chip_ins->chip->name_underscore, chip_ins->id);
 	if (next)
 		fprintf(fil, "\t.next=&%s,\n", next->name);
-	if (ptr->smbios_slot_type || ptr->smbios_slot_data_width ||
-	    ptr->smbios_slot_designation || ptr->smbios_slot_length) {
-		fprintf(fil, "#if !DEVTREE_EARLY\n");
-		fprintf(fil, "#if CONFIG(GENERATE_SMBIOS_TABLES)\n");
-	}
-	/* SMBIOS types start at 1, if zero it hasn't been set */
-	if (ptr->smbios_slot_type)
-		fprintf(fil, "\t.smbios_slot_type = %s,\n",
-			ptr->smbios_slot_type);
-	if (ptr->smbios_slot_data_width)
-		fprintf(fil, "\t.smbios_slot_data_width = %s,\n",
-			ptr->smbios_slot_data_width);
-	if (ptr->smbios_slot_designation)
-		fprintf(fil, "\t.smbios_slot_designation = \"%s\",\n",
-			ptr->smbios_slot_designation);
-	if (ptr->smbios_slot_length)
-		fprintf(fil, "\t.smbios_slot_length = %s,\n",
-			ptr->smbios_slot_length);
-	if (ptr->smbios_slot_type || ptr->smbios_slot_data_width ||
-	    ptr->smbios_slot_designation || ptr->smbios_slot_length) {
-		fprintf(fil, "#endif\n");
-		fprintf(fil, "#endif\n");
-	}
+
+	emit_smbios_data(fil, ptr);
+
 	fprintf(fil, "};\n");
 
 	emit_resources(fil, ptr);
@@ -1237,6 +1359,12 @@ static void expose_device_names(FILE *fil, FILE *head, struct device *ptr, struc
 			ptr->path_a, ptr->path_b);
 		fprintf(fil, "DEVTREE_CONST struct device *const __pnp_%04x_%02x = &%s;\n",
 			ptr->path_a, ptr->path_b, ptr->name);
+	}
+
+	if (ptr->alias) {
+		fprintf(head, "extern DEVTREE_CONST struct device *const %s_ptr;\n", ptr->name);
+		fprintf(fil, "DEVTREE_CONST struct device *const %s_ptr = &%s;\n",
+			ptr->name, ptr->name);
 	}
 }
 
@@ -1402,6 +1530,56 @@ static void parse_devicetree(const char *file, struct bus *parent)
 	yyparse();
 
 	fclose(filec);
+}
+
+static int device_probe_count(struct fw_config_probe *probe)
+{
+	int count = 0;
+	while (probe) {
+		probe = probe->next;
+		count++;
+	}
+
+	return count;
+}
+
+/*
+ * When overriding devices, use the following rules:
+ * 1. If probe count matches and:
+ *    a. Entire probe list matches for both devices -> Same device, override.
+ *    b. No probe entries match -> Different devices, do not override.
+ *    c. Partial list matches -> Bad device tree entries, fail build.
+ *
+ * 2. If probe counts do not match and:
+ *    a. No probe entries match -> Different devices, do not override.
+ *    b. Partial list matches -> Bad device tree entries, fail build.
+ */
+static int device_probes_match(struct device *a, struct device *b)
+{
+	struct fw_config_probe *a_probe = a->probe;
+	struct fw_config_probe *b_probe = b->probe;
+	int a_probe_count = device_probe_count(a_probe);
+	int b_probe_count = device_probe_count(b_probe);
+	int match_count = 0;
+
+	while (a_probe) {
+		if (check_probe_exists(b_probe, a_probe->field, a_probe->option))
+			match_count++;
+		a_probe = a_probe->next;
+	}
+
+	if ((a_probe_count == b_probe_count) && (a_probe_count == match_count))
+		return 1;
+
+	if (match_count) {
+		printf("ERROR: devices with overlapping probes: ");
+		printf(a->path, a->path_a, a->path_b);
+		printf(b->path, b->path_a, b->path_b);
+		printf("\n");
+		exit(1);
+	}
+
+	return 0;
 }
 
 /*
@@ -1728,7 +1906,16 @@ static void override_devicetree(struct bus *base_parent,
 		/* Look for a matching device in base tree. */
 		for (base_child = base_parent->children;
 		     base_child; base_child = base_child->sibling) {
-			if (device_match(base_child, override_child))
+			if (!device_match(base_child, override_child))
+				continue;
+			/* If base device has no probe statement, nothing else to compare. */
+			if (base_child->probe == NULL)
+				break;
+			/*
+			 * If base device has probe statements, ensure that all probe conditions
+			 * match for base and override device.
+			 */
+			if (device_probes_match(base_child, override_child))
 				break;
 		}
 
@@ -1777,6 +1964,7 @@ static void generate_outputh(FILE *f, const char *fw_conf_header, const char *de
 
 static void generate_outputc(FILE *f, const char *static_header)
 {
+	fprintf(f, "#include <boot/coreboot_tables.h>\n");
 	fprintf(f, "#include <device/device.h>\n");
 	fprintf(f, "#include <device/pci.h>\n");
 	fprintf(f, "#include <fw_config.h>\n");
@@ -1878,6 +2066,7 @@ int main(int argc, char **argv)
 
 	if (override_devtree)
 		parse_override_devicetree(override_devtree, &override_root_dev);
+
 
 	FILE *autogen = fopen(outputc, "w");
 	if (!autogen) {

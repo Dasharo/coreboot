@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <acpi/acpigen.h>
+#include <arch/hpet.h>
 #include <assert.h>
 #include <cbmem.h>
 #include <device/mmio.h>
 #include <device/pci.h>
 #include <soc/acpi.h>
 #include <soc/cpu.h>
+#include <soc/hest.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/soc_util.h>
@@ -159,14 +161,14 @@ static unsigned long acpi_create_dmar_ds_pci_br_for_port(unsigned long current,
 	const uint32_t dev = iio_resource->PcieInfo.PortInfo[port].Device;
 	const uint32_t func = iio_resource->PcieInfo.PortInfo[port].Function;
 
-	const uint32_t id = pci_mmio_read_config32(PCI_DEV(bus, dev, func),
+	const uint32_t id = pci_s_read_config32(PCI_DEV(bus, dev, func),
 		PCI_VENDOR_ID);
 	if (id == 0xffffffff)
 		return 0;
 
 	unsigned long atsr_size = 0;
 	unsigned long pci_br_size = 0;
-	if (is_atsr == true && first && *first == true) {
+	if (is_atsr && first && *first) {
 		printk(BIOS_DEBUG, "[Root Port ATS Capability] Flags: 0x%x, "
 			"PCI Segment Number: 0x%x\n", 0, pcie_seg);
 		atsr_size = acpi_create_dmar_atsr(current, 0, pcie_seg);
@@ -448,6 +450,9 @@ unsigned long northbridge_write_acpi_tables(const struct device *device,
 		current = acpi_align_current(current);
 		acpi_add_table(rsdp, dmar);
 	}
+
+	if (CONFIG(SOC_ACPI_HEST))
+		current = hest_create(current, rsdp);
 
 	return current;
 }

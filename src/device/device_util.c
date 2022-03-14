@@ -152,14 +152,14 @@ const char *dev_path(const struct device *dev)
 
 	buffer[0] = '\0';
 	if (!dev) {
-		memcpy(buffer, "<null>", 7);
+		strcpy(buffer, "<null>");
 	} else {
 		switch (dev->path.type) {
 		case DEVICE_PATH_NONE:
-			memcpy(buffer, "NONE", 5);
+			strcpy(buffer, "NONE");
 			break;
 		case DEVICE_PATH_ROOT:
-			memcpy(buffer, "Root Device", 12);
+			strcpy(buffer, "Root Device");
 			break;
 		case DEVICE_PATH_PCI:
 			snprintf(buffer, sizeof(buffer),
@@ -217,14 +217,6 @@ const char *dev_path(const struct device *dev)
 		case DEVICE_PATH_MMIO:
 			snprintf(buffer, sizeof(buffer), "MMIO: %08lx",
 				 dev->path.mmio.addr);
-			break;
-		case DEVICE_PATH_ESPI:
-			snprintf(buffer, sizeof(buffer), "ESPI: %08lx",
-				 dev->path.espi.addr);
-			break;
-		case DEVICE_PATH_LPC:
-			snprintf(buffer, sizeof(buffer), "LPC: %08lx",
-				 dev->path.lpc.addr);
 			break;
 		case DEVICE_PATH_GPIO:
 			snprintf(buffer, sizeof(buffer), "GPIO: %d", dev->path.gpio.id);
@@ -450,7 +442,7 @@ static resource_t align_down(resource_t val, unsigned long gran)
  * @param resource The resource whose limit is desired.
  * @return The end.
  */
-resource_t resource_end(struct resource *resource)
+resource_t resource_end(const struct resource *resource)
 {
 	resource_t base, end;
 
@@ -476,7 +468,7 @@ resource_t resource_end(struct resource *resource)
  * @param resource The resource whose maximum is desired.
  * @return The maximum.
  */
-resource_t resource_max(struct resource *resource)
+resource_t resource_max(const struct resource *resource)
 {
 	resource_t max;
 
@@ -491,7 +483,7 @@ resource_t resource_max(struct resource *resource)
  * @param resource The resource type to decode.
  * @return TODO.
  */
-const char *resource_type(struct resource *resource)
+const char *resource_type(const struct resource *resource)
 {
 	static char buffer[RESOURCE_TYPE_MAX];
 	snprintf(buffer, sizeof(buffer), "%s%s%s%s",
@@ -513,7 +505,7 @@ const char *resource_type(struct resource *resource)
  * @param resource The resource that was just stored.
  * @param comment TODO
  */
-void report_resource_stored(struct device *dev, struct resource *resource,
+void report_resource_stored(struct device *dev, const struct resource *resource,
 			    const char *comment)
 {
 	char buf[10];
@@ -710,14 +702,14 @@ static void resource_tree(const struct device *root, int debug_level, int depth)
 		indent[i] = ' ';
 	indent[i] = '\0';
 
-	do_printk(BIOS_DEBUG, "%s%s", indent, dev_path(root));
+	printk(BIOS_DEBUG, "%s%s", indent, dev_path(root));
 	if (root->link_list && root->link_list->children)
-		do_printk(BIOS_DEBUG, " child on link 0 %s",
+		printk(BIOS_DEBUG, " child on link 0 %s",
 			  dev_path(root->link_list->children));
-	do_printk(BIOS_DEBUG, "\n");
+	printk(BIOS_DEBUG, "\n");
 
 	for (res = root->resource_list; res; res = res->next) {
-		do_printk(debug_level, "%s%s resource base %llx size %llx "
+		printk(debug_level, "%s%s resource base %llx size %llx "
 			  "align %d gran %d limit %llx flags %lx index %lx\n",
 			  indent, dev_path(root), res->base, res->size,
 			  res->align, res->gran, res->limit, res->flags,
@@ -735,12 +727,12 @@ void print_resource_tree(const struct device *root, int debug_level,
 {
 	/* Bail if root is null. */
 	if (!root) {
-		do_printk(debug_level, "%s passed NULL for root!\n", __func__);
+		printk(debug_level, "%s passed NULL for root!\n", __func__);
 		return;
 	}
 
 	/* Bail if not printing to screen. */
-	if (!do_printk(debug_level, "Show resources in subtree (%s)...%s\n",
+	if (!printk(debug_level, "Show resources in subtree (%s)...%s\n",
 		       dev_path(root), msg))
 		return;
 
@@ -758,7 +750,7 @@ void show_devs_tree(const struct device *dev, int debug_level, int depth)
 		depth_str[i] = ' ';
 	depth_str[i] = '\0';
 
-	do_printk(debug_level, "%s%s: enabled %d\n",
+	printk(debug_level, "%s%s: enabled %d\n",
 		  depth_str, dev_path(dev), dev->enabled);
 
 	for (link = dev->link_list; link; link = link->next) {
@@ -771,7 +763,7 @@ void show_devs_tree(const struct device *dev, int debug_level, int depth)
 void show_all_devs_tree(int debug_level, const char *msg)
 {
 	/* Bail if not printing to screen. */
-	if (!do_printk(debug_level, "Show all devs in tree form... %s\n", msg))
+	if (!printk(debug_level, "Show all devs in tree form... %s\n", msg))
 		return;
 	show_devs_tree(all_devices, debug_level, 0);
 }
@@ -779,10 +771,10 @@ void show_all_devs_tree(int debug_level, const char *msg)
 void show_devs_subtree(struct device *root, int debug_level, const char *msg)
 {
 	/* Bail if not printing to screen. */
-	if (!do_printk(debug_level, "Show all devs in subtree %s... %s\n",
+	if (!printk(debug_level, "Show all devs in subtree %s... %s\n",
 		       dev_path(root), msg))
 		return;
-	do_printk(debug_level, "%s\n", msg);
+	printk(debug_level, "%s\n", msg);
 	show_devs_tree(root, debug_level, 0);
 }
 
@@ -791,10 +783,10 @@ void show_all_devs(int debug_level, const char *msg)
 	struct device *dev;
 
 	/* Bail if not printing to screen. */
-	if (!do_printk(debug_level, "Show all devs... %s\n", msg))
+	if (!printk(debug_level, "Show all devs... %s\n", msg))
 		return;
 	for (dev = all_devices; dev; dev = dev->next) {
-		do_printk(debug_level, "%s: enabled %d\n",
+		printk(debug_level, "%s: enabled %d\n",
 			  dev_path(dev), dev->enabled);
 	}
 }
@@ -808,7 +800,7 @@ void show_one_resource(int debug_level, struct device *dev,
 	end = resource_end(resource);
 	buf[0] = '\0';
 
-	do_printk(debug_level, "%s %02lx <- [0x%010llx - 0x%010llx] "
+	printk(debug_level, "%s %02lx <- [0x%010llx - 0x%010llx] "
 		  "size 0x%08llx gran 0x%02x %s%s%s\n", dev_path(dev),
 		  resource->index, base, end, resource->size, resource->gran,
 		  buf, resource_type(resource), comment);
@@ -818,12 +810,12 @@ void show_all_devs_resources(int debug_level, const char *msg)
 {
 	struct device *dev;
 
-	if (!do_printk(debug_level, "Show all devs with resources... %s\n", msg))
+	if (!printk(debug_level, "Show all devs with resources... %s\n", msg))
 		return;
 
 	for (dev = all_devices; dev; dev = dev->next) {
 		struct resource *res;
-		do_printk(debug_level, "%s: enabled %d\n",
+		printk(debug_level, "%s: enabled %d\n",
 			  dev_path(dev), dev->enabled);
 		for (res = dev->resource_list; res; res = res->next)
 			show_one_resource(debug_level, dev, res, "");
@@ -865,13 +857,13 @@ void fixed_io_resource(struct device *dev, unsigned long index,
 void mmconf_resource(struct device *dev, unsigned long index)
 {
 	struct resource *resource = new_resource(dev, index);
-	resource->base = CONFIG_MMCONF_BASE_ADDRESS;
-	resource->size = CONFIG_MMCONF_LENGTH;
+	resource->base = CONFIG_ECAM_MMCONF_BASE_ADDRESS;
+	resource->size = CONFIG_ECAM_MMCONF_LENGTH;
 	resource->flags = IORESOURCE_MEM | IORESOURCE_RESERVE |
 		IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED;
 
-	printk(BIOS_DEBUG, "Adding PCIe enhanced config space BAR "
-			"0x%08lx-0x%08lx.\n", (unsigned long)(resource->base),
+	printk(BIOS_DEBUG, "Adding PCIe enhanced config space BAR 0x%08lx-0x%08lx.\n",
+			(unsigned long)(resource->base),
 			(unsigned long)(resource->base + resource->size));
 }
 

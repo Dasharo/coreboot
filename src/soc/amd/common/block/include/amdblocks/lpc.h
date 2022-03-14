@@ -10,6 +10,8 @@
 #define   LEGACY_DMA_EN			BIT(2)
 #define   VW_ROM_SHARING_EN		BIT(3)
 #define   EXT_ROM_SHARING_EN		BIT(4)
+#define   SPI_ROM_BIOS_SEMAPHORE	BIT(5)
+#define   SPI_ROM_EC_SEMAPHORE		BIT(6)
 
 #define LPC_IO_PORT_DECODE_ENABLE	0x44
 #define   DECODE_ENABLE_PARALLEL_PORT0	BIT(0)
@@ -67,24 +69,12 @@
 #define     LPC_SELECT_SIO_2E2F		0
 #define   WIDEIO_RANGE_ERROR		-1
 
-/* Assuming word access to higher word (register 0x4a) */
-#define LPC_IO_OR_MEM_DEC_EN_HIGH	0x4a
-#define   LPC_WIDEIO2_ENABLE_H		BIT(9)
-#define   LPC_WIDEIO1_ENABLE_H		BIT(8)
-#define   DECODE_IO_PORT_ENABLE6_H	BIT(7)
-#define   DECODE_IO_PORT_ENABLE5_H	BIT(6)
-#define   DECODE_IO_PORT_ENABLE4_H	BIT(5)
-#define   DECODE_IO_PORT_ENABLE3_H	BIT(3)
-#define   DECODE_IO_PORT_ENABLE2_H	BIT(2)
-#define   DECODE_IO_PORT_ENABLE1_H	BIT(1)
-#define   DECODE_IO_PORT_ENABLE0_H	BIT(0)
-
 #define LPC_MEM_PORT1			0x4c
 #define ROM_PROTECT_RANGE0		0x50
 #define   ROM_BASE_MASK			0xfffff000		/* bits 31-12 */
 #define   ROM_RANGE_WP			BIT(10)
 #define   ROM_RANGE_RP			BIT(9)
-#define   RANGE_UNIT			BIT(8)
+#define   RANGE_UNIT			BIT(8)			/* 0: 4kiB, 1: 64kiB */
 #define   RANGE_ADDR_MASK		0x000000ff		/* Range defined by bits 7-0 */
 #define ROM_PROTECT_RANGE_REG(n)	(ROM_PROTECT_RANGE0 + (4 * n))
 #define MAX_ROM_PROTECT_RANGES		4
@@ -105,6 +95,8 @@
 #define   LPC_ALT_WIDEIO0_ENABLE	BIT(0)
 
 #define LPC_MISC_CONTROL_BITS		0x78
+#define   LPC_LDRQ1_EN			BIT(3)
+#define   LPC_LDRQ0_EN			BIT(2)
 #define   LPC_NOHOG			BIT(0)
 
 #define LPC_TRUSTED_PLATFORM_MODULE	0x7c
@@ -113,12 +105,24 @@
 
 #define LPC_WIDEIO2_GENERIC_PORT	0x90
 
+#define LPC_ROM_DMA_SRC_ADDR		0xb0
+#define LPC_ROM_DMA_DST_ADDR		0xb4
 /* LPC register 0xb8 is DWORD, here there are definitions for byte
    access. For example, bits 31-24 are accessed through byte access
    at register 0xbb. */
-#define LPC_ROM_DMA_EC_HOST_CONTROL	0xb8
-#define   SPI_FROM_HOST_PREFETCH_EN	BIT(24)
-#define   SPI_FROM_USB_PREFETCH_EN	BIT(23)
+#define LPC_ROM_DMA_EC_HOST_CONTROL		0xb8
+#define   SPI_FROM_HOST_PREFETCH_EN		BIT(24)
+#define   SPI_FROM_USB_PREFETCH_EN		BIT(23)
+#define   LPC_ROM_DMA_CTRL_DW_COUNT_SHIFT	6
+#define   LPC_ROM_DMA_CTRL_DW_COUNT_MASK	(0x3ffUL << LPC_ROM_DMA_CTRL_DW_COUNT_SHIFT)
+#define   LPC_ROM_DMA_CTRL_ERROR		BIT(1)
+#define   LPC_ROM_DMA_CTRL_START		BIT(0)
+#define LPC_ROM_DMA_MIN_ALIGNMENT		(1 << 6)
+#define LPC_ROM_DMA_CTRL_DW_COUNT(bytes)                                                       \
+	(((bytes / LPC_ROM_DMA_MIN_ALIGNMENT) - 1) << LPC_ROM_DMA_CTRL_DW_COUNT_SHIFT)
+#define LPC_ROM_DMA_CTRL_MAX_BYTES                                                             \
+	(((LPC_ROM_DMA_CTRL_DW_COUNT_MASK >> LPC_ROM_DMA_CTRL_DW_COUNT_SHIFT) + 1)             \
+	 * LPC_ROM_DMA_MIN_ALIGNMENT)
 
 #define LPC_HOST_CONTROL		0xbb
 #define   PREFETCH_EN_SPI_FROM_HOST	BIT(0)
@@ -127,10 +131,7 @@
 /* Clear all decoding to the LPC bus and erase any range registers associated
  * with the enable bits. */
 void lpc_disable_decodes(void);
-/* LPC is typically enabled very early, but this function is last opportunity */
-void soc_late_lpc_bridge_enable(void);
 void lpc_enable_port80(void);
-void lpc_enable_pci_port80(void);
 void lpc_enable_decode(uint32_t decodes);
 /* addr = index/data to enable:  LPC_SELECT_SIO_2E2F or LPC_SELECT_SIO_4E4F */
 void lpc_enable_sio_decode(const bool addr);

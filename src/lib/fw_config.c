@@ -11,6 +11,7 @@
 #include <lib.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <drivers/vpd/vpd.h>
 
 uint64_t fw_config_get(void)
 {
@@ -21,35 +22,49 @@ uint64_t fw_config_get(void)
 	if (fw_config_value_initialized)
 		return fw_config_value;
 	fw_config_value_initialized = true;
-
-	/* Look in CBFS to allow override of value. */
-	if (CONFIG(FW_CONFIG_SOURCE_CBFS)) {
-		if (cbfs_load(CONFIG_CBFS_PREFIX "/fw_config", &fw_config_value,
-			      sizeof(fw_config_value)) != sizeof(fw_config_value)) {
-			printk(BIOS_WARNING, "%s: Could not get fw_config from CBFS\n",
-			       __func__);
-			fw_config_value = UNDEFINED_FW_CONFIG;
-		} else {
-			printk(BIOS_INFO, "FW_CONFIG value from CBFS is 0x%" PRIx64 "\n",
-			       fw_config_value);
-			return fw_config_value;
-		}
-	}
+	fw_config_value = UNDEFINED_FW_CONFIG;
 
 	/* Read the value from EC CBI. */
 	if (CONFIG(FW_CONFIG_SOURCE_CHROMEEC_CBI)) {
-		if (google_chromeec_cbi_get_fw_config(&fw_config_value)) {
-			printk(BIOS_WARNING, "%s: Could not get fw_config from EC\n", __func__);
-			fw_config_value = UNDEFINED_FW_CONFIG;
-		}
+		if (google_chromeec_cbi_get_fw_config(&fw_config_value))
+			printk(BIOS_WARNING, "%s: Could not get fw_config from CBI\n",
+				__func__);
+		else
+			printk(BIOS_INFO, "FW_CONFIG value from CBI is 0x%" PRIx64 "\n",
+				fw_config_value);
 	}
 
-	printk(BIOS_INFO, "FW_CONFIG value is 0x%" PRIx64 "\n", fw_config_value);
+	/* Look in CBFS to allow override of value. */
+	if (CONFIG(FW_CONFIG_SOURCE_CBFS) && fw_config_value == UNDEFINED_FW_CONFIG) {
+		if (cbfs_load(CONFIG_CBFS_PREFIX "/fw_config", &fw_config_value,
+			      sizeof(fw_config_value)) != sizeof(fw_config_value))
+			printk(BIOS_WARNING, "%s: Could not get fw_config from CBFS\n",
+				__func__);
+		else
+			printk(BIOS_INFO, "FW_CONFIG value from CBFS is 0x%" PRIx64 "\n",
+				fw_config_value);
+	}
+
+	if (CONFIG(FW_CONFIG_SOURCE_VPD) && fw_config_value == UNDEFINED_FW_CONFIG) {
+		int vpd_value;
+		if (vpd_get_int("fw_config", VPD_RW_THEN_RO, &vpd_value)) {
+			fw_config_value = vpd_value;
+			printk(BIOS_INFO, "FW_CONFIG value from VPD is 0x%" PRIx64 "\n",
+				fw_config_value);
+		} else
+			printk(BIOS_WARNING, "%s: Could not get fw_config from vpd\n",
+				__func__);
+	}
+
 	return fw_config_value;
 }
 
 bool fw_config_probe(const struct fw_config *match)
 {
+	/* If fw_config is not provisioned, then there is nothing to match. */
+	if (!fw_config_is_provisioned())
+		return false;
+
 	/* Compare to system value. */
 	if ((fw_config_get() & match->mask) == match->value) {
 		if (match->field_name && match->option_name)
@@ -68,6 +83,29 @@ bool fw_config_probe(const struct fw_config *match)
 bool fw_config_is_provisioned(void)
 {
 	return fw_config_get() != UNDEFINED_FW_CONFIG;
+}
+
+bool fw_config_probe_dev(const struct device *dev, const struct fw_config **matching_probe)
+{
+	const struct fw_config *probe;
+
+	if (matching_probe)
+		*matching_probe = NULL;
+
+	/* If the device does not have a probe list, then probing is not required. */
+	if (!dev->probe_list)
+		return true;
+
+	for (probe = dev->probe_list; probe && probe->mask != 0; probe++) {
+		if (!fw_config_probe(probe))
+			continue;
+
+		if (matching_probe)
+			*matching_probe = probe;
+		return true;
+	}
+
+	return false;
 }
 
 #if ENV_RAMSTAGE
@@ -111,23 +149,15 @@ static void fw_config_init(void *unused)
 
 	for (dev = all_devices; dev; dev = dev->next) {
 		const struct fw_config *probe;
-		bool match = false;
 
-		if (!dev->probe_list)
-			continue;
-
-		for (probe = dev->probe_list; probe && probe->mask != 0; probe++) {
-			if (fw_config_probe(probe)) {
-				match = true;
-				cached_configs[probe_index(probe->mask)] = probe;
-				break;
-			}
-		}
-
-		if (!match) {
+		if (!fw_config_probe_dev(dev, &probe)) {
 			printk(BIOS_INFO, "%s disabled by fw_config\n", dev_path(dev));
 			dev->enabled = 0;
+			continue;
 		}
+
+		if (probe)
+			cached_configs[probe_index(probe->mask)] = probe;
 	}
 }
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT_CHIPS, BS_ON_ENTRY, fw_config_init, NULL);

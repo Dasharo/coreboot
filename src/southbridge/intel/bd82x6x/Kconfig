@@ -23,7 +23,6 @@ config SOUTH_BRIDGE_OPTIONS
 	select SOUTHBRIDGE_INTEL_COMMON_PMBASE
 	select SOUTHBRIDGE_INTEL_COMMON_RTC
 	select SOUTHBRIDGE_INTEL_COMMON_RESET
-	select IOAPIC
 	select HAVE_USBDEBUG_OPTIONS
 	select HAVE_SMI_HANDLER
 	select USE_WATCHDOG_ON_BOOT
@@ -54,7 +53,6 @@ config SERIRQ_CONTINUOUS_MODE
 	  operated in continuous mode.
 
 config HPET_MIN_TICKS
-	hex
 	default 0x80
 
 config HIDE_MEI_ON_ERROR
@@ -64,5 +62,8 @@ config HIDE_MEI_ON_ERROR
 	  If you enable this option, the Management Engine Interface
 	  device will be hidden when ME is in an inoperable mode, e.g.
 	  if me_cleaner was used.
+
+config PCIEXP_HOTPLUG
+	default y
 
 endif

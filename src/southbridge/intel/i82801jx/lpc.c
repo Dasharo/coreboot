@@ -20,6 +20,7 @@
 #include <southbridge/intel/common/pciehp.h>
 #include <southbridge/intel/common/pmutil.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
+#include <southbridge/intel/common/rcba_pirq.h>
 
 #define NMI_OFF	0
 
@@ -27,20 +28,13 @@ typedef struct southbridge_intel_i82801jx_config config_t;
 
 static void i82801jx_enable_apic(struct device *dev)
 {
-	u32 reg32;
-	volatile u32 *ioapic_index = (volatile u32 *)(IO_APIC_ADDR);
-	volatile u32 *ioapic_data = (volatile u32 *)(IO_APIC_ADDR + 0x10);
-
 	/* Enable IOAPIC. Keep APIC Range Select at zero. */
 	RCBA8(0x31ff) = 0x03;
 	/* We have to read 0x31ff back if bit0 changed. */
 	RCBA8(0x31ff);
 
 	/* Lock maximum redirection entries (MRE), R/WO register. */
-	*ioapic_index	= 0x01;
-	reg32		= *ioapic_data;
-	*ioapic_index	= 0x01;
-	*ioapic_data	= reg32;
+	ioapic_lock_max_vectors(VIO_APIC_VADDR);
 
 	setup_ioapic(VIO_APIC_VADDR, 2); /* ICH7 code uses id 2. */
 }
@@ -154,9 +148,6 @@ static void i82801jx_power_options(struct device *dev)
 	/* Get the chip configuration */
 	config_t *config = dev->chip_info;
 
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-	int nmi_option;
-
 	/* BIOS must program... */
 	pci_or_config32(dev, 0xac, (1 << 30) | (3 << 8));
 
@@ -166,8 +157,7 @@ static void i82801jx_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use MAINBOARD_POWER_ON.
 	 */
-	pwr_on = MAINBOARD_POWER_ON;
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail", MAINBOARD_POWER_ON);
 
 	reg8 = pci_read_config8(dev, D31F0_GEN_PMCON_3);
 	reg8 &= 0xfe;
@@ -203,8 +193,7 @@ static void i82801jx_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x74); /* Read from 0x74 as 0x70 is write only. */
-	nmi_option = NMI_OFF;
-	get_option(&nmi_option, "nmi");
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */

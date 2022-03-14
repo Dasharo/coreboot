@@ -162,32 +162,7 @@ static void pch_pcie_pm_late(struct device *dev)
 	pci_or_config32(dev, 0xd4, 1 << 1);
 
 	/* Check for a rootport ASPM override */
-	switch (PCI_FUNC(dev->path.pci.devfn)) {
-	case 0:
-		apmc = config->pcie_aspm_f0;
-		break;
-	case 1:
-		apmc = config->pcie_aspm_f1;
-		break;
-	case 2:
-		apmc = config->pcie_aspm_f2;
-		break;
-	case 3:
-		apmc = config->pcie_aspm_f3;
-		break;
-	case 4:
-		apmc = config->pcie_aspm_f4;
-		break;
-	case 5:
-		apmc = config->pcie_aspm_f5;
-		break;
-	case 6:
-		apmc = config->pcie_aspm_f6;
-		break;
-	case 7:
-		apmc = config->pcie_aspm_f7;
-		break;
-	}
+	apmc = config->pcie_aspm[PCI_FUNC(dev->path.pci.devfn)];
 
 	/* Setup the override or get the real ASPM setting */
 	if (apmc) {
@@ -244,11 +219,11 @@ static void pch_pciexp_scan_bridge(struct device *dev)
 {
 	struct southbridge_intel_bd82x6x_config *config = dev->chip_info;
 
-	/* Normal PCIe Scan */
-	pciexp_scan_bridge(dev);
-
-	if (config->pcie_hotplug_map[PCI_FUNC(dev->path.pci.devfn)]) {
-		intel_acpi_pcie_hotplug_scan_slot(dev->link_list);
+	if (CONFIG(PCIEXP_HOTPLUG) && config->pcie_hotplug_map[PCI_FUNC(dev->path.pci.devfn)]) {
+		pciexp_hotplug_scan_bridge(dev);
+	} else {
+		/* Normal PCIe Scan */
+		pciexp_scan_bridge(dev);
 	}
 
 	/* Late Power Management init after bridge device enumeration */

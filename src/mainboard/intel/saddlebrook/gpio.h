@@ -12,12 +12,6 @@
 /* BIOS Flash Write Protect */
 #define GPIO_PCH_WP		GPP_C23
 
-/* Memory configuration board straps */
-#define GPIO_MEM_CONFIG_0	GPP_C12
-#define GPIO_MEM_CONFIG_1	GPP_C13
-#define GPIO_MEM_CONFIG_2	GPP_C14
-#define GPIO_MEM_CONFIG_3	GPP_C15
-
 /* EC wake is LAN_WAKE# which is a special DeepSX wake pin */
 #define GPE_EC_WAKE		GPE0_LAN_WAK
 
@@ -251,7 +245,7 @@ static const struct pad_config gpio_table[] = {
 /* LANPHYC */		PAD_CFG_NF(GPD11, NONE, DEEP, NF1),
 };
 
-/* Early pad configuration in romstage. */
+/* Early pad configuration in bootblock */
 static const struct pad_config early_gpio_table[] = {
 /* UART0_CTS# */	PAD_CFG_GPO(GPP_C11, 1, DEEP), /* EN_PP3300_KEPLER */
 };

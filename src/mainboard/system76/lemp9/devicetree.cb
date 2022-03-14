@@ -1,6 +1,5 @@
 chip soc/intel/cannonlake
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		/* Touchpad */
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
@@ -8,9 +7,6 @@ chip soc/intel/cannonlake
 			.fall_time_ns = 110,
 		},
 	}"
-
-	# Send an extra VR mailbox command for the PS4 exit issue
-	register "SendVrMbxCmd" = "2"
 
 # CPU (soc/intel/cannonlake/cpu.c)
 	# Power limit
@@ -106,7 +102,7 @@ chip soc/intel/cannonlake
 		device pci 15.1 off end # I2C #1
 		device pci 15.2 off end # I2C #2
 		device pci 15.3 off end # I2C #3
-		device pci 16.0 off end # Management Engine Interface 1
+		device pci 16.0 on  end # Management Engine Interface 1
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
@@ -181,20 +177,18 @@ chip soc/intel/cannonlake
 		device pci 1e.3 off end # GSPI #1
 		device pci 1f.0 on	# LPC Interface
 			# LPC configuration from lspci -s 1f.0 -xxx
-			# Address 0x84: Decode 0x80 - 0x8F (Port 80)
-			register "gen1_dec" = "0x000c0081"
-			# Address 0x88: Decode 0x68 - 0x6F (PMC)
-			register "gen2_dec" = "0x00040069"
+			# Address 0x88: Decode 0x68 - 0x6F (EC PM channel)
+			register "gen1_dec" = "0x00040069"
 			# Address 0x8C: Decode 0xE00 - 0xEFF (AP/EC command)
-			register "gen3_dec" = "0x00fc0E01"
+			register "gen2_dec" = "0x00fc0E01"
 			# Address 0x90: Decode 0xF00 - 0xFFF (AP/EC debug)
-			register "gen4_dec" = "0x00fc0F01"
+			register "gen3_dec" = "0x00fc0F01"
 			chip drivers/pc80/tpm	# TPM
 				device pnp 0c31.0 on  end
 			end
 		end
 		device pci 1f.1 off end # P2SB
-		device pci 1f.2 off end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on	# Intel HDA
 			register "PchHdaAudioLinkHda" = "1"
 		end

@@ -11,7 +11,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select SPI_FLASH_GIGADEVICE
 
 config MAINBOARD_DIR
-	string
 	default "pine64/rockpro64"
 
 config BOOT_DEVICE_SPI_FLASH_BUS
@@ -26,11 +25,7 @@ config CONSOLE_SERIAL_UART_ADDRESS
 ##########################################################
 #### Update below when adding a new derivative board. ####
 ##########################################################
-config DEVICETREE
-	string
-	default "devicetree.cb" if BOARD_PINE64_ROCKPRO64
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ROCKPro64" if BOARD_PINE64_ROCKPRO64
 endif # BOARD_PINE64_ROCKPRO64

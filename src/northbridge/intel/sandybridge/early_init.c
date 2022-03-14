@@ -17,10 +17,10 @@ static void systemagent_vtd_init(void)
 		return;
 
 	/* Setup BARs */
-	MCHBAR32(GFXVTBAR + 4) = GFXVT_BASE >> 32;
-	MCHBAR32(GFXVTBAR)     = GFXVT_BASE | 1;
-	MCHBAR32(VTVC0BAR + 4) = VTVC0_BASE >> 32;
-	MCHBAR32(VTVC0BAR)     = VTVC0_BASE | 1;
+	mchbar_write32(GFXVTBAR + 4, GFXVT_BASE >> 32);
+	mchbar_write32(GFXVTBAR + 0, GFXVT_BASE | 1);
+	mchbar_write32(VTVC0BAR + 4, VTVC0_BASE >> 32);
+	mchbar_write32(VTVC0BAR + 0, VTVC0_BASE | 1);
 
 	/* Lock policies */
 	write32((void *)(GFXVT_BASE + 0xff0), 0x80000000);
@@ -86,10 +86,9 @@ static void sandybridge_setup_graphics(void)
 
 	printk(BIOS_DEBUG, "Initializing Graphics...\n");
 
-	if (get_option(&gfxsize, "gfx_uma_size") != CB_SUCCESS) {
-		/* Setup IGD memory by setting GGC[7:3] = 1 for 32MB */
-		gfxsize = 0;
-	}
+	/* Fall back to 32 MiB for IGD memory by setting GGC[7:3] = 1 */
+	gfxsize = get_uint_option("gfx_uma_size", 0);
+
 	reg16 = pci_read_config16(HOST_BRIDGE, GGC);
 	reg16 &= ~0x00f8;
 	reg16 |= (gfxsize + 1) << 3;
@@ -104,18 +103,18 @@ static void sandybridge_setup_graphics(void)
 	pci_update_config8(PCI_DEV(0, 2, 0), MSAC, ~0x06, 0x02);
 
 	/* Erratum workarounds */
-	MCHBAR32_OR(SAPMCTL, (1 << 9) | (1 << 10));
+	mchbar_setbits32(SAPMCTL, 1 << 9 | 1 << 10);
 
 	/* Enable SA Clock Gating */
-	MCHBAR32_OR(SAPMCTL, 1);
+	mchbar_setbits32(SAPMCTL, 1 << 0);
 
 	/* GPU RC6 workaround for sighting 366252 */
-	MCHBAR32_OR(SSKPD_HI, 1 << 31);
+	mchbar_setbits32(SSKPD_HI, 1 << 31);
 
 	/* VLW (Virtual Legacy Wire?) */
-	MCHBAR32_AND(0x6120, ~(1 << 0));
+	mchbar_clrbits32(0x6120, 1 << 0);
 
-	MCHBAR32_OR(INTRDIRCTL, (1 << 4) | (1 << 5));
+	mchbar_setbits32(INTRDIRCTL, 1 << 4 | 1 << 5);
 }
 
 static void start_peg_link_training(void)
@@ -195,5 +194,5 @@ void systemagent_early_init(void)
 
 void northbridge_romstage_finalize(void)
 {
-	MCHBAR16(SSKPD_HI) = 0xCAFE;
+	mchbar_write16(SSKPD_HI, 0xcafe);
 }

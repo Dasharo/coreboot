@@ -6,10 +6,14 @@
  * Chapter number: 3
  */
 
+#include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
+#include <delay.h>
+#include <intelblocks/power_limit.h>
 #include <intelblocks/systemagent.h>
 #include <soc/iomap.h>
+#include <soc/soc_chip.h>
 #include <soc/systemagent.h>
 
 /*
@@ -21,7 +25,7 @@
 void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 {
 	static const struct sa_mmio_descriptor soc_fixed_resources[] = {
-		{ PCIEXBAR, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_MMCONF_LENGTH,
+		{ PCIEXBAR, CONFIG_ECAM_MMCONF_BASE_ADDRESS, CONFIG_ECAM_MMCONF_LENGTH,
 				"PCIEXBAR" },
 		{ MCHBAR, MCH_BASE_ADDRESS, MCH_BASE_SIZE, "MCHBAR" },
 		{ DMIBAR, DMI_BASE_ADDRESS, DMI_BASE_SIZE, "DMIBAR" },
@@ -48,12 +52,45 @@ void soc_add_fixed_mmio_resources(struct device *dev, int *index)
  */
 void soc_systemagent_init(struct device *dev)
 {
+	struct soc_power_limits_config *soc_config;
+	struct device *sa;
+	uint16_t sa_pci_id;
+	u8 tdp;
+	size_t i;
+	config_t *config;
+
 	/* Enable Power Aware Interrupt Routing */
 	enable_power_aware_intr();
 
 	/* Enable BIOS Reset CPL */
 	enable_bios_reset_cpl();
-	/* TODO: Add set_power_limits() */
+
+	/* Configure turbo power limits 1ms after reset complete bit */
+	mdelay(1);
+	config = config_of_soc();
+
+	/* Get System Agent PCI ID */
+	sa = pcidev_path_on_root(SA_DEVFN_ROOT);
+	sa_pci_id = sa ? pci_read_config16(sa, PCI_DEVICE_ID) : 0xFFFF;
+
+	tdp = get_cpu_tdp();
+
+	/* Choose power limits configuration based on the CPU SA PCI ID and
+	 * CPU TDP value. */
+	for (i = 0; i < ARRAY_SIZE(cpuid_to_adl); i++) {
+		if (sa_pci_id == cpuid_to_adl[i].cpu_id &&
+				tdp == cpuid_to_adl[i].cpu_tdp) {
+			soc_config = &config->power_limits_config[cpuid_to_adl[i].limits];
+			set_power_limits(MOBILE_SKU_PL1_TIME_SEC, soc_config);
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(cpuid_to_adl)) {
+		printk(BIOS_ERR, "unknown SA ID: 0x%4x, skipped power limits configuration.\n",
+			sa_pci_id);
+		return;
+	}
 }
 
 uint32_t soc_systemagent_max_chan_capacity_mib(u8 capid0_a_ddrsz)

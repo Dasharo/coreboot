@@ -1,5 +1,8 @@
 if BOARD_SUPERMICRO_X9SCL
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_8192
@@ -16,20 +19,14 @@ config BOARD_SPECIFIC_OPTIONS
 	select IPMI_KCS
 
 config MAINBOARD_DIR
-	string
 	default "supermicro/x9scl"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "X9SCL/X9SCM"
 
 config USBDEBUG_HCD_INDEX
 	int
 	default 1
-
-config VGA_BIOS_FILE
-	string
-	default "pci102b,0532.rom"
 
 config VGA_BIOS_ID
 	string
@@ -42,7 +39,6 @@ config PXE_ROM_ID
 	default "8086:10d3"
 
 config CBFS_SIZE
-	hex
 	default 0x400000
 
 #config SUPERMICRO_BOARDID

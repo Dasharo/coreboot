@@ -15,7 +15,7 @@
 int pmc_soc_get_resources(struct pmc_resource_config *cfg)
 {
 	cfg->pwrmbase_offset = PCI_BASE_ADDRESS_0;
-	cfg->pwrmbase_addr = PMC_BAR0;
+	cfg->pwrmbase_addr = PCH_PWRM_BASE_ADDRESS;
 	cfg->pwrmbase_size = PMC_BAR0_SIZE;
 	cfg->abase_offset = PCI_BASE_ADDRESS_4;
 	cfg->abase_addr = ACPI_BASE_ADDRESS;
@@ -71,23 +71,10 @@ static void set_slp_s3_assertion_width(int width_usecs)
 	uintptr_t gen_pmcon3 = soc_read_pmc_base() + GEN_PMCON3;
 	int setting = choose_slp_s3_assertion_width(width_usecs);
 
-	reg = read32((void *)gen_pmcon3);
+	reg = read32p(gen_pmcon3);
 	reg &= ~SLP_S3_ASSERT_MASK;
 	reg |= setting << SLP_S3_ASSERT_WIDTH_SHIFT;
-	write32((void *)gen_pmcon3, reg);
-}
-
-void pmc_soc_set_afterg3_en(const bool on)
-{
-	void *const gen_pmcon1 = (void *)(soc_read_pmc_base() + GEN_PMCON1);
-	uint32_t reg32;
-
-	reg32 = read32(gen_pmcon1);
-	if (on)
-		reg32 &= ~SLEEP_AFTER_POWER_FAIL;
-	else
-		reg32 |= SLEEP_AFTER_POWER_FAIL;
-	write32(gen_pmcon1, reg32);
+	write32p(gen_pmcon3, reg);
 }
 
 void pmc_soc_init(struct device *dev)

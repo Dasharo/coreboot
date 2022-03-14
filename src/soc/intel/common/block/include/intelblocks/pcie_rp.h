@@ -62,11 +62,17 @@ struct pcie_rp_config {
  * in case the root port numbers are not contiguous within the slot.
  * `count` is the number of functions within the group starting with the `start`
  * function number.
+ * `lcap_port_base` is the starting index of physical port as described in LCAP
+ * register in PCIe config space. coreboot always uses 0 based indexing while
+ * referring to the PCIe port but LCAP registers uses 1-based indexing in
+ * most of the cases. Remapping logic needs to correctly map LCAP port number
+ * (1-based or n-based) to coreboot indexing (0-based).
  */
 struct pcie_rp_group {
 	unsigned int slot;
 	unsigned int start;
 	unsigned int count;
+	unsigned int lcap_port_base;
 };
 
 static inline unsigned int rp_start_fn(const struct pcie_rp_group *group)
@@ -110,5 +116,21 @@ void pcie_rp_update_devicetree(const struct pcie_rp_group *groups);
  * in the groups table is <= 32.
  */
 uint32_t pcie_rp_enable_mask(const struct pcie_rp_group *groups);
+
+/* Get PCH root port groups */
+const struct pcie_rp_group *soc_get_pch_rp_groups(void);
+
+enum pcie_rp_type {
+	PCIE_RP_UNKNOWN,
+	PCIE_RP_CPU,
+	PCIE_RP_PCH,
+};
+
+/* For PCIe RTD3 support, each SoC that uses it must implement this function. */
+struct device; /* Not necessary to include all of device/device.h */
+enum pcie_rp_type soc_get_pcie_rp_type(const struct device *dev);
+
+/* Return the virtual wire index that represents CPU-side PCIe root ports */
+int soc_get_cpu_rp_vw_idx(const struct device *dev);
 
 #endif /* SOC_INTEL_COMMON_BLOCK_PCIE_RP_H */

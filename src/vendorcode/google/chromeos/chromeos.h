@@ -5,11 +5,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <bootmode.h>
-#include <device/device.h>
-#include <rules.h>
-#include <security/vboot/misc.h>
-#include <security/vboot/vboot_common.h>
 #include <types.h>
 
 #if CONFIG(CHROMEOS)
@@ -29,6 +24,9 @@ void mainboard_prepare_cr50_reset(void);
 
 void cbmem_add_vpd_calibration_data(void);
 void chromeos_set_me_hash(u32*, int);
+void chromeos_set_ramoops(void *ram_oops, size_t size);
+void chromeos_set_ecfw_rw(void);
+void chromeos_init_chromeos_acpi(void);
 
 /**
  * get_dsm_calibration_from_key - Gets value related to DSM calibration from VPD
@@ -48,16 +46,9 @@ struct cros_gpio;
 void chromeos_acpi_gpio_generate(const struct cros_gpio *gpios, size_t num);
 
 /*
- * Common helper function and delcarations for mainboards to use to generate
- * ACPI-specific Chrome OS needs.
+ * Declaration for mainboards to use to generate ACPI-specific Chrome OS needs.
  */
 void mainboard_chromeos_acpi_generate(void);
-#if CONFIG(CHROMEOS)
-struct device;
-void chromeos_dsdt_generator(const struct device *dev);
-#else
-#define chromeos_dsdt_generator NULL
-#endif
 
 enum {
 	CROS_GPIO_REC = 1, /* Recovery */

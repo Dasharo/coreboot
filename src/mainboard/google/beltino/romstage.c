@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <stdint.h>
 #include <northbridge/intel/haswell/haswell.h>
 #include <northbridge/intel/haswell/raminit.h>
 #include <southbridge/intel/lynxpoint/pch.h>
@@ -40,13 +39,13 @@ void mainboard_config_rcba(void)
 	RCBA16(D23IR) = DIR_ROUTE(PIRQH, PIRQH, PIRQH, PIRQH); /* SDIO */
 }
 
-void mb_get_spd_map(uint8_t spd_map[4])
+void mb_get_spd_map(struct spd_info *spdi)
 {
-	spd_map[0] = 0xa0;
-	spd_map[2] = 0xa4;
+	spdi->addresses[0] = 0x50;
+	spdi->addresses[2] = 0x52;
 }
 
-const struct usb2_port_setting mainboard_usb2_ports[MAX_USB2_PORTS] = {
+const struct usb2_port_config mainboard_usb2_ports[MAX_USB2_PORTS] = {
 	/* Length, Enable, OCn#, Location */
 	{ 0x0064, 1, 0,               /* P0: VP8 */
 	  USB_PORT_MINI_PCIE },
@@ -66,7 +65,7 @@ const struct usb2_port_setting mainboard_usb2_ports[MAX_USB2_PORTS] = {
 	  USB_PORT_SKIP },
 };
 
-const struct usb3_port_setting mainboard_usb3_ports[MAX_USB3_PORTS] = {
+const struct usb3_port_config mainboard_usb3_ports[MAX_USB3_PORTS] = {
 	/* Enable, OCn# */
 	{ 1, 0 }, /* P1; CN22 */
 	{ 1, 1 }, /* P2; CN23  */

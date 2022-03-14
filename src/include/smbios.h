@@ -10,6 +10,10 @@ unsigned long smbios_write_tables(unsigned long start);
 int smbios_add_string(u8 *start, const char *str);
 int smbios_string_table_len(u8 *start);
 
+struct smbios_header;
+int smbios_full_table_len(struct smbios_header *header, u8 *str_table_start);
+void *smbios_carve_table(unsigned long start, u8 type, u8 length, u16 handle);
+
 /* Used by mainboard to add an on-board device */
 enum misc_slot_type;
 enum misc_slot_length;
@@ -20,7 +24,7 @@ int smbios_write_type9(unsigned long *current, int *handle,
 			const enum slot_data_bus_bandwidth bandwidth,
 			const enum misc_slot_usage usage,
 			const enum misc_slot_length length,
-			u8 slot_char1, u8 slot_char2, u8 bus, u8 dev_func);
+			const u16 id, u8 slot_char1, u8 slot_char2, u8 bus, u8 dev_func);
 enum smbios_bmc_interface_type;
 int smbios_write_type38(unsigned long *current, int *handle,
 			const enum smbios_bmc_interface_type interface_type,
@@ -30,6 +34,9 @@ int smbios_write_type38(unsigned long *current, int *handle,
 int smbios_write_type41(unsigned long *current, int *handle,
 			const char *name, u8 instance, u16 segment,
 			u8 bus, u8 device, u8 function, u8 device_type);
+
+struct device;
+int get_smbios_data(struct device *dev, int *handle, unsigned long *current);
 
 const char *smbios_system_manufacturer(void);
 const char *smbios_system_product_name(void);
@@ -185,6 +192,8 @@ typedef enum {
 	MEMORY_TYPE_LOGICAL_NON_VOLATILE_DEVICE = 0x1f,
 	MEMORY_TYPE_HBM = 0x20,
 	MEMORY_TYPE_HBM2 = 0x21,
+	MEMORY_TYPE_DDR5 = 0x22,
+	MEMORY_TYPE_LPDDR5 = 0x23,
 } smbios_memory_type;
 
 typedef enum {
@@ -240,6 +249,7 @@ typedef enum {
 	SMBIOS_PHYS_MEMORY_ARRAY = 16,
 	SMBIOS_MEMORY_DEVICE = 17,
 	SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS = 19,
+	SMBIOS_MEMORY_DEVICE_MAPPED_ADDRESS = 20,
 	SMBIOS_SYSTEM_BOOT_INFORMATION = 32,
 	SMBIOS_IPMI_DEVICE_INFORMATION = 38,
 	SMBIOS_ONBOARD_DEVICES_EXTENDED_INFORMATION = 41,
@@ -276,10 +286,14 @@ struct smbios_entry30 {
 	u64 struct_table_address;
 } __packed;
 
-struct smbios_type0 {
+struct smbios_header {
 	u8 type;
 	u8 length;
 	u16 handle;
+} __packed;
+
+struct smbios_type0 {
+	struct smbios_header header;
 	u8 vendor;
 	u8 bios_version;
 	u16 bios_start_segment;
@@ -296,10 +310,20 @@ struct smbios_type0 {
 	u8 eos[2];
 } __packed;
 
+typedef enum {
+	SMBIOS_WAKEUP_TYPE_RESERVED = 0x00,
+	SMBIOS_WAKEUP_TYPE_OTHER = 0x01,
+	SMBIOS_WAKEUP_TYPE_UNKNOWN = 0x02,
+	SMBIOS_WAKEUP_TYPE_APM_TIMER = 0x03,
+	SMBIOS_WAKEUP_TYPE_MODEM_RING = 0x04,
+	SMBIOS_WAKEUP_TYPE_LAN_REMOTE = 0x05,
+	SMBIOS_WAKEUP_TYPE_POWER_SWITCH = 0x06,
+	SMBIOS_WAKEUP_TYPE_PCI_PME = 0x07,
+	SMBIOS_WAKEUP_TYPE_AC_POWER_RESTORED = 0x08,
+} smbios_wakeup_type;
+
 struct smbios_type1 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 manufacturer;
 	u8 product_name;
 	u8 version;
@@ -310,6 +334,12 @@ struct smbios_type1 {
 	u8 family;
 	u8 eos[2];
 } __packed;
+
+#define SMBIOS_FEATURE_FLAGS_HOSTING_BOARD		(1 << 0)
+#define SMBIOS_FEATURE_FLAGS_REQUIRES_DAUGHTER_CARD	(1 << 1)
+#define SMBIOS_FEATURE_FLAGS_REMOVABLE			(1 << 2)
+#define SMBIOS_FEATURE_FLAGS_REPLACEABLE		(1 << 3)
+#define SMBIOS_FEATURE_FLAGS_HOT_SWAPPABLE		(1 << 4)
 
 typedef enum {
 	SMBIOS_BOARD_TYPE_UNKNOWN = 0x01,
@@ -328,9 +358,7 @@ typedef enum {
 } smbios_board_type;
 
 struct smbios_type2 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 manufacturer;
 	u8 product_name;
 	u8 version;
@@ -383,9 +411,7 @@ typedef enum {
 } smbios_enclosure_type;
 
 struct smbios_type3 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 manufacturer;
 	u8 _type;
 	u8 version;
@@ -405,9 +431,7 @@ struct smbios_type3 {
 } __packed;
 
 struct smbios_type4 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 socket_designation;
 	u8 processor_type;
 	u8 processor_family;
@@ -518,9 +542,7 @@ enum smbios_cache_associativity {
 #define SMBIOS_CACHE_OP_MODE_UNKNOWN 3
 
 struct smbios_type7 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 socket_designation;
 	u16 cache_configuration;
 	u16 max_cache_size;
@@ -634,9 +656,7 @@ struct port_information {
 };
 
 struct smbios_type8 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 internal_reference_designator;
 	u8 internal_connector_type;
 	u8 external_reference_designator;
@@ -771,9 +791,7 @@ struct slot_peer_groups {
 } __packed;
 
 struct smbios_type9 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 slot_designation;
 	u8 slot_type;
 	u8 slot_data_bus_width;
@@ -792,17 +810,13 @@ struct smbios_type9 {
 } __packed;
 
 struct smbios_type11 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 count;
 	u8 eos[2];
 } __packed;
 
 struct smbios_type15 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u16 area_length;
 	u16 header_offset;
 	u16 data_offset;
@@ -829,12 +843,10 @@ enum {
 	SMBIOS_EVENTLOG_STATUS_FULL  = 2, /* Bit 1 */
 };
 
-#define SMBIOS_USE_EXTENDED_MAX_CAPACITY	(1 << 31)
+#define SMBIOS_USE_EXTENDED_MAX_CAPACITY	(1ULL << 31)
 
 struct smbios_type16 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 location;
 	u8 use;
 	u8 memory_error_correction;
@@ -846,9 +858,7 @@ struct smbios_type16 {
 } __packed;
 
 struct smbios_type17 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u16 phys_memory_array_handle;
 	u16 memory_error_information_handle;
 	u16 total_width;
@@ -875,9 +885,7 @@ struct smbios_type17 {
 } __packed;
 
 struct smbios_type19 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u32 starting_address;
 	u32 ending_address;
 	u16 memory_array_handle;
@@ -887,19 +895,29 @@ struct smbios_type19 {
 	u8 eos[2];
 } __packed;
 
+struct smbios_type20 {
+	struct smbios_header header;
+	u32 addr_start;
+	u32 addr_end;
+	u16 memory_device_handle;
+	u16 memory_array_mapped_address_handle;
+	u8 partition_row_pos;
+	u8 interleave_pos;
+	u8 interleave_depth;
+	u64 ext_addr_start;
+	u64 ext_addr_end;
+	u8 eos[2];
+} __packed;
+
 struct smbios_type32 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 reserved[6];
 	u8 boot_status;
 	u8 eos[2];
 } __packed;
 
 struct smbios_type38 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 interface_type;
 	u8 ipmi_rev;
 	u8 i2c_slave_addr;
@@ -934,9 +952,7 @@ typedef enum {
 #define SMBIOS_DEVICE_TYPE_COUNT 10
 
 struct smbios_type41 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 reference_designation;
 	u8 device_type: 7;
 	u8 device_status: 1;
@@ -949,9 +965,7 @@ struct smbios_type41 {
 } __packed;
 
 struct smbios_type127 {
-	u8 type;
-	u8 length;
-	u16 handle;
+	struct smbios_header header;
 	u8 eos[2];
 } __packed;
 
@@ -962,6 +976,7 @@ void smbios_fill_dimm_asset_tag(const struct dimm_info *dimm,
 void smbios_fill_dimm_locator(const struct dimm_info *dimm,
 	struct smbios_type17 *t);
 
+smbios_wakeup_type smbios_system_wakeup_type(void);
 smbios_board_type smbios_mainboard_board_type(void);
 smbios_enclosure_type smbios_mainboard_enclosure_type(void);
 

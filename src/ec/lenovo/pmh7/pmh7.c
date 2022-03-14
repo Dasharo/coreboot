@@ -25,7 +25,6 @@ void pmh7_dock_event_enable(int onoff)
 		pmh7_register_set_bit(0x60, 3);
 	else
 		pmh7_register_clear_bit(0x60, 3);
-
 }
 
 void pmh7_touchpad_enable(int onoff)
@@ -106,7 +105,6 @@ static void enable_dev(struct device *dev)
 {
 	const struct ec_lenovo_pmh7_config *conf = dev->chip_info;
 	struct resource *resource;
-	u8 val;
 
 	resource = new_resource(dev, EC_LENOVO_PMH7_INDEX);
 	resource->flags = IORESOURCE_IO | IORESOURCE_FIXED;
@@ -118,13 +116,9 @@ static void enable_dev(struct device *dev)
 	pmh7_backlight_enable(conf->backlight_enable);
 	pmh7_dock_event_enable(conf->dock_event_enable);
 
-	if (get_option(&val, "touchpad") != CB_SUCCESS)
-		val = 1;
-	pmh7_touchpad_enable(val);
+	pmh7_touchpad_enable(get_uint_option("touchpad", 1));
 
-	if (get_option(&val, "trackpoint") != CB_SUCCESS)
-		val = 1;
-	pmh7_trackpoint_enable(val);
+	pmh7_trackpoint_enable(get_uint_option("trackpoint", 1));
 
 	printk(BIOS_INFO, "PMH7: ID %02x Revision %02x\n",
 	       pmh7_register_read(EC_LENOVO_PMH7_REG_ID),

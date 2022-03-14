@@ -4,9 +4,9 @@
 
 Scope (\_TZ)
 {
-	/* degree Celcius to deci-Kelvin (ACPI temperature unit) */
+	/* degree Celsius to deci-Kelvin (ACPI temperature unit) */
 	Method(C2dK, 1) {
-		Add (2732, Multiply (Arg0, 10), Local0)
+		Local0 = 2732 + Arg0 * 10
 		Return (Local0)
 	}
 

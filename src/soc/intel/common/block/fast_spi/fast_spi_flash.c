@@ -110,7 +110,7 @@ static int wait_for_hwseq_xfer(struct fast_spi_flash_ctx *ctx,
 	struct stopwatch sw;
 	uint32_t hsfsts;
 
-	stopwatch_init_msecs_expire(&sw, SPIBAR_HWSEQ_XFER_TIMEOUT);
+	stopwatch_init_msecs_expire(&sw, SPIBAR_HWSEQ_XFER_TIMEOUT_MS);
 	do {
 		hsfsts = fast_spi_flash_ctrlr_reg_read(ctx, SPIBAR_HSFSTS_CTL);
 
@@ -125,7 +125,23 @@ static int wait_for_hwseq_xfer(struct fast_spi_flash_ctx *ctx,
 	} while (!(stopwatch_expired(&sw)));
 
 	printk(BIOS_ERR, "SPI Transaction Timeout (Exceeded %d ms) at Flash Offset %x HSFSTS = 0x%08x\n",
-		SPIBAR_HWSEQ_XFER_TIMEOUT, flash_addr, hsfsts);
+		SPIBAR_HWSEQ_XFER_TIMEOUT_MS, flash_addr, hsfsts);
+	return E_TIMEOUT;
+}
+
+static int wait_for_hwseq_spi_cycle_complete(struct fast_spi_flash_ctx *ctx)
+{
+	struct stopwatch sw;
+	uint32_t hsfsts;
+
+	stopwatch_init_msecs_expire(&sw, SPIBAR_HWSEQ_XFER_TIMEOUT_MS);
+	do {
+		hsfsts = fast_spi_flash_ctrlr_reg_read(ctx, SPIBAR_HSFSTS_CTL);
+
+		if (!(hsfsts & SPIBAR_HSFSTS_SCIP))
+			return SUCCESS;
+	} while (!(stopwatch_expired(&sw)));
+
 	return E_TIMEOUT;
 }
 
@@ -134,6 +150,13 @@ static int exec_sync_hwseq_xfer(struct fast_spi_flash_ctx *ctx,
 				uint32_t hsfsts_cycle, uint32_t flash_addr,
 				size_t len)
 {
+	if (wait_for_hwseq_spi_cycle_complete(ctx) != SUCCESS) {
+		printk(BIOS_ERR, "SPI Transaction Timeout (Exceeded %d ms) due to prior"
+				" operation at Flash Offset %x\n",
+				SPIBAR_HWSEQ_XFER_TIMEOUT_MS, flash_addr);
+		return E_TIMEOUT;
+	}
+
 	start_hwseq_xfer(ctx, hsfsts_cycle, flash_addr, len);
 	return wait_for_hwseq_xfer(ctx, flash_addr);
 }
@@ -350,7 +373,7 @@ static int fast_spi_flash_protect(const struct spi_flash *flash,
 	}
 
 	if (fpr >= SPIBAR_FPR_MAX) {
-		printk(BIOS_ERR, "ERROR: No SPI FPR free!\n");
+		printk(BIOS_ERR, "No SPI FPR free!\n");
 		return -1;
 	}
 
@@ -365,7 +388,7 @@ static int fast_spi_flash_protect(const struct spi_flash *flash,
 		protect_mask |= (SPI_FPR_RPE | SPI_FPR_WPE);
 		break;
 	default:
-		printk(BIOS_ERR, "ERROR: Seeking invalid protection!\n");
+		printk(BIOS_ERR, "Seeking invalid protection!\n");
 		return -1;
 	}
 
@@ -376,7 +399,7 @@ static int fast_spi_flash_protect(const struct spi_flash *flash,
 	write32((void *)fpr_base, reg);
 	reg = read32((void *)fpr_base);
 	if (!(reg & protect_mask)) {
-		printk(BIOS_ERR, "ERROR: Unable to set SPI FPR %d\n", fpr);
+		printk(BIOS_ERR, "Unable to set SPI FPR %d\n", fpr);
 		return -1;
 	}
 

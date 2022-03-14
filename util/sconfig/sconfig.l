@@ -38,8 +38,6 @@ generic			{yylval.number=GENERIC; return(BUS);}
 mmio			{yylval.number=MMIO; return(BUS);}
 spi			{yylval.number=SPI; return(BUS);}
 usb			{yylval.number=USB; return(BUS);}
-lpc			{yylval.number=LPC; return(BUS);}
-espi			{yylval.number=ESPI; return(BUS);}
 gpio			{yylval.number=GPIO; return(BUS);}
 irq			{yylval.number=IRQ; return(RESOURCE);}
 drq			{yylval.number=DRQ; return(RESOURCE);}
@@ -49,7 +47,9 @@ inherit			{return(INHERIT);}
 subsystemid		{return(SUBSYSTEMID);}
 end			{return(END);}
 smbios_slot_desc	{return(SLOT_DESC);}
+smbios_dev_info		{return(SMBIOS_DEV_INFO);}
 =			{return(EQUALS);}
+\|			{return(PIPE);}
 0x[0-9a-fA-F.]+		{yylval.string = malloc(yyleng+1); strncpy(yylval.string, yytext, yyleng); yylval.string[yyleng]='\0'; return(NUMBER);}
 [0-9.]+			{yylval.string = malloc(yyleng+1); strncpy(yylval.string, yytext, yyleng); yylval.string[yyleng]='\0'; return(NUMBER);}
 [0-9a-fA-F.]+		{yylval.string = malloc(yyleng+1); strncpy(yylval.string, yytext, yyleng); yylval.string[yyleng]='\0'; return(NUMBER);}

@@ -287,10 +287,17 @@ const struct region_device_ops mem_rdev_rw_ops = {
 	.eraseat = mdev_eraseat,
 };
 
-void mmap_helper_device_init(struct mmap_helper_region_device *mdev,
-				void *cache, size_t cache_size)
+static const struct mem_region_device mem_rdev = MEM_REGION_DEV_RO_INIT(0, ~(size_t)0);
+static const struct mem_region_device mem_rdev_rw = MEM_REGION_DEV_RW_INIT(0, ~(size_t)0);
+
+int rdev_chain_mem(struct region_device *child, const void *base, size_t size)
 {
-	mem_pool_init(&mdev->pool, cache, cache_size);
+	return rdev_chain(child, &mem_rdev.rdev, (uintptr_t)base, size);
+}
+
+int rdev_chain_mem_rw(struct region_device *child, void *base, size_t size)
+{
+	return rdev_chain(child, &mem_rdev_rw.rdev, (uintptr_t)base, size);
 }
 
 void *mmap_helper_rdev_mmap(const struct region_device *rd, size_t offset,
@@ -301,13 +308,13 @@ void *mmap_helper_rdev_mmap(const struct region_device *rd, size_t offset,
 
 	mdev = container_of((void *)rd, __typeof__(*mdev), rdev);
 
-	mapping = mem_pool_alloc(&mdev->pool, size);
+	mapping = mem_pool_alloc(mdev->pool, size);
 
 	if (mapping == NULL)
 		return NULL;
 
 	if (rd->ops->readat(rd, mapping, offset, size) != size) {
-		mem_pool_free(&mdev->pool, mapping);
+		mem_pool_free(mdev->pool, mapping);
 		return NULL;
 	}
 
@@ -320,7 +327,7 @@ int mmap_helper_rdev_munmap(const struct region_device *rd, void *mapping)
 
 	mdev = container_of((void *)rd, __typeof__(*mdev), rdev);
 
-	mem_pool_free(&mdev->pool, mapping);
+	mem_pool_free(mdev->pool, mapping);
 
 	return 0;
 }

@@ -5,57 +5,13 @@ config SOC_INTEL_BROADWELL
 
 if SOC_INTEL_BROADWELL
 
-config INTEL_LYNXPOINT_LP
-	bool
-	default y if SOC_INTEL_BROADWELL
-
 config SOC_SPECIFIC_OPTIONS
 	def_bool y
-	select ACPI_HAS_DEVICE_NVS
-	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
-	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
 	select CPU_INTEL_HASWELL
-	select MRC_SETTINGS_PROTECT
-	select HAVE_SMI_HANDLER
-	select SOUTHBRIDGE_INTEL_COMMON_ACPI_MADT
-	select SOUTHBRIDGE_INTEL_COMMON_EARLY_SMBUS
-	select SOUTHBRIDGE_INTEL_COMMON_RESET
-	select SOUTHBRIDGE_INTEL_COMMON_RTC
-	select SOUTHBRIDGE_INTEL_COMMON_SMBUS
-	select SOUTHBRIDGE_INTEL_COMMON_SPI_ICH9
-	select HAVE_USBDEBUG
-	select IOAPIC
-	select INTEL_LYNXPOINT_LP
-	select REG_SCRIPT
-	select RTC
-	select SPI_FLASH
-	select SOC_INTEL_COMMON
-	select INTEL_DESCRIPTOR_MODE_CAPABLE
-	select HAVE_EM100PRO_SPI_CONSOLE_SUPPORT
 	select INTEL_GMA_ACPI
-	select HAVE_POWER_STATE_AFTER_FAILURE
-	select HAVE_POWER_STATE_PREVIOUS_AFTER_FAILURE
-
-config PCIEXP_ASPM
-	bool
-	default y
-
-config PCIEXP_AER
-	bool
-	default y
-
-config PCIEXP_COMMON_CLOCK
-	bool
-	default y
-
-config PCIEXP_CLK_PM
-	bool
-	default y
-
-config PCIEXP_L1_SUB_STATE
-	bool
-	default y
+	select MRC_SETTINGS_PROTECT
+	select REG_SCRIPT
 
 config BROADWELL_VBOOT_IN_BOOTBLOCK
 	depends on VBOOT
@@ -67,7 +23,7 @@ config BROADWELL_VBOOT_IN_BOOTBLOCK
 	  Broadwell can either start verstage in a separate stage
 	  right after the bootblock has run or it can start it
 	  after romstage for compatibility reasons.
-	  Broadwell however uses a mrc.bin to initialse memory which
+	  Broadwell however uses a mrc.bin to initialize memory which
 	  needs to be located at a fixed offset. Therefore even with
 	  a separate verstage starting after the bootblock that same
 	  binary is used meaning a jump is made from RW to the RO region
@@ -77,10 +33,10 @@ config VBOOT
 	select VBOOT_MUST_REQUEST_DISPLAY
 	select VBOOT_STARTS_IN_ROMSTAGE if !BROADWELL_VBOOT_IN_BOOTBLOCK
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xf0000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	default 64
 
 config VGA_BIOS_ID
@@ -151,32 +107,6 @@ config RO_REGION_ONLY
 
 endif # HAVE_MRC
 
-config INTEL_PCH_UART_CONSOLE
-	bool "Use Serial IO UART for console"
-	default n
-	select DRIVERS_UART_8250MEM
-
-config INTEL_PCH_UART_CONSOLE_NUMBER
-	hex "Serial IO UART number to use for console"
-	default 0x0
-	depends on INTEL_PCH_UART_CONSOLE
-
-config TTYS0_BASE
-	hex
-	default 0xd6000000
-	depends on INTEL_PCH_UART_CONSOLE
-
-config EHCI_BAR
-	hex
-	default 0xd8000000
-
-config SERIRQ_CONTINUOUS_MODE
-	bool
-	default y
-	help
-	  If you set this option to y, the serial IRQ machine will be
-	  operated in continuous mode.
-
 config HAVE_REFCODE_BLOB
 	depends on ARCH_X86
 	bool "An external reference code blob should be put into cbfs."
@@ -193,5 +123,7 @@ config REFCODE_BLOB_FILE
 	 The path and filename to the file to be added to cbfs.
 
 endif # HAVE_REFCODE_BLOB
+
+source "src/soc/intel/broadwell/pch/Kconfig"
 
 endif

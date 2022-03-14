@@ -5,6 +5,7 @@
 #include <drivers/analogix/anx7625/anx7625.h>
 #include <edid.h>
 #include <gpio.h>
+#include <soc/dsi.h>
 #include <soc/i2c.h>
 
 #include "panel.h"
@@ -12,8 +13,7 @@
 #define ANX7625_I2C_BUS 4
 
 static struct panel_serializable_data anx7625_data = {
-	.orientation = LB_FB_ORIENTATION_NORMAL,
-	.init = { INIT_END_CMD },
+	.init = { PANEL_END },
 };
 
 static void dummy_power_on(void)
@@ -32,6 +32,7 @@ static void start_anx7625(void)
 
 static struct panel_description anx7625_panel = {
 	.s = &anx7625_data,
+	.orientation = LB_FB_ORIENTATION_NORMAL,
 	.power_on = dummy_power_on,
 	.post_power_on = start_anx7625,
 };
@@ -71,4 +72,9 @@ struct panel_description *get_panel_description(int panel_id)
 		return NULL;
 	}
 	return &anx7625_panel;
+}
+
+void mtk_dsi_override_phy_timing(struct mtk_phy_timing *timing)
+{
+	timing->da_hs_trail += 9;
 }

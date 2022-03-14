@@ -2,13 +2,13 @@
 
 #include <acpi/acpi_device.h>
 #include <acpi/acpigen.h>
+#include <commonlib/bsd/bcd.h>
+#include <console/console.h>
 #include <device/device.h>
 #include <device/i2c.h>
 #include <device/i2c_bus.h>
-#include <version.h>
-#include <console/console.h>
-#include <bcd.h>
 #include <timer.h>
+#include <version.h>
 #include "chip.h"
 #include "rx6110sa.h"
 
@@ -166,7 +166,7 @@ static void rx6110sa_init(struct device *dev)
 	rx6110sa_write(dev, CTRL_REG, reg);
 }
 
-#if CONFIG(HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES) && !CONFIG(RX6110SA_DISABLE_ACPI)
 static void rx6110sa_fill_ssdt(const struct device *dev)
 {
 	struct drivers_i2c_rx6110sa_config *config = dev->chip_info;
@@ -198,6 +198,7 @@ static void rx6110sa_fill_ssdt(const struct device *dev)
 	/* Device */
 	acpigen_write_scope(scope);
 	acpigen_write_device(acpi_device_name(dev));
+	acpigen_write_name_string("_HID", RX6110SA_HID_NAME);
 	acpigen_write_name_string("_DDN", RX6110SA_HID_DESC);
 	acpigen_write_STA(acpi_device_status(dev));
 
@@ -226,7 +227,7 @@ static struct device_operations rx6110sa_ops = {
 	.set_resources		= noop_set_resources,
 	.init			= rx6110sa_init,
 	.final			= rx6110sa_final,
-#if CONFIG(HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES) && !CONFIG(RX6110SA_DISABLE_ACPI)
 	.acpi_name		= rx6110sa_acpi_name,
 	.acpi_fill_ssdt		= rx6110sa_fill_ssdt,
 #endif

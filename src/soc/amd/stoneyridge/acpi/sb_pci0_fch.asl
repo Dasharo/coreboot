@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/alib.h>
+
 External(\_SB.ALIB, MethodObj)
 
 /* System Bus */
@@ -54,7 +56,7 @@ Name(CRES, ResourceTemplate() {
 	 * The Secondary bus range for PCI0 lets the system
 	 * know what bus values are allowed on the downstream
 	 * side of this PCI bus if there is a PCI-PCI bridge.
-	 * PCI busses can have 256 secondary busses which
+	 * PCI buses can have 256 secondary buses which
 	 * range from [0-0xFF] but they do not need to be
 	 * sequential.
 	 */
@@ -142,7 +144,7 @@ Method(_INI, 0, Serialized) {
 	F1SZ = 3
 	F1DA= \PWRS
 
-	\_SB.ALIB(1, F1BF)
+	\_SB.ALIB(ALIB_FUNCTION_REPORT_AC_DC_STATE, F1BF)
 
 } /* End Method(_SB._INI) */
 

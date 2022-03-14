@@ -11,43 +11,29 @@
 #include <arch/ioapic.h>
 #include <acpi/acpi.h>
 #include <cpu/x86/smm.h>
-#include <soc/iobp.h>
 #include <soc/iomap.h>
 #include <soc/lpc.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
-#include <soc/ramstage.h>
 #include <soc/rcba.h>
 #include <soc/intel/broadwell/pch/chip.h>
 #include <acpi/acpigen.h>
 #include <southbridge/intel/common/rtc.h>
+#include <southbridge/intel/lynxpoint/iobp.h>
 #include <southbridge/intel/lynxpoint/lp_gpio.h>
 
 static void pch_enable_ioapic(struct device *dev)
 {
-	u32 reg32;
-
 	/* Assign unique bus/dev/fn for I/O APIC */
 	pci_write_config16(dev, LPC_IBDF,
 		PCH_IOAPIC_PCI_BUS << 8 | PCH_IOAPIC_PCI_SLOT << 3);
 
-	set_ioapic_id(VIO_APIC_VADDR, 0x02);
-
 	/* affirm full set of redirection table entries ("write once") */
-	reg32 = io_apic_read(VIO_APIC_VADDR, 0x01);
+	/* PCH-LP has 40 redirection entries */
+	ioapic_set_max_vectors(VIO_APIC_VADDR, 40);
 
-	/* PCH-LP has 39 redirection entries */
-	reg32 &= ~0x00ff0000;
-	reg32 |= 0x00270000;
-
-	io_apic_write(VIO_APIC_VADDR, 0x01, reg32);
-
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
+	setup_ioapic(VIO_APIC_VADDR, 0x02);
 }
 
 static void enable_hpet(struct device *dev)
@@ -125,7 +111,6 @@ static void pch_power_options(struct device *dev)
 {
 	u16 reg16;
 	const char *state;
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
@@ -133,7 +118,8 @@ static void pch_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
+					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);
 	reg16 &= 0xfffe;
@@ -604,11 +590,12 @@ static unsigned long broadwell_write_acpi_tables(const struct device *device,
 						 unsigned long current,
 						 struct acpi_rsdp *rsdp)
 {
-	if (CONFIG(INTEL_PCH_UART_CONSOLE))
+	if (CONFIG(SERIALIO_UART_CONSOLE)) {
 		current = acpi_write_dbg2_pci_uart(rsdp, current,
-			(CONFIG_INTEL_PCH_UART_CONSOLE_NUMBER == 1) ?
+			(CONFIG_UART_FOR_CONSOLE == 1) ?
 				PCH_DEV_UART1 : PCH_DEV_UART0,
-			ACPI_ACCESS_SIZE_BYTE_ACCESS);
+			ACPI_ACCESS_SIZE_DWORD_ACCESS);
+	}
 	return acpi_write_hpet(device, current, rsdp);
 }
 

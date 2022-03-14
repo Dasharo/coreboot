@@ -1,10 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <console/console.h>
 #include <device/device.h>
-#include <acpi/acpi.h>
 #include <amdblocks/agesawrapper.h>
 #include <amdblocks/amd_pci_util.h>
+#include <soc/gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/southbridge.h>
 
@@ -98,7 +97,7 @@ static void mainboard_init(void *chip_info)
 	size_t num_gpios;
 	const struct soc_amd_gpio *gpios;
 	gpios = gpio_table(&num_gpios);
-	program_gpios(gpios, num_gpios);
+	gpio_configure_pads(gpios, num_gpios);
 }
 
 /*************************************************

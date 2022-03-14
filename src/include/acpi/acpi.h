@@ -31,14 +31,6 @@
  #define  SLP_TYP_S5	5
 #endif
 
-/* ACPI Device Sleep States */
-#define ACPI_DEVICE_SLEEP_D0		0
-#define ACPI_DEVICE_SLEEP_D1		1
-#define ACPI_DEVICE_SLEEP_D2		2
-#define ACPI_DEVICE_SLEEP_D3		3
-#define ACPI_DEVICE_SLEEP_D3_HOT	ACPI_DEVICE_SLEEP_D3
-#define ACPI_DEVICE_SLEEP_D3_COLD	4
-
 #define ACPI_TABLE_CREATOR	"COREBOOT"  /* Must be exactly 8 bytes long! */
 #define OEM_ID			"COREv4"    /* Must be exactly 6 bytes long! */
 #define ACPI_DSDT_REV_1		0x01        /* DSDT revision: ACPI v1 */
@@ -51,6 +43,15 @@
 #include <cper.h>
 #include <romstage_handoff.h>
 #include <types.h>
+
+enum acpi_device_sleep_states {
+	ACPI_DEVICE_SLEEP_D0		= 0,
+	ACPI_DEVICE_SLEEP_D1		= 1,
+	ACPI_DEVICE_SLEEP_D2		= 2,
+	ACPI_DEVICE_SLEEP_D3		= 3,
+	ACPI_DEVICE_SLEEP_D3_HOT	= ACPI_DEVICE_SLEEP_D3,
+	ACPI_DEVICE_SLEEP_D3_COLD	= 4,
+};
 
 #define RSDP_SIG		"RSD PTR "  /* RSDT pointer signature */
 #define ASLC			"CORE"      /* Must be exactly 4 bytes long! */
@@ -71,8 +72,8 @@ enum coreboot_acpi_ids {
 
 enum acpi_tables {
 	/* Tables defined by ACPI and used by coreboot */
-	BERT, DBG2, DMAR, DSDT, FACS, FADT, HEST, HPET, IVRS, MADT, MCFG,
-	RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
+	BERT, DBG2, DMAR, DSDT, EINJ, FACS, FADT, HEST, HMAT, HPET, IVRS, MADT,
+	MCFG, RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
 	/* Additional proprietary tables used by coreboot */
 	VFCT, NHLT, SPMI, CRAT
 };
@@ -127,6 +128,18 @@ typedef struct acpi_gen_regaddr {
 #define ACPI_ACCESS_SIZE_WORD_ACCESS	2
 #define ACPI_ACCESS_SIZE_DWORD_ACCESS	3
 #define ACPI_ACCESS_SIZE_QWORD_ACCESS	4
+
+/* Macros for common resource types */
+#define ACPI_REG_MSR(address, offset, width) \
+	(acpi_addr_t){ \
+		.space_id    = ACPI_ADDRESS_SPACE_FIXED, \
+		.access_size = ACPI_ACCESS_SIZE_QWORD_ACCESS, \
+		.addrl       = address, \
+		.bit_offset  = offset, \
+		.bit_width   = width, \
+	}
+
+#define ACPI_REG_UNSUPPORTED	(acpi_addr_t){0}
 
 /* Common ACPI HIDs */
 #define ACPI_HID_FDC "PNP0700"
@@ -208,6 +221,71 @@ typedef struct acpi_mcfg_mmconfig {
 	u8 reserved[4];
 } __packed acpi_mcfg_mmconfig_t;
 
+/*
+ * HMAT (Heterogeneous Memory Attribute Table)
+ * ACPI spec 6.4 section 5.2.27
+ */
+typedef struct acpi_hmat {
+	acpi_header_t header;
+	u32 resv;
+	/* Followed by HMAT table structure[n] */
+} __packed acpi_hmat_t;
+
+/* HMAT: Memory Proximity Domain Attributes structure */
+typedef struct acpi_hmat_mpda {
+	u16 type;			/* Type (0) */
+	u16 resv;
+	u32 length;			/* Length in bytes (40) */
+	u16 flags;
+	u16 resv1;
+	u32 proximity_domain_initiator;
+	u32 proximity_domain_memory;
+	u32 resv2;
+	u64 resv3;
+	u64 resv4;
+} __packed acpi_hmat_mpda_t;
+
+/* HMAT: System Locality Latency and Bandwidth Information structure */
+typedef struct acpi_hmat_sllbi {
+	u16 type;			/* Type (1) */
+	u16 resv;
+	u32 length;			/* Length in bytes */
+	u8 flags;
+	u8 data_type;
+	/*
+	 * Transfer size defined as a 5-biased power of 2 exponent,
+	 * when the bandwidth/latency value is achieved.
+	 */
+	u8 min_transfer_size;
+	u8 resv1;
+	u32 num_initiator_domains;
+	u32 num_target_domains;
+	u32 resv2;
+	u64 entry_base_unit;
+	/* Followed by initiator proximity domain list */
+	/* Followed by target proximity domain list */
+	/* Followed by latency / bandwidth values */
+} __packed acpi_hmat_sllbi_t;
+
+/* HMAT: Memory Side Cache Information structure */
+typedef struct acpi_hmat_msci {
+	u16 type;			/* Type (2) */
+	u16 resv;
+	u32 length;			/* Length in bytes */
+	u32 domain;			/* Proximity domain for the memory */
+	u32 resv1;
+	u64 cache_size;
+	/* Describes level, associativity, write policy, cache line size */
+	u32 cache_attributes;
+	u16 resv2;
+	/*
+	 * Number of SMBIOS handlers that contribute to the
+	 * memory side cache physical devices
+	 */
+	u16 num_handlers;
+	/* Followed by SMBIOS handlers*/
+} __packed acpi_hmat_msci_t;
+
 /* SRAT (System Resource Affinity Table) */
 typedef struct acpi_srat {
 	acpi_header_t header;
@@ -215,6 +293,10 @@ typedef struct acpi_srat {
 	u64 resv1;
 	/* Followed by static resource allocation structure[n] */
 } __packed acpi_srat_t;
+
+#define ACPI_SRAT_STRUCTURE_LAPIC 0
+#define ACPI_SRAT_STRUCTURE_MEM   1
+#define ACPI_SRAT_STRUCTURE_GIA   5
 
 /* SRAT: Processor Local APIC/SAPIC Affinity Structure */
 typedef struct acpi_srat_lapic {
@@ -244,6 +326,21 @@ typedef struct acpi_srat_mem {
 		    */
 	u32 resv2[2];
 } __packed acpi_srat_mem_t;
+
+/* SRAT: Generic Initiator Affinity Structure (ACPI spec 6.4 section 5.2.16.6) */
+typedef struct acpi_srat_gia {
+	u8 type;		/* Type (5) */
+	u8 length;		/* Length in bytes (32) */
+	u8 resv;
+	u8 dev_handle_type;	/* Device handle type */
+	u32 proximity_domain;	/*Proximity domain */
+	u8 dev_handle[16];	/* Device handle */
+	u32 flags;
+	u32 resv1;
+} __packed acpi_srat_gia_t;
+
+#define ACPI_SRAT_GIA_DEV_HANDLE_ACPI 0
+#define ACPI_SRAT_GIA_DEV_HANDLE_PCI  1
 
 /* SLIT (System Locality Distance Information Table) */
 typedef struct acpi_slit {
@@ -410,11 +507,16 @@ enum dmar_type {
 	DMAR_RMRR = 1,
 	DMAR_ATSR = 2,
 	DMAR_RHSA = 3,
-	DMAR_ANDD = 4
+	DMAR_ANDD = 4,
+	DMAR_SATC = 5
 };
 
 enum {
 	DRHD_INCLUDE_PCI_ALL = 1
+};
+
+enum {
+	ATC_REQUIRED = 1
 };
 
 enum dmar_flags {
@@ -464,6 +566,14 @@ typedef struct dmar_andd_entry {
 	u8 device_number;
 	u8 device_name[];
 } __packed dmar_andd_entry_t;
+
+typedef struct dmar_satc_entry {
+	u16 type;
+	u16 length;
+	u8 flags;
+	u8 reserved;
+	u16 segment_number;
+} __packed dmar_satc_entry_t;
 
 /* DMAR (DMA Remapping Reporting Structure) */
 typedef struct acpi_dmar {
@@ -636,8 +746,8 @@ typedef struct acpi_fadt {
 	u32 flags;
 	acpi_addr_t reset_reg;
 	u8 reset_value;
-	u16 ARM_boot_arch;	/* Revision 6 only, Revision 5: Must be zero */
-	u8 FADT_MinorVersion;	/* Revision 6 only, Revision 5: Must be zero */
+	u16 ARM_boot_arch;	/* Must be zero if ACPI Revision <= 5.0 */
+	u8 FADT_MinorVersion;	/* Must be zero if ACPI Revision <= 5.0 */
 	u32 x_firmware_ctl_l;
 	u32 x_firmware_ctl_h;
 	u32 x_dsdt_l;
@@ -658,12 +768,21 @@ typedef struct acpi_fadt {
 } __packed acpi_fadt_t;
 
 /* FADT TABLE Revision values */
-#define ACPI_FADT_REV_ACPI_1_0		1
-#define ACPI_FADT_REV_ACPI_2_0		3
-#define ACPI_FADT_REV_ACPI_3_0		4
-#define ACPI_FADT_REV_ACPI_4_0		4
-#define ACPI_FADT_REV_ACPI_5_0		5
-#define ACPI_FADT_REV_ACPI_6_0		6
+#define ACPI_FADT_REV_ACPI_1	1
+#define ACPI_FADT_REV_ACPI_2	3
+#define ACPI_FADT_REV_ACPI_3	4
+#define ACPI_FADT_REV_ACPI_4	4
+#define ACPI_FADT_REV_ACPI_5	5
+#define ACPI_FADT_REV_ACPI_6	6
+
+/* FADT Minor Version value:
+ *  Bits 0-3: minor version
+ *  Bits 4-7: Errata
+ *   value of 1 means this is compatible with Errata A,
+ *   value of 2 would be compatible with Errata B, and so on
+ * Version 6.3 Errata A would be: (1 << 4) | 3
+ */
+#define ACPI_FADT_MINOR_VERSION_0	0 /* coreboot currently use this version */
 
 /* Flags for p_lvl2_lat and p_lvl3_lat */
 #define ACPI_FADT_C2_NOT_SUPPORTED	101
@@ -832,7 +951,15 @@ typedef struct acpi_hest_generic_data_v300 {
 #define ACPI_GENERROR_VALID_FRUID_TEXT		BIT(1)
 #define ACPI_GENERROR_VALID_TIMESTAMP		BIT(2)
 
-/* Generic Error Status Block */
+/*
+ * Generic Error Status Block
+ *
+ * If there is a raw data section at the end of the generic error status block after the
+ * zero or more generic error data entries, raw_data_length indicates the length of the raw
+ * section and raw_data_offset is the offset of the beginning of the raw data section from
+ * the start of the acpi_generic_error_status block it is contained in. So if raw_data_length
+ * is non-zero, raw_data_offset must be at least sizeof(acpi_generic_error_status_t).
+ */
 typedef struct acpi_generic_error_status {
 	u32 block_status;
 	u32 raw_data_offset;	/* must follow any generic entries */
@@ -887,6 +1014,25 @@ typedef struct acpi_tstate {
 	u32 control;
 	u32 status;
 } __packed acpi_tstate_t;
+
+enum acpi_lpi_state_flags {
+	ACPI_LPI_STATE_DISABLED = 0,
+	ACPI_LPI_STATE_ENABLED
+};
+
+/* Low Power Idle State */
+struct acpi_lpi_state {
+	u32 min_residency_us;
+	u32 worst_case_wakeup_latency_us;
+	u32 flags;
+	u32 arch_context_lost_flags;
+	u32 residency_counter_frequency_hz;
+	u32 enabled_parent_state;
+	acpi_addr_t entry_method;
+	acpi_addr_t residency_counter_register;
+	acpi_addr_t usage_counter_register;
+	const char *state_name;
+};
 
 /* Port types for ACPI _UPC object */
 enum acpi_upc_type {
@@ -948,12 +1094,140 @@ struct acpi_spmi {
 	u8 reserved3;
 } __packed;
 
+/* EINJ APEI Standard Definitions */
+/* EINJ Error Types
+   Refer to the ACPI spec, EINJ section, for more info on bit definitions
+*/
+#define ACPI_EINJ_CPU_CE		(1 << 0)
+#define ACPI_EINJ_CPU_UCE		(1 << 1)
+#define ACPI_EINJ_CPU_UCE_FATAL		(1 << 2)
+#define ACPI_EINJ_MEM_CE		(1 << 3)
+#define ACPI_EINJ_MEM_UCE		(1 << 4)
+#define ACPI_EINJ_MEM_UCE_FATAL		(1 << 5)
+#define ACPI_EINJ_PCIE_CE		(1 << 6)
+#define ACPI_EINJ_PCIE_UCE_NON_FATAL	(1 << 7)
+#define ACPI_EINJ_PCIE_UCE_FATAL	(1 << 8)
+#define ACPI_EINJ_PLATFORM_CE		(1 << 9)
+#define ACPI_EINJ_PLATFORM_UCE		(1 << 10)
+#define ACPI_EINJ_PLATFORM_UCE_FATAL	(1 << 11)
+#define ACPI_EINJ_VENDOR_DEFINED	(1 << 31)
+#define ACPI_EINJ_DEFAULT_CAP		(ACPI_EINJ_MEM_CE | ACPI_EINJ_MEM_UCE | \
+					ACPI_EINJ_PCIE_CE | ACPI_EINJ_PCIE_UCE_FATAL)
+
+/* EINJ actions */
+#define ACTION_COUNT			9
+#define BEGIN_INJECT_OP			0x00
+#define GET_TRIGGER_ACTION_TABLE	0x01
+#define SET_ERROR_TYPE			0x02
+#define GET_ERROR_TYPE			0x03
+#define END_INJECT_OP			0x04
+#define EXECUTE_INJECT_OP		0x05
+#define CHECK_BUSY_STATUS		0x06
+#define GET_CMD_STATUS			0x07
+#define SET_ERROR_TYPE_WITH_ADDRESS	0x08
+#define TRIGGER_ERROR			0xFF
+
+/* EINJ Instructions */
+#define READ_REGISTER			0x00
+#define READ_REGISTER_VALUE		0x01
+#define WRITE_REGISTER			0x02
+#define WRITE_REGISTER_VALUE		0x03
+#define NO_OP				0x04
+
+/* EINJ (Error Injection Table) */
+typedef struct acpi_gen_regaddr1 {
+	u8  space_id;		/* Address space ID */
+	u8  bit_width;		/* Register size in bits */
+	u8  bit_offset;		/* Register bit offset */
+	u8  access_size;	/* Access size since ACPI 2.0c */
+	u64 addr;		/* Register address */
+} __packed acpi_addr64_t;
+
+/* Instruction entry */
+typedef struct acpi_einj_action_table {
+	u8 action;
+	u8 instruction;
+	u16 flags;
+	acpi_addr64_t reg;
+	u64 value;
+	u64 mask;
+} __packed acpi_einj_action_table_t;
+
+typedef struct acpi_injection_header {
+	u32 einj_header_size;
+	u32 flags;
+	u32 entry_count;
+} __packed acpi_injection_header_t;
+
+typedef struct acpi_einj_trigger_table {
+	u32 header_size;
+	u32 revision;
+	u32 table_size;
+	u32 entry_count;
+	acpi_einj_action_table_t trigger_action[1];
+} __packed acpi_einj_trigger_table_t;
+
+typedef struct set_error_type {
+	u32 errtype;
+	u32 vendorerrortype;
+	u32 flags;
+	u32 apicid;
+	u64 memaddr;
+	u64 memrange;
+	u32 pciesbdf;
+} __packed set_error_type_t;
+
+#define EINJ_PARAM_NUM 6
+typedef struct acpi_einj_smi {
+	u64 op_state;
+	u64 err_inject[EINJ_PARAM_NUM];
+	u64 trigger_action_table;
+	u64 err_inj_cap;
+	u64 op_status;
+	u64 cmd_sts;
+	u64 einj_addr;
+	u64 einj_addr_msk;
+	set_error_type_t setaddrtable;
+	u64 reserved[50];
+} __packed acpi_einj_smi_t;
+
+/* EINJ Flags */
+#define EINJ_DEF_TRIGGER_PORT	0xb2
+#define FLAG_PRESERVE		0x01
+#define FLAG_IGNORE		0x00
+
+/* EINJ Registers */
+#define EINJ_REG_MEMORY(address) \
+	{ \
+	.space_id = ACPI_ADDRESS_SPACE_MEMORY, \
+	.bit_width = 64, \
+	.bit_offset = 0, \
+	.access_size = ACPI_ACCESS_SIZE_QWORD_ACCESS, \
+	.addr = address}
+
+#define EINJ_REG_IO() \
+	{ \
+	.space_id = ACPI_ADDRESS_SPACE_IO, \
+	.bit_width = 0x10, \
+	.bit_offset = 0, \
+	.access_size = ACPI_ACCESS_SIZE_WORD_ACCESS, \
+	.addr = EINJ_DEF_TRIGGER_PORT} /* HW dependent code can override this also */
+
+typedef struct acpi_einj {
+	acpi_header_t header;
+	acpi_injection_header_t inj_header;
+	acpi_einj_action_table_t action_table[ACTION_COUNT];
+} __packed acpi_einj_t;
+
+
+void acpi_create_einj(acpi_einj_t *einj, uintptr_t addr, u8 actions);
+
 unsigned long fw_cfg_acpi_tables(unsigned long start);
 
 /* These are implemented by the target port or north/southbridge. */
+void preload_acpi_dsdt(void);
 unsigned long write_acpi_tables(unsigned long addr);
 unsigned long acpi_fill_madt(unsigned long current);
-unsigned long acpi_fill_mcfg(unsigned long current);
 unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long current);
 void acpi_create_ssdt_generator(acpi_header_t *ssdt, const char *oem_table_id);
 void acpi_write_bert(acpi_bert_t *bert, uintptr_t region, size_t length);
@@ -965,9 +1239,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt);
 void mainboard_fill_fadt(acpi_fadt_t *fadt);
 
 void acpi_fill_gnvs(void);
-
-void update_ssdt(void *ssdt);
-void update_ssdtx(void *ssdtx, int i);
+void acpi_fill_cnvs(void);
 
 unsigned long acpi_fill_lpit(unsigned long current);
 
@@ -985,14 +1257,18 @@ int acpi_create_madt_lapic_nmi(acpi_madt_lapic_nmi_t *lapic_nmi, u8 cpu,
 			       u16 flags, u8 lint);
 void acpi_create_madt(acpi_madt_t *madt);
 unsigned long acpi_create_madt_lapics(unsigned long current);
-unsigned long acpi_create_madt_lapic_nmis(unsigned long current, u16 flags,
-					  u8 lint);
 int acpi_create_madt_lx2apic(acpi_madt_lx2apic_t *lapic, u32 cpu, u32 apic);
 int acpi_create_madt_lx2apic_nmi(acpi_madt_lx2apic_nmi_t *lapic_nmi, u32 cpu,
 				 u16 flags, u8 lint);
 int acpi_create_srat_lapic(acpi_srat_lapic_t *lapic, u8 node, u8 apic);
 int acpi_create_srat_mem(acpi_srat_mem_t *mem, u8 node, u32 basek, u32 sizek,
 			 u32 flags);
+/*
+ * Given the Generic Initiator device's BDF, the proximity domain's ID
+ * and flag, create Generic Initiator Affinity structure in SRAT.
+ */
+int acpi_create_srat_gia_pci(acpi_srat_gia_t *gia, u32 proximity_domain,
+		u16 seg, u8 bus, u8 dev, u8 func, u32 flags);
 int acpi_create_mcfg_mmconfig(acpi_mcfg_mmconfig_t *mmconfig, u32 base,
 			      u16 seg_nr, u8 start, u8 end);
 unsigned long acpi_create_srat_lapics(unsigned long current);
@@ -1001,6 +1277,16 @@ void acpi_create_srat(acpi_srat_t *srat,
 
 void acpi_create_slit(acpi_slit_t *slit,
 		      unsigned long (*acpi_fill_slit)(unsigned long current));
+
+/*
+ * Create a Memory Proximity Domain Attributes structure for HMAT,
+ * given proximity domain for the attached initiaor, and
+ * proximimity domain for the memory.
+ */
+int acpi_create_hmat_mpda(acpi_hmat_mpda_t *mpda, u32 initiator, u32 memory);
+/* Create Heterogeneous Memory Attribute Table */
+void acpi_create_hmat(acpi_hmat_t *hmat,
+		      unsigned long (*acpi_fill_hmat)(unsigned long current));
 
 void acpi_create_vfct(const struct device *device,
 		      acpi_vfct_t *vfct,
@@ -1055,9 +1341,12 @@ unsigned long acpi_create_dmar_rhsa(unsigned long current, u64 base_addr,
 				    u32 proximity_domain);
 unsigned long acpi_create_dmar_andd(unsigned long current, u8 device_number,
 				    const char *device_name);
+unsigned long acpi_create_dmar_satc(unsigned long current, u8 flags,
+				    u16 segment);
 void acpi_dmar_drhd_fixup(unsigned long base, unsigned long current);
 void acpi_dmar_rmrr_fixup(unsigned long base, unsigned long current);
 void acpi_dmar_atsr_fixup(unsigned long base, unsigned long current);
+void acpi_dmar_satc_fixup(unsigned long base, unsigned long current);
 unsigned long acpi_create_dmar_ds_pci_br(unsigned long current,
 					   u8 bus, u8 dev, u8 fn);
 unsigned long acpi_create_dmar_ds_pci(unsigned long current,
@@ -1077,9 +1366,8 @@ unsigned long acpi_create_hest_error_source(acpi_hest_t *hest,
 void acpi_create_lpit(acpi_lpit_t *lpit);
 unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t uid);
 
-/* For crashlog. */
-bool acpi_is_boot_error_src_present(void);
-void acpi_soc_fill_bert(acpi_bert_t *bert, void **region, size_t *length);
+/* chipsets that select ACPI_BERT must implement this function */
+enum cb_err acpi_soc_get_bert_region(void **region, size_t *length);
 
 /* For ACPI S3 support. */
 void __noreturn acpi_resume(void *wake_vec);
@@ -1153,6 +1441,7 @@ static inline uintptr_t acpi_align_current(uintptr_t current)
  * be made into a weak function if there is ever a need to override the
  * coreboot default ACPI spec version supported. */
 int get_acpi_table_revision(enum acpi_tables table);
+u8 get_acpi_fadt_minor_version(void);
 
 #endif  // !defined(__ASSEMBLER__) && !defined(__ACPI__)
 

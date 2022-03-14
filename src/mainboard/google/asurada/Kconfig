@@ -29,13 +29,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_FORCE_NATIVE_VGA_INIT
 	select HAVE_LINEAR_FRAMEBUFFER
 	select DRIVER_ANALOGIX_ANX7625
+	select COMMONLIB_STORAGE
+	select COMMONLIB_STORAGE_MMC
 
 config MAINBOARD_DIR
-	string
 	default "google/asurada"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Asurada" if BOARD_GOOGLE_ASURADA
 	default "Hayato" if BOARD_GOOGLE_HAYATO
 	default "Spherion" if BOARD_GOOGLE_SPHERION
@@ -53,5 +53,9 @@ config BOOT_DEVICE_SPI_FLASH_BUS
 config EC_GOOGLE_CHROMEEC_SPI_BUS
 	hex
 	default 0x1
+
+config CONSOLE_CBMEM_BUFFER_SIZE
+	hex
+	default 0x80000
 
 endif

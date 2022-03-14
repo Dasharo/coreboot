@@ -23,6 +23,13 @@
 #define MCHBAR32(x)	(*(volatile u32 *)(uintptr_t)(MCH_BASE_ADDRESS + x))
 #define MCHBAR64(x)	(*(volatile u64 *)(uintptr_t)(MCH_BASE_ADDRESS + x))
 
+/* REGBAR */
+#define REGBAR_OFFSET(pid, x)	(REG_BASE_ADDRESS + ((pid) << 16) + (x))
+#define REGBAR8(pid, x)		(*(volatile u8 *)(uintptr_t)REGBAR_OFFSET(pid, x))
+#define REGBAR16(pid, x)	(*(volatile u16 *)(uintptr_t)REGBAR_OFFSET(pid, x))
+#define REGBAR32(pid, x)	(*(volatile u32 *)(uintptr_t)REGBAR_OFFSET(pid, x))
+#define REGBAR64(pid, x)	(*(volatile u64 *)(uintptr_t)REGBAR_OFFSET(pid, x))
+
 /* Perform System Agent Initialization during Bootblock phase */
 void bootblock_systemagent_early_init(void);
 
@@ -72,6 +79,9 @@ uintptr_t sa_get_tseg_base(void);
 size_t sa_get_tseg_size(void);
 /* Fill MMIO resource above 4GB into GNVS */
 void sa_fill_gnvs(struct global_nvs *gnvs);
+/* API to lock PAM registers */
+void sa_lock_pam(void);
+
 /*
  * SoC overrides
  *

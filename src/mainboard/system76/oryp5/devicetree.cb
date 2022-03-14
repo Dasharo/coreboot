@@ -1,6 +1,5 @@
 chip soc/intel/cannonlake
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		// Touchpad I2C bus
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
@@ -109,7 +108,7 @@ chip soc/intel/cannonlake
 		device pci 15.1 on  end # I2C #1
 		device pci 15.2 off end # I2C #2
 		device pci 15.3 off end # I2C #3
-		device pci 16.0 off end # Management Engine Interface 1
+		device pci 16.0 on  end # Management Engine Interface 1
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
@@ -182,21 +181,25 @@ chip soc/intel/cannonlake
 		device pci 1e.2 off end # GSPI #0
 		device pci 1e.3 off end # GSPI #1
 		device pci 1f.0 on # LPC Interface
-			register "gen1_dec" = "0x000c0081"
-			register "gen2_dec" = "0x00040069"
-			register "gen3_dec" = "0x00fc0e01"
-			register "gen4_dec" = "0x00fc0f01"
+			register "gen1_dec" = "0x00040069"
+			register "gen2_dec" = "0x00fc0e01"
+			register "gen3_dec" = "0x00fc0f01"
 			chip drivers/pc80/tpm
 				device pnp 0c31.0 on end
 			end
 		end
 		device pci 1f.1 off end # P2SB
-		device pci 1f.2 off end # Power Management Controller
+		device pci 1f.2 hidden end # Power Management Controller
 		device pci 1f.3 on      # Intel HDA
 			subsystemid 0x1558 0x96e1
 			register "PchHdaAudioLinkHda" = "1"
 		end
-		device pci 1f.4 on  end # SMBus
+		device pci 1f.4 on      # SMBus
+			chip drivers/i2c/tas5825m
+				register "id" = "0"
+				device i2c 4e on end # (8bit address: 0x9c)
+			end # tas5825m
+		end
 		device pci 1f.5 on  end # PCH SPI
 		device pci 1f.6 off end # GbE
 	end

@@ -1,4 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+fw_config
+	field TOUCHPAD 26
+		option REGULAR_TOUCHPAD 1
+		option NUMPAD_TOUCHPAD 0
+	end
+end
+
 chip soc/amd/picasso
 
 	# Set FADT Configuration
@@ -6,12 +13,15 @@ chip soc/amd/picasso
 	# See table 5-34 ACPI 6.3 spec
 	register "common_config.fadt_flags" = "ACPI_FADT_SLEEP_BUTTON | ACPI_FADT_SEALED_CASE"
 
-	register "acp_pin_cfg" = "I2S_PINS_I2S_TDM"
-	register "acp_i2s_wake_enable" = "0"
-	register "acp_pme_enable" = "0"
+	# ACP Configuration
+	register "common_config.acp_config" = "{
+		.acp_pin_cfg = I2S_PINS_I2S_TDM,
+		.acp_i2s_wake_enable = 0,
+		.acp_pme_enable = 0,
+	}"
 
 	# Start : OPN Performance Configuration
-	# (Configuratin that is common for all variants)
+	# (Configuration that is common for all variants)
 	# For the below fields, 0 indicates use SOC default
 
 	# PROCHOT_L de-assertion Ramp Time
@@ -58,7 +68,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port0 Default
 	register "usb_2_port_tune_params[0]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -71,7 +81,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port1 Default
 	register "usb_2_port_tune_params[1]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -84,7 +94,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port2 Default
 	register "usb_2_port_tune_params[2]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -97,7 +107,7 @@ chip soc/amd/picasso
 
 	# Controller0 Port3 Default
 	register "usb_2_port_tune_params[3]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x03,
@@ -110,7 +120,7 @@ chip soc/amd/picasso
 
 	# Controller1 Port0 Default
 	register "usb_2_port_tune_params[4]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x02,
@@ -123,7 +133,7 @@ chip soc/amd/picasso
 
 	# Controller1 Port1 Default
 	register "usb_2_port_tune_params[5]" = "{
-		.com_pds_tune = 0x03,
+		.com_pds_tune = 0x07,
 		.sq_rx_tune = 0x3,
 		.tx_fsls_tune = 0x3,
 		.tx_pre_emp_amp_tune = 0x02,
@@ -183,15 +193,6 @@ chip soc/amd/picasso
 	register "usb_port_overcurrent_pin[4]" = "USB_OC_NONE"	# Camera
 	register "usb_port_overcurrent_pin[5]" = "USB_OC_NONE"	# Bluetooth
 
-	# SPI Configuration
-	register "common_config.spi_config" = "{
-		.normal_speed = SPI_SPEED_33M, /* MHz */
-		.fast_speed = SPI_SPEED_66M, /* MHz */
-		.altio_speed = SPI_SPEED_66M, /* MHz */
-		.tpm_speed = SPI_SPEED_66M, /* MHz */
-		.read_mode = SPI_READ_MODE_DUAL122,
-	}"
-
 	# eSPI Configuration
 	register "common_config.espi_config" = "{
 		.std_io_decode_bitmap = ESPI_DECODE_IO_0x80_EN | ESPI_DECODE_IO_0X60_0X64_EN,
@@ -220,7 +221,7 @@ chip soc/amd/picasso
 		.io_mode = ESPI_IO_MODE_QUAD,
 		.op_freq_mhz = ESPI_OP_FREQ_33_MHZ,
 		.crc_check_enable = 1,
-		.dedicated_alert_pin = 1,
+		.alert_pin = ESPI_ALERT_PIN_PUSH_PULL,
 		.periph_ch_en = 1,
 		.vw_ch_en = 1,
 		.oob_ch_en = 0,
@@ -231,7 +232,7 @@ chip soc/amd/picasso
 
 	register "i2c_scl_reset" = "GPIO_I2C2_SCL | GPIO_I2C3_SCL"
 
-	# genral purpose PCIe clock output configuration
+	# general purpose PCIe clock output configuration
 	register "gpp_clk_config[0]" = "GPP_CLK_REQ" # WLAN
 	register "gpp_clk_config[1]" = "GPP_CLK_REQ" # SD Reader
 	register "gpp_clk_config[2]" = "GPP_CLK_REQ" # NVME SSD
@@ -240,32 +241,24 @@ chip soc/amd/picasso
 	register "gpp_clk_config[5]" = "GPP_CLK_OFF"
 	register "gpp_clk_config[6]" = "GPP_CLK_OFF"
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
+	register "pspp_policy" = "DXIO_PSPP_BALANCED"
 
 	# See AMD 55570-B1 Table 13: PCI Device ID Assignments.
 	device domain 0 on
 		subsystemid 0x1022 0x1510 inherit
-		device pci 0.0 on  end # Root Complex
-		device pci 0.2 on  end # IOMMU
-		device pci 1.0 on  end # Dummy Host Bridge, must be enabled
-		device pci 1.1 off end # GPP Bridge 0
-		device pci 1.2 on      # GPP Bridge 1 - Wifi
+		device ref iommu on end
+		device ref gpp_bridge_1 on # Wifi
 			chip drivers/wifi/generic
 				register "wake" = "GEVENT_8"
 				device pci 00.0 on  end
 			end
 		end
-		device pci 1.3 on  end # GPP Bridge 2 - SD
-		device pci 1.4 off end # GPP Bridge 3
-		device pci 1.5 off end # GPP Bridge 4
-		device pci 8.0 on  end # Dummy Host Bridge, must be enabled
-		device pci 8.1 on      # Internal GPP Bridge 0 to Bus A
-			device pci 0.0 on  end # Internal GPU
-			device pci 0.1 on  end # Display HDA
-			device pci 0.2 on  end # Crypto Coprocessor
-			device pci 0.3 on # USB 3.1
+		device ref gpp_bridge_2 on end # SD
+		device ref internal_bridge_a on
+			device ref gfx on  end # Internal GPU
+			device ref gfx_hda on end # Display HDA
+			device ref crypto on end # Crypto Coprocessor
+			device ref xhci_0 on # USB 3.1
 				chip drivers/usb/acpi
 					register "desc" = ""Root Hub""
 					register "type" = "UPC_TYPE_HUB"
@@ -303,7 +296,7 @@ chip soc/amd/picasso
 							register "desc" = ""Bluetooth""
 							register "type" = "UPC_TYPE_INTERNAL"
 							register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_143)"
-							device usb 2.5 on end
+							device usb 2.5 alias xhci0_bt on end
 						end
 						chip drivers/usb/acpi
 							register "desc" = ""Left Type-C Port""
@@ -332,7 +325,7 @@ chip soc/amd/picasso
 					end
 				end
 			end
-			device pci 0.5 on
+			device ref acp on
 				chip drivers/amd/i2s_machine_dev
 					register "hid" = ""AMDI5682""
 					# DMIC select GPIO for ACP machine device
@@ -345,17 +338,13 @@ chip soc/amd/picasso
 					# Set low (0) = Select DMIC0
 					# Set high (1) = Select DMIC1
 					register "dmic_select_gpio" = "ACPI_GPIO_OUTPUT(GPIO_67)"
-					device generic 0.0 on end
+					device generic 0.0 alias acp_machine on end
 				end
 			end # Audio
-			device pci 0.6 off end # HDA
-			device pci 0.7 on  end # non-Sensor Fusion Hub device
+			device ref hda off end # HDA
+			device ref mp2 on end # non-Sensor Fusion Hub device
 		end
-		device pci 8.2 off     # Internal GPP Bridge 0 to Bus B
-			device pci 0.0 off end # AHCI
-		end
-		device pci 14.0 on  end # SM
-		device pci 14.3 on  # - D14F3 bridge
+		device ref lpc_bridge on
 			chip ec/google/chromeec
 				device pnp 0c09.0 on
 					chip ec/google/chromeec/i2c_tunnel
@@ -375,7 +364,7 @@ chip soc/amd/picasso
 								register "property_list[1].type" = "ACPI_DP_TYPE_STRING"
 								register "property_list[1].name" = ""realtek,mclk-name""
 								register "property_list[1].string" = ""oscout1""
-								device i2c 1a on end
+								device i2c 1a alias audio_rt5682 on end
 							end
 						end
 					end
@@ -386,23 +375,9 @@ chip soc/amd/picasso
 				end
 			end
 		end
-		device pci 18.0 on  end # Data fabric [0-7]
-		device pci 18.1 on  end
-		device pci 18.2 on  end
-		device pci 18.3 on  end
-		device pci 18.4 on  end
-		device pci 18.5 on  end
-		device pci 18.6 on  end
 	end # domain
 
-	chip drivers/generic/max98357a
-			register "hid" = ""MX98357A""
-			register "sdmode_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_91)"
-			register "sdmode_delay" = "5"
-			device generic 0.1 on end
-	end
-
-	device mmio 0xfedc5000 on
+	device ref i2c_3 on
 		chip drivers/i2c/tpm
 			register "hid" = ""GOOG0005""
 			register "desc" = ""Cr50 TPM""
@@ -411,8 +386,6 @@ chip soc/amd/picasso
 		end
 	end
 
-	device mmio 0xfedca000 off end # UART1
-	device mmio 0xfedce000 off end # UART2
-	device mmio 0xfedcf000 off end # UART3
+	device ref uart_0 on end # console
 
 end	# chip soc/amd/picasso

@@ -64,7 +64,9 @@ typedef struct __packed {
 	/** Offset 0x00D4**/	uint8_t                     UnusedUpdSpace0;
 	/** Offset 0x00D5**/	uint8_t                     ccx_down_core_mode;
 	/** Offset 0x00D6**/	uint8_t                     ccx_disable_smt;
-	/** Offset 0x00D7**/	uint8_t                     UnusedUpdSpace1[41];
+	/** Offset 0x00D7**/	uint8_t                     UnusedUpdSpace1;
+	/** Offset 0x00D8**/	uint8_t                     hdmi2_disable;
+	/** Offset 0x00DC**/	uint8_t                     UnusedUpdSpace2[39];
 	/** Offset 0x0100**/	uint16_t                    Reserved100;
 	/** Offset 0x0102**/	uint16_t                    UpdTerminator;
 } FSP_M_CONFIG;
@@ -76,5 +78,10 @@ typedef struct __packed {
 	/** Offset 0x0020**/	FSPM_ARCH_UPD               FspmArchUpd;
 	/** Offset 0x0040**/	FSP_M_CONFIG                FspmConfig;
 } FSPM_UPD;
+
+#define IMAGE_REVISION_MAJOR_VERSION 0x01
+#define IMAGE_REVISION_MINOR_VERSION 0x00
+#define IMAGE_REVISION_REVISION 0x02
+#define IMAGE_REVISION_BUILD_NUMBER 0x04
 
 #endif

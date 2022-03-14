@@ -7,14 +7,12 @@
 #include <console/console.h>
 #include <drivers/intel/gma/int15.h>
 #include <fmap.h>
-#include <acpi/acpi.h>
 #include <arch/io.h>
 #include "onboard.h"
 #include "ec.h"
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <smbios.h>
 #include <ec/quanta/ene_kb3940q/ec.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 
 static unsigned int search(char *p, char *a, unsigned int lengthp,
 			   unsigned int lengtha)
@@ -150,8 +148,9 @@ static void program_keyboard_type(u32 search_address, u32 search_length)
 			if (offset != search_length)
 				kbd_type = EC_KBD_JP;
 		}
-	} else
+	} else {
 		printk(BIOS_DEBUG, "Error: Could not locate VPD area\n");
+	}
 
 	printk(BIOS_DEBUG, "Setting Keyboard type in EC to ");
 	printk(BIOS_DEBUG, (kbd_type == EC_KBD_JP) ? "Japanese" : "English");
@@ -168,7 +167,7 @@ static void mainboard_init(struct device *dev)
 	struct device *ethernet_dev = NULL;
 	void *vpd_file;
 
-	if (CONFIG(CHROMEOS)) {
+	if (CONFIG(VPD)) {
 		struct region_device rdev;
 
 		if (fmap_locate_area_as_rdev("RO_VPD", &rdev) == 0) {
@@ -257,7 +256,6 @@ static void mainboard_enable(struct device *dev)
 {
 	dev->ops->init = mainboard_init;
 	dev->ops->get_smbios_data = butterfly_onboard_smbios_data;
-	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
 	install_intel_vga_int15_handler(GMA_INT15_ACTIVE_LFP_INT_LVDS, GMA_INT15_PANEL_FIT_DEFAULT, GMA_INT15_BOOT_DISPLAY_DEFAULT, 0);
 }
 

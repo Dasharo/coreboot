@@ -1,17 +1,17 @@
 ifeq ($(CONFIG_INTEL_TXT),y)
 
+all-y += logging.c
+
 romstage-y += romstage.c
 romstage-y += getsec_sclean.S
 romstage-y += getsec.c
 
 romstage-y += common.c
-romstage-$(CONFIG_INTEL_TXT_LOGGING) += logging.c
 
 ramstage-y += common.c
 ramstage-y += getsec.c
 ramstage-y += getsec_enteraccs.S
 ramstage-y += ramstage.c
-ramstage-$(CONFIG_INTEL_TXT_LOGGING) += logging.c
 
 cbfs-files-y += $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM)
 $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM)-file := $(CONFIG_INTEL_TXT_BIOSACM_FILE)
@@ -28,7 +28,7 @@ endif
 
 ifeq ($(CONFIG_CPU_INTEL_FIRMWARE_INTERFACE_TABLE),y)
 
-$(call add_intermediate, add_acm_fit, $(IFITTOOL))
+$(call add_intermediate, add_acm_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r COREBOOT -a -n $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM) -t 2 \
 		-s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
 
@@ -41,7 +41,7 @@ ibb-files := $(foreach file,$(cbfs-files), \
 
 ibb-files += bootblock
 
-$(call add_intermediate, add_ibb_fit, $(IFITTOOL))
+$(call add_intermediate, add_ibb_fit, $(IFITTOOL) set_fit_ptr)
 	$(foreach file, $(ibb-files), $(shell $(IFITTOOL) -f $< -a -n $(file) -t 7 \
 		-s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -r COREBOOT)) true
 

@@ -11,23 +11,6 @@
 #include <soc/pm.h>
 #include <soc/soc_chip.h>
 
-/*
- * Set which power state system will be after reapplying
- * the power (from G3 State)
- */
-void pmc_soc_set_afterg3_en(const bool on)
-{
-	uint8_t reg8;
-	uint8_t *const pmcbase = pmc_mmio_regs();
-
-	reg8 = read8(pmcbase + GEN_PMCON_A);
-	if (on)
-		reg8 &= ~SLEEP_AFTER_POWER_FAIL;
-	else
-		reg8 |= SLEEP_AFTER_POWER_FAIL;
-	write8(pmcbase + GEN_PMCON_A, reg8);
-}
-
 static void config_deep_sX(uint32_t offset, uint32_t mask, int sx, int enable)
 {
 	uint32_t reg;
@@ -83,6 +66,24 @@ static void pmc_init(void *unused)
 	config_deep_s3(config->deep_s3_enable_ac, config->deep_s3_enable_dc);
 	config_deep_s5(config->deep_s5_enable_ac, config->deep_s5_enable_dc);
 	config_deep_sx(config->deep_sx_config);
+
+	/*
+	 * Disable ACPI PM timer based on Kconfig
+	 *
+	 * Disabling ACPI PM timer is necessary for XTAL OSC shutdown.
+	 * Disabling ACPI PM timer also switches off TCO
+	 */
+	if (!CONFIG(USE_PM_ACPI_TIMER))
+		setbits8(pmc_mmio_regs() + PCH_PWRM_ACPI_TMR_CTL, ACPI_TIM_DIS);
+
+	/*
+	 * Clear PMCON status bits (Global Reset/Power Failure/Host Reset Status bits)
+	 *
+	 * Perform the PMCON status bit clear operation from `.final`
+	 * to cover any such chances where later boot stage requested a global
+	 * reset and PMCON status bit remains set.
+	 */
+	pmc_clear_pmcon_sts();
 }
 
 /*

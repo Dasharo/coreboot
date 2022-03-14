@@ -19,6 +19,7 @@
 #include <cpu/intel/smm_reloc.h>
 #include <cpu/intel/common/common.h>
 #include <smp/node.h>
+#include <types.h>
 
 static void configure_thermal_target(void)
 {
@@ -73,23 +74,13 @@ static void set_max_ratio(void)
 	       ((perf_ctl.lo >> 8) & 0xff) * IRONLAKE_BCLK);
 }
 
-static void configure_mca(void)
-{
-	msr_t msr;
-	int i;
-
-	msr.lo = msr.hi = 0;
-	/* This should only be done on a cold boot */
-	for (i = 0; i < 7; i++)
-		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
-}
-
 static void model_2065x_init(struct device *cpu)
 {
 	char processor_name[49];
 
 	/* Clear out pending MCEs */
-	configure_mca();
+	/* This should only be done on a cold boot */
+	mca_clear_status();
 
 	/* Print processor name */
 	fill_processor_name(processor_name);
@@ -100,9 +91,7 @@ static void model_2065x_init(struct device *cpu)
 	/* Setup Page Attribute Tables (PAT) */
 	// TODO set up PAT
 
-	/* Enable the local CPU APICs */
 	enable_lapic_tpr();
-	setup_lapic();
 
 	/* Set virtualization based on Kconfig option */
 	set_vmx_and_lock();
@@ -133,8 +122,8 @@ static void pre_mp_init(void)
 static int get_cpu_count(void)
 {
 	msr_t msr;
-	int num_threads;
-	int num_cores;
+	unsigned int num_threads;
+	unsigned int num_cores;
 
 	msr = rdmsr(MSR_CORE_THREAD_COUNT);
 	num_threads = (msr.lo >> 0) & 0xffff;
@@ -184,8 +173,8 @@ static const struct mp_ops mp_ops = {
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }
 
 static struct device_operations cpu_dev_ops = {

@@ -158,20 +158,35 @@ static inline int rdev_chain_full(struct region_device *child,
 }
 
 /*
+ * Returns < 0 on error otherwise returns size of data read at provided
+ * offset filling in the buffer passed.
+ *
+ * You must ensure the buffer is large enough to hold the full region_device.
+ */
+static inline ssize_t rdev_read_full(const struct region_device *rd, void *b)
+{
+	return rdev_readat(rd, b, 0, region_device_sz(rd));
+}
+
+/*
  * Compute relative offset of the child (c) w.r.t. the parent (p). Returns < 0
  * when child is not within the parent's region.
  */
 ssize_t rdev_relative_offset(const struct region_device *p,
 				const struct region_device *c);
 
+/* Helper functions to create an rdev that represents memory. */
+int rdev_chain_mem(struct region_device *child, const void *base, size_t size);
+int rdev_chain_mem_rw(struct region_device *child, void *base, size_t size);
+
 struct mem_region_device {
 	char *base;
 	struct region_device rdev;
 };
 
-/* Initialize at runtime a mem_region_device. This would be used when
- * the base and size are dynamic or can't be known during linking.
- * There are two variants: read-only and read-write. */
+/* Initialize at runtime a mem_region_device. Should only be used for mappings
+   that need to fit right up to the edge of the physical address space. Most use
+   cases will want to use rdev_chain_mem() instead. */
 void mem_region_device_ro_init(struct mem_region_device *mdev, void *base,
 				size_t size);
 
@@ -182,7 +197,8 @@ extern const struct region_device_ops mem_rdev_ro_ops;
 
 extern const struct region_device_ops mem_rdev_rw_ops;
 
-/* Statically initialize mem_region_device. */
+/* Statically initialize mem_region_device. Should normally only be used for
+   const globals. Most use cases will want to use rdev_chain_mem() instead. */
 #define MEM_REGION_DEV_INIT(base_, size_, ops_)				\
 	{								\
 		.base = (void *)(base_),				\
@@ -196,17 +212,15 @@ extern const struct region_device_ops mem_rdev_rw_ops;
 		MEM_REGION_DEV_INIT(base_, size_, &mem_rdev_rw_ops)	\
 
 struct mmap_helper_region_device {
-	struct mem_pool pool;
+	struct mem_pool *pool;
 	struct region_device rdev;
 };
 
-#define MMAP_HELPER_REGION_INIT(ops_, offset_, size_)			\
+#define MMAP_HELPER_DEV_INIT(ops_, offset_, size_, mpool_)		\
 	{								\
 		.rdev = REGION_DEV_INIT((ops_), (offset_), (size_)),	\
+		.pool = (mpool_),					\
 	}
-
-void mmap_helper_device_init(struct mmap_helper_region_device *mdev,
-				void *cache, size_t cache_size);
 
 void *mmap_helper_rdev_mmap(const struct region_device *, size_t, size_t);
 int mmap_helper_rdev_munmap(const struct region_device *, void *);

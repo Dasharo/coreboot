@@ -1,4 +1,6 @@
 chip soc/intel/tigerlake
+
+	device cpu_cluster 0 on end
 	device domain 0 on
 		device gpio 0 alias pch_gpio on end
 		device pci 00.0 alias system_agent on end
@@ -56,7 +58,6 @@ chip soc/intel/tigerlake
 		device pci 0d.2 alias tbt_dma0 off end
 		device pci 0d.3 alias tbt_dma1 off end
 		device pci 0e.0 alias vmd off end
-		device pci 10.2 alias cnvi_bt off end
 		device pci 10.6 alias thc0 off end
 		device pci 10.7 alias thc1 off end
 		device pci 12.0 alias ish off end

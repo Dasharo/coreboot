@@ -10,6 +10,7 @@
 #include <security/vboot/misc.h>
 #include <security/vboot/symbols.h>
 #include <security/vboot/vboot_common.h>
+#include <timestamp.h>
 
 /* Ensure vboot configuration is valid: */
 _Static_assert(CONFIG(VBOOT_STARTS_IN_BOOTBLOCK) +
@@ -45,21 +46,16 @@ void vboot_run_logic(void)
 		verstage_main();
 		after_verstage();
 	} else if (verstage_should_load()) {
-		struct cbfsf file;
 		struct prog verstage =
 			PROG_INIT(PROG_VERSTAGE,
 				CONFIG_CBFS_PREFIX "/verstage");
 
 		printk(BIOS_DEBUG, "VBOOT: Loading verstage.\n");
 
-		/* load verstage from RO */
-		if (cbfs_boot_locate(&file, prog_name(&verstage), NULL))
-			die("failed to load verstage");
-
-		cbfs_file_data(prog_rdev(&verstage), &file);
-
+		timestamp_add_now(TS_START_COPYVER);
 		if (cbfs_prog_stage_load(&verstage))
 			die("failed to load verstage");
+		timestamp_add_now(TS_END_COPYVER);
 
 		/* verify and select a slot */
 		prog_run(&verstage);

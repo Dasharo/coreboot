@@ -1,9 +1,5 @@
 chip soc/intel/tigerlake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -29,8 +25,6 @@ chip soc/intel/tigerlake
 	# FSP configuration
 	register "SaGv" = "SaGv_Disabled"
 
-	register "SataEnable" = "1"
-	register "SataMode" = "0"
 	register "SataSalpSupport" = "1"
 
 	# TODO: the lengths are all MID for right now.
@@ -56,6 +50,7 @@ chip soc/intel/tigerlake
 	register "PcieRpEnable[8]" = "1"
 	register "PcieClkSrcUsage[2]" = "8"
 	register "PcieClkSrcClkReq[2]" = "2"
+	register "PcieRpSlotImplemented[8]" = "1"
 
 	# Mark unused SRCCLKREQs as so
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_NOTUSED"
@@ -66,7 +61,6 @@ chip soc/intel/tigerlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| I2C0              | Touchscreen               |
 	#| I2C1              | Touchpad                  |
 	#| I2C2              | ISH ?                     |
@@ -74,7 +68,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | ISH ?                     |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.i2c[0] = {
 			.speed = I2C_SPEED_FAST,
 		},
@@ -137,7 +130,7 @@ chip soc/intel/tigerlake
 	device domain 0 on
 		device pci 00.0 on  end # Host Bridge
 		device pci 02.0 on  end # Graphics
-		device pci 04.0 on  end # DPTF
+		device pci 04.0 off end # DPTF
 		device pci 05.0 off end # IPU
 		device pci 06.0 off end # PEG60
 		device pci 07.0 on  end # TBT_PCIe0
@@ -297,7 +290,7 @@ chip soc/intel/tigerlake
 		device pci 1f.1 off end # P2SB
 		device pci 1f.2 hidden end # PMC
 		device pci 1f.3 on  end # Intel HDA
-		device pci 1f.4 on  end # SMBus
+		device pci 1f.4 off end # SMBus
 		device pci 1f.5 on  end # PCH SPI Flash Controller
 		device pci 1f.6 off end # GbE Controller
 		device pci 1f.7 off end # Intel Trace Hub

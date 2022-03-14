@@ -30,7 +30,7 @@ static u8 get_hex_digit(const u8 c)
 			ret = c - 'a' + 0x0a;
 	}
 	if (ret > 0x0f) {
-		printk(BIOS_ERR, "Error: Invalid hex digit found: "
+		printk(BIOS_ERR, "Invalid hex digit found: "
 				 "%c - 0x%02x\n", (char)c, c);
 		ret = 0;
 	}
@@ -41,18 +41,11 @@ static u8 get_hex_digit(const u8 c)
 
 static enum cb_err fetch_mac_string_cbfs(u8 *macstrbuf)
 {
-	struct cbfsf fh;
-	uint32_t matchraw = CBFS_TYPE_RAW;
-
-	if (!cbfs_boot_locate(&fh, "atl1e-macaddress", &matchraw)) {
-		/* check the cbfs for the mac address */
-		if (rdev_readat(&fh.data, macstrbuf, 0, MACLEN) != MACLEN) {
-			printk(BIOS_ERR, "atl1e: Error reading MAC from CBFS\n");
-			return CB_ERR;
-		}
-		return CB_SUCCESS;
+	if (!cbfs_load("atl1e-macaddress", macstrbuf, MACLEN)) {
+		printk(BIOS_ERR, "atl1e: Error reading MAC from CBFS\n");
+		return CB_ERR;
 	}
-	return CB_ERR;
+	return CB_SUCCESS;
 }
 
 static void get_mac_address(u8 *macaddr, const u8 *strbuf)
@@ -113,7 +106,7 @@ static int atl1e_eeprom_exist(u32 mem_base)
 static void atl1e_init(struct device *dev)
 {
 	/* Get the resource of the NIC mmio */
-	struct resource *nic_res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	struct resource *nic_res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 
 	if (nic_res == NULL) {
 		printk(BIOS_ERR, "atl1e: resource not found\n");
@@ -134,7 +127,7 @@ static void atl1e_init(struct device *dev)
 
 	/* Check if the base is invalid */
 	if (!mem_base) {
-		printk(BIOS_ERR, "atl1e: Error cant find MEM resource\n");
+		printk(BIOS_ERR, "atl1e: Error can't find MEM resource\n");
 		return;
 	}
 	/* Enable but do not set bus master */

@@ -5,29 +5,29 @@
 #include <console/console.h>
 #include "gm45.h"
 
-#define CxRECy_MCHBAR(x, y)	(0x14a0 + (x * 0x0100) + ((3 - y) * 4))
+#define CxRECy_MCHBAR(x, y)	(0x14a0 + ((x) * 0x0100) + ((3 - (y)) * 4))
 #define CxRECy_SHIFT_L		0
 #define CxRECy_MASK_L		(3 << CxRECy_SHIFT_L)
 #define CxRECy_SHIFT_H		16
 #define CxRECy_MASK_H		(3 << CxRECy_SHIFT_H)
 #define CxRECy_T_SHIFT		28
 #define CxRECy_T_MASK		(0xf << CxRECy_T_SHIFT)
-#define CxRECy_T(t)		((t << CxRECy_T_SHIFT) & CxRECy_T_MASK)
+#define CxRECy_T(t)		(((t) << CxRECy_T_SHIFT) & CxRECy_T_MASK)
 #define CxRECy_P_SHIFT		24
 #define CxRECy_P_MASK		(0x7 << CxRECy_P_SHIFT)
-#define CxRECy_P(p)		((p << CxRECy_P_SHIFT) & CxRECy_P_MASK)
+#define CxRECy_P(p)		(((p) << CxRECy_P_SHIFT) & CxRECy_P_MASK)
 #define CxRECy_PH_SHIFT		22
 #define CxRECy_PH_MASK		(0x3 << CxRECy_PH_SHIFT)
-#define CxRECy_PH(p)		((p << CxRECy_PH_SHIFT) & CxRECy_PH_MASK)
+#define CxRECy_PH(p)		(((p) << CxRECy_PH_SHIFT) & CxRECy_PH_MASK)
 #define CxRECy_PM_SHIFT		20
 #define CxRECy_PM_MASK		(0x3 << CxRECy_PM_SHIFT)
-#define CxRECy_PM(p)		((p << CxRECy_PM_SHIFT) & CxRECy_PM_MASK)
+#define CxRECy_PM(p)		(((p) << CxRECy_PM_SHIFT) & CxRECy_PM_MASK)
 #define CxRECy_TIMING_MASK	(CxRECy_T_MASK | CxRECy_P_MASK | \
 				 CxRECy_PH_MASK | CxRECy_PM_MASK)
 
 #define CxDRT3_C_SHIFT	7
 #define CxDRT3_C_MASK	(0xf << CxDRT3_C_SHIFT)
-#define CxDRT3_C(c)	((c << CxDRT3_C_SHIFT) & CxDRT3_C_MASK)
+#define CxDRT3_C(c)	(((c) << CxDRT3_C_SHIFT) & CxDRT3_C_MASK)
 /* group to byte-lane mapping: (cardF X group X 2 per group) */
 static const char bytelane_map[2][4][2] = {
 /* A,B,C */{ { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 } },
@@ -110,29 +110,28 @@ static void program_timing(int channel, int group,
 
 	/* C value is per channel. */
 	unsigned int mchbar = CxDRT3_MCHBAR(channel);
-	MCHBAR32(mchbar) = (MCHBAR32(mchbar) & ~CxDRT3_C_MASK) |
-					CxDRT3_C(timing->c);
+	mchbar_clrsetbits32(mchbar, CxDRT3_C_MASK, CxDRT3_C(timing->c));
 
 	/* All other per group. */
 	mchbar = CxRECy_MCHBAR(channel, group);
-	u32 reg = MCHBAR32(mchbar);
+	u32 reg = mchbar_read32(mchbar);
 	reg &= ~CxRECy_TIMING_MASK;
 	reg |= CxRECy_T(timing->t) | CxRECy_P(timing->p) |
 		CxRECy_PH(timing->ph) | CxRECy_PM(timing->pre);
-	MCHBAR32(mchbar) = reg;
+	mchbar_write32(mchbar, reg);
 }
 
 static int read_dqs_level(const int channel, const int lane)
 {
 	unsigned int mchbar = 0x14f0 + (channel * 0x0100);
-	MCHBAR32(mchbar) &= ~(1 << 9);
-	MCHBAR32(mchbar) |=  (1 << 9);
+	mchbar_clrbits32(mchbar, 1 << 9);
+	mchbar_setbits32(mchbar, 1 << 9);
 
 	/* Read from this channel. */
 	read32((u32 *)raminit_get_rank_addr(channel, 0));
 
 	mchbar = 0x14b0 + (channel * 0x0100) + ((7 - lane) * 4);
-	return MCHBAR32(mchbar) & (1 << 30);
+	return mchbar_read32(mchbar) & (1 << 30);
 }
 
 static void find_dqs_low(const int channel, const int group,
@@ -272,22 +271,22 @@ void raminit_receive_enable_calibration(const timings_t *const timings,
 		unsigned int group;
 		for (group = 0; group < 4; ++group) {
 			const unsigned int mchbar = CxRECy_MCHBAR(ch, group);
-			u32 reg = MCHBAR32(mchbar);
+			u32 reg = mchbar_read32(mchbar);
 			reg &= ~((3 << 16) | (1 << 8) | 3);
 			reg |= (map[group][0] - group);
 			reg |= (map[group][1] - group - 1) << 16;
-			MCHBAR32(mchbar) = reg;
+			mchbar_write32(mchbar, reg);
 		}
 	}
 
-	MCHBAR32(0x12a4) |= 1 << 31;
-	MCHBAR32(0x13a4) |= 1 << 31;
-	MCHBAR32(0x14f0) = (MCHBAR32(0x14f0) & ~(3 << 9)) | (1 << 9);
-	MCHBAR32(0x15f0) = (MCHBAR32(0x15f0) & ~(3 << 9)) | (1 << 9);
+	mchbar_setbits32(0x12a4, 1 << 31);
+	mchbar_setbits32(0x13a4, 1 << 31);
+	mchbar_clrsetbits32(0x14f0, 3 << 9, 1 << 9);
+	mchbar_clrsetbits32(0x15f0, 3 << 9, 1 << 9);
 
 	receive_enable_calibration(timings, dimms);
 
-	MCHBAR32(0x12a4) &= ~(1 << 31);
-	MCHBAR32(0x13a4) &= ~(1 << 31);
+	mchbar_clrbits32(0x12a4, 1 << 31);
+	mchbar_clrbits32(0x13a4, 1 << 31);
 	raminit_reset_readwrite_pointers();
 }

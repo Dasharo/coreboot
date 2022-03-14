@@ -34,6 +34,7 @@
 	url = https://review.coreboot.org/intel-microcode.git
 	update = none
 	ignore = dirty
+	branch = main
 [submodule "3rdparty/ffs"]
 	path = 3rdparty/ffs
 	url = https://review.coreboot.org/ffs.git

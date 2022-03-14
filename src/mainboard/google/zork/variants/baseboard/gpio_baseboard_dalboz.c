@@ -5,7 +5,6 @@
 #include <gpio.h>
 #include <soc/gpio.h>
 #include <soc/smi.h>
-#include <stdlib.h>
 #include <variant/gpio.h>
 
 static const struct soc_amd_gpio gpio_set_stage_ram[] = {
@@ -14,7 +13,7 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	/* SYS_RESET_L */
 	PAD_NF(GPIO_1, SYS_RESET_L, PULL_NONE),
 	/* WIFI_PCIE_WAKE_ODL */
-	PAD_SCI(GPIO_2, PULL_NONE, EDGE_LOW),
+	PAD_NF_SCI(GPIO_2, WAKE_L, PULL_NONE, EDGE_LOW),
 	/* H1_FCH_INT_ODL */
 	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS_DELIVERY),
 	/* PEN_DETECT_ODL */
@@ -28,7 +27,7 @@ static const struct soc_amd_gpio gpio_set_stage_ram[] = {
 	/* I2S_LRCLK - Bit banged in depthcharge */
 	PAD_NF(GPIO_8, ACP_I2S_LRCLK, PULL_NONE),
 	/* TOUCHPAD_INT_ODL */
-	PAD_SCI(GPIO_9, PULL_NONE, EDGE_LOW),
+	PAD_SCI(GPIO_9, PULL_NONE, LEVEL_LOW),
 	/* S0iX SLP - goes to EC */
 	PAD_GPO(GPIO_10, HIGH),
 	/* EC_IN_RW_OD */
@@ -183,7 +182,7 @@ static void wifi_power_reset_configure_active_low_power(void)
 		/* EN_PWR_WIFI_L */
 		PAD_GPO(GPIO_42, LOW),
 	};
-	program_gpios(v3_wifi_table, ARRAY_SIZE(v3_wifi_table));
+	gpio_configure_pads(v3_wifi_table, ARRAY_SIZE(v3_wifi_table));
 
 	mdelay(50);
 	gpio_set(GPIO_29, 0);
@@ -208,7 +207,7 @@ static void wifi_power_reset_configure_active_high_power(void)
 		/* EN_PWR_WIFI */
 		PAD_GPO(GPIO_42, LOW),
 	};
-	program_gpios(v3_wifi_table, ARRAY_SIZE(v3_wifi_table));
+	gpio_configure_pads(v3_wifi_table, ARRAY_SIZE(v3_wifi_table));
 
 	mdelay(10);
 	gpio_set(GPIO_42, 1);
@@ -242,7 +241,7 @@ static void wifi_power_reset_configure_pre_v3(void)
 		/* EN_PWR_WIFI */
 		PAD_GPO(GPIO_29, LOW),
 	};
-	program_gpios(pre_v3_wifi_table, ARRAY_SIZE(pre_v3_wifi_table));
+	gpio_configure_pads(pre_v3_wifi_table, ARRAY_SIZE(pre_v3_wifi_table));
 
 	mdelay(10);
 	gpio_set(GPIO_29, 1);
@@ -267,7 +266,7 @@ __weak void variant_pcie_gpio_configure(void)
 		PAD_GPO(GPIO_142, HIGH),
 	};
 
-	program_gpios(pcie_gpio_table, ARRAY_SIZE(pcie_gpio_table));
+	gpio_configure_pads(pcie_gpio_table, ARRAY_SIZE(pcie_gpio_table));
 
 	/* Deassert PCIE_RST1_L */
 	gpio_set(GPIO_27, 1);
@@ -309,4 +308,49 @@ const __weak struct soc_amd_gpio *variant_sleep_gpio_table(size_t *size, int slp
 {
 	*size = ARRAY_SIZE(gpio_sleep_table);
 	return gpio_sleep_table;
+}
+
+static const struct soc_amd_gpio espi_gpio_table[] = {
+	/* PCIE_RST0_L - Fixed timings */
+	PAD_NF(GPIO_26, PCIE_RST_L, PULL_NONE),
+	/* FCH_ESPI_EC_CS_L */
+	PAD_NF(GPIO_30, ESPI_CS_L, PULL_NONE),
+	/* ESPI_ALERT_L */
+	PAD_NF(GPIO_108, ESPI_ALERT_L, PULL_NONE),
+};
+
+const __weak struct soc_amd_gpio *variant_espi_gpio_table(size_t *size)
+{
+	*size = ARRAY_SIZE(espi_gpio_table);
+	return espi_gpio_table;
+}
+
+static const struct soc_amd_gpio tpm_gpio_table[] = {
+	/* H1_FCH_INT_ODL */
+	PAD_INT(GPIO_3, PULL_NONE, EDGE_LOW, STATUS),
+	/* I2C3_SCL - H1 */
+	PAD_NF(GPIO_19, I2C3_SCL, PULL_NONE),
+	/* I2C3_SDA - H1 */
+	PAD_NF(GPIO_20, I2C3_SDA, PULL_NONE),
+	/* EC_IN_RW_OD */
+	PAD_GPI(GPIO_11, PULL_NONE),
+};
+
+const __weak struct soc_amd_gpio *variant_tpm_gpio_table(size_t *size)
+{
+	*size = ARRAY_SIZE(tpm_gpio_table);
+	return tpm_gpio_table;
+}
+
+static const struct soc_amd_gpio early_gpio_table[] = {
+	/* UART0_RXD - DEBUG */
+	PAD_NF(GPIO_136, UART0_RXD, PULL_NONE),
+	/* UART0_TXD - DEBUG */
+	PAD_NF(GPIO_138, UART0_TXD, PULL_NONE),
+};
+
+const struct soc_amd_gpio *variant_early_gpio_table(size_t *size)
+{
+	*size = ARRAY_SIZE(early_gpio_table);
+	return early_gpio_table;
 }

@@ -97,6 +97,7 @@ u32 map_oprom_vendev(u32 vendev)
 	case 0x80860412:		/* GT2 Desktop */
 	case 0x80860416:		/* GT2 Mobile */
 	case 0x8086041a:		/* GT2 Server */
+	case 0x8086041e:		/* GT1.5 Desktop */
 	case 0x80860a16:		/* GT2 ULT */
 
 	case 0x80860422:		/* GT3 Desktop */
@@ -177,7 +178,7 @@ static void gma_pm_init_pre_vbios(struct device *dev)
 {
 	printk(BIOS_DEBUG, "GT Power Management Init\n");
 
-	gtt_res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	gtt_res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (!gtt_res || !gtt_res->base)
 		return;
 
@@ -472,6 +473,7 @@ static struct device_operations gma_func0_ops = {
 static const unsigned short pci_device_ids[] = {
 	0x0402, /* Desktop GT1 */
 	0x0412, /* Desktop GT2 */
+	0x041e, /* Desktop GT1.5 */
 	0x0422, /* Desktop GT3 */
 	0x0d22, /* Desktop GT3e */
 	0x0406, /* Mobile GT1 */
@@ -483,6 +485,8 @@ static const unsigned short pci_device_ids[] = {
 	0x0a06, /* ULT GT1 */
 	0x0a16, /* ULT GT2 */
 	0x0a26, /* ULT GT3 */
+	0x0a0e, /* ULX GT1 */
+	0x0a1e, /* ULX GT2 */
 	0,
 };
 

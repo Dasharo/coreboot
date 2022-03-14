@@ -18,7 +18,6 @@
 #include <device/pci_ids.h>
 #include <device/pci_def.h>
 #include <string.h>
-#include <delay.h>
 #include <elog.h>
 #include <halt.h>
 #include <option.h>
@@ -176,15 +175,14 @@ static void intel_me_init(struct device *dev)
 {
 	me_bios_path path = intel_me_path(dev);
 	me_bios_payload mbp_data;
-	u8 me_state = 0, me_state_prev = 0;
 	bool need_reset = false;
 	union me_hfs hfs;
 
 	/* Do initial setup and determine the BIOS path */
 	printk(BIOS_NOTICE, "ME: BIOS path: %s\n", me_get_bios_path_string(path));
 
-	get_option(&me_state, "me_state");
-	get_option(&me_state_prev, "me_state_prev");
+	u8 me_state = get_uint_option("me_state", 0);
+	u8 me_state_prev = get_uint_option("me_state_prev", 0);
 
 	printk(BIOS_DEBUG, "ME: me_state=%u, me_state_prev=%u\n", me_state, me_state_prev);
 
@@ -268,7 +266,7 @@ static void intel_me_init(struct device *dev)
 	   set the 'changed' bit here. */
 	if (me_state != CMOS_ME_STATE(me_state_prev) || need_reset) {
 		u8 new_state = me_state | CMOS_ME_STATE_CHANGED;
-		set_option("me_state_prev", &new_state);
+		set_uint_option("me_state_prev", new_state);
 	}
 
 	if (need_reset) {

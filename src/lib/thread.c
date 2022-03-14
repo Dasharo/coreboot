@@ -1,13 +1,17 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <arch/cpu.h>
 #include <bootstate.h>
 #include <console/console.h>
+#include <smp/node.h>
 #include <thread.h>
 #include <timer.h>
+
+static u8 thread_stacks[CONFIG_STACK_SIZE * CONFIG_NUM_THREADS] __aligned(sizeof(uint64_t));
+static bool initialized;
 
 static void idle_thread_init(void);
 
@@ -22,25 +26,25 @@ static struct thread all_threads[TOTAL_NUM_THREADS];
 static struct thread *runnable_threads;
 static struct thread *free_threads;
 
-static inline struct cpu_info *thread_cpu_info(const struct thread *t)
-{
-	return (void *)(t->stack_orig);
-}
+static struct thread *active_thread;
 
 static inline int thread_can_yield(const struct thread *t)
 {
-	return (t != NULL && t->can_yield);
+	return (t != NULL && t->can_yield > 0);
 }
 
-/* Assumes current CPU info can switch. */
-static inline struct thread *cpu_info_to_thread(const struct cpu_info *ci)
+static inline void set_current_thread(struct thread *t)
 {
-	return ci->thread;
+	assert(boot_cpu());
+	active_thread = t;
 }
 
 static inline struct thread *current_thread(void)
 {
-	return cpu_info_to_thread(cpu_info());
+	if (!initialized || !boot_cpu())
+		return NULL;
+
+	return active_thread;
 }
 
 static inline int thread_list_empty(struct thread **list)
@@ -77,22 +81,16 @@ static inline struct thread *pop_runnable(void)
 static inline struct thread *get_free_thread(void)
 {
 	struct thread *t;
-	struct cpu_info *ci;
-	struct cpu_info *new_ci;
 
 	if (thread_list_empty(&free_threads))
 		return NULL;
 
 	t = pop_thread(&free_threads);
 
-	ci = cpu_info();
-
-	/* Initialize the cpu_info structure on the new stack. */
-	new_ci = thread_cpu_info(t);
-	*new_ci = *ci;
-	new_ci->thread = t;
-
 	/* Reset the current stack value to the original. */
+	if (!t->stack_orig)
+		die("%s: Invalid stack value\n", __func__);
+
 	t->stack_current = t->stack_orig;
 
 	return t;
@@ -106,10 +104,10 @@ static inline void free_thread(struct thread *t)
 /* The idle thread is ran whenever there isn't anything else that is runnable.
  * It's sole responsibility is to ensure progress is made by running the timer
  * callbacks. */
-static void idle_thread(void *unused)
+__noreturn static enum cb_err idle_thread(void *unused)
 {
 	/* This thread never voluntarily yields. */
-	thread_prevent_coop();
+	thread_coop_disable();
 	while (1)
 		timers_run();
 }
@@ -127,11 +125,22 @@ static void schedule(struct thread *t)
 		/* current is still runnable. */
 		push_runnable(current);
 	}
+
+	if (t->handle)
+		t->handle->state = THREAD_STARTED;
+
+	set_current_thread(t);
+
 	switch_to_thread(t->stack_current, &current->stack_current);
 }
 
-static void terminate_thread(struct thread *t)
+static void terminate_thread(struct thread *t, enum cb_err error)
 {
+	if (t->handle) {
+		t->handle->error = error;
+		t->handle->state = THREAD_DONE;
+	}
+
 	free_thread(t);
 	schedule(NULL);
 }
@@ -139,20 +148,11 @@ static void terminate_thread(struct thread *t)
 static void asmlinkage call_wrapper(void *unused)
 {
 	struct thread *current = current_thread();
+	enum cb_err error;
 
-	current->entry(current->entry_arg);
-	terminate_thread(current);
-}
+	error = current->entry(current->entry_arg);
 
-/* Block the current state transitions until thread is complete. */
-static void asmlinkage call_wrapper_block_current(void *unused)
-{
-	struct thread *current = current_thread();
-
-	boot_state_current_block();
-	current->entry(current->entry_arg);
-	boot_state_current_unblock();
-	terminate_thread(current);
+	terminate_thread(current, error);
 }
 
 struct block_boot_state {
@@ -165,18 +165,19 @@ static void asmlinkage call_wrapper_block_state(void *arg)
 {
 	struct block_boot_state *bbs = arg;
 	struct thread *current = current_thread();
+	enum cb_err error;
 
 	boot_state_block(bbs->state, bbs->seq);
-	current->entry(current->entry_arg);
+	error = current->entry(current->entry_arg);
 	boot_state_unblock(bbs->state, bbs->seq);
-	terminate_thread(current);
+	terminate_thread(current, error);
 }
 
 /* Prepare a thread so that it starts by executing thread_entry(thread_arg).
  * Within thread_entry() it will call func(arg). */
-static void prepare_thread(struct thread *t, void *func, void *arg,
-			   asmlinkage void (*thread_entry)(void *),
-			   void *thread_arg)
+static void prepare_thread(struct thread *t, struct thread_handle *handle,
+			   enum cb_err (*func)(void *), void *arg,
+			   asmlinkage void (*thread_entry)(void *), void *thread_arg)
 {
 	/* Stash the function and argument to run. */
 	t->entry = func;
@@ -184,6 +185,9 @@ static void prepare_thread(struct thread *t, void *func, void *arg,
 
 	/* All new threads can yield by default. */
 	t->can_yield = 1;
+
+	/* Pointer used to publish the state of thread */
+	t->handle = handle;
 
 	arch_prepare_thread(t, thread_entry, thread_arg);
 }
@@ -206,10 +210,8 @@ static void idle_thread_init(void)
 		die("No threads available for idle thread!\n");
 
 	/* Queue idle thread to run once all other threads have yielded. */
-	prepare_thread(t, idle_thread, NULL, call_wrapper, NULL);
+	prepare_thread(t, NULL, idle_thread, NULL, call_wrapper, NULL);
 	push_runnable(t);
-	/* Mark the currently executing thread to cooperate. */
-	thread_cooperate();
 }
 
 /* Don't inline this function so the timeout_callback won't have its storage
@@ -238,25 +240,24 @@ static void *thread_alloc_space(struct thread *t, size_t bytes)
 	return (void *)t->stack_current;
 }
 
-void threads_initialize(void)
+static void threads_initialize(void)
 {
 	int i;
 	struct thread *t;
 	u8 *stack_top;
-	struct cpu_info *ci;
-	u8 *thread_stacks;
 
-	thread_stacks = arch_get_thread_stackbase();
+	if (initialized)
+		return;
 
-	/* Initialize the BSP thread first. The cpu_info structure is assumed
-	 * to be just under the top of the stack. */
 	t = &all_threads[0];
-	ci = cpu_info();
-	ci->thread = t;
-	t->stack_orig = (uintptr_t)ci;
-	t->id = 0;
 
-	stack_top = &thread_stacks[CONFIG_STACK_SIZE] - sizeof(struct cpu_info);
+	set_current_thread(t);
+
+	t->stack_orig = (uintptr_t)NULL; /* We never free the main thread */
+	t->id = 0;
+	t->can_yield = 1;
+
+	stack_top = &thread_stacks[CONFIG_STACK_SIZE];
 	for (i = 1; i < TOTAL_NUM_THREADS; i++) {
 		t = &all_threads[i];
 		t->stack_orig = (uintptr_t)stack_top;
@@ -266,63 +267,78 @@ void threads_initialize(void)
 	}
 
 	idle_thread_init();
+
+	initialized = 1;
 }
 
-int thread_run(void (*func)(void *), void *arg)
+int thread_run(struct thread_handle *handle, enum cb_err (*func)(void *), void *arg)
 {
 	struct thread *current;
 	struct thread *t;
 
+	/* Lazy initialization */
+	threads_initialize();
+
 	current = current_thread();
 
 	if (!thread_can_yield(current)) {
-		printk(BIOS_ERR,
-		       "thread_run() called from non-yielding context!\n");
+		printk(BIOS_ERR, "%s() called from non-yielding context!\n", __func__);
 		return -1;
 	}
 
 	t = get_free_thread();
 
 	if (t == NULL) {
-		printk(BIOS_ERR, "thread_run() No more threads!\n");
+		printk(BIOS_ERR, "%s: No more threads!\n", __func__);
 		return -1;
 	}
 
-	prepare_thread(t, func, arg, call_wrapper_block_current, NULL);
+	prepare_thread(t, handle, func, arg, call_wrapper, NULL);
 	schedule(t);
 
 	return 0;
 }
 
-int thread_run_until(void (*func)(void *), void *arg,
+int thread_run_until(struct thread_handle *handle, enum cb_err (*func)(void *), void *arg,
 		     boot_state_t state, boot_state_sequence_t seq)
 {
 	struct thread *current;
 	struct thread *t;
 	struct block_boot_state *bbs;
 
+	/* This is a ramstage specific API */
+	if (!ENV_RAMSTAGE)
+		dead_code();
+
+	/* Lazy initialization */
+	threads_initialize();
+
 	current = current_thread();
 
 	if (!thread_can_yield(current)) {
-		printk(BIOS_ERR,
-		       "thread_run() called from non-yielding context!\n");
+		printk(BIOS_ERR, "%s() called from non-yielding context!\n", __func__);
 		return -1;
 	}
 
 	t = get_free_thread();
 
 	if (t == NULL) {
-		printk(BIOS_ERR, "thread_run() No more threads!\n");
+		printk(BIOS_ERR, "%s: No more threads!\n", __func__);
 		return -1;
 	}
 
 	bbs = thread_alloc_space(t, sizeof(*bbs));
 	bbs->state = state;
 	bbs->seq = seq;
-	prepare_thread(t, func, arg, call_wrapper_block_state, bbs);
+	prepare_thread(t, handle, func, arg, call_wrapper_block_state, bbs);
 	schedule(t);
 
 	return 0;
+}
+
+int thread_yield(void)
+{
+	return thread_yield_microseconds(0);
 }
 
 int thread_yield_microseconds(unsigned int microsecs)
@@ -341,22 +357,71 @@ int thread_yield_microseconds(unsigned int microsecs)
 	return 0;
 }
 
-void thread_cooperate(void)
+void thread_coop_enable(void)
 {
 	struct thread *current;
 
 	current = current_thread();
 
-	if (current != NULL)
-		current->can_yield = 1;
+	if (current == NULL)
+		return;
+
+	assert(current->can_yield <= 0);
+
+	current->can_yield++;
 }
 
-void thread_prevent_coop(void)
+void thread_coop_disable(void)
 {
 	struct thread *current;
 
 	current = current_thread();
 
-	if (current != NULL)
-		current->can_yield = 0;
+	if (current == NULL)
+		return;
+
+	current->can_yield--;
+}
+
+enum cb_err thread_join(struct thread_handle *handle)
+{
+	struct stopwatch sw;
+	struct thread *current = current_thread();
+
+	assert(handle);
+	assert(current);
+	assert(current->handle != handle);
+
+	if (handle->state == THREAD_UNINITIALIZED)
+		return CB_ERR_ARG;
+
+	printk(BIOS_SPEW, "waiting for thread\n");
+
+	stopwatch_init(&sw);
+
+	while (handle->state != THREAD_DONE)
+		assert(thread_yield() == 0);
+
+	printk(BIOS_SPEW, "took %lu us\n", stopwatch_duration_usecs(&sw));
+
+	return handle->error;
+}
+
+void thread_mutex_lock(struct thread_mutex *mutex)
+{
+	struct stopwatch sw;
+
+	stopwatch_init(&sw);
+
+	while (mutex->locked)
+		assert(thread_yield() == 0);
+	mutex->locked = true;
+
+	printk(BIOS_SPEW, "took %lu us to acquire mutex\n", stopwatch_duration_usecs(&sw));
+}
+
+void thread_mutex_unlock(struct thread_mutex *mutex)
+{
+	assert(mutex->locked);
+	mutex->locked = 0;
 }

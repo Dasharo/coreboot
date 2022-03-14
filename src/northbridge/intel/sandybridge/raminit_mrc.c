@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <arch/hpet.h>
 #include <console/console.h>
 #include <console/usb.h>
 #include <cf9_reset.h>
 #include <string.h>
 #include <device/device.h>
+#include <device/dram/ddr3.h>
 #include <device/pci_ops.h>
 #include <arch/cpu.h>
 #include <cbmem.h>
@@ -14,6 +16,8 @@
 #include <device/pci_def.h>
 #include <lib.h>
 #include <mrc_cache.h>
+#include <spd.h>
+#include <smbios.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <timestamp.h>
@@ -23,6 +27,7 @@
 #include "chip.h"
 #include <security/vboot/vboot_common.h>
 #include <southbridge/intel/bd82x6x/pch.h>
+#include <memory_info.h>
 
 /* Management Engine is in the southbridge */
 #include <southbridge/intel/bd82x6x/me.h>
@@ -175,8 +180,8 @@ void sdram_initialize(struct pei_data *pei_data)
 		usbdebug_hw_init(true);
 
 	/* Print the MRC version after executing the UEFI PEI stage */
-	u32 version = MCHBAR32(MRC_REVISION);
-	printk(BIOS_DEBUG, "MRC Version %d.%d.%d Build %d\n",
+	u32 version = mchbar_read32(MRC_REVISION);
+	printk(BIOS_DEBUG, "MRC Version %u.%u.%u Build %u\n",
 		(version >> 24) & 0xff, (version >> 16) & 0xff,
 		(version >>  8) & 0xff, (version >>  0) & 0xff);
 
@@ -230,8 +235,8 @@ static void northbridge_fill_pei_data(struct pei_data *pei_data)
 	pei_data->mchbar       = CONFIG_FIXED_MCHBAR_MMIO_BASE;
 	pei_data->dmibar       = CONFIG_FIXED_DMIBAR_MMIO_BASE;
 	pei_data->epbar        = CONFIG_FIXED_EPBAR_MMIO_BASE;
-	pei_data->pciexbar     = CONFIG_MMCONF_BASE_ADDRESS;
-	pei_data->hpet_address = CONFIG_HPET_ADDRESS;
+	pei_data->pciexbar     = CONFIG_ECAM_MMCONF_BASE_ADDRESS;
+	pei_data->hpet_address = HPET_BASE_ADDRESS;
 	pei_data->thermalbase  = 0xfed08000;
 	pei_data->system_type  = !(get_platform_type() == PLATFORM_MOBILE);
 	pei_data->tseg_size    = CONFIG_SMM_TSEG_SIZE;
@@ -271,7 +276,7 @@ static void devicetree_fill_pei_data(struct pei_data *pei_data)
 	/* MRC only supports fixed numbers of frequencies */
 	default:
 		printk(BIOS_WARNING, "RAMINIT: Limiting DDR3 clock to 800 Mhz\n");
-		/* fallthrough */
+		__fallthrough;
 	case 400:
 		pei_data->max_ddr3_freq = 800;
 		break;
@@ -371,7 +376,7 @@ void perform_raminit(int s3resume)
 
 	} else {
 		printk(BIOS_ERR, "Could not parse MRC_VAR data\n");
-		hexdump32(BIOS_ERR, mrc_var, sizeof(*mrc_var) / sizeof(u32));
+		hexdump(mrc_var, sizeof(*mrc_var));
 	}
 
 	const int cbmem_was_initted = !cbmem_recovery(s3resume);
@@ -382,4 +387,79 @@ void perform_raminit(int s3resume)
 		/* Failed S3 resume, reset to come up cleanly */
 		system_reset();
 	}
+	setup_sdram_meminfo(&pei_data);
+}
+
+void setup_sdram_meminfo(struct pei_data *pei_data)
+{
+	u32 addr_decoder_common, addr_decode_ch[2];
+	struct memory_info *mem_info;
+	struct dimm_info *dimm;
+	int dimm_size;
+	int i;
+	int dimm_cnt = 0;
+
+	mem_info = cbmem_add(CBMEM_ID_MEMINFO, sizeof(struct memory_info));
+	memset(mem_info, 0, sizeof(struct memory_info));
+
+	addr_decoder_common = mchbar_read32(MAD_CHNL);
+	addr_decode_ch[0] = mchbar_read32(MAD_DIMM_CH0);
+	addr_decode_ch[1] = mchbar_read32(MAD_DIMM_CH1);
+
+	const int refclk = mchbar_read32(MC_BIOS_REQ) & 0x100 ? 100 : 133;
+	const int ddr_frequency = (mchbar_read32(MC_BIOS_DATA) * refclk * 100 * 2 + 50) / 100;
+
+	for (i = 0; i < ARRAY_SIZE(addr_decode_ch); i++) {
+		u32 ch_conf = addr_decode_ch[i];
+
+		/* DIMM-A */
+		dimm_size = ((ch_conf >> 0) & 0xff) * 256;
+		if (dimm_size) {
+			dimm = &mem_info->dimm[dimm_cnt];
+			dimm->dimm_size = dimm_size;
+			dimm->ddr_type = MEMORY_TYPE_DDR3;
+			dimm->ddr_frequency = ddr_frequency;
+			dimm->rank_per_dimm = 1 + ((ch_conf >> 17) & 1);
+			dimm->channel_num = i;
+			dimm->dimm_num = 0;
+			dimm->bank_locator = i * 2;
+			memcpy(dimm->serial,				/* bytes 122-125 */
+				&pei_data->spd_data[0][SPD_DIMM_SERIAL_NUM],
+				sizeof(uint8_t) * SPD_DIMM_SERIAL_LEN);
+			memcpy(dimm->module_part_number,		/* bytes 128-145 */
+				&pei_data->spd_data[0][SPD_DIMM_PART_NUM],
+				sizeof(uint8_t) * SPD_DIMM_PART_LEN);
+			dimm->mod_id =					/* bytes 117/118 */
+				(pei_data->spd_data[0][SPD_DIMM_MOD_ID2] << 8) |
+				(pei_data->spd_data[0][SPD_DIMM_MOD_ID1] & 0xFF);
+			dimm->mod_type = DDR3_SPD_SODIMM;
+			dimm->bus_width = MEMORY_BUS_WIDTH_64;
+			dimm_cnt++;
+		}
+		/* DIMM-B */
+		dimm_size = ((ch_conf >> 8) & 0xff) * 256;
+		if (dimm_size) {
+			dimm = &mem_info->dimm[dimm_cnt];
+			dimm->dimm_size = dimm_size;
+			dimm->ddr_type = MEMORY_TYPE_DDR3;
+			dimm->ddr_frequency = ddr_frequency;
+			dimm->rank_per_dimm =  1 + ((ch_conf >> 18) & 1);
+			dimm->channel_num = i;
+			dimm->dimm_num = 1;
+			dimm->bank_locator = i * 2;
+			memcpy(dimm->serial,				/* bytes 122-125 */
+				&pei_data->spd_data[0][SPD_DIMM_SERIAL_NUM],
+				sizeof(uint8_t) * SPD_DIMM_SERIAL_LEN);
+			memcpy(dimm->module_part_number,		/* bytes 128-145 */
+				&pei_data->spd_data[0][SPD_DIMM_PART_NUM],
+				sizeof(uint8_t) * SPD_DIMM_PART_LEN);
+			dimm->mod_id =					/* bytes 117/118 */
+				(pei_data->spd_data[0][SPD_DIMM_MOD_ID2] << 8) |
+				(pei_data->spd_data[0][SPD_DIMM_MOD_ID1] & 0xFF);
+			dimm->mod_type = DDR3_SPD_SODIMM;
+			dimm->bus_width = MEMORY_BUS_WIDTH_64;
+			dimm_cnt++;
+		}
+	}
+	mem_info->dimm_cnt = dimm_cnt;
 }

@@ -8,7 +8,6 @@
 #include <amdblocks/psp.h>
 
 /* x86 to PSP commands */
-#define MBOX_BIOS_CMD_DRAM_INFO			0x01
 #define MBOX_BIOS_CMD_SMM_INFO			0x02
 #define MBOX_BIOS_CMD_SX_INFO			0x03
 #define   MBOX_BIOS_CMD_SX_INFO_SLEEP_TYPE_MAX	0x07
@@ -18,10 +17,17 @@
 #define MBOX_BIOS_CMD_CLEAR_S3_STS		0x07
 #define MBOX_BIOS_CMD_S3_DATA_INFO		0x08
 #define MBOX_BIOS_CMD_NOP			0x09
+#define MBOX_BIOS_CMD_SET_SPL_FUSE		0x2d
+#define MBOX_BIOS_CMD_QUERY_SPL_FUSE		0x47
 #define MBOX_BIOS_CMD_ABORT			0xfe
-/* x86 to PSP commands, v1 */
+
+/* x86 to PSP commands, v1-only */
+#define MBOX_BIOS_CMD_DRAM_INFO			0x01
 #define MBOX_BIOS_CMD_SMU_FW			0x19
 #define MBOX_BIOS_CMD_SMU_FW2			0x1a
+
+#define CORE_2_PSP_MSG_38_OFFSET		0x10998
+#define CORE_2_PSP_MSG_38_FUSE_SPL		BIT(12)
 
 /* generic PSP interface status, v1 */
 #define PSPV1_STATUS_INITIALIZED	BIT(0)
@@ -29,10 +35,6 @@
 #define PSPV1_STATUS_TERMINATED		BIT(2)
 #define PSPV1_STATUS_HALT		BIT(3)
 #define PSPV1_STATUS_RECOVERY		BIT(4)
-
-/* generic PSP interface status, v2 */
-#define PSPV2_STATUS_ERROR		BIT(30)
-#define PSPV2_STATUS_RECOVERY		BIT(31)
 
 /* psp_mbox consists of hardware registers beginning at PSPx000070
  *   mbox_command: BIOS->PSP command, cleared by PSP when complete
@@ -106,6 +108,11 @@ struct mbox_cmd_sx_info_buffer {
 	u8 sleep_type;
 } __attribute__((packed, aligned(32)));
 
+struct mbox_cmd_late_spl_buffer {
+	struct mbox_buffer_header header;
+	uint32_t	spl_value;
+} __attribute__((packed, aligned(32)));
+
 #define PSP_INIT_TIMEOUT 10000 /* 10 seconds */
 #define PSP_CMD_TIMEOUT 1000 /* 1 second */
 
@@ -113,5 +120,7 @@ void psp_print_cmd_status(int cmd_status, struct mbox_buffer_header *header);
 
 /* This command needs to be implemented by the generation specific code. */
 int send_psp_command(u32 command, void *buffer);
+
+enum cb_err soc_read_c2p38(uint32_t *msg_38_value);
 
 #endif /* __AMD_PSP_DEF_H__ */

@@ -28,6 +28,7 @@ payloads/external/tianocore \
 payloads/external/GRUB2 \
 payloads/external/LinuxBoot \
 payloads/external/Yabits \
+payloads/external/skiboot \
 
 force-payload:
 
@@ -48,5 +49,16 @@ distclean-payloads:
 print-repo-info-payloads:
 	-$(foreach payload, $(PAYLOADS_LIST), $(MAKE) -C $(payload) print-repo-info 2>/dev/null; )
 
+ifeq ($(CONFIG_PAYLOAD_NONE),y)
+files_added:: warn_no_payload
+endif
+
+warn_no_payload:
+	printf "\n\t** WARNING **\n"
+	printf "coreboot has been built without a payload. Writing\n"
+	printf "a coreboot image without a payload to your board's\n"
+	printf "flash chip will result in a non-booting system. You\n"
+	printf "can use cbfstool to add a payload to the image.\n\n"
+
 .PHONY: force-payload coreinfo nvramcui
-.PHONY: clean-payloads distclean-payloads print-repo-info-payloads
+.PHONY: clean-payloads distclean-payloads print-repo-info-payloads warn_no_payload

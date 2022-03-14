@@ -6,7 +6,23 @@
 #include <acpi/acpi.h>
 #include <device/device.h>
 #include <intelblocks/cpulib.h>
+#include <soc/pm.h>
 #include <stdint.h>
+
+/* CPU Types */
+enum core_type {
+	CPUID_RESERVED_1 = 0x10,
+	CPUID_CORE_TYPE_INTEL_ATOM = 0x20,
+	CPUID_RESERVED_2 = 0x30,
+	CPUID_CORE_TYPE_INTEL_CORE = 0x40,
+	CPUID_UNKNOWN = 0xff,
+};
+
+/* Gets the scaling factor for small and big core */
+void soc_get_scaling_factor(u16 *big_core_scal_factor, u16 *small_core_scal_factor);
+
+/* Generates ACPI code to define _CPC control method */
+void acpigen_write_CPPC_hybrid_method(int core_id);
 
 /* Forward declare the power state struct here */
 struct chipset_power_state;
@@ -37,7 +53,7 @@ void soc_write_sci_irq_select(uint32_t scis);
  * get_cstate_map returns a table of processor specific acpi_cstate_t entries
  * and number of entries in the table
  */
-acpi_cstate_t *soc_get_cstate_map(size_t *num_entries);
+const acpi_cstate_t *soc_get_cstate_map(size_t *num_entries);
 
 /*
  * get_tstate_map returns a table of processor specific acpi_tstate_t entries
@@ -47,10 +63,9 @@ acpi_tstate_t *soc_get_tss_table(int *entries);
 
 /*
  * Chipset specific quirks for the wake enable bits.
- * Returns wake events for the soc.
  */
-uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
-			    const struct chipset_power_state *ps);
+void acpi_fill_soc_wake(uint32_t *pm1_en, uint32_t *gpe0_en,
+			const struct chipset_power_state *ps);
 
 /* Chipset specific settings for filling up dmar table */
 unsigned long sa_write_acpi_tables(const struct device *dev,
@@ -90,4 +105,32 @@ struct madt_ioapic_info {
  */
 const struct madt_ioapic_info *soc_get_ioapic_info(size_t *entries);
 
+struct soc_pmc_lpm {
+	unsigned int num_substates;
+	unsigned int num_req_regs;
+	unsigned int lpm_ipc_offset;
+	unsigned int req_reg_stride;
+	uint8_t lpm_enable_mask;
+};
+
+/* Generate an Intel Power Engine ACPI device */
+void generate_acpi_power_engine(void);
+
+/* Generate an Intel Power Engine ACPI device that supports exposing LPM
+   substate requirements */
+void generate_acpi_power_engine_with_lpm(const struct soc_pmc_lpm *lpm);
+
+/* Fill SSDT for SGX status, EPC base and length */
+void sgx_fill_ssdt(void);
+
+/*
+ * This function returns the CPU type (big or small) of the CPU that it is executing
+ * on. It is designed to be called after MP initialization. If the SoC selects
+ * SOC_INTEL_COMMON_BLOCK_ACPI_CPU_HYBRID, then this function must be implemented,
+ * and will be called from set_cpu_type().
+ */
+enum core_type get_soc_cpu_type(void);
+
+/* Check if CPU supports Nominal frequency or not */
+bool soc_is_nominal_freq_supported(void);
 #endif				/* _SOC_INTEL_COMMON_BLOCK_ACPI_H_ */

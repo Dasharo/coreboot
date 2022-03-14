@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
-#include <console/console.h>
 #include <cpu/x86/msr.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
@@ -27,7 +26,6 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 			FSP_M_TEST_CONFIG *m_t_cfg,
 			const struct soc_intel_skylake_config *config)
 {
-	const struct device *dev;
 	/*
 	 * To enable or disable the corresponding PEG root port you need to
 	 * add to the devicetree.cb:
@@ -38,8 +36,7 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 	 * If PEG port is not defined in the device tree, it will be disabled
 	 * in FSP
 	 */
-	dev = pcidev_path_on_root(SA_DEVFN_PEG0); /* PEG 0:1:0 */
-	m_cfg->Peg0Enable = dev && dev->enabled;
+	m_cfg->Peg0Enable = is_devfn_enabled(SA_DEVFN_PEG0);
 	if (m_cfg->Peg0Enable) {
 		m_cfg->Peg0Enable = 2;
 		m_cfg->Peg0MaxLinkWidth = config->Peg0MaxLinkWidth;
@@ -52,8 +49,7 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 		m_t_cfg->Peg0Gen3EqPh3Method = 0;
 	}
 
-	dev = pcidev_path_on_root(SA_DEVFN_PEG1); /* PEG 0:1:1 */
-	m_cfg->Peg1Enable = dev && dev->enabled;
+	m_cfg->Peg1Enable = is_devfn_enabled(SA_DEVFN_PEG1);
 	if (m_cfg->Peg1Enable) {
 		m_cfg->Peg1Enable = 2;
 		m_cfg->Peg1MaxLinkWidth = config->Peg1MaxLinkWidth;
@@ -63,8 +59,7 @@ static void soc_peg_init_params(FSP_M_CONFIG *m_cfg,
 		m_t_cfg->Peg1Gen3EqPh3Method = 0;
 	}
 
-	dev = pcidev_path_on_root(SA_DEVFN_PEG2); /* PEG 0:1:2 */
-	m_cfg->Peg2Enable = dev && dev->enabled;
+	m_cfg->Peg2Enable = is_devfn_enabled(SA_DEVFN_PEG2);
 	if (m_cfg->Peg2Enable) {
 		m_cfg->Peg2Enable = 2;
 		m_cfg->Peg2MaxLinkWidth = config->Peg2MaxLinkWidth;
@@ -86,8 +81,11 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->IedSize = CONFIG_IED_REGION_SIZE;
 	m_cfg->ProbelessTrace = 0;
 	m_cfg->SaGv = config->SaGv;
-	m_cfg->UserBd = BOARD_TYPE_ULT_ULX;
-	m_cfg->RMT = config->Rmt;
+	if (CONFIG(SKYLAKE_SOC_PCH_H))
+		m_cfg->UserBd = BOARD_TYPE_DESKTOP;
+	else
+		m_cfg->UserBd = BOARD_TYPE_ULT_ULX;
+	m_cfg->RMT = config->RMT;
 	m_cfg->CmdTriStateDis = config->CmdTriStateDis;
 	m_cfg->DdrFreqLimit = 0;
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
@@ -109,10 +107,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 static void soc_primary_gfx_config_params(FSP_M_CONFIG *m_cfg,
 				const struct soc_intel_skylake_config *config)
 {
-	const struct device *dev;
-
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	m_cfg->InternalGfx = dev && dev->enabled;
+	m_cfg->InternalGfx = !CONFIG(SOC_INTEL_DISABLE_IGD) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	/*
 	 * If iGPU is enabled, set IGD stolen size to 64MB. The FBC
@@ -132,7 +127,6 @@ static void soc_primary_gfx_config_params(FSP_M_CONFIG *m_cfg,
 void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 {
 	const struct soc_intel_skylake_config *config;
-	const struct device *dev;
 	FSP_M_CONFIG *m_cfg = &mupd->FspmConfig;
 	FSP_M_TEST_CONFIG *m_t_cfg = &mupd->FspmTestConfig;
 
@@ -154,14 +148,12 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	/* DCI and TraceHub configs */
 	m_t_cfg->PchDciEn = config->PchDciEn;
 
-	dev = pcidev_path_on_root(PCH_DEVFN_TRACEHUB);
-	m_cfg->EnableTraceHub = dev && dev->enabled;
+	m_cfg->EnableTraceHub = is_devfn_enabled(PCH_DEVFN_TRACEHUB);
 	m_cfg->TraceHubMemReg0Size = config->TraceHubMemReg0Size;
 	m_cfg->TraceHubMemReg1Size = config->TraceHubMemReg1Size;
 
 	/* Enable SMBus controller */
-	dev = pcidev_path_on_root(PCH_DEVFN_SMBUS);
-	m_cfg->SmbusEnable = dev && dev->enabled;
+	m_cfg->SmbusEnable = is_devfn_enabled(PCH_DEVFN_SMBUS);
 
 	/* Set primary graphic device */
 	soc_primary_gfx_config_params(m_cfg, config);
@@ -176,14 +168,10 @@ void soc_update_memory_params_for_mma(FSP_M_CONFIG *memory_cfg,
 	/* Boot media is memory mapped for Skylake and Kabylake (SPI). */
 	assert(CONFIG(BOOT_DEVICE_MEMORY_MAPPED));
 
-	memory_cfg->MmaTestContentPtr =
-			(uintptr_t) rdev_mmap_full(&mma_cfg->test_content);
-	memory_cfg->MmaTestContentSize =
-			region_device_sz(&mma_cfg->test_content);
-	memory_cfg->MmaTestConfigPtr =
-			(uintptr_t) rdev_mmap_full(&mma_cfg->test_param);
-	memory_cfg->MmaTestConfigSize =
-			region_device_sz(&mma_cfg->test_param);
+	memory_cfg->MmaTestContentPtr = (uintptr_t)mma_cfg->test_content;
+	memory_cfg->MmaTestContentSize = mma_cfg->test_content_size;
+	memory_cfg->MmaTestConfigPtr = (uintptr_t)mma_cfg->test_param;
+	memory_cfg->MmaTestConfigSize = mma_cfg->test_param_size;
 	memory_cfg->MrcFastBoot = 0x00;
 	memory_cfg->SaGv = 0x02;
 }

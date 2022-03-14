@@ -16,20 +16,16 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_USES_IFD_GBE_REGION
 
 config MAINBOARD_DIR
-	string
 	default "roda/rv11"
 
 config VARIANT_DIR
-	string
 	default "rv11" if BOARD_RODA_RV11
 	default "rw11" if BOARD_RODA_RW11
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Lizard RW11" if BOARD_RODA_RW11
 	default "Lizard RV11"
 

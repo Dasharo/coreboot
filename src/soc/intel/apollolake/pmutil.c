@@ -24,14 +24,14 @@
 
 #include "chip.h"
 
-static uintptr_t read_pmc_mmio_bar(void)
+uint8_t *pmc_mmio_regs(void)
 {
-	return PMC_BAR0;
+	return (void *)(uintptr_t)PCH_PWRM_BASE_ADDRESS;
 }
 
 uintptr_t soc_read_pmc_base(void)
 {
-	return read_pmc_mmio_bar();
+	return (uintptr_t)pmc_mmio_regs();
 }
 
 uint32_t *soc_pmc_etr_addr(void)
@@ -48,6 +48,7 @@ const char *const *soc_smi_sts_array(size_t *a)
 		[APM_STS_BIT] = "APM",
 		[SWSMI_TMR_STS_BIT] = "SWSMI_TMR",
 		[PM1_STS_BIT] = "PM1",
+		[GPE0_STS_BIT] = "GPE0 (reserved)",
 		[GPIO_STS_BIT] = "GPIO_SMI",
 		[GPIO_UNLOCK_SMI_STS_BIT] = "GPIO_UNLOCK_SSMI",
 		[MC_SMI_STS_BIT] = "MCSMI",
@@ -86,7 +87,11 @@ uint32_t soc_get_smi_status(uint32_t generic_sts)
 			generic_sts |= (1 << PM1_STS_BIT);
 	}
 
-	return generic_sts;
+	/*
+	 * GPE0_STS is reserved in APL/GLK datasheets. For compatibility
+	 * with common code, mask it out so that it is always zero.
+	 */
+	return generic_sts & ~(1 << GPE0_STS_BIT);
 }
 
 const char *const *soc_tco_sts_array(size_t *a)
@@ -148,7 +153,7 @@ void soc_get_gpi_gpe_configs(uint8_t *dw0, uint8_t *dw1, uint8_t *dw2)
 
 void soc_fill_power_state(struct chipset_power_state *ps)
 {
-	uintptr_t pmc_bar0 = read_pmc_mmio_bar();
+	uintptr_t pmc_bar0 = soc_read_pmc_base();
 
 	ps->tco1_sts = tco_read_reg(TCO1_STS);
 	ps->tco2_sts = tco_read_reg(TCO2_STS);
@@ -195,7 +200,7 @@ int soc_get_rtc_failed(void)
 
 int vbnv_cmos_failed(void)
 {
-	uintptr_t pmc_bar = read_pmc_mmio_bar();
+	uintptr_t pmc_bar = soc_read_pmc_base();
 	uint32_t gen_pmcon1 = read32((void *)(pmc_bar + GEN_PMCON1));
 	int rtc_failure = rtc_failed(gen_pmcon1);
 
@@ -218,4 +223,31 @@ int vbnv_cmos_failed(void)
 uint16_t get_pmbase(void)
 {
 	return (uint16_t) ACPI_BASE_ADDRESS;
+}
+
+void pmc_soc_set_afterg3_en(const bool on)
+{
+	const uintptr_t gen_pmcon1 = soc_read_pmc_base() + GEN_PMCON1;
+	uint32_t reg32;
+
+	reg32 = read32p(gen_pmcon1);
+	if (on)
+		reg32 &= ~SLEEP_AFTER_POWER_FAIL;
+	else
+		reg32 |= SLEEP_AFTER_POWER_FAIL;
+	write32p(gen_pmcon1, reg32);
+}
+
+void pmc_clear_pmcon_sts(void)
+{
+	uint32_t reg_val;
+	uint8_t *addr;
+	addr = pmc_mmio_regs();
+
+	reg_val = read32(addr + GEN_PMCON1);
+	/* Clear SUS_PWR_FLR, GBL_RST_STS, HOST_RST_STS, PWR_FLR bits
+	 * while retaining MS4V write-1-to-clear bit */
+	reg_val &= ~(MS4V);
+
+	write32((addr + GEN_PMCON1), reg_val);
 }

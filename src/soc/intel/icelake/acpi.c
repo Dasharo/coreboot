@@ -15,7 +15,6 @@
 #include <soc/pm.h>
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
-#include <string.h>
 
 /*
  * List of supported C-states in this processor.
@@ -107,7 +106,7 @@ static int cstate_set_s0ix[] = {
 	C_STATE_C10
 };
 
-acpi_cstate_t *soc_get_cstate_map(size_t *entries)
+const acpi_cstate_t *soc_get_cstate_map(size_t *entries)
 {
 	static acpi_cstate_t map[MAX(ARRAY_SIZE(cstate_set_s0ix),
 				ARRAY_SIZE(cstate_set_non_s0ix))];
@@ -127,7 +126,7 @@ acpi_cstate_t *soc_get_cstate_map(size_t *entries)
 	}
 
 	for (i = 0; i < *entries; i++) {
-		memcpy(&map[i], &cstate_map[set[i]], sizeof(acpi_cstate_t));
+		map[i] = cstate_map[set[i]];
 		map[i].ctype = i + 1;
 	}
 	return map;
@@ -162,8 +161,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 }
 uint32_t soc_read_sci_irq_select(void)
 {
-	uintptr_t pmc_bar = soc_read_pmc_base();
-	return read32((void *)pmc_bar + IRQ_REG);
+	return read32p(soc_read_pmc_base() + IRQ_REG);
 }
 
 void soc_fill_gnvs(struct global_nvs *gnvs)
@@ -179,21 +177,6 @@ void soc_fill_gnvs(struct global_nvs *gnvs)
 
 	/* Fill in Above 4GB MMIO resource */
 	sa_fill_gnvs(gnvs);
-}
-
-uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
-			    const struct chipset_power_state *ps)
-{
-	/*
-	 * WAK_STS bit is set when the system is in one of the sleep states
-	 * (via the SLP_EN bit) and an enabled wake event occurs. Upon setting
-	 * this bit, the PMC will transition the system to the ON state and
-	 * can only be set by hardware and can only be cleared by writing a one
-	 * to this bit position.
-	 */
-
-	generic_pm1_en |= WAK_STS | RTC_EN | PWRBTN_EN;
-	return generic_pm1_en;
 }
 
 int soc_madt_sci_irq_polarity(int sci)

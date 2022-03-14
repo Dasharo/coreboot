@@ -1,14 +1,43 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <drivers/intel/gma/opregion.h>
+#include <ec/google/chromeec/ec.h>
 #include <fw_config.h>
 #include <sar.h>
 
+enum {
+	MAGOLOR_SKU_START = 0x70000,
+	MAGOLOR_SKU_END = 0x7ffff,
+	MAGLIA_SKU_START = 0x80000,
+	MAGLIA_SKU_END = 0x8ffff,
+	MAGISTER_SKU_START = 0xc0000,
+	MAGISTER_SKU_END = 0xcffff,
+	MAGMA_SKU_START = 0xd0000,
+	MAGMA_SKU_END = 0xdffff,
+	MAGNETO_SKU_START = 0x110000,
+	MAGNETO_SKU_END = 0x11ffff,
+};
+
 const char *get_wifi_sar_cbfs_filename(void)
 {
-	const char *filename = NULL;
+	uint32_t sku_id = google_chromeec_get_board_sku();
 
-	if (fw_config_probe(FW_CONFIG(TABLETMODE, TABLETMODE_ENABLED)))
-		filename = "wifi_sar-magolor.hex";
+	if (sku_id >= MAGOLOR_SKU_START && sku_id <= MAGLIA_SKU_END)
+		return "wifi_sar-magolor.hex";
+	if (sku_id >= MAGISTER_SKU_START && sku_id <= MAGISTER_SKU_END)
+		return "wifi_sar-magister.hex";
+	if (sku_id >= MAGMA_SKU_START && sku_id <= MAGMA_SKU_END)
+		return "wifi_sar-magma.hex";
+	if (sku_id >= MAGNETO_SKU_START && sku_id <= MAGNETO_SKU_END)
+		return "wifi_sar-magneto.hex";
 
-	return filename;
+	return WIFI_SAR_CBFS_DEFAULT_FILENAME;
+}
+
+const char *mainboard_vbt_filename(void)
+{
+	if (fw_config_probe(FW_CONFIG(DB_PORTS, DB_PORTS_1A_HDMI)))
+		return "vbt_magister.bin";
+
+	return "vbt.bin";
 }

@@ -50,7 +50,6 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->duty_width = 3;	/* CLK_VAL bits 3:1 */
 	fadt->day_alrm = 0;	/* 0x7d these have to be */
 	fadt->mon_alrm = 0;	/* 0x7e added to cmos.layout */
-	fadt->century = 0;	/* 0x7f to make rtc alarm work */
 	fadt->iapc_boot_arch = FADT_BOOT_ARCH;	/* See table 5-10 */
 	fadt->res2 = 0;		/* reserved, MUST be 0 ACPI 3.0 */
 	fadt->flags |= ACPI_FADT_WBINVD | /* See table 5-10 ACPI 3.0a spec */
@@ -63,8 +62,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 				ACPI_FADT_S4_RTC_VALID |
 				ACPI_FADT_REMOTE_POWER_ON;
 
-	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
-	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* Must be zero if ACPI Revision <= 5.0 */
 
 	fadt->x_firmware_ctl_l = 0;	/* set to 0 if firmware_ctrl is used */
 	fadt->x_firmware_ctl_h = 0;

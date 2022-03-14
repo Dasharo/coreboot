@@ -6,7 +6,7 @@
 /* CR0 bits */
 #define PE		(1 << 0)
 
-#ifdef __x86_64__
+#if ENV_X86_64
 	.code64
 #else
 	.code32
@@ -14,7 +14,14 @@
 
 	.globl __wakeup
 __wakeup:
-#ifdef __x86_64__
+#if ENV_X86_64
+	/* When called in x86_64 mode, the resume vector is in %rdi
+	 * instead of the stack, save it in 4(%rsp) for the 32-bit code.
+	 * It's OK to overwrite the return address at (%rsp) because this
+	 * function doesn't return.
+	 */
+	mov	%edi, 4(%rsp)
+
 	xor	%rax,%rax
 	mov	%ss, %ax
 	push	%rax

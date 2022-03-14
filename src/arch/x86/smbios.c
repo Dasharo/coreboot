@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
 #include <string.h>
 #include <smbios.h>
 #include <console/console.h>
@@ -34,41 +35,6 @@ static u8 smbios_checksum(u8 *p, u32 length)
 	while (length--)
 		ret += *p++;
 	return -ret;
-}
-
-/* Get the device type 41 from the dev struct */
-static u8 smbios_get_device_type_from_dev(struct device *dev)
-{
-	u16 pci_basesubclass = (dev->class >> 8) & 0xFFFF;
-
-	switch (pci_basesubclass) {
-	case PCI_CLASS_NOT_DEFINED:
-		return SMBIOS_DEVICE_TYPE_OTHER;
-	case PCI_CLASS_DISPLAY_VGA:
-	case PCI_CLASS_DISPLAY_XGA:
-	case PCI_CLASS_DISPLAY_3D:
-	case PCI_CLASS_DISPLAY_OTHER:
-		return SMBIOS_DEVICE_TYPE_VIDEO;
-	case PCI_CLASS_STORAGE_SCSI:
-		return SMBIOS_DEVICE_TYPE_SCSI;
-	case PCI_CLASS_NETWORK_ETHERNET:
-		return SMBIOS_DEVICE_TYPE_ETHERNET;
-	case PCI_CLASS_NETWORK_TOKEN_RING:
-		return SMBIOS_DEVICE_TYPE_TOKEN_RING;
-	case PCI_CLASS_MULTIMEDIA_VIDEO:
-	case PCI_CLASS_MULTIMEDIA_AUDIO:
-	case PCI_CLASS_MULTIMEDIA_PHONE:
-	case PCI_CLASS_MULTIMEDIA_OTHER:
-		return SMBIOS_DEVICE_TYPE_SOUND;
-	case PCI_CLASS_STORAGE_ATA:
-		return SMBIOS_DEVICE_TYPE_PATA;
-	case PCI_CLASS_STORAGE_SATA:
-		return SMBIOS_DEVICE_TYPE_SATA;
-	case PCI_CLASS_STORAGE_SAS:
-		return SMBIOS_DEVICE_TYPE_SAS;
-	default:
-		return SMBIOS_DEVICE_TYPE_UNKNOWN;
-	}
 }
 
 int smbios_add_string(u8 *start, const char *str)
@@ -115,6 +81,23 @@ int smbios_string_table_len(u8 *start)
 		return 2;
 
 	return len + 1;
+}
+
+int smbios_full_table_len(struct smbios_header *header, u8 *str_table_start)
+{
+	return header->length + smbios_string_table_len(str_table_start);
+}
+
+void *smbios_carve_table(unsigned long start, u8 type, u8 length, u16 handle)
+{
+	struct smbios_header *t = (struct smbios_header *)start;
+
+	assert(length >= sizeof(*t));
+	memset(t, 0, length);
+	t->type = type;
+	t->length = length - 2;
+	t->handle = handle;
+	return t;
 }
 
 static int smbios_cpu_vendor(u8 *start)
@@ -241,9 +224,12 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 					 unsigned long *current, int *handle,
 					 int type16_handle)
 {
-	struct smbios_type17 *t = (struct smbios_type17 *)*current;
+	struct spd_info info;
+	get_spd_info(dimm->ddr_type, dimm->mod_type, &info);
 
-	memset(t, 0, sizeof(struct smbios_type17));
+	struct smbios_type17 *t = smbios_carve_table(*current, SMBIOS_MEMORY_DEVICE,
+						     sizeof(*t), *handle);
+
 	t->memory_type = dimm->ddr_type;
 	if (dimm->configured_speed_mts != 0)
 		t->clock_speed = dimm->configured_speed_mts;
@@ -253,7 +239,6 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 		t->speed = dimm->max_speed_mts;
 	else
 		t->speed = dimm->ddr_frequency;
-	t->type = SMBIOS_MEMORY_DEVICE;
 	if (dimm->dimm_size < 0x7fff) {
 		t->size = dimm->dimm_size;
 	} else {
@@ -262,24 +247,7 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 	}
 	t->data_width = 8 * (1 << (dimm->bus_width & 0x7));
 	t->total_width = t->data_width + 8 * ((dimm->bus_width & 0x18) >> 3);
-
-	switch (dimm->mod_type) {
-	case SPD_RDIMM:
-	case SPD_MINI_RDIMM:
-		t->form_factor = MEMORY_FORMFACTOR_RIMM;
-		break;
-	case SPD_UDIMM:
-	case SPD_MICRO_DIMM:
-	case SPD_MINI_UDIMM:
-		t->form_factor = MEMORY_FORMFACTOR_DIMM;
-		break;
-	case SPD_SODIMM:
-		t->form_factor = MEMORY_FORMFACTOR_SODIMM;
-		break;
-	default:
-		t->form_factor = MEMORY_FORMFACTOR_UNKNOWN;
-		break;
-	}
+	t->form_factor = info.form_factor;
 
 	smbios_fill_dimm_manufacturer_from_id(dimm->mod_id, t);
 	smbios_fill_dimm_serial_number(dimm, t);
@@ -296,30 +264,17 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 	t->maximum_voltage = dimm->vdd_voltage;
 
 	/* Fill in type detail */
-	switch (dimm->mod_type) {
-	case SPD_RDIMM:
-	case SPD_MINI_RDIMM:
-		t->type_detail = MEMORY_TYPE_DETAIL_REGISTERED;
-		break;
-	case SPD_UDIMM:
-	case SPD_MINI_UDIMM:
-		t->type_detail = MEMORY_TYPE_DETAIL_UNBUFFERED;
-		break;
-	default:
-		t->type_detail = MEMORY_TYPE_DETAIL_UNKNOWN;
-		break;
-	}
+	t->type_detail = info.type_detail;
+
 	/* Synchronous = 1 */
 	t->type_detail |= MEMORY_TYPE_DETAIL_SYNCHRONOUS;
 	/* no handle for error information */
 	t->memory_error_information_handle = 0xFFFE;
 	t->attributes = dimm->rank_per_dimm;
-	t->handle = *handle;
 	t->phys_memory_array_handle = type16_handle;
 
 	*handle += 1;
-	t->length = sizeof(struct smbios_type17) - 2;
-	return t->length + smbios_string_table_len(t->eos);
+	return smbios_full_table_len(&t->header, t->eos);
 }
 
 #define VERSION_VPD "firmware_version"
@@ -377,31 +332,22 @@ static const char *get_bios_version(void)
 	return coreboot_version;
 }
 
+
 static int smbios_write_type0(unsigned long *current, int handle)
 {
-	struct smbios_type0 *t = (struct smbios_type0 *)*current;
-	int len = sizeof(struct smbios_type0);
-	char bversion[100];
+	struct smbios_type0 *t = smbios_carve_table(*current, SMBIOS_BIOS_INFORMATION,
+						    sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type0));
-	t->type = SMBIOS_BIOS_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
-
-	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
+	t->vendor = smbios_add_string(t->eos, "coreboot");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
-	snprintf(bversion, sizeof(bversion), "coreboot %s, Dasharo %s",
-		 get_bios_version(), coreboot_version);
-	t->bios_version = smbios_add_string(t->eos, bversion);
-
-	if (CONFIG(CHROMEOS) && CONFIG(HAVE_ACPI_TABLES)) {
+	if (CONFIG(CHROMEOS_NVS)) {
 		uintptr_t version_address = (uintptr_t)t->eos;
 		/* SMBIOS offsets start at 1 rather than 0 */
 		version_address += (u32)smbios_string_table_len(t->eos) - 1;
 		smbios_type0_bios_version(version_address);
 	}
-
+	t->bios_version = smbios_add_string(t->eos, get_bios_version());
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
@@ -429,7 +375,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 		t->bios_characteristics_ext1 = BIOS_EXT1_CHARACTERISTICS_ACPI;
 
 	t->bios_characteristics_ext2 = BIOS_EXT2_CHARACTERISTICS_TARGET;
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -484,9 +430,8 @@ unsigned int __weak smbios_cpu_get_voltage(void)
 	return 0; /* Unknown */
 }
 
-static size_t get_number_of_caches(struct cpuid_result res_deterministic_cache)
+static size_t get_number_of_caches(size_t max_logical_cpus_sharing_cache)
 {
-	size_t max_logical_cpus_sharing_cache = 0;
 	size_t number_of_cpus_per_package = 0;
 	size_t max_logical_cpus_per_package = 0;
 	struct cpuid_result res;
@@ -497,8 +442,6 @@ static size_t get_number_of_caches(struct cpuid_result res_deterministic_cache)
 	res = cpuid(1);
 
 	max_logical_cpus_per_package = (res.ebx >> 16) & 0xff;
-
-	max_logical_cpus_sharing_cache  = ((res_deterministic_cache.eax >> 14) & 0xfff) + 1;
 
 	/* Check if it's last level cache */
 	if (max_logical_cpus_sharing_cache == max_logical_cpus_per_package)
@@ -516,36 +459,29 @@ static size_t get_number_of_caches(struct cpuid_result res_deterministic_cache)
 
 static int smbios_write_type1(unsigned long *current, int handle)
 {
-	struct smbios_type1 *t = (struct smbios_type1 *)*current;
-	int len = sizeof(struct smbios_type1);
+	struct smbios_type1 *t = smbios_carve_table(*current, SMBIOS_SYSTEM_INFORMATION,
+						    sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type1));
-	t->type = SMBIOS_SYSTEM_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
 	t->manufacturer = smbios_add_string(t->eos, smbios_system_manufacturer());
 	t->product_name = smbios_add_string(t->eos, smbios_system_product_name());
 	t->serial_number = smbios_add_string(t->eos, smbios_system_serial_number());
+	t->wakeup_type = smbios_system_wakeup_type();
 	t->sku = smbios_add_string(t->eos, smbios_system_sku());
 	t->version = smbios_add_string(t->eos, smbios_system_version());
 #ifdef CONFIG_MAINBOARD_FAMILY
 	t->family = smbios_add_string(t->eos, CONFIG_MAINBOARD_FAMILY);
 #endif
 	smbios_system_set_uuid(t->uuid);
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
 
 static int smbios_write_type2(unsigned long *current, int handle, const int chassis_handle)
 {
-	struct smbios_type2 *t = (struct smbios_type2 *)*current;
-	int len = sizeof(struct smbios_type2);
+	struct smbios_type2 *t = smbios_carve_table(*current, SMBIOS_BOARD_INFORMATION,
+						    sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type2));
-	t->type = SMBIOS_BOARD_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
 	t->manufacturer = smbios_add_string(t->eos, smbios_mainboard_manufacturer());
 	t->product_name = smbios_add_string(t->eos, smbios_mainboard_product_name());
 	t->serial_number = smbios_add_string(t->eos, smbios_mainboard_serial_number());
@@ -556,20 +492,16 @@ static int smbios_write_type2(unsigned long *current, int handle, const int chas
 		smbios_mainboard_location_in_chassis());
 	t->board_type = smbios_mainboard_board_type();
 	t->chassis_handle = chassis_handle;
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
 
 static int smbios_write_type3(unsigned long *current, int handle)
 {
-	struct smbios_type3 *t = (struct smbios_type3 *)*current;
-	int len = sizeof(struct smbios_type3);
+	struct smbios_type3 *t = smbios_carve_table(*current, SMBIOS_SYSTEM_ENCLOSURE,
+						    sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type3));
-	t->type = SMBIOS_SYSTEM_ENCLOSURE;
-	t->handle = handle;
-	t->length = len - 2;
 	t->manufacturer = smbios_add_string(t->eos, smbios_system_manufacturer());
 	t->bootup_state = SMBIOS_STATE_SAFE;
 	t->power_supply_state = SMBIOS_STATE_SAFE;
@@ -580,7 +512,7 @@ static int smbios_write_type3(unsigned long *current, int handle)
 	t->asset_tag_number = smbios_add_string(t->eos, smbios_mainboard_asset_tag());
 	t->version = smbios_add_string(t->eos, smbios_chassis_version());
 	t->serial_number = smbios_add_string(t->eos, smbios_chassis_serial_number());
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -589,8 +521,6 @@ static int smbios_write_type4(unsigned long *current, int handle)
 {
 	unsigned int cpu_voltage;
 	struct cpuid_result res;
-	struct smbios_type4 *t = (struct smbios_type4 *)*current;
-	int len = sizeof(struct smbios_type4);
 	uint16_t characteristics = 0;
 	static unsigned int cnt = 0;
 	char buf[8];
@@ -602,10 +532,8 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	if (cpu_have_cpuid())
 		res = cpuid(1);
 
-	memset(t, 0, sizeof(struct smbios_type4));
-	t->type = SMBIOS_PROCESSOR_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
+	struct smbios_type4 *t = smbios_carve_table(*current, SMBIOS_PROCESSOR_INFORMATION,
+						    sizeof(*t), handle);
 
 	snprintf(buf, sizeof(buf), "CPU%d", cnt++);
 	t->socket_designation = smbios_add_string(t->eos, buf);
@@ -651,7 +579,6 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	t->serial_number = smbios_add_string(t->eos, smbios_processor_serial_number());
 	t->status = SMBIOS_PROCESSOR_STATUS_CPU_ENABLED | SMBIOS_PROCESSOR_STATUS_POPULATED;
 	t->processor_upgrade = get_socket_type();
-	len = t->length + smbios_string_table_len(t->eos);
 	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0x16 &&
 	    cpuid_eax(0x16) != 0 && cpuid_ecx(0x16) != 0) {
 		t->current_speed = cpuid_eax(0x16); /* base frequency */
@@ -685,6 +612,7 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	if (cpu_voltage > 0)
 		t->voltage = 0x80 | cpu_voltage;
 
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -703,14 +631,10 @@ static int smbios_write_type7(unsigned long *current,
 			      const size_t max_cache_size,
 			      const size_t cache_size)
 {
-	struct smbios_type7 *t = (struct smbios_type7 *)*current;
-	int len = sizeof(struct smbios_type7);
 	char buf[8];
 
-	memset(t, 0, sizeof(struct smbios_type7));
-	t->type = SMBIOS_CACHE_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
+	struct smbios_type7 *t = smbios_carve_table(*current, SMBIOS_CACHE_INFORMATION,
+						    sizeof(*t), handle);
 
 	snprintf(buf, sizeof(buf), "CACHE%x", level);
 	t->socket_designation = smbios_add_string(t->eos, buf);
@@ -761,7 +685,7 @@ static int smbios_write_type7(unsigned long *current,
 	t->error_correction_type = smbios_cache_error_correction_type(level);
 	t->system_cache_type = type;
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -813,48 +737,31 @@ static int smbios_write_type7_cache_parameters(unsigned long *current,
 					       int *max_struct_size,
 					       struct smbios_type4 *type4)
 {
-	struct cpuid_result res;
-	unsigned int cnt = 0;
+	unsigned int cnt = CACHE_L1D;
 	int len = 0;
-	u32 leaf;
 
 	if (!cpu_have_cpuid())
 		return len;
 
-	if (cpu_is_intel()) {
-		res = cpuid(0);
-		if (res.eax < 4)
-			return len;
-		leaf = 4;
-	} else if (cpu_is_amd()) {
-		res = cpuid(0x80000000);
-		if (res.eax < 0x80000001)
-			return len;
-
-		res = cpuid(0x80000001);
-		if (!(res.ecx & (1 << 22)))
-			return len;
-
-		leaf = 0x8000001d;
-	} else {
-		printk(BIOS_DEBUG, "SMBIOS: Unknown CPU\n");
+	enum cpu_type dcache_cpuid = cpu_check_deterministic_cache_cpuid_supported();
+	if (dcache_cpuid == CPUID_TYPE_INVALID || dcache_cpuid == CPUID_COMMAND_UNSUPPORTED) {
+		printk(BIOS_DEBUG, "SMBIOS: Unknown CPU or CPU doesn't support Deterministic "
+					"Cache CPUID leaf\n");
 		return len;
 	}
 
 	while (1) {
 		enum smbios_cache_associativity associativity;
 		enum smbios_cache_type type;
+		struct cpu_cache_info info;
+		if (!fill_cpu_cache_info(cnt++, &info))
+			continue;
 
-		res = cpuid_ext(leaf, cnt++);
-
-		const u8 cache_type = CPUID_CACHE_TYPE(res);
-		const u8 level = CPUID_CACHE_LEVEL(res);
-		const size_t assoc = CPUID_CACHE_WAYS_OF_ASSOC(res) + 1;
-		const size_t partitions = CPUID_CACHE_PHYS_LINE(res) + 1;
-		const size_t cache_line_size = CPUID_CACHE_COHER_LINE(res) + 1;
-		const size_t number_of_sets = CPUID_CACHE_NO_OF_SETS(res) + 1;
-		const size_t cache_size = assoc * partitions * cache_line_size * number_of_sets
-							* get_number_of_caches(res);
+		const u8 cache_type = info.type;
+		const u8 level = info.level;
+		const size_t assoc = info.num_ways;
+		const size_t cache_share = info.num_cores_shared;
+		const size_t cache_size = info.size * get_number_of_caches(cache_share);
 
 		if (!cache_type)
 			/* No more caches in the system */
@@ -875,7 +782,7 @@ static int smbios_write_type7_cache_parameters(unsigned long *current,
 			break;
 		}
 
-		if (CPUID_CACHE_FULL_ASSOC(res))
+		if (info.fully_associative)
 			associativity = SMBIOS_CACHE_ASSOCIATIVITY_FULL;
 		else
 			associativity = smbios_cache_associativity(assoc);
@@ -908,15 +815,12 @@ int smbios_write_type8(unsigned long *current, int *handle,
 				const struct port_information *port,
 				size_t num_ports)
 {
-	int len = sizeof(struct smbios_type8);
 	unsigned int totallen = 0, i;
 
 	for (i = 0; i < num_ports; i++, port++) {
-		struct smbios_type8 *t = (struct smbios_type8 *)*current;
-		memset(t, 0, sizeof(struct smbios_type8));
-		t->type = SMBIOS_PORT_CONNECTOR_INFORMATION;
-		t->handle = *handle;
-		t->length = len - 2;
+		struct smbios_type8 *t = smbios_carve_table(*current,
+							    SMBIOS_PORT_CONNECTOR_INFORMATION,
+							    sizeof(*t), *handle);
 		t->internal_reference_designator =
 			smbios_add_string(t->eos, port->internal_reference_designator);
 		t->internal_connector_type = port->internal_connector_type;
@@ -925,8 +829,9 @@ int smbios_write_type8(unsigned long *current, int *handle,
 		t->external_connector_type = port->external_connector_type;
 		t->port_type = port->port_type;
 		*handle += 1;
-		*current += t->length + smbios_string_table_len(t->eos);
-		totallen += t->length + smbios_string_table_len(t->eos);
+		const int len = smbios_full_table_len(&t->header, t->eos);
+		*current += len;
+		totallen += len;
 	}
 	return totallen;
 }
@@ -936,18 +841,15 @@ int smbios_write_type9(unsigned long *current, int *handle,
 			const enum slot_data_bus_bandwidth bandwidth,
 			const enum misc_slot_usage usage,
 			const enum misc_slot_length length,
-			u8 slot_char1, u8 slot_char2, u8 bus, u8 dev_func)
+			const u16 id, u8 slot_char1, u8 slot_char2, u8 bus, u8 dev_func)
 {
-	struct smbios_type9 *t = (struct smbios_type9 *)*current;
-	int len = sizeof(struct smbios_type9);
+	struct smbios_type9 *t = smbios_carve_table(*current, SMBIOS_SYSTEM_SLOTS,
+						    sizeof(*t), *handle);
 
-	memset(t, 0, sizeof(struct smbios_type9));
-	t->type = SMBIOS_SYSTEM_SLOTS;
-	t->handle = *handle;
-	t->length = len - 2;
 	t->slot_designation = smbios_add_string(t->eos, name ? name : "SLOT");
 	t->slot_type = type;
 	/* TODO add slot_id supoort, will be "_SUN" for ACPI devices */
+	t->slot_id = id;
 	t->slot_data_bus_width = bandwidth;
 	t->current_usage = usage;
 	t->slot_length = length;
@@ -958,7 +860,7 @@ int smbios_write_type9(unsigned long *current, int *handle,
 	t->device_function_number = dev_func;
 	t->data_bus_width = SlotDataBusWidthOther;
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	*handle += 1;
 	return len;
@@ -966,14 +868,9 @@ int smbios_write_type9(unsigned long *current, int *handle,
 
 static int smbios_write_type11(unsigned long *current, int *handle)
 {
-	struct smbios_type11 *t = (struct smbios_type11 *)*current;
-	int len;
 	struct device *dev;
-
-	memset(t, 0, sizeof(*t));
-	t->type = SMBIOS_OEM_STRINGS;
-	t->handle = *handle;
-	t->length = len = sizeof(*t) - 2;
+	struct smbios_type11 *t = smbios_carve_table(*current, SMBIOS_OEM_STRINGS,
+						     sizeof(*t), *handle);
 
 	for (dev = all_devices; dev; dev = dev->next) {
 		if (dev->ops && dev->ops->get_smbios_strings)
@@ -985,8 +882,7 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 		return 0;
 	}
 
-	len += smbios_string_table_len(t->eos);
-
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	(*handle)++;
 	return len;
@@ -994,9 +890,6 @@ static int smbios_write_type11(unsigned long *current, int *handle)
 
 static int smbios_write_type16(unsigned long *current, int *handle)
 {
-	struct smbios_type16 *t = (struct smbios_type16 *)*current;
-
-	int len;
 	int i;
 	uint64_t max_capacity;
 
@@ -1017,10 +910,8 @@ static int smbios_write_type16(unsigned long *current, int *handle)
 		}
 	}
 
-	memset(t, 0, sizeof(*t));
-	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
-	t->handle = *handle;
-	t->length = len = sizeof(*t) - 2;
+	struct smbios_type16 *t = smbios_carve_table(*current, SMBIOS_PHYS_MEMORY_ARRAY,
+						     sizeof(*t), *handle);
 
 	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
 	t->use = MEMORY_ARRAY_USE_SYSTEM;
@@ -1037,8 +928,7 @@ static int smbios_write_type16(unsigned long *current, int *handle)
 	}
 	t->number_of_memory_devices = meminfo->number_of_devices;
 
-	len += smbios_string_table_len(t->eos);
-
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	(*handle)++;
 	return len;
@@ -1046,7 +936,6 @@ static int smbios_write_type16(unsigned long *current, int *handle)
 
 static int smbios_write_type17(unsigned long *current, int *handle, int type16)
 {
-	int len = sizeof(struct smbios_type17);
 	int totallen = 0;
 	int i;
 
@@ -1065,7 +954,7 @@ static int smbios_write_type17(unsigned long *current, int *handle, int type16)
 		 * Otherwise, the physical installed memory size is guessed from the system
 		 * memory map, which results in a slightly smaller value than the actual size.
 		 */
-		len = create_smbios_type17_for_dimm(dimm, current, handle, type16);
+		const int len = create_smbios_type17_for_dimm(dimm, current, handle, type16);
 		*current += len;
 		totallen += len;
 	}
@@ -1074,8 +963,6 @@ static int smbios_write_type17(unsigned long *current, int *handle, int type16)
 
 static int smbios_write_type19(unsigned long *current, int *handle, int type16)
 {
-	struct smbios_type19 *t = (struct smbios_type19 *)*current;
-	int len = sizeof(struct smbios_type19);
 	int i;
 
 	struct memory_info *meminfo;
@@ -1083,11 +970,10 @@ static int smbios_write_type19(unsigned long *current, int *handle, int type16)
 	if (meminfo == NULL)
 		return 0;	/* can't find mem info in cbmem */
 
-	memset(t, 0, sizeof(struct smbios_type19));
+	struct smbios_type19 *t = smbios_carve_table(*current,
+						     SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS,
+						     sizeof(*t), *handle);
 
-	t->type = SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS;
-	t->length = len - 2;
-	t->handle = *handle;
 	t->memory_array_handle = type16;
 
 	for (i = 0; i < meminfo->dimm_cnt && i < ARRAY_SIZE(meminfo->dimm); i++) {
@@ -1117,21 +1003,62 @@ static int smbios_write_type19(unsigned long *current, int *handle, int type16)
 		t->extended_ending_address--;
 	}
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	*handle += 1;
 	return len;
 }
 
+static int smbios_write_type20_table(unsigned long *current, int *handle, u32 addr_start,
+		u32 addr_end, int type17_handle, int type19_handle)
+{
+	struct smbios_type20 *t = smbios_carve_table(*current, SMBIOS_MEMORY_DEVICE_MAPPED_ADDRESS,
+						     sizeof(*t), *handle);
+
+	t->memory_device_handle = type17_handle;
+	t->memory_array_mapped_address_handle = type19_handle;
+	t->addr_start = addr_start;
+	t->addr_end = addr_end;
+	t->partition_row_pos = 0xff;
+	t->interleave_pos = 0xff;
+	t->interleave_depth = 0xff;
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
+	*current += len;
+	*handle += 1;
+	return len;
+}
+
+static int smbios_write_type20(unsigned long *current, int *handle,
+		int type17_handle, int type19_handle)
+{
+	u32 start_addr = 0;
+	int totallen = 0;
+	int i;
+
+	struct memory_info *meminfo;
+	meminfo = cbmem_find(CBMEM_ID_MEMINFO);
+	if (meminfo == NULL)
+		return 0;	/* can't find mem info in cbmem */
+
+	printk(BIOS_INFO, "Create SMBIOS type 20\n");
+	for (i = 0; i < meminfo->dimm_cnt && i < ARRAY_SIZE(meminfo->dimm); i++) {
+		struct dimm_info *dimm;
+		dimm = &meminfo->dimm[i];
+		u32 end_addr = start_addr + (dimm->dimm_size << 10) - 1;
+		totallen += smbios_write_type20_table(current, handle, start_addr, end_addr,
+				type17_handle, type19_handle);
+		start_addr = end_addr + 1;
+	}
+	return totallen;
+}
+
 static int smbios_write_type32(unsigned long *current, int handle)
 {
-	struct smbios_type32 *t = (struct smbios_type32 *)*current;
-	int len = sizeof(struct smbios_type32);
+	struct smbios_type32 *t = smbios_carve_table(*current, SMBIOS_SYSTEM_BOOT_INFORMATION,
+						     sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type32));
-	t->type = SMBIOS_SYSTEM_BOOT_INFORMATION;
-	t->handle = handle;
-	t->length = len - 2;
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -1142,13 +1069,9 @@ int smbios_write_type38(unsigned long *current, int *handle,
 			const u64 base_addr, const u8 base_modifier,
 			const u8 irq)
 {
-	struct smbios_type38 *t = (struct smbios_type38 *)*current;
-	int len = sizeof(struct smbios_type38);
+	struct smbios_type38 *t = smbios_carve_table(*current, SMBIOS_IPMI_DEVICE_INFORMATION,
+						     sizeof(*t), *handle);
 
-	memset(t, 0, sizeof(struct smbios_type38));
-	t->type = SMBIOS_IPMI_DEVICE_INFORMATION;
-	t->handle = *handle;
-	t->length = len - 2;
 	t->interface_type = interface_type;
 	t->ipmi_rev = ipmi_rev;
 	t->i2c_slave_addr = i2c_addr;
@@ -1157,9 +1080,9 @@ int smbios_write_type38(unsigned long *current, int *handle,
 	t->base_address_modifier = base_modifier;
 	t->irq = irq;
 
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	*handle += 1;
-
 	return len;
 }
 
@@ -1167,13 +1090,10 @@ int smbios_write_type41(unsigned long *current, int *handle,
 			const char *name, u8 instance, u16 segment,
 			u8 bus, u8 device, u8 function, u8 device_type)
 {
-	struct smbios_type41 *t = (struct smbios_type41 *)*current;
-	int len = sizeof(struct smbios_type41);
+	struct smbios_type41 *t = smbios_carve_table(*current,
+						SMBIOS_ONBOARD_DEVICES_EXTENDED_INFORMATION,
+						sizeof(*t), *handle);
 
-	memset(t, 0, sizeof(struct smbios_type41));
-	t->type = SMBIOS_ONBOARD_DEVICES_EXTENDED_INFORMATION;
-	t->handle = *handle;
-	t->length = len - 2;
 	t->reference_designation = smbios_add_string(t->eos, name);
 	t->device_type = device_type;
 	t->device_status = 1;
@@ -1183,7 +1103,7 @@ int smbios_write_type41(unsigned long *current, int *handle,
 	t->device_number = device;
 	t->function_number = function;
 
-	len = t->length + smbios_string_table_len(t->eos);
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	*handle += 1;
 	return len;
@@ -1191,42 +1111,98 @@ int smbios_write_type41(unsigned long *current, int *handle,
 
 static int smbios_write_type127(unsigned long *current, int handle)
 {
-	struct smbios_type127 *t = (struct smbios_type127 *)*current;
-	int len = sizeof(struct smbios_type127);
+	struct smbios_type127 *t = smbios_carve_table(*current, SMBIOS_END_OF_TABLE,
+						      sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type127));
-	t->type = SMBIOS_END_OF_TABLE;
-	t->handle = handle;
-	t->length = len - 2;
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
 
-/* Generate Type41 entries from devicetree */
-static int smbios_walk_device_tree_type41(struct device *dev, int *handle,
-					  unsigned long *current)
+/* Get the device type 41 from the dev struct */
+static u8 smbios_get_device_type_from_dev(struct device *dev)
 {
+	u16 pci_basesubclass = (dev->class >> 8) & 0xFFFF;
+
+	switch (pci_basesubclass) {
+	case PCI_CLASS_NOT_DEFINED:
+		return SMBIOS_DEVICE_TYPE_OTHER;
+	case PCI_CLASS_DISPLAY_VGA:
+	case PCI_CLASS_DISPLAY_XGA:
+	case PCI_CLASS_DISPLAY_3D:
+	case PCI_CLASS_DISPLAY_OTHER:
+		return SMBIOS_DEVICE_TYPE_VIDEO;
+	case PCI_CLASS_STORAGE_SCSI:
+		return SMBIOS_DEVICE_TYPE_SCSI;
+	case PCI_CLASS_NETWORK_ETHERNET:
+		return SMBIOS_DEVICE_TYPE_ETHERNET;
+	case PCI_CLASS_NETWORK_TOKEN_RING:
+		return SMBIOS_DEVICE_TYPE_TOKEN_RING;
+	case PCI_CLASS_MULTIMEDIA_VIDEO:
+	case PCI_CLASS_MULTIMEDIA_AUDIO:
+	case PCI_CLASS_MULTIMEDIA_PHONE:
+	case PCI_CLASS_MULTIMEDIA_OTHER:
+		return SMBIOS_DEVICE_TYPE_SOUND;
+	case PCI_CLASS_STORAGE_ATA:
+		return SMBIOS_DEVICE_TYPE_PATA;
+	case PCI_CLASS_STORAGE_SATA:
+		return SMBIOS_DEVICE_TYPE_SATA;
+	case PCI_CLASS_STORAGE_SAS:
+		return SMBIOS_DEVICE_TYPE_SAS;
+	default:
+		return SMBIOS_DEVICE_TYPE_UNKNOWN;
+	}
+}
+
+static bool smbios_get_type41_instance_id(struct device *dev, u8 device_type, u8 *instance_id)
+{
+#if CONFIG(SMBIOS_TYPE41_PROVIDED_BY_DEVTREE)
+	*instance_id = dev->smbios_instance_id;
+	return dev->smbios_instance_id_valid;
+#else
 	static u8 type41_inst_cnt[SMBIOS_DEVICE_TYPE_COUNT + 1] = {};
 
+	if (device_type == SMBIOS_DEVICE_TYPE_OTHER ||
+	    device_type == SMBIOS_DEVICE_TYPE_UNKNOWN)
+		return false;
+
+	if (device_type > SMBIOS_DEVICE_TYPE_COUNT)
+		return false;
+
+	*instance_id = type41_inst_cnt[device_type]++;
+	return true;
+#endif
+}
+
+static const char *smbios_get_type41_refdes(struct device *dev)
+{
+#if CONFIG(SMBIOS_TYPE41_PROVIDED_BY_DEVTREE)
+	if (dev->smbios_refdes)
+		return dev->smbios_refdes;
+#endif
+	return get_pci_subclass_name(dev);
+}
+
+static int smbios_generate_type41_from_devtree(struct device *dev, int *handle,
+					       unsigned long *current)
+{
 	if (dev->path.type != DEVICE_PATH_PCI)
 		return 0;
 	if (!dev->on_mainboard)
 		return 0;
 
-	u8 device_type = smbios_get_device_type_from_dev(dev);
+	const u8 device_type = smbios_get_device_type_from_dev(dev);
 
-	if (device_type == SMBIOS_DEVICE_TYPE_OTHER ||
-	    device_type == SMBIOS_DEVICE_TYPE_UNKNOWN)
+	u8 instance_id;
+
+	if (!smbios_get_type41_instance_id(dev, device_type, &instance_id))
 		return 0;
 
-	if (device_type > SMBIOS_DEVICE_TYPE_COUNT)
-		return 0;
-
-	const char *name = get_pci_subclass_name(dev);
+	const char *name = smbios_get_type41_refdes(dev);
 
 	return smbios_write_type41(current, handle,
 					name, // name
-					type41_inst_cnt[device_type]++, // inst
+					instance_id, // inst
 					0, // segment
 					dev->bus->secondary, //bus
 					PCI_SLOT(dev->path.pci.devfn), // device
@@ -1234,9 +1210,8 @@ static int smbios_walk_device_tree_type41(struct device *dev, int *handle,
 					device_type);
 }
 
-/* Generate Type9 entries from devicetree */
-static int smbios_walk_device_tree_type9(struct device *dev, int *handle,
-					 unsigned long *current)
+static int smbios_generate_type9_from_devtree(struct device *dev, int *handle,
+					      unsigned long *current)
 {
 	enum misc_slot_usage usage;
 	enum slot_data_bus_bandwidth bandwidth;
@@ -1278,10 +1253,21 @@ static int smbios_walk_device_tree_type9(struct device *dev, int *handle,
 				  bandwidth,
 				  usage,
 				  length,
+				  0,
 				  1,
 				  0,
 				  dev->bus->secondary,
 				  dev->path.pci.devfn);
+}
+
+int get_smbios_data(struct device *dev, int *handle, unsigned long *current)
+{
+	int len = 0;
+
+	len += smbios_generate_type9_from_devtree(dev, handle, current);
+	len += smbios_generate_type41_from_devtree(dev, handle, current);
+
+	return len;
 }
 
 static int smbios_walk_device_tree(struct device *tree, int *handle, unsigned long *current)
@@ -1290,12 +1276,15 @@ static int smbios_walk_device_tree(struct device *tree, int *handle, unsigned lo
 	int len = 0;
 
 	for (dev = tree; dev; dev = dev->next) {
-		if (dev->enabled && dev->ops && dev->ops->get_smbios_data) {
+		if (!dev->enabled)
+			continue;
+
+		if (dev->ops && dev->ops->get_smbios_data) {
 			printk(BIOS_INFO, "%s (%s)\n", dev_path(dev), dev_name(dev));
 			len += dev->ops->get_smbios_data(dev, handle, current);
+		} else {
+			len += get_smbios_data(dev, handle, current);
 		}
-		len += smbios_walk_device_tree_type9(dev, handle, current);
-		len += smbios_walk_device_tree_type41(dev, handle, current);
 	}
 	return len;
 }
@@ -1313,11 +1302,11 @@ unsigned long smbios_write_tables(unsigned long current)
 	printk(BIOS_DEBUG, "%s: %08lx\n", __func__, current);
 
 	se = (struct smbios_entry *)current;
-	current += sizeof(struct smbios_entry);
+	current += sizeof(*se);
 	current = ALIGN_UP(current, 16);
 
 	se3 = (struct smbios_entry30 *)current;
-	current += sizeof(struct smbios_entry30);
+	current += sizeof(*se3);
 	current = ALIGN_UP(current, 16);
 
 	tables = current;
@@ -1339,8 +1328,12 @@ unsigned long smbios_write_tables(unsigned long current)
 
 	const int type16 = handle;
 	update_max(len, max_struct_size, smbios_write_type16(&current, &handle));
+	const int type17 = handle;
 	update_max(len, max_struct_size, smbios_write_type17(&current, &handle, type16));
+	const int type19 = handle;
 	update_max(len, max_struct_size, smbios_write_type19(&current, &handle, type16));
+	update_max(len, max_struct_size,
+			smbios_write_type20(&current, &handle, type17, type19));
 	update_max(len, max_struct_size, smbios_write_type32(&current, handle++));
 
 	update_max(len, max_struct_size, smbios_walk_device_tree(all_devices,
@@ -1349,9 +1342,9 @@ unsigned long smbios_write_tables(unsigned long current)
 	update_max(len, max_struct_size, smbios_write_type127(&current, handle++));
 
 	/* Install SMBIOS 2.1 entry point */
-	memset(se, 0, sizeof(struct smbios_entry));
+	memset(se, 0, sizeof(*se));
 	memcpy(se->anchor, "_SM_", 4);
-	se->length = sizeof(struct smbios_entry);
+	se->length = sizeof(*se);
 	se->major_version = 3;
 	se->minor_version = 0;
 	se->max_struct_size = max_struct_size;
@@ -1361,21 +1354,20 @@ unsigned long smbios_write_tables(unsigned long current)
 	se->struct_table_address = (u32)tables;
 	se->struct_table_length = len;
 
-	se->intermediate_checksum = smbios_checksum((u8 *)se + 0x10,
-						    sizeof(struct smbios_entry) - 0x10);
-	se->checksum = smbios_checksum((u8 *)se, sizeof(struct smbios_entry));
+	se->intermediate_checksum = smbios_checksum((u8 *)se + 0x10, sizeof(*se) - 0x10);
+	se->checksum = smbios_checksum((u8 *)se, sizeof(*se));
 
 	/* Install SMBIOS 3.0 entry point */
-	memset(se3, 0, sizeof(struct smbios_entry30));
+	memset(se3, 0, sizeof(*se3));
 	memcpy(se3->anchor, "_SM3_", 5);
-	se3->length = sizeof(struct smbios_entry30);
+	se3->length = sizeof(*se3);
 	se3->major_version = 3;
 	se3->minor_version = 0;
 
 	se3->struct_table_address = (u64)tables;
 	se3->struct_table_length = len;
 
-	se3->checksum = smbios_checksum((u8 *)se3, sizeof(struct smbios_entry30));
+	se3->checksum = smbios_checksum((u8 *)se3, sizeof(*se3));
 
 	return current;
 }

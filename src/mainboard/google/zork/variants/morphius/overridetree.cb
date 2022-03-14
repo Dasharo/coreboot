@@ -1,4 +1,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+
+fw_config
+	field USB_DAUGHTERBOARD
+		option MORPHIUS_DB_PICASSO 0
+		option MORPHIUS_DB_DALI 1
+	end
+end
+
 chip soc/amd/picasso
 
 	# Start : OPN Performance Configuration
@@ -72,13 +80,29 @@ chip soc/amd/picasso
 	# See AMD 55570-B1 Table 13: PCI Device ID Assignments.
 	device domain 0 on
 		subsystemid 0x1022 0x1510 inherit
+
+		device ref lpc_bridge on
+			chip ec/google/chromeec
+				device ref cros_ec on
+					chip ec/google/chromeec/i2c_tunnel
+						device ref cros_ec_i2c_9 on
+							chip drivers/i2c/generic
+								device ref db_mst on
+									probe USB_DAUGHTERBOARD MORPHIUS_DB_DALI
+								end
+							end
+						end
+					end
+				end
+			end
+		end
 	end # domain
 
-	device mmio 0xfedc4000 on
+	device ref i2c_2 on
 		chip drivers/i2c/generic
 			register "hid" = ""ELAN0000""
 			register "desc" = ""ELAN Touchpad""
-			register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_LOW(GPIO_9)"
+			register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_9)"
 			register "wake" = "GEVENT_22"
 			register "probed" = "1"
 			device i2c 15 on end
@@ -123,7 +147,7 @@ chip soc/amd/picasso
 		end
 	end
 
-	device mmio 0xfedca000 on
+	device ref uart_1 on
 		chip drivers/uart/acpi
 			register "name" = ""CRFP""
 			register "desc" = ""Fingerprint Reader""

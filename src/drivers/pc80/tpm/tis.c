@@ -22,6 +22,7 @@
 #include <security/tpm/tis.h>
 #include <device/pnp.h>
 #include <drivers/tpm/tpm_ppi.h>
+#include <timer.h>
 #include "chip.h"
 
 #define PREFIX "lpc_tpm: "
@@ -84,7 +85,7 @@
 #define TPM_DRIVER_ERR		(~0)
 
  /* 1 second is plenty for anything TPM does.*/
-#define MAX_DELAY_US	(1000 * 1000)
+#define MAX_DELAY_US	USECS_PER_SEC
 
 /*
  * Structures defined below allow creating descriptions of TPM vendor/device
@@ -172,7 +173,7 @@ static inline u8 tpm_read_data(int locality)
 
 static inline void tpm_write_data(u8 data, int locality)
 {
-	TPM_DEBUG_IO_WRITE(TIS_REG_STS, data);
+	TPM_DEBUG_IO_WRITE(TIS_REG_DATA_FIFO, data);
 	write8(TIS_REG(locality, TIS_REG_DATA_FIFO), data);
 }
 
@@ -238,7 +239,7 @@ static inline u32 tpm_read_int_polarity(int locality)
 /*
  * tis_wait_sts()
  *
- * Wait for at least a second for a status to change its state to match the
+ * Wait for at most a second for a status to change its state to match the
  * expected state. Normally the transition happens within microseconds.
  *
  * @locality - locality
@@ -249,14 +250,15 @@ static inline u32 tpm_read_int_polarity(int locality)
  */
 static int tis_wait_sts(int locality, u8 mask, u8 expected)
 {
-	u32 time_us = MAX_DELAY_US;
-	while (time_us > 0) {
+	struct stopwatch sw;
+
+	stopwatch_init_usecs_expire(&sw, MAX_DELAY_US);
+	do {
 		u8 value = tpm_read_status(locality);
 		if ((value & mask) == expected)
 			return 0;
-		udelay(1); /* 1 us */
-		time_us--;
-	}
+		udelay(1);
+	} while (!stopwatch_expired(&sw));
 	return TPM_TIMEOUT_ERR;
 }
 
@@ -291,7 +293,7 @@ static inline int tis_expect_data(int locality)
 /*
  * tis_wait_access()
  *
- * Wait for at least a second for a access to change its state to match the
+ * Wait for at most a second for a access to change its state to match the
  * expected state. Normally the transition happens within microseconds.
  *
  * @locality - locality
@@ -302,14 +304,15 @@ static inline int tis_expect_data(int locality)
  */
 static int tis_wait_access(int locality, u8 mask, u8 expected)
 {
-	u32 time_us = MAX_DELAY_US;
-	while (time_us > 0) {
+	struct stopwatch sw;
+
+	stopwatch_init_usecs_expire(&sw, MAX_DELAY_US);
+	do {
 		u8 value = tpm_read_access(locality);
 		if ((value & mask) == expected)
 			return 0;
-		udelay(1); /* 1 us */
-		time_us--;
-	}
+		udelay(1);
+	} while (!stopwatch_expired(&sw));
 	return TPM_TIMEOUT_ERR;
 }
 
@@ -440,7 +443,6 @@ static u32 tis_senddata(const u8 *const data, u32 len)
 {
 	u32 offset = 0;
 	u16 burst = 0;
-	u32 max_cycles = 0;
 	u8 locality = 0;
 
 	if (tis_wait_ready(locality)) {
@@ -452,19 +454,19 @@ static u32 tis_senddata(const u8 *const data, u32 len)
 
 	while (1) {
 		unsigned int count;
+		struct stopwatch sw;
 
 		/* Wait till the device is ready to accept more data. */
+		stopwatch_init_usecs_expire(&sw, MAX_DELAY_US);
 		while (!burst) {
-			if (max_cycles++ == MAX_DELAY_US) {
-				printf("%s:%d failed to feed %d bytes of %d\n",
+			if (stopwatch_expired(&sw)) {
+				printf("%s:%d failed to feed %u bytes of %u\n",
 				       __FILE__, __LINE__, len - offset, len);
 				return TPM_DRIVER_ERR;
 			}
 			udelay(1);
 			burst = tpm_read_burst_count(locality);
 		}
-
-		max_cycles = 0;
 
 		/*
 		 * Calculate number of bytes the TPM is ready to accept in one
@@ -570,7 +572,7 @@ static u32 tis_readresponse(u8 *buffer, size_t *len)
 
 				if ((expected_count < offset) ||
 				    (expected_count > *len)) {
-					printf("%s:%d bad response size %d\n",
+					printf("%s:%d bad response size %u\n",
 					       __FILE__, __LINE__,
 					       expected_count);
 					return TPM_DRIVER_ERR;
@@ -600,7 +602,7 @@ static u32 tis_readresponse(u8 *buffer, size_t *len)
 
 	/* * Make sure we indeed read all there was. */
 	if (tis_has_valid_data(locality)) {
-		printf("%s:%d wrong receive status: %x %d bytes left\n",
+		printf("%s:%d wrong receive status: %x %u bytes left\n",
 		       __FILE__, __LINE__, tpm_read_status(locality),
 	               tpm_read_burst_count(locality));
 		return TPM_DRIVER_ERR;
@@ -647,7 +649,7 @@ int tis_open(void)
 
 	/* did we get a lock? */
 	if (tis_wait_received_access(locality)) {
-		printf("%s:%d - failed to lock locality %d\n",
+		printf("%s:%d - failed to lock locality %u\n",
 		       __FILE__, __LINE__, locality);
 		return TPM_DRIVER_ERR;
 	}
@@ -674,7 +676,7 @@ int tis_close(void)
 	if (tis_has_access(locality)) {
 		tis_drop_access(locality);
 		if (tis_wait_dropped_access(locality)) {
-			printf("%s:%d - failed to release locality %d\n",
+			printf("%s:%d - failed to release locality %u\n",
 			       __FILE__, __LINE__, locality);
 			return TPM_DRIVER_ERR;
 		}
@@ -877,7 +879,7 @@ static struct pnp_info pnp_dev_info[] = {
 
 static void enable_dev(struct device *dev)
 {
-	if (CONFIG(TPM1) || CONFIG(TPM2))
+	if (CONFIG(TPM))
 		pnp_enable_devices(dev, &lpc_tpm_ops,
 			ARRAY_SIZE(pnp_dev_info), pnp_dev_info);
 }

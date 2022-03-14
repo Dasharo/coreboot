@@ -29,7 +29,7 @@ void generate_cpu_entries(const struct device *device)
 	int numcpus = determine_total_number_of_cores();
 	printk(BIOS_DEBUG, "Found %d CPU(s).\n", numcpus);
 
-	/* without the outer scope, furhter ssdt addition will end up
+	/* without the outer scope, further ssdt addition will end up
 	 * within the processor statement */
 	acpigen_write_scope("\\_SB");
 	for (cpu=0; cpu < numcpus; cpu++) {
@@ -37,10 +37,4 @@ void generate_cpu_entries(const struct device *device)
 		acpigen_pop_len();
 	}
 	acpigen_pop_len();
-}
-
-unsigned long acpi_fill_mcfg(unsigned long current)
-{
-	/* chipset doesn't have mmconfig */
-	return current;
 }

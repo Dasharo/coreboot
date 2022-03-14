@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <arch/cpu.h>
 #include <stdint.h>
 #include <cpu/amd/microcode.h>
 #include <commonlib/helpers.h>
@@ -7,6 +8,9 @@
 #include <cpu/x86/msr.h>
 #include <cpu/amd/msr.h>
 #include <cbfs.h>
+#include <timestamp.h>
+
+#define CPU_MICROCODE_BLOB_NAME "cpu_microcode_blob.bin"
 
 _Static_assert(CONFIG_SOC_AMD_COMMON_BLOCK_UCODE_SIZE > 0,
 	       "SOC_AMD_COMMON_BLOCK_UCODE_SIZE is not set");
@@ -34,6 +38,8 @@ struct microcode {
 	uint8_t m_patch_data[MPB_MAX_SIZE-MPB_DATA_OFFSET];
 } __packed;
 
+_Static_assert(sizeof(struct microcode) == MPB_MAX_SIZE, "microcode size is invalid");
+
 static void apply_microcode_patch(const struct microcode *m)
 {
 	uint32_t new_patch_id;
@@ -47,7 +53,7 @@ static void apply_microcode_patch(const struct microcode *m)
 	printk(BIOS_DEBUG, "microcode: patch id to apply = 0x%08x\n",
 		m->patch_id);
 
-	msr = rdmsr(MSR_PATCH_LEVEL);
+	msr = rdmsr(IA32_BIOS_SIGN_ID);
 	new_patch_id = msr.lo;
 
 	if (new_patch_id == m->patch_id)
@@ -65,29 +71,64 @@ static uint16_t get_equivalent_processor_rev_id(void)
 	return (uint16_t)((cpuid_family & 0xff0000) >> 8 | (cpuid_family & 0xff));
 }
 
-static void amd_update_microcode(const void *ucode, size_t ucode_len,
-				uint16_t equivalent_processor_rev_id)
+static const struct microcode *find_microcode(const struct microcode *ucode, size_t ucode_len)
 {
+	uint16_t equivalent_processor_rev_id = get_equivalent_processor_rev_id();
 	const struct microcode *m;
 
-	for (m = (struct microcode *)ucode;
-		m < (struct microcode *)ucode + ucode_len/MPB_MAX_SIZE; m++) {
+	for (m = ucode; m < ucode + ucode_len / MPB_MAX_SIZE; m++) {
 		if (m->processor_rev_id == equivalent_processor_rev_id)
-			apply_microcode_patch(m);
+			return m;
 	}
+
+	printk(BIOS_WARNING, "Failed to find microcode for processor rev: %hx.\n",
+	       equivalent_processor_rev_id);
+
+	return NULL;
 }
 
 void amd_update_microcode_from_cbfs(void)
 {
-	const void *ucode;
-	size_t ucode_len;
-	uint16_t equivalent_processor_rev_id = get_equivalent_processor_rev_id();
+	static struct microcode ucode_cache;
+	static bool cache_valid;
 
-	ucode = cbfs_map("cpu_microcode_blob.bin", &ucode_len);
-	if (!ucode) {
-		printk(BIOS_WARNING, "cpu_microcode_blob.bin not found. Skipping updates.\n");
-		return;
+	struct microcode *ucode_list;
+	const struct microcode *matching_ucode;
+	size_t ucode_len;
+
+	/* Cache the buffer so each CPU doesn't need to read the uCode from flash */
+	if (!cache_valid) {
+		timestamp_add_now(TS_READ_UCODE_START);
+		ucode_list = cbfs_map(CPU_MICROCODE_BLOB_NAME, &ucode_len);
+		if (!ucode_list) {
+			printk(BIOS_WARNING,
+			       CPU_MICROCODE_BLOB_NAME " not found. Skipping updates.\n");
+			return;
+		}
+
+		matching_ucode = find_microcode(ucode_list, ucode_len);
+
+		if (!matching_ucode) {
+			cbfs_unmap(ucode_list);
+			return;
+		}
+
+		ucode_cache = *matching_ucode;
+		cache_valid = true;
+
+		cbfs_unmap(ucode_list);
+
+		timestamp_add_now(TS_READ_UCODE_END);
 	}
 
-	amd_update_microcode(ucode, ucode_len, equivalent_processor_rev_id);
+	apply_microcode_patch(&ucode_cache);
+}
+
+void preload_microcode(void)
+{
+	if (!CONFIG(CBFS_PRELOAD))
+		return;
+
+	printk(BIOS_DEBUG, "Preloading microcode %s\n", CPU_MICROCODE_BLOB_NAME);
+	cbfs_preload(CPU_MICROCODE_BLOB_NAME);
 }

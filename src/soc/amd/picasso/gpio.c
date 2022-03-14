@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <stdint.h>
-#include <amdblocks/gpio_banks.h>
-#include <amdblocks/acpimmio.h>
-#include <amdblocks/smi.h>
+#include <amdblocks/gpio.h>
 #include <soc/gpio.h>
-#include <soc/smi.h>
+#include <types.h>
 
 static const struct soc_amd_event gpio_event_table[] = {
 	{ GPIO_0, GEVENT_21 }, /* GPIO0 may only be used as PWR_BTN_L in ACPI */
@@ -38,11 +35,4 @@ void soc_get_gpio_event_table(const struct soc_amd_event **table, size_t *items)
 {
 	*table = gpio_event_table;
 	*items = ARRAY_SIZE(gpio_event_table);
-}
-
-void soc_gpio_hook(uint8_t gpio, uint8_t mux)
-{
-	/* Always program Gevent when WAKE_L_AGPIO2 is configured as WAKE_L */
-	if ((gpio == 2) && !(mux & AMD_GPIO_MUX_MASK))
-		soc_route_sci(GPIO_2_EVENT);
 }

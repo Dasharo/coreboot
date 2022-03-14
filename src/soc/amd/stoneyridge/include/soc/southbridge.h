@@ -7,7 +7,6 @@
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <soc/iomap.h>
-#include "chip.h"
 
 /*
  * AcpiMmio Region
@@ -33,10 +32,6 @@
 #define   PM_SERIRQ_NUM_BITS_24		0x001c
 #define   PM_SERIRQ_MODE		BIT(6)
 #define   PM_SERIRQ_ENABLE		BIT(7)
-
-#define PM_RTC_SHADOW			0x5b	/* state when power resumes */
-#define   PM_S5_AT_POWER_RECOVERY	0x04	/* S5 */
-#define   PM_RESTORE_S0_IF_PREV_S0	0x07	/* S0 if previously at S0 */
 
 #define PM_EVT_BLK			0x60
 #define   WAK_STS			BIT(15) /*AcpiPmEvtBlkx00 Pm1Status */
@@ -70,8 +65,6 @@
 #define   PM_ACPI_WAKE_AS_GEVENT	BIT(27)
 #define   PM_ACPI_NB_PME_GEVENT		BIT(28)
 #define   PM_ACPI_RTC_WAKE_EN		BIT(29)
-#define PM_RST_CTRL1			0xbe
-#define   SLPTYPE_CONTROL_EN		BIT(5)
 #define PM_PCIB_CFG			0xea
 #define   PM_GENINT_DISABLE		BIT(0)
 #define PM_LPC_GATING			0xec
@@ -137,18 +130,6 @@
 #define   DEBUG_PORT_ENABLE		  BIT(18)
 #define   DEBUG_PORT_MASK		(BIT(16) | BIT(17) | BIT(18))
 
-/* FCH AOAC device offsets for AOAC_DEV_D3_CTL/AOAC_DEV_D3_STATE */
-#define FCH_AOAC_DEV_CLK_GEN		0
-#define FCH_AOAC_DEV_I2C0		5
-#define FCH_AOAC_DEV_I2C1		6
-#define FCH_AOAC_DEV_I2C2		7
-#define FCH_AOAC_DEV_I2C3		8
-#define FCH_AOAC_DEV_UART0		11
-#define FCH_AOAC_DEV_UART1		12
-#define FCH_AOAC_DEV_AMBA		17
-#define FCH_AOAC_DEV_USB2		18
-#define FCH_AOAC_DEV_USB3		23
-
 #define PM1_LIMIT			16
 #define GPE0_LIMIT			28
 #define TOTAL_BITS(a)			(8 * sizeof(a))
@@ -160,46 +141,10 @@
 #define SATA_CAPABILITIES_REG		0xfc
 #define SATA_CAPABILITY_SPM		BIT(12)
 
-#define SPI_CNTRL0			0x00
-#define   SPI_BUSY			BIT(31)
-#define   SPI_READ_MODE_MASK		(BIT(30) | BIT(29) | BIT(18))
-/* Nominal is 16.7MHz on older devices, 33MHz on newer */
-#define   SPI_READ_MODE_NOM		0x00000000
-#define   SPI_READ_MODE_DUAL112		(          BIT(29)          )
-#define   SPI_READ_MODE_QUAD114		(          BIT(29) | BIT(18))
-#define   SPI_READ_MODE_DUAL122		(BIT(30)                    )
-#define   SPI_READ_MODE_QUAD144		(BIT(30) |           BIT(18))
-#define   SPI_READ_MODE_NORMAL66	(BIT(30) | BIT(29)          )
-#define   SPI_READ_MODE_FAST		(BIT(30) | BIT(29) | BIT(18))
-#define   SPI_ACCESS_MAC_ROM_EN		BIT(22)
-#define   SPI_FIFO_PTR_CLR		BIT(20)
-#define   SPI_ARB_ENABLE		BIT(19)
-#define   EXEC_OPCODE			BIT(16)
-
-#define SPI100_ENABLE			0x20
-#define   SPI_USE_SPI100		BIT(0)
-
-/* Use SPI_SPEED_16M-SPI_SPEED_66M below for the southbridge */
-#define SPI100_SPEED_CONFIG		0x22
-#define   SPI_SPEED_66M			(0x0)
-#define   SPI_SPEED_33M			(                  BIT(0))
-#define   SPI_SPEED_22M			(         BIT(1)         )
-#define   SPI_SPEED_16M			(         BIT(1) | BIT(0))
-#define   SPI_SPEED_100M		(BIT(2)                  )
-#define   SPI_SPEED_800K		(BIT(2) |          BIT(0))
-#define   SPI_NORM_SPEED_NEW_SH		12
-#define   SPI_FAST_SPEED_NEW_SH		8
-#define   SPI_ALT_SPEED_NEW_SH		4
-#define   SPI_TPM_SPEED_NEW_SH		0
-
-#define SPI100_HOST_PREF_CONFIG		0x2c
-#define   SPI_RD4DW_EN_HOST		BIT(15)
-
 /* Platform Security Processor D8F0 */
 void soc_enable_psp_early(void);
 
 #define PSP_MAILBOX_BAR			PCI_BASE_ADDRESS_4 /* BKDG: "BAR3" */
-#define PSP_MAILBOX_OFFSET		0x70 /* offset from BAR3 value */
 
 #define PSP_BAR_ENABLES			0x48
 #define  BAR3HIDE			BIT(12) /* Bit to hide BAR3 addr */
@@ -237,9 +182,7 @@ void fch_init(void *chip_info);
 void fch_final(void *chip_info);
 
 void enable_aoac_devices(void);
-void sb_clk_output_48Mhz(u32 osc);
-void sb_read_mode(u32 mode);
-void sb_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm);
+void fch_clk_output_48Mhz(u32 osc);
 
 /*
  * Call the mainboard to get the USB Over Current Map. The mainboard
@@ -249,11 +192,5 @@ void sb_set_spi100(u16 norm, u16 fast, u16 alt, u16 tpm);
  */
 int mainboard_get_xhci_oc_map(uint16_t *usb_oc_map);
 int mainboard_get_ehci_oc_map(uint16_t *usb_oc_map);
-
-/* Initialize all the i2c buses that are marked with early init. */
-void i2c_soc_early_init(void);
-
-/* Initialize all the i2c buses that are not marked with early init. */
-void i2c_soc_init(void);
 
 #endif /* AMD_STONEYRIDGE_SOUTHBRIDGE_H */

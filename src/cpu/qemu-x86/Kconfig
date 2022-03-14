@@ -2,6 +2,8 @@
 
 config CPU_QEMU_X86
 	bool
+	select ARCH_X86
+	select HAVE_EXP_X86_64_SUPPORT
 	select UDELAY_TSC
 	select TSC_MONOTONIC_TIMER
 	select UNKNOWN_TSC_RATE
@@ -15,10 +17,10 @@ choice
 
 config CPU_QEMU_X86_LAPIC_INIT
 	bool "Legacy serial LAPIC init"
+	select LEGACY_SMP_INIT
 
 config CPU_QEMU_X86_PARALLEL_MP
 	bool "Parallel MP init"
-	select PARALLEL_MP
 
 endchoice
 
@@ -33,12 +35,13 @@ config CPU_QEMU_X86_NO_SMM
 
 config CPU_QEMU_X86_ASEG_SMM
 	bool "SMM in ASEG"
-	depends on !PARALLEL_MP
+	depends on CPU_QEMU_X86_LAPIC_INIT
 	select SMM_ASEG
 
-#config CPU_QEMU_X86_TSEG_SMM
-#	bool "SMM in TSEG"
-#	select SMM_TSEG
+config CPU_QEMU_X86_TSEG_SMM
+	bool "SMM in TSEG"
+	select SMM_TSEG
+	depends on CPU_QEMU_X86_PARALLEL_MP
 
 endchoice
 
@@ -47,15 +50,7 @@ config MAX_CPUS
 	default 32 if SMM_TSEG
 	default 4
 
-config CPU_QEMU_X86_64
-	bool "Experimental 64bit support"
-	select ARCH_ALL_STAGES_X86_64
-	select ARCH_POSTCAR_X86_64
+config HEAP_SIZE
+	default 0x8000
 
-config CPU_QEMU_X86_32
-	bool
-	default n if CPU_QEMU_X86_64
-	default y
-	select ARCH_ALL_STAGES_X86_32
-	select ARCH_POSTCAR_X86_32
 endif

@@ -16,15 +16,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_FINTEK_COMMON_PRE_RAM
 	select SUPERIO_FINTEK_FAN_CONTROL
 	select SUPERIO_FINTEK_FAN_API_CALL
-	select VGA_BIOS
 	select AZALIA_PLUGIN_SUPPORT
 
 config MAINBOARD_DIR
-	string
 	default "amd/padmelon"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Padmelon"
 
 choice
@@ -49,6 +46,9 @@ config IRQ_SLOT_COUNT
 	int
 	default 11
 
+config VGA_BIOS
+	default y if USE_AMD_BLOBS
+
 config HWM_PORT
 	hex
 	default 0x0225
@@ -57,5 +57,13 @@ config HWM_PORT
 	  addresses are HWM_PORT for index an HWM_PORT + 1 for data.
 	  If changed, make sure fan_init.c IO window setting. The HWM
 	  (Hardware Monitor) is used for fan control within padmelon.
+
+if !EM100
+config EFS_SPI_READ_MODE
+	default 4          # Dual IO (1-2-2)
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+endif
 
 endif # BOARD_AMD_PADMELON

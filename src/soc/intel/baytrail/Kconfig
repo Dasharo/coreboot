@@ -8,8 +8,7 @@ if SOC_INTEL_BAYTRAIL
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
-	select ACPI_HAS_DEVICE_NVS
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SPI_FLASH_NO_EARLY_WRITES
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
@@ -19,7 +18,6 @@ config CPU_SPECIFIC_OPTIONS
 	select SOUTHBRIDGE_INTEL_COMMON_RESET
 	select SOUTHBRIDGE_INTEL_COMMON_SMBUS
 	select SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
-	select PARALLEL_MP
 	select PCIEXP_ASPM
 	select PCIEXP_COMMON_CLOCK
 	select REG_SCRIPT
@@ -41,20 +39,16 @@ config VBOOT
 	select VBOOT_MUST_REQUEST_DISPLAY
 	select VBOOT_STARTS_IN_ROMSTAGE
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xe0000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	int
 	default 256
 
 config MAX_CPUS
 	int
 	default 4
-
-config CPU_ADDR_BITS
-	int
-	default 36
 
 config SMM_TSEG_SIZE
 	hex
@@ -138,7 +132,7 @@ config HAVE_REFCODE_BLOB
 	bool "Use a binary refcode blob instead of native ModPHY init"
 	default n
 	help
-	 Use the ChromeBook refcode to intitialize high-speed PHYs instead of
+	 Use the ChromeBook refcode to initialize high-speed PHYs instead of
 	 native code.
 
 if HAVE_REFCODE_BLOB
@@ -156,10 +150,5 @@ config VGA_BIOS_ID
 	string
 	depends on VGA_BIOS
 	default "8086,0f31"
-
-config VGA_BIOS_FILE
-	string
-	depends on VGA_BIOS
-	default "pci8086,0f31.rom"
 
 endif

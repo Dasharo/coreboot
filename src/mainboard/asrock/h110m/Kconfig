@@ -17,16 +17,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select RT8168_SET_LED_MODE
 	select MAINBOARD_HAS_LPC_TPM
 
-config IRQ_SLOT_COUNT
-	int
-	default 18
+config DISABLE_HECI1_AT_PRE_BOOT
+	default y
 
 config MAINBOARD_DIR
-	string
 	default "asrock/h110m"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "H110M"
 
 config PRERAM_CBMEM_CONSOLE_SIZE
@@ -34,7 +31,6 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	default 0xd00
 
 config DIMM_SPD_SIZE
-	int
 	default 512 #DDR4
 
 endif

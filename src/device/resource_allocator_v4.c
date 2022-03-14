@@ -637,7 +637,7 @@ static void allocate_domain_resources(const struct device *domain)
  * order to accomplish best fit for the resources, a list of ranges is maintained by each
  * resource type (i/o and mem). Domain does not differentiate between mem and prefmem. Since
  * they are allocated space from the same window, the resource allocator at the domain level
- * ensures that the biggest requirement is selected indepedent of the prefetch type. Once the
+ * ensures that the biggest requirement is selected independent of the prefetch type. Once the
  * resource allocation for all immediate downstream devices is complete at the domain level,
  * resource allocator walks down the subtree for each downstream bridge to continue the
  * allocation process at the bridge level. Since bridges have separate windows for i/o, mem and
@@ -670,7 +670,7 @@ void allocate_resources(const struct device *root)
 		post_log_path(child);
 
 		/* Pass 1 - Gather requirements. */
-		printk(BIOS_INFO, "==== Resource allocator: %s - Pass 1 (gathering requirements) ===\n",
+		printk(BIOS_INFO, "=== Resource allocator: %s - Pass 1 (gathering requirements) ===\n",
 		       dev_path(child));
 		compute_domain_resources(child);
 

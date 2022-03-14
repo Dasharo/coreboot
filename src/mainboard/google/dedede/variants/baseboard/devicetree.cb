@@ -5,17 +5,37 @@ fw_config
 		option DB_PORTS_1C_LTE 2
 		option DB_PORTS_1A_HDMI 3
 		option DB_PORTS_1C_1A 4
+		option DB_PORTS_LTE_HDMI 5
+		option DB_PORTS_1C_1A_LTE 6
+		option DB_PORTS_1C 7
+		option DB_PORTS_1A_HDMI_LTE 8
+	end
+	field STYLUS 4
+		option STYLUS_ABSENT 0
+		option STYLUS_PRESENT 1
 	end
         field TABLETMODE 10
                 option TABLETMODE_DISABLED 0
                 option TABLETMODE_ENABLED 1
         end
+	field AUDIO_AMP 14 16
+		option UNPROVISIONED 0
+		option MAX98360 1
+		option RT1015_I2C 2
+		option RT1015P_AUTO 3
+	end
+	field LTE 11
+		option LTE_ABSENT 0
+		option LTE_PRESENT 1
+	end
+	field EXT_VR 18
+		option EXT_VR_PRESENT 0
+		option EXT_VR_ABSENT 1
+	end
 end
 
 chip soc/intel/jasperlake
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
+	device cpu_cluster 0 on end
 
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
@@ -153,12 +173,6 @@ chip soc/intel/jasperlake
 
 	register "tcc_offset" = "10"     # TCC of 90C
 
-	# chipset_lockdown configuration
-	# Use below format to override value in overridetree.cb if required
-	# format:
-	# register "common_soc_config.<variable_name>" = "value"
-	register "common_soc_config.chipset_lockdown" = CHIPSET_LOCKDOWN_COREBOOT
-
 	# VR config settings
 	# Imon Slope correction specified in 1/100 increment values. Range is 0-200.
 	# Eg: 125 = 1.25
@@ -188,6 +202,9 @@ chip soc/intel/jasperlake
 	#       - PM_CFG.SLP_A_MIN_ASST_WDTH (PchPmSlpAMinAssert)
 	#       - PM_CFG.SLP_LAN_MIN_ASST_WDTH
 	register "PchPmPwrCycDur" = "1"       # 1s
+
+	# Set xHCI LFPS period sampling off time, the default is 9ms.
+	register "xhci_lfps_sampling_offtime_ms" = "9"
 
 	device domain 0 on
 		device pci 00.0 on end # Host Bridge

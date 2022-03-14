@@ -1,9 +1,5 @@
 chip soc/intel/tigerlake
 
-	device cpu_cluster 0 on
-		device lapic 0 on end
-	end
-
 	# GPE configuration
 	# Note that GPE events called out in ASL code rely on this
 	# route. i.e. If this route changes then the affected GPE
@@ -12,12 +8,11 @@ chip soc/intel/tigerlake
 	register "pmc_gpe0_dw1" = "GPP_C"
 	register "pmc_gpe0_dw2" = "GPP_D"
 
-	# Enable heci1 communication
-	register "HeciEnabled" = "1"
-
 	# FSP configuration
 	register "SaGv" = "SaGv_Disabled"
-	register "SmbusEnable" = "1"
+
+	# CNVi BT enable/disable
+	register "CnviBtCore" = "true"
 
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC3)"		# Type-C Port1
 	register "usb2_ports[1]" = "USB2_PORT_EMPTY"		# M.2 WWAN
@@ -47,6 +42,10 @@ chip soc/intel/tigerlake
 	register "PcieRpEnable[3]" = "1"
 	register "PcieRpEnable[8]" = "1"
 	register "PcieRpEnable[10]" = "1"
+	register "PcieRpSlotImplemented[2]" = "1"
+	register "PcieRpSlotImplemented[3]" = "1"
+	register "PcieRpSlotImplemented[8]" = "1"
+	register "PcieRpSlotImplemented[10]" = "1"
 
 	# Enable PR LTR
 	register "PcieRpLtrEnable[2]" = "1"
@@ -125,9 +124,6 @@ chip soc/intel/tigerlake
 	# Enable DPTF
 	register "dptf_enable" = "1"
 
-	# Enable Processor Thermal Control
-	register "Device4Enable" = "1"
-
 	# Add PL1 and PL2 values
 	register "power_limits_config[POWER_LIMITS_U_2_CORE]" = "{
 		.tdp_pl1_override = 9,
@@ -152,7 +148,6 @@ chip soc/intel/tigerlake
 
 	# Intel Common SoC Config
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[1] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -192,7 +187,7 @@ chip soc/intel/tigerlake
 					.time_window_max = 32 * MSECS_PER_SEC,
 					.granularity = 200,}"
 				register "controls.power_limits.pl2" = "{
-					.min_power = 9000,
+					.min_power = 40000,
 					.max_power = 40000,
 					.time_window_min = 28 * MSECS_PER_SEC,
 					.time_window_max = 32 * MSECS_PER_SEC,
@@ -217,7 +212,6 @@ chip soc/intel/tigerlake
 		device pci 0e.0 off end # VMD			0x9A0B
 
 		# From PCH EDS(576591)
-		device pci 10.2 on  end # CNVi: BT		0xA0F5 - A0F7
 		device pci 10.6 off end # THC0			0xA0D0
 		device pci 10.7 off end # THC1			0xA0D1
 		device pci 12.0 on      # SensorHUB		0xA0FC
@@ -290,7 +284,13 @@ chip soc/intel/tigerlake
 		device pci 1c.0 off end # RP1			0xA0B8
 		device pci 1c.1 off end # RP2			0xA0B9
 		device pci 1c.2 on  end # RP3			0xA0BA
-		device pci 1c.3 on  end # RP4			0xA0BB
+		device pci 1c.3 on
+			chip soc/intel/common/block/pcie/rtd3
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_B17)"
+				register "srcclk_pin" = "2"
+				device generic 0 on end
+			end
+		end # RP4					0xA0BB
 		device pci 1c.4 off end # RP5			0xA0BC
 		device pci 1c.5 off end # RP6			0xA0BD
 		device pci 1c.6 off end # RP7			0xA0BE
@@ -324,15 +324,15 @@ chip soc/intel/tigerlake
 			chip drivers/intel/pmc_mux
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "6"
-						register "usb3_port_number" = "3"
+						use usb2_port6 as usb2_port
+						use tcss_usb3_port3 as usb3_port
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "5"
-						register "usb3_port_number" = "2"
+						use usb2_port5 as usb2_port
+						use tcss_usb3_port2 as usb3_port
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 1 alias conn1 on end

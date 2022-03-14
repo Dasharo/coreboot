@@ -4,7 +4,6 @@
  * ACPI - create the Fixed ACPI Description Tables (FADT)
  */
 
-#include <string.h>
 #include <console/console.h>
 #include <acpi/acpi.h>
 #include <acpi/acpigen.h>
@@ -40,22 +39,22 @@ unsigned long acpi_fill_madt(unsigned long current)
 	current += acpi_create_madt_ioapic((acpi_madt_ioapic_t *)current,
 			GNB_IOAPIC_ID, GNB_IO_APIC_ADDR, IO_APIC_INTERRUPTS);
 
-	/* 0: mean bus 0--->ISA */
-	/* 0: PIC 0 */
-	/* 2: APIC 2 */
-	/* 5 mean: 0101 --> Edge-triggered, Active high */
-	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)
-						current, 0, 0, 2, 0);
-	current += acpi_create_madt_irqoverride(
-		(acpi_madt_irqoverride_t *)current, 0, 9, 9,
-		MP_IRQ_TRIGGER_LEVEL | MP_IRQ_POLARITY_LOW);
+	/* PIT is connected to legacy IRQ 0, but IOAPIC GSI 2 */
+	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)current,
+			MP_BUS_ISA, 0, 2,
+			MP_IRQ_TRIGGER_DEFAULT | MP_IRQ_POLARITY_DEFAULT);
+	/* SCI IRQ type override */
+	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)current,
+			MP_BUS_ISA, 9, 9,
+			MP_IRQ_TRIGGER_LEVEL | MP_IRQ_POLARITY_LOW);
 
 	current = acpi_fill_madt_irqoverride(current);
 
 	/* create all subtables for processors */
 	current += acpi_create_madt_lapic_nmi((acpi_madt_lapic_nmi_t *)current,
-			0xff, 5, 1);
-	/* 1: LINT1 connect to NMI */
+			ACPI_MADT_LAPIC_NMI_ALL_PROCESSORS,
+			MP_IRQ_TRIGGER_EDGE | MP_IRQ_POLARITY_HIGH,
+			1 /* 1: LINT1 connect to NMI */);
 
 	return current;
 }
@@ -92,9 +91,8 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
 	fadt->duty_offset = 1;	/* CLK_VAL bits 3:1 */
 	fadt->duty_width = 3;	/* CLK_VAL bits 3:1 */
-	fadt->day_alrm = 0x0d;
+	fadt->day_alrm = RTC_DATE_ALARM;
 	fadt->mon_alrm = 0;
-	fadt->century = 0x32;
 	fadt->iapc_boot_arch = cfg->fadt_boot_arch; /* legacy free default */
 	fadt->res2 = 0;		/* reserved, MUST be 0 ACPI 3.0 */
 	fadt->flags |=	ACPI_FADT_WBINVD | /* See table 5-34 ACPI 6.3 spec */
@@ -107,8 +105,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 			ACPI_FADT_REMOTE_POWER_ON;
 	fadt->flags |= cfg->fadt_flags; /* additional board-specific flags */
 
-	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
-	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* Must be zero if ACPI Revision <= 5.0 */
 
 	fadt->x_firmware_ctl_l = 0;	/* set to 0 if firmware_ctrl is used */
 	fadt->x_firmware_ctl_h = 0;
@@ -290,7 +287,7 @@ void generate_cpu_entries(const struct device *device)
 		.addrl = PS_STS_REG,
 	};
 
-	acpi_cstate_t cstate_info[] = {
+	const acpi_cstate_t cstate_info[] = {
 		[0] = {
 			.ctype = 1,
 			.latency = 1,
@@ -318,9 +315,7 @@ void generate_cpu_entries(const struct device *device)
 		},
 	};
 
-	threads_per_core = ((cpuid_ebx(CPUID_EBX_CORE_ID) & CPUID_EBX_THREADS_MASK)
-			    >> CPUID_EBX_THREADS_SHIFT)
-			   + 1;
+	threads_per_core = get_threads_per_core();
 	pstate_count = get_pstate_info(pstate_values, pstate_xpss_values);
 	logical_cores = get_cpu_count();
 
@@ -354,7 +349,8 @@ void generate_cpu_entries(const struct device *device)
 
 		acpigen_write_CST_package(cstate_info, ARRAY_SIZE(cstate_info));
 
-		acpigen_write_CSD_package(cpu >> 1, threads_per_core, HW_ALL, 0);
+		acpigen_write_CSD_package(cpu / threads_per_core, threads_per_core,
+					  CSD_HW_ALL, 0);
 
 		acpigen_pop_len();
 	}
@@ -362,51 +358,4 @@ void generate_cpu_entries(const struct device *device)
 	acpigen_write_scope("\\");
 	acpigen_write_name_integer("PCNT", logical_cores);
 	acpigen_pop_len();
-}
-
-static int acpigen_soc_gpio_op(const char *op, unsigned int gpio_num)
-{
-	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
-		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
-					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
-		return -1;
-	}
-	/* op (gpio_num) */
-	acpigen_emit_namestring(op);
-	acpigen_write_integer(gpio_num);
-	return 0;
-}
-
-static int acpigen_soc_get_gpio_state(const char *op, unsigned int gpio_num)
-{
-	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
-		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
-					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
-		return -1;
-	}
-	/* Store (op (gpio_num), Local0) */
-	acpigen_write_store();
-	acpigen_soc_gpio_op(op, gpio_num);
-	acpigen_emit_byte(LOCAL0_OP);
-	return 0;
-}
-
-int acpigen_soc_read_rx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_state("\\_SB.GRXS", gpio_num);
-}
-
-int acpigen_soc_get_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_state("\\_SB.GTXS", gpio_num);
-}
-
-int acpigen_soc_set_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_gpio_op("\\_SB.STXS", gpio_num);
-}
-
-int acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_gpio_op("\\_SB.CTXS", gpio_num);
 }

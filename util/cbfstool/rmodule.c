@@ -38,10 +38,16 @@ static int valid_reloc_amd64(Elf64_Rela *rel)
 
 	type = ELF64_R_TYPE(rel->r_info);
 
-	/* Only these 6 relocations are expected to be found. */
+	/*
+	 * Relocation R_AMD64_32S is not allowed. It can only be safely used in protected mode,
+	 * and when the address pointed to is below 2 GiB in long mode.
+	 * Using it in assembly operations will break compilation with error:
+	 * E: Invalid reloc type: 11
+	 */
+
+	/* Only these 5 relocations are expected to be found. */
 	return (type == R_AMD64_64 ||
 		type == R_AMD64_PC64 ||
-		type == R_AMD64_32S ||
 		type == R_AMD64_32 ||
 		type == R_AMD64_PC32 ||
 	/*
@@ -60,7 +66,6 @@ static int should_emit_amd64(Elf64_Rela *rel)
 
 	/* Only emit absolute relocations */
 	return (type == R_AMD64_64 ||
-		type == R_AMD64_32S ||
 		type == R_AMD64_32);
 }
 
@@ -150,6 +155,19 @@ static int relocation_for_absolute_symbol(struct rmod_context *ctx, Elf64_Rela *
 	return 0;
 }
 
+static int relocation_for_weak_extern_symbols(struct rmod_context *ctx, Elf64_Rela *r)
+{
+	Elf64_Sym *s = &ctx->pelf.syms[ELF64_R_SYM(r->r_info)];
+
+	if (ELF64_ST_BIND(s->st_info) == STB_WEAK && ELF64_ST_TYPE(s->st_info) == STT_NOTYPE) {
+		DEBUG("Omitting relocation for undefined extern: %s\n",
+		      &ctx->strtab[s->st_name]);
+		return 1;
+	}
+
+	return 0;
+}
+
 /*
  * Relocation processing loops.
  */
@@ -182,10 +200,17 @@ static int for_each_reloc(struct rmod_context *ctx, struct reloc_filter *f,
 			if (!ctx->ops->valid_type(r)) {
 				ERROR("Invalid reloc type: %u\n",
 				      (unsigned int)ELF64_R_TYPE(r->r_info));
+				if ((ctx->ops->arch == EM_X86_64) &&
+				    (ELF64_R_TYPE(r->r_info) == R_AMD64_32S))
+					ERROR("Illegal use of 32bit sign extended addressing at offset 0x%x\n",
+					      (unsigned int)r->r_offset);
 				return -1;
 			}
 
 			if (relocation_for_absolute_symbol(ctx, r))
+				continue;
+
+			if (relocation_for_weak_extern_symbols(ctx, r))
 				continue;
 
 			/* Allow the provided filter to have precedence. */
@@ -498,8 +523,9 @@ write_elf(const struct rmod_context *ctx, const struct buffer *in,
 	/* Program contents. */
 	buffer_splice(&program, in, ctx->phdr->p_offset, ctx->phdr->p_filesz);
 
-	/* Create ELF writer with modified entry point. */
+	/* Create ELF writer. Set entry point to 0 to match section offsets. */
 	memcpy(&ehdr, &ctx->pelf.ehdr, sizeof(ehdr));
+	ehdr.e_entry = 0;
 	ew = elf_writer_init(&ehdr);
 
 	if (ew == NULL) {

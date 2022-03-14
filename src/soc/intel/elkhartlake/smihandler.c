@@ -16,12 +16,8 @@
  */
 void smihandler_soc_at_finalize(void)
 {
-	const struct soc_intel_elkhartlake_config *config;
-
-	config = config_of_soc();
-
-	if (!config->HeciEnabled && CONFIG(HECI_DISABLE_USING_SMM))
-		heci_disable();
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+		heci1_disable();
 }
 
 const smi_handler_t southbridge_smi[SMI_STS_BITS] = {

@@ -6,11 +6,18 @@ config SOC_AMD_COMMON_BLOCK_SPI
 	  instead of individual SPI specific code.
 
 config SOC_AMD_COMMON_BLOCK_SPI_DEBUG
+	bool "Enable SPI debugging"
+
+config SOC_AMD_COMMON_BLOCK_SPI_4DW_BURST
 	bool
+	depends on !SOC_AMD_STONEYRIDGE
+	help
+	  Select this option to keep the 4 DWORD burst support enabled.
 
 config EFS_SPI_READ_MODE
 	int
 	range 0 7
+	default 0 if EM100
 	default 2
 	help
 	  SPI read mode to be programmed by the PSP.
@@ -29,7 +36,8 @@ config EFS_SPI_READ_MODE
 config EFS_SPI_SPEED
 	int
 	range 0 5
-	default 0
+	default 3 if EM100
+	default 1
 	help
 	  SPI Fast Speed to be programmed by the PSP.
 	    0: 66.66Mhz
@@ -50,3 +58,45 @@ config EFS_SPI_MICRON_FLAG
 	    0: Board does not use Micron parts
 	    1: Board always uses Micron parts
 	    2: Micron parts are optional
+
+config NORMAL_READ_SPI_SPEED
+	int
+	range 0 5
+	default 3 if EM100
+	default 1
+	help
+	  SPI Normal Speed to be programmed by coreboot.
+	    0: 66.66Mhz
+	    1: 33.33MHz
+	    2: 22.22MHz
+	    3: 16.66MHz
+	    4: 100MHz
+	    5: 800KHz
+
+config ALT_SPI_SPEED
+	int
+	range 0 5
+	default 3 if EM100
+	default 1
+	help
+	  SPI ALT Speed to be programmed by coreboot.
+	    0: 66.66Mhz
+	    1: 33.33MHz
+	    2: 22.22MHz
+	    3: 16.66MHz
+	    4: 100MHz
+	    5: 800KHz
+
+config TPM_SPI_SPEED
+	int
+	range 0 5
+	default 3 if EM100
+	default 1
+	help
+	  SPI TPM Speed to be programmed by coreboot.
+	    0: 66.66Mhz
+	    1: 33.33MHz
+	    2: 22.22MHz
+	    3: 16.66MHz
+	    4: 100MHz
+	    5: 800KHz

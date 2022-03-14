@@ -12,27 +12,13 @@
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
-#include <soc/ramstage.h>
+#include <soc/refcode.h>
 #include <soc/systemagent.h>
 
 u8 systemagent_revision(void)
 {
 	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
 	return pci_read_config8(sa_dev, PCI_REVISION_ID);
-}
-
-uintptr_t sa_get_tolud_base(void)
-{
-	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
-	/* Bit 0 is lock bit, not part of address */
-	return pci_read_config32(sa_dev, TOLUD) & ~1;
-}
-
-uintptr_t sa_get_gsm_base(void)
-{
-	struct device *sa_dev = pcidev_path_on_root(SA_DEVFN_ROOT);
-	/* Bit 0 is lock bit, not part of address */
-	return pci_read_config32(sa_dev, BGSM) & ~1;
 }
 
 static int get_pcie_bar(struct device *dev, unsigned int index, u32 *base,
@@ -93,7 +79,7 @@ static int get_bar_in_mchbar(struct device *dev, unsigned int index, u32 *base,
 {
 	u32 bar;
 
-	bar = MCHBAR32(index);
+	bar = mchbar_read32(index);
 
 	/* If not enabled don't report it. */
 	if (!(bar & 0x1))
@@ -286,7 +272,7 @@ static void mc_add_dram_resources(struct device *dev, int *resource_cnt)
 
 	/*
 	 * DMA Protected Range can be reserved below TSEG for PCODE patch
-	 * or TXT/BootGuard related data.  Rather than report a base address
+	 * or TXT/Boot Guard related data.  Rather than report a base address
 	 * the DPR register reports the TOP of the region, which is the same
 	 * as TSEG base.  The region size is reported in MiB in bits 11:4.
 	 */
@@ -400,21 +386,14 @@ static void systemagent_read_resources(struct device *dev)
 
 static void systemagent_init(struct device *dev)
 {
-	u8 bios_reset_cpl, pair;
-
-	/* Enable Power Aware Interrupt Routing */
-	pair = MCHBAR8(MCH_PAIR);
-	pair &= ~0x7;	/* Clear 2:0 */
-	pair |= 0x4;	/* Fixed Priority */
-	MCHBAR8(MCH_PAIR) = pair;
+	/* Enable Power Aware Interrupt Routing. */
+	mchbar_clrsetbits8(MCH_PAIR, 0x7, 0x4);	/* Clear 2:0, set Fixed Priority */
 
 	/*
 	 * Set bits 0+1 of BIOS_RESET_CPL to indicate to the CPU
 	 * that BIOS has initialized memory and power management
 	 */
-	bios_reset_cpl = MCHBAR8(BIOS_RESET_CPL);
-	bios_reset_cpl |= 3;
-	MCHBAR8(BIOS_RESET_CPL) = bios_reset_cpl;
+	mchbar_setbits8(BIOS_RESET_CPL, 3);
 	printk(BIOS_DEBUG, "Set BIOS_RESET_CPL\n");
 
 	/* Configure turbo power limits 1ms after reset complete bit */

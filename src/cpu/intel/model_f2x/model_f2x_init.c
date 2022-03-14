@@ -3,7 +3,6 @@
 #include <device/device.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/mtrr.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/intel/hyperthreading.h>
 #include <cpu/intel/common/common.h>
@@ -12,7 +11,7 @@
 static void model_f2x_init(struct device *cpu)
 {
 	/* Turn on caching if we haven't already */
-	x86_enable_cache();
+	enable_cache();
 
 	if (!intel_ht_sibling()) {
 		/* MTRRs are shared between threads */
@@ -22,9 +21,6 @@ static void model_f2x_init(struct device *cpu)
 		/* Update the microcode */
 		intel_update_microcode_from_cbfs();
 	}
-
-	/* Enable the local CPU APICs */
-	setup_lapic();
 
 	/* Start up my CPU siblings */
 	intel_sibling_init(cpu);

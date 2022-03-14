@@ -1,13 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <gpio.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
-#define WP_GPIO	GP_E_22
-
-#define ACTIVE_LOW	0
-#define ACTIVE_HIGH	1
+#include "onboard.h"
 
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
@@ -22,14 +21,13 @@ void fill_lb_gpios(struct lb_gpios *gpios)
 int get_write_protect_state(void)
 {
 	/*
-	 * The vboot loader queries this function in romstage. The GPIOs have
+	 * This function might get queried early in romstage. The GPIOs have
 	 * not been set up yet as that configuration is done in ramstage.
 	 * Configuring this GPIO as input so that there isn't any ambiguity
 	 * in the reading.
 	 */
-#if ENV_ROMSTAGE
-	 gpio_input_pullup(WP_GPIO);
-#endif
+	if (ENV_ROMSTAGE_OR_BEFORE)
+		gpio_input_pullup(WP_GPIO);
 
 	/* WP is enabled when the pin is reading high. */
 	return !!gpio_get(WP_GPIO);

@@ -18,7 +18,7 @@ Device (MCHC)
 		Offset(0xB4),
 		BGSM,   32,	/* Base of Graphics Stolen Memory */
 		Offset(0xBC),
-		TLUD,   32,	/* Top of Low Useable DRAM */
+		TLUD,   32,	/* Top of Low Usable DRAM */
 	}
 }
 
@@ -58,7 +58,7 @@ Method (_CRS, 0, Serialized)
 		 * PCI MMIO Region (TOLUD - PCI extended base MMCONF)
 		 * This assumes that MMCONF is placed after PCI config space,
 		 * and that no resources are allocated after the MMCONF region.
-		 * This works, sicne MMCONF is hardcoded to 0xe00000000.
+		 * This works, since MMCONF is hardcoded to 0xe00000000.
 		 */
 		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
 				NonCacheable, ReadWrite,
@@ -78,12 +78,12 @@ Method (_CRS, 0, Serialized)
 	CreateDwordField (MCRS, PM01._LEN, PLEN)
 
 	/* Read C-Unit PCI CFG Reg. 0xBC for TOLUD (shadow from B-Unit) */
-	And(\_SB.PCI0.MCHC.TLUD, 0xFFF00000, PMIN)
-	/* Read MMCONF base */
-	And(\_SB.PCI0.MCHC.MCNF, 0xF0000000, PMAX)
+	PMIN = \_SB.PCI0.MCHC.TLUD & 0xFFF00000
+	/* Use PCR base to ensure PMAX below GPIO controllers attached to _SB */
+	PMAX = CONFIG_PCR_BASE_ADDRESS & 0xF0000000
 
 	/* Calculate PCI MMIO Length */
-	Add(Subtract(PMAX, PMIN), 1, PLEN)
+	PLEN = PMAX - PMIN + 1
 
 	/* Find GFX resource area in GCRS */
 	CreateDwordField(MCRS, STOM._MIN, GMIN)
@@ -91,25 +91,25 @@ Method (_CRS, 0, Serialized)
 	CreateDwordField(MCRS, STOM._LEN, GLEN)
 
 	/* Read BGSM */
-	And(\_SB.PCI0.MCHC.BGSM, 0xFFF00000, GMIN)
+	GMIN = \_SB.PCI0.MCHC.BGSM & 0xFFF00000
 
 	/* Read TOLUD */
-	And(\_SB.PCI0.MCHC.TLUD, 0xFFF00000, GMAX)
-	Decrement(GMAX)
-	Add(Subtract(GMAX, GMIN), 1, GLEN)
+	GMAX = \_SB.PCI0.MCHC.TLUD & 0xFFF00000
+	GMAX--
+	GLEN = GMAX - GMIN + 1
 
 	/* Patch PM02 range based on Memory Size */
-	If (LEqual (A4GS, 0)) {
+	If (A4GS == 0) {
 		CreateQwordField (MCRS, PM02._LEN, MSEN)
-		Store (0, MSEN)
+		MSEN = 0
 	} Else {
 		CreateQwordField (MCRS, PM02._MIN, MMIN)
 		CreateQwordField (MCRS, PM02._MAX, MMAX)
 		CreateQwordField (MCRS, PM02._LEN, MLEN)
 		/* Set 64bit MMIO resource base and length */
-		Store (A4GS, MLEN)
-		Store (A4GB, MMIN)
-		Subtract (Add (MMIN, MLEN), 1, MMAX)
+		MLEN = A4GS
+		MMIN = A4GB
+		MMAX = MMIN + MLEN - 1
 	}
 
 	Return (MCRS)

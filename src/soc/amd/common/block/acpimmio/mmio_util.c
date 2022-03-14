@@ -34,6 +34,7 @@ DECLARE_ACPIMMIO(acpimmio_asf, ASF);
 DECLARE_ACPIMMIO(acpimmio_smbus, SMBUS);
 DECLARE_ACPIMMIO(acpimmio_wdt, WDT);
 DECLARE_ACPIMMIO(acpimmio_hpet, HPET);
+DECLARE_ACPIMMIO(acpimmio_remote_gpio, REMOTE_GPIO);
 DECLARE_ACPIMMIO(acpimmio_dpvga, DPVGA);
 DECLARE_ACPIMMIO(acpimmio_xhci_pm, XHCIPM);
 DECLARE_ACPIMMIO(acpimmio_acdc_tmr, ACDCTMR);
@@ -91,6 +92,11 @@ void fch_configure_hpet(void)
 	reg |=  HPET_EN | HPET_MSI_EN;
 	reg &= ~HPET_WIDTH_SEL; /* 32 bit HPET */
 	pm_write32(PM_DECODE_EN, reg);
+}
+
+void fch_disable_kb_rst(void)
+{
+	pm_write8(PM_RST_CTRL1, pm_read8(PM_RST_CTRL1) & ~KBRSTEN);
 }
 
 /* PM registers are accessed a byte at a time via CD6/CD7 */

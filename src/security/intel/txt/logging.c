@@ -6,7 +6,28 @@
 #include <types.h>
 
 #include "txt.h"
+#include "txt_getsec.h"
 #include "txt_register.h"
+
+const char *intel_txt_processor_error_type(uint8_t type)
+{
+	static const char *const names[] = {
+		[0]  = "Legacy Shutdown",
+		[5]  = "Load memory type error in ACM area",
+		[6]  = "Unrecognized ACM format",
+		[7]  = "Failure to authenticate",
+		[8]  = "Invalid ACM format",
+		[9]  = "Unexpected Snoop hit",
+		[10] = "Invalid event",
+		[11] = "Invalid MLE",
+		[12] = "Machine check event",
+		[13] = "VMXAbort",
+		[14] = "AC memory corruption",
+		[15] = "Illegal voltage/bus ratio",
+	};
+
+	return type < ARRAY_SIZE(names) && names[type] ? names[type] : "Unknown";
+}
 
 /**
  * Logs microcode or SINIT ACM errors.
@@ -24,49 +45,8 @@ static void log_txt_error(const char *phase)
 		else
 			printk(BIOS_ERR, " Caused by: Processor\n");
 
-		printk(BIOS_ERR, " Type: ");
-
-		switch (txt_error & TXT_ERROR_MASK) {
-		case 0:
-			printk(BIOS_ERR, "Legacy Shutdown\n");
-			break;
-		case 5:
-			printk(BIOS_ERR, "Load memory type error in ACM area\n");
-			break;
-		case 6:
-			printk(BIOS_ERR, "Unrecognized ACM format\n");
-			break;
-		case 7:
-			printk(BIOS_ERR, "Failure to authenticate\n");
-			break;
-		case 8:
-			printk(BIOS_ERR, "Invalid ACM format\n");
-			break;
-		case 9:
-			printk(BIOS_ERR, "Unexpected Snoop hit\n");
-			break;
-		case 10:
-			printk(BIOS_ERR, "Invalid event\n");
-			break;
-		case 11:
-			printk(BIOS_ERR, "Invalid MLE\n");
-			break;
-		case 12:
-			printk(BIOS_ERR, "Machine check event\n");
-			break;
-		case 13:
-			printk(BIOS_ERR, "VMXAbort\n");
-			break;
-		case 14:
-			printk(BIOS_ERR, "AC memory corruption\n");
-			break;
-		case 15:
-			printk(BIOS_ERR, "Illegal voltage/bus ratio\n");
-			break;
-		default:
-			printk(BIOS_ERR, "unknown\n");
-			break;
-		}
+		printk(BIOS_ERR, " Type: %s\n",
+		       intel_txt_processor_error_type(txt_error & TXT_ERROR_MASK));
 	}
 }
 
@@ -205,7 +185,7 @@ void txt_dump_chipset_info(void)
 
 	printk(BIOS_INFO, "TEE-TXT: DIDVID 0x%x\n", read32((void *)TXT_DIDVID));
 	printk(BIOS_INFO, "TEE-TXT: production fused chipset: %s\n",
-	       (read64((void *)TXT_VER_FSBIF) & TXT_VER_PRODUCTION_FUSED) ? "true" : "false");
+	       intel_txt_chipset_is_production_fused() ? "true" : "false");
 }
 
 void txt_dump_regions(void)
@@ -239,5 +219,45 @@ void txt_dump_regions(void)
 		       bdr->lcp_pd_size);
 		printk(BIOS_DEBUG, "TEE-TXT: BiosDataRegion.lcp_pd_base 0x%llx\n",
 		       bdr->lcp_pd_base);
+	}
+}
+
+void txt_dump_getsec_parameters(void)
+{
+	uint32_t version_mask;
+	uint32_t version_numbers_supported;
+	uint32_t max_size_acm_area;
+	uint32_t memory_type_mask;
+	uint32_t senter_function_disable;
+	uint32_t txt_feature_flags;
+
+	if (!getsec_parameter(&version_mask, &version_numbers_supported,
+			      &max_size_acm_area, &memory_type_mask,
+			      &senter_function_disable, &txt_feature_flags)) {
+		printk(BIOS_WARNING, "Could not obtain GETSEC parameters\n");
+		return;
+	}
+	printk(BIOS_DEBUG, "TEE-TXT: GETSEC[PARAMETERS] returned:\n");
+	printk(BIOS_DEBUG, " ACM Version comparison mask: %08x\n", version_mask);
+	printk(BIOS_DEBUG, " ACM Version numbers supported: %08x\n",
+		version_numbers_supported);
+	printk(BIOS_DEBUG, " Max size of authenticated code execution area: %08x\n",
+		max_size_acm_area);
+	printk(BIOS_DEBUG, " External memory types supported during AC mode: %08x\n",
+		memory_type_mask);
+	printk(BIOS_DEBUG, " Selective SENTER functionality control: %02x\n",
+		(senter_function_disable >> 8) & 0x7f);
+	printk(BIOS_DEBUG, " Feature Extensions Flags: %08x\n", txt_feature_flags);
+	printk(BIOS_DEBUG, "\tS-CRTM Capability rooted in: ");
+	if (txt_feature_flags & GETSEC_PARAMS_TXT_EXT_CRTM_SUPPORT) {
+		printk(BIOS_DEBUG, "processor\n");
+	} else {
+		printk(BIOS_DEBUG, "BIOS\n");
+	}
+	printk(BIOS_DEBUG, "\tMachine Check Register: ");
+	if (txt_feature_flags & GETSEC_PARAMS_TXT_EXT_MACHINE_CHECK) {
+		printk(BIOS_DEBUG, "preserved\n");
+	} else {
+		printk(BIOS_DEBUG, "must be clear\n");
 	}
 }

@@ -7,7 +7,6 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mp.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/intel/smm_reloc.h>
 #include <cpu/intel/speedstep.h>
@@ -17,6 +16,7 @@
 #include <northbridge/intel/haswell/haswell.h>
 #include <southbridge/intel/lynxpoint/pch.h>
 #include <cpu/intel/common/common.h>
+#include <types.h>
 #include "haswell.h"
 #include "chip.h"
 
@@ -88,7 +88,7 @@ static int pcode_ready(void)
 
 	wait_count = 0;
 	do {
-		if (!(MCHBAR32(BIOS_MAILBOX_INTERFACE) & MAILBOX_RUN_BUSY))
+		if (!(mchbar_read32(BIOS_MAILBOX_INTERFACE) & MAILBOX_RUN_BUSY))
 			return 0;
 		wait_count += delay_step;
 		udelay(delay_step);
@@ -107,23 +107,23 @@ static void calibrate_24mhz_bclk(void)
 	}
 
 	/* A non-zero value initiates the PCODE calibration. */
-	MCHBAR32(BIOS_MAILBOX_DATA) = ~0;
-	MCHBAR32(BIOS_MAILBOX_INTERFACE) =
-		MAILBOX_RUN_BUSY | MAILBOX_BIOS_CMD_FSM_MEASURE_INTVL;
+	mchbar_write32(BIOS_MAILBOX_DATA, ~0);
+	mchbar_write32(BIOS_MAILBOX_INTERFACE,
+		MAILBOX_RUN_BUSY | MAILBOX_BIOS_CMD_FSM_MEASURE_INTVL);
 
 	if (pcode_ready() < 0) {
 		printk(BIOS_ERR, "PCODE: mailbox timeout on completion.\n");
 		return;
 	}
 
-	err_code = MCHBAR32(BIOS_MAILBOX_INTERFACE) & 0xff;
+	err_code = mchbar_read32(BIOS_MAILBOX_INTERFACE) & 0xff;
 
 	printk(BIOS_DEBUG, "PCODE: 24MHz BCLK calibration response: %d\n",
 	       err_code);
 
 	/* Read the calibrated value. */
-	MCHBAR32(BIOS_MAILBOX_INTERFACE) =
-		MAILBOX_RUN_BUSY | MAILBOX_BIOS_CMD_READ_CALIBRATION;
+	mchbar_write32(BIOS_MAILBOX_INTERFACE,
+		MAILBOX_RUN_BUSY | MAILBOX_BIOS_CMD_READ_CALIBRATION);
 
 	if (pcode_ready() < 0) {
 		printk(BIOS_ERR, "PCODE: mailbox timeout on read.\n");
@@ -131,7 +131,7 @@ static void calibrate_24mhz_bclk(void)
 	}
 
 	printk(BIOS_DEBUG, "PCODE: 24MHz BCLK calibration value: 0x%08x\n",
-	       MCHBAR32(BIOS_MAILBOX_DATA));
+	       mchbar_read32(BIOS_MAILBOX_DATA));
 }
 
 static u32 pcode_mailbox_read(u32 command)
@@ -142,7 +142,7 @@ static u32 pcode_mailbox_read(u32 command)
 	}
 
 	/* Send command and start transaction */
-	MCHBAR32(BIOS_MAILBOX_INTERFACE) = command | MAILBOX_RUN_BUSY;
+	mchbar_write32(BIOS_MAILBOX_INTERFACE, command | MAILBOX_RUN_BUSY);
 
 	if (pcode_ready() < 0) {
 		printk(BIOS_ERR, "PCODE: mailbox timeout on completion.\n");
@@ -150,7 +150,7 @@ static u32 pcode_mailbox_read(u32 command)
 	}
 
 	/* Read mailbox */
-	return MCHBAR32(BIOS_MAILBOX_DATA);
+	return mchbar_read32(BIOS_MAILBOX_DATA);
 }
 
 static int pcode_mailbox_write(u32 command, u32 data)
@@ -160,10 +160,10 @@ static int pcode_mailbox_write(u32 command, u32 data)
 		return -1;
 	}
 
-	MCHBAR32(BIOS_MAILBOX_DATA) = data;
+	mchbar_write32(BIOS_MAILBOX_DATA, data);
 
 	/* Send command and start transaction */
-	MCHBAR32(BIOS_MAILBOX_INTERFACE) = command | MAILBOX_RUN_BUSY;
+	mchbar_write32(BIOS_MAILBOX_INTERFACE, command | MAILBOX_RUN_BUSY);
 
 	if (pcode_ready() < 0) {
 		printk(BIOS_ERR, "PCODE: mailbox timeout on completion.\n");
@@ -365,12 +365,12 @@ void set_power_limits(u8 power_limit_1_time)
 	wrmsr(MSR_PKG_POWER_LIMIT, limit);
 
 	/* Set power limit values in MCHBAR as well */
-	MCHBAR32(MCH_PKG_POWER_LIMIT_LO) = limit.lo;
-	MCHBAR32(MCH_PKG_POWER_LIMIT_HI) = limit.hi;
+	mchbar_write32(MCH_PKG_POWER_LIMIT_LO, limit.lo);
+	mchbar_write32(MCH_PKG_POWER_LIMIT_HI, limit.hi);
 
 	/* Set DDR RAPL power limit by copying from MMIO to MSR */
-	msr.lo = MCHBAR32(MCH_DDR_POWER_LIMIT_LO);
-	msr.hi = MCHBAR32(MCH_DDR_POWER_LIMIT_HI);
+	msr.lo = mchbar_read32(MCH_DDR_POWER_LIMIT_LO);
+	msr.hi = mchbar_read32(MCH_DDR_POWER_LIMIT_HI);
 	wrmsr(MSR_DDR_RAPL_LIMIT, msr);
 
 	/* Use nominal TDP values for CPUs with configurable TDP */
@@ -395,6 +395,7 @@ static void configure_c_states(void)
 	msr.lo |= (1 << 27);	// C3 Auto Undemotion Enable
 	msr.lo |= (1 << 26);	// C1 Auto Demotion Enable
 	msr.lo |= (1 << 25);	// C3 Auto Demotion Enable
+	msr.lo |= (1 << 15);	// Lock bits 15:0
 	msr.lo &= ~(1 << 10);	// Disable IO MWAIT redirection
 
 	if (timed_mwait_capable)
@@ -520,16 +521,17 @@ static void configure_mca(void)
 {
 	msr_t msr;
 	int i;
-	int num_banks;
+	const unsigned int num_banks = mca_get_bank_count();
 
-	msr = rdmsr(IA32_MCG_CAP);
-	num_banks = msr.lo & 0xff;
-	msr.lo = msr.hi = 0;
+	/* Enable all error reporting */
+	msr.lo = msr.hi = ~0;
+	for (i = 0; i < num_banks; i++)
+		wrmsr(IA32_MC_CTL(i), msr);
+
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
 	 * of these banks are core vs package scope. For now every CPU clears
 	 * every bank. */
-	for (i = 0; i < num_banks; i++)
-		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
+	mca_clear_status();
 }
 
 /* All CPUs including BSP will run the following function. */
@@ -538,9 +540,7 @@ static void cpu_core_init(struct device *cpu)
 	/* Clear out pending MCEs */
 	configure_mca();
 
-	/* Enable the local CPU APICs */
 	enable_lapic_tpr();
-	setup_lapic();
 
 	/* Set virtualization based on Kconfig option */
 	set_vmx_and_lock();
@@ -585,8 +585,8 @@ static void pre_mp_init(void)
 static int get_cpu_count(void)
 {
 	msr_t msr;
-	int num_threads;
-	int num_cores;
+	unsigned int num_threads;
+	unsigned int num_cores;
 
 	msr = rdmsr(MSR_CORE_THREAD_COUNT);
 	num_threads = (msr.lo >> 0) & 0xffff;
@@ -639,8 +639,8 @@ static const struct mp_ops mp_ops = {
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }
 
 static struct device_operations cpu_dev_ops = {

@@ -44,15 +44,12 @@ config VBOOT_VBNV_OFFSET
 	default 0x2a
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/t420"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad T420"
 
 config USBDEBUG_HCD_INDEX
@@ -62,10 +59,6 @@ config USBDEBUG_HCD_INDEX
 config DRAM_RESET_GATE_GPIO
 	int
 	default 10
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0126.rom"
 
 config VGA_BIOS_ID
 	string

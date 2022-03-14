@@ -8,39 +8,37 @@ if SOC_INTEL_ELKHARTLAKE
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	select CACHE_MRC_SETTINGS
 	select CPU_INTEL_COMMON
 	select CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 	select CPU_SUPPORTS_PM_TIMER_EMULATION
+	select DISPLAY_FSP_VERSION_INFO
 	select FSP_COMPRESS_FSP_S_LZ4
 	select FSP_M_XIP
 	select FSP_STATUS_GLOBAL_RESET_REQUIRED_3
 	select GENERIC_GPIO_LIB
 	select HAVE_FSP_GOP
-	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select HAVE_SMI_HANDLER
 	select IDT_IN_EVERY_STAGE
-	select INTEL_CAR_NEM #TODO - Enable INTEL_CAR_NEM_ENHANCED
+	select INTEL_CAR_NEM
+	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select INTEL_GMA_ACPI
 	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
-	select IOAPIC
 	select MP_SERVICES_PPI_V1
 	select MRC_SETTINGS_PROTECT
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
-	select MICROCODE_BLOB_UNDISCLOSED
 	select PLATFORM_USES_FSP2_1
-	select REG_SCRIPT
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
-	select PMC_LOW_POWER_MODE_PROGRAM
 	select SOC_INTEL_COMMON
 	select SOC_INTEL_COMMON_ACPI_WAKE_SOURCE
 	select SOC_INTEL_COMMON_BLOCK
 	select SOC_INTEL_COMMON_BLOCK_ACPI
+	select SOC_INTEL_COMMON_BLOCK_ACPI_CPPC
 	select SOC_INTEL_COMMON_BLOCK_ACPI_GPIO
 	select SOC_INTEL_COMMON_BLOCK_ACPI_LPIT
+	select SOC_INTEL_COMMON_BLOCK_ACPI_PEP
 	select SOC_INTEL_COMMON_BLOCK_CAR
 	select SOC_INTEL_COMMON_BLOCK_CHIP_CONFIG
 	select SOC_INTEL_COMMON_BLOCK_CPU
@@ -49,10 +47,13 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_GPIO_DUAL_ROUTE_SUPPORT
 	select SOC_INTEL_COMMON_BLOCK_GSPI_VERSION_2
 	select SOC_INTEL_COMMON_BLOCK_HDA
+	select HAVE_INTEL_FSP_REPO
+	select HECI_DISABLE_USING_SMM if DISABLE_HECI1_AT_PRE_BOOT
+	select SOC_INTEL_COMMON_BLOCK_PMC_EPOC
+	select SOC_INTEL_COMMON_BLOCK_POWER_LIMIT
 	select SOC_INTEL_COMMON_BLOCK_SA
 	select SOC_INTEL_COMMON_BLOCK_SCS
 	select SOC_INTEL_COMMON_BLOCK_SMM
-	select SOC_INTEL_COMMON_BLOCK_POWER_LIMIT
 	select SOC_INTEL_COMMON_BLOCK_SMM_IO_TRAP
 	select SOC_INTEL_COMMON_FSP_RESET
 	select SOC_INTEL_COMMON_PCH_BASE
@@ -62,7 +63,9 @@ config CPU_SPECIFIC_OPTIONS
 	select TSC_MONOTONIC_TIMER
 	select UDELAY_TSC
 	select UDK_202005_BINDING
-	select DISPLAY_FSP_VERSION_INFO
+	select USE_FSP_NOTIFY_PHASE_POST_PCI_ENUM
+	select USE_FSP_NOTIFY_PHASE_READY_TO_BOOT
+	select USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE
 
 config MAX_CPUS
 	int
@@ -109,7 +112,11 @@ config MAX_ROOT_PORTS
 	int
 	default 7
 
-config MAX_PCIE_CLOCKS
+config MAX_SATA_PORTS
+	int
+	default 2
+
+config MAX_PCIE_CLOCK_SRC
 	int
 	default 6
 
@@ -127,7 +134,7 @@ config PCR_BASE_ADDRESS
 	help
 	  This option allows you to select MMIO Base Address of sideband bus.
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xc0000000
 
 config CPU_BCLK_MHZ
@@ -163,15 +170,15 @@ config CONSOLE_UART_BASE_ADDRESS
 	depends on INTEL_LPSS_UART_FOR_CONSOLE
 
 # Clock divider parameters for 115200 baud rate
-# Baudrate = (UART source clcok * M) /(N *16)
-# EHL UART source clock: 100MHz
+# Baudrate = (UART source clock * M) /(N *16)
+# EHL UART source clock: 120MHz
 config SOC_INTEL_COMMON_LPSS_UART_CLK_M_VAL
 	hex
-	default 0x30
+	default 0x25a
 
 config SOC_INTEL_COMMON_LPSS_UART_CLK_N_VAL
 	hex
-	default 0xc35
+	default 0x7fff
 
 config VBOOT
 	select VBOOT_SEPARATE_VERSTAGE
@@ -181,14 +188,53 @@ config VBOOT
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 config FSP_HEADER_PATH
-	default "src/vendorcode/intel/fsp/fsp2_0/elkhartlake/"
+	default "3rdparty/fsp/ElkhartLakeFspBinPkg/Include/"
 
 config FSP_FD_PATH
-	default "3rdparty/fsp/ElkhartLakeFspBinPkg/Fsp.fd"
+	string
+	depends on FSP_USE_REPO
+	default "3rdparty/fsp/ElkhartLakeFspBinPkg/FspBin/FSPRel.bin"
+
+config PSE_ENABLE
+	bool "Enable PSE ARM controller"
+	help
+	  Enable PSE IP. The PSE describes the integrated programmable
+	  service engine that is designed together with x86 Atom cores
+	  as an Asymmetric Multi-Processing (AMP) system.
+
+config ADD_PSE_IMAGE_TO_CBFS
+	bool "Add PSE Firmware to CBFS"
+	depends on PSE_ENABLE
+	default n
+	help
+	  PSE FW binary is required to use PSE dedicated peripherals from
+	  x86 subsystem. Once PSE is enabled, the FW will be loaded from
+	  CBFS by FSP and executed.
+
+config PSE_IMAGE_FILE
+	string "PSE binary path and filename"
+	depends on ADD_PSE_IMAGE_TO_CBFS
+	help
+	  The path and filename of the PSE binary.
+
+config PSE_FW_FILE_SIZE_KIB
+	hex "Memory buffer (KiB) for PSE FW image"
+	depends on ADD_PSE_IMAGE_TO_CBFS
+	default 0x200
+	help
+	  It is recommended to allocate at least 512 KiB for PSE FW.
+
+config PSE_CONFIG_BUFFER_SIZE_KIB
+	hex "Memory buffer (KiB) for PSE config data"
+	depends on ADD_PSE_IMAGE_TO_CBFS
+	default 0x100
+	help
+	  It is recommended to allocate at least 256 KiB for PSE config
+	  data (FSP will append PSE config data to memory region right
+	  after PSE FW memory region).
 
 config SOC_INTEL_ELKHARTLAKE_DEBUG_CONSENT
 	int "Debug Consent for EHL"
@@ -209,4 +255,14 @@ config SOC_INTEL_ELKHARTLAKE_DEBUG_CONSENT
 config PRERAM_CBMEM_CONSOLE_SIZE
 	hex
 	default 0x1400
+
+config SOC_INTEL_ELKHARTLAKE_TCO_NO_REBOOT_EN
+	bool "Disable reset on second TCO expiration"
+	depends on SOC_INTEL_COMMON_BLOCK_TCO
+	default n
+	help
+	  Setting this option will prevent a host reset if the TCO timer expires
+	  for the second time. Since this feature is not exposed to the OS in the
+	  standard TCO interface, this setting can be enabled on firmware level.
+	  This might be useful depending on the TCO policy.
 endif

@@ -58,7 +58,7 @@ static int cstate_set_c1_c6[] = {
 	C_STATE_C6,
 };
 
-acpi_cstate_t *soc_get_cstate_map(size_t *entries)
+const acpi_cstate_t *soc_get_cstate_map(size_t *entries)
 {
 	static acpi_cstate_t map[ARRAY_SIZE(cstate_set_all)];
 	int *cstate_set;
@@ -93,7 +93,6 @@ static void print_madt_ioapic(int socket, int stack,
 	printk(BIOS_DEBUG, "Adding MADT IOAPIC for socket: %d, stack: %d, ioapic_id: 0x%x, "
 	       "ioapic_base: 0x%x, gsi_base: 0x%x\n",
 	       socket, stack,  ioapic_id, ioapic_base, gsi_base);
-	return;
 }
 
 const struct madt_ioapic_info *soc_get_ioapic_info(size_t *entries)

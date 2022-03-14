@@ -28,6 +28,8 @@ CFLAGS_ramstage += $(CFLAGS_asan)
 $(obj)/ramstage/lib/asan.o: CFLAGS_asan =
 endif
 
+all-y += list.c
+
 decompressor-y += decompressor.c
 $(call src-to-obj,decompressor,$(dir)/decompressor.c): $(objcbfs)/bootblock.lz4
 $(call src-to-obj,decompressor,$(dir)/decompressor.c): CCACHE_EXTRAFILES=$(objcbfs)/bootblock.lz4
@@ -38,6 +40,7 @@ decompressor-y += delay.c
 decompressor-$(CONFIG_GENERIC_GPIO_LIB) += gpio.c
 decompressor-y += memchr.c
 decompressor-y += memcmp.c
+decompressor-$(CONFIG_CBFS_VERIFICATION) += metadata_hash.c
 decompressor-y += prog_ops.c
 decompressor-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 
@@ -108,6 +111,7 @@ romstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 romstage-$(CONFIG_CONSOLE_CBMEM) += cbmem_console.c
 
 romstage-y += compute_ip_checksum.c
+romstage-y += dimm_info_util.c
 ifeq ($(CONFIG_COMPILER_GCC),y)
 bootblock-$(CONFIG_ARCH_BOOTBLOCK_X86_32) += gcc.c
 verstage-$(CONFIG_ARCH_VERSTAGE_X86_32) += gcc.c
@@ -144,19 +148,23 @@ ramstage-$(CONFIG_BOOTSPLASH) += bootsplash.c
 ramstage-$(CONFIG_BOOTSPLASH) += jpeg.c
 ramstage-$(CONFIG_COLLECT_TIMESTAMPS) += timestamp.c
 ramstage-$(CONFIG_COVERAGE) += libgcov.c
+ramstage-y += dp_aux.c
 ramstage-y += edid.c
 ramstage-y += edid_fill_fb.c
 ramstage-y += memrange.c
-ramstage-$(CONFIG_COOP_MULTITASKING) += thread.c
-ramstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
 ramstage-$(CONFIG_GENERIC_GPIO_LIB) += gpio.c
 ramstage-$(CONFIG_GENERIC_UDELAY) += timer.c
 ramstage-y += b64_decode.c
 ramstage-$(CONFIG_ACPI_NHLT) += nhlt.c
-ramstage-y += list.c
 ramstage-$(CONFIG_FLATTENED_DEVICE_TREE) += device_tree.c
 ramstage-$(CONFIG_PAYLOAD_FIT_SUPPORT) += fit.c
 ramstage-$(CONFIG_PAYLOAD_FIT_SUPPORT) += fit_payload.c
+
+romstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
+ramstage-$(CONFIG_TIMER_QUEUE) += timer_queue.c
+
+romstage-$(CONFIG_COOP_MULTITASKING) += thread.c
+ramstage-$(CONFIG_COOP_MULTITASKING) += thread.c
 
 romstage-y += cbmem_common.c
 romstage-y += imd_cbmem.c
@@ -360,11 +368,19 @@ $(LIB_SPD_BIN): $(LIB_SPD_DEPS)
 	    (echo "HAVE_SPD_IN_CBFS is set but SPD_SOURCES is empty" && exit 1)
 	test -n "$(LIB_SPD_DEPS)" || \
 	    (echo "SPD_SOURCES is set but no SPD file was found" && exit 1)
-	for f in $(LIB_SPD_DEPS); \
-	 do for c in $$(cat $$f | grep --binary-files=text -v ^#); \
-	  do printf $$(printf '\\%o' 0x$$c); \
-	 done; \
-	done > $@
+	if [ "$(SPD_SOURCES)" = "placeholder" ]; then \
+	    printf '\0'; \
+	else \
+	    for f in $(LIB_SPD_DEPS); do \
+	        if [ ! -f $$f ]; then \
+	            echo "File not found: $$f" >&2; \
+	            exit 1; \
+	        fi; \
+	        for c in $$(cat $$f | grep --binary-files=text -v ^#); \
+	            do printf $$(printf '\\%o' 0x$$c); \
+	        done; \
+	    done; \
+	fi > $@
 
 cbfs-files-y += spd.bin
 spd.bin-file := $(LIB_SPD_BIN)

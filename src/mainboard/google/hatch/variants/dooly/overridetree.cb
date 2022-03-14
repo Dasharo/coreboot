@@ -1,3 +1,11 @@
+fw_config
+	field AUDIO_CODEC_SOURCE 8 10
+		option AUDIO_CODEC_UNPROVISIONED 0
+		option AUDIO_CODEC_ALC5682	1
+		option AUDIO_CODEC_ALC5682I_VS	2
+	end
+end
+
 chip soc/intel/cannonlake
 
 	register "power_limits_config" = "{
@@ -189,7 +197,7 @@ chip soc/intel/cannonlake
 						     TEMP_PCT(30, 30),}}"
 
 				## Passive Policy
-				register "policies.passive[0]" = "DPTF_PASSIVE(CPU, CPU,           70, 60000)"
+				register "policies.passive[0]" = "DPTF_PASSIVE(CPU, CPU,           85, 60000)"
 				register "policies.passive[1]" = "DPTF_PASSIVE(CPU, TEMP_SENSOR_0, 76, 60000)"
 
 				## Critical Policy
@@ -327,6 +335,7 @@ chip soc/intel/cannonlake
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D15)"
 				register "generic.reset_delay_ms" = "100"
+				register "generic.wake" = "GPE0_DW0_20"
 				register "generic.has_power_resource" = "1"
 				register "generic.disable_gpio_export_in_crs" = "1"
 				register "hid_desc_reg_offset" = "0x20"
@@ -345,7 +354,34 @@ chip soc/intel/cannonlake
 				register "property_list[0].type" = "ACPI_DP_TYPE_INTEGER"
 				register "property_list[0].name" = ""realtek,jd-src""
 				register "property_list[0].integer" = "1"
-				device i2c 1a on end
+				device i2c 1a on
+					probe AUDIO_CODEC_SOURCE AUDIO_CODEC_UNPROVISIONED
+					probe AUDIO_CODEC_SOURCE AUDIO_CODEC_ALC5682
+				end
+			end
+			chip drivers/i2c/generic
+				register "hid" = ""RTL5682""
+				register "name" = ""RT58""
+				register "desc" = ""Realtek RT5682""
+				register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_BOTH(GPP_H0)"
+				register "property_count" = "1"
+				register "property_list[0].type" = "ACPI_DP_TYPE_INTEGER"
+				register "property_list[0].name" = ""realtek,jd-src""
+				register "property_list[0].integer" = "1"
+				device i2c 1a on
+					probe AUDIO_CODEC_SOURCE AUDIO_CODEC_ALC5682I_VS
+				end
+			end
+			chip drivers/generic/gpio_keys
+				register "name" = ""MUTE""
+				register "label" = ""mic_mute_switch""
+				register "gpio" = "ACPI_GPIO_INPUT_ACTIVE_LOW(GPP_D16)"
+				register "key.wakeup_route" = "WAKEUP_ROUTE_DISABLED"
+				register "key.dev_name" = ""MMSW""
+				register "key.linux_code" = "SW_MUTE_DEVICE"
+				register "key.linux_input_type" = "EV_SW"
+				register "key.label" = ""mic_mute_switch_key""
+				device generic 0 on end
 			end
 		end #I2C #4
 		device pci 1a.0 on  end # eMMC

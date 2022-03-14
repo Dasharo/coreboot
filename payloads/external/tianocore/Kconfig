@@ -2,60 +2,63 @@ if PAYLOAD_TIANOCORE
 
 config PAYLOAD_FILE
 	string "Tianocore binary"
-	default "payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd"
+	default "$(obj)/UEFIPAYLOAD.fd"
 	help
-	  The result of a corebootPkg build
+	  The result of a UefiPayloadPkg build
 
 choice
 	prompt "Tianocore payload"
-	default TIANOCORE_COREBOOTPAYLOAD
+	default TIANOCORE_UEFIPAYLOAD
 	help
-	  Select which type of payload Tianocore will build (default is CorebootPayload)
-	  CorebootPayload: MrChromebox's customized version of Tianocore which works on most
-	  (all?) x86_64 devices
-	  UEFIPayload: Use upstream Tianocore payload from https://github.com/tianocore/edk2
-
-config TIANOCORE_COREBOOTPAYLOAD
-	bool "CorebootPayload"
-	help
-	  Select this option to build using MrChromebox's custom Tianocore tree
-	  i.e. a version of Tianocore that builds without any errors and just works.
+	  Select which type of payload Tianocore will build (default is UefiPayload)
+	  UefiPayload: MrChromebox's customized fork of Tianocore which works on most
+	  x86_64 devices
+	  Upstream: Use upstream Tianocore payload from https://github.com/tianocore/edk2
+	  CorebootPayload: MrChromebox's customized fork of the deprecated CorebootPayloadPkg
+	  Tianocore build target. It may work better on some older hardware (eg, x230)
+	  which does not work properly with the UefiPayloadPkg options.
 
 config TIANOCORE_UEFIPAYLOAD
 	bool "UEFIPayload"
 	help
+	  Select this option to build using MrChromebox's custom Tianocore fork,
+	  which incorporates fixes/improvements from System 76's and 9elements' trees.
+
+config TIANOCORE_UPSTREAM
+	bool "Upstream"
+	help
 	  Select this option if you want to use upstream EDK2 to build Tianocore.
 
+config TIANOCORE_COREBOOTPAYLOAD
+	bool "CorebootPayload"
+	help
+	  Select this option to build using MrChromebox's older (now deprecated)
+	  CorebootPayloadPkg-based Tianocore branch
+
+config TIANOCORE_CUSTOM
+	bool "Custom"
+	help
+	  Specify your own edk2 repository and branch to use.
+
 endchoice
 
-config TIANOCORE_REVISION_ID
+config TIANOCORE_REPOSITORY
+	string "URL to git repository for edk2"
+	default "https://github.com/tianocore/edk2" if TIANOCORE_UPSTREAM
+	default "https://github.com/mrchromebox/edk2" if TIANOCORE_UEFIPAYLOAD || TIANOCORE_COREBOOTPAYLOAD
+	help
+	  coreboot supports an array of build options which can be found below. These options
+	  will only have an effect if the relevant options exist in the target repository.
+
+config TIANOCORE_TAG_OR_REV
 	string "Insert a commit's SHA-1 or a branch name"
+	default "origin/uefipayload_202107" if TIANOCORE_UEFIPAYLOAD
+	default "origin/master" if TIANOCORE_UPSTREAM
+	default "origin/coreboot_fb" if TIANOCORE_COREBOOTPAYLOAD
 	help
-	   The commit's SHA-1 or branch name of the revision to use. Choose "upstream/master"
-	   for master branch of Tianocore release on github.
-
-choice
-	prompt "Target architecture"
-	default TIANOCORE_TARGET_X64
-	help
-	  The Tianocore coreboot Payload Package binary can be
-	  built for either only IA32 or both X64 and IA32 architectures.
-	  Select which architecture(s) to build for; default is to build
-	  for both X64 and IA32.
-
-config TIANOCORE_TARGET_IA32
-	bool "IA32"
-	help
-	  By selecting this option, the target architecture will be built
-	  for only IA32.
-
-config TIANOCORE_TARGET_X64
-	bool "X64"
-	help
-	  By selecting this option, the target architecture will be built
-	  for X64 and IA32.
-
-endchoice
+	  The commit's SHA-1 or branch name of the revision to use. This must exist in
+	  TIANOCORE_REPOSITORY, and in the case of a branch name, prefixed with origin i.e.
+	  "origin/uefipayload_202202"
 
 choice
 	prompt "Tianocore build"
@@ -76,29 +79,52 @@ config TIANOCORE_RELEASE
 
 endchoice
 
-config TIANOCORE_USE_8254_TIMER
-	bool "TianoCore 8254 Timer"
-	help
-	  Use 8254 Timer for legacy support.
+if TIANOCORE_UEFIPAYLOAD
 
-config TIANOCORE_BOOTSPLASH_IMAGE
-	bool "Use a custom bootsplash image"
+config TIANOCORE_ABOVE_4G_MEMORY
+	bool "Enable above 4G memory"
+	default n
+	help
+	  Select this option to enable Above 4G Decode. This will allow the
+	  payload to use all of the memory, rather than an maximum of 4G.
+
+	  Disabling memory above 4G is useful for bootloaders that are not
+	  fully 64-bit aware such as Qubes R4.0.4 bootloader.
+
+
+config TIANOCORE_BOOTSPLASH_FILE
+	string "Tianocore Bootsplash path and filename"
+	default "bootsplash.bmp"
 	help
 	  Select this option if you have a bootsplash image that you would
 	  like to be used. If this option is not selected, the default
 	  coreboot logo (European Brown Hare) will used.
 
-config TIANOCORE_BOOTSPLASH_FILE
-	string "Tianocore Bootsplash path and filename"
-	depends on TIANOCORE_BOOTSPLASH_IMAGE
-	default "bootsplash.bmp"
-	help
 	  The path and filename of the file to use as graphical bootsplash
-	  screen. The file format must be uncompressed BMP, and the file's
-	  resolution must be less than the native resolution of the display.
+	  image. The file must be an uncompressed BMP, in BMP 3 format.
+
+	  Linux can create these with the below command:
+	      `convert splosh.bmp BMP3:splash.bmp`
+
+	  This image will also be used as the BGRT boot image, which may
+	  persist through your OS boot process.
+
+	  See ACPI spec 6.3, 5.2.22 Boot Graphics Resource Table (BGRT), and
+	  Microsoft's documentation on BGRT positioning:
+	  Docs/Windows/Windows Drivers/Bring up guide/Boot screen components
+
+	  Accordingly, the image used should be no taller/wider than 40% of
+	  the display panel's native pixel height/width (or resolution set).
 
 	  If an absolute path is not given, the path will assumed to be
 	  relative to the coreboot root directory.
+
+config TIANOCORE_BOOT_MANAGER_ESCAPE
+	bool "Use Escape key for Boot Manager"
+	default n
+	help
+	  Use Escape as the hot-key to access the Boot Manager. This replaces
+	  the default key of F2.
 
 config TIANOCORE_BOOT_TIMEOUT
 	int "TianoCore boot timeout"
@@ -106,7 +132,59 @@ config TIANOCORE_BOOT_TIMEOUT
 	help
 	  The length of time in seconds for which the boot splash/menu prompt will be displayed.
 	  For boards with an internal display, the default value of 2s is generally sufficient.
-	  For boards without an internal display, a value of 5s is generally sufficient.
+	  For boards with an external display, a value of 5s is generally sufficient.
+
+config TIANOCORE_CBMEM_LOGGING
+	bool "Enable Tianocore logging to CBMEM"
+	help
+	  Select this option if you want to enable Tianocore logging to CBMEM.
+	  You may want to increase the default cbmem buffer size when selecting
+	  this option, especially if using a debug (vs release) build.
+	  Selecting this option will increase the payload size in CBFS by 0x10000.
+
+config TIANOCORE_FOLLOW_BGRT_SPEC
+	bool "Center logo 38.2% from the top of screen"
+	default n
+	help
+	  Follow the BGRT Specification implemented by Microsoft and
+	  the Boot Logo 38.2% will be vertically centered 38.2% from
+	  the top of the display.
+
+config TIANOCORE_HAVE_EFI_SHELL
+	bool "Include EFI Shell"
+	default y
+	help
+	  Include the EFI shell Binary
+
+config TIANOCORE_PRIORITIZE_INTERNAL
+	bool "Prioritize internal boot devices"
+	default y
+	help
+	  Prioritize internal boot devices over external devices
+
+config TIANOCORE_PS2_SUPPORT
+	bool "Support PS/2 Keyboards"
+	default y
+	help
+	  Include support for PS/2 keyboards
+
+config TIANOCORE_SD_MMC_TIMEOUT
+	int "Timeout in μs for initializing SD Card reader"
+	default 1000
+	help
+	  The amount of time allowed to initialize the SD Card reader and/or eMMC drive.
+	  Most only require 1000μs, but certain readers can take 1000000μs.
+
+endif
+
+if TIANOCORE_COREBOOTPAYLOAD
+
+config TIANOCORE_USE_8254_TIMER
+	bool "TianoCore 8254 Timer"
+	help
+	  Use 8254 Timer for legacy support.
+
+endif
 
 config TIANOCORE_ENABLE_IPXE
 	bool "Include iPXE in Tianocore payload"

@@ -36,7 +36,7 @@ void cbmem_run_init_hooks(int is_recovery)
 	function_called();
 }
 
-void *__wrap_cbmem_top_chipset(void)
+void *cbmem_top_chipset(void)
 {
 	return (void *)_cbmem_top_ptr;
 }
@@ -441,14 +441,13 @@ static void test_cbmem_entry_start(void **state)
 	/* Check if start address of found entry is the same
 	   as the one returned by cbmem_find() function */
 	assert_ptr_equal(cbmem_find(CBMEM_ENTRY_ID),
-			cbmem_entry_start(cbmem_entry_find(CBMEM_ENTRY_ID)));
+			 cbmem_entry_start(cbmem_entry_find(CBMEM_ENTRY_ID)));
 	assert_ptr_equal(cbmem_find(id1), cbmem_entry_start(cbmem_entry_find(id1)));
 	assert_ptr_equal(cbmem_find(id2), cbmem_entry_start(cbmem_entry_find(id2)));
 }
 
 /* Reimplementation for testing purposes */
-void bootmem_add_range(uint64_t start, uint64_t size,
-		       const enum bootmem_type tag)
+void bootmem_add_range(uint64_t start, uint64_t size, const enum bootmem_type tag)
 {
 	check_expected(start);
 	check_expected(size);
@@ -626,5 +625,5 @@ int main(void)
 				setup_teardown_test_imd_cbmem),
 	};
 
-	return cmocka_run_group_tests(tests, setup_group_imd_cbmem, teardown_group_imd_cbmem);
+	return cb_run_group_tests(tests, setup_group_imd_cbmem, teardown_group_imd_cbmem);
 }

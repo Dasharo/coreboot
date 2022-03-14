@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
 chip soc/intel/skylake
-	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
-	}"
-
 	register "SerialIoDevMode" = "{
 		[PchSerialIoIndexUart2] = PchSerialIoSkipInit,	/* Routed to debug header */
 	}"
@@ -60,7 +56,6 @@ chip soc/intel/skylake
 		device pci 16.3 off end		# ME KT
 		device pci 16.4 off end		# MEI #3
 		device pci 17.0 on		# SATA
-			register "SataMode"		= "SATA_AHCI"
 			register "SataSalpSupport"	= "1"
 			register "SataPortsEnable"	= "{
 				[0] = 1,
@@ -75,9 +70,6 @@ chip soc/intel/skylake
 				[3] = 1,
 			}"
 			# DevSlp not supported
-
-			# Enable test mode for SATA margining
-			register "SataTestMode" = "1"
 		end
 		device pci 19.0 on  end		# UART #2
 		device pci 1c.0 off end		# RP #1

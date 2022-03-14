@@ -2,6 +2,9 @@
 
 if BOARD_ASUS_P5QPL_AM || BOARD_ASUS_P5G41T_M_LX
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select CPU_INTEL_SOCKET_LGA775
@@ -20,21 +23,17 @@ config BOARD_SPECIFIC_OPTIONS
 	select ATHEROS_ATL1E_SETMAC if BOARD_ASUS_P5QPL_AM
 
 config MAINBOARD_DIR
-	string
 	default "asus/p5qpl-am"
 
 config VARIANT_DIR
-	string
 	default "p5qpl-am" if BOARD_ASUS_P5QPL_AM
 	default "p5g41t-m_lx" if BOARD_ASUS_P5G41T_M_LX
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "P5QPL-AM" if BOARD_ASUS_P5QPL_AM
 	default "P5G41T-M LX" if BOARD_ASUS_P5G41T_M_LX
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 # Override the default variant behavior, since the data.vbt is the same

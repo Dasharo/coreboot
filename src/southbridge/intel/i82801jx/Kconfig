@@ -9,7 +9,6 @@ config SOUTHBRIDGE_INTEL_I82801JX
 	select HAVE_SMI_HANDLER
 	select HAVE_USBDEBUG_OPTIONS
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
-	select IOAPIC
 	select SOUTHBRIDGE_INTEL_COMMON_GPIO
 	select SOUTHBRIDGE_INTEL_COMMON_PMBASE
 	select SOUTHBRIDGE_INTEL_COMMON_PMCLIB
@@ -31,12 +30,14 @@ config EHCI_BAR
 	default 0xfef00000
 
 config HPET_MIN_TICKS
-	hex
 	default 0x80
 
 ## Some enterprise variants may require an IFD
 config INTEL_DESCRIPTOR_MODE_REQUIRED
 	bool
 	default n
+
+config PCIEXP_HOTPLUG
+	default y
 
 endif

@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <boot_device.h>
 #include <bootstate.h>
 #include <cbmem.h>
-#include <console/console.h>
-#include <bcd.h>
-#include <boot_device.h>
+#include <commonlib/bsd/bcd.h>
+#include <commonlib/bsd/elog.h>
 #include <commonlib/region.h>
+#include <console/console.h>
+#include <elog.h>
 #include <fmap.h>
 #include <lib.h>
 #include <post.h>
@@ -14,8 +16,10 @@
 #include <smbios.h>
 #include <stdint.h>
 #include <string.h>
-#include <elog.h>
-#include "elog_internal.h"
+#include <timestamp.h>
+
+#define ELOG_MIN_AVAILABLE_ENTRIES	2  /* Shrink when this many can't fit */
+#define ELOG_SHRINK_PERCENTAGE		25 /* Percent of total area to remove */
 
 #if CONFIG(ELOG_DEBUG)
 #define elog_debug(STR...) printk(BIOS_DEBUG, STR)
@@ -44,7 +48,7 @@ struct elog_state {
 
 	struct region_device nv_dev;
 	/* Device that mirrors the eventlog in memory. */
-	struct mem_region_device mirror_dev;
+	struct region_device mirror_dev;
 
 	enum elog_init_state elog_initialized;
 };
@@ -56,7 +60,7 @@ static uint8_t elog_mirror_buf[ELOG_SIZE];
 
 static inline struct region_device *mirror_dev_get(void)
 {
-	return &elog_state.mirror_dev.rdev;
+	return &elog_state.mirror_dev;
 }
 
 static size_t elog_events_start(void)
@@ -179,28 +183,6 @@ static void elog_debug_dump_buffer(const char *msg)
 }
 
 /*
- * Update the checksum at the last byte
- */
-static void elog_update_checksum(struct event_header *event, u8 checksum)
-{
-	u8 *event_data = (u8 *)event;
-	event_data[event->length - 1] = checksum;
-}
-
-/*
- * Simple byte checksum for events
- */
-static u8 elog_checksum_event(struct event_header *event)
-{
-	u8 index, checksum = 0;
-	u8 *data = (u8 *)event;
-
-	for (index = 0; index < event->length; index++)
-		checksum += data[index];
-	return checksum;
-}
-
-/*
  * Check if mirrored buffer is filled with ELOG_TYPE_EOL byte from the
  * provided offset to the end of the mirrored buffer.
  */
@@ -239,24 +221,8 @@ static int elog_is_header_valid(void)
 
 	header = rdev_mmap(mirror_dev_get(), 0, sizeof(*header));
 
-	if (header == NULL) {
-		printk(BIOS_ERR, "ELOG: could not map header.\n");
-		return 0;
-	}
-
-	if (header->magic != ELOG_SIGNATURE) {
-		printk(BIOS_ERR, "ELOG: header magic 0x%X != 0x%X\n",
-		       header->magic, ELOG_SIGNATURE);
-		return 0;
-	}
-	if (header->version != ELOG_VERSION) {
-		printk(BIOS_ERR, "ELOG: header version %u != %u\n",
-		       header->version, ELOG_VERSION);
-		return 0;
-	}
-	if (header->header_size != sizeof(*header)) {
-		printk(BIOS_ERR, "ELOG: header size mismatch %u != %zu\n",
-		       header->header_size, sizeof(*header));
+	if (elog_verify_header(header) != CB_SUCCESS) {
+		printk(BIOS_ERR, "ELOG: failed to verify header.\n");
 		return 0;
 	}
 	return 1;
@@ -281,7 +247,7 @@ static size_t elog_is_event_valid(size_t offset)
 	if (len < (sizeof(*event) + sizeof(checksum)))
 		return 0;
 
-	if (len > MAX_EVENT_SIZE)
+	if (len > ELOG_MAX_EVENT_SIZE)
 		return 0;
 
 	event = elog_get_event_buffer(offset, len);
@@ -593,8 +559,6 @@ static inline u8 *elog_flash_offset_to_address(void)
  */
 int elog_smbios_write_type15(unsigned long *current, int handle)
 {
-	struct smbios_type15 *t = (struct smbios_type15 *)*current;
-	int len = sizeof(struct smbios_type15);
 	uintptr_t log_address;
 
 	size_t elog_size = region_device_sz(&elog_state.nv_dev);
@@ -614,10 +578,9 @@ int elog_smbios_write_type15(unsigned long *current, int handle)
 		return 0;
 	}
 
-	memset(t, 0, len);
-	t->type = SMBIOS_EVENT_LOG;
-	t->length = len - 2;
-	t->handle = handle;
+	struct smbios_type15 *t = smbios_carve_table(*current, SMBIOS_EVENT_LOG,
+						     sizeof(*t), handle);
+
 	t->area_length = elog_size - 1;
 	t->header_offset = 0;
 	t->data_offset = sizeof(struct elog_header);
@@ -629,6 +592,7 @@ int elog_smbios_write_type15(unsigned long *current, int handle)
 	t->log_type_descriptors = 0;
 	t->log_type_descriptor_length = 2;
 
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -650,13 +614,13 @@ int elog_clear(void)
 static int elog_find_flash(void)
 {
 	size_t total_size;
-	size_t reserved_space = ELOG_MIN_AVAILABLE_ENTRIES * MAX_EVENT_SIZE;
+	size_t reserved_space = ELOG_MIN_AVAILABLE_ENTRIES * ELOG_MAX_EVENT_SIZE;
 	struct region_device *rdev = &elog_state.nv_dev;
 
 	elog_debug("%s()\n", __func__);
 
 	/* Find the ELOG base and size in FMAP */
-	if (fmap_locate_area_as_rdev_rw("RW_ELOG", rdev) < 0) {
+	if (fmap_locate_area_as_rdev_rw(ELOG_RW_REGION_NAME, rdev) < 0) {
 		printk(BIOS_WARNING, "ELOG: Unable to find RW_ELOG in FMAP\n");
 		return -1;
 	}
@@ -786,6 +750,9 @@ int elog_init(void)
 	}
 	elog_state.elog_initialized = ELOG_BROKEN;
 
+	if (!ENV_SMM)
+		timestamp_add_now(TS_ELOG_INIT_START);
+
 	elog_debug("%s()\n", __func__);
 
 	/* Set up the backing store */
@@ -798,8 +765,7 @@ int elog_init(void)
 		printk(BIOS_ERR, "ELOG: Unable to allocate backing store\n");
 		return -1;
 	}
-	mem_region_device_rw_init(&elog_state.mirror_dev, mirror_buffer,
-				  elog_size);
+	rdev_chain_mem_rw(&elog_state.mirror_dev, mirror_buffer, elog_size);
 
 	/*
 	 * Mark as initialized to allow elog_init() to be called and deemed
@@ -819,37 +785,11 @@ int elog_init(void)
 
 	if (ENV_PAYLOAD_LOADER)
 		elog_add_boot_count();
+
+	if (!ENV_SMM)
+		timestamp_add_now(TS_ELOG_INIT_END);
+
 	return 0;
-}
-
-/*
- * Populate timestamp in event header with current time
- */
-static void elog_fill_timestamp(struct event_header *event)
-{
-#if CONFIG(RTC)
-	struct rtc_time time;
-
-	rtc_get(&time);
-	event->second = bin2bcd(time.sec);
-	event->minute = bin2bcd(time.min);
-	event->hour = bin2bcd(time.hour);
-	event->day = bin2bcd(time.mday);
-	event->month = bin2bcd(time.mon);
-	event->year = bin2bcd(time.year % 100);
-
-	/* Basic sanity check of expected ranges */
-	if (event->month > 0x12 || event->day > 0x31 || event->hour > 0x23 ||
-	    event->minute > 0x59 || event->second > 0x59)
-#endif
-	{
-		event->year   = 0;
-		event->month  = 0;
-		event->day    = 0;
-		event->hour   = 0;
-		event->minute = 0;
-		event->second = 0;
-	}
 }
 
 /*
@@ -858,6 +798,7 @@ static void elog_fill_timestamp(struct event_header *event)
 int elog_add_event_raw(u8 event_type, void *data, u8 data_size)
 {
 	struct event_header *event;
+	struct rtc_time time = { 0 };
 	u8 event_size;
 
 	elog_debug("%s(type=%X)\n", __func__, event_type);
@@ -868,7 +809,7 @@ int elog_add_event_raw(u8 event_type, void *data, u8 data_size)
 
 	/* Header + Data + Checksum */
 	event_size = sizeof(*event) + data_size + 1;
-	if (event_size > MAX_EVENT_SIZE) {
+	if (event_size > ELOG_MAX_EVENT_SIZE) {
 		printk(BIOS_ERR, "ELOG: Event(%X) data size too "
 		       "big (%d)\n", event_type, event_size);
 		return -1;
@@ -885,7 +826,11 @@ int elog_add_event_raw(u8 event_type, void *data, u8 data_size)
 	/* Fill out event data */
 	event->type = event_type;
 	event->length = event_size;
-	elog_fill_timestamp(event);
+	if (CONFIG(RTC))
+		rtc_get(&time);
+
+	elog_fill_timestamp(event, time.sec, time.min, time.hour,
+			    time.mday, time.mon, time.year);
 
 	if (data_size)
 		memcpy(&event[1], data, data_size);

@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <console/console.h>
 #include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <device/device.h>
@@ -8,12 +7,10 @@
 #include <southbridge/intel/bd82x6x/pch.h>
 #include <southbridge/intel/common/gpio.h>
 #include <ec/quanta/ene_kb3940q/ec.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include "ec.h"
-
-#define WP_GPIO		6
-#define DEVMODE_GPIO	54
-#define FORCE_RECOVERY_MODE	0
+#include "onboard.h"
 
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
@@ -42,23 +39,13 @@ int get_lid_switch(void)
 	return (ec_mem_read(EC_HW_GPI_STATUS) >> EC_GPI_LID_STAT_BIT) & 1;
 }
 
+/* FIXME: VBOOT reads this in ENV_ROMSTAGE. */
 int get_recovery_mode_switch(void)
 {
-	int ec_rec_mode = 0;
+	if (ENV_RAMSTAGE)
+		return (ec_mem_read(EC_CODE_STATE) == EC_COS_EC_RO);
 
-	if (FORCE_RECOVERY_MODE) {
-		printk(BIOS_DEBUG, "FORCING RECOVERY MODE.\n");
-		return 1;
-	}
-
-	if (ENV_RAMSTAGE) {
-		if (ec_mem_read(EC_CODE_STATE) == EC_COS_EC_RO)
-			ec_rec_mode = 1;
-
-		printk(BIOS_DEBUG, "RECOVERY MODE FROM EC: %x\n", ec_rec_mode);
-	}
-
-	return ec_rec_mode;
+	return 0;
 }
 
 static const struct cros_gpio cros_gpios[] = {
@@ -68,5 +55,19 @@ static const struct cros_gpio cros_gpios[] = {
 
 void mainboard_chromeos_acpi_generate(void)
 {
+	// TODO: MLR
+	// The firmware read/write status is a "virtual" switch and
+	// will be handled elsewhere.  Until then hard-code to
+	// read/write instead of read-only for developer mode.
+	if (CONFIG(CHROMEOS_NVS))
+		chromeos_set_ecfw_rw();
+
 	chromeos_acpi_gpio_generate(cros_gpios, ARRAY_SIZE(cros_gpios));
+}
+
+int get_ec_is_trusted(void)
+{
+	/* Do not have a Chrome EC involved in entering recovery mode;
+	   Always return trusted. */
+	return 1;
 }

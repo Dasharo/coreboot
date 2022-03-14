@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <soc/amd/common/acpi/aoac.asl>
+#include <soc/aoac_defs.h>
 #include <soc/gpio.h>
 #include <soc/iomap.h>
 #include <amdblocks/acpimmio_map.h>
@@ -33,7 +34,7 @@ Device (GPIO)
 				ResourceConsumer,
 				Level,
 				ActiveLow,
-				Exclusive, , , IRQR)
+				Shared, , , IRQR)
 			{ 0 }
 			Memory32Fixed (ReadWrite, ACPIMMIO_GPIO0_BASE, 0x400)
 		}
@@ -87,7 +88,7 @@ Device (FUR0)
 		}
 	}
 
-	AOAC_DEVICE(11, 0)
+	AOAC_DEVICE(FCH_AOAC_DEV_UART0, 0)
 }
 
 Device (FUR1) {
@@ -118,7 +119,7 @@ Device (FUR1) {
 		}
 	}
 
-	AOAC_DEVICE(12, 0)
+	AOAC_DEVICE(FCH_AOAC_DEV_UART1, 0)
 }
 
 Device (I2C0) {
@@ -154,7 +155,7 @@ Device (I2C0) {
 		Return (0x0F)
 	}
 
-	AOAC_DEVICE(5, 0)
+	AOAC_DEVICE(FCH_AOAC_DEV_I2C0, 0)
 }
 
 Device (I2C1) {
@@ -190,7 +191,7 @@ Device (I2C1) {
 		Return (0x0F)
 	}
 
-	AOAC_DEVICE(6, 0)
+	AOAC_DEVICE(FCH_AOAC_DEV_I2C1, 0)
 }
 
 Device (I2C2) {
@@ -226,12 +227,16 @@ Device (I2C2) {
 		Return (0x0F)
 	}
 
-	AOAC_DEVICE(7, 0)
+	AOAC_DEVICE(FCH_AOAC_DEV_I2C2, 0)
 }
 
 Device (I2C3)
 {
+#if CONFIG(SOC_AMD_COMMON_BLOCK_I2C3_TPM_SHARED_WITH_PSP)
+	Name (_HID, "AMDI0019")
+#else
 	Name (_HID, "AMDI0010")
+#endif
 	Name (_UID, 0x3)
 	Method (_CRS, 0) {
 		Local0 = ResourceTemplate() {
@@ -262,7 +267,10 @@ Device (I2C3)
 		Return (0x0F)
 	}
 
-	AOAC_DEVICE(8, 0)
+/* If this device is shared with PSP, then PSP takes care of power management */
+#if !CONFIG(SOC_AMD_COMMON_BLOCK_I2C3_TPM_SHARED_WITH_PSP)
+	AOAC_DEVICE(FCH_AOAC_DEV_I2C3, 0)
+#endif
 }
 
 Device (MISC)

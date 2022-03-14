@@ -17,7 +17,8 @@
 #include <libgen.h>
 #include <assert.h>
 #include <regex.h>
-#include <commonlib/cbmem_id.h>
+#include <commonlib/bsd/cbmem_id.h>
+#include <commonlib/loglevel.h>
 #include <commonlib/timestamp_serialized.h>
 #include <commonlib/tcpa_log_serialized.h>
 #include <commonlib/coreboot_tables.h>
@@ -621,22 +622,29 @@ static void dump_timestamps(int mach_readable)
 	if (!tst_p)
 		die("Unable to map full timestamp table\n");
 
-	/* Report the base time within the table. */
-	prev_stamp = 0;
-	if (mach_readable)
-		timestamp_print_parseable_entry(0,  tst_p->base_time,
-						prev_stamp);
-	else
-		timestamp_print_entry(0,  tst_p->base_time, prev_stamp);
-	prev_stamp = tst_p->base_time;
-
-	sorted_tst_p = malloc(size);
+	sorted_tst_p = malloc(size + sizeof(struct timestamp_entry));
 	if (!sorted_tst_p)
 		die("Failed to allocate memory");
 	aligned_memcpy(sorted_tst_p, tst_p, size);
 
+	/*
+	 * Insert a timestamp to represent the base time (start of coreboot),
+	 * in case we have to rebase for negative timestamps below.
+	 */
+	sorted_tst_p->entries[tst_p->num_entries].entry_id = 0;
+	sorted_tst_p->entries[tst_p->num_entries].entry_stamp = 0;
+	sorted_tst_p->num_entries += 1;
+
 	qsort(&sorted_tst_p->entries[0], sorted_tst_p->num_entries,
 	      sizeof(struct timestamp_entry), compare_timestamp_entries);
+
+	/*
+	 * If there are negative timestamp entries, rebase all of the
+	 * timestamps to the lowest one in the list.
+	 */
+	if (sorted_tst_p->entries[0].entry_stamp < 0)
+		sorted_tst_p->base_time = -sorted_tst_p->entries[0].entry_stamp;
+	prev_stamp = 0;
 
 	total_time = 0;
 	for (uint32_t i = 0; i < sorted_tst_p->num_entries; i++) {
@@ -715,12 +723,41 @@ struct cbmem_console {
 #define CBMC_CURSOR_MASK ((1 << 28) - 1)
 #define CBMC_OVERFLOW (1 << 31)
 
+enum console_print_type {
+	CONSOLE_PRINT_FULL = 0,
+	CONSOLE_PRINT_LAST,
+	CONSOLE_PRINT_PREVIOUS,
+};
+
+static int parse_loglevel(char *arg, int *print_unknown_logs)
+{
+	if (arg[0] == '+') {
+		*print_unknown_logs = 1;
+		arg++;
+	} else {
+		*print_unknown_logs = 0;
+	}
+
+	char *endptr;
+	int loglevel = strtol(arg, &endptr, 0);
+	if (*endptr == '\0' && loglevel >= BIOS_EMERG && loglevel <= BIOS_LOG_PREFIX_MAX_LEVEL)
+		return loglevel;
+
+	/* Only match first 3 characters so `NOTE` and `NOTICE` both match. */
+	for (int i = BIOS_EMERG; i <= BIOS_LOG_PREFIX_MAX_LEVEL; i++)
+		if (!strncasecmp(arg, bios_log_prefix[i], 3))
+			return i;
+
+	*print_unknown_logs = 1;
+	return BIOS_NEVER;
+}
+
 /* dump the cbmem console */
-static void dump_console(int one_boot_only)
+static void dump_console(enum console_print_type type, int max_loglevel, int print_unknown_logs)
 {
 	const struct cbmem_console *console_p;
 	char *console_c;
-	size_t size, cursor;
+	size_t size, cursor, previous;
 	struct mapping console_mapping;
 
 	if (console.tag != LB_TAG_CBMEM_CONSOLE) {
@@ -770,15 +807,16 @@ static void dump_console(int one_boot_only)
 	/* Slight memory corruption may occur between reboots and give us a few
 	   unprintable characters like '\0'. Replace them with '?' on output. */
 	for (cursor = 0; cursor < size; cursor++)
-		if (!isprint(console_c[cursor]) && !isspace(console_c[cursor]))
+		if (!isprint(console_c[cursor]) && !isspace(console_c[cursor])
+		    && !BIOS_LOG_IS_MARKER(console_c[cursor]))
 			console_c[cursor] = '?';
 
-	/* We detect the last boot by looking for a bootblock, romstage or
+	/* We detect the reboot cutoff by looking for a bootblock, romstage or
 	   ramstage banner, in that order (to account for platforms without
 	   CONFIG_BOOTBLOCK_CONSOLE and/or CONFIG_EARLY_CONSOLE). Once we find
-	   a banner, store the last match for that stage in cursor and stop. */
-	cursor = 0;
-	if (one_boot_only) {
+	   a banner, store the last two matches for that stage and stop. */
+	cursor = previous = 0;
+	if (type != CONSOLE_PRINT_FULL) {
 #define BANNER_REGEX(stage) \
 		"\n\ncoreboot-[^\n]* " stage " starting.*\\.\\.\\.\n"
 #define OVERFLOW_REGEX(stage) "\n\\*\\*\\* Pre-CBMEM " stage " console overflow"
@@ -796,13 +834,46 @@ static void dump_console(int one_boot_only)
 			assert(!regcomp(&re, regex[i], 0));
 
 			/* Keep looking for matches so we find the last one. */
-			while (!regexec(&re, console_c + cursor, 1, &match, 0))
+			while (!regexec(&re, console_c + cursor, 1, &match, 0)) {
+				previous = cursor;
 				cursor += match.rm_so + 1;
+			}
 			regfree(&re);
 		}
 	}
 
-	puts(console_c + cursor);
+	if (type == CONSOLE_PRINT_PREVIOUS) {
+		console_c[cursor] = '\0';
+		cursor = previous;
+	}
+
+	char c;
+	int suppressed = 0;
+	int tty = isatty(fileno(stdout));
+	while ((c = console_c[cursor++])) {
+		if (BIOS_LOG_IS_MARKER(c)) {
+			int lvl = BIOS_LOG_MARKER_TO_LEVEL(c);
+			if (lvl > max_loglevel) {
+				suppressed = 1;
+				continue;
+			}
+			suppressed = 0;
+			if (tty)
+				printf(BIOS_LOG_ESCAPE_PATTERN, bios_log_escape[lvl]);
+			printf(BIOS_LOG_PREFIX_PATTERN, bios_log_prefix[lvl]);
+		} else {
+			if (!suppressed)
+				putchar(c);
+			if (c == '\n') {
+				if (tty && !suppressed)
+					printf(BIOS_LOG_ESCAPE_RESET);
+				suppressed = !print_unknown_logs;
+			}
+		}
+	}
+	if (tty)
+		printf(BIOS_LOG_ESCAPE_RESET);
+
 	free(console_c);
 	unmap_memory(&console_mapping);
 }
@@ -1087,6 +1158,8 @@ static void print_usage(const char *name, int exit_code)
 	printf("\n"
 	     "   -c | --console:                   print cbmem console\n"
 	     "   -1 | --oneboot:                   print cbmem console for last boot only\n"
+	     "   -2 | --2ndtolast:                 print cbmem console for the boot that came before the last one only\n"
+	     "   -B | --loglevel:                  maximum loglevel to print; prefix `+` (e.g. -B +INFO) to also print lines that have no level\n"
 	     "   -C | --coverage:                  dump coverage information\n"
 	     "   -l | --list:                      print cbmem table of contents\n"
 	     "   -x | --hexdump:                   print hexdump of cbmem area\n"
@@ -1227,13 +1300,17 @@ int main(int argc, char** argv)
 	int print_timestamps = 0;
 	int print_tcpa_log = 0;
 	int machine_readable_timestamps = 0;
-	int one_boot_only = 0;
+	enum console_print_type console_type = CONSOLE_PRINT_FULL;
 	unsigned int rawdump_id = 0;
+	int max_loglevel = BIOS_NEVER;
+	int print_unknown_logs = 1;
 
 	int opt, option_index = 0;
 	static struct option long_options[] = {
 		{"console", 0, 0, 'c'},
 		{"oneboot", 0, 0, '1'},
+		{"2ndtolast", 0, 0, '2'},
+		{"loglevel", required_argument, 0, 'B'},
 		{"coverage", 0, 0, 'C'},
 		{"list", 0, 0, 'l'},
 		{"tcpa-log", 0, 0, 'L'},
@@ -1246,7 +1323,7 @@ int main(int argc, char** argv)
 		{"help", 0, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "c1CltTLxVvh?r:",
+	while ((opt = getopt_long(argc, argv, "c12B:CltTLxVvh?r:",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'c':
@@ -1255,8 +1332,16 @@ int main(int argc, char** argv)
 			break;
 		case '1':
 			print_console = 1;
-			one_boot_only = 1;
+			console_type = CONSOLE_PRINT_LAST;
 			print_defaults = 0;
+			break;
+		case '2':
+			print_console = 1;
+			console_type = CONSOLE_PRINT_PREVIOUS;
+			print_defaults = 0;
+			break;
+		case 'B':
+			max_loglevel = parse_loglevel(optarg, &print_unknown_logs);
 			break;
 		case 'C':
 			print_coverage = 1;
@@ -1383,7 +1468,7 @@ int main(int argc, char** argv)
 		die("Table not found.\n");
 
 	if (print_console)
-		dump_console(one_boot_only);
+		dump_console(console_type, max_loglevel, print_unknown_logs);
 
 	if (print_coverage)
 		dump_coverage();

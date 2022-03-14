@@ -7,7 +7,7 @@
 #include <soc/iomap.h>
 #include "psp_def.h"
 
-static const char *psp_status_nobase = "error: PSP BAR3 not assigned";
+static const char *psp_status_nobase = "error: PSP_ADDR_MSR and PSP BAR3 not assigned";
 static const char *psp_status_halted = "error: PSP in halted state";
 static const char *psp_status_recovery = "error: PSP recovery required";
 static const char *psp_status_errcmd = "error sending command";
@@ -53,29 +53,6 @@ void psp_print_cmd_status(int cmd_status, struct mbox_buffer_header *header)
 		printk(BIOS_WARNING, "%s\n", status_to_string(cmd_status));
 	else
 		printk(BIOS_DEBUG, "OK\n");
-}
-
-/*
- * Notify the PSP that DRAM is present.  Upon receiving this command, the PSP
- * will load its OS into fenced DRAM that is not accessible to the x86 cores.
- */
-int psp_notify_dram(void)
-{
-	int cmd_status;
-	struct mbox_default_buffer buffer = {
-		.header = {
-			.size = sizeof(buffer)
-		}
-	};
-
-	printk(BIOS_DEBUG, "PSP: Notify that DRAM is available... ");
-
-	cmd_status = send_psp_command(MBOX_BIOS_CMD_DRAM_INFO, &buffer);
-
-	/* buffer's status shouldn't change but report it if it does */
-	psp_print_cmd_status(cmd_status, &buffer.header);
-
-	return cmd_status;
 }
 
 /*

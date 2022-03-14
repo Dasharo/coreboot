@@ -16,12 +16,16 @@
  */
 void smihandler_soc_at_finalize(void)
 {
-	const struct soc_intel_jasperlake_config *config;
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+		heci1_disable();
+}
 
-	config = config_of_soc();
-
-	if (!config->HeciEnabled && CONFIG(HECI_DISABLE_USING_SMM))
-		heci_disable();
+int smihandler_soc_disable_busmaster(pci_devfn_t dev)
+{
+	/* Skip disabling PMC bus master to keep IO decode enabled */
+	if (dev == PCH_DEV_PMC)
+		return 0;
+	return 1;
 }
 
 const smi_handler_t southbridge_smi[SMI_STS_BITS] = {

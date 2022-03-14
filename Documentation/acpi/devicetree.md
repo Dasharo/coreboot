@@ -5,7 +5,7 @@
 ACPI exposes a platform-independent interface for operating systems to perform
 power management and other platform-level functions.  Some operating systems
 also use ACPI to enumerate devices that are not immediately discoverable, such
-as those behind I2C or SPI busses (in contrast to PCI).  This document discusses
+as those behind I2C or SPI buses (in contrast to PCI).  This document discusses
 the way that coreboot uses the concept of a "device tree" to generate ACPI
 tables for usage by the operating system.
 
@@ -20,6 +20,62 @@ devicetree.  Note, not all mainboards will have the devicetree/overridetree
 distinction, and may only have a devicetree.cb file.  Or you can always just
 write the ASL (ACPI Source Language) code yourself.
 
+### Naming and referencing devices
+
+When declaring a device, it can optionally be given an alias that can be
+referred to elsewhere. This is particularly useful to declare a device in one
+device tree while allowing its configuration to be more easily changed in an
+overlay. For instance, the AMD Picasso SoC definition
+(`soc/amd/picasso/chipset.cb`) declares an IOMMU on a PCI bus that is disabled
+by default:
+
+```
+chip soc/amd/picasso
+	device domain 0 on
+		...
+		device pci 00.2 alias iommu off end
+		...
+	end
+end
+```
+
+A device based on this SoC can override the configuration for the IOMMU without
+duplicating addresses, as in
+`mainboard/google/zork/variants/baseboard/devicetree_trembyle.cb`:
+
+```
+chip soc/amd/picasso
+	device domain 0
+		...
+		device ref iommu on end
+		...
+	end
+end
+```
+
+In this example the override simply enables the IOMMU, but it could also
+set additional properties (or even add child devices) inside the IOMMU `device`
+block.
+
+---
+
+It is important to note that devices that use `device ref` syntax to override
+previous definitions of a device by alias must be placed at **exactly the same
+location in the device tree** as the original declaration. If not, this will
+actually create another device rather than overriding the properties of the
+existing one. For instance, if the above snippet from `devicetree_trembyle.cb`
+were written as follows:
+
+```
+chip soc/amd/picasso
+	# NOTE: not inside domain 0!
+	device ref iommu on end
+end
+```
+
+Then this would leave the SoC's IOMMU disabled, and instead create a new device
+with no properties as a direct child of the SoC.
+
 ## Device drivers
 
 Let's take a look at an example entry from
@@ -30,7 +86,7 @@ device pci 15.0 on
 	chip drivers/i2c/generic
 		register "hid" = ""ELAN0000""
 		register "desc" = ""ELAN Touchpad""
-		register "irq" = "ACPI_IRQ_WAKE_EDGE_LOW(GPP_A21_IRQ)"
+		register "irq" = "ACPI_IRQ_WAKE_LEVEL_LOW(GPP_A21_IRQ)"
 		register "wake" = "GPE0_DW0_21"
 		device i2c 15 on end
 	end
@@ -60,12 +116,12 @@ Scope (\_SB.PCI0.I2C0)
             I2cSerialBusV2 (0x0015, ControllerInitiated, 400000,
                 AddressingMode7Bit, "\\_SB.PCI0.I2C0",
                 0x00, ResourceConsumer, , Exclusive, )
-            Interrupt (ResourceConsumer, Edge, ActiveLow, ExclusiveAndWake, ,, )
+            Interrupt (ResourceConsumer, Level, ActiveLow, ExclusiveAndWake, ,, )
             {
                 0x0000002D,
             }
         })
-        Name (_S0W, 0x04)  // _S0W: S0 Device Wake State
+        Name (_S0W, ACPI_DEVICE_SLEEP_D3_HOT)  // _S0W: S0 Device Wake State
         Name (_PRW, Package (0x02)  // _PRW: Power Resources for Wake
         {
             0x15, // GPE #21
@@ -136,7 +192,7 @@ corresponds to **const char *desc** and in ASL:
 It also adds the interrupt,
 
 ```
-    Interrupt (ResourceConsumer, Edge, ActiveLow, ExclusiveAndWake, ,, )
+    Interrupt (ResourceConsumer, Level, ActiveLow, ExclusiveAndWake, ,, )
     {
         0x0000002D,
     }
@@ -145,15 +201,15 @@ It also adds the interrupt,
 which comes from:
 
 ```
-    register "irq" = "ACPI_IRQ_WAKE_EDGE_LOW(GPP_A21_IRQ)"
+    register "irq" = "ACPI_IRQ_WAKE_LEVEL_LOW(GPP_A21_IRQ)"
 ```
 
-The GPIO pin IRQ settings control the "Edge", "ActiveLow", and
-"ExclusiveAndWake" settings seen above (edge means it is an edge-triggered
-interrupt as opposed to level-triggered; active low means the interrupt is
-triggered on a falling edge).
+The GPIO pin IRQ settings control the "Level", "ActiveLow", and
+"ExclusiveAndWake" settings seen above (level means it is a level-triggered
+interrupt as opposed to edge-triggered; active low means the interrupt is
+triggered when the signal is low).
 
-Note that the ACPI_IRQ_WAKE_EDGE_LOW macro informs the platform that the GPIO
+Note that the ACPI_IRQ_WAKE_LEVEL_LOW macro informs the platform that the GPIO
 will be routed through SCI (ACPI's System Control Interrupt) for use as a wake
 source.  Also note that the IRQ names are SoC-specific, and you will need to
 find the names in your SoC's header file.  The ACPI_* macros are defined in
@@ -196,7 +252,7 @@ for more details on ACPI methods)
 
 ### _S0W (S0 Device Wake State)
 _S0W indicates the deepest S0 sleep state this device can wake itself from,
-which in this case is 4, representing _D3cold_.
+which in this case is ACPI_DEVICE_SLEEP_D3_HOT, representing _D3hot_.
 
 ### _PRW (Power Resources for Wake)
 _PRW indicates the power resources and events required for wake.  There are no

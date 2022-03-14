@@ -20,11 +20,11 @@
 #include <soc/nhlt.h>
 #include <soc/pci_devs.h>
 #include <stdint.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 #include <variant/ec.h>
 #include <variant/gpio.h>
 
 extern struct chip_operations drivers_i2c_generic_ops;
+extern struct chip_operations drivers_i2c_cs42l42_ops;
 extern struct chip_operations drivers_i2c_da7219_ops;
 
 static bool is_cnvi_held_in_reset(void)
@@ -61,6 +61,7 @@ static void gpio_modification_by_ssfc(struct pad_config *table, size_t num)
 	/* For RT5682, GPIO 137 should be set as EDGE_BOTH. */
 	const struct pad_config rt5682_gpio_137 = PAD_CFG_GPI_APIC_IOS(GPIO_137,
 			NONE, DEEP, EDGE_BOTH, INVERT, HIZCRx1, DISPUPD);
+	enum ssfc_audio_codec codec = ssfc_get_audio_codec();
 
 	if (table == NULL || num == 0)
 		return;
@@ -68,10 +69,11 @@ static void gpio_modification_by_ssfc(struct pad_config *table, size_t num)
 	/*
 	 * Currently we only have the case of RT5682 as the second source. And
 	 * in case of Ampton which used RT5682 as the default source, it didn't
-	 * provide override_table right now so it will be returned ealier since
+	 * provide override_table right now so it will be returned earlier since
 	 * table above is NULL.
 	 */
-	if (ssfc_get_audio_codec() != SSFC_AUDIO_CODEC_RT5682)
+	if ((codec != SSFC_AUDIO_CODEC_RT5682) &&
+		(codec != SSFC_AUDIO_CODEC_RT5682_VS))
 		return;
 
 	while (num--) {
@@ -137,7 +139,6 @@ static unsigned long mainboard_write_acpi_tables(
 static void mainboard_enable(struct device *dev)
 {
 	dev->ops->write_acpi_tables = mainboard_write_acpi_tables;
-	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
 }
 
 struct chip_operations mainboard_ops = {
@@ -191,17 +192,37 @@ static void audio_codec_device_update(void)
 			continue;
 		}
 
-		if ((audio_dev->chip_ops == &drivers_i2c_generic_ops) &&
-			(codec == SSFC_AUDIO_CODEC_RT5682)) {
+		if (audio_dev->chip_ops == &drivers_i2c_generic_ops) {
 			struct drivers_i2c_generic_config *cfg =
 				audio_dev->chip_info;
 
-			if (cfg != NULL && !strcmp(cfg->hid, "10EC5682")) {
-				printk(BIOS_INFO, "enable RT5682.\n");
+			if ((cfg != NULL && !strcmp(cfg->hid, "10EC5682")) &&
+				(codec == SSFC_AUDIO_CODEC_RT5682)) {
+				printk(BIOS_INFO, "enable RT5682 VD.\n");
+				continue;
+			}
+
+			if ((cfg != NULL && !strcmp(cfg->hid, "10EC5682")) &&
+				(codec == SSFC_AUDIO_CODEC_RT5682_VS)) {
+				cfg->hid = "RTL5682";
+				printk(BIOS_INFO, "enable RT5682 VS.\n");
+				continue;
+			}
+
+			if ((cfg != NULL && !strcmp(cfg->hid, "RTL5682")) &&
+				(codec == SSFC_AUDIO_CODEC_RT5682_VS)) {
+				printk(BIOS_INFO, "enable RT5682 VS.\n");
 				continue;
 			}
 		}
 
+		if ((audio_dev->chip_ops == &drivers_i2c_cs42l42_ops) &&
+			(codec == SSFC_AUDIO_CODEC_CS42L42)) {
+			printk(BIOS_INFO, "enable CS42L42.\n");
+			continue;
+		}
+
+		printk(BIOS_INFO, "%s has been disabled\n", audio_dev->chip_ops->name);
 		audio_dev->enabled = 0;
 	}
 }

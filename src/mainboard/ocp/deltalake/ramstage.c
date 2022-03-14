@@ -4,6 +4,8 @@
 #include <console/console.h>
 #include <drivers/ipmi/ipmi_ops.h>
 #include <drivers/ocp/dmi/ocp_dmi.h>
+#include <drivers/vpd/vpd.h>
+#include <security/intel/txt/txt.h>
 #include <soc/ramstage.h>
 #include <soc/soc_util.h>
 #include <stdio.h>
@@ -17,6 +19,7 @@
 #include <cpxsp_dl_gpio.h>
 
 #include "ipmi.h"
+#include "vpd.h"
 
 #define SLOT_ID_LEN 2
 
@@ -56,6 +59,12 @@ const char *smbios_mainboard_location_in_chassis(void)
 	return slot_id_str;
 }
 
+/* Override SMBIOS type 2 Feature Flags */
+u8 smbios_mainboard_feature_flags(void)
+{
+	return SMBIOS_FEATURE_FLAGS_HOSTING_BOARD | SMBIOS_FEATURE_FLAGS_REPLACEABLE;
+}
+
 /*
  * Override SMBIOS type 4 cpu voltage.
  * BIT7 will set to 1 after value return. If BIT7 is set to 1, the remaining seven
@@ -77,21 +86,22 @@ typedef struct {
 	const char *slot_designator;
 } slot_info;
 
+/* Array index + 1 would be used as Slot ID */
 slot_info slotinfo[] = {
 	{CSTACK,  SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0xE8, "SSD1_M2_Data_Drive"},
 	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "SSD0_M2_Boot_Drive"},
 	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "BB_OCP_NIC"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "1OU_JD2_M2_3"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "1OU_JD2_M2_2"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "1OU_JD1_M2_1"},
-	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "1OU_JD1_M2_0"},
+	{PSTACK2, SlotTypePciExpressGen3X16, SlotDataBusWidth16X, 0x00, "1OU_OCP_NIC"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "2OU_JD1_M2_0"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "2OU_JD1_M2_1"},
+	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "2OU_JD2_M2_2"},
+	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "2OU_JD2_M2_3"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "2OU_JD3_M2_4"},
 	{PSTACK0, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "2OU_JD3_M2_5"},
-	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "2OU_JD2_M2_3"},
-	{PSTACK1, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "2OU_JD2_M2_2"},
-	{PSTACK2, SlotTypePciExpressGen3X16, SlotDataBusWidth16X, 0x00, "1OU_OCP_NIC"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x18, "1OU_JD1_M2_0"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x10, "1OU_JD1_M2_1"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x08, "1OU_JD2_M2_2"},
+	{PSTACK2, SlotTypePciExpressGen3X4, SlotDataBusWidth4X, 0x00, "1OU_JD2_M2_3"},
 };
 
 #define SPD_REGVID_LEN 6
@@ -184,11 +194,9 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 	uint8_t sec_bus;
 	uint8_t slot_usage;
 	uint8_t pcie_config = 0;
-	uint8_t characteristics_1 = 0;
-	uint8_t characteristics_2 = 0;
 	uint32_t vendor_device_id;
 	uint8_t stack_busnos[MAX_IIO_STACK];
-	pci_devfn_t pci_dev;
+	pci_devfn_t pci_dev_slot, pci_dev = 0;
 	unsigned int cap;
 	uint16_t sltcap;
 
@@ -199,6 +207,9 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 		stack_busnos[index] = get_stack_busno(index);
 
 	for (index = 0; index < ARRAY_SIZE(slotinfo); index++) {
+		uint8_t characteristics_1 = 0;
+		uint8_t characteristics_2 = 0;
+
 		if (pcie_config == PCIE_CONFIG_A) {
 			if (index == 0 || index == 1 || index == 2)
 				printk(BIOS_INFO, "Find Config-A slot: %s\n",
@@ -207,23 +218,29 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 				continue;
 		}
 		if (pcie_config == PCIE_CONFIG_B) {
-			if (index == 0 || index == 1 || index == 2 || index == 3 || index == 4
-				|| index == 5 || index == 6)
+			switch (index) {
+			case 0 ... 2:
+			case 10 ... 13:
 				printk(BIOS_INFO, "Find Config-B slot: %s\n",
 					slotinfo[index].slot_designator);
-			else
+				break;
+			default:
 				continue;
+			}
 		}
 		if (pcie_config == PCIE_CONFIG_C) {
-			if (index == 0 || index == 1 || index == 7 || index == 8 || index == 9
-				|| index == 10 || index == 11 || index == 12 || index == 13)
+			switch (index) {
+			case 0 ... 1:
+			case 3 ... 9:
 				printk(BIOS_INFO, "Find Config-C slot: %s\n",
 					slotinfo[index].slot_designator);
-			else
+				break;
+			default:
 				continue;
+			}
 		}
 		if (pcie_config == PCIE_CONFIG_D) {
-			if (index != 13)
+			if (index != 3)
 				printk(BIOS_INFO, "Find Config-D slot: %s\n",
 					slotinfo[index].slot_designator);
 			else
@@ -235,14 +252,14 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 		else
 			slot_length = SlotLengthShort;
 
-		pci_dev = PCI_DEV(stack_busnos[slotinfo[index].stack],
+		pci_dev_slot = PCI_DEV(stack_busnos[slotinfo[index].stack],
 			slotinfo[index].dev_func >> 3, slotinfo[index].dev_func & 0x7);
-		sec_bus = pci_s_read_config8(pci_dev, PCI_SECONDARY_BUS);
+		sec_bus = pci_s_read_config8(pci_dev_slot, PCI_SECONDARY_BUS);
 
 		if (sec_bus == 0xFF) {
 			slot_usage = SlotUsageUnknown;
 		} else {
-			/* Checking for Slot device availability */
+			/* Checking for downstream device availability */
 			pci_dev = PCI_DEV(sec_bus, 0, 0);
 			vendor_device_id = pci_s_read_config32(pci_dev, 0);
 			if (vendor_device_id == 0xFFFFFFFF)
@@ -253,18 +270,23 @@ static int create_smbios_type9(int *handle, unsigned long *current)
 
 		characteristics_1 |= SMBIOS_SLOT_3P3V; // Provides33Volts
 		characteristics_2 |= SMBIOS_SLOT_PME; // PmeSiganalSupported
-
-		cap = pci_s_find_capability(pci_dev, PCI_CAP_ID_PCIE);
-		sltcap = pci_s_read_config16(pci_dev, cap + PCI_EXP_SLTCAP);
+		/* Read IIO root port device CSR for slot capabilities */
+		cap = pci_s_find_capability(pci_dev_slot, PCI_CAP_ID_PCIE);
+		sltcap = pci_s_read_config16(pci_dev_slot, cap + PCI_EXP_SLTCAP);
 		if (sltcap & PCI_EXP_SLTCAP_HPC)
 			characteristics_2 |= SMBIOS_SLOT_HOTPLUG;
 
+		const uint16_t slot_id = index + 1;
+		/* According to SMBIOS spec, the BDF number should be the end
+		   point on the slot, for now we keep using the root port's BDF to
+		   be aligned with our UEFI reference BIOS. */
 		length += smbios_write_type9(current, handle,
 					  slotinfo[index].slot_designator,
 					  slotinfo[index].slot_type,
 					  slotinfo[index].slot_data_bus_width,
 					  slot_usage,
 					  slot_length,
+					  slot_id,
 					  characteristics_1,
 					  characteristics_2,
 					  stack_busnos[slotinfo[index].stack],
@@ -333,3 +355,23 @@ struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
 };
+
+bool skip_intel_txt_lockdown(void)
+{
+	static bool fetched_vpd = 0;
+	static uint8_t skip_txt = SKIP_INTEL_TXT_LOCKDOWN_DEFAULT;
+
+	if (fetched_vpd)
+		return (bool)skip_txt;
+
+	if (!vpd_get_bool(SKIP_INTEL_TXT_LOCKDOWN, VPD_RW_THEN_RO, &skip_txt))
+		printk(BIOS_INFO, "%s: not able to get VPD %s, default set to %d\n",
+		       __func__, SKIP_INTEL_TXT_LOCKDOWN, SKIP_INTEL_TXT_LOCKDOWN_DEFAULT);
+	else
+		printk(BIOS_DEBUG, "%s: VPD %s, got %d\n", __func__, SKIP_INTEL_TXT_LOCKDOWN,
+		       skip_txt);
+
+	fetched_vpd = 1;
+
+	return (bool)skip_txt;
+}

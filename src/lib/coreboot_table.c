@@ -19,6 +19,7 @@
 #include <cbmem.h>
 #include <bootmem.h>
 #include <bootsplash.h>
+#include <inttypes.h>
 #include <spi_flash.h>
 #include <smmstore.h>
 
@@ -245,11 +246,13 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_TIMESTAMP, LB_TAG_TIMESTAMPS},
 		{CBMEM_ID_CONSOLE, LB_TAG_CBMEM_CONSOLE},
 		{CBMEM_ID_ACPI_GNVS, LB_TAG_ACPI_GNVS},
+		{CBMEM_ID_ACPI_CNVS, LB_TAG_ACPI_CNVS},
 		{CBMEM_ID_VPD, LB_TAG_VPD},
 		{CBMEM_ID_WIFI_CALIBRATION, LB_TAG_WIFI_CALIBRATION},
 		{CBMEM_ID_TCPA_LOG, LB_TAG_TCPA_LOG},
 		{CBMEM_ID_FMAP, LB_TAG_FMAP},
 		{CBMEM_ID_VBOOT_WORKBUF, LB_TAG_VBOOT_WORKBUF},
+		{CBMEM_ID_TYPE_C_INFO, LB_TAG_TYPE_C_INFO},
 	};
 	int i;
 
@@ -305,10 +308,20 @@ static struct lb_board_config *lb_board_config(struct lb_header *header)
 	config->tag = LB_TAG_BOARD_CONFIG;
 	config->size = sizeof(*config);
 
+	const uint64_t fw_config = fw_config_get();
 	config->board_id = board_id();
 	config->ram_code = ram_code();
 	config->sku_id = sku_id();
-	config->fw_config = pack_lb64(fw_config_get());
+	config->fw_config = pack_lb64(fw_config);
+
+	if (config->board_id != UNDEFINED_STRAPPING_ID)
+		printk(BIOS_INFO, "Board ID: %d\n", config->board_id);
+	if (config->ram_code != UNDEFINED_STRAPPING_ID)
+		printk(BIOS_INFO, "RAM code: %d\n", config->ram_code);
+	if (config->sku_id != UNDEFINED_STRAPPING_ID)
+		printk(BIOS_INFO, "SKU ID: %d\n", config->sku_id);
+	if (fw_config != UNDEFINED_FW_CONFIG)
+		printk(BIOS_INFO, "FW config: %#" PRIx64 "\n", fw_config);
 
 	return config;
 }
@@ -455,12 +468,11 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 	lb_mainboard(head);
 
 	/* Record the serial ports and consoles */
-#if CONFIG(CONSOLE_SERIAL)
-	uart_fill_lb(head);
-#endif
-#if CONFIG(CONSOLE_USB)
-	lb_add_console(LB_TAG_CONSOLE_EHCI, head);
-#endif
+	if (CONFIG(CONSOLE_SERIAL))
+		uart_fill_lb(head);
+
+	if (CONFIG(CONSOLE_USB))
+		lb_add_console(LB_TAG_CONSOLE_EHCI, head);
 
 	/* Record our various random string information */
 	lb_strings(head);

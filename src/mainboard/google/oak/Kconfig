@@ -26,7 +26,6 @@ config VBOOT
 	select VBOOT_VBNV_FLASH
 
 config MAINBOARD_DIR
-	string
 	default "google/oak"
 
 config EC_GOOGLE_CHROMEEC_SPI_BUS
@@ -57,7 +56,6 @@ config EC_GOOGLE_CHROMEEC_PD_BOARDNAME
 #### Update below when adding a new derivative board. ####
 ##########################################################
 config MAINBOARD_PART_NUMBER
-	string
 	default "Oak" if BOARD_GOOGLE_OAK
 	default "Elm" if BOARD_GOOGLE_ELM
 	default "Hana" if BOARD_GOOGLE_HANA

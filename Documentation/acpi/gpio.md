@@ -84,15 +84,6 @@ the raw Rx gpio value.
 
 ## Implementation Details
 
-ACPI library in coreboot will provide weak definitions for all the
-above functions with error messages indicating that these functions
-are being used. This allows drivers to conditionally make use of GPIOs
-based on device-tree entries or any other config option. It is
-recommended that the SoC code in coreboot should provide
-implementations of all the above functions generating ACPI AML code
-irrespective of them being used in any driver. This allows mainboards
-to use any drivers and take advantage of this common infrastructure.
-
 Platforms are restricted to using Local5, Local6 and Local7 variables
 only in implementations of the above functions. Any AML methods called
 by the above functions do not have any such restrictions on use of
@@ -159,7 +150,6 @@ for the GPIO.
 	 */
 	acpigen_write_if_and(Local5, TX_BIT);
 	acpigen_write_store_args(ONE_OP, LOCAL0_OP);
-	acpigen_pop_len();
 	acpigen_write_else();
 	acpigen_write_store_args(ZERO_OP, LOCAL0_OP);
 	acpigen_pop_len();

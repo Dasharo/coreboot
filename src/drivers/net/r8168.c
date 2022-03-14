@@ -17,6 +17,7 @@
 #include <device/pci.h>
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
+#include <device/pci_ids.h>
 #include <delay.h>
 #include <fmap.h>
 #include <types.h>
@@ -28,10 +29,15 @@
 #define CMD_REG			0x37
 #define  CMD_REG_RESET		0x10
 #define CMD_LED0_LED1		0x18
+#define CMD_LED_FEATURE		0x94
+#define CMD_LEDSEL0		0x18
+#define CMD_LEDSEL2		0x84
 
 #define CFG_9346		0x50
 #define  CFG_9346_LOCK		0x00
 #define  CFG_9346_UNLOCK	0xc0
+#define CMD_REG_ASPM		0xb0
+#define ASPM_L1_2_MASK		0xe059000f
 
 #define DEVICE_INDEX_BYTE	12
 #define MAX_DEVICE_SUPPORT	10
@@ -72,7 +78,7 @@ static u8 get_hex_digit(const u8 c)
 			ret = c - 'a' + 0x0a;
 	}
 	if (ret > 0x0f) {
-		printk(BIOS_ERR, "Error: Invalid hex digit found: "
+		printk(BIOS_ERR, "Invalid hex digit found: "
 				 "%c - 0x%02x\n", (char)c, c);
 		ret = 0;
 	}
@@ -90,7 +96,7 @@ static enum cb_err fetch_mac_vpd_key(u8 *macstrbuf, const char *vpd_key)
 	size_t offset;
 
 	if (fmap_locate_area_as_rdev("RO_VPD", &rdev)) {
-		printk(BIOS_ERR, "Error: Couldn't find RO_VPD region.");
+		printk(BIOS_ERR, "Couldn't find RO_VPD region.");
 		return CB_ERR;
 	}
 	search_address = rdev_mmap_full(&rdev);
@@ -104,8 +110,7 @@ static enum cb_err fetch_mac_vpd_key(u8 *macstrbuf, const char *vpd_key)
 			search_length);
 
 	if (offset == search_length) {
-		printk(BIOS_ERR,
-		       "Error: Could not locate '%s' in VPD\n", vpd_key);
+		printk(BIOS_ERR, "Could not locate '%s' in VPD\n", vpd_key);
 		rdev_munmap(&rdev, search_address);
 		return CB_ERR;
 	}
@@ -166,18 +171,11 @@ static void fetch_mac_string_vpd(struct drivers_net_config *config, u8 *macstrbu
 
 static enum cb_err fetch_mac_string_cbfs(u8 *macstrbuf)
 {
-	struct cbfsf fh;
-	uint32_t matchraw = CBFS_TYPE_RAW;
-
-	if (!cbfs_boot_locate(&fh, "rt8168-macaddress", &matchraw)) {
-		/* check the cbfs for the mac address */
-		if (rdev_readat(&fh.data, macstrbuf, 0, MACLEN) != MACLEN) {
-			printk(BIOS_ERR, "r8168: Error reading MAC from CBFS\n");
-			return CB_ERR;
-		}
-		return CB_SUCCESS;
+	if (!cbfs_load("rt8168-macaddress", macstrbuf, MACLEN)) {
+		printk(BIOS_ERR, "r8168: Error reading MAC from CBFS\n");
+		return CB_ERR;
 	}
-	return CB_ERR;
+	return CB_SUCCESS;
 }
 
 static void get_mac_address(u8 *macaddr, const u8 *strbuf)
@@ -248,6 +246,20 @@ static void program_mac_address(struct device *dev, u16 io_base)
 	printk(BIOS_DEBUG, "done\n");
 }
 
+static void enable_aspm_l1_2(u16 io_base)
+{
+	printk(BIOS_INFO, "rtl: Enable ASPM L1.2\n");
+
+	/* Disable register protection */
+	outb(CFG_9346_UNLOCK, io_base + CFG_9346);
+
+	/* Enable ASPM_L1.2 */
+	outl(ASPM_L1_2_MASK, io_base + CMD_REG_ASPM);
+
+	/* Lock config regs */
+	outb(CFG_9346_LOCK, io_base + CFG_9346);
+}
+
 static void r8168_set_customized_led(struct device *dev, u16 io_base)
 {
 	struct drivers_net_config *config = dev->chip_info;
@@ -255,28 +267,69 @@ static void r8168_set_customized_led(struct device *dev, u16 io_base)
 	if (!config)
 		return;
 
-	/* Read the customized LED setting from devicetree */
-	printk(BIOS_DEBUG, "r8168: Customized LED 0x%x\n", config->customized_leds);
+	if (dev->device == PCI_DEVICE_ID_REALTEK_8125) {
+		/* Set LED global Feature register */
+		outb(config->led_feature, io_base + CMD_LED_FEATURE);
+		printk(BIOS_DEBUG, "r8125: read back LED global feature setting as 0x%x\n",
+		inb(io_base + CMD_LED_FEATURE));
 
-	/*
-	 * Refer to RTL8111H datasheet 7.2 Customizable LED Configuration
-	 * Starting from offset 0x18
-	 * Bit[15:12]	LED Feature Control(FC)
-	 * Bit[11:08]	LED Select for PINLED2
-	 * Bit[07:04]	LED Select for PINLED1
-	 * Bit[03:00]	LED Select for PINLED0
-	 *
-	 * Speed	Link10M		Link100M	Link1000M	ACT/Full
-	 * LED0		Bit0		Bit1		Bit2		Bit3
-	 * LED1		Bit4		Bit5		Bit6		Bit7
-	 * LED2		Bit8		Bit9		Bit10		Bit11
-	 * FC		Bit12		Bit13		Bit14		Bit15
-	 */
+		/*
+		 * Refer to RTL8125 datasheet 5.Customizable LED Configuration
+		 * Register Name	IO Address
+		 * LEDSEL0		0x18
+		 * LEDSEL2		0x84
+		 * LEDFEATURE		0x94
+		 *
+		 * LEDSEL Bit[]		Description
+		 * Bit0			Link10M
+		 * Bit1			Link100M
+		 * Bit3			Link1000M
+		 * Bit5			Link2.5G
+		 * Bit9			ACT
+		 * Bit10		preboot enable
+		 * Bit11		lp enable
+		 * Bit12		active low/high
+		 *
+		 * LEDFEATURE		Description
+		 * Bit0			LED Table V1/V2
+		 * Bit1~3		Reserved
+		 * Bit4~5		LED Blinking Duty Cycle	12.5%/ 25%/ 50%/ 75%
+		 * Bit6~7		LED Blinking Freq. 240ms/160ms/80ms/Link-Speed-Dependent
+		 */
 
-	/* Set customized LED registers */
-	outw(config->customized_leds, io_base + CMD_LED0_LED1);
-	printk(BIOS_DEBUG, "r8168: read back LED setting as 0x%x\n",
-		inw(io_base + CMD_LED0_LED1));
+		/* Set customized LED0 register */
+		outw(config->customized_led0, io_base + CMD_LEDSEL0);
+		printk(BIOS_DEBUG, "r8125: read back LED0 setting as 0x%x\n",
+			inw(io_base + CMD_LEDSEL0));
+
+		/* Set customized LED2 register */
+		outw(config->customized_led2, io_base + CMD_LEDSEL2);
+		printk(BIOS_DEBUG, "r8125: read back LED2 setting as 0x%x\n",
+			inw(io_base + CMD_LEDSEL2));
+	} else {
+		/* Read the customized LED setting from devicetree */
+		printk(BIOS_DEBUG, "r8168: Customized LED 0x%x\n", config->customized_leds);
+
+		/*
+		 * Refer to RTL8111H datasheet 7.2 Customizable LED Configuration
+		 * Starting from offset 0x18
+		 * Bit[15:12]	LED Feature Control(FC)
+		 * Bit[11:08]	LED Select for PINLED2
+		 * Bit[07:04]	LED Select for PINLED1
+		 * Bit[03:00]	LED Select for PINLED0
+		 *
+		 * Speed	Link10M		Link100M	Link1000M	ACT/Full
+		 * LED0		Bit0		Bit1		Bit2		Bit3
+		 * LED1		Bit4		Bit5		Bit6		Bit7
+		 * LED2		Bit8		Bit9		Bit10		Bit11
+		 * FC		Bit12		Bit13		Bit14		Bit15
+		 */
+
+		/* Set customized LED registers */
+		outw(config->customized_leds, io_base + CMD_LED0_LED1);
+		printk(BIOS_DEBUG, "r8168: read back LED setting as 0x%x\n",
+			inw(io_base + CMD_LED0_LED1));
+	}
 }
 
 static void r8168_init(struct device *dev)
@@ -287,7 +340,7 @@ static void r8168_init(struct device *dev)
 
 	/* Check if the base is invalid */
 	if (!io_base) {
-		printk(BIOS_ERR, "r8168: Error cant find IO resource\n");
+		printk(BIOS_ERR, "r8168: Error can't find IO resource\n");
 		return;
 	}
 	/* Enable but do not set bus master */
@@ -301,6 +354,10 @@ static void r8168_init(struct device *dev)
 	/* Program customized LED mode */
 	if (CONFIG(RT8168_SET_LED_MODE))
 		r8168_set_customized_led(dev, io_base);
+
+	struct drivers_net_config *config = dev->chip_info;
+	if (CONFIG(PCIEXP_ASPM) && config->enable_aspm_l1_2)
+		enable_aspm_l1_2(io_base);
 }
 
 #if CONFIG(HAVE_ACPI_TABLES)
@@ -324,7 +381,7 @@ static void r8168_net_fill_ssdt(const struct device *dev)
 		acpigen_write_name_string("_DDN", dev->chip_ops->name);
 
 	/* Power Resource */
-	if (config->has_power_resource) {
+	if (CONFIG(RT8168_GEN_ACPI_POWER_RESOURCE) && config->has_power_resource) {
 		const struct acpi_power_res_params power_res_params = {
 			.stop_gpio = &config->stop_gpio,
 			.stop_delay_ms = config->stop_delay_ms,
@@ -367,10 +424,16 @@ static struct device_operations r8168_ops  = {
 #endif
 };
 
+static const unsigned short pci_device_ids[] = {
+	PCI_DEVICE_ID_REALTEK_8168,
+	PCI_DEVICE_ID_REALTEK_8125,
+	0
+};
+
 static const struct pci_driver r8168_driver __pci_driver = {
 	.ops    = &r8168_ops,
-	.vendor = 0x10ec,
-	.device = 0x8168,
+	.vendor = PCI_VENDOR_ID_REALTEK,
+	.devices = pci_device_ids,
 };
 
 struct chip_operations drivers_net_ops = {

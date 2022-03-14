@@ -19,17 +19,6 @@ chip soc/intel/tigerlake
 	# Disable SRCCLKREQ1#
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_NOTUSED"
 
-	# Acoustic settings
-	register "AcousticNoiseMitigation" = "1"
-	register "SlowSlewRate[VR_DOMAIN_IA]" = "SLEW_FAST_8"
-	register "SlowSlewRate[VR_DOMAIN_GT]" = "SLEW_FAST_8"
-	register "SlowSlewRate[VR_DOMAIN_SA]" = "SLEW_FAST_8"
-	register "SlowSlewRate[VR_DOMAIN_VLCC]" = "SLEW_FAST_8"
-	register "FastPkgCRampDisable[VR_DOMAIN_IA]" = "1"
-	register "FastPkgCRampDisable[VR_DOMAIN_GT]" = "1"
-	register "FastPkgCRampDisable[VR_DOMAIN_SA]" = "1"
-	register "FastPkgCRampDisable[VR_DOMAIN_VLCC]" = "1"
-
 	device domain 0 on
 		device ref dptf on
 			chip drivers/intel/dptf
@@ -80,6 +69,26 @@ chip soc/intel/tigerlake
 				device generic 0 on end
 			end
 		end
+
+		device ref tbt_pcie_rp0 on
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_pcie_rp1 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+		end
+		device ref tbt_dma0 on
+			probe DB_USB USB4_GEN2
+			probe DB_USB USB4_GEN3
+			chip drivers/intel/usb4/retimer
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_H10)"
+				register "dfp[1].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_H10)"
+				use tcss_usb3_port3 as dfp[0].typec_port
+				use tcss_usb3_port2 as dfp[1].typec_port
+				device generic 0 on end
+			end
+		end
+
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -177,29 +186,14 @@ chip soc/intel/tigerlake
 				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_F14_IRQ)"
 				register "speed" = "I2C_SPEED_FAST"
 				register "uid" = "0"
-				register "reg_prox_ctrl0" = "0x10"
-				register "reg_prox_ctrl1" = "0x00"
-				register "reg_prox_ctrl2" = "0x84"
-				register "reg_prox_ctrl3" = "0x0e"
-				register "reg_prox_ctrl4" = "0x07"
-				register "reg_prox_ctrl5" = "0xc6"
-				register "reg_prox_ctrl6" = "0x20"
-				register "reg_prox_ctrl7" = "0x0d"
-				register "reg_prox_ctrl8" = "0x8d"
-				register "reg_prox_ctrl9" = "0x43"
-				register "reg_prox_ctrl10" = "0x1f"
-				register "reg_prox_ctrl11" = "0x00"
-				register "reg_prox_ctrl12" = "0x00"
-				register "reg_prox_ctrl13" = "0x00"
-				register "reg_prox_ctrl14" = "0x00"
-				register "reg_prox_ctrl15" = "0x00"
-				register "reg_prox_ctrl16" = "0x00"
-				register "reg_prox_ctrl17" = "0x00"
-				register "reg_prox_ctrl18" = "0x00"
-				register "reg_prox_ctrl19" = "0x00"
-				register "reg_sar_ctrl0" = "0x50"
-				register "reg_sar_ctrl1" = "0x8a"
-				register "reg_sar_ctrl2" = "0x3c"
+				register "cs0_ground" = "0x0"
+				register "combined_sensors_count" = "2"
+				register "combined_sensors[0]" = "1"
+				register "combined_sensors[1]" = "2"
+				register "resolution" = "SX9310_FINEST"
+				register "avg_pos_strength" = "512"
+				register "startup_sensor" = "1"
+				register "proxraw_strength" = "0"
 				device i2c 28 on end
 			end
 		end
@@ -229,6 +223,13 @@ chip soc/intel/tigerlake
 				device pnp 0c09.0 on end
 			end
 		end
+		device ref hda on
+			probe AUDIO MAX98357_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682_SNDW
+			probe AUDIO MAX98373_ALC5682I_I2S_UP4
+			probe AUDIO MAX98360_ALC5682I_I2S
+		end
 		device ref pcie_rp9 on
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B2)"
@@ -237,26 +238,21 @@ chip soc/intel/tigerlake
 				device generic 0 on end
 			end
 		end
-		# This variant has USB4/PCIe on both ports so RP0 must be enabled
-		# in order for hotplug resources to be assigned to Type-C Port C0.
-		device ref tbt_pcie_rp0 on
-			probe DB_USB USB4_GEN3
-		end
 		device ref pmc hidden
 			# The pmc_mux chip driver is a placeholder for the
 			# PMC.MUX device in the ACPI hierarchy.
 			chip drivers/intel/pmc_mux
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "9"
-						register "usb3_port_number" = "1"
+						use usb2_port9 as usb2_port
+						use tcss_usb3_port1 as usb3_port
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "4"
-						register "usb3_port_number" = "2"
+						use usb2_port4 as usb2_port
+						use tcss_usb3_port2 as usb3_port
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 1 alias conn1 on end

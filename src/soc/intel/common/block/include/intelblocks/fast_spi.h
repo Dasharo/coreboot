@@ -65,6 +65,10 @@ void fast_spi_early_init(uintptr_t spi_base_address);
  */
 extern const struct spi_ctrlr fast_spi_flash_ctrlr;
 /*
+ * Clear SPI Synchronous SMI status bit and return its value.
+ */
+bool fast_spi_clear_sync_smi_status(void);
+/*
  * Read SPI Write protect disable bit.
  */
 bool fast_spi_wpd_status(void);
@@ -73,15 +77,19 @@ bool fast_spi_wpd_status(void);
  */
 void fast_spi_enable_wp(void);
 /*
+ * Disable SPI Write protect.
+ */
+void fast_spi_disable_wp(void);
+/*
  * Get base and size of extended BIOS decode window used at runtime in host address space. If
  * the BIOS region is not greater than 16MiB, then this function returns 0 for both base and
  * size.
  */
 void fast_spi_get_ext_bios_window(uintptr_t *base, size_t *size);
 /*
- * SOC function to get SPI-DMI Destination Id
+ * SOC function to get SPI PSF Destination Id
  */
-uint32_t soc_get_spi_dmi_destination_id(void);
+uint32_t soc_get_spi_psf_destination_id(void);
 /*
  * Add MTRR for extended BIOS region(when supported) to postcar frame
  */

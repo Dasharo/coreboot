@@ -20,7 +20,7 @@ static void spi_flash_addr(u32 addr, u8 *cmd)
 	cmd[3] = addr >> 0;
 }
 
-static int do_spi_flash_cmd(const struct spi_slave *spi, const void *dout,
+static int do_spi_flash_cmd(const struct spi_slave *spi, const u8 *dout,
 			    size_t bytes_out, void *din, size_t bytes_in)
 {
 	int ret;
@@ -51,8 +51,8 @@ static int do_spi_flash_cmd(const struct spi_slave *spi, const void *dout,
 	return ret;
 }
 
-static int do_dual_read_cmd(const struct spi_slave *spi, const void *dout,
-			    size_t bytes_out, void *din, size_t bytes_in)
+static int do_dual_output_cmd(const struct spi_slave *spi, const u8 *dout,
+			      size_t bytes_out, void *din, size_t bytes_in)
 {
 	int ret;
 
@@ -79,6 +79,31 @@ static int do_dual_read_cmd(const struct spi_slave *spi, const void *dout,
 	return ret;
 }
 
+static int do_dual_io_cmd(const struct spi_slave *spi, const u8 *dout,
+			  size_t bytes_out, void *din, size_t bytes_in)
+{
+	int ret;
+
+	/* Only the very first byte (opcode) is transferred in "single" mode. */
+	struct spi_op vector = { .dout = dout, .bytesout = 1,
+				 .din = NULL, .bytesin = 0 };
+
+	ret = spi_claim_bus(spi);
+	if (ret)
+		return ret;
+
+	ret = spi_xfer_vector(spi, &vector, 1);
+
+	if (!ret)
+		ret = spi->ctrlr->xfer_dual(spi, &dout[1], bytes_out - 1, NULL, 0);
+
+	if (!ret)
+		ret = spi->ctrlr->xfer_dual(spi, NULL, 0, din, bytes_in);
+
+	spi_release_bus(spi);
+	return ret;
+}
+
 int spi_flash_cmd(const struct spi_slave *spi, u8 cmd, void *response, size_t len)
 {
 	int ret = do_spi_flash_cmd(spi, &cmd, sizeof(cmd), response, len);
@@ -88,15 +113,17 @@ int spi_flash_cmd(const struct spi_slave *spi, u8 cmd, void *response, size_t le
 	return ret;
 }
 
+/* TODO: This code is quite possibly broken and overflowing stacks. Fix ASAP! */
+#pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wstack-usage="
+#endif
+#pragma GCC diagnostic ignored "-Wvla"
 int spi_flash_cmd_write(const struct spi_slave *spi, const u8 *cmd,
 			size_t cmd_len, const void *data, size_t data_len)
 {
 	int ret;
-	u8 buff[4 + MAX_FLASH_CMD_DATA_SIZE];
-
-	if (ARRAY_SIZE(buff) < cmd_len + data_len)
-		return -1;
-
+	u8 buff[cmd_len + data_len];
 	memcpy(buff, cmd, cmd_len);
 	memcpy(buff + cmd_len, data, data_len);
 
@@ -108,6 +135,7 @@ int spi_flash_cmd_write(const struct spi_slave *spi, const u8 *cmd,
 
 	return ret;
 }
+#pragma GCC diagnostic pop
 
 /* Perform the read operation honoring spi controller fifo size, reissuing
  * the read command until the full request completed. */
@@ -116,18 +144,23 @@ int spi_flash_cmd_read(const struct spi_flash *flash, u32 offset,
 {
 	u8 cmd[5];
 	int ret, cmd_len;
-	int (*do_cmd)(const struct spi_slave *spi, const void *din,
+	int (*do_cmd)(const struct spi_slave *spi, const u8 *din,
 		      size_t in_bytes, void *out, size_t out_bytes);
 
 	if (CONFIG(SPI_FLASH_NO_FAST_READ)) {
 		cmd_len = 4;
 		cmd[0] = CMD_READ_ARRAY_SLOW;
 		do_cmd = do_spi_flash_cmd;
-	} else if (flash->flags.dual_spi && flash->spi.ctrlr->xfer_dual) {
+	} else if (flash->flags.dual_io && flash->spi.ctrlr->xfer_dual) {
+		cmd_len = 5;
+		cmd[0] = CMD_READ_FAST_DUAL_IO;
+		cmd[4] = 0;
+		do_cmd = do_dual_io_cmd;
+	} else if (flash->flags.dual_output && flash->spi.ctrlr->xfer_dual) {
 		cmd_len = 5;
 		cmd[0] = CMD_READ_FAST_DUAL_OUTPUT;
 		cmd[4] = 0;
-		do_cmd = do_dual_read_cmd;
+		do_cmd = do_dual_output_cmd;
 	} else {
 		cmd_len = 5;
 		cmd[0] = CMD_READ_ARRAY_FAST;
@@ -256,7 +289,6 @@ int spi_flash_cmd_write_page_program(const struct spi_flash *flash, u32 offset,
 		byte_addr = offset % page_size;
 		chunk_len = MIN(len - actual, page_size - byte_addr);
 		chunk_len = spi_crop_chunk(&flash->spi, sizeof(cmd), chunk_len);
-		chunk_len = MIN(MAX_FLASH_CMD_DATA_SIZE, chunk_len);
 
 		spi_flash_addr(offset, cmd);
 		if (CONFIG(DEBUG_SPI_FLASH)) {
@@ -350,7 +382,8 @@ static int fill_spi_flash(const struct spi_slave *spi, struct spi_flash *flash,
 	flash->pp_cmd = vi->desc->pp_cmd;
 	flash->wren_cmd = vi->desc->wren_cmd;
 
-	flash->flags.dual_spi = part->fast_read_dual_output_support;
+	flash->flags.dual_output = part->fast_read_dual_output_support;
+	flash->flags.dual_io = part->fast_read_dual_io_support;
 
 	flash->ops = &vi->desc->ops;
 	flash->prot_ops = vi->prot_ops;
@@ -469,8 +502,10 @@ int spi_flash_probe(unsigned int bus, unsigned int cs, struct spi_flash *flash)
 	}
 
 	const char *mode_string = "";
-	if (flash->flags.dual_spi && spi.ctrlr->xfer_dual)
-		mode_string = " (Dual SPI mode)";
+	if (flash->flags.dual_io && spi.ctrlr->xfer_dual)
+		mode_string = " (Dual I/O mode)";
+	else if (flash->flags.dual_output && spi.ctrlr->xfer_dual)
+		mode_string = " (Dual Output mode)";
 	printk(BIOS_INFO,
 	       "SF: Detected %02x %04x with sector size 0x%x, total 0x%x%s\n",
 		flash->vendor, flash->model, flash->sector_size, flash->size, mode_string);
@@ -480,6 +515,10 @@ int spi_flash_probe(unsigned int bus, unsigned int cs, struct spi_flash *flash)
 			" CONFIG_ROM_SIZE 0x%x!!\n", flash->size,
 			CONFIG_ROM_SIZE);
 	}
+
+	if (CONFIG(SPI_FLASH_EXIT_4_BYTE_ADDR_MODE) && ENV_INITIAL_STAGE)
+		spi_flash_cmd(&flash->spi, CMD_EXIT_4BYTE_ADDR_MODE, NULL, 0);
+
 	return 0;
 }
 

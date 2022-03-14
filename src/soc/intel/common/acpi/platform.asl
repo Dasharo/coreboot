@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <include/console/post_codes.h>
+#include <commonlib/include/commonlib/console/post_codes.h>
 
 External(\_SB.MPTS, MethodObj)
 External(\_SB.MWAK, MethodObj)
@@ -30,7 +30,7 @@ Method (_PTS, 1)
 	}
 	/*
 	 * Save the current PM bits then
-	 * enable GPIO PM with MISCCFG_ENABLE_GPIO_PM_CONFIG
+	 * enable GPIO PM with MISCCFG_GPIO_PM_CONFIG_BITS
 	 */
 	If (CondRefOf (\_SB.PCI0.EGPM))
 	{

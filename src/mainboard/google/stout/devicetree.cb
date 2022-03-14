@@ -22,7 +22,7 @@ chip northbridge/intel/sandybridge
 	device cpu_cluster 0 on
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 
 			register "tcc_offset" = "5"	# TCC of 95C
@@ -32,8 +32,6 @@ chip northbridge/intel/sandybridge
 			register "acpi_c3" = "5"	# ACPI(C3) = MWAIT(C7)
 		end
 	end
-
-	register "pci_mmio_size" = "1024"
 
 	device domain 0 on
 		subsystemid 0x1ae0 0xc000 inherit
@@ -63,9 +61,7 @@ chip northbridge/intel/sandybridge
 			register "gen3_dec" = "0x0001C1611"
 
 			# Enable zero-based linear PCIe root port functions
-			register "pcie_port_coalesce" = "1"
-
-			register "c2_latency" = "1"
+			register "pcie_port_coalesce" = "true"
 
 			device pci 14.0 on end # USB 3.0 Controller
 			device pci 16.0 on end # Management Engine Interface 1
@@ -78,7 +74,7 @@ chip northbridge/intel/sandybridge
 			device pci 1c.0 on end # PCIe Port #1
 			device pci 1c.1 on end # PCIe Port #2 (WLAN)
 			device pci 1c.2 on end # PCIe Port #3 (Card Reader)
-				register "pcie_aspm_f2" = "0x3"
+				register "pcie_aspm[2]" = "0x3"
 			device pci 1c.3 off end # PCIe Port #4
 			device pci 1c.4 off end # PCIe Port #5
 			device pci 1c.5 on end # PCIe Port #6 (LAN)

@@ -6,11 +6,16 @@ This section contains documentation about coreboot on specific mainboards.
 
 - [X210](51nb/x210.md)
 
+## Acer
+
+- [G43T-AM3](acer/g43t-am3.md)
+
 ## AMD
 - [padmelon](amd/padmelon/padmelon.md)
 
 ## ASRock
 
+- [H77 Pro4-M](asrock/h77pro4-m.md)
 - [H81M-HDS](asrock/h81m-hds.md)
 - [H110M-DVS](asrock/h110m-dvs.md)
 
@@ -19,9 +24,12 @@ This section contains documentation about coreboot on specific mainboards.
 - [A88XM-E](asus/a88xm-e.md)
 - [F2A85-M](asus/f2a85-m.md)
 - [P5Q](asus/p5q.md)
+- [P8C WS](asus/p8c_ws.md)
 - [P8H61-M LX](asus/p8h61-m_lx.md)
 - [P8H61-M Pro](asus/p8h61-m_pro.md)
+- [P8H77-V](asus/p8h77-v.md)
 - [P8Z77-M Pro](asus/p8z77-m_pro.md)
+- [P8Z77-V](asus/p8z77-v.md)
 
 ## Cavium
 
@@ -153,6 +161,7 @@ The boards in this section are not real mainboards, but emulators.
 
 ## Purism
 
+- [Librem 14](purism/librem_14.md)
 - [Librem Mini](purism/librem_mini.md)
 
 ## Protectli
@@ -168,6 +177,10 @@ The boards in this section are not real mainboards, but emulators.
 
 - [SiFive HiFive Unleashed](sifive/hifive-unleashed.md)
 
+## Star Labs Systems
+
+- [StarBook Mk V](starlabs/starbook_tgl.md)
+
 ## Supermicro
 
 - [X10SLM+-F](supermicro/x10slm-f.md)
@@ -176,8 +189,21 @@ The boards in this section are not real mainboards, but emulators.
 
 ## System76
 
-- [Lemur Pro](system76/lemp9.md)
+- [Adder Workstation 1](system76/addw1.md)
+- [Adder Workstation 2](system76/addw2.md)
+- [Bonobo Workstation 14](system76/bonw14.md)
+- [Darter Pro 6](system76/darp6.md)
+- [Darter Pro 7](system76/darp7.md)
+- [Galago Pro 4](system76/galp4.md)
+- [Galago Pro 5](system76/galp5.md)
+- [Gazelle 15](system76/gaze15.md)
+- [Gazelle 16](system76/gaze16.md)
+- [Lemur Pro 9](system76/lemp9.md)
+- [Lemur Pro 10](system76/lemp10.md)
 - [Oryx Pro 5](system76/oryp5.md)
+- [Oryx Pro 6](system76/oryp6.md)
+- [Oryx Pro 7](system76/oryp7.md)
+- [Oryx Pro 8](system76/oryp8.md)
 
 ## Texas Instruments
 

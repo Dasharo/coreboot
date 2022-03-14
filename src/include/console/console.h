@@ -3,10 +3,9 @@
 #ifndef CONSOLE_CONSOLE_H_
 #define CONSOLE_CONSOLE_H_
 
-#include <stdint.h>
-#include <arch/cpu.h>
-#include <console/post_codes.h>
+#include <commonlib/console/post_codes.h>
 #include <console/vtxprintf.h>
+#include <stdint.h>
 
 /* console.h is supposed to provide the log levels defined in here: */
 #include <commonlib/loglevel.h>
@@ -48,8 +47,13 @@ static inline int get_console_loglevel(void)
 	 ENV_LIBAGESA || (ENV_SMM && CONFIG(DEBUG_SMI)))
 
 #if __CONSOLE_ENABLE__
-asmlinkage void console_init(void);
+int get_log_level(void);
+void console_init(void);
 int console_log_level(int msg_level);
+
+int printk(int msg_level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+int vprintk(int msg_level, const char *fmt, va_list args);
+
 void do_putchar(unsigned char byte);
 
 /* Return number of microseconds elapsed from start of stage or the previous
@@ -57,23 +61,29 @@ void do_putchar(unsigned char byte);
 long console_time_get_and_reset(void);
 void console_time_report(void);
 
-#define printk(LEVEL, fmt, args...) do_printk(LEVEL, fmt, ##args)
-#define vprintk(LEVEL, fmt, args) do_vprintk(LEVEL, fmt, args)
-
+/*
+ * "Fast" basically means only the CBMEM console right now. This is used to still
+ * print debug messages there when loglevel disables the other consoles. It is also
+ * used to compile-time eliminate code paths that only affect "interactive" consoles
+ * (which are all "slow") when none of those are enabled.
+ */
 enum { CONSOLE_LOG_NONE = 0, CONSOLE_LOG_FAST, CONSOLE_LOG_ALL };
+#define HAS_ONLY_FAST_CONSOLES !(CONFIG(SPKMODEM) || CONFIG(CONSOLE_QEMU_DEBUGCON) || \
+	CONFIG(CONSOLE_SERIAL) || CONFIG(CONSOLE_NE2K) || CONFIG(CONSOLE_USB) || \
+	CONFIG(EM100PRO_SPI_CONSOLE) || CONFIG(CONSOLE_SPI_FLASH) || \
+	CONFIG(CONSOLE_SYSTEM76_EC))
+
 #else
+static inline int get_log_level(void) { return -1; }
 static inline void console_init(void) {}
 static inline int console_log_level(int msg_level) { return 0; }
-static inline void printk(int LEVEL, const char *fmt, ...) {}
-static inline void vprintk(int LEVEL, const char *fmt, va_list args) {}
+static inline int
+	__attribute__((format(printf, 2, 3)))
+	printk(int LEVEL, const char *fmt, ...) { return 0; }
+static inline int vprintk(int LEVEL, const char *fmt, va_list args) { return 0; }
 static inline void do_putchar(unsigned char byte) {}
 static inline long console_time_get_and_reset(void) { return 0; }
 static inline void console_time_report(void) {}
 #endif
-
-int do_printk(int msg_level, const char *fmt, ...)
-	__attribute__((format(printf, 2, 3)));
-
-int do_vprintk(int msg_level, const char *fmt, va_list args);
 
 #endif /* CONSOLE_CONSOLE_H_ */

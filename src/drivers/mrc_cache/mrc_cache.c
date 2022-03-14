@@ -255,7 +255,7 @@ static int mrc_cache_get_latest_slot_info(const char *name,
 
 	/* No data to return. */
 	if (region_file_data(cache_file, rdev) < 0) {
-		printk(BIOS_ERR, "MRC: no data in '%s'\n", name);
+		printk(BIOS_NOTICE, "MRC: no data in '%s'\n", name);
 		return fail_bad_data ? -1 : 0;
 	}
 
@@ -285,7 +285,8 @@ static int mrc_cache_find_current(int type, uint32_t version,
 	 * In recovery mode, force retraining if the memory retrain
 	 * switch is set.
 	 */
-	if (vboot_recovery_mode_enabled() && get_recovery_mode_retrain_switch())
+	if (CONFIG(VBOOT_STARTS_IN_BOOTBLOCK) && vboot_recovery_mode_enabled()
+	    && get_recovery_mode_retrain_switch())
 		return -1;
 
 	cr = lookup_region(&region, type);
@@ -485,7 +486,7 @@ static void update_mrc_cache_by_type(int type,
 
 	struct update_region_file_entry entries[] = {
 		[0] = {
-			.size = sizeof(struct mrc_metadata),
+			.size = sizeof(*new_md),
 			.data = new_md,
 		},
 		[1] = {
@@ -695,7 +696,7 @@ int mrc_cache_stash_data(int type, uint32_t version, const void *data,
 		.data_checksum = compute_ip_checksum(data, size),
 	};
 	md.header_checksum =
-		compute_ip_checksum(&md, sizeof(struct mrc_metadata));
+		compute_ip_checksum(&md, sizeof(md));
 
 	if (CONFIG(MRC_STASH_TO_CBMEM)) {
 		/* Store data in cbmem for use in ramstage */

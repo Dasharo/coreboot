@@ -18,21 +18,30 @@
 void mainboard_memory_init_params(struct romstage_params *params,
 				  MEMORY_INIT_UPD *memory_params)
 {
-	struct region_device spd_rdev;
-	u8 spd_index = 0;
+	u8 spd_index;
 
-	if (!CONFIG(ONBOARD_SAMSUNG_MEM)) {
-		if (cpld_read_pcb_version() <= 7)
-			spd_index = 1;
-		else
-			spd_index = 2;
+	switch (cpld_read_pcb_version()) {
+	case 0:	/* intentional fallthrough */
+	case 1:	/* intentional fallthrough */
+	case 2:	/* intentional fallthrough */
+	case 3:	/* intentional fallthrough */
+	case 4:	/* intentional fallthrough */
+	case 5:
+		spd_index = 0;
+		break;
+	case 6:	/* intentional fallthrough */
+	case 7:
+		spd_index = 1;
+		break;
+	default:
+		spd_index = 2;
+		break;
 	}
 
-	if (get_spd_cbfs_rdev(&spd_rdev, spd_index) < 0)
-		die("spd.bin not found\n");
-
 	memory_params->PcdMemoryTypeEnable = MEM_DDR3;
-	memory_params->PcdMemorySpdPtr = (uintptr_t)rdev_mmap_full(&spd_rdev);
+	memory_params->PcdMemorySpdPtr = spd_cbfs_map(spd_index);
+	if (!memory_params->PcdMemorySpdPtr)
+		die("spd.bin not found\n");
 	memory_params->PcdMemChannel0Config = 1; /* Memory down */
 	memory_params->PcdMemChannel1Config = 2; /* Disabled */
 }

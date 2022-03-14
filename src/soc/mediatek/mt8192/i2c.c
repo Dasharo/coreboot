@@ -2,11 +2,13 @@
 
 #include <assert.h>
 #include <device/mmio.h>
-#include <soc/pll.h>
 #include <soc/i2c.h>
 #include <soc/gpio.h>
 
-#define I2C_CLK_HZ (UNIVPLL_HZ / 20)
+#define I2C_FULL_DUTY 100
+#define I2C_HALF_DUTY 50
+#define I2C_ADJUSTED_DUTY 45
+#define I2C_FS_START_CON 0x601
 struct mtk_i2c mtk_i2c_bus_controller[] = {
 	[0] = {
 		.i2c_regs = (void *)(I2C_BASE + 0x250000),
@@ -60,7 +62,8 @@ struct mtk_i2c mtk_i2c_bus_controller[] = {
 	},
 };
 
-#define I2C_BUS_NUMBER ARRAY_SIZE(mtk_i2c_bus_controller)
+_Static_assert(ARRAY_SIZE(mtk_i2c_bus_controller) == I2C_BUS_NUMBER,
+	       "Wrong size of mtk_i2c_bus_controller");
 
 struct pad_func {
 	gpio_t gpio;
@@ -123,35 +126,64 @@ static void mtk_i2c_set_gpio_pinmux(uint8_t bus)
 	}
 }
 
-static void mtk_i2c_speed_init(uint8_t bus)
+static void mtk_i2c_speed_init_soc(uint8_t bus)
 {
 	uint8_t step_div;
 	const uint8_t clock_div = 5;
 	const uint8_t sample_div = 1;
 	uint32_t i2c_freq;
+	uint32_t tar_speed = 400;
+	uint32_t tar_speed_high;
+	uint32_t tar_speed_low;
 
 	assert(bus < I2C_BUS_NUMBER);
 
+	/* Adjust ratio of high/low level */
+	tar_speed_high = tar_speed * I2C_HALF_DUTY / I2C_ADJUSTED_DUTY;
+
 	/* Calculate i2c frequency */
 	step_div = DIV_ROUND_UP(I2C_CLK_HZ,
-				(400 * KHz * sample_div * 2) * clock_div);
+				(tar_speed_high * KHz * sample_div * 2) * clock_div);
 	i2c_freq = I2C_CLK_HZ / (step_div * sample_div * 2 * clock_div);
-	assert(sample_div < 8 && step_div < 64 && i2c_freq <= 400 * KHz &&
-	       i2c_freq >= 380 * KHz);
+	assert(sample_div < 8 && step_div < 64 &&
+	       i2c_freq <= tar_speed_high * KHz &&
+	       i2c_freq >= (tar_speed_high - 20) * KHz);
 
 	/* Init i2c bus timing register */
 	write32(&mtk_i2c_bus_controller[bus].i2c_regs->timing,
 		(sample_div - 1) << 8 | (step_div - 1));
+
+	/* Adjust ratio of high/low level */
+	tar_speed_low = tar_speed * I2C_HALF_DUTY /
+			(I2C_FULL_DUTY - I2C_ADJUSTED_DUTY);
+
+	/* Calculate i2c frequency */
+	step_div = DIV_ROUND_UP(I2C_CLK_HZ,
+				(tar_speed_low * KHz * sample_div * 2) * clock_div);
+	i2c_freq = I2C_CLK_HZ / (step_div * sample_div * 2 * clock_div);
+	assert(sample_div < 8 && step_div < 64 &&
+	       i2c_freq <= tar_speed_low * KHz &&
+	       i2c_freq >= (tar_speed_low - 20) * KHz);
 	write32(&mtk_i2c_bus_controller[bus].i2c_regs->ltiming,
 		(sample_div - 1) << 6 | (step_div - 1));
 
 	/* Init i2c bus clock_div register */
 	write32(&mtk_i2c_bus_controller[bus].i2c_regs->clock_div,
 		clock_div - 1);
+
+	/* Adjust tSU,STA/tHD,STA/tSU,STO */
+	write32(&mtk_i2c_bus_controller[bus].i2c_regs->ext_conf, I2C_FS_START_CON);
 }
 
 void mtk_i2c_bus_init(uint8_t bus)
 {
-	mtk_i2c_speed_init(bus);
+	mtk_i2c_speed_init_soc(bus);
 	mtk_i2c_set_gpio_pinmux(bus);
+}
+
+void mtk_i2c_dump_more_info(struct mt_i2c_regs *regs)
+{
+	printk(BIOS_DEBUG, "LTIMING %x\nCLK_DIV %x\n",
+	       read32(&regs->ltiming),
+	       read32(&regs->clock_div));
 }

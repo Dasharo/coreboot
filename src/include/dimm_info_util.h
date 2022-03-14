@@ -12,7 +12,7 @@
  * Use this when setting dimm_info.bus_width if the raw SPD values are not
  * available.
  */
-uint8_t smbios_bus_width_to_spd_width(uint16_t total_width,
+uint8_t smbios_bus_width_to_spd_width(uint8_t ddr_type, uint16_t total_width,
 				      uint16_t data_width);
 
 /**
@@ -28,7 +28,7 @@ uint32_t smbios_memory_size_to_mib(uint16_t memory_size,
  *
  * Use this when setting dimm_info.mod_type.
  */
-uint8_t
-smbios_form_factor_to_spd_mod_type(smbios_memory_form_factor form_factor);
+uint8_t smbios_form_factor_to_spd_mod_type(smbios_memory_type memory_type,
+		smbios_memory_form_factor form_factor);
 
 #endif

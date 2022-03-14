@@ -21,30 +21,21 @@
 #include <southbridge/intel/common/pciehp.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
 #include <southbridge/intel/common/spi.h>
+#include <southbridge/intel/common/rcba_pirq.h>
 
 #define NMI_OFF	0
 
-typedef struct southbridge_intel_ibexpeak_config config_t;
-
 /**
- * Set miscellanous static southbridge features.
+ * Set miscellaneous static southbridge features.
  *
  * @param dev PCI device with I/O APIC control registers
  */
 static void pch_enable_ioapic(struct device *dev)
 {
-	u32 reg32;
-
-	set_ioapic_id(VIO_APIC_VADDR, 0x01);
 	/* affirm full set of redirection table entries ("write once") */
-	reg32 = io_apic_read(VIO_APIC_VADDR, 0x01);
-	io_apic_write(VIO_APIC_VADDR, 0x01, reg32);
+	ioapic_lock_max_vectors(VIO_APIC_VADDR);
 
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
+	setup_ioapic(VIO_APIC_VADDR, 0x01);
 }
 
 static void pch_enable_serial_irqs(struct device *dev)
@@ -120,7 +111,7 @@ static void pch_pirq_init(struct device *dev)
 static void pch_gpi_routing(struct device *dev)
 {
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_ibexpeak_config *config = dev->chip_info;
 	u32 reg32 = 0;
 
 	/* An array would be much nicer here, or some
@@ -153,10 +144,7 @@ static void pch_power_options(struct device *dev)
 	u32 reg32;
 	const char *state;
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
-
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-	int nmi_option;
+	const struct southbridge_intel_ibexpeak_config *config = dev->chip_info;
 
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
@@ -164,7 +152,8 @@ static void pch_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
+					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);
 	reg16 &= 0xfffe;
@@ -205,8 +194,7 @@ static void pch_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x70);
-	nmi_option = NMI_OFF;
-	get_option(&nmi_option, "nmi");
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */
@@ -456,7 +444,7 @@ static void lpc_init(struct device *dev)
 static void pch_lpc_read_resources(struct device *dev)
 {
 	struct resource *res;
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_ibexpeak_config *config = dev->chip_info;
 	u8 io_index = 0;
 
 	/* Get the normal PCI resources of this device. */
@@ -531,7 +519,7 @@ static const char *lpc_acpi_name(const struct device *dev)
 static void southbridge_fill_ssdt(const struct device *device)
 {
 	struct device *dev = pcidev_on_root(0x1f, 0);
-	config_t *chip = dev->chip_info;
+	struct southbridge_intel_ibexpeak_config *chip = dev->chip_info;
 
 	intel_acpi_pcie_hotplug_generator(chip->pcie_hotplug_map, 8);
 	intel_acpi_gen_def_acpi_pirq(dev);

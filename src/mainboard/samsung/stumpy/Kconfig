@@ -1,5 +1,8 @@
 if BOARD_SAMSUNG_STUMPY
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_8192
@@ -25,15 +28,9 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "samsung/stumpy"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Stumpy"
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0106.rom"
 
 endif # BOARD_SAMSUNG_STUMPY

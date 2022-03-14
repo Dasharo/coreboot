@@ -1,84 +1,59 @@
 comment "Volteer"
 
 config BOARD_GOOGLE_DELBIN
-	bool "-> Delbin"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select DRIVERS_GENESYSLOGIC_GL9755
+	bool "->  Delbin (ASUS Chromebook Flip CX5)"
 
 config BOARD_GOOGLE_ELDRID
-	bool "-> Eldrid"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
+	bool "->  Eldrid"
 
 config BOARD_GOOGLE_HALVOR
-	bool "-> Halvor"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select INTEL_CAR_NEM
+	bool "->  Halvor"
 
 config BOARD_GOOGLE_LINDAR
-	bool "-> Lindar"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select INTEL_CAR_NEM
-	select CHROMEOS_DSM_CALIB if CHROMEOS
-	select DRIVERS_I2C_RT1011
+	bool "->  Lindar"
 
 config BOARD_GOOGLE_MALEFOR
-	bool "-> Malefor"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select INTEL_CAR_NEM
+	bool "->  Malefor"
 
 config BOARD_GOOGLE_TERRADOR
-	bool "-> Terrador"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
+	bool "->  Terrador"
 
 config BOARD_GOOGLE_TODOR
-	bool "-> Todor"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select INTEL_CAR_NEM
+	bool "->  Todor"
 
 config BOARD_GOOGLE_TRONDO
-	bool "-> Trondo"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select INTEL_CAR_NEM
+	bool "->  Trondo"
 
 config BOARD_GOOGLE_VOLTEER
-	bool "-> Volteer"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select VARIANT_HAS_MIPI_CAMERA
-	select INTEL_CAR_NEM
+	bool "->  Volteer"
 
 config BOARD_GOOGLE_VOLTEER2
-	bool "-> Volteer2"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select VARIANT_HAS_MIPI_CAMERA
-	select DRIVERS_GENESYSLOGIC_GL9755
-	select DRIVER_I2C_TPM_ACPI
+	bool "->  Volteer2"
 
 # Reworked Volteer2 prototype, Haven chip replaced with Dauntless demo board
 config BOARD_GOOGLE_VOLTEER2_TI50
-	bool "-> Volteer2_Ti50"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select VARIANT_HAS_MIPI_CAMERA
-	select DRIVERS_GENESYSLOGIC_GL9755
-	select DRIVER_I2C_TPM_ACPI
+	bool "->  Volteer2_Ti50"
 
 config BOARD_GOOGLE_VOXEL
-	bool "-> Voxel"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
+	bool "->  Voxel (Acer Chromebook Spin 713 (CP713-3W))"
 
 config BOARD_GOOGLE_ELEMI
-	bool "-> Elemi"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
+	bool "->  Elemi (HP Pro c640 G2 Chromebook)"
 
 config BOARD_GOOGLE_VOEMA
-	bool "-> Voema"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select VARIANT_HAS_MIPI_CAMERA
+	bool "->  Voema"
 
 config BOARD_GOOGLE_DROBIT
-	bool "-> Drobit"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
-	select DRIVERS_GENESYSLOGIC_GL9755
+	bool "->  Drobit (ASUS Chromebook CX9400)"
 
 config BOARD_GOOGLE_COPANO
-	bool "-> Copano"
-	select BOARD_GOOGLE_BASEBOARD_VOLTEER
+	bool "->  Copano (ASUS Chromebook Flip CX5400)"
+
+config BOARD_GOOGLE_COLLIS
+	bool "->  Collis"
+
+config BOARD_GOOGLE_VOLET
+	bool "->  Volet"
+
+config BOARD_GOOGLE_CHRONICLER
+	bool "->  Chronicler"

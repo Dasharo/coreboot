@@ -5,7 +5,7 @@
 
 #include <device/device.h>
 #include <device/i2c.h>
-#include <stdint.h>
+#include <types.h>
 
 #if CONFIG(DRIVERS_I2C_DESIGNWARE_DEBUG)
 #define DW_I2C_DEBUG BIOS_DEBUG
@@ -95,32 +95,16 @@ uintptr_t dw_i2c_base_address(unsigned int bus);
 
 /*
  * Initialize this bus controller and set the speed
- * Return value:
- * -1 = failure
- *  0 = success
 */
-int dw_i2c_init(unsigned int bus, const struct dw_i2c_bus_config *bcfg);
+enum cb_err dw_i2c_init(unsigned int bus, const struct dw_i2c_bus_config *bcfg);
 
 /*
  * Generate speed config based on clock
- * Return value:
- * -1 = failure
- *  0 = success
 */
-int dw_i2c_gen_speed_config(uintptr_t dw_i2c_addr,
+enum cb_err dw_i2c_gen_speed_config(uintptr_t dw_i2c_addr,
 					enum i2c_speed speed,
 					const struct dw_i2c_bus_config *bcfg,
 					struct dw_i2c_speed_config *config);
-
-/*
- * Process given I2C segments in a single transfer
- * Return value:
- * -1 = failure
- *  0 = success
- */
-int dw_i2c_transfer(unsigned int bus,
-			const struct i2c_msg *segments,
-			size_t count);
 
 /*
  * Map an i2c host controller device to a logical bus number.

@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#define __SIMPLE_DEVICE__
+
 #include <arch/io.h>
 #include <device/pci_ops.h>
 #include <device/device.h>
@@ -22,6 +24,7 @@
 #define TCOBASE		0x50
 #define TCOCTL		0x54
 #define  TCO_BASE_EN		(1 << 8)
+#define  TCO_BASE_LOCK		(1 << 0)
 
 /* Get base address of TCO I/O registers. */
 static uint16_t tco_get_bar(void)
@@ -50,6 +53,10 @@ void tco_write_reg(uint16_t tco_reg, uint16_t value)
 void tco_lockdown(void)
 {
 	uint16_t tcocnt;
+	const pci_devfn_t dev = PCH_DEV_SMBUS;
+
+	/* TCO base address lockdown */
+	pci_or_config32(dev, TCOCTL, TCO_BASE_LOCK);
 
 	/* TCO Lock down */
 	tcocnt = tco_read_reg(TCO1_CNT);
@@ -101,13 +108,7 @@ static void tco_enable_bar(void)
 {
 	uint32_t reg32;
 	uint16_t tcobase;
-#if defined(__SIMPLE_DEVICE__)
-	int devfn = PCH_DEVFN_SMBUS;
-	pci_devfn_t dev = PCI_DEV(0, PCI_SLOT(devfn), PCI_FUNC(devfn));
-#else
-	struct device *dev;
-	dev = PCH_DEV_SMBUS;
-#endif
+	const pci_devfn_t dev = PCH_DEV_SMBUS;
 
 	/* Disable TCO in SMBUS Device first before changing Base Address */
 	reg32 = pci_read_config32(dev, TCOCTL);

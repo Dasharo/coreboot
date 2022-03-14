@@ -12,7 +12,7 @@ static const struct pad_config gpio_table[] = {
 	/* A19 : GPP_A19 */
 	PAD_NC(GPP_A19, NONE),
 	/* A20 : TOUCH_INT_ODL */
-	PAD_CFG_GPI_APIC(GPP_A20, NONE, PLTRST, LEVEL, NONE),
+	PAD_CFG_GPI_IRQ_WAKE(GPP_A20, NONE, PLTRST, LEVEL, INVERT),
 	/* A21 : FPMCU_PCH_BOOT0 */
 	PAD_NC(GPP_A21, NONE),
 	/* A22 : FPMCU_PCH_INT_L */
@@ -42,7 +42,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_C19, NONE),
 
 	/* D16 : DMIC_ON_OFF MIC_SWITCH_L */
-	PAD_CFG_GPI(GPP_D16, NONE, DEEP),
+	PAD_CFG_GPI_GPIO_DRIVER(GPP_D16, NONE, DEEP),
 
 	/* E2  : EN_PP_MST_OD */
 	PAD_CFG_GPO(GPP_E2, 1, DEEP),
@@ -137,6 +137,8 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_GPI(GPP_C20, NONE, DEEP),
 	/* C21 : H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_C21, NONE, PLTRST, LEVEL, INVERT),
+	/* C22 : EC_IN_RW_OD */
+	PAD_CFG_GPI(GPP_C22, NONE, DEEP),
 	/* C23 : WLAN_PE_RST# */
 	PAD_CFG_GPO(GPP_C23, 1, DEEP),
 	/* E1  : M2_SSD_PEDET */

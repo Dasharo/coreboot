@@ -39,7 +39,9 @@
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_KEY_PRESSED)     |\
 	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_MODE_CHANGE))
 
-#define MAINBOARD_EC_S0IX_WAKE_EVENTS	(MAINBOARD_EC_S3_WAKE_EVENTS)
+#define MAINBOARD_EC_S0IX_WAKE_EVENTS \
+	(MAINBOARD_EC_S3_WAKE_EVENTS |\
+	 EC_HOST_EVENT_MASK(EC_HOST_EVENT_USB_MUX))
 
 /* Log EC wake events plus EC shutdown events */
 #define MAINBOARD_EC_LOG_EVENTS \
@@ -54,12 +56,12 @@
 /* Enable EC backed ALS device in ACPI */
 #define EC_ENABLE_ALS_DEVICE
 
+/* Enable MKBP for buttons and switches */
+#define EC_ENABLE_MKBP_DEVICE
+
 /* Enable LID switch and provide wake pin for EC */
 #define EC_ENABLE_LID_SWITCH
 #define EC_ENABLE_WAKE_PIN	GPE_EC_WAKE
-
-/* Enable Tablet switch */
-#define EC_ENABLE_TBMC_DEVICE
 
 #define SIO_EC_MEMMAP_ENABLE	/* EC Memory Map Resources */
 #define SIO_EC_HOST_ENABLE	/* EC Host Interface Resources */

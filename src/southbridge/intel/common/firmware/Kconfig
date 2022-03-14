@@ -37,10 +37,19 @@ config HAVE_ME_BIN
 	  coreboot without it. In this case however, you'll have to make sure
 	  that you don't overwrite your ME/TXE firmware on your flash ROM.
 
-config ME_BIN_PATH
-	string "Path to management engine firmware"
-	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/me.bin"
+config STITCH_ME_BIN
+	bool "Stitch individual ME/CSE components"
+	default n
 	depends on HAVE_ME_BIN
+	help
+	  This config can be selected by mainboard if it wants to stitch ME/CSE
+	  components during build time instead of supplying a pre-stitched
+	  binary.
+
+config ME_BIN_PATH
+	string "Path to management engine firmware" if !STITCH_ME_BIN
+	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/me.bin"
+	depends on HAVE_ME_BIN && !STITCH_ME_BIN
 
 config CHECK_ME
 	bool "Verify the integrity of the supplied ME/TXE firmware"
@@ -57,6 +66,7 @@ config CHECK_ME
 
 config ME_REGION_ALLOW_CPU_READ_ACCESS
 	bool "Allows HOST/CPU read access to ME region"
+	depends on HAVE_IFD_BIN
 	default y if SOC_INTEL_CSE_LITE_SKU
 	default n
 	help
@@ -94,7 +104,7 @@ config USE_ME_CLEANER
 
 	  If unsure, say N.
 
-comment "Please test the modified ME/TXE firmware and coreboot in two steps"
+comment "Please test coreboot with the original, unmodified ME firmware before using me_cleaner"
 	depends on USE_ME_CLEANER
 
 config ME_CLEANER_ARGS
@@ -137,8 +147,8 @@ config EC_BIN_PATH
 	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/ec.bin"
 
 choice
-	prompt "Protect flash regions"
-	default UNLOCK_FLASH_REGIONS
+	prompt "Protect flash regions" if HAVE_IFD_BIN
+	default UNLOCK_FLASH_REGIONS if HAVE_IFD_BIN
 	help
 	  This option allows you to protect flash regions.
 
@@ -172,7 +182,6 @@ config UNLOCK_FLASH_REGIONS
 endchoice
 
 config CBFS_SIZE
-	hex
 	default 0x100000
 	help
 	  Reduce CBFS size to give room to the IFD blobs.

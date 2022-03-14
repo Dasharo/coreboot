@@ -2,8 +2,8 @@ chip soc/intel/tigerlake
 	register "DdiPort1Hpd" = "0"
 	register "DdiPort2Hpd" = "0"
 	register "TcssAuxOri" = "1"
-	register "IomTypeCPortPadCfg[0]" = "0x090E000A"
-	register "IomTypeCPortPadCfg[1]" = "0x090E000D"
+	register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_E10, .pad_auxn_dc = GPP_E13}"
+
 	# USB Port Config
 	register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)"	# Type-A Port A0
 	register "usb2_ports[3]" = "USB2_PORT_TYPE_C(OC_SKIP)"	# Type-A / Type-C C1
@@ -16,7 +16,6 @@ chip soc/intel/tigerlake
 	#+-------------------+---------------------------+
 	#| Field             |  Value                    |
 	#+-------------------+---------------------------+
-	#| chipset_lockdown  | CHIPSET_LOCKDOWN_COREBOOT |
 	#| GSPI0             | cr50 TPM. Early init is   |
 	#|                   | required to set up a BAR  |
 	#|                   | for TPM communication     |
@@ -27,7 +26,6 @@ chip soc/intel/tigerlake
 	#| I2C5              | Trackpad                  |
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
-		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
 		.gspi[0] = {
 			.speed_mhz = 1,
 			.early_init = 1,
@@ -57,12 +55,126 @@ chip soc/intel/tigerlake
 		[PchSerialIoIndexI2C4]  = PchSerialIoDisabled,
 		[PchSerialIoIndexI2C5]  = PchSerialIoPci,
 	}"
-	device domain 0 on
-		# Baseboard has these on, so they must be disabled here.
-		device ref tbt_pcie_rp0 off end
-		device ref tbt_pcie_rp1 off end
-		device ref tbt_dma0 off end
 
+	# Acoustic settings
+	register "AcousticNoiseMitigation" = "0"
+	register "SlowSlewRate" = "SLEW_FAST_2"
+	register "FastPkgCRampDisable" = "0"
+
+	device domain 0 on
+		device ref dptf on
+			chip drivers/intel/dptf
+				## Fan Performance Control (Percent, Speed, Noise, Power)
+				register "controls.fan_perf" = "{
+					[0] = {  90, 6700, 220, 2200, },
+					[1] = {  80, 5800, 180, 1800, },
+					[2] = {  70, 5000, 145, 1450, },
+					[3] = {  60, 4900, 115, 1150, },
+					[4] = {  50, 3838,  90,  900, },
+					[5] = {  40, 2904,  55,  550, },
+					[6] = {  30, 2337,  30,  300, },
+					[7] = {  20, 1608,  15,  150, },
+					[8] = {  10,  800,  10,  100, },
+					[9] = {   0,    0,   0,   50, }}"
+
+				register "options.fan.fine_grained_control" = "1"
+				register "options.fan.step_size" = "2"
+				device generic 0 on
+					probe THERMAL FAN_TABLE_0
+				end
+			end
+			chip drivers/intel/dptf
+				## Active Policy
+				register "policies.active" = "{
+					[0] = {.target = DPTF_CPU,
+					       .thresholds = {TEMP_PCT(85, 90),
+							      TEMP_PCT(80, 69),
+							      TEMP_PCT(75, 56),
+							      TEMP_PCT(70, 46),
+							      TEMP_PCT(65, 36),}},
+					[1] = {.target = DPTF_TEMP_SENSOR_0,
+					       .thresholds = {TEMP_PCT(50, 90),
+							      TEMP_PCT(47, 69),
+							      TEMP_PCT(45, 56),
+							      TEMP_PCT(42, 46),
+							      TEMP_PCT(39, 36),}},
+					[2] = {.target = DPTF_TEMP_SENSOR_1,
+					       .thresholds = {TEMP_PCT(50, 90),
+							      TEMP_PCT(47, 69),
+							      TEMP_PCT(45, 56),
+							      TEMP_PCT(42, 46),
+							      TEMP_PCT(39, 36),}},
+					[3] = {.target = DPTF_TEMP_SENSOR_2,
+					       .thresholds = {TEMP_PCT(50, 90),
+							      TEMP_PCT(47, 69),
+							      TEMP_PCT(45, 56),
+							      TEMP_PCT(42, 46),
+							      TEMP_PCT(39, 36),}},
+					[4] = {.target = DPTF_TEMP_SENSOR_3,
+					       .thresholds = {TEMP_PCT(50, 90),
+							      TEMP_PCT(47, 69),
+							      TEMP_PCT(45, 56),
+							      TEMP_PCT(42, 46),
+							      TEMP_PCT(39, 36),}}}"
+
+				## Passive Policy
+				register "policies.passive" = "{
+					[0] = DPTF_PASSIVE(CPU, CPU,           95, 5000),
+					[1] = DPTF_PASSIVE(CPU, TEMP_SENSOR_1, 65, 6000),
+					[2] = DPTF_PASSIVE(CHARGER,     TEMP_SENSOR_0, 65, 6000),
+					[3] = DPTF_PASSIVE(CPU, TEMP_SENSOR_2, 65, 6000),
+					[4] = DPTF_PASSIVE(CPU, TEMP_SENSOR_3, 65, 6000)}"
+
+				## Critical Policy
+				register "policies.critical" = "{
+					[0] = DPTF_CRITICAL(CPU,               105, SHUTDOWN),
+					[1] = DPTF_CRITICAL(TEMP_SENSOR_0,      75, SHUTDOWN),
+					[2] = DPTF_CRITICAL(TEMP_SENSOR_1,      75, SHUTDOWN),
+					[3] = DPTF_CRITICAL(TEMP_SENSOR_2,      75, SHUTDOWN),
+					[4] = DPTF_CRITICAL(TEMP_SENSOR_3,      75, SHUTDOWN)}"
+
+				## Power Limits Control
+				# 3-15W PL1 in 200mW increments, avg over 28-32s interval
+				# PL2 ranges from 15 to 60W, avg over 28-32s interval
+				register "controls.power_limits" = "{
+					.pl1 = {.min_power = 3000,
+						.max_power = 15000,
+						.time_window_min = 28 * MSECS_PER_SEC,
+						.time_window_max = 32 * MSECS_PER_SEC,
+						.granularity = 200,},
+					.pl2 = {.min_power = 60000,
+						.max_power = 60000,
+						.time_window_min = 28 * MSECS_PER_SEC,
+						.time_window_max = 32 * MSECS_PER_SEC,
+						.granularity = 1000,}}"
+
+				## Charger Performance Control (Control, mA)
+				register "controls.charger_perf" = "{
+					[0] = { 255, 1700 },
+					[1] = {  24, 1500 },
+					[2] = {  16, 1000 },
+					[3] = {   8,  500 }}"
+
+				## Fan Performance Control (Percent, Speed, Noise, Power)
+				register "controls.fan_perf" = "{
+					[0] = { 100, 5800, 220, 2200, },
+					[1] = {  90, 5700, 180, 1800, },
+					[2] = {  80, 5050, 145, 1450, },
+					[3] = {  70, 4800, 115, 1150, },
+					[4] = {  65, 4500,  90,  900, },
+					[5] = {  60, 4200,  55,  550, },
+					[6] = {  55, 3800,  30,  300, },
+					[7] = {  50, 3508,  15,  150, },
+					[8] = {  45, 3400,  10,  100, },
+					[9] = {   0,    0,   0,   50, }}"
+
+				register "options.fan.fine_grained_control" = "1"
+				register "options.fan.step_size" = "2"
+				device generic 1 on
+					probe THERMAL FAN_TABLE_1
+				end
+			end
+		end
 		device ref i2c0 on
 			chip drivers/i2c/generic
 				register "hid" = ""10EC5682""
@@ -103,8 +215,8 @@ chip soc/intel/tigerlake
 				register "generic.probed" = "1"
 				register "generic.reset_gpio" =
 							"ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C10)"
-				# Parameter T3 >= 10ms
-				register "generic.reset_delay_ms" = "120"
+				# Parameter T5 >= 180ms
+				register "generic.reset_delay_ms" = "180"
 				# Parameter T2 >= 1ms
 				register "generic.reset_off_delay_ms" = "3"
 				register "generic.enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A8)"
@@ -120,7 +232,7 @@ chip soc/intel/tigerlake
 			chip drivers/i2c/generic
 				register "hid" = ""ELAN0001""
 				register "desc" = ""ELAN Touchscreen""
-				register "irq" = "ACPI_IRQ_EDGE_LOW(GPP_E7_IRQ)"
+				register "irq" = "ACPI_IRQ_LEVEL_LOW(GPP_E7_IRQ)"
 				register "probed" = "1"
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C10)"
 				register "reset_delay_ms" = "20"
@@ -156,6 +268,13 @@ chip soc/intel/tigerlake
 				device pnp 0c09.0 on end
 			end
 		end
+		device ref hda on
+			probe AUDIO MAX98357_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682I_I2S
+			probe AUDIO MAX98373_ALC5682_SNDW
+			probe AUDIO MAX98373_ALC5682I_I2S_UP4
+			probe AUDIO MAX98360_ALC5682I_I2S
+		end
 		device ref pcie_rp9 on
 			chip soc/intel/common/block/pcie/rtd3
 				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A22)"
@@ -170,14 +289,14 @@ chip soc/intel/tigerlake
 			chip drivers/intel/pmc_mux
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "9"
-						register "usb3_port_number" = "1"
+						use usb2_port9 as usb2_port
+						use tcss_usb3_port1 as usb3_port
 						# SBU & HSL follows CC
 						device generic 0 alias conn0 on end
 					end
 					chip drivers/intel/pmc_mux/conn
-						register "usb2_port_number" = "4"
-						register "usb3_port_number" = "2"
+						use usb2_port4 as usb2_port
+						use tcss_usb3_port2 as usb3_port
 						# SBU is fixed, HSL follows CC
 						register "sbu_orientation" = "TYPEC_ORIENTATION_NORMAL"
 						device generic 1 alias conn1 on end

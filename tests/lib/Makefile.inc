@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+tests-y += lib-test
 tests-y += string-test
 tests-y += b64_decode-test
 tests-y += hexstrtobin-test
@@ -22,6 +23,25 @@ tests-y += malloc-test
 tests-y += memmove-test
 tests-y += crc_byte-test
 tests-y += compute_ip_checksum-test
+tests-y += memrange-test
+tests-y += uuid-test
+tests-y += bootmem-test
+tests-y += dimm_info_util-test
+tests-y += coreboot_table-test
+tests-y += rtc-test
+tests-y += spd_cache-ddr3-test
+tests-y += spd_cache-ddr4-test
+tests-y += cbmem_stage_cache-test
+tests-y += libgcc-test
+tests-y += cbfs-verification-no-sha512-test
+tests-y += cbfs-verification-has-sha512-test
+tests-y += cbfs-no-verification-no-sha512-test
+tests-y += cbfs-no-verification-has-sha512-test
+tests-y += cbfs-lookup-no-mcache-test
+tests-y += cbfs-lookup-has-mcache-test
+tests-y += lzma-test
+
+lib-test-srcs += tests/lib/lib-test.c
 
 string-test-srcs += tests/lib/string-test.c
 string-test-srcs += src/lib/string.c
@@ -63,7 +83,6 @@ fmap-test-srcs += tests/stubs/console.c
 fmap-test-srcs += src/lib/boot_device.c
 fmap-test-srcs += src/commonlib/region.c
 fmap-test-cflags += -I tests/include/tests/lib/fmap
-fmap-test-cflags += -I 3rdparty/vboot/firmware/include
 
 imd_cbmem-ramstage-test-stage := ramstage
 imd_cbmem-ramstage-test-srcs += tests/lib/imd_cbmem-test.c
@@ -106,3 +125,119 @@ crc_byte-test-srcs += src/lib/crc_byte.c
 compute_ip_checksum-test-srcs += tests/lib/compute_ip_checksum-test.c
 compute_ip_checksum-test-srcs += src/lib/compute_ip_checksum.c
 
+memrange-test-srcs += tests/lib/memrange-test.c
+memrange-test-srcs += src/lib/memrange.c
+memrange-test-srcs += tests/stubs/console.c
+memrange-test-srcs += src/device/device_util.c
+
+uuid-test-srcs += tests/lib/uuid-test.c
+uuid-test-srcs += src/lib/hexstrtobin.c
+uuid-test-srcs += src/lib/uuid.c
+
+bootmem-test-srcs += tests/lib/bootmem-test.c
+bootmem-test-srcs += tests/stubs/console.c
+bootmem-test-srcs += src/device/device_util.c
+bootmem-test-srcs += src/lib/bootmem.c
+bootmem-test-srcs += src/lib/memrange.c
+
+dimm_info_util-test-srcs += tests/lib/dimm_info_util-test.c
+dimm_info_util-test-srcs += src/device/dram/spd.c
+dimm_info_util-test-srcs += src/lib/dimm_info_util.c
+dimm_info_util-test-srcs += tests/stubs/console.c
+
+coreboot_table-test-srcs += tests/lib/coreboot_table-test.c
+coreboot_table-test-srcs += tests/stubs/console.c
+coreboot_table-test-srcs += src/lib/compute_ip_checksum.c
+coreboot_table-test-srcs += src/lib/coreboot_table.c
+coreboot_table-test-srcs += src/lib/imd_cbmem.c
+coreboot_table-test-srcs += src/lib/imd.c
+coreboot_table-test-cflags += -I tests/include/tests/lib/fmap
+coreboot_table-test-mocks += cbmem_top_chipset
+
+rtc-test-srcs += tests/lib/rtc-test.c
+rtc-test-srcs += src/lib/rtc.c
+
+spd_cache-ddr3-test-srcs += tests/lib/spd_cache-test.c
+spd_cache-ddr3-test-srcs += tests/stubs/console.c
+spd_cache-ddr3-test-srcs += src/lib/spd_cache.c
+spd_cache-ddr3-test-srcs += src/lib/crc_byte.c
+spd_cache-ddr3-test-srcs += src/commonlib/region.c
+spd_cache-ddr3-test-mocks += fmap_locate_area_as_rdev
+spd_cache-ddr3-test-config += CONFIG_SPD_CACHE_FMAP_NAME=\"RW_SPD_CACHE\" \
+				CONFIG_DIMM_MAX=4 CONFIG_DIMM_SPD_SIZE=256 \
+				CONFIG_BOOT_DEVICE_MEMORY_MAPPED=1
+spd_cache-ddr3-test-cflags += -D__TEST_SPD_CACHE_DDR=3
+
+spd_cache-ddr4-test-srcs += tests/lib/spd_cache-test.c
+spd_cache-ddr4-test-srcs += tests/stubs/console.c
+spd_cache-ddr4-test-srcs += src/lib/spd_cache.c
+spd_cache-ddr4-test-srcs += src/lib/crc_byte.c
+spd_cache-ddr4-test-srcs += src/commonlib/region.c
+spd_cache-ddr4-test-mocks += fmap_locate_area_as_rdev
+spd_cache-ddr4-test-config += CONFIG_SPD_CACHE_FMAP_NAME=\"RW_SPD_CACHE\" \
+				CONFIG_DIMM_MAX=4 CONFIG_DIMM_SPD_SIZE=512 \
+				CONFIG_BOOT_DEVICE_MEMORY_MAPPED=1
+spd_cache-ddr4-test-cflags += -D__TEST_SPD_CACHE_DDR=4
+
+cbmem_stage_cache-test-srcs += tests/lib/cbmem_stage_cache-test.c
+cbmem_stage_cache-test-srcs += tests/stubs/console.c
+cbmem_stage_cache-test-srcs += src/lib/cbmem_stage_cache.c
+cbmem_stage_cache-test-srcs += src/lib/imd_cbmem.c
+cbmem_stage_cache-test-srcs += src/lib/imd.c
+cbmem_stage_cache-test-config += CONFIG_CBMEM_STAGE_CACHE=1
+
+libgcc-test-srcs += tests/lib/libgcc-test.c
+
+# CBFS varification tests are compiled with CONFIG_CBFS_VERIFICATION
+# and VB2_SUPPORT_SHA512 set and unset. Code should work with and without
+# verification and with hash structure of different sizes.
+cbfs-verification-no-sha512-test-stage := bootblock
+cbfs-verification-no-sha512-test-srcs := tests/lib/cbfs-verification-test.c \
+					tests/stubs/console.c \
+					tests/stubs/die.c \
+					tests/mock/cbfs_file_mock.c \
+					src/lib/cbfs.c \
+					src/commonlib/bsd/cbfs_private.c \
+					src/commonlib/mem_pool.c \
+					src/commonlib/region.c
+cbfs-verification-no-sha512-test-mocks += cbfs_get_boot_device cbfs_lookup
+cbfs-verification-no-sha512-test-config += CONFIG_COLLECT_TIMESTAMPS=0 \
+					CONFIG_CBFS_VERIFICATION=1 \
+					CONFIG_NO_CBFS_MCACHE=1 \
+					VB2_SUPPORT_SHA512=0
+
+$(call copy-test,cbfs-verification-no-sha512-test,cbfs-verification-has-sha512-test)
+cbfs-verification-has-sha512-test-config += VB2_SUPPORT_SHA512=1
+
+$(call copy-test,cbfs-verification-no-sha512-test,cbfs-no-verification-no-sha512-test)
+cbfs-no-verification-no-sha512-test-config += CONFIG_CBFS_VERIFICATION=0
+
+$(call copy-test,cbfs-verification-no-sha512-test,cbfs-no-verification-has-sha512-test)
+cbfs-no-verification-has-sha512-test-config += CONFIG_CBFS_VERIFICATION=0 \
+						VB2_SUPPORT_SHA512=1
+
+cbfs-lookup-no-mcache-test-srcs = tests/lib/cbfs-lookup-test.c \
+				tests/stubs/console.c \
+				tests/stubs/die.c \
+				tests/mock/cbfs_file_mock.c \
+				src/lib/cbfs.c \
+				src/commonlib/bsd/cbfs_private.c \
+				src/commonlib/bsd/cbfs_mcache.c \
+				src/commonlib/mem_pool.c \
+				src/commonlib/region.c
+cbfs-lookup-no-mcache-test-mocks += cbfs_get_boot_device \
+					cbfs_lookup \
+					cbfs_mcache_lookup \
+					mem_pool_alloc \
+					mem_pool_free
+cbfs-lookup-no-mcache-test-config += CONFIG_ARCH_X86=0 \
+				CONFIG_COLLECT_TIMESTAMPS=0 \
+				CONFIG_NO_CBFS_MCACHE=1
+
+$(call copy-test,cbfs-lookup-no-mcache-test,cbfs-lookup-has-mcache-test)
+cbfs-lookup-has-mcache-test-config += CONFIG_NO_CBFS_MCACHE=0
+
+lzma-test-srcs += tests/lib/lzma-test.c
+lzma-test-srcs += tests/stubs/console.c
+lzma-test-srcs += src/lib/lzma.c
+lzma-test-srcs += src/lib/lzmadecode.c

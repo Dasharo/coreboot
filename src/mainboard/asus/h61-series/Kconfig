@@ -1,0 +1,56 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+config BOARD_ASUS_H61_SERIES
+	bool
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select INTEL_GMA_HAVE_VBT
+	select INTEL_INT15
+	select MAINBOARD_HAS_LIBGFXINIT
+	select NORTHBRIDGE_INTEL_SANDYBRIDGE
+	select SERIRQ_CONTINUOUS_MODE
+	select SOUTHBRIDGE_INTEL_BD82X6X
+	select USE_NATIVE_RAMINIT
+
+if BOARD_ASUS_H61_SERIES
+
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
+config MAINBOARD_DIR
+	default "asus/h61-series"
+
+config VARIANT_DIR
+	default "h61m-cs"          if BOARD_ASUS_H61M_CS
+	default "p8h61-m_lx"       if BOARD_ASUS_P8H61_M_LX
+	default "p8h61-m_lx3_r2_0" if BOARD_ASUS_P8H61_M_LX3_R2_0
+	default "p8h61-m_pro"      if BOARD_ASUS_P8H61_M_PRO
+	default "p8h61-m_pro_cm6630" if BOARD_ASUS_P8H61_M_PRO_CM6630
+
+config MAINBOARD_PART_NUMBER
+	default "H61M-CS"          if BOARD_ASUS_H61M_CS
+	default "P8H61-M LX"       if BOARD_ASUS_P8H61_M_LX
+	default "P8H61-M LX3 R2.0" if BOARD_ASUS_P8H61_M_LX3_R2_0
+	default "P8H61-M PRO"      if BOARD_ASUS_P8H61_M_PRO
+	default "P8H61-M PRO CM6630" if BOARD_ASUS_P8H61_M_PRO_CM6630
+
+config OVERRIDE_DEVICETREE
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
+
+config CMOS_DEFAULT_FILE
+	default "src/mainboard/\$(MAINBOARDDIR)/variants/\$(CONFIG_VARIANT_DIR)/cmos.default"
+
+config CMOS_LAYOUT_FILE
+	default "src/mainboard/\$(MAINBOARDDIR)/variants/\$(CONFIG_VARIANT_DIR)/cmos.layout"
+
+#
+# These ME partitions need to be whitelisted for correct system
+# operation. Example issues from removing them include: no serial output
+# and kernel warnings about loading audio codecs.
+#
+config ME_CLEANER_ARGS
+	string
+	depends on USE_ME_CLEANER
+	default "-S --whitelist EFFS,FCRS" if BOARD_ASUS_P8H61_M_LX
+
+endif

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <acpi/acpigen.h>
 #include <acpi/acpi.h>
+#include <acpi/acpigen.h>
 #include <assert.h>
 #include <console/console.h>
 #include <console/debug.h>
@@ -11,22 +11,31 @@
 #include <cpu/intel/microcode.h>
 #include <cpu/intel/smm_reloc.h>
 #include <cpu/intel/turbo.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/mtrr.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/mp_init.h>
+#include <intelpch/lockdown.h>
 #include <soc/cpu.h>
 #include <soc/msr.h>
-#include <soc/soc_util.h>
+#include <soc/pci_devs.h>
+#include <soc/pm.h>
 #include <soc/smmrelocate.h>
+#include <soc/soc_util.h>
 #include <soc/util.h>
+#include <types.h>
 
 #include "chip.h"
 
 static const void *microcode_patch;
 
 static const config_t *chip_config = NULL;
+
+bool cpu_soc_is_in_untrusted_mode(void)
+{
+	/* IA_UNTRUSTED_MODE is not supported in Cooper Lake */
+	return false;
+}
 
 static void xeon_configure_mca(void)
 {
@@ -68,7 +77,6 @@ static void each_cpu_init(struct device *cpu)
 
 	printk(BIOS_SPEW, "%s dev: %s, cpu: %d, apic_id: 0x%x\n",
 		__func__, dev_path(cpu), cpu_index(), cpu->path.apic.apic_id);
-	setup_lapic();
 
 	/*
 	 * Set HWP base feature, EPP reg enumeration, lock thermal and msr
@@ -101,6 +109,13 @@ static void each_cpu_init(struct device *cpu)
 
 	/* Enable Vmx */
 	set_vmx_and_lock();
+	set_aesni_lock();
+
+	/* The MSRs and CSRS have the same register layout. Use the CSRS bit definitions
+	   Lock Turbo. Did FSP-S set this up??? */
+	msr = rdmsr(MSR_TURBO_ACTIVATION_RATIO);
+	msr.lo |= (TURBO_ACTIVATION_RATIO_LOCK);
+	wrmsr(MSR_TURBO_ACTIVATION_RATIO, msr);
 }
 
 static struct device_operations cpu_dev_ops = {
@@ -175,8 +190,11 @@ static void post_mp_init(void)
 	/* Set Max Ratio */
 	set_max_turbo_freq();
 
-	if (CONFIG(HAVE_SMI_HANDLER))
+	if (CONFIG(HAVE_SMI_HANDLER)) {
 		global_smi_enable();
+		if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT)
+			pmc_lock_smi();
+	}
 }
 
 static const struct mp_ops mp_ops = {
@@ -198,8 +216,8 @@ void cpx_init_cpus(struct device *dev)
 
 	intel_microcode_load_unlocked(microcode_patch);
 
-	if (mp_init_with_smm(dev->link_list, &mp_ops) < 0)
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(dev->link_list, &mp_ops);
 
 	/*
 	 * chip_config is used in cpu device callback. Other than cpu 0,

@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <cpu/intel/haswell/haswell.h>
+#include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pciexp.h>
@@ -9,13 +10,13 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <soc/lpc.h>
-#include <soc/iobp.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
 #include <soc/rcba.h>
 #include <soc/intel/broadwell/pch/chip.h>
+#include <southbridge/intel/lynxpoint/iobp.h>
 #include <southbridge/intel/lynxpoint/lp_gpio.h>
-#include <delay.h>
+#include <types.h>
 
 /* Low Power variant has 6 root ports. */
 #define MAX_NUM_ROOT_PORTS 6
@@ -31,7 +32,7 @@ struct root_port_config {
 	u32 b0d28f0_32c;
 	u32 b0d28f4_32c;
 	u32 b0d28f5_32c;
-	int coalesce;
+	bool coalesce;
 	int gbe_port;
 	int num_ports;
 	struct device *ports[MAX_NUM_ROOT_PORTS];
@@ -274,7 +275,7 @@ static void root_port_commit_config(void)
 
 	/* If the first root port is disabled the coalesce ports. */
 	if (!rpc.ports[0]->enabled)
-		rpc.coalesce = 1;
+		rpc.coalesce = true;
 
 	/* Perform clock gating configuration. */
 	pcie_enable_clock_gating();
@@ -516,8 +517,8 @@ static void pch_pcie_early(struct device *dev)
 	}
 
 	/* Enable LTR in Root Port. Disable OBFF. */
-	pci_update_config32(dev, 0x64, ~(1 << 11) & ~(3 << 18), (1 << 11));
-	pci_update_config32(dev, 0x68, ~(1 << 10), (1 << 10));
+	pci_update_config32(dev, 0x64, ~(3 << 18), (1 << 11));
+	pci_or_config32(dev, 0x68, 1 << 10);
 
 	pci_update_config32(dev, 0x318, ~(0xffff << 16), (0x1414 << 16));
 
@@ -609,17 +610,15 @@ static void pch_pcie_enable(struct device *dev)
 		root_port_commit_config();
 }
 
-static void pcie_set_L1_ss_max_latency(struct device *dev, unsigned int off)
+static void pcie_get_ltr_max_latencies(u16 *max_snoop, u16 *max_nosnoop)
 {
-	/* Set max snoop and non-snoop latency for Broadwell */
-	pci_write_config32(dev, off,
-		PCIE_LTR_MAX_NO_SNOOP_LATENCY_3146US << 16 |
-		PCIE_LTR_MAX_SNOOP_LATENCY_3146US);
+	*max_snoop = PCIE_LTR_MAX_SNOOP_LATENCY_3146US;
+	*max_nosnoop = PCIE_LTR_MAX_NO_SNOOP_LATENCY_3146US;
 }
 
 static struct pci_operations pcie_ops = {
 	.set_subsystem = pci_dev_set_subsystem,
-	.set_L1_ss_latency = pcie_set_L1_ss_max_latency,
+	.get_ltr_max_latencies = pcie_get_ltr_max_latencies,
 };
 
 static struct device_operations device_ops = {

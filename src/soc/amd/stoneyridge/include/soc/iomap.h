@@ -11,14 +11,10 @@
 #define ALINK_AHB_ADDRESS		0xfedc0000
 
 /* I2C fixed address */
-#define I2C_BASE_ADDRESS		0xfedc2000
-#define I2C_DEVICE_SIZE			0x00001000
-#define I2C_DEVICE_COUNT		4
-
-#if CONFIG(HPET_ADDRESS_OVERRIDE)
-#error HPET address override is not allowed and must be fixed at 0xfed00000
-#endif
-#define HPET_BASE_ADDRESS		0xfed00000
+#define APU_I2C0_BASE			0xfedc2000
+#define APU_I2C1_BASE			0xfedc3000
+#define APU_I2C2_BASE			0xfedc4000
+#define APU_I2C3_BASE			0xfedc5000
 
 #define APU_UART0_BASE			0xfedc6000
 #define APU_UART1_BASE			0xfedc8000

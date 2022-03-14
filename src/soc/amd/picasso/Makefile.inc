@@ -2,11 +2,8 @@
 
 ifeq ($(CONFIG_SOC_AMD_PICASSO),y)
 
-subdirs-y += ../../../cpu/x86/lapic
-subdirs-y += ../../../cpu/x86/cache
-subdirs-y += ../../../cpu/x86/mtrr
-subdirs-y += ../../../cpu/x86/pae
 subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += psp_verstage
+subdirs-$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK) += ../common/psp_verstage
 
 # Beware that all-y also adds the compilation unit to verstage on PSP
 all-y += config.c
@@ -14,43 +11,41 @@ all-y += aoac.c
 
 bootblock-y += bootblock.c
 bootblock-y += early_fch.c
-bootblock-y += i2c.c
-bootblock-y += uart.c
 bootblock-y += gpio.c
+bootblock-y += i2c.c
 bootblock-y += reset.c
+bootblock-y += uart.c
 
-romstage-y += i2c.c
-romstage-y += romstage.c
+romstage-y += fsp_m_params.c
 romstage-y += gpio.c
+romstage-y += i2c.c
 romstage-y += reset.c
+romstage-y += romstage.c
 romstage-y += uart.c
-romstage-y += mrc_cache.c
 
 verstage-y += i2c.c
 verstage_x86-y += gpio.c
-verstage_x86-y += uart.c
 verstage_x86-y += reset.c
+verstage_x86-y += uart.c
 
-ramstage-y += i2c.c
+ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
+ramstage-$(CONFIG_HAVE_ACPI_TABLES) += agesa_acpi.c
 ramstage-y += chip.c
 ramstage-y += cpu.c
 ramstage-y += data_fabric.c
-ramstage-y += root_complex.c
-ramstage-y += mca.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
-ramstage-$(CONFIG_HAVE_ACPI_TABLES) += agesa_acpi.c
-ramstage-y += gpio.c
 ramstage-y += fch.c
-ramstage-y += reset.c
-ramstage-y += acp.c
-ramstage-y += sata.c
-ramstage-y += uart.c
-ramstage-y += soc_util.c
-ramstage-y += fsp_params.c
+ramstage-y += fsp_s_params.c
+ramstage-y += gpio.c
 ramstage-y += graphics.c
+ramstage-y += i2c.c
+ramstage-y += mca.c
 ramstage-y += pcie_gpp.c
+ramstage-y += reset.c
+ramstage-y += root_complex.c
+ramstage-y += sata.c
+ramstage-y += soc_util.c
+ramstage-y += uart.c
 ramstage-y += xhci.c
-ramstage-y += dmi.c
 
 smm-y += smihandler.c
 ifeq ($(CONFIG_DEBUG_SMI),y)
@@ -59,7 +54,6 @@ endif
 smm-y += gpio.c
 smm-y += smu.c
 
-CPPFLAGS_common += -I$(src)/soc/amd/picasso
 CPPFLAGS_common += -I$(src)/soc/amd/picasso/include
 CPPFLAGS_common += -I$(src)/soc/amd/picasso/acpi
 CPPFLAGS_common += -I$(src)/vendorcode/amd/fsp/picasso
@@ -83,6 +77,18 @@ PICASSO_FWM_POSITION=$(call int-add, \
 	$(call int-shift-left, \
 	0x80000 $(CONFIG_AMD_FWM_POSITION_INDEX))) 0x20000 1)
 
+# 0x40 accounts for the cbfs_file struct + filename + metadata structs, aligned to 64 bytes
+# Building the cbfs image will fail if the offset isn't large enough
+AMD_FW_AB_POSITION := 0x40
+
+PICASSO_FW_A_POSITION=$(call int-add, \
+	$(shell awk '$$2 == "FMAP_SECTION_FW_MAIN_A_START" {print $$3}' $(obj)/fmap_config.h) \
+	$(AMD_FW_AB_POSITION))
+
+PICASSO_FW_B_POSITION=$(call int-add, \
+	$(shell awk '$$2 == "FMAP_SECTION_FW_MAIN_B_START" {print $$3}' $(obj)/fmap_config.h) \
+	$(AMD_FW_AB_POSITION))
+
 #
 # PSP Directory Table items
 #
@@ -105,6 +111,9 @@ else
 # Disable MP2 firmware loading
 PSP_SOFTFUSE_BITS += 29
 endif
+
+# Use additional Soft Fuse bits specified in Kconfig
+PSP_SOFTFUSE_BITS += $(call strip_quotes, $(CONFIG_PSP_SOFTFUSE_BITS))
 
 ifeq ($(CONFIG_PSP_LOAD_S0I3_FW),y)
 OPT_PSP_LOAD_S0I3_FW="--load-s0i3"
@@ -131,15 +140,14 @@ PSP_BIOSBIN_SIZE=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | a
 PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -l $(PSP_ELF_FILE) | grep LOAD | awk '{print $$3}')
 # type = 0x63 - construct APOB NV base/size from flash map
 # The flashmap section used for this is expected to be named RW_MRC_CACHE
-APOB_NV_SIZE=$(shell grep "FMAP_SECTION_RW_MRC_CACHE_SIZE" $(obj)/fmap_config.h | awk '{print $$(NF)}')
-APOB_NV_BASE=$(shell grep "FMAP_SECTION_RW_MRC_CACHE_START" $(obj)/fmap_config.h | awk '{print $$(NF)}')
+APOB_NV_SIZE=$(shell awk '$$2 == "FMAP_SECTION_RW_MRC_CACHE_SIZE" {print $$3}' $(obj)/fmap_config.h)
+APOB_NV_BASE=$(shell awk '$$2 == "FMAP_SECTION_RW_MRC_CACHE_START" {print $$3}' $(obj)/fmap_config.h)
 
 ifeq ($(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),y)
 # type = 0x6B - PSP Shared memory location
 ifneq ($(CONFIG_PSP_SHAREDMEM_SIZE),0x0)
 PSP_SHAREDMEM_SIZE=$(CONFIG_PSP_SHAREDMEM_SIZE)
-_PSP_SHAREDMEM_BASE=$(shell grep _psp_sharedmem_dram $(obj)/cbfs/$(CONFIG_CBFS_PREFIX)/bootblock.map | cut -f1 -d' ')
-PSP_SHAREDMEM_BASE=$(shell printf "0x%s" $(_PSP_SHAREDMEM_BASE))
+PSP_SHAREDMEM_BASE=$(shell awk '$$3 == "_psp_sharedmem_dram" {printf "0x" $$1}' $(objcbfs)/bootblock.map)
 endif
 
 # type = 0x52 - PSP Bootloader Userspace Application (verstage)
@@ -147,10 +155,9 @@ PSP_VERSTAGE_FILE=$(call strip_quotes,$(CONFIG_PSP_VERSTAGE_FILE))
 PSP_VERSTAGE_SIG_FILE=$(call strip_quotes,$(CONFIG_PSP_VERSTAGE_SIGNING_TOKEN))
 endif # CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK
 
-# type = 0xb - See #55758 (NDA) for bit definitions.
-PSP_SOFTFUSE_BITS += 28
 
 # Helper function to return a value with given bit set
+# Soft Fuse type = 0xb - See #55758 (NDA) for bit definitions.
 set-bit=$(call int-shift-left, 1 $(call _toint,$1))
 PSP_SOFTFUSE=$(shell A=$(call int-add, \
 		$(foreach bit,$(PSP_SOFTFUSE_BITS),$(call set-bit,$(bit)))); printf "0x%x" $$A)
@@ -226,7 +233,8 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(PSP_BIOSBIN_FILE)) \
 			$$(PSP_APCB_FILES) \
 			$(DEP_FILES) \
 			$(AMDFWTOOL) \
-			$(obj)/fmap_config.h
+			$(obj)/fmap_config.h \
+			$(objcbfs)/bootblock.elf # this target also creates the .map file
 	$(if $(PSP_APCB_FILES), ,$(error APCB_SOURCES is not set))
 	rm -f $@
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
@@ -252,7 +260,7 @@ $(obj)/amdfw_a.rom: $(obj)/amdfw.rom
 		$(AMDFW_COMMON_ARGS) \
 		$(OPT_APOB_NV_SIZE) \
 		$(OPT_APOB_NV_BASE) \
-		--location $(shell printf "%#x" $(CONFIG_PICASSO_FW_A_POSITION)) \
+		--location $(shell printf "%#x" $(PICASSO_FW_A_POSITION)) \
 		--anywhere \
 		--output $@
 
@@ -263,7 +271,7 @@ $(obj)/amdfw_b.rom: $(obj)/amdfw.rom
 		$(AMDFW_COMMON_ARGS) \
 		$(OPT_APOB_NV_SIZE) \
 		$(OPT_APOB_NV_BASE) \
-		--location $(shell printf "%#x" $(CONFIG_PICASSO_FW_B_POSITION)) \
+		--location $(shell printf "%#x" $(PICASSO_FW_B_POSITION)) \
 		--anywhere \
 		--output $@
 
@@ -275,16 +283,14 @@ apu/amdfw-type := raw
 ifeq ($(CONFIG_VBOOT_SLOTS_RW_AB)$(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),yy)
 cbfs-files-y += apu/amdfw_a
 apu/amdfw_a-file := $(obj)/amdfw_a.rom
-apu/amdfw_a-position := $(call strip_quotes, $(CONFIG_PICASSO_FW_A_POSITION))
+apu/amdfw_a-position := $(AMD_FW_AB_POSITION)
 apu/amdfw_a-type := raw
 
 cbfs-files-y += apu/amdfw_b
 apu/amdfw_b-file := $(obj)/amdfw_b.rom
-apu/amdfw_b-position := $(call strip_quotes, $(CONFIG_PICASSO_FW_B_POSITION))
+apu/amdfw_b-position := $(AMD_FW_AB_POSITION)
 apu/amdfw_b-type := raw
 endif
-
-$(call strip_quotes,$(CONFIG_FSP_M_CBFS))-options := -b $(CONFIG_FSP_M_ADDR)
 
 cpu_microcode_bins += $(wildcard ${FIRMWARE_LOCATION}/UcodePatch_*.bin)
 

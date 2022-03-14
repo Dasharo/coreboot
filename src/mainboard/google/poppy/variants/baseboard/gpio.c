@@ -2,7 +2,8 @@
 
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
-#include <commonlib/helpers.h>
+#include <types.h>
+#include <vendorcode/google/chromeos/chromeos.h>
 
 /* Pad configuration in ramstage */
 /* Leave eSPI pins untouched from default settings */
@@ -340,6 +341,9 @@ static const struct pad_config gpio_table[] = {
 
 /* Early pad configuration in bootblock */
 static const struct pad_config early_gpio_table[] = {
+	/* C6  : SM1CLK ==> EC_IN_RW_OD */
+	PAD_CFG_GPI_GPIO_DRIVER(GPP_C6, UP_20K, DEEP),
+
 	/* C18 : I2C1_SDA ==> PCH_I2C1_H1_3V3_SDA */
 	PAD_CFG_NF(GPP_C18, NONE, DEEP, NF1),
 	/* C19 : I2C1_SCL ==> PCH_I2C1_H1_3V3_SCL */

@@ -24,7 +24,6 @@
 #include <soc/lpc.h>
 #include <soc/pch.h>
 #include <soc/pci_devs.h>
-#include <soc/ramstage.h>
 #include <soc/rcba.h>
 #include <soc/intel/broadwell/pch/chip.h>
 
@@ -710,7 +709,7 @@ static int intel_mei_setup(struct device *dev)
 	struct mei_csr host;
 
 	/* Find the MMIO base for the ME interface */
-	res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (!res || res->base == 0 || res->size == 0) {
 		printk(BIOS_DEBUG, "ME: MEI resource not present!\n");
 		return -1;
@@ -770,7 +769,7 @@ static int intel_me_extend_valid(struct device *dev)
 	printk(BIOS_DEBUG, "\n");
 
 	/* Save hash in NVS for the OS to verify */
-	if (CONFIG(CHROMEOS))
+	if (CONFIG(CHROMEOS_NVS))
 		chromeos_set_me_hash(extend, count);
 
 	return 0;

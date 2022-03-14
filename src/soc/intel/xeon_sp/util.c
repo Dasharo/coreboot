@@ -74,7 +74,7 @@ msr_t read_msr_ppin(void)
 	return ppin;
 }
 
-int get_threads_per_package(void)
+static unsigned int get_threads_per_package(void)
 {
 	unsigned int core_count, thread_count;
 	cpu_read_topology(&core_count, &thread_count);
@@ -168,7 +168,7 @@ void xeonsp_init_cpu_config(void)
 	unsigned int num_sockets;
 
 	/*
-	 * sort APIC ids in asending order to identify apicid ranges for
+	 * sort APIC ids in ascending order to identify apicid ranges for
 	 * each numa domain
 	 */
 	for (dev = all_devices; dev; dev = dev->next) {
@@ -317,6 +317,9 @@ static void set_bios_init_completion_for_package(uint32_t socket)
 		PCODE_INIT_DONE3_MASK, RST_CPL3_MASK);
 	if (timedout)
 		die("BIOS RESET CPL3 timed out.\n");
+
+	/* Set PMAX_LOCK - must be set before RESET CPL4 */
+	pci_or_config32(PCU_DEV_CR0(bus), PCU_CR0_PMAX, PMAX_LOCK);
 
 	/* update RST_CPL4, PCODE_INIT_DONE4 */
 	timedout = set_bios_reset_cpl_for_package(socket, RST_CPL4_MASK,

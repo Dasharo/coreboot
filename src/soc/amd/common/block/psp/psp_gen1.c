@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <cpu/amd/msr.h>
+#include <cpu/x86/msr.h>
 #include <device/mmio.h>
+#include <device/pci_ops.h>
+#include <device/pci_def.h>
 #include <cbfs.h>
 #include <region_file.h>
 #include <timer.h>
@@ -8,7 +12,38 @@
 #include <amdblocks/psp.h>
 #include <soc/iomap.h>
 #include <soc/northbridge.h>
+#include <soc/pci_devs.h>
+#include <soc/southbridge.h>
 #include "psp_def.h"
+
+#define PSP_MAILBOX_OFFSET		0x70
+
+static void *soc_get_mbox_address(void)
+{
+	uintptr_t psp_mmio;
+
+	/* Check for presence of the PSP */
+	if (pci_read_config32(SOC_PSP_DEV, PCI_VENDOR_ID) == 0xffffffff) {
+		printk(BIOS_WARNING, "PSP: No SOC_PSP_DEV found at D%xF%x\n",
+			PSP_DEV, PSP_FUNC);
+		return 0;
+	}
+
+	/* Determine if Bar3Hide has been set, and if hidden get the base from
+	 * the MSR instead. */
+	if (pci_read_config32(SOC_PSP_DEV, PSP_BAR_ENABLES) & BAR3HIDE) {
+		psp_mmio = rdmsr(PSP_ADDR_MSR).lo;
+		if (!psp_mmio) {
+			printk(BIOS_WARNING, "PSP: BAR hidden, PSP_ADDR_MSR uninitialized\n");
+			return 0;
+		}
+	} else {
+		psp_mmio = pci_read_config32(SOC_PSP_DEV, PSP_MAILBOX_BAR) &
+				~PCI_BASE_ADDRESS_MEM_ATTR_MASK;
+	}
+
+	return (void *)(psp_mmio + PSP_MAILBOX_OFFSET);
+}
 
 static u32 rd_mbox_sts(struct pspv1_mbox *mbox)
 {
@@ -101,8 +136,6 @@ int psp_load_named_blob(enum psp_blob_type type, const char *name)
 	int cmd_status;
 	u32 command;
 	void *blob;
-	struct cbfsf cbfs_file;
-	struct region_device rdev;
 
 	switch (type) {
 	case BLOB_SMU_FW:
@@ -122,13 +155,7 @@ int psp_load_named_blob(enum psp_blob_type type, const char *name)
 		return -PSPSTS_UNSUPPORTED;
 	}
 
-	if (cbfs_boot_locate(&cbfs_file, name, NULL)) {
-		printk(BIOS_ERR, "BUG: Cannot locate blob for PSP loading\n");
-		return -PSPSTS_INVALID_NAME;
-	}
-
-	cbfs_file_data(&rdev, &cbfs_file);
-	blob = rdev_mmap_full(&rdev);
+	blob = cbfs_map(name, NULL);
 	if (!blob) {
 		printk(BIOS_ERR, "BUG: Cannot map blob for PSP loading\n");
 		return -PSPSTS_INVALID_NAME;
@@ -140,6 +167,29 @@ int psp_load_named_blob(enum psp_blob_type type, const char *name)
 	cmd_status = send_psp_command(command, blob);
 	psp_print_cmd_status(cmd_status, NULL);
 
-	rdev_munmap(&rdev, blob);
+	cbfs_unmap(blob);
+	return cmd_status;
+}
+
+/*
+ * Notify the PSP that DRAM is present.  Upon receiving this command, the PSP
+ * will load its OS into fenced DRAM that is not accessible to the x86 cores.
+ */
+int psp_notify_dram(void)
+{
+	int cmd_status;
+	struct mbox_default_buffer buffer = {
+		.header = {
+			.size = sizeof(buffer)
+		}
+	};
+
+	printk(BIOS_DEBUG, "PSP: Notify that DRAM is available... ");
+
+	cmd_status = send_psp_command(MBOX_BIOS_CMD_DRAM_INFO, &buffer);
+
+	/* buffer's status shouldn't change but report it if it does */
+	psp_print_cmd_status(cmd_status, &buffer.header);
+
 	return cmd_status;
 }

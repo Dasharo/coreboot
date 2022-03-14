@@ -1,14 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <device/azalia_device.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/mmio.h>
-#include <soc/intel/common/hda_verb.h>
-#include <soc/ramstage.h>
 #include <soc/igd.h>
+#include <southbridge/intel/lynxpoint/hda_verb.h>
 
 static const u32 minihd_verb_table[] = {
 	/* coreboot specific header */
@@ -53,7 +53,7 @@ static void minihd_init(struct device *dev)
 	int codec_mask, i;
 
 	/* Find base address */
-	res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (!res)
 		return;
 
@@ -80,8 +80,8 @@ static void minihd_init(struct device *dev)
 	if (codec_mask) {
 		for (i = 3; i >= 0; i--) {
 			if (codec_mask & (1 << i))
-				hda_codec_init(base, i, sizeof(minihd_verb_table),
-					       minihd_verb_table);
+				azalia_codec_init(base, i, minihd_verb_table,
+						  sizeof(minihd_verb_table));
 		}
 	}
 

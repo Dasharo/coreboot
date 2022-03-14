@@ -73,7 +73,7 @@ static int gtt_setup(u8 *mmiobase)
 
 static int intel_gma_init_lvds(struct northbridge_intel_i945_config *conf,
 			  unsigned int pphysbase, unsigned int piobase,
-			  u8 *mmiobase, unsigned int pgfx)
+			  u8 *mmiobase, uintptr_t pgfx)
 {
 	struct edid edid;
 	struct edid_mode *mode;
@@ -328,7 +328,7 @@ static int intel_gma_init_lvds(struct northbridge_intel_i945_config *conf,
 	write32(mmiobase + EIR, 0xffffffff);
 
 	if (gtt_setup(mmiobase)) {
-		printk(BIOS_ERR, "ERROR: GTT Setup Failed!!!\n");
+		printk(BIOS_ERR, "GTT Setup Failed!!!\n");
 		return 0;
 	}
 
@@ -352,7 +352,7 @@ static int intel_gma_init_lvds(struct northbridge_intel_i945_config *conf,
 	if (temp & 1)
 		printk(BIOS_INFO, "GTT Enabled\n");
 	else
-		printk(BIOS_ERR, "ERROR: GTT is still Disabled!!!\n");
+		printk(BIOS_ERR, "GTT is still Disabled!!!\n");
 
 	if (CONFIG(LINEAR_FRAMEBUFFER)) {
 		printk(BIOS_SPEW, "memset %p to 0x00 for %d bytes\n",
@@ -373,15 +373,15 @@ static int intel_gma_init_lvds(struct northbridge_intel_i945_config *conf,
 
 static int intel_gma_init_vga(struct northbridge_intel_i945_config *conf,
 			  unsigned int pphysbase, unsigned int piobase,
-			  u8 *mmiobase, unsigned int pgfx)
+			  u8 *mmiobase, uintptr_t pgfx)
 {
 	int i;
 	u32 hactive, vactive;
 	u16 reg16;
 	u32 uma_size;
 
-	printk(BIOS_SPEW, "mmiobase %x addrport %x physbase %x\n",
-		(u32)mmiobase, piobase, pphysbase);
+	printk(BIOS_SPEW, "mmiobase %lx addrport %x physbase %x\n",
+		(uintptr_t)mmiobase, piobase, pphysbase);
 
 	gtt_setup(mmiobase);
 
@@ -707,15 +707,10 @@ static void gma_func0_disable(struct device *dev)
 
 static void gma_func1_init(struct device *dev)
 {
-	u8 val;
-
 	if (!CONFIG(NO_GFX_INIT))
 		pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
 
-	if (get_option(&val, "tft_brightness") == CB_SUCCESS)
-		pci_write_config8(dev, 0xf4, val);
-	else
-		pci_write_config8(dev, 0xf4, 0xff);
+	pci_write_config8(dev, 0xf4, get_uint_option("tft_brightness", 0xff));
 }
 
 static void gma_generate_ssdt(const struct device *device)

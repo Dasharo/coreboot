@@ -28,7 +28,7 @@
 	}
 
 /* C-state map without S0ix */
-static acpi_cstate_t cstate_map[] = {
+static const acpi_cstate_t cstate_map[] = {
 	{
 		/* C1 */
 		.ctype = 1, /* ACPI C1 */
@@ -84,13 +84,6 @@ int acpi_sci_irq(void)
 
 	printk(BIOS_DEBUG, "SCI is IRQ%d\n", sci_irq);
 	return sci_irq;
-}
-
-unsigned long acpi_fill_mcfg(unsigned long current)
-{
-	current += acpi_create_mcfg_mmconfig((acpi_mcfg_mmconfig_t *)current,
-			CONFIG_MMCONF_BASE_ADDRESS, 0, 0, CONFIG_MMCONF_BUS_NUMBER - 1);
-	return current;
 }
 
 unsigned long acpi_fill_madt(unsigned long current)
@@ -272,17 +265,11 @@ static void generate_p_state_entries(int core, int cores_per_package)
 void generate_cpu_entries(const struct device *device)
 {
 	int core;
-	int pcontrol_blk = get_pmbase(), plen = 6;
 	const struct pattrs *pattrs = pattrs_get();
 
 	for (core = 0; core < pattrs->num_cpus; core++) {
-		if (core > 0) {
-			pcontrol_blk = 0;
-			plen = 0;
-		}
-
 		/* Generate processor \_SB.CPUx */
-		acpigen_write_processor(core, pcontrol_blk, plen);
+		acpigen_write_processor(core, 0, 0);
 
 		/* Generate  P-state tables */
 		generate_p_state_entries(core, pattrs->num_cpus);

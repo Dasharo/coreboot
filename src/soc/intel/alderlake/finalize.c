@@ -7,18 +7,19 @@
  */
 
 #include <arch/io.h>
-#include <device/mmio.h>
 #include <bootstate.h>
+#include <commonlib/console/post_codes.h>
 #include <console/console.h>
-#include <console/post_codes.h>
 #include <cpu/x86/smm.h>
+#include <device/mmio.h>
 #include <device/pci.h>
+#include <intelblocks/cse.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/systemagent.h>
 #include <intelblocks/tco.h>
-#include <intelblocks/thermal.h>
-#include <spi-generic.h>
+#include <intelpch/lockdown.h>
 #include <soc/p2sb.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
@@ -26,6 +27,7 @@
 #include <soc/smbus.h>
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
+#include <spi-generic.h>
 
 #define CAMERA1_CLK		0x8000 /* Camera 1 Clock */
 #define CAMERA2_CLK		0x8080 /* Camera 2 Clock */
@@ -47,22 +49,12 @@ static void pch_handle_sideband(config_t *config)
 
 static void pch_finalize(void)
 {
-	config_t *config;
+	config_t *config = config_of_soc();
 
 	/* TCO Lock down */
 	tco_lockdown();
 
 	/* TODO: Add Thermal Configuration */
-
-	/*
-	 * Disable ACPI PM timer based on dt policy
-	 *
-	 * Disabling ACPI PM timer is necessary for XTAL OSC shutdown.
-	 * Disabling ACPI PM timer also switches off TCO
-	 */
-	config = config_of_soc();
-	if (config->PmTimerDisabled)
-		pmc_disable_acpi_timer();
 
 	pch_handle_sideband(config);
 
@@ -82,6 +74,19 @@ static void tbt_finalize(void)
 	}
 }
 
+static void sa_finalize(void)
+{
+	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT)
+		sa_lock_pam();
+}
+
+static void heci_finalize(void)
+{
+	heci_set_to_d0i3();
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+		heci1_disable();
+}
+
 static void soc_finalize(void *unused)
 {
 	printk(BIOS_DEBUG, "Finalizing chipset.\n");
@@ -89,10 +94,18 @@ static void soc_finalize(void *unused)
 	pch_finalize();
 	apm_control(APM_CNT_FINALIZE);
 	tbt_finalize();
+	sa_finalize();
+	if (CONFIG(USE_FSP_NOTIFY_PHASE_READY_TO_BOOT) &&
+			 CONFIG(USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE))
+		heci_finalize();
 
 	/* Indicate finalize step with post code */
 	post_code(POST_OS_BOOT);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, soc_finalize, NULL);
-BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_LOAD, BS_ON_EXIT, soc_finalize, NULL);
+/*
+ * The purpose of this change is to accommodate more time to push out sending
+ * CSE EOP messages at post.
+ */
+BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_BOOT, BS_ON_ENTRY, soc_finalize, NULL);

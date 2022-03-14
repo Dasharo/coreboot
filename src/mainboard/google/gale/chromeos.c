@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <boardid.h>
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <console/console.h>
 #include <delay.h>
@@ -9,7 +10,6 @@
 #include <soc/cdp.h>
 #include <soc/blsp.h>
 #include <timer.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 
 #define PP_SW   41
 
@@ -156,4 +156,11 @@ int get_wipeout_mode_switch(void)
 int get_write_protect_state(void)
 {
 	return !read_gpio(get_wp_status_gpio_pin());
+}
+
+int get_ec_is_trusted(void)
+{
+	/* Do not have a Chrome EC involved in entering recovery mode;
+	   Always return trusted. */
+	return 1;
 }

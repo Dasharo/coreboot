@@ -3,6 +3,7 @@
 #include <console/console.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/cr.h>
+#include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
@@ -14,12 +15,21 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <intelblocks/cpulib.h>
-
+#include <lib.h>
 #include <soc/msr.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/smm.h>
 #include <soc/soc_util.h>
+#include <types.h>
+
+bool cpu_soc_is_in_untrusted_mode(void)
+{
+	msr_t msr;
+
+	msr = rdmsr(MSR_POWER_MISC);
+	return !!(msr.lo & ENABLE_IA_UNTRUSTED);
+}
 
 static struct smm_relocation_attrs relo_attrs;
 
@@ -90,12 +100,12 @@ static void denverton_core_init(struct device *cpu)
 	/* Enable Turbo */
 	enable_turbo();
 
-	/* Enable speed step. */
-	if (get_turbo_state() == TURBO_ENABLED) {
-		msr = rdmsr(IA32_MISC_ENABLE);
-		msr.lo |= SPEED_STEP_ENABLE_BIT;
-		wrmsr(IA32_MISC_ENABLE, msr);
-	}
+	/* Enable speed step. Always ON.*/
+	msr = rdmsr(IA32_MISC_ENABLE);
+	msr.lo |= SPEED_STEP_ENABLE_BIT;
+	wrmsr(IA32_MISC_ENABLE, msr);
+
+	enable_pm_timer_emulation();
 }
 
 static struct device_operations cpu_dev_ops = {
@@ -161,45 +171,35 @@ static void get_smm_info(uintptr_t *perm_smbase, size_t *perm_smsize,
 	*smm_save_state_size = sizeof(em64t100_smm_state_save_area_t);
 }
 
-static int detect_num_cpus_via_cpuid(void)
+static unsigned int detect_num_cpus_via_cpuid(void)
 {
-	register int ecx = 0;
-	struct cpuid_result leaf_b;
+	unsigned int ecx = 0;
 
 	while (1) {
-		leaf_b = cpuid_ext(0xb, ecx);
+		const struct cpuid_result leaf_b = cpuid_ext(0xb, ecx);
 
 		/* Processor doesn't have hyperthreading so just determine the
-		* number of cores by from level type (ecx[15:8] == * 2). */
-		if ((leaf_b.ecx & 0xff00) == 0x0200)
-			break;
+		   number of cores from level type (ecx[15:8] == 2). */
+		if ((leaf_b.ecx >> 8 & 0xff) == 2)
+			return leaf_b.ebx & 0xffff;
+
 		ecx++;
 	}
-	return (leaf_b.ebx & 0xffff);
 }
 
-static int detect_num_cpus_via_mch(void)
+/* Assumes that FSP has already programmed the cores disabled register */
+static unsigned int detect_num_cpus_via_mch(void)
 {
-	/* Assumes that FSP has already programmed the cores disabled register
-	 */
-	u32 core_exists_mask, active_cores_mask;
-	u32 core_disable_mask;
-	register int active_cores = 0, total_cores = 0;
-	register int counter = 0;
-
 	/* Get Masks for Total Existing SOC Cores and Core Disable Mask */
-	core_exists_mask = MMIO32(DEFAULT_MCHBAR + MCH_BAR_CORE_EXISTS_MASK);
-	core_disable_mask = MMIO32(DEFAULT_MCHBAR + MCH_BAR_CORE_DISABLE_MASK);
-	active_cores_mask = (~core_disable_mask) & core_exists_mask;
+	const u32 core_exists_mask = MMIO32(DEFAULT_MCHBAR + MCH_BAR_CORE_EXISTS_MASK);
+	const u32 core_disable_mask = MMIO32(DEFAULT_MCHBAR + MCH_BAR_CORE_DISABLE_MASK);
+	const u32 active_cores_mask = ~core_disable_mask & core_exists_mask;
 
 	/* Calculate Number of Active Cores */
-	for (; counter < CONFIG_MAX_CPUS;
-	     counter++, active_cores_mask >>= 1, core_exists_mask >>= 1) {
-		active_cores += (active_cores_mask & CORE_BIT_MSK);
-		total_cores += (core_exists_mask & CORE_BIT_MSK);
-	}
+	const unsigned int active_cores = popcnt(active_cores_mask);
+	const unsigned int total_cores = popcnt(core_exists_mask);
 
-	printk(BIOS_DEBUG, "Number of Active Cores: %d of %d total.\n",
+	printk(BIOS_DEBUG, "Number of Active Cores: %u of %u total.\n",
 	       active_cores, total_cores);
 
 	return active_cores;
@@ -208,11 +208,11 @@ static int detect_num_cpus_via_mch(void)
 /* Find CPU topology */
 int get_cpu_count(void)
 {
-	int num_cpus = detect_num_cpus_via_mch();
+	unsigned int num_cpus = detect_num_cpus_via_mch();
 
-	if (num_cpus <= 0 || num_cpus > CONFIG_MAX_CPUS) {
+	if (num_cpus == 0 || num_cpus > CONFIG_MAX_CPUS) {
 		num_cpus = detect_num_cpus_via_cpuid();
-		printk(BIOS_DEBUG, "Number of Cores (CPUID): %d.\n", num_cpus);
+		printk(BIOS_DEBUG, "Number of Cores (CPUID): %u.\n", num_cpus);
 	}
 	return num_cpus;
 }
@@ -285,9 +285,9 @@ static const struct mp_ops mp_ops = {
 	.post_mp_init = post_mp_init,
 };
 
-void denverton_init_cpus(struct device *dev)
+void mp_init_cpus(struct bus *cpu_bus)
 {
 	/* Clear for take-off */
-	if (mp_init_with_smm(dev->link_list, &mp_ops) < 0)
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }

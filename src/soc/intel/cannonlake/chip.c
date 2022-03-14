@@ -7,26 +7,26 @@
 #include <intelblocks/acpi.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
+#include <intelblocks/irq.h>
 #include <intelblocks/itss.h>
 #include <intelblocks/pcie_rp.h>
 #include <intelblocks/xdci.h>
 #include <soc/intel/common/vbt.h>
-#include <soc/gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 
 #include "chip.h"
 
 static const struct pcie_rp_group pch_lp_rp_groups[] = {
-	{ .slot = PCH_DEV_SLOT_PCIE,	.count = 8 },
-	{ .slot = PCH_DEV_SLOT_PCIE_1,	.count = 8 },
+	{ .slot = PCH_DEV_SLOT_PCIE,	.count = 8, .lcap_port_base = 1 },
+	{ .slot = PCH_DEV_SLOT_PCIE_1,	.count = 8, .lcap_port_base = 1 },
 	{ 0 }
 };
 
 static const struct pcie_rp_group pch_h_rp_groups[] = {
-	{ .slot = PCH_DEV_SLOT_PCIE,	.count = 8 },
-	{ .slot = PCH_DEV_SLOT_PCIE_1,	.count = 8 },
-	{ .slot = PCH_DEV_SLOT_PCIE_2,	.count = 8 },
+	{ .slot = PCH_DEV_SLOT_PCIE,	.count = 8, .lcap_port_base = 1 },
+	{ .slot = PCH_DEV_SLOT_PCIE_1,	.count = 8, .lcap_port_base = 1 },
+	{ .slot = PCH_DEV_SLOT_PCIE_2,	.count = 8, .lcap_port_base = 1 },
 	{ 0 }
 };
 
@@ -140,33 +140,6 @@ const char *soc_acpi_name(const struct device *dev)
 }
 #endif
 
-/*
- * TODO(furquan): Get rid of this workaround once FSP is fixed. Currently, FSP-S
- * configures GPIOs when it should not and this results in coreboot GPIO
- * configuration being overwritten. Until FSP is fixed, maintain the reference
- * of GPIO config table from mainboard and use that to re-configure GPIOs after
- * FSP-S is done.
- */
-void cnl_configure_pads(const struct pad_config *cfg, size_t num_pads)
-{
-	static const struct pad_config *g_cfg;
-	static size_t g_num_pads;
-
-	/*
-	 * If cfg and num_pads are passed in from mainboard, maintain a
-	 * reference to the GPIO table.
-	 */
-	if ((cfg == NULL) || (num_pads == 0)) {
-		cfg = g_cfg;
-		num_pads = g_num_pads;
-	} else {
-		g_cfg = cfg;
-		g_num_pads = num_pads;
-	}
-
-	gpio_configure_pads(cfg, num_pads);
-}
-
 void soc_init_pre_device(void *chip_info)
 {
 	/* Perform silicon specific init. */
@@ -174,9 +147,6 @@ void soc_init_pre_device(void *chip_info)
 
 	 /* Display FIRMWARE_VERSION_INFO_HOB */
 	fsp_display_fvi_version_hob();
-
-	/* TODO(furquan): Get rid of this workaround once FSP is fixed. */
-	cnl_configure_pads(NULL, 0);
 
 	soc_gpio_pm_configuration();
 
@@ -187,19 +157,35 @@ void soc_init_pre_device(void *chip_info)
 		pcie_rp_update_devicetree(pch_lp_rp_groups);
 }
 
+static void cpu_fill_ssdt(const struct device *dev)
+{
+	generate_cpu_entries(dev);
+
+	if (!generate_pin_irq_map())
+		printk(BIOS_ERR, "Failed to generate ACPI _PRT table!\n");
+}
+
+static void cpu_set_north_irqs(struct device *dev)
+{
+	irq_program_non_pch();
+}
+
 static struct device_operations pci_domain_ops = {
 	.read_resources   = &pci_domain_read_resources,
 	.set_resources    = &pci_domain_set_resources,
 	.scan_bus         = &pci_domain_scan_bus,
-	#if CONFIG(HAVE_ACPI_TABLES)
+#if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name        = &soc_acpi_name,
-	#endif
+#endif
 };
 
 static struct device_operations cpu_bus_ops = {
 	.read_resources   = noop_read_resources,
 	.set_resources    = noop_set_resources,
-	.acpi_fill_ssdt   = generate_cpu_entries,
+	.enable_resources = cpu_set_north_irqs,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.acpi_fill_ssdt   = cpu_fill_ssdt,
+#endif
 };
 
 static void soc_enable(struct device *dev)
@@ -211,6 +197,9 @@ static void soc_enable(struct device *dev)
 		dev->ops = &cpu_bus_ops;
 	else if (dev->path.type == DEVICE_PATH_GPIO)
 		block_gpio_enable(dev);
+	else if (dev->path.type == DEVICE_PATH_PCI &&
+		 dev->path.pci.devfn == PCH_DEVFN_PMC)
+		dev->ops = &pmc_ops;
 }
 
 struct chip_operations soc_intel_cannonlake_ops = {

@@ -13,30 +13,9 @@
 #include <rmodule.h>
 #include <stage_cache.h>
 #include <symbols.h>
+#include <thread.h>
 #include <timestamp.h>
-#include <fit_payload.h>
 #include <security/vboot/vboot_common.h>
-
-/* Only can represent up to 1 byte less than size_t. */
-const struct mem_region_device addrspace_32bit =
-	MEM_REGION_DEV_RO_INIT(0, ~0UL);
-
-int prog_locate(struct prog *prog)
-{
-	struct cbfsf file;
-
-	if (prog_locate_hook(prog))
-		return -1;
-
-	if (cbfs_boot_locate(&file, prog_name(prog), NULL))
-		return -1;
-
-	cbfsf_file_type(&file, &prog->cbfs_type);
-
-	cbfs_file_data(prog_rdev(prog), &file);
-
-	return 0;
-}
 
 void run_romstage(void)
 {
@@ -45,18 +24,15 @@ void run_romstage(void)
 
 	vboot_run_logic();
 
-	if (ENV_X86 && CONFIG(BOOTBLOCK_NORMAL)) {
-		if (legacy_romstage_selector(&romstage))
-			goto fail;
-	} else {
-		if (prog_locate(&romstage))
-			goto fail;
-	}
-
 	timestamp_add_now(TS_START_COPYROM);
 
-	if (cbfs_prog_stage_load(&romstage))
-		goto fail;
+	if (ENV_X86 && CONFIG(BOOTBLOCK_NORMAL)) {
+		if (legacy_romstage_select_and_load(&romstage))
+			goto fail;
+	} else {
+		if (cbfs_prog_stage_load(&romstage))
+			goto fail;
+	}
 
 	timestamp_add_now(TS_END_COPYROM);
 
@@ -78,6 +54,7 @@ static void run_ramstage_from_resume(struct prog *ramstage)
 	/* Load the cached ramstage to runtime location. */
 	stage_cache_load_stage(STAGE_RAMSTAGE, ramstage);
 
+	ramstage->cbfs_type = CBFS_TYPE_STAGE;
 	prog_set_arg(ramstage, cbmem_top());
 
 	if (prog_entry(ramstage) != NULL) {
@@ -98,7 +75,15 @@ static int load_relocatable_ramstage(struct prog *ramstage)
 
 	return rmodule_stage_load(&rmod_ram);
 }
+void preload_ramstage(void)
+{
+	if (!CONFIG(CBFS_PRELOAD))
+		return;
 
+	printk(BIOS_DEBUG, "Preloading ramstage\n");
+
+	cbfs_preload(CONFIG_CBFS_PREFIX "/ramstage");
+}
 void run_ramstage(void)
 {
 	struct prog ramstage =
@@ -119,9 +104,6 @@ void run_ramstage(void)
 		run_ramstage_from_resume(&ramstage);
 
 	vboot_run_logic();
-
-	if (prog_locate(&ramstage))
-		goto fail;
 
 	timestamp_add_now(TS_START_COPYRAM);
 
@@ -153,30 +135,47 @@ fail:
 static struct prog global_payload =
 	PROG_INIT(PROG_PAYLOAD, CONFIG_CBFS_PREFIX "/payload");
 
+void payload_preload(void)
+{
+	if (!CONFIG(CBFS_PRELOAD))
+		return;
+
+	cbfs_preload(global_payload.name);
+}
+
 void payload_load(void)
 {
 	struct prog *payload = &global_payload;
+	void *mapping;
 
 	timestamp_add_now(TS_LOAD_PAYLOAD);
 
-	if (prog_locate(payload))
+	if (prog_locate_hook(payload))
+		goto out;
+
+	payload->cbfs_type = CBFS_TYPE_QUERY;
+	mapping = cbfs_type_map(prog_name(payload), NULL, &payload->cbfs_type);
+
+	if (!mapping)
 		goto out;
 
 	switch (prog_cbfs_type(payload)) {
 	case CBFS_TYPE_SELF: /* Simple ELF */
-		selfload_check(payload, BM_MEM_RAM);
+		selfload_mapped(payload, mapping, BM_MEM_RAM);
 		break;
 	case CBFS_TYPE_FIT: /* Flattened image tree */
 		if (CONFIG(PAYLOAD_FIT_SUPPORT)) {
-			fit_payload(payload);
+			fit_payload(payload, mapping);
 			break;
-		} /* else fall-through */
+		}
+		__fallthrough;
 	default:
 		die_with_post_code(POST_INVALID_ROM,
-				   "Unsupported payload type.\n");
+				   "Unsupported payload type %d.\n", payload->cbfs_type);
 		break;
 	}
 
+	cbfs_unmap(mapping);
 out:
 	if (prog_entry(payload) == NULL)
 		die_with_post_code(POST_INVALID_ROM, "Payload not loaded.\n");

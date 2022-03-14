@@ -115,6 +115,44 @@ variant's override table.
 This configuration is often hooked into the mainboard's `enable_dev` callback,
 defined in its `struct chip_operations`.
 
+## Unconnected and unused pads
+
+In digital electronics, it is generally recommended to tie unconnected GPIOs to
+a defined signal like VCC or GND by setting their direction to output, adding an
+external pull resistor or configuring an internal pull resistor. This is done to
+prevent floating of the pin state, which can cause various issues like EMI,
+higher power usage due to continuously switching logic, etc.
+
+On Intel PCHs from Sunrise Point onwards, termination of unconnected GPIOs is
+explicitly not required, when the input buffer is disabled by setting the bit
+`GPIORXDIS` which effectively disconnects the pad from the internal logic. All
+pads defaulting to GPIO mode have this bit set. However, in the mainboard's
+GPIO configuration the macro `PAD_NC(pad, NONE)` can be used to explicitly
+configure a pad as unconnected.
+
+In case there are no schematics available for a board and the vendor set a
+pad to something like `GPIORXDIS=1`, `GPIOTXDIS=1` with an internal pull
+resistor, an unconnected or otherwise unused pad can be assumed. In this case it
+is recommended to keep the pull resistor, because the external circuit might
+rely on it.
+
+Unconnected pads defaulting to a native function (input and output) usually
+don't need to be configured as GPIO with the `GPIORXDIS` bit set. For clarity
+and documentation purpose the macro may be used as well for them.
+
+Some pads configured as native input function explicitly require external
+pull-ups when being unused, according to the PDGs:
+- eDP_HPD
+- SMBCLK/SMBDATA
+- SML0CLK/SML0DATA/SML0ALERT
+- SATAGP*
+
+When the board was designed correctly, nothing needs to be done for them
+explicitly, while using `PAD_NC(pad, NONE)` can act as documentation. If such a
+pad is missing the external pull resistor due to bad board design, the pad
+should be configured with `PAD_NC(pad, NONE)` anyway to disconnect it
+internally.
+
 ## Potential issues (gotchas!)
 
 There are a couple of configurations that you need to especially careful about,
@@ -124,11 +162,61 @@ The first is configuring a pin as an output, when it was designed to be an
 input. There is a real risk in this case of short-circuiting a component which
 could cause catastrophic failures, up to and including your mainboard!
 
-The other configuration option to watch out for deals with unconnected GPIOs.
-If no pullup or pulldown is declared with these, they may end up "floating",
-i.e., not at logical high or logical low. This can cause problems such as
-unwanted power consumption or not reading the pin correctly, if it was intended
-to be strapped.
+### Intel SoCs
+
+As per Intel Platform Controller Hub (PCH) EDS since Skylake, a GPIO PAD register
+supports four different types of GPIO reset as:
+
+| PAD   Reset Config                              | Platform Reset | GPP | GPD |
+|-------------------------------------------------|----------------|-----|-----|
+| 00 - Power Good (GPP: RSMRST,  GPD: DSW_PWROK)  | Warm Reset     | N   | N   |
+|                                                 | Cold Reset     | N   | N   |
+|                                                 | S3/S4/S5       | N   | N   |
+|                                                 | Global Reset   | N   | N   |
+|                                                 | Deep Sx        | Y   | N   |
+|                                                 | G3             | Y   | N   |
+| 01 - Deep                                       | Warm Reset     | Y   | Y   |
+|                                                 | Cold Reset     | Y   | Y   |
+|                                                 | S3/S4/S5       | N   | N   |
+|                                                 | Global Reset   | Y   | Y   |
+|                                                 | Deep Sx        | Y   | Y   |
+|                                                 | G3             | Y   | Y   |
+| 10 - Host Reset/PLTRST                          | Warm Reset     | Y   | Y   |
+|                                                 | Cold Reset     | Y   | Y   |
+|                                                 | S3/S4/S5       | Y   | Y   |
+|                                                 | Global Reset   | Y   | Y   |
+|                                                 | Deep Sx        | Y   | Y   |
+|                                                 | G3             | Y   | Y   |
+| 11 - Resume Reset (GPP: Reserved,  GPD: RSMRST) | Warm Reset     | -   | N   |
+|                                                 | Cold Reset     | -   | N   |
+|                                                 | S3/S4/S5       | -   | N   |
+|                                                 | Global Reset   | -   | N   |
+|                                                 | Deep Sx        | -   | Y   |
+|                                                 | G3             | -   | Y   |
+
+Each GPIO Community has a Pad Configuration Lock register for a GPP allowing locking
+specific register fields in the PAD configuration register.
+
+The Pad Config Lock registers reset type is default hardcoded to **Power Good** and
+it's **not** configurable by GPIO PAD DW0.PadRstCfg. Hence, it may appear that for a GPP,
+the Pad Reset Config (DW0 Bit 31) is configured differently from `Power Good`.
+
+This would create confusion where the Pad configuration is returned to its `default`
+value but remains `locked`, this would prevent software to reprogram the GPP.
+Additionally, this means software can't rely on GPIOs being reset by PLTRST# or Sx entry.
+
+Hence, as per GPIO BIOS Writers Guide (BWG) it's recommended to change the Pad Reset
+Configuration for lock GPP as `Power Good` so that pad configuration and lock bit are
+always in sync and can be reset at the same time.
+
+## Soft Straps
+
+Soft straps, that can be configured by the vendor in the Intel Flash Image Tool
+(FIT), can influence some pads' default mode. It is possible to select either a
+native function or GPIO mode for some pads on non-server SoCs, while on server
+SoCs most pads can be controlled. Thus, it is generally recommended to always
+configure all pads and don't just rely on the defaults mentioned in the
+datasheet(s) which might not reflect what the vendor configured.
 
 ## Pad-related known issues and workarounds
 

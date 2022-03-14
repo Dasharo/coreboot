@@ -28,6 +28,9 @@ struct chipset_power_state {
 	uint32_t prev_sleep_state;
 } __attribute__((packed));
 
+/* Get base address PMC memory mapped registers. */
+uint8_t *pmc_mmio_regs(void);
+
 struct chipset_power_state *fill_power_state(void);
 
 /* Power Management Utility Functions. */
@@ -44,5 +47,8 @@ void disable_pm1_control(uint32_t mask);
 void enable_gpe(uint32_t mask);
 void disable_gpe(uint32_t mask);
 void disable_all_gpe(void);
+
+/* Clear PMCON status bits */
+void pmc_clear_pmcon_sts(void);
 
 #endif /* _DENVERTON_NS_PM_H_ */

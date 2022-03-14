@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef CPU_INTEL_MSR_H
 #define CPU_INTEL_MSR_H
 
@@ -5,14 +7,29 @@
  * Common MSRs for Intel CPUs
  */
 
-#define MSR_FEATURE_CONFIG	0x13c
-#define  AESNI_DISABLE		(1 << 1)
-#define  AESNI_LOCK		(1 << 0)
-
 #define MSR_PIC_MSG_CONTROL	0x2e
 #define  TPR_UPDATES_DISABLE	(1 << 10)
 
 #define MSR_PLATFORM_INFO	0xce
+
+#define MSR_BC_PBEC		0x139
+#define  B_STOP_PBET		(1 << 0)
+
+#define MSR_BOOT_GUARD_SACM_INFO	0x13a
+#define  V_TPM_PRESENT_MASK		0x06
+#define  B_BOOT_GUARD_SACM_INFO_NEM_ENABLED	(1 << 0)
+#define  B_BOOT_GUARD_SACM_INFO_TPM_SUCCESS	(1 << 3)
+#define  B_BOOT_GUARD_SACM_INFO_MEASURED_BOOT	(1 << 5)
+#define  B_BOOT_GUARD_SACM_INFO_VERIFIED_BOOT	(1 << 6)
+#define  B_BOOT_GUARD_SACM_INFO_REVOKED		(1 << 7)
+#define  B_BOOT_GUARD_SACM_INFO_BTG_CAPABILITY	(1ull << 32)
+#define  B_BOOT_GUARD_SACM_INFO_TXT_CAPABILITY	(1ull << 34)
+
+#define MSR_FEATURE_CONFIG	0x13c
+#define  AESNI_DISABLE		(1 << 1)
+#define  AESNI_LOCK		(1 << 0)
+
+#define MSR_SPCL_CHIPSET_USAGE	0x1fe
 
 #define MSR_PKG_C10_RESIDENCY	0x632
 

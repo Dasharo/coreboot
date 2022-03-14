@@ -13,11 +13,6 @@
 #include <timestamp.h>
 #include <cbmem.h>
 
-/* SOC initialization after FSP silicon init */
-__weak void soc_after_silicon_init(void)
-{
-}
-
 static void display_hob_info(FSP_INFO_HEADER *fsp_info_header)
 {
 	const EFI_GUID graphics_info_guid = EFI_PEI_GRAPHICS_INFO_HOB_GUID;
@@ -25,7 +20,7 @@ static void display_hob_info(FSP_INFO_HEADER *fsp_info_header)
 
 	/* Verify the HOBs */
 	if (hob_list_ptr == NULL) {
-		printk(BIOS_ERR, "ERROR - HOB pointer is NULL!\n");
+		printk(BIOS_ERR, "HOB pointer is NULL!\n");
 		return;
 	}
 
@@ -46,8 +41,7 @@ static void display_hob_info(FSP_INFO_HEADER *fsp_info_header)
 		!get_next_guid_hob(&graphics_info_guid, hob_list_ptr) &&
 		CONFIG(DISPLAY_HOBS)) {
 		printk(BIOS_ERR, "7.5: EFI_PEI_GRAPHICS_INFO_HOB missing!\n");
-		printk(BIOS_ERR,
-		       "ERROR - Missing one or more required FSP HOBs!\n");
+		printk(BIOS_ERR, "Missing one or more required FSP HOBs!\n");
 	}
 }
 
@@ -141,22 +135,6 @@ static void fsp_run_silicon_init(FSP_INFO_HEADER *fsp_info_header)
 	}
 
 	display_hob_info(fsp_info_header);
-	soc_after_silicon_init();
-}
-
-static int fsp_find_and_relocate(struct prog *fsp)
-{
-	if (prog_locate(fsp)) {
-		printk(BIOS_ERR, "ERROR: Couldn't find %s\n", prog_name(fsp));
-		return -1;
-	}
-
-	if (fsp_relocate(fsp, prog_rdev(fsp))) {
-		printk(BIOS_ERR, "ERROR: FSP relocation failed.\n");
-		return -1;
-	}
-
-	return 0;
 }
 
 static void fsp_load(void)
@@ -166,7 +144,7 @@ static void fsp_load(void)
 	if (resume_from_stage_cache()) {
 		stage_cache_load_stage(STAGE_REFCODE, &fsp);
 	} else {
-		fsp_find_and_relocate(&fsp);
+		fsp_relocate(&fsp);
 
 		if (prog_entry(&fsp))
 			stage_cache_add(STAGE_REFCODE, &fsp);
@@ -185,18 +163,5 @@ void intel_silicon_init(void)
 /* Initialize the UPD parameters for SiliconInit */
 __weak void mainboard_silicon_init_params(
 	SILICON_INIT_UPD *params)
-{
-};
-
-/* Display the UPD parameters for SiliconInit */
-__weak void soc_display_silicon_init_params(
-	const SILICON_INIT_UPD *old, SILICON_INIT_UPD *new)
-{
-	printk(BIOS_SPEW, "UPD values for SiliconInit:\n");
-	hexdump32(BIOS_SPEW, new, sizeof(*new));
-}
-
-/* Initialize the UPD parameters for SiliconInit */
-__weak void soc_silicon_init_params(SILICON_INIT_UPD *params)
 {
 }

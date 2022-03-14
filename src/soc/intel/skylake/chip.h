@@ -78,9 +78,6 @@ struct soc_intel_skylake_config {
 	/* TCC activation offset */
 	uint32_t tcc_offset;
 
-	/* Whether to ignore VT-d support of the SKU */
-	int ignore_vtd;
-
 	/*
 	 * System Agent dynamic frequency configuration
 	 * When enabled memory will be trained at two different frequencies.
@@ -97,7 +94,7 @@ struct soc_intel_skylake_config {
 	} SaGv;
 
 	/* Enable/disable Rank Margin Tool */
-	u8 Rmt;
+	u8 RMT;
 
 	/* Disable Command TriState */
 	u8 CmdTriStateDis;
@@ -286,7 +283,6 @@ struct soc_intel_skylake_config {
 		Display_Switchable,
 	} PrimaryDisplay;
 	u8 SkipExtGfxScan;
-	u8 ScanExtGfxForLegacyOpRom;
 
 	/* GPIO IRQ Route  The valid values is 14 or 15*/
 	u8 GpioIrqSelect;
@@ -399,11 +395,6 @@ struct soc_intel_skylake_config {
 	 * 3 = GT unsliced,  4 = GT sliced
 	 */
 	struct vr_config domain_vr_config[NUM_VR_DOMAINS];
-	/*
-	 * HeciEnabled decides the state of Heci1 at end of boot
-	 * Setting to 0 (default) disables Heci1 and hides the device from OS
-	 */
-	u8 HeciEnabled;
 
 	/*
 	 * Enable VR specific mailbox command
@@ -479,9 +470,6 @@ struct soc_intel_skylake_config {
 	 * 2 - VR mailbox command sent for IA/GT/SA rails.
 	 */
 	u8 IslVrCmd;
-
-	/* Enable/Disable Sata test mode */
-	u8 SataTestMode;
 
 	/* i915 struct for GMA backlight control */
 	struct i915_gpu_controller_info gfx;

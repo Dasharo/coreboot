@@ -10,6 +10,7 @@
 #include <drivers/intel/gma/i915.h>
 #include <drivers/intel/gma/libgfxinit.h>
 #include <drivers/intel/gma/opregion.h>
+#include <intelblocks/cfg.h>
 #include <intelblocks/graphics.h>
 #include <fsp/graphics.h>
 #include <soc/pci_devs.h>
@@ -57,7 +58,9 @@ static void gma_init(struct device *const dev)
 	 * Kconfig to perform GFX initialization.
 	 */
 	if (CONFIG(RUN_FSP_GOP)) {
-		fsp_report_framebuffer_info(graphics_get_memory_base());
+		const struct soc_intel_common_config *config = chip_get_common_soc_structure();
+		fsp_report_framebuffer_info(graphics_get_framebuffer_address(),
+					    config->panel_orientation);
 		return;
 	}
 
@@ -97,28 +100,27 @@ static uintptr_t graphics_get_bar(struct device *dev, unsigned long index)
 {
 	struct resource *gm_res;
 
-	gm_res = find_resource(dev, index);
+	gm_res = probe_resource(dev, index);
 	if (!gm_res)
 		return 0;
 
 	return gm_res->base;
 }
 
-uintptr_t graphics_get_memory_base(void)
+uintptr_t graphics_get_framebuffer_address(void)
 {
 	uintptr_t memory_base;
 	struct device *dev = pcidev_path_on_root(SA_DEVFN_IGD);
 
 	if (is_graphics_disabled(dev))
 		return 0;
-	/*
-	 * GFX PCI config space offset 0x18 know as Graphics
-	 * Memory Range Address (GMADR)
-	 */
+
 	memory_base = graphics_get_bar(dev, PCI_BASE_ADDRESS_2);
 	if (!memory_base)
 		die_with_post_code(POST_HW_INIT_FAILURE,
-				   "GMADR is not programmed!");
+				   "Graphic memory bar2 is not programmed!");
+
+	memory_base += CONFIG_SOC_INTEL_GFX_FRAMEBUFFER_OFFSET;
 
 	return memory_base;
 }
@@ -269,6 +271,8 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CML_GT2_H_R0,
 	PCI_DEVICE_ID_INTEL_CML_GT2_H_R1,
 	PCI_DEVICE_ID_INTEL_TGL_GT0,
+	PCI_DEVICE_ID_INTEL_TGL_GT1_H_32,
+	PCI_DEVICE_ID_INTEL_TGL_GT1_H_16,
 	PCI_DEVICE_ID_INTEL_TGL_GT2_ULT,
 	PCI_DEVICE_ID_INTEL_TGL_GT2_ULX,
 	PCI_DEVICE_ID_INTEL_TGL_GT3_ULT,
@@ -277,6 +281,7 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_EHL_GT2_1,
 	PCI_DEVICE_ID_INTEL_EHL_GT1_2,
 	PCI_DEVICE_ID_INTEL_EHL_GT2_2,
+	PCI_DEVICE_ID_INTEL_EHL_GT1_2_1,
 	PCI_DEVICE_ID_INTEL_EHL_GT1_3,
 	PCI_DEVICE_ID_INTEL_EHL_GT2_3,
 	PCI_DEVICE_ID_INTEL_JSL_GT1,
@@ -295,7 +300,22 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_ADL_GT1_8,
 	PCI_DEVICE_ID_INTEL_ADL_GT1_9,
 	PCI_DEVICE_ID_INTEL_ADL_P_GT2,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_1,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_2,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_3,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_4,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_5,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_6,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_7,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_8,
+	PCI_DEVICE_ID_INTEL_ADL_P_GT2_9,
 	PCI_DEVICE_ID_INTEL_ADL_S_GT1,
+	PCI_DEVICE_ID_INTEL_ADL_M_GT1,
+	PCI_DEVICE_ID_INTEL_ADL_M_GT2,
+	PCI_DEVICE_ID_INTEL_ADL_M_GT3,
+	PCI_DEVICE_ID_INTEL_ADL_N_GT1,
+	PCI_DEVICE_ID_INTEL_ADL_N_GT2,
+	PCI_DEVICE_ID_INTEL_ADL_N_GT3,
 	0,
 };
 

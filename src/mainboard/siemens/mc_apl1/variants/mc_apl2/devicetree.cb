@@ -41,6 +41,22 @@ chip soc/intel/apollolake
 	# Enable Vtd feature
 	register "enable_vtd" = "1"
 
+	# I2C3 controller used for RTC
+	register "common_soc_config" = "{
+		.i2c[3] = {
+			.speed = I2C_SPEED_STANDARD,
+			.rise_time_ns = 60,
+			.fall_time_ns = 20,
+			.data_hold_time_ns = 300,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_hcnt = 0x68,
+				.scl_lcnt = 0xd4,
+				.sda_hold = 0x28
+			},
+		},
+	}"
+
 	device domain 0 on
 		device pci 00.0 on  end	# - Host Bridge
 		device pci 00.1 off end	# - DPTF
@@ -54,7 +70,9 @@ chip soc/intel/apollolake
 		device pci 0e.0 on  end	# - Audio
 		device pci 0f.0 on  end	# - CSE
 		device pci 11.0 on  end	# - ISH
-		device pci 12.0 on  end	# - SATA
+		device pci 12.0 on	# - SATA
+			register "DisableSataSalpSupport" = "1"
+		end
 		device pci 13.0 on	# - RP 2 - PCIe A 0
 			register "pcie_rp_clkreq_pin[2]" = "CLKREQ_DISABLED"
 			register "pcie_rp_hotplug_enable[2]" = "0"
@@ -82,8 +100,8 @@ chip soc/intel/apollolake
 		device pci 15.0 on  end	# - XHCI
 		device pci 15.1 off end	# - XDCI
 		device pci 16.0 on  end	# - I2C 0
-		device pci 16.1 on  end	# - I2C 1
-		device pci 16.2 on  end	# - I2C 2
+		device pci 16.1 off end	# - I2C 1
+		device pci 16.2 off end	# - I2C 2
 		device pci 16.3 on	# - I2C 3
 			# Enable external RTC chip
 			chip drivers/i2c/rx6110sa
@@ -99,10 +117,10 @@ chip soc/intel/apollolake
 				device i2c 0x32 on end	# RTC RX6110 SA
 			end
 		end
-		device pci 17.0 on  end	# - I2C 4
-		device pci 17.1 on  end	# - I2C 5
-		device pci 17.2 on  end	# - I2C 6
-		device pci 17.3 on  end	# - I2C 7
+		device pci 17.0 off end	# - I2C 4
+		device pci 17.1 off end	# - I2C 5
+		device pci 17.2 off end	# - I2C 6
+		device pci 17.3 off end	# - I2C 7
 		device pci 18.0 on  end	# - UART 0
 		device pci 18.1 on  end	# - UART 1
 		device pci 18.2 on  end	# - UART 2

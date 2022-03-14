@@ -21,6 +21,7 @@
 #include <southbridge/intel/common/pciehp.h>
 #include <southbridge/intel/common/acpi_pirq_gen.h>
 #include <southbridge/intel/common/pmutil.h>
+#include <southbridge/intel/common/rcba_pirq.h>
 #include <southbridge/intel/common/rtc.h>
 #include <southbridge/intel/common/spi.h>
 #include <types.h>
@@ -30,29 +31,20 @@
 typedef struct southbridge_intel_bd82x6x_config config_t;
 
 /**
- * Set miscellanous static southbridge features.
+ * Set miscellaneous static southbridge features.
  *
  * @param dev PCI device with I/O APIC control registers
  */
 static void pch_enable_ioapic(struct device *dev)
 {
-	u32 reg32;
-
 	/* Assign unique bus/dev/fn for I/O APIC */
 	pci_write_config16(dev, LPC_IBDF,
 		PCH_IOAPIC_PCI_BUS << 8 | PCH_IOAPIC_PCI_SLOT << 3);
 
-	set_ioapic_id(VIO_APIC_VADDR, 0x02);
-
 	/* affirm full set of redirection table entries ("write once") */
-	reg32 = io_apic_read(VIO_APIC_VADDR, 0x01);
-	io_apic_write(VIO_APIC_VADDR, 0x01, reg32);
+	ioapic_lock_max_vectors(VIO_APIC_VADDR);
 
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
+	setup_ioapic(VIO_APIC_VADDR, 0x02);
 }
 
 static void pch_enable_serial_irqs(struct device *dev)
@@ -162,16 +154,14 @@ static void pch_power_options(struct device *dev)
 	/* Get the chip configuration */
 	config_t *config = dev->chip_info;
 
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-	int nmi_option;
-
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
 	 * 1 == S5 Soft Off
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
+					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);
 	reg16 &= 0xfffe;
@@ -212,8 +202,7 @@ static void pch_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x70);
-	nmi_option = NMI_OFF;
-	get_option(&nmi_option, "nmi");
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */
@@ -260,18 +249,18 @@ static void cpt_pm_init(struct device *dev)
 {
 	printk(BIOS_DEBUG, "CougarPoint PM init\n");
 	pci_write_config8(dev, 0xa9, 0x47);
-	RCBA32_AND_OR(CIR30, ~0UL, (1 << 6)|(1 << 0));
-	RCBA32_AND_OR(CIR5, ~0UL, (1 << 0));
-	RCBA16_AND_OR(CIR3, ~0UL, (1 << 13)|(1 << 14));
-	RCBA16_AND_OR(CIR2, ~0UL, (1 << 14));
+	RCBA32_AND_OR(CIR30, ~0U, (1 << 6)|(1 << 0));
+	RCBA32_AND_OR(CIR5, ~0U, (1 << 0));
+	RCBA16_AND_OR(CIR3, ~0U, (1 << 13)|(1 << 14));
+	RCBA16_AND_OR(CIR2, ~0U, (1 << 14));
 	RCBA32(DMC) = 0xc0388400;
-	RCBA32_AND_OR(CIR6, ~0UL, (1 << 5)|(1 << 18));
-	RCBA32_AND_OR(CIR9, ~0UL, (1 << 15)|(1 << 1));
+	RCBA32_AND_OR(CIR6, ~0U, (1 << 5)|(1 << 18));
+	RCBA32_AND_OR(CIR9, ~0U, (1 << 15)|(1 << 1));
 	RCBA32_AND_OR(CIR7, ~0x1f, 0xf);
 	RCBA32(PM_CFG) = 0x050f0000;
 	RCBA32(CIR8) = 0x04000000;
-	RCBA32_AND_OR(CIR10, ~0UL, 0xfffff);
-	RCBA32_AND_OR(CIR11, ~0UL, (1 << 1));
+	RCBA32_AND_OR(CIR10, ~0U, 0xfffff);
+	RCBA32_AND_OR(CIR11, ~0U, (1 << 1));
 	RCBA32(CIR12) = 0x0001c000;
 	RCBA32(CIR14) = 0x00061100;
 	RCBA32(CIR15) = 0x7f8fdfff;
@@ -373,10 +362,10 @@ static void enable_clock_gating(struct device *dev)
 	reg16 |= (1 << 11);
 	pci_write_config16(dev, GEN_PMCON_1, reg16);
 
-	pch_iobp_update(0xEB007F07, ~0UL, (1 << 31));
-	pch_iobp_update(0xEB004000, ~0UL, (1 << 7));
-	pch_iobp_update(0xEC007F07, ~0UL, (1 << 31));
-	pch_iobp_update(0xEC004000, ~0UL, (1 << 7));
+	pch_iobp_update(0xEB007F07, ~0U, (1 << 31));
+	pch_iobp_update(0xEB004000, ~0U, (1 << 7));
+	pch_iobp_update(0xEC007F07, ~0U, (1 << 31));
+	pch_iobp_update(0xEC004000, ~0U, (1 << 7));
 
 	reg32 = RCBA32(CG);
 	reg32 |= (1 << 31);

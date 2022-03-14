@@ -20,11 +20,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_GMA_HAVE_VBT
 
 config MAINBOARD_DIR
-	string
 	default "intel/d945gclf"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "D945GCLF"
 
 config IRQ_SLOT_COUNT

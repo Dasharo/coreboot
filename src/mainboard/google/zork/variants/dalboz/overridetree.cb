@@ -42,7 +42,7 @@ chip soc/amd/picasso
 		subsystemid 0x1022 0x1510 inherit
 	end # domain
 
-	device mmio 0xfedc4000 on # APU_I2C2_BASE
+	device ref i2c_2 on
 		chip drivers/i2c/generic
 			register "hid" = ""RAYD0001""
 			register "desc" = ""Raydium Touchscreen""
@@ -95,7 +95,7 @@ chip soc/amd/picasso
 		chip drivers/i2c/generic
 			register "hid" = ""ELAN0000""
 			register "desc" = ""ELAN Touchpad""
-			register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_LOW(GPIO_9)"
+			register "irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPIO_9)"
 			register "wake" = "GEVENT_22"
 			register "probed" = "1"
 			device i2c 15 on end
@@ -109,5 +109,12 @@ chip soc/amd/picasso
 			register "hid_desc_reg_offset" = "0x20"
 			device i2c 2c on end
 		end
+	end
+
+	chip drivers/generic/max98357a
+			register "hid" = ""MX98357A""
+			register "sdmode_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPIO_91)"
+			register "sdmode_delay" = "5"
+			device generic 0.1 on end
 	end
 end	# chip soc/amd/picasso

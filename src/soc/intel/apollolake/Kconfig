@@ -1,5 +1,6 @@
 config SOC_INTEL_APOLLOLAKE
 	bool
+	select INTEL_CAR_CQOS
 	help
 	  Intel Apollolake support
 
@@ -13,6 +14,7 @@ config SOC_INTEL_GEMINILAKE
 	select SOC_INTEL_COMMON_BLOCK_GSPI_VERSION_2
 	select IDT_IN_EVERY_STAGE
 	select PAGING_IN_CACHE_AS_RAM
+	select INTEL_CAR_NEM
 	help
 	  Intel GLK support
 
@@ -22,13 +24,12 @@ config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_INTEL_HARDWARE_SLEEP_VALUES
 	select ACPI_NO_PCAT_8259
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES
 	# CPU specific options
 	select CPU_INTEL_COMMON
 	select CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 	select CPU_SUPPORTS_PM_TIMER_EMULATION
-	select IOAPIC
 	select PCR_COMMON_IOSF_1_0
 	select SSE2
 	select SUPPORT_CPU_UCODE_IN_CBFS
@@ -40,18 +41,27 @@ config CPU_SPECIFIC_OPTIONS
 	select FSP_PLATFORM_MEMORY_SETTINGS_VERSIONS
 	select FSP_STATUS_GLOBAL_RESET_REQUIRED_5
 	select GENERIC_GPIO_LIB
-	select INTEL_DESCRIPTOR_MODE_CAPABLE
-	select HAVE_SMI_HANDLER
+	select HAVE_ASAN_IN_ROMSTAGE
+	select HAVE_CF9_RESET_PREPARE
+	select HAVE_FSP_GOP
+	select HAVE_FSP_LOGO_SUPPORT
 	select HAVE_INTEL_FSP_REPO if !SOC_INTEL_GEMINILAKE
+	select HAVE_SMI_HANDLER
+	select INTEL_DESCRIPTOR_MODE_CAPABLE
+	select INTEL_GMA_ACPI
+	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
+	select INTEL_GMA_SWSMISCI
 	select MRC_SETTINGS_PROTECT
 	select MRC_SETTINGS_VARIABLE_DATA
+	select NO_PM_ACPI_TIMER
+	select NO_UART_ON_SUPERIO
 	select NO_XIP_EARLY_STAGES
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
 	select PCIEXP_ASPM
 	select PCIEXP_COMMON_CLOCK
 	select PCIEXP_CLK_PM
 	select PCIEXP_L1_SUB_STATE
+	select PLATFORM_USES_FSP2_0
 	select PMC_INVALID_READ_AFTER_WRITE
 	select PMC_GLOBAL_RESET_ENABLE_LOCK
 	select REG_SCRIPT
@@ -61,6 +71,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK
 	select SOC_INTEL_COMMON_BLOCK_POWER_LIMIT
 	select SOC_INTEL_COMMON_BLOCK_ACPI
+	select SOC_INTEL_COMMON_BLOCK_CAR
 	select SOC_INTEL_COMMON_BLOCK_CHIP_CONFIG
 	select SOC_INTEL_COMMON_BLOCK_CPU
 	select SOC_INTEL_COMMON_BLOCK_DSP
@@ -71,6 +82,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_GPIO_ITSS_POL_CFG
 	select SOC_INTEL_COMMON_BLOCK_GPIO_IOSTANDBY
 	select SOC_INTEL_COMMON_BLOCK_GRAPHICS
+	select SOC_INTEL_COMMON_BLOCK_HECI1_DISABLE_USING_PCR if DISABLE_HECI1_AT_PRE_BOOT
 	select SOC_INTEL_COMMON_BLOCK_ITSS
 	select SOC_INTEL_COMMON_BLOCK_I2C
 	select SOC_INTEL_COMMON_BLOCK_LPC
@@ -94,21 +106,35 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_CSE
 	select SOC_INTEL_COMMON_BLOCK_SMBUS
 	select SOC_INTEL_COMMON_FSP_RESET
+	select SOC_INTEL_COMMON_RESET
+	select SOC_INTEL_NO_BOOTGUARD_MSR
 	select SOUTHBRIDGE_INTEL_COMMON_SMBUS
-	select UDELAY_TSC
 	select TSC_MONOTONIC_TIMER
-	select PLATFORM_USES_FSP2_0
+	select UDELAY_TSC
 	select UDK_2015_BINDING if !SOC_INTEL_GEMINILAKE
 	select UDK_2017_BINDING if SOC_INTEL_GEMINILAKE
-	select SOC_INTEL_COMMON_RESET
-	select HAVE_CF9_RESET_PREPARE
-	select INTEL_GMA_ADD_VBT if RUN_FSP_GOP
-	select HAVE_FSP_GOP
-	select HAVE_FSP_LOGO_SUPPORT
-	select NO_UART_ON_SUPERIO
-	select INTEL_GMA_ACPI
-	select INTEL_GMA_SWSMISCI
-	select HAVE_ASAN_IN_ROMSTAGE
+	select USE_FSP_NOTIFY_PHASE_POST_PCI_ENUM
+	select USE_FSP_NOTIFY_PHASE_READY_TO_BOOT
+	select USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE
+	# This SoC does not map SPI flash like many previous SoC. Therefore we
+	# provide a custom media driver that facilitates mapping
+	select X86_CUSTOM_BOOTMEDIA
+
+config SKIP_CSE_RBP
+	bool
+	default y if BOOT_DEVICE_MEMORY_MAPPED
+	help
+	  Tell CSE we do not need to use Ring Buffer Protocol (RBP) to fetch
+	  firmware for us if we are using memory-mapped SPI. This lets CSE
+	  state machine transition to next boot state, so that it can function
+	  as designed.
+
+config DISABLE_HECI1_AT_PRE_BOOT
+	default y
+
+config MAX_HECI_DEVICES
+	int
+	default 1
 
 config MAX_CPUS
 	int
@@ -169,12 +195,6 @@ config DRIVERS_I2C_DESIGNWARE_CLOCK_MHZ
 config C_ENV_BOOTBLOCK_SIZE
 	hex
 	default 0x8000
-
-# This SoC does not map SPI flash like many previous SoC. Therefore we provide
-# a custom media driver that facilitates mapping
-config X86_TOP4G_BOOTMEDIA_MAP
-	bool
-	default n
 
 config ROMSTAGE_ADDR
 	hex
@@ -296,40 +316,6 @@ config NHLT_RT5682
 	default n
 	help
 	  Include DSP firmware settings for headset codec.
-
-choice
-	prompt "Cache-as-ram implementation"
-	default CAR_CQOS if !SOC_INTEL_GEMINILAKE
-	default CAR_NEM
-	help
-	  This option allows you to select how cache-as-ram (CAR) is set up.
-
-config CAR_NEM
-	bool "Non-evict mode"
-	select SOC_INTEL_COMMON_BLOCK_CAR
-	select INTEL_CAR_NEM
-	help
-	  Traditionally, CAR is set up by using Non-Evict mode. This method
-	  does not allow CAR and cache to co-exist, because cache fills are
-	  block in NEM mode.
-
-config CAR_CQOS
-	bool "Cache Quality of Service"
-	select SOC_INTEL_COMMON_BLOCK_CAR
-	select INTEL_CAR_CQOS
-	help
-	  Cache Quality of Service allows more fine-grained control of cache
-	  usage. As result, it is possible to set up portion of L2 cache for
-	  CAR and use remainder for actual caching.
-
-config USE_APOLLOLAKE_FSP_CAR
-	bool "Use FSP CAR"
-	select FSP_CAR
-	help
-	  Use FSP APIs to initialize & tear down the Cache-As-Ram.
-
-endchoice
-
 #
 # Each bit in QOS mask controls this many bytes. This is calculated as:
 # (CACHE_WAYS / CACHE_BITS_PER_MASK) * CACHE_LINE_SIZE * CACHE_SETS

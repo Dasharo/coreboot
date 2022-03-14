@@ -4,6 +4,7 @@
 #define __DEVICE_MMIO_H__
 
 #include <arch/mmio.h>
+#include <commonlib/helpers.h>
 #include <endian.h>
 #include <types.h>
 
@@ -41,7 +42,7 @@ void buffer_from_fifo32(void *buffer, size_t size, void *fifo,
  * bytes of the 'prefix' u32 parameter and any high-order bytes exceeding prefsz
  * must be 0. Note that 'size' counts total bytes written, including 'prefsz'.
  */
-void buffer_to_fifo32_prefix(void *buffer, u32 prefix, int prefsz, size_t size,
+void buffer_to_fifo32_prefix(const void *buffer, u32 prefix, int prefsz, size_t size,
 			     void *fifo, int fifo_stride, int fifo_width);
 
 /*
@@ -50,7 +51,7 @@ void buffer_to_fifo32_prefix(void *buffer, u32 prefix, int prefsz, size_t size,
  * registers or 0 to write everything into the same register). fifo_width is
  * the amount of bytes written per register (can be 1 through 4).
  */
-static inline void buffer_to_fifo32(void *buffer, size_t size, void *fifo,
+static inline void buffer_to_fifo32(const void *buffer, size_t size, void *fifo,
 				    int fifo_stride, int fifo_width)
 {
 	buffer_to_fifo32_prefix(buffer, 0, 0, size, fifo,
@@ -130,7 +131,8 @@ static inline void buffer_to_fifo32(void *buffer, size_t size, void *fifo,
 #define DEFINE_BIT(name, bit) DEFINE_BITFIELD(name, bit, bit)
 
 #define _BF_MASK(name, value) \
-	((u32)((1ULL << name##_BITFIELD_SIZE) - 1) << name##_BITFIELD_SHIFT)
+	((u32)GENMASK(name##_BITFIELD_SHIFT + name##_BITFIELD_SIZE - 1, \
+		      name##_BITFIELD_SHIFT))
 
 #define _BF_VALUE(name, value) \
 	(((u32)(value) << name##_BITFIELD_SHIFT) & _BF_MASK(name, 0))

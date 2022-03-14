@@ -28,6 +28,7 @@
 #include <soc/intel/common/vbt.h>
 #include <soc/iomap.h>
 #include <soc/itss.h>
+#include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/systemagent.h>
@@ -35,6 +36,7 @@
 #include <timer.h>
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
+#include <types.h>
 
 #include "chip.h"
 
@@ -533,9 +535,19 @@ static void glk_fsp_silicon_init_params_cb(
 {
 #if CONFIG(SOC_INTEL_GEMINILAKE)
 	uint8_t port;
-	struct device *dev;
+
+	/*
+	 * UsbPerPortCtl was retired in Fsp 2.0.0+, so PDO programming must be
+	 * enabled to configure individual ports in what Fsp thinks is PEI.
+	 */
+	silconfig->UsbPdoProgramming = cfg->usb_config_override;
 
 	for (port = 0; port < APOLLOLAKE_USB2_PORT_MAX; port++) {
+		if (cfg->usb_config_override) {
+			silconfig->PortUsb20Enable[port] = cfg->usb2_port[port].enable;
+			silconfig->PortUs20bOverCurrentPin[port] = cfg->usb2_port[port].oc_pin;
+		}
+
 		if (!cfg->usb2eye[port].Usb20OverrideEn)
 			continue;
 
@@ -549,8 +561,14 @@ static void glk_fsp_silicon_init_params_cb(
 			cfg->usb2eye[port].Usb20IUsbTxEmphasisEn;
 	}
 
-	dev = pcidev_path_on_root(SA_GLK_DEVFN_GMM);
-	silconfig->Gmm = is_dev_enabled(dev);
+	if (cfg->usb_config_override) {
+		for (port = 0; port < APOLLOLAKE_USB3_PORT_MAX; port++) {
+			silconfig->PortUsb30Enable[port] = cfg->usb3_port[port].enable;
+			silconfig->PortUs30bOverCurrentPin[port] = cfg->usb3_port[port].oc_pin;
+		}
+	}
+
+	silconfig->Gmm = is_devfn_enabled(SA_GLK_DEVFN_GMM);
 
 	/* On Geminilake, we need to override the default FSP PCIe de-emphasis
 	 * settings using the device tree settings. This is because PCIe
@@ -685,11 +703,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 	else
 		apl_fsp_silicon_init_params_cb(cfg, silconfig);
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = pcidev_path_on_root(PCH_DEVFN_XDCI);
-	if (!xdci_can_enable())
-		dev->enabled = 0;
-	silconfig->UsbOtg = dev->enabled;
+	silconfig->UsbOtg = xdci_can_enable(PCH_DEVFN_XDCI);
 
 	silconfig->VmxEnable = CONFIG(ENABLE_VMX);
 
@@ -727,10 +741,19 @@ struct chip_operations soc_intel_apollolake_ops = {
 	.final = &soc_final
 };
 
+static void soc_enable_untrusted_mode(void *unused)
+{
+	/*
+	 * Set Bit 6 (ENABLE_IA_UNTRUSTED_MODE) of MSR 0x120
+	 * UCODE_PCR_POWER_MISC MSR to enter IA Untrusted Mode.
+	 */
+	msr_set(MSR_POWER_MISC, ENABLE_IA_UNTRUSTED);
+}
+
 static void drop_privilege_all(void)
 {
 	/* Drop privilege level on all the CPUs */
-	if (mp_run_on_all_cpus(&cpu_enable_untrusted_mode, NULL) < 0)
+	if (mp_run_on_all_cpus(&soc_enable_untrusted_mode, NULL) != CB_SUCCESS)
 		printk(BIOS_ERR, "failed to enable untrusted mode\n");
 }
 
@@ -769,9 +792,7 @@ static void configure_xhci_host_mode_port0(void)
 
 static int check_xdci_enable(void)
 {
-	struct device *dev = PCH_DEV_XDCI;
-
-	return !!dev->enabled;
+	return is_dev_enabled(pcidev_path_on_root(PCH_DEVFN_XDCI));
 }
 
 static void disable_xhci_lfps_pm(void)

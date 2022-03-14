@@ -15,8 +15,9 @@
 #include <soc/pm.h>
 #include <soc/romstage.h>
 #include <soc/systemagent.h>
+#include <timestamp.h>
 
-void save_mrc_data(struct pei_data *pei_data)
+static void save_mrc_data(struct pei_data *pei_data)
 {
 	printk(BIOS_DEBUG, "MRC data at %p %d bytes\n", pei_data->data_to_save,
 	       pei_data->data_to_save_size);
@@ -42,10 +43,10 @@ static void report_memory_config(void)
 {
 	int i;
 
-	const u32 addr_decoder_common = MCHBAR32(MAD_CHNL);
+	const u32 addr_decoder_common = mchbar_read32(MAD_CHNL);
 
 	printk(BIOS_DEBUG, "memcfg DDR3 clock %d MHz\n",
-	       (MCHBAR32(MC_BIOS_DATA) * 13333 * 2 + 50) / 100);
+	       (mchbar_read32(MC_BIOS_DATA) * 13333 * 2 + 50) / 100);
 
 	printk(BIOS_DEBUG, "memcfg channel assignment: A: %d, B % d, C % d\n",
 	       (addr_decoder_common >> 0) & 3,
@@ -53,7 +54,7 @@ static void report_memory_config(void)
 	       (addr_decoder_common >> 4) & 3);
 
 	for (i = 0; i < NUM_CHANNELS; i++) {
-		const u32 ch_conf = MCHBAR32(MAD_DIMM(i));
+		const u32 ch_conf = mchbar_read32(MAD_DIMM(i));
 
 		printk(BIOS_DEBUG, "memcfg channel[%d] config (%8.8x):\n", i, ch_conf);
 		printk(BIOS_DEBUG, "   ECC %s\n", ecc_decoder[(ch_conf >> 24) & 3]);
@@ -80,7 +81,7 @@ static void report_memory_config(void)
 /*
  * Find PEI executable in coreboot filesystem and execute it.
  */
-void sdram_initialize(struct pei_data *pei_data)
+static void sdram_initialize(struct pei_data *pei_data)
 {
 	size_t mrc_size;
 	pei_wrapper_entry_t entry;
@@ -129,15 +130,15 @@ void sdram_initialize(struct pei_data *pei_data)
 		die("pei_data version mismatch\n");
 
 	/* Print the MRC version after executing the UEFI PEI stage. */
-	u32 version = MCHBAR32(MRC_REVISION);
-	printk(BIOS_DEBUG, "MRC Version %d.%d.%d Build %d\n",
+	u32 version = mchbar_read32(MRC_REVISION);
+	printk(BIOS_DEBUG, "MRC Version %u.%u.%u Build %u\n",
 		(version >> 24) & 0xff, (version >> 16) & 0xff,
 		(version >>  8) & 0xff, (version >>  0) & 0xff);
 
 	report_memory_config();
 }
 
-void setup_sdram_meminfo(struct pei_data *pei_data)
+static void setup_sdram_meminfo(struct pei_data *pei_data)
 {
 	struct memory_info *mem_info;
 
@@ -174,4 +175,36 @@ void setup_sdram_meminfo(struct pei_data *pei_data)
 		dimm->mod_type = pei_dimm->mod_type;
 		dimm->bus_width = pei_dimm->bus_width;
 	}
+}
+
+void perform_raminit(const struct chipset_power_state *const power_state)
+{
+	const int s3resume = power_state->prev_sleep_state == ACPI_S3;
+
+	struct pei_data pei_data = { 0 };
+
+	mainboard_fill_pei_data(&pei_data);
+	mainboard_fill_spd_data(&pei_data);
+
+	post_code(0x32);
+
+	timestamp_add_now(TS_BEFORE_INITRAM);
+
+	pei_data.boot_mode = power_state->prev_sleep_state;
+
+	/* Initialize RAM */
+	sdram_initialize(&pei_data);
+
+	timestamp_add_now(TS_AFTER_INITRAM);
+
+	int cbmem_was_initted = !cbmem_recovery(s3resume);
+	if (s3resume && !cbmem_was_initted) {
+		/* Failed S3 resume, reset to come up cleanly */
+		printk(BIOS_CRIT, "Failed to recover CBMEM in S3 resume.\n");
+		system_reset();
+	}
+
+	save_mrc_data(&pei_data);
+
+	setup_sdram_meminfo(&pei_data);
 }

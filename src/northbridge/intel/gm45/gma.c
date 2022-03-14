@@ -33,7 +33,7 @@ static u32 get_cdclk(struct device *const dev)
 {
 	const u16 cdclk_sel = pci_read_config16(dev, GCFGC_OFFSET) & GCFGC_CD_MASK;
 
-	switch (MCHBAR8(HPLLVCO_MCHBAR) & 0x7) {
+	switch (mchbar_read8(HPLLVCO_MCHBAR) & 0x7) {
 	case VCO_2666:
 	case VCO_4000:
 	case VCO_5333:
@@ -151,7 +151,7 @@ static void gma_func0_init(struct device *dev)
 
 	intel_gma_init_igd_opregion();
 
-	gtt_res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	gtt_res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (gtt_res == NULL)
 		return;
 	mmio = res2mmio(gtt_res, 0, 0);

@@ -3,8 +3,6 @@
 #ifndef __NORTHBRIDGE_INTEL_IRONLAKE_IRONLAKE_H__
 #define __NORTHBRIDGE_INTEL_IRONLAKE_IRONLAKE_H__
 
-#define DEFAULT_HECIBAR		((u8 *)0xfed17000)
-
 /*
  * D1:F0 PEG
  */
@@ -21,7 +19,7 @@
 
 #include "memmap.h"
 
-#define QUICKPATH_BUS (CONFIG_MMCONF_BUS_NUMBER - 1)
+#define QUICKPATH_BUS (CONFIG_ECAM_MMCONF_BUS_NUMBER - 1)
 
 #include <southbridge/intel/ibexpeak/pch.h>
 
@@ -90,15 +88,6 @@
 
 #include <northbridge/intel/common/fixed_bars.h>
 
-#define MCHBAR8_AND(x,  and)		(MCHBAR8(x)  = MCHBAR8(x)  & (and))
-#define MCHBAR16_AND(x, and)		(MCHBAR16(x) = MCHBAR16(x) & (and))
-#define MCHBAR32_AND(x, and)		(MCHBAR32(x) = MCHBAR32(x) & (and))
-#define MCHBAR8_OR(x,  or)		(MCHBAR8(x)  = MCHBAR8(x)  | (or))
-#define MCHBAR16_OR(x, or)		(MCHBAR16(x) = MCHBAR16(x) | (or))
-#define MCHBAR32_OR(x, or)		(MCHBAR32(x) = MCHBAR32(x) | (or))
-#define MCHBAR8_AND_OR(x,  and, or)	(MCHBAR8(x)  = (MCHBAR8(x)  & (and)) | (or))
-#define MCHBAR16_AND_OR(x, and, or)	(MCHBAR16(x) = (MCHBAR16(x) & (and)) | (or))
-#define MCHBAR32_AND_OR(x, and, or)	(MCHBAR32(x) = (MCHBAR32(x) & (and)) | (or))
 /*
  * EPBAR - Egress Port Root Complex Register Block
  */

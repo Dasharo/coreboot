@@ -15,21 +15,14 @@
 #include <intelblocks/acpi_wake_source.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/sgx.h>
 #include <intelblocks/uart.h>
 #include <soc/gpio.h>
 #include <soc/iomap.h>
 #include <soc/pm.h>
+#include <cpu/x86/lapic.h>
 
 #define  CPUID_6_EAX_ISST	(1 << 7)
-
-__attribute__((weak)) unsigned long acpi_fill_mcfg(unsigned long current)
-{
-	/* PCI Segment Group 0, Start Bus Number 0, End Bus Number is 255 */
-	current += acpi_create_mcfg_mmconfig((void *)current,
-					     CONFIG_MMCONF_BASE_ADDRESS, 0, 0,
-					     CONFIG_MMCONF_BUS_NUMBER - 1);
-	return current;
-}
 
 static int acpi_sci_irq(void)
 {
@@ -80,6 +73,10 @@ static unsigned long acpi_madt_irq_overrides(unsigned long current)
 	/* NMI */
 	current += acpi_create_madt_lapic_nmi((acpi_madt_lapic_nmi_t *)current, 0xff, 5, 1);
 
+	if (is_x2apic_mode())
+		current += acpi_create_madt_lx2apic_nmi((acpi_madt_lx2apic_nmi_t *)current,
+				0xffffffff, 0x5, 1);
+
 	return current;
 }
 
@@ -119,8 +116,6 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
 	const uint16_t pmbase = ACPI_BASE_ADDRESS;
 
-	fadt->header.revision = get_acpi_table_revision(FADT);
-
 	fadt->sci_int = acpi_sci_irq();
 
 	if (permanent_smi_handler()) {
@@ -140,13 +135,14 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	/* GPE0 STS/EN pairs each 32 bits wide. */
 	fadt->gpe0_blk_len = 2 * GPE0_REG_MAX * sizeof(uint32_t);
 
-	fadt->duty_offset = 1;
 	fadt->day_alrm = 0xd;
 
 	fadt->flags |= ACPI_FADT_WBINVD | ACPI_FADT_C1_SUPPORTED |
-			ACPI_FADT_C2_MP_SUPPORTED | ACPI_FADT_SLEEP_BUTTON |
-			ACPI_FADT_SEALED_CASE | ACPI_FADT_S4_RTC_WAKE |
-			ACPI_FADT_PLATFORM_CLOCK;
+			ACPI_FADT_SLEEP_BUTTON |
+			ACPI_FADT_SEALED_CASE | ACPI_FADT_S4_RTC_WAKE;
+
+	if (CONFIG(USE_PM_ACPI_TIMER))
+		fadt->flags |= ACPI_FADT_PLATFORM_CLOCK;
 
 	fadt->x_pm1a_evt_blk.space_id = ACPI_ADDRESS_SPACE_IO;
 	fadt->x_pm1a_evt_blk.bit_width = fadt->pm1_evt_len * 8;
@@ -186,10 +182,9 @@ unsigned long southbridge_write_acpi_tables(const struct device *device,
 }
 
 __weak
-uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
-			    const struct chipset_power_state *ps)
+void acpi_fill_soc_wake(uint32_t *pm1_en, uint32_t *gpe0_en,
+			const struct chipset_power_state *ps)
 {
-	return generic_pm1_en;
 }
 
 /*
@@ -204,6 +199,7 @@ uint32_t acpi_fill_soc_wake(uint32_t generic_pm1_en,
 int soc_fill_acpi_wake(const struct chipset_power_state *ps, uint32_t *pm1, uint32_t **gpe0)
 {
 	static uint32_t gpe0_sts[GPE0_REG_MAX];
+	uint32_t gpe0_en[GPE0_REG_MAX];
 	uint32_t pm1_en;
 	int i;
 
@@ -212,15 +208,18 @@ int soc_fill_acpi_wake(const struct chipset_power_state *ps, uint32_t *pm1, uint
 	 * powerbtn or any other wake source like lidopen, key board press etc.
 	 */
 	pm1_en = ps->pm1_en;
+	pm1_en |= WAK_STS | PWRBTN_EN;
 
-	pm1_en = acpi_fill_soc_wake(pm1_en, ps);
+	memcpy(gpe0_en, ps->gpe0_en, sizeof(gpe0_en));
+
+	acpi_fill_soc_wake(&pm1_en, gpe0_en, ps);
 
 	*pm1 = ps->pm1_sts & pm1_en;
 
 	/* Mask off GPE0 status bits that are not enabled */
 	*gpe0 = &gpe0_sts[0];
 	for (i = 0; i < GPE0_REG_MAX; i++)
-		gpe0_sts[i] = ps->gpe0_sts[i] & ps->gpe0_en[i];
+		gpe0_sts[i] = ps->gpe0_sts[i] & gpe0_en[i];
 
 	return GPE0_REG_MAX;
 }
@@ -248,7 +247,7 @@ int common_calculate_power_ratio(int tdp, int p1_ratio, int ratio)
 
 static void generate_c_state_entries(void)
 {
-	acpi_cstate_t *c_state_map;
+	const acpi_cstate_t *c_state_map;
 	size_t entries;
 
 	c_state_map = soc_get_cstate_map(&entries);
@@ -371,6 +370,11 @@ void generate_t_state_entries(int core, int cores_per_package)
 
 static void generate_cppc_entries(int core_id)
 {
+	u32 version = CPPC_VERSION_2;
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_CPU_HYBRID))
+		version = CPPC_VERSION_3;
+
 	if (!(CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_CPPC) &&
 	      cpuid_eax(6) & CPUID_6_EAX_ISST))
 		return;
@@ -378,12 +382,15 @@ static void generate_cppc_entries(int core_id)
 	/* Generate GCPC package in first logical core */
 	if (core_id == 0) {
 		struct cppc_config cppc_config;
-		cpu_init_cppc_config(&cppc_config, CPPC_VERSION_2);
+		cpu_init_cppc_config(&cppc_config, version);
 		acpigen_write_CPPC_package(&cppc_config);
 	}
 
 	/* Write _CPC entry for each logical core */
-	acpigen_write_CPPC_method();
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_CPU_HYBRID))
+		acpigen_write_CPPC_hybrid_method(core_id);
+	else
+		acpigen_write_CPPC_method();
 }
 
 __weak void soc_power_states_generation(int core_id,
@@ -393,8 +400,7 @@ __weak void soc_power_states_generation(int core_id,
 
 void generate_cpu_entries(const struct device *device)
 {
-	int core_id, cpu_id, pcontrol_blk = ACPI_BASE_ADDRESS;
-	int plen = 6;
+	int core_id, cpu_id;
 	int totalcores = dev_count_cpu();
 	unsigned int num_virt;
 	unsigned int num_phys;
@@ -408,14 +414,8 @@ void generate_cpu_entries(const struct device *device)
 
 	for (cpu_id = 0; cpu_id < numcpus; cpu_id++) {
 		for (core_id = 0; core_id < num_virt; core_id++) {
-			if (core_id > 0) {
-				pcontrol_blk = 0;
-				plen = 0;
-			}
-
 			/* Generate processor \_SB.CPUx */
-			acpigen_write_processor((cpu_id) * num_virt +
-						core_id, pcontrol_blk, plen);
+			acpigen_write_processor((cpu_id) * num_virt + core_id, 0, 0);
 
 			/* Generate C-state tables */
 			generate_c_state_entries();
@@ -434,4 +434,7 @@ void generate_cpu_entries(const struct device *device)
 
 	/* Add a method to notify processor nodes */
 	acpigen_write_processor_cnot(num_virt);
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		sgx_fill_ssdt();
 }

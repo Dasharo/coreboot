@@ -19,16 +19,10 @@ config BOARD_SPECIFIC_OPTIONS
 	select USE_NATIVE_RAMINIT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/l520"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad L520"
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0126.rom"
 
 config VGA_BIOS_ID
 	string

@@ -11,10 +11,10 @@ chip northbridge/intel/sandybridge
 	# Enable DVI Hotplug with 6ms pulse
 	register "gpu_dp_b_hotplug" = "0x06"
 
-	device cpu_cluster 0x0 on
+	device cpu_cluster 0 on
 		chip cpu/intel/model_206ax
 			# Magic APIC ID to locate this chip
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 
 			register "acpi_c1" = "1"
@@ -22,13 +22,12 @@ chip northbridge/intel/sandybridge
 			register "acpi_c3" = "5"
 		end
 	end
-	device domain 0x0 on
+	device domain 0 on
 		device pci 00.0 on  end	# Host bridge
 		device pci 01.0 off end	# PCIe Bridge for discrete graphics
 		device pci 02.0 on  end	# Internal graphics VGA controller
 
 		chip southbridge/intel/bd82x6x # Intel Series 6 Cougar Point PCH
-			register "c2_latency" = "0x0065"
 			register "sata_port_map" = "0x1"
 			register "spi_lvscc" = "0x2005"
 			register "spi_uvscc" = "0x2005"
@@ -82,7 +81,7 @@ chip northbridge/intel/sandybridge
 					device pnp 4e.609 off end	# GPIO6
 					device pnp 4e.709 off end	# GPIO7
 					device pnp 4e.a on end		# ACPI
-					device pnp 4e.b on		# HWM, front pannel LED
+					device pnp 4e.b on		# HWM, front panel LED
 						io 0x60 = 0xa30
 						io 0x62 = 0 # unused
 					end

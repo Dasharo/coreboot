@@ -12,11 +12,13 @@
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>
+#include <device/device.h>
 #include <reg_script.h>
 #include <soc/iosf.h>
 #include <soc/msr.h>
 #include <soc/pattrs.h>
 #include <soc/ramstage.h>
+#include <types.h>
 
 /* Core level MSRs */
 static const struct reg_script core_msr_script[] = {
@@ -192,10 +194,8 @@ static const struct mp_ops mp_ops = {
 	.post_mp_init        = post_mp_init,
 };
 
-void baytrail_init_cpus(struct device *dev)
+void mp_init_cpus(struct bus *cpu_bus)
 {
-	struct bus *cpu_bus = dev->link_list;
-
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }

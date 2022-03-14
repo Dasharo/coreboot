@@ -151,7 +151,7 @@ void SetMemParams(AMD_POST_PARAMS *PostParams)
 	const struct device *dev = pcidev_path_on_root(GNB_DEVFN);
 
 	if (!dev || !dev->chip_info) {
-		printk(BIOS_ERR, "ERROR: Cannot find SoC devicetree config\n");
+		printk(BIOS_ERR, "Cannot find SoC devicetree config\n");
 		/* In case of a BIOS error, only attempt to set UMA. */
 		PostParams->MemConfig.UmaMode = CONFIG(GFXUMA) ?
 					UMA_AUTO : UMA_NONE;
@@ -189,7 +189,7 @@ void soc_customize_init_early(AMD_EARLY_PARAMS *InitEarly)
 	struct _PLATFORM_CONFIGURATION *platform;
 
 	if (!dev || !dev->chip_info) {
-		printk(BIOS_WARNING, "Warning: Cannot find SoC devicetree"
+		printk(BIOS_WARNING, "Cannot find SoC devicetree"
 					" config, STAPM unchanged\n");
 		return;
 	}
@@ -214,6 +214,5 @@ static void migrate_power_state(int is_recovery)
 		acpi_fill_pm_gpe_state(&state->gpe_state);
 		acpi_pm_gpe_add_events_print_events();
 	}
-	acpi_clear_pm_gpe_status();
 }
 ROMSTAGE_CBMEM_INIT_HOOK(migrate_power_state)

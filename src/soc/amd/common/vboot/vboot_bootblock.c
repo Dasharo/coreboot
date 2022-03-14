@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/reset.h>
-#include <bl_uapp/bl_syscall_public.h>
 #include <bootblock_common.h>
+#include <console/cbmem_console.h>
 #include <console/console.h>
 #include <pc80/mc146818rtc.h>
 #include <security/vboot/vbnv.h>
@@ -13,7 +13,7 @@
 
 static int transfer_buffer_valid(const struct transfer_info_struct *ptr)
 {
-	if (ptr->magic_val == TRANSFER_MAGIC_VAL)
+	if (ptr->magic_val == TRANSFER_MAGIC_VAL && ptr->struct_bytes == sizeof(*ptr))
 		return 1;
 	else
 		return 0;
@@ -35,7 +35,7 @@ void verify_psp_transfer_buf(void)
 			CMOS_RECOVERY_MAGIC_VAL)
 		die("Error: Reboot into recovery was unsuccessful.  Halting.");
 
-	printk(BIOS_ERR, "ERROR: VBOOT workbuf not valid.\n");
+	printk(BIOS_ERR, "VBOOT workbuf not valid.\n");
 	printk(BIOS_DEBUG, "Signature: %#08x\n", *(uint32_t *)_vboot2_work);
 	cmos_init(0);
 	cmos_write(CMOS_RECOVERY_MAGIC_VAL, CMOS_RECOVERY_BYTE);
@@ -62,6 +62,31 @@ void show_psp_transfer_info(void)
 	}
 }
 
+static void setup_cbmem_console(const struct transfer_info_struct *info)
+{
+
+	void *cbmemc;
+	size_t cbmemc_size;
+
+	if (info->console_offset < sizeof(*info))
+		return;
+
+	if (info->timestamp_offset <= info->console_offset)
+		return;
+
+	cbmemc_size = info->timestamp_offset - info->console_offset;
+
+	if (info->console_offset + cbmemc_size > info->buffer_size)
+		return;
+
+	cbmemc = (void *)((uintptr_t)info + info->console_offset);
+
+	/* We need to manually initialize cbmemc so we can fill the new buffer. cbmemc_init()
+	 * will also be called later in console_hw_init(), but it will be a no-op. */
+	cbmemc_init();
+	cbmemc_copy_in(cbmemc, cbmemc_size);
+}
+
 void boot_with_psp_timestamp(uint64_t base_timestamp)
 {
 	const struct transfer_info_struct *info = (const struct transfer_info_struct *)
@@ -69,6 +94,8 @@ void boot_with_psp_timestamp(uint64_t base_timestamp)
 
 	if (!transfer_buffer_valid(info) || info->timestamp == 0)
 		return;
+
+	setup_cbmem_console(info);
 
 	/*
 	 * info->timestamp is PSP's timestamp (in microseconds)

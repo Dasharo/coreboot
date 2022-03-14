@@ -17,7 +17,7 @@
 #include <soc/soc_chip.h>
 
 static const struct pcie_rp_group pch_rp_groups[] = {
-	{ .slot = PCH_DEV_SLOT_PCIE,    .count = 7 },
+	{ .slot = PCH_DEV_SLOT_PCIE,    .count = 7, .lcap_port_base = 1 },
 	{ 0 }
 };
 
@@ -82,11 +82,13 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_PCIE5:	return "RP05";
 	case PCH_DEVFN_PCIE6:	return "RP06";
 	case PCH_DEVFN_PCIE7:	return "RP07";
+	case PCH_DEVFN_PSEGBE0:	return "OTN0";
+	case PCH_DEVFN_PSEGBE1:	return "OTN1";
 	case PCH_DEVFN_UART0:	return "UAR0";
 	case PCH_DEVFN_UART1:	return "UAR1";
 	case PCH_DEVFN_GSPI0:	return "SPI0";
 	case PCH_DEVFN_GSPI1:	return "SPI1";
-	case PCH_DEVFN_GBE:	return "GLAN";
+	case PCH_DEVFN_GBE:	return "GTSN";
 	case PCH_DEVFN_GSPI2:	return "SPI2";
 	case PCH_DEVFN_EMMC:	return "EMMC";
 	case PCH_DEVFN_SDCARD:	return "SDXC";
@@ -98,18 +100,16 @@ const char *soc_acpi_name(const struct device *dev)
 }
 #endif
 
-/* SoC rotine to fill GPIO PM mask and value for GPIO_MISCCFG register */
+/* SoC routine to fill GPIO PM mask and value for GPIO_MISCCFG register */
 static void soc_fill_gpio_pm_configuration(void)
 {
 	uint8_t value[TOTAL_GPIO_COMM];
 	const config_t *config = config_of_soc();
 
 	if (config->gpio_override_pm)
-		memcpy(value, config->gpio_pm, sizeof(uint8_t) *
-			TOTAL_GPIO_COMM);
+		memcpy(value, config->gpio_pm, sizeof(value));
 	else
-		memset(value, MISCCFG_ENABLE_GPIO_PM_CONFIG, sizeof(uint8_t) *
-			TOTAL_GPIO_COMM);
+		memset(value, MISCCFG_GPIO_PM_CONFIG_BITS, sizeof(value));
 
 	gpio_pm_configure(value, TOTAL_GPIO_COMM);
 }

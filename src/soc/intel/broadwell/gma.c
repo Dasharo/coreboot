@@ -18,7 +18,6 @@
 #include <drivers/intel/gma/libgfxinit.h>
 #include <drivers/intel/gma/opregion.h>
 #include <soc/pm.h>
-#include <soc/ramstage.h>
 #include <soc/systemagent.h>
 #include <soc/intel/broadwell/chip.h>
 #include <security/vboot/vbnv.h>
@@ -284,7 +283,7 @@ int gtt_poll(u32 reg, u32 mask, u32 value)
 
 static void gma_setup_panel(struct device *dev)
 {
-	config_t *conf = config_of(dev);
+	struct soc_intel_broadwell_config *conf = config_of(dev);
 	const struct i915_gpu_panel_config *panel_cfg = &conf->panel_cfg;
 	u32 reg32;
 
@@ -361,7 +360,7 @@ static void gma_setup_panel(struct device *dev)
 static int igd_get_cdclk_haswell(u32 *const cdsel, int *const inform_pc,
 				 struct device *const dev)
 {
-	const config_t *const conf = config_of(dev);
+	const struct soc_intel_broadwell_config *const conf = config_of(dev);
 	int cdclk = conf->cdclk;
 
 	/* Check for ULX GT1 or GT2 */
@@ -396,7 +395,7 @@ static int igd_get_cdclk_broadwell(u32 *const cdsel, int *const inform_pc,
 				   struct device *const dev)
 {
 	static const u32 cdsel_by_cdclk[] = { 0, 2, 0, 1, 3 };
-	const config_t *const conf = config_of(dev);
+	const struct soc_intel_broadwell_config *const conf = config_of(dev);
 	int cdclk = conf->cdclk;
 
 	/* Check for ULX */
@@ -506,7 +505,7 @@ static void igd_init(struct device *dev)
 
 	intel_gma_init_igd_opregion();
 
-	gtt_res = find_resource(dev, PCI_BASE_ADDRESS_0);
+	gtt_res = probe_resource(dev, PCI_BASE_ADDRESS_0);
 	if (!gtt_res || !gtt_res->base)
 		return;
 
@@ -529,7 +528,7 @@ static void igd_init(struct device *dev)
 	}
 
 	/* Set RP1 graphics frequency */
-	rp1_gfx_freq = (MCHBAR32(0x5998) >> 8) & 0xff;
+	rp1_gfx_freq = (mchbar_read32(0x5998) >> 8) & 0xff;
 	gtt_write(0xa008, rp1_gfx_freq << 24);
 
 	/* Post VBIOS panel setup */

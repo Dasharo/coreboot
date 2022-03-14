@@ -17,7 +17,6 @@
 #include <soc/mtcmos.h>
 #include <soc/pll.h>
 #include <soc/usb.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 #include <framebuffer_info.h>
 
 enum {
@@ -231,7 +230,7 @@ static void display_startup(void)
 static void mainboard_init(struct device *dev)
 {
 	/* TP_SHIFT_EN: Enables the level shifter for I2C bus 4 (TPAD), which
-	 * also contains the PS8640 eDP brige and the USB hub.
+	 * also contains the PS8640 eDP bridge and the USB hub.
 	 */
 	if (board_id() + CONFIG_BOARD_ID_ADJUSTMENT < 5)
 		mt6391_gpio_output(MT6391_KP_ROW2, 1);

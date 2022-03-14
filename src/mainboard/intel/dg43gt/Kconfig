@@ -2,6 +2,9 @@
 
 if BOARD_INTEL_DG43GT
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select CPU_INTEL_SOCKET_LGA775
@@ -26,11 +29,9 @@ config VGA_BIOS_ID
 	default "8086,2e22"
 
 config MAINBOARD_DIR
-	string
 	default "intel/dg43gt"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "DG43GT"
 
 endif # BOARD_INTEL_DG43GT

@@ -54,7 +54,7 @@ static struct typedesc_t filetypes[] unused = {
 	{0, NULL}
 };
 
-#define CBFS_SUBHEADER(_p) ( (void *) ((((uint8_t *) (_p)) + ntohl((_p)->offset))) )
+#define CBFS_SUBHEADER(_p) ((void *) ((((uint8_t *) (_p)) + be32toh((_p)->offset))))
 
 static inline size_t cbfs_file_attr_hash_size(enum vb2_hash_algorithm algo)
 {
@@ -71,5 +71,10 @@ void xdr_segs(struct buffer *output,
 	      struct cbfs_payload_segment *segs, int nseg);
 void xdr_get_seg(struct cbfs_payload_segment *out,
 		struct cbfs_payload_segment *in);
+
+/* platform_fixups.c */
+typedef int (*platform_fixup_func)(struct buffer *buffer, size_t offset);
+platform_fixup_func platform_fixups_probe(struct buffer *buffer, size_t offset,
+					  const char *region_name);
 
 #endif

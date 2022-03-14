@@ -45,6 +45,12 @@ to the payload), but it's also a value that is deeply ingrained in the
 project. We fearlessly rip out parts of the architecture and remodel it
 when a better way of doing the same was identified.
 
+That said, since there are attempts to coerce coreboot to move in various
+directions by outside "standardization", long-established practices of
+coreboot as well as aligned projects can be documented as best practices,
+making them standards in their own right. However we reserve the right to
+retire them as the landscape shifts around us.
+
 ### One tree for everything
 
 Another difference to various other firmware projects is that we try
@@ -162,14 +168,8 @@ Contents:
 
 * [Getting Started](getting_started/index.md)
 * [Tutorial](tutorial/index.md)
-* [Coding Style](contributing/coding_style.md)
-* [Project Ideas](contributing/project_ideas.md)
-* [Documentation Ideas](contributing/documentation_ideas.md)
-* [Code of Conduct](community/code_of_conduct.md)
-* [Language style](community/language_style.md)
-* [Community forums](community/forums.md)
-* [Project services](community/services.md)
-* [coreboot at conferences](community/conferences.md)
+* [Contributing](contributing/index.md)
+* [Community](community/index.md)
 * [Payloads](payloads.md)
 * [Distributions](distributions.md)
 * [Technotes](technotes/index.md)
@@ -183,6 +183,7 @@ Contents:
 * [Mainboard](mainboard/index.md)
 * [Payloads](lib/payloads/index.md)
 * [Libraries](lib/index.md)
+* [Options](lib/option.md)
 * [Security](security/index.md)
 * [SuperIO](superio/index.md)
 * [Vendorcode](vendorcode/index.md)

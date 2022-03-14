@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <symbols.h>
+#include <endian.h>
 
 #include "fmap_config.h"
 
@@ -16,7 +17,7 @@
  */
 
 static int fmap_print_once;
-static struct mem_region_device fmap_cache;
+static struct region_device fmap_cache;
 
 #define print_once(...) do { \
 		if (!fmap_print_once) \
@@ -49,11 +50,12 @@ static void report(const struct fmap *fmap)
 	print_once(BIOS_DEBUG, "FMAP: Found \"%s\" version %d.%d at %#x.\n",
 	       fmap->name, fmap->ver_major, fmap->ver_minor, FMAP_OFFSET);
 	print_once(BIOS_DEBUG, "FMAP: base = %#llx size = %#x #areas = %d\n",
-	       (long long)fmap->base, fmap->size, fmap->nareas);
+	       (long long)le64toh(fmap->base), le32toh(fmap->size),
+	       le16toh(fmap->nareas));
 	fmap_print_once = 1;
 }
 
-static void setup_preram_cache(struct mem_region_device *cache_mrdev)
+static void setup_preram_cache(struct region_device *cache_rdev)
 {
 	if (CONFIG(NO_FMAP_CACHE))
 		return;
@@ -78,7 +80,7 @@ static void setup_preram_cache(struct mem_region_device *cache_mrdev)
 		if (!verify_fmap(fmap))
 			goto register_cache;
 
-		printk(BIOS_ERR, "ERROR: FMAP cache corrupted?!\n");
+		printk(BIOS_ERR, "FMAP cache corrupted?!\n");
 		if (CONFIG(TOCTOU_SAFETY))
 			die("TOCTOU safety relies on FMAP cache");
 	}
@@ -99,7 +101,7 @@ static void setup_preram_cache(struct mem_region_device *cache_mrdev)
 	report(fmap);
 
 register_cache:
-	mem_region_device_ro_init(cache_mrdev, fmap, FMAP_SIZE);
+	rdev_chain_mem(cache_rdev, fmap, FMAP_SIZE);
 }
 
 static int find_fmap_directory(struct region_device *fmrd)
@@ -109,10 +111,10 @@ static int find_fmap_directory(struct region_device *fmrd)
 	size_t offset = FMAP_OFFSET;
 
 	/* Try FMAP cache first */
-	if (!region_device_sz(&fmap_cache.rdev))
+	if (!region_device_sz(&fmap_cache))
 		setup_preram_cache(&fmap_cache);
-	if (region_device_sz(&fmap_cache.rdev))
-		return rdev_chain_full(fmrd, &fmap_cache.rdev);
+	if (region_device_sz(&fmap_cache))
+		return rdev_chain_full(fmrd, &fmap_cache);
 
 	boot_device_init();
 	boot = boot_device_ro();
@@ -188,10 +190,10 @@ int fmap_locate_area(const char *name, struct region *ar)
 		}
 
 		printk(BIOS_DEBUG, "FMAP: area %s found @ %x (%d bytes)\n",
-		       name, area->offset, area->size);
+		       name, le32toh(area->offset), le32toh(area->size));
 
-		ar->offset = area->offset;
-		ar->size = area->size;
+		ar->offset = le32toh(area->offset);
+		ar->size = le32toh(area->size);
 
 		rdev_munmap(&fmrd, area);
 
@@ -226,8 +228,8 @@ int fmap_find_region_name(const struct region * const ar,
 		if (area == NULL)
 			return -1;
 
-		if ((ar->offset != area->offset) ||
-		    (ar->size != area->size)) {
+		if ((ar->offset != le32toh(area->offset)) ||
+		    (ar->size != le32toh(area->size))) {
 			rdev_munmap(&fmrd, area);
 			offset += sizeof(struct fmap_area);
 			continue;
@@ -281,7 +283,7 @@ static void fmap_register_cbmem_cache(int unused)
 	if (!e)
 		return;
 
-	mem_region_device_ro_init(&fmap_cache, cbmem_entry_start(e), cbmem_entry_size(e));
+	rdev_chain_mem(&fmap_cache, cbmem_entry_start(e), cbmem_entry_size(e));
 }
 
 /*
@@ -299,13 +301,13 @@ static void fmap_setup_cbmem_cache(int unused)
 	const size_t s = region_device_sz(&fmrd);
 	struct fmap *fmap = cbmem_add(CBMEM_ID_FMAP, s);
 	if (!fmap) {
-		printk(BIOS_ERR, "ERROR: Failed to allocate CBMEM\n");
+		printk(BIOS_ERR, "Failed to allocate CBMEM\n");
 		return;
 	}
 
 	const ssize_t ret = rdev_readat(&fmrd, fmap, 0, s);
 	if (ret != s) {
-		printk(BIOS_ERR, "ERROR: Failed to read FMAP into CBMEM\n");
+		printk(BIOS_ERR, "Failed to read FMAP into CBMEM\n");
 		cbmem_entry_remove(cbmem_entry_find(CBMEM_ID_FMAP));
 		return;
 	}

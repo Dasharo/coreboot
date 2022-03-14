@@ -4,9 +4,11 @@
 #define _CPU_INTEL_COMMON_H
 
 #include <types.h>
+#include <acpi/acpigen.h>
 
 void set_vmx_and_lock(void);
 void set_feature_ctrl_vmx(void);
+void set_feature_ctrl_vmx_arg(bool enable);
 void set_feature_ctrl_lock(void);
 
 /*

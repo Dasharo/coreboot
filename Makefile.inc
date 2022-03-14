@@ -40,6 +40,7 @@ COREBOOT_EXPORTS += MAINBOARDDIR VARIANT_DIR CARRIER_DIR
 ## rom image file, are placed under $(objcbfs).
 ## These typically have suffixes .debug .elf .bin and .map
 objcbfs := $(obj)/cbfs/$(CONFIG_CBFS_PREFIX)
+additional-dirs += $(objcbfs)
 COREBOOT_EXPORTS += objcbfs
 
 ## Based on the active configuration, Makefile conditionally collects
@@ -47,6 +48,7 @@ COREBOOT_EXPORTS += objcbfs
 ## Such files that do not have a clear one-to-one relation to a source
 ## file under src/ are placed and built under $(objgenerated)
 objgenerated := $(obj)/generated
+additional-dirs += $(objgenerated)
 COREBOOT_EXPORTS += objgenerated
 
 ## CCACHE_EXTRAFILES can be set by individual rules to help CCACHE
@@ -56,7 +58,7 @@ COREBOOT_EXPORTS += CCACHE_EXTRAFILES
 #######################################################################
 # root rule to resolve if in build mode (ie. configuration exists)
 real-target: $(obj)/config.h coreboot files_added
-coreboot: build-dirs $(obj)/coreboot.rom $(obj)/cbfstool $(obj)/rmodtool $(obj)/ifwitool
+coreboot: $(obj)/coreboot.rom $(obj)/cbfstool $(obj)/rmodtool $(obj)/ifwitool $(obj)/cse_fpt $(obj)/cse_serger
 
 # This target can be used in site local to run scripts or additional
 # targets after the build completes by creating a Makefile.inc in the
@@ -71,13 +73,13 @@ files_added:: build_complete
 
 #######################################################################
 # our phony targets
-PHONY+= clean-abuild coreboot check-style build-dirs build_complete
+PHONY+= clean-abuild coreboot check-style build_complete
 
 #######################################################################
 # root source directories of coreboot
 subdirs-y := src/lib src/commonlib/ src/console src/device src/acpi src/superio/common
 subdirs-y += src/ec/acpi $(wildcard src/ec/*/*) $(wildcard src/southbridge/*/*)
-subdirs-y += $(wildcard src/soc/*/*) $(wildcard src/northbridge/*/*)
+subdirs-y += $(wildcard src/soc/*) $(wildcard src/soc/*/*) $(wildcard src/northbridge/*/*)
 subdirs-y += $(wildcard src/superio/*) $(wildcard src/superio/*/*)
 subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*) $(wildcard src/drivers/*/*/*)
 subdirs-y += src/cpu src/vendorcode
@@ -185,27 +187,29 @@ ramstage-generic-ccopts += -D__RAMSTAGE__
 ifeq ($(CONFIG_COVERAGE),y)
 ramstage-c-ccopts += -fprofile-arcs -ftest-coverage
 endif
-
 ifneq ($(UPDATED_SUBMODULES),1)
 # try to fetch non-optional submodules if the source is under git
-forgetthis:=$(if $(GIT),$(shell git submodule update --init))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init $(quiet_errors)))
+# Checkout Cmocka repository
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/cmocka $(quiet_errors)))
 ifeq ($(CONFIG_USE_BLOBS),y)
 # These items are necessary because each has update=none in .gitmodules.  They are ignored
 # until expressly requested and enabled with --checkout
-forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/blobs))
-forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/intel-microcode))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/blobs $(quiet_errors)))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/intel-microcode $(quiet_errors)))
 ifeq ($(CONFIG_FSP_USE_REPO),y)
-forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/fsp))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/fsp $(quiet_errors)))
 endif
 ifeq ($(CONFIG_USE_AMD_BLOBS),y)
-forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/amd_blobs))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/amd_blobs $(quiet_errors)))
 endif
 ifeq ($(CONFIG_USE_QC_BLOBS),y)
-forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/qc_blobs))
+forgetthis:=$(if $(GIT),$(shell git submodule update --init --checkout 3rdparty/qc_blobs $(quiet_errors)))
 endif
 endif
 UPDATED_SUBMODULES:=1
 COREBOOT_EXPORTS += UPDATED_SUBMODULES
+
 endif
 
 postcar-c-deps:=$$(OPTION_TABLE_H)
@@ -257,15 +261,24 @@ EMPTY_RESOURCE_TEMPLATE_WARNING = 3150
 # Redundant offset remarks are not useful in any way and are masking useful
 # ones that might indicate an issue so it is better to hide them.
 REDUNDANT_OFFSET_REMARK = 2158
-# Ignore _HID & _ADR coexisting in Intel Lynxpoint ASL code.
-# See cb:38802
-# "Multiple types (Device object requires either a _HID or _ADR, but not both)"
-MULTIPLE_TYPES_WARNING = 3073
+# IASL compiler check for usage of _CRS, _DIS, _PRS, and _SRS objects:
+#	1) If _PRS is present, must have _CRS and _SRS
+#	2) If _SRS is present, must have _PRS (_PRS requires _CRS and _SRS)
+#	3) If _DIS is present, must have _SRS (_SRS requires _PRS, _PRS requires _CRS and _SRS)
+#	4) If _SRS is present, probably should have a _DIS (Remark only)
+# A warning will be issued for each of these cases.
+# For existing ASL code, ignore this warnings
+IASL_MISSING_DEPENDENCY = 3141
 
 IASL_WARNINGS_LIST = $(EMPTY_RESOURCE_TEMPLATE_WARNING) $(REDUNDANT_OFFSET_REMARK)
 
-ifeq ($(CONFIG_SOUTHBRIDGE_INTEL_LYNXPOINT),y)
-IASL_WARNINGS_LIST += $(MULTIPLE_TYPES_WARNING)
+ifeq ($(CONFIG_IGNORE_IASL_MISSING_DEPENDENCY),y)
+	IASL_WARNINGS_LIST += $(IASL_MISSING_DEPENDENCY)
+build_complete::
+	printf "*** WARNING: The ASL code for this platform is incomplete.  Please fix it. ***\n"
+	printf "*** If _PRS is present, must have _CRS and _SRS ***\n"
+	printf "*** If _SRS is present, must have _PRS, _CRS, and _SRS ***\n"
+	printf "*** If _DIS is present, must have _SRS, _PRS, _CRS, and _SRS ***\n"
 endif
 
 IGNORED_IASL_WARNINGS = $(addprefix -vw , $(IASL_WARNINGS_LIST))
@@ -274,6 +287,9 @@ define asl_template
 $(CONFIG_CBFS_PREFIX)/$(1).aml-file = $(obj)/$(1).aml
 $(CONFIG_CBFS_PREFIX)/$(1).aml-type = raw
 $(CONFIG_CBFS_PREFIX)/$(1).aml-compression = none
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA),y)
+$(CONFIG_CBFS_PREFIX)/$(1).aml-align = 64
+endif
 cbfs-files-$(if $(2),$(2),y) += $(CONFIG_CBFS_PREFIX)/$(1).aml
 -include $(obj)/$(1).d
 $(obj)/$(1).aml: $(src)/mainboard/$(MAINBOARDDIR)/$(1).asl $(obj)/config.h
@@ -296,20 +312,10 @@ endef
 # arg1: source file
 # arg2: binary file name
 cbfs-files-processor-nvramtool= \
-	$(eval $(2): $(1) $(src)/mainboard/$(MAINBOARDDIR)/cmos.layout | $(objutil)/nvramtool/nvramtool ; \
+	$(eval $(2): $(1) $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE)) | $(objutil)/nvramtool/nvramtool ; \
 		printf "    CREATE     $(2) (from $(1))\n"; \
-		$(objutil)/nvramtool/nvramtool -y $(src)/mainboard/$(MAINBOARDDIR)/cmos.layout -D $(2).tmp -p $(1) && \
+		$(objutil)/nvramtool/nvramtool -y $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE)) -D $(2).tmp -p $(1) && \
 		mv $(2).tmp $(2))
-
-#######################################################################
-# Link VSA binary to ELF-ish stage
-# arg1: source file
-# arg2: binary file name
-cbfs-files-processor-vsa= \
-	$(eval $(2): $(1) ; \
-		printf "    CREATE     $(2) (from $(1))\n"; \
-		$(OBJCOPY_ramstage) --set-start 0x20 --adjust-vma 0x60000 -I binary -O elf32-i386 -B i386 $(1) $(2).tmp && \
-		$(LD_ramstage) -m elf_i386 -e 0x60020 --section-start .data=0x60000 $(2).tmp -o $(2))
 
 #######################################################################
 # Reduce a .config file to its minimal representation
@@ -333,7 +339,7 @@ endef
 cbfs-files-processor-struct= \
 	$(eval $(2): $(1) $(obj)/build.h $(KCONFIG_AUTOHEADER); \
 		printf "    CC+STRIP   $(1)\n"; \
-		$(CC_ramstage) -MMD $(CPPFLAGS_ramstage) $(CFLAGS_ramstage) $$(ramstage-c-ccopts) -include $(KCONFIG_AUTOHEADER) -MT $(2) -o $(2).tmp -c $(1) && \
+		$(CC_ramstage) -MMD $(CPPFLAGS_ramstage) $(CFLAGS_ramstage) --param asan-globals=0 $$(ramstage-c-ccopts) -include $(KCONFIG_AUTOHEADER) -MT $(2) -o $(2).tmp -c $(1) && \
 		$(OBJCOPY_ramstage) -O binary --set-section-flags .bss*=alloc,contents,load $(2).tmp $(2); \
 		rm -f $(2).tmp) \
 	$(eval DEPENDENCIES += $(2).d)
@@ -445,6 +451,7 @@ ADAFLAGS_common += -pipe -g -nostdinc
 ADAFLAGS_common += -Wstrict-aliasing -Wshadow
 ADAFLAGS_common += -fno-common -fomit-frame-pointer
 ADAFLAGS_common += -ffunction-sections -fdata-sections
+ADAFLAGS_common += -fno-pie
 # Ada warning options:
 #
 #  a   Activate most optional warnings.
@@ -483,7 +490,7 @@ ADAFLAGS_common += -gnatwa.eeD.HHTU.U.W.Y
 # Disable style checks for now
 ADAFLAGS_common += -gnatyN
 
-LDFLAGS_common := --gc-sections -nostdlib -nostartfiles -static
+LDFLAGS_common := --gc-sections -nostdlib --nmagic -static
 
 # Workaround for RISC-V linker bug, merge back into above line when fixed.
 # https://sourceware.org/bugzilla/show_bug.cgi?id=27180
@@ -506,7 +513,7 @@ ifeq ($(CONFIG_DEBUG_ADA_CODE),y)
 ADAFLAGS_common += -gnata
 endif
 
-additional-dirs := $(objutil)/cbfstool $(objutil)/ifdtool \
+additional-dirs += $(objutil)/cbfstool $(objutil)/ifdtool \
 		   $(objutil)/options $(objutil)/amdfwtool \
 		   $(objutil)/cbootimage
 
@@ -534,9 +541,6 @@ $(build_h): $$(shell $$(build_h_check))
 	@printf "    GEN        build.h\n"
 	mv $< $@
 
-build-dirs $(objcbfs) $(objgenerated):
-	mkdir -p $(objcbfs) $(objgenerated)
-
 $(obj)/build_info:
 	@echo 'COREBOOT_VERSION: $(call strip_quotes,$(KERNELVERSION))' > $@.tmp
 	@echo 'MAINBOARD_VENDOR: $(call strip_quotes,$(CONFIG_MAINBOARD_VENDOR))' >> $@.tmp
@@ -551,6 +555,8 @@ RMODTOOL:=$(objutil)/cbfstool/rmodtool
 IFWITOOL:=$(objutil)/cbfstool/ifwitool
 IFITTOOL:=$(objutil)/cbfstool/ifittool
 AMDCOMPRESS:=$(objutil)/cbfstool/amdcompress
+CSE_FPT:=$(objutil)/cbfstool/cse_fpt
+CSE_SERGER:=$(objutil)/cbfstool/cse_serger
 
 $(obj)/cbfstool: $(CBFSTOOL)
 	cp $< $@
@@ -570,6 +576,12 @@ $(obj)/ifittool: $(IFITTOOL)
 $(obj)/amdcompress: $(AMDCOMPRESS)
 	cp $< $@
 
+$(obj)/cse_fpt: $(CSE_FPT)
+	cp $< $@
+
+$(obj)/cse_serger: $(CSE_SERGER)
+	cp $< $@
+
 _WINCHECK=$(shell uname -o 2> /dev/null)
 STACK=
 ifeq ($(_WINCHECK),Msys)
@@ -586,6 +598,8 @@ IFDTOOL:=$(objutil)/ifdtool/ifdtool
 AMDFWTOOL:=$(objutil)/amdfwtool/amdfwtool
 
 APCB_EDIT_TOOL:=$(top)/util/apcb/apcb_edit.py
+
+APCB_V3_EDIT_TOOL:=$(top)/util/apcb/apcb_v3_edit.py
 
 CBOOTIMAGE:=$(objutil)/cbootimage/cbootimage
 
@@ -696,7 +710,7 @@ install-git-commit-clangfmt:
 include util/crossgcc/Makefile.inc
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo
+tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(CSE_FPT) $(CSE_SERGER)
 
 ###########################################################################
 # Common recipes for all stages
@@ -768,7 +782,7 @@ $(objcbfs)/bootblock.raw.bin: $(objcbfs)/bootblock.raw.elf
 	$(OBJCOPY_bootblock) -O binary $< $@
 
 ifneq ($(CONFIG_HAVE_BOOTBLOCK),y)
-$(objcbfs)/bootblock.bin: $(objcbfs)
+$(objcbfs)/bootblock.bin:
 	dd if=/dev/zero of=$@ bs=64 count=1
 endif
 
@@ -1097,7 +1111,7 @@ TS_OPTIONS := -j $(CONFIG_INTEL_TOP_SWAP_BOOTBLOCK_SIZE)
 endif
 
 ifneq ($(CONFIG_UPDATE_IMAGE),y)
-$(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $(IFITTOOL) $$(cpu_ucode_cbfs_file) $(obj)/fmap.fmap $(obj)/fmap.desc
+$(obj)/coreboot.pre: $(objcbfs)/bootblock.bin $$(prebuilt-files) $(CBFSTOOL) $(obj)/fmap.fmap $(obj)/fmap.desc
 	$(CBFSTOOL) $@.tmp create -M $(obj)/fmap.fmap -r $(shell cat $(obj)/fmap.desc)
 ifeq ($(CONFIG_ARCH_X86),y)
 	$(CBFSTOOL) $@.tmp add \
@@ -1153,7 +1167,7 @@ add_intermediate = \
 	$(1): $(obj)/coreboot.pre $(2) | $(INTERMEDIATE) \
 	$(eval INTERMEDIATE+=$(1)) $(eval PHONY+=$(1))
 
-$(obj)/coreboot.rom: $(obj)/coreboot.pre $(RAMSTAGE) $(CBFSTOOL) $$(INTERMEDIATE)
+$(obj)/coreboot.rom: $(obj)/coreboot.pre $(CBFSTOOL) $(IFITTOOL) $$(INTERMEDIATE)
 	@printf "    CBFS       $(subst $(obj)/,,$(@))\n"
 # The full ROM may be larger than the CBFS part, so create an empty
 # file (filled with \377 = 0xff) and copy the CBFS image over it.
@@ -1213,6 +1227,10 @@ cbfs-files-$(CONFIG_HAVE_RAMSTAGE) += $(CONFIG_CBFS_PREFIX)/ramstage
 $(CONFIG_CBFS_PREFIX)/ramstage-file := $(RAMSTAGE)
 $(CONFIG_CBFS_PREFIX)/ramstage-type := stage
 $(CONFIG_CBFS_PREFIX)/ramstage-compression := $(CBFS_COMPRESS_FLAG)
+# The AMD LPC SPI DMA controller requires source files to be 64 byte aligned.
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA),y)
+$(CONFIG_CBFS_PREFIX)/ramstage-align := 64
+endif
 
 cbfs-files-$(CONFIG_HAVE_REFCODE_BLOB) += $(CONFIG_CBFS_PREFIX)/refcode
 $(CONFIG_CBFS_PREFIX)/refcode-file := $(REFCODE_BLOB)
@@ -1261,7 +1279,8 @@ cbfs-get-segments-cmd = $(CBFSTOOL) $(obj)/coreboot.pre print -v | sed -n \
 	'\%$(1)%,\%^[^ ]\{4\}%s%    .*load: \(0x[0-9a-fA-F]*\),.*length: [0-9]*/\([0-9]*\).*%\1 \2%p'
 
 ramstage-symbol-addr-cmd = $(OBJDUMP_ramstage) -t $(objcbfs)/ramstage.elf | \
-	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p'
+	sed -n '/ $(1)$$/s/^\([0-9a-fA-F]*\) .*/0x\1/p' | \
+	uniq
 
 $(call add_intermediate, check-ramstage-overlaps)
 	programs=$$($(foreach file,$(check-ramstage-overlap-files), \

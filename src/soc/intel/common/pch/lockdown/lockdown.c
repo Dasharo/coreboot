@@ -14,8 +14,8 @@
  * This function will get lockdown config specific to soc.
  *
  * Return values:
- *  0 = CHIPSET_LOCKDOWN_FSP = use FSP's lockdown functionality to lockdown IPs
- *  1 = CHIPSET_LOCKDOWN_COREBOOT = Use coreboot to lockdown IPs
+ *  0 = CHIPSET_LOCKDOWN_COREBOOT = Use coreboot to lockdown IPs
+ *  1 = CHIPSET_LOCKDOWN_FSP = use FSP's lockdown functionality to lockdown IPs
  */
 int get_lockdown_config(void)
 {
@@ -64,6 +64,12 @@ static void fast_spi_lockdown_cfg(int chipset_lockdown)
 	if (chipset_lockdown == CHIPSET_LOCKDOWN_COREBOOT) {
 		/* BIOS Interface Lock */
 		fast_spi_set_bios_interface_lock_down();
+
+		/* Only allow writes in SMM */
+		if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+			fast_spi_set_eiss();
+			fast_spi_enable_wp();
+		}
 
 		/* BIOS Lock */
 		fast_spi_set_lock_enable();

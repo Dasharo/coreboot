@@ -3,6 +3,8 @@
 #ifndef _INTEL_ME_H
 #define _INTEL_ME_H
 
+#include <types.h>
+
 #define ME_RETRY		100000	/* 1 second */
 #define ME_DELAY		10	/* 10 us */
 
@@ -228,6 +230,8 @@ void intel_early_me_status(void);
 int intel_early_me_init(void);
 int intel_early_me_uma_size(void);
 int intel_early_me_init_done(u8 status);
+
+void setup_heci_uma(u64 heci_uma_addr, unsigned int heci_uma_size);
 
 typedef struct {
 	u32       major_version  : 16;

@@ -237,9 +237,17 @@ static bool set_scancode_set(const unsigned char set)
 	return ret;
 }
 
+static bool keyboard_peek_echo_result(void)
+{
+	const uint8_t ch = i8042_peek_data_ps2();
+	return ch == 0xee || ch == 0xfe;
+}
+
 static enum keyboard_state {
 	STATE_INIT = 0,
 	STATE_SIMPLIFIED_INIT,
+	STATE_HOTPLUG,
+	STATE_HOTPLUG_ECHO,
 	STATE_DISABLE_SCAN,
 	STATE_DRAIN_INPUT,
 	STATE_DISABLE_TRANSLATION,
@@ -250,13 +258,16 @@ static enum keyboard_state {
 	STATE_ENABLE_TRANSLATION,
 	STATE_ENABLE_SCAN,
 	STATE_RUNNING,
-	STATE_IGNORE,
+	STATE_RUNNING_ECHO,
+	STATE_DETENTION,
 } keyboard_state;
 
 #define STATE_NAMES_ENTRY(name) [STATE_##name] = #name
 static const char *const state_names[] = {
 	STATE_NAMES_ENTRY(INIT),
 	STATE_NAMES_ENTRY(SIMPLIFIED_INIT),
+	STATE_NAMES_ENTRY(HOTPLUG),
+	STATE_NAMES_ENTRY(HOTPLUG_ECHO),
 	STATE_NAMES_ENTRY(DISABLE_SCAN),
 	STATE_NAMES_ENTRY(DRAIN_INPUT),
 	STATE_NAMES_ENTRY(DISABLE_TRANSLATION),
@@ -267,7 +278,8 @@ static const char *const state_names[] = {
 	STATE_NAMES_ENTRY(ENABLE_TRANSLATION),
 	STATE_NAMES_ENTRY(ENABLE_SCAN),
 	STATE_NAMES_ENTRY(RUNNING),
-	STATE_NAMES_ENTRY(IGNORE),
+	STATE_NAMES_ENTRY(RUNNING_ECHO),
+	STATE_NAMES_ENTRY(DETENTION),
 };
 
 __attribute__((unused))
@@ -299,6 +311,28 @@ static void keyboard_poll(void)
 		keyboard_drain_input();
 		(void)i8042_set_kbd_translation(false);
 		next_state = STATE_CONFIGURE;
+		break;
+
+	case STATE_HOTPLUG:
+		if (timer_us(state_time) > 1*1000*1000) {
+			i8042_write_data(I8042_KBCMD_ECHO);
+			next_state = STATE_HOTPLUG_ECHO;
+		}
+		break;
+
+	case STATE_HOTPLUG_ECHO:
+		if (!i8042_data_ready_ps2()) {
+			if (timer_us(state_time) > 200*1000)
+				next_state = STATE_HOTPLUG;
+			break;
+		}
+
+		if (keyboard_peek_echo_result()) {
+			next_state = STATE_DISABLE_SCAN;
+			keyboard_time = timer_us(0);
+		}
+		(void)i8042_read_data_ps2();
+
 		break;
 
 	case STATE_DISABLE_SCAN:
@@ -394,23 +428,51 @@ static void keyboard_poll(void)
 		break;
 
 	case STATE_RUNNING:
-		/* TODO: Use echo command to detect detach. */
+		if (!i8042_data_ready_ps2()) {
+			if (timer_us(state_time) > 500*1000) {
+				i8042_write_data(I8042_KBCMD_ECHO);
+				next_state = STATE_RUNNING_ECHO;
+			}
+		} else {
+			state_time = timer_us(0);
+		}
 		break;
 
-	case STATE_IGNORE:
-		/* TODO: Try again after timeout if it ever seems useful. */
+	case STATE_RUNNING_ECHO:
+		if (!i8042_data_ready_ps2()) {
+			if (timer_us(state_time) > 200*1000) {
+				debug("INFO: Keyboard echo timed out.\n");
+				next_state = STATE_HOTPLUG;
+			}
+			break;
+		}
+
+		if (keyboard_peek_echo_result()) {
+			(void)i8042_read_data_ps2();
+			next_state = STATE_RUNNING;
+		}
+
+		state_time = timer_us(0);
+		break;
+
+	case STATE_DETENTION:
+		if (timer_us(state_time) > 5*1000*1000)
+			next_state = STATE_HOTPLUG;
 		break;
 
 	}
 
 	switch (next_state) {
 	case STATE_INIT:
+	case STATE_HOTPLUG:
+	case STATE_HOTPLUG_ECHO:
 	case STATE_RUNNING:
-	case STATE_IGNORE:
+	case STATE_RUNNING_ECHO:
+	case STATE_DETENTION:
 		break;
 	default:
 		if (timer_us(keyboard_time) > 30*1000*1000)
-			next_state = STATE_IGNORE;
+			next_state = STATE_DETENTION;
 		break;
 	}
 
@@ -424,7 +486,9 @@ static void keyboard_poll(void)
 bool keyboard_havechar(void)
 {
 	keyboard_poll();
-	return keyboard_state == STATE_RUNNING && i8042_data_ready_ps2();
+	return i8042_data_ready_ps2() &&
+	       (keyboard_state == STATE_RUNNING ||
+		(keyboard_state == STATE_RUNNING_ECHO && !keyboard_peek_echo_result()));
 }
 
 unsigned char keyboard_get_scancode(void)
@@ -590,6 +654,11 @@ void keyboard_disconnect(void)
 	/* Disable scanning */
 	keyboard_cmd(I8042_KBCMD_DEFAULT_DIS);
 	keyboard_drain_input();
+
+	/* Nobody but us seems to still use scancode set #1.
+	   So try to hand over with more modern settings. */
+	set_scancode_set(2);
+	i8042_set_kbd_translation(CONFIG(LP_PC_KEYBOARD_TRANSLATION));
 
 	/* Send keyboard disconnect command */
 	i8042_cmd(I8042_CMD_DIS_KB);

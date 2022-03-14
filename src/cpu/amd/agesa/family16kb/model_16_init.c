@@ -7,7 +7,6 @@
 #include <cpu/amd/mtrr.h>
 #include <device/device.h>
 #include <cpu/x86/pae.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/cache.h>
 #include <acpi/acpi.h>
@@ -17,17 +16,16 @@ static void model_16_init(struct device *dev)
 {
 	printk(BIOS_DEBUG, "Model 16 Init.\n");
 
-	u8 i;
 	msr_t msr;
-	int num_banks;
 	int msrno;
 #if CONFIG(LOGICAL_CPUS)
 	u32 siblings;
 #endif
 
-	//x86_enable_cache();
-	//amd_setup_mtrrs();
-	//x86_mtrr_check();
+	/*
+	 * AGESA sets the MTRRs main MTRRs. The shadow area needs to be set
+	 * by coreboot.
+	 */
 	disable_cache();
 	/* Enable access to AMD RdDram and WrDram extension bits */
 	msr = rdmsr(SYSCFG_MSR);
@@ -53,18 +51,10 @@ static void model_16_init(struct device *dev)
 		restore_mtrr();
 
 	x86_mtrr_check();
-	x86_enable_cache();
+	enable_cache();
 
 	/* zero the machine check error status registers */
-	msr = rdmsr(IA32_MCG_CAP);
-	num_banks = msr.lo & MCA_BANKS_MASK;
-	msr.lo = 0;
-	msr.hi = 0;
-	for (i = 0; i < num_banks; i++)
-		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
-
-	/* Enable the local CPU APICs */
-	setup_lapic();
+	mca_clear_status();
 
 #if CONFIG(LOGICAL_CPUS)
 	siblings = cpuid_ecx(0x80000008) & 0xff;

@@ -5,10 +5,6 @@ subdirs-y += romstage
 subdirs-y += ../../../cpu/intel/common
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
-subdirs-y += ../../../cpu/x86/lapic
-subdirs-y += ../../../cpu/x86/mtrr
-subdirs-y += ../../../cpu/x86/smm
-subdirs-y += ../../../cpu/x86/tsc
 
 bootblock-y += bootblock/bootblock.c
 bootblock-y += i2c.c
@@ -22,6 +18,7 @@ bootblock-y += spi.c
 bootblock-y += lpc.c
 bootblock-y += uart.c
 
+verstage-y += gpio.c
 verstage-y += gspi.c
 verstage-y += pmutil.c
 verstage-y += i2c.c
@@ -32,7 +29,6 @@ romstage-y += gpio.c
 romstage-y += gspi.c
 romstage-y += i2c.c
 romstage-y += me.c
-romstage-y += pmc.c
 romstage-y += pmutil.c
 romstage-y += reset.c
 romstage-y += spi.c
@@ -66,7 +62,6 @@ ramstage-y += xhci.c
 smm-y += elog.c
 smm-y += gpio.c
 smm-y += p2sb.c
-smm-y += pmc.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += uart.c
@@ -85,6 +80,13 @@ endif
 ifeq ($(CONFIG_MAINBOARD_SUPPORTS_KABYLAKE_CPU),y)
 # Kabylake H B0 S0
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-09
+endif
+# CoffeeLake
+ifeq ($(CONFIG_MAINBOARD_SUPPORTS_COFFEELAKE_CPU),y)
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0a
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0b
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0c
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9e-0d
 endif
 else
 ifeq ($(CONFIG_MAINBOARD_SUPPORTS_SKYLAKE_CPU),y)

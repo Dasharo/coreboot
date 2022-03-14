@@ -4,7 +4,6 @@
 #include <arch/cpu.h>
 #include <console/console.h>
 #include <cpu/intel/msr.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/x86/msr.h>
 #include "common.h"
 
@@ -16,11 +15,10 @@ void set_vmx_and_lock(void)
 	set_feature_ctrl_lock();
 }
 
-void set_feature_ctrl_vmx(void)
+void set_feature_ctrl_vmx_arg(bool enable)
 {
 	msr_t msr;
 	uint32_t feature_flag;
-	int enable = CONFIG(ENABLE_VMX);
 
 	feature_flag = cpu_get_feature_flags_ecx();
 	/* Check that the VMX is supported before reading or writing the MSR. */
@@ -62,6 +60,12 @@ void set_feature_ctrl_vmx(void)
 	printk(BIOS_DEBUG, "VMX status: %s\n",
 		enable ? "enabled" : "disabled");
 }
+
+void set_feature_ctrl_vmx(void)
+{
+	set_feature_ctrl_vmx_arg(CONFIG(ENABLE_VMX));
+}
+
 void set_feature_ctrl_lock(void)
 {
 	msr_t msr;
@@ -103,184 +107,37 @@ void set_feature_ctrl_lock(void)
  */
 void cpu_init_cppc_config(struct cppc_config *config, u32 version)
 {
-	acpi_addr_t msr = {
-		.space_id   = ACPI_ADDRESS_SPACE_FIXED,
-		.bit_width  = 8,
-		.bit_offset = 0,
-		.access_size = ACPI_ACCESS_SIZE_QWORD_ACCESS,
-		.addrl      = 0,
-		.addrh      = 0,
-	};
-	static const acpi_addr_t unsupported = {
-		.space_id   = ACPI_ADDRESS_SPACE_MEMORY,
-		.bit_width  = 0,
-		.bit_offset = 0,
-		.access_size = ACPI_ACCESS_SIZE_UNDEFINED,
-		.addrl      = 0,
-		.addrh      = 0,
-	};
-
 	config->version = version;
 
-	msr.addrl = IA32_HWP_CAPABILITIES;
+	config->entries[CPPC_HIGHEST_PERF]		= CPPC_REG_MSR(IA32_HWP_CAPABILITIES, 0, 8);
+	config->entries[CPPC_NOMINAL_PERF]		= CPPC_REG_MSR(MSR_PLATFORM_INFO, 8, 8);
+	config->entries[CPPC_LOWEST_NONL_PERF]		= CPPC_REG_MSR(IA32_HWP_CAPABILITIES, 16, 8);
+	config->entries[CPPC_LOWEST_PERF]		= CPPC_REG_MSR(IA32_HWP_CAPABILITIES, 24, 8);
+	config->entries[CPPC_GUARANTEED_PERF]		= CPPC_REG_MSR(IA32_HWP_CAPABILITIES, 8, 8);
+	config->entries[CPPC_DESIRED_PERF]		= CPPC_REG_MSR(IA32_HWP_REQUEST, 16, 8);
+	config->entries[CPPC_MIN_PERF]			= CPPC_REG_MSR(IA32_HWP_REQUEST, 0, 8);
+	config->entries[CPPC_MAX_PERF]			= CPPC_REG_MSR(IA32_HWP_REQUEST, 8, 8);
+	config->entries[CPPC_PERF_REDUCE_TOLERANCE]	= CPPC_UNSUPPORTED;
+	config->entries[CPPC_TIME_WINDOW]		= CPPC_UNSUPPORTED;
+	config->entries[CPPC_COUNTER_WRAP]		= CPPC_UNSUPPORTED;
+	config->entries[CPPC_REF_PERF_COUNTER]		= CPPC_REG_MSR(IA32_MPERF, 0, 64);
+	config->entries[CPPC_DELIVERED_PERF_COUNTER]	= CPPC_REG_MSR(IA32_APERF, 0, 64);
+	config->entries[CPPC_PERF_LIMITED]		= CPPC_REG_MSR(IA32_HWP_STATUS, 2, 1);
+	config->entries[CPPC_ENABLE]			= CPPC_REG_MSR(IA32_PM_ENABLE, 0, 1);
 
-	/*
-	 * Highest Performance:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x00, 0x771, 0x04,)},
-	 */
-	config->regs[CPPC_HIGHEST_PERF] = msr;
+	if (version < 2)
+		return;
 
-	/*
-	 * Lowest Nonlinear Performance -> Most Efficient Performance:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x10, 0x771, 0x04,)},
-	 */
-	msr.bit_offset = 16;
-	config->regs[CPPC_LOWEST_NONL_PERF] = msr;
+	config->entries[CPPC_AUTO_SELECT]		= CPPC_DWORD(1);
+	config->entries[CPPC_AUTO_ACTIVITY_WINDOW]	= CPPC_REG_MSR(IA32_HWP_REQUEST, 32, 10);
+	config->entries[CPPC_PERF_PREF]			= CPPC_REG_MSR(IA32_HWP_REQUEST, 24, 8);
+	config->entries[CPPC_REF_PERF]			= CPPC_UNSUPPORTED;
 
-	/*
-	 * Lowest Performance:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x18, 0x771, 0x04,)},
-	 */
-	msr.bit_offset = 24;
-	config->regs[CPPC_LOWEST_PERF] = msr;
+	if (version < 3)
+		return;
 
-	/*
-	 * Guaranteed Performance Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x08, 0x771, 0x04,)},
-	 */
-	msr.bit_offset = 8;
-	config->regs[CPPC_GUARANTEED_PERF] = msr;
-
-	msr.addrl = MSR_PLATFORM_INFO;
-
-	/*
-	 * Nominal Performance -> Maximum Non-Turbo Ratio:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x08, 0xce, 0x04,)},
-	 */
-	msr.bit_offset = 8;
-	config->regs[CPPC_NOMINAL_PERF] = msr;
-
-	msr.addrl = IA32_HWP_REQUEST;
-
-	/*
-	 * Desired Performance Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x10, 0x774, 0x04,)},
-	 */
-	msr.bit_offset = 16;
-	config->regs[CPPC_DESIRED_PERF] = msr;
-
-	/*
-	 * Minimum Performance Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x00, 0x774, 0x04,)},
-	 */
-	msr.bit_offset = 0;
-	config->regs[CPPC_MIN_PERF] = msr;
-
-	/*
-	 * Maximum Performance Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x08, 0x774, 0x04,)},
-	 */
-	msr.bit_offset = 8;
-	config->regs[CPPC_MAX_PERF] = msr;
-
-	/*
-	 * Performance Reduction Tolerance Register:
-	 * ResourceTemplate(){Register(SystemMemory, 0x00, 0x00, 0x0,,)},
-	 */
-	config->regs[CPPC_PERF_REDUCE_TOLERANCE] = unsupported;
-
-	/*
-	 * Time Window Register:
-	 * ResourceTemplate(){Register(SystemMemory, 0x00, 0x00, 0x0,,)},
-	 */
-	config->regs[CPPC_TIME_WINDOW] = unsupported;
-
-	/*
-	 * Counter Wraparound Time:
-	 * ResourceTemplate(){Register(SystemMemory, 0x00, 0x00, 0x0,,)},
-	 */
-	config->regs[CPPC_COUNTER_WRAP] = unsupported;
-
-	msr.addrl = IA32_MPERF;
-
-	/*
-	 * Reference Performance Counter Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x40, 0x00, 0x0E7, 0x04,)},
-	 */
-	msr.bit_width = 64;
-	msr.bit_offset = 0;
-	config->regs[CPPC_REF_PERF_COUNTER] = msr;
-
-	msr.addrl = IA32_APERF;
-
-	/*
-	 * Delivered Performance Counter Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x40, 0x00, 0x0E8, 0x04,)},
-	 */
-	config->regs[CPPC_DELIVERED_PERF_COUNTER] = msr;
-
-	msr.addrl = IA32_HWP_STATUS;
-
-	/*
-	 * Performance Limited Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x01, 0x02, 0x777, 0x04,)},
-	 */
-	msr.bit_width = 1;
-	msr.bit_offset = 2;
-	config->regs[CPPC_PERF_LIMITED] = msr;
-
-	msr.addrl = IA32_PM_ENABLE;
-
-	/*
-	 * CPPC Enable Register:
-	 * ResourceTemplate(){Register(FFixedHW, 0x01, 0x00, 0x770, 0x04,)},
-	 */
-	msr.bit_offset = 0;
-	config->regs[CPPC_ENABLE] = msr;
-
-	if (version >= 2) {
-		/* Autonomous Selection Enable is populated below */
-
-		msr.addrl = IA32_HWP_REQUEST;
-
-		/*
-		 * Autonomous Activity Window Register
-		 * ResourceTemplate(){Register(FFixedHW, 0x0a, 0x20, 0x774, 0x04,)},
-		 */
-		msr.bit_width = 10;
-		msr.bit_offset = 32;
-		config->regs[CPPC_AUTO_ACTIVITY_WINDOW] = msr;
-
-		/*
-		 * Autonomous Energy Performance Preference Register
-		 * ResourceTemplate(){Register(FFixedHW, 0x08, 0x18, 0x774, 0x04,)},
-		 */
-		msr.bit_width = 8;
-		msr.bit_offset = 24;
-		config->regs[CPPC_PERF_PREF] = msr;
-
-		/* Reference Performance */
-		config->regs[CPPC_REF_PERF] = unsupported;
-
-		if (version >= 3) {
-			/* Lowest Frequency */
-			config->regs[CPPC_LOWEST_FREQ] = unsupported;
-			/* Nominal Frequency */
-			config->regs[CPPC_NOMINAL_FREQ] = unsupported;
-		}
-
-		/*
-		 * Autonomous Selection Enable = 1
-		 * This field is actually the first addition in version 2 but
-		 * it's so unlike the others I'm populating it last.
-		 */
-		msr.space_id    = ACPI_ADDRESS_SPACE_MEMORY;
-		msr.bit_width   = 32;
-		msr.bit_offset  = 0;
-		msr.access_size = ACPI_ACCESS_SIZE_UNDEFINED;
-		msr.addrl       = 1;
-		config->regs[CPPC_AUTO_SELECT] = msr;
-	}
+	config->entries[CPPC_LOWEST_FREQ]		= CPPC_UNSUPPORTED;
+	config->entries[CPPC_NOMINAL_FREQ]		= CPPC_UNSUPPORTED;
 }
 
 void set_aesni_lock(void)

@@ -16,16 +16,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_CMOS_DEFAULT
 	select MAINBOARD_USES_IFD_GBE_REGION
 
-config IRQ_SLOT_COUNT
-	int
-	default 18
+config DISABLE_HECI1_AT_PRE_BOOT
+	default y
 
 config MAINBOARD_DIR
-	string
 	default "intel/saddlebrook"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Skylake Saddle Brook"
 
 config MAINBOARD_FAMILY

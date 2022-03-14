@@ -106,6 +106,10 @@ struct soc_intel_apollolake_config {
 	uint8_t gpe0_dw2; /* GPE0_95_64 STS/EN */
 	uint8_t gpe0_dw3; /* GPE0_127_96 STS/EN */
 
+	/* LPC fixed enables and ranges */
+	uint16_t lpc_iod;
+	uint16_t lpc_ioe;
+
 	/* Configure LPSS S0ix Enable */
 	uint8_t lpss_s0ix_enable;
 
@@ -190,6 +194,9 @@ struct soc_intel_apollolake_config {
 	 * 0:Enable (default), 1:Disable.
 	 */
 	uint8_t disable_xhci_lfps_pm;
+
+	/* SATA Aggressive Link Power Management */
+	uint8_t DisableSataSalpSupport;
 };
 
 typedef struct soc_intel_apollolake_config config_t;

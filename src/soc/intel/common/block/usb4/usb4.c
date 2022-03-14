@@ -6,6 +6,7 @@
 #include <device/pci.h>
 #include <device/pci_def.h>
 #include <device/pci_ids.h>
+#include <intelblocks/tcss.h>
 #include <soc/pci_devs.h>
 
 #define INTEL_TBT_IMR_VALID_UUID	"C44D002F-69F9-4E7D-A904-A7BAABDF43F7"
@@ -27,6 +28,9 @@ static const char *tbt_dma_acpi_name(const struct device *dev)
 static void tbt_dma_fill_ssdt(const struct device *dev)
 {
 	struct acpi_dp *dsd, *pkg;
+
+	if (!tcss_valid_tbt_auth())
+		return;
 
 	acpigen_write_scope(acpi_device_path(dev));
 
@@ -51,6 +55,8 @@ static void tbt_dma_fill_ssdt(const struct device *dev)
 static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGL_TBT_DMA0,
 	PCI_DEVICE_ID_INTEL_TGL_TBT_DMA1,
+	PCI_DEVICE_ID_INTEL_TGL_H_TBT_DMA0,
+	PCI_DEVICE_ID_INTEL_TGL_H_TBT_DMA1,
 	PCI_DEVICE_ID_INTEL_ADL_TBT_DMA0,
 	PCI_DEVICE_ID_INTEL_ADL_TBT_DMA1,
 	0

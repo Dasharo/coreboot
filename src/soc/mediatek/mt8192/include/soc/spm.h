@@ -4,7 +4,7 @@
 #define SOC_MEDIATEK_MT8192_SPM_H
 
 #include <soc/addressmap.h>
-#include <stdint.h>
+#include <soc/mtcmos.h>
 #include <types.h>
 
 /* SPM READ/WRITE CFG */
@@ -639,6 +639,7 @@ check_member(mtk_spm_regs, root_core_addr, 0x2a4);
 check_member(mtk_spm_regs, spm2sw_mailbox_0, 0x2d0);
 check_member(mtk_spm_regs, peri_pwr_con, 0x3c8);
 check_member(mtk_spm_regs, spm_mem_ck_sel, 0x400);
+check_member(mtk_spm_regs, ulposc_con, 0x420);
 check_member(mtk_spm_regs, spm_force_dvfs, 0x4fc);
 check_member(mtk_spm_regs, spm_sw_flag_0, 0x600);
 check_member(mtk_spm_regs, spm_sw_flag_1, 0x608);
@@ -672,5 +673,23 @@ struct dyna_load_pcm {
 };
 
 int spm_init(void);
+
+static const struct power_domain_data disp[] = {
+	{
+		.pwr_con = &mtk_spm->dis_pwr_con,
+		.pwr_sta_mask = DISP_PWR_STA_MASK,
+		.sram_pdn_mask = DISP_SRAM_PDN_MASK,
+		.sram_ack_mask = DISP_SRAM_ACK_MASK,
+	},
+};
+
+static const struct power_domain_data audio[] = {
+	{
+		.pwr_con = &mtk_spm->audio_pwr_con,
+		.pwr_sta_mask = AUDIO_PWR_STA_MASK,
+		.sram_pdn_mask = AUDIO_SRAM_PDN_MASK,
+		.sram_ack_mask = AUDIO_SRAM_ACK_MASK,
+	},
+};
 
 #endif  /* SOC_MEDIATEK_MT8192_SPM_H */

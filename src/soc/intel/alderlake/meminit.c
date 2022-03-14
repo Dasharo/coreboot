@@ -14,6 +14,17 @@
 #define DDR5_PHYSICAL_CH_WIDTH		32
 #define DDR5_CHANNELS			CHANNEL_COUNT(DDR5_PHYSICAL_CH_WIDTH)
 
+static void set_rcomp_config(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg)
+{
+	if (mb_cfg->rcomp.resistor != 0)
+		mem_cfg->RcompResistor = mb_cfg->rcomp.resistor;
+
+	for (size_t i = 0; i < ARRAY_SIZE(mem_cfg->RcompTarget); i++) {
+		if (mb_cfg->rcomp.targets[i] != 0)
+			mem_cfg->RcompTarget[i] = mb_cfg->rcomp.targets[i];
+	}
+}
+
 static void meminit_lp4x(FSP_M_CONFIG *mem_cfg)
 {
 	mem_cfg->DqPinsInterleaved = 0;
@@ -28,9 +39,6 @@ static void meminit_lp5x(FSP_M_CONFIG *mem_cfg, const struct mem_lp5x_config *lp
 static void meminit_ddr(FSP_M_CONFIG *mem_cfg, const struct mem_ddr_config *ddr_config)
 {
 	mem_cfg->DqPinsInterleaved = ddr_config->dq_pins_interleaved;
-	memcpy(&mem_cfg->RcompResistor, ddr_config->rcomp_resistor,
-	       sizeof(mem_cfg->RcompResistor));
-	memcpy(&mem_cfg->RcompTarget, ddr_config->rcomp_targets, sizeof(mem_cfg->RcompTarget));
 }
 
 static const struct soc_mem_cfg soc_mem_cfg[] = {
@@ -115,40 +123,41 @@ static const struct soc_mem_cfg soc_mem_cfg[] = {
 static void mem_init_spd_upds(FSP_M_CONFIG *mem_cfg, const struct mem_channel_data *data)
 {
 	uint32_t *spd_upds[MRC_CHANNELS][CONFIG_DIMMS_PER_CHANNEL] = {
-		[0] = { &mem_cfg->MemorySpdPtr00, &mem_cfg->MemorySpdPtr01, },
-		[1] = { &mem_cfg->MemorySpdPtr02, &mem_cfg->MemorySpdPtr03, },
-		[2] = { &mem_cfg->MemorySpdPtr04, &mem_cfg->MemorySpdPtr05, },
-		[3] = { &mem_cfg->MemorySpdPtr06, &mem_cfg->MemorySpdPtr07, },
-		[4] = { &mem_cfg->MemorySpdPtr08, &mem_cfg->MemorySpdPtr09, },
-		[5] = { &mem_cfg->MemorySpdPtr10, &mem_cfg->MemorySpdPtr11, },
-		[6] = { &mem_cfg->MemorySpdPtr12, &mem_cfg->MemorySpdPtr13, },
-		[7] = { &mem_cfg->MemorySpdPtr14, &mem_cfg->MemorySpdPtr15, },
+		[0] = { &mem_cfg->MemorySpdPtr000, &mem_cfg->MemorySpdPtr001, },
+		[1] = { &mem_cfg->MemorySpdPtr010, &mem_cfg->MemorySpdPtr011, },
+		[2] = { &mem_cfg->MemorySpdPtr020, &mem_cfg->MemorySpdPtr021, },
+		[3] = { &mem_cfg->MemorySpdPtr030, &mem_cfg->MemorySpdPtr031, },
+		[4] = { &mem_cfg->MemorySpdPtr100, &mem_cfg->MemorySpdPtr101, },
+		[5] = { &mem_cfg->MemorySpdPtr110, &mem_cfg->MemorySpdPtr111, },
+		[6] = { &mem_cfg->MemorySpdPtr120, &mem_cfg->MemorySpdPtr121, },
+		[7] = { &mem_cfg->MemorySpdPtr130, &mem_cfg->MemorySpdPtr131, },
 	};
-	uint8_t *disable_dimm_upds[MRC_CHANNELS] = {
-		&mem_cfg->DisableDimmMc0Ch0,
-		&mem_cfg->DisableDimmMc0Ch1,
-		&mem_cfg->DisableDimmMc0Ch2,
-		&mem_cfg->DisableDimmMc0Ch3,
-		&mem_cfg->DisableDimmMc1Ch0,
-		&mem_cfg->DisableDimmMc1Ch1,
-		&mem_cfg->DisableDimmMc1Ch2,
-		&mem_cfg->DisableDimmMc1Ch3,
+	uint8_t *disable_channel_upds[MRC_CHANNELS] = {
+		&mem_cfg->DisableMc0Ch0,
+		&mem_cfg->DisableMc0Ch1,
+		&mem_cfg->DisableMc0Ch2,
+		&mem_cfg->DisableMc0Ch3,
+		&mem_cfg->DisableMc1Ch0,
+		&mem_cfg->DisableMc1Ch1,
+		&mem_cfg->DisableMc1Ch2,
+		&mem_cfg->DisableMc1Ch3,
 	};
 	size_t ch, dimm;
 
 	mem_cfg->MemorySpdDataLen = data->spd_len;
 
 	for (ch = 0; ch < MRC_CHANNELS; ch++) {
-		uint8_t *disable_dimm_ptr = disable_dimm_upds[ch];
-		*disable_dimm_ptr = 0;
+		uint8_t *disable_channel_ptr = disable_channel_upds[ch];
+		bool enable_channel = 0;
 
 		for (dimm = 0; dimm < CONFIG_DIMMS_PER_CHANNEL; dimm++) {
 			uint32_t *spd_ptr = spd_upds[ch][dimm];
 
 			*spd_ptr = data->spd[ch][dimm];
-			if (!*spd_ptr)
-				*disable_dimm_ptr |= BIT(dimm);
+			if (*spd_ptr)
+				enable_channel = 1;
 		}
+		*disable_channel_ptr = !enable_channel;
 	}
 }
 
@@ -170,19 +179,20 @@ static void mem_init_dq_upds(FSP_M_CONFIG *mem_cfg, const struct mem_channel_dat
 				const struct mb_cfg *mb_cfg, bool auto_detect)
 {
 	void *dq_upds[MRC_CHANNELS] = {
-		&mem_cfg->DqMapCpu2DramCh0,
-		&mem_cfg->DqMapCpu2DramCh1,
-		&mem_cfg->DqMapCpu2DramCh2,
-		&mem_cfg->DqMapCpu2DramCh3,
-		&mem_cfg->DqMapCpu2DramCh4,
-		&mem_cfg->DqMapCpu2DramCh5,
-		&mem_cfg->DqMapCpu2DramCh6,
-		&mem_cfg->DqMapCpu2DramCh7,
+		&mem_cfg->DqMapCpu2DramMc0Ch0,
+		&mem_cfg->DqMapCpu2DramMc0Ch1,
+		&mem_cfg->DqMapCpu2DramMc0Ch2,
+		&mem_cfg->DqMapCpu2DramMc0Ch3,
+		&mem_cfg->DqMapCpu2DramMc1Ch0,
+		&mem_cfg->DqMapCpu2DramMc1Ch1,
+		&mem_cfg->DqMapCpu2DramMc1Ch2,
+		&mem_cfg->DqMapCpu2DramMc1Ch3,
 	};
 
-	const size_t upd_size = sizeof(mem_cfg->DqMapCpu2DramCh0);
+	const size_t upd_size = sizeof(mem_cfg->DqMapCpu2DramMc0Ch0);
 
-	_Static_assert(upd_size == CONFIG_MRC_CHANNEL_WIDTH, "Incorrect DQ UPD size!");
+	_Static_assert(sizeof(mem_cfg->DqMapCpu2DramMc0Ch0) == CONFIG_MRC_CHANNEL_WIDTH,
+		       "Incorrect DQ UPD size!");
 
 	mem_init_dq_dqs_upds(dq_upds, mb_cfg->dq_map, upd_size, data, auto_detect);
 }
@@ -191,21 +201,38 @@ static void mem_init_dqs_upds(FSP_M_CONFIG *mem_cfg, const struct mem_channel_da
 				const struct mb_cfg *mb_cfg, bool auto_detect)
 {
 	void *dqs_upds[MRC_CHANNELS] = {
-		&mem_cfg->DqsMapCpu2DramCh0,
-		&mem_cfg->DqsMapCpu2DramCh1,
-		&mem_cfg->DqsMapCpu2DramCh2,
-		&mem_cfg->DqsMapCpu2DramCh3,
-		&mem_cfg->DqsMapCpu2DramCh4,
-		&mem_cfg->DqsMapCpu2DramCh5,
-		&mem_cfg->DqsMapCpu2DramCh6,
-		&mem_cfg->DqsMapCpu2DramCh7,
+		&mem_cfg->DqsMapCpu2DramMc0Ch0,
+		&mem_cfg->DqsMapCpu2DramMc0Ch1,
+		&mem_cfg->DqsMapCpu2DramMc0Ch2,
+		&mem_cfg->DqsMapCpu2DramMc0Ch3,
+		&mem_cfg->DqsMapCpu2DramMc1Ch0,
+		&mem_cfg->DqsMapCpu2DramMc1Ch1,
+		&mem_cfg->DqsMapCpu2DramMc1Ch2,
+		&mem_cfg->DqsMapCpu2DramMc1Ch3,
 	};
 
-	const size_t upd_size = sizeof(mem_cfg->DqsMapCpu2DramCh0);
+	const size_t upd_size = sizeof(mem_cfg->DqsMapCpu2DramMc0Ch0);
 
-	_Static_assert(upd_size == CONFIG_MRC_CHANNEL_WIDTH / 8, "Incorrect DQS UPD size!");
+	_Static_assert(sizeof(mem_cfg->DqsMapCpu2DramMc0Ch0) == CONFIG_MRC_CHANNEL_WIDTH / 8,
+		       "Incorrect DQS UPD size!");
 
 	mem_init_dq_dqs_upds(dqs_upds, mb_cfg->dqs_map, upd_size, data, auto_detect);
+}
+
+#define DDR5_CH_DIMM_OFFSET(ch, dimm)        ((ch) * CONFIG_DIMMS_PER_CHANNEL + (dimm))
+
+static void ddr5_fill_dimm_module_info(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,
+						 const struct mem_spd *spd_info)
+{
+	for (size_t ch = 0; ch < soc_mem_cfg[MEM_TYPE_DDR5].num_phys_channels; ch++) {
+		for (size_t dimm = 0; dimm < CONFIG_DIMMS_PER_CHANNEL; dimm++) {
+			size_t mrc_ch = soc_mem_cfg[MEM_TYPE_DDR5].phys_to_mrc_map[ch];
+			mem_cfg->SpdAddressTable[DDR5_CH_DIMM_OFFSET(mrc_ch, dimm)] =
+				spd_info->smbus[ch].addr_dimm[dimm] << 1;
+		}
+	}
+	mem_init_dq_upds(mem_cfg, NULL, mb_cfg, true);
+	mem_init_dqs_upds(mem_cfg, NULL, mb_cfg, true);
 }
 
 void memcfg_init(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,
@@ -216,12 +243,30 @@ void memcfg_init(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,
 
 	mem_cfg->ECT = mb_cfg->ect;
 	mem_cfg->UserBd = mb_cfg->UserBd;
+	set_rcomp_config(mem_cfg, mb_cfg);
+
+	/* Fill command mirror for memory */
+	mem_cfg->CmdMirror = mb_cfg->CmdMirror;
+
+	/* Fill LpDdrrDqDqs Retraining for memory */
+	mem_cfg->LpDdrDqDqsReTraining = mb_cfg->LpDdrDqDqsReTraining;
 
 	switch (mb_cfg->type) {
 	case MEM_TYPE_DDR4:
+		meminit_ddr(mem_cfg, &mb_cfg->ddr_config);
+		dq_dqs_auto_detect = true;
+		break;
 	case MEM_TYPE_DDR5:
 		meminit_ddr(mem_cfg, &mb_cfg->ddr_config);
 		dq_dqs_auto_detect = true;
+		/*
+		* TODO: Drop this workaround once SMBus driver in coreboot is updated to
+		* support DDR5 EEPROM reading.
+		*/
+		if (spd_info->topo == MEM_TOPO_DIMM_MODULE) {
+			ddr5_fill_dimm_module_info(mem_cfg, mb_cfg, spd_info);
+			return;
+		}
 		break;
 	case MEM_TYPE_LP4X:
 		meminit_lp4x(mem_cfg);

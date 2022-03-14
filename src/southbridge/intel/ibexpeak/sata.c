@@ -13,8 +13,6 @@
 #include "chip.h"
 #include "pch.h"
 
-typedef struct southbridge_intel_ibexpeak_config config_t;
-
 static inline u32 sir_read(struct device *dev, int idx)
 {
 	pci_write_config32(dev, SATA_SIRI, idx);
@@ -32,8 +30,7 @@ static void sata_init(struct device *dev)
 	u32 reg32;
 	u16 reg16;
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
-	u8 sata_mode;
+	const struct southbridge_intel_ibexpeak_config *config = dev->chip_info;
 
 	printk(BIOS_DEBUG, "SATA: Initializing...\n");
 
@@ -42,9 +39,8 @@ static void sata_init(struct device *dev)
 		return;
 	}
 
-	if (get_option(&sata_mode, "sata_mode") != CB_SUCCESS)
-		/* Default to AHCI */
-		sata_mode = 0;
+	/* Default to AHCI */
+	u8 sata_mode = get_uint_option("sata_mode", 0);
 
 	/* SATA configuration */
 
@@ -170,15 +166,13 @@ static void sata_init(struct device *dev)
 static void sata_enable(struct device *dev)
 {
 	/* Get the chip configuration */
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_ibexpeak_config *config = dev->chip_info;
 	u16 map = 0;
-	u8 sata_mode;
 
 	if (!config)
 		return;
 
-	if (get_option(&sata_mode, "sata_mode") != CB_SUCCESS)
-		sata_mode = 0;
+	u8 sata_mode = get_uint_option("sata_mode", 0);
 
 	/*
 	 * Set SATA controller mode early so the resource allocator can
@@ -194,7 +188,7 @@ static void sata_enable(struct device *dev)
 
 static void sata_fill_ssdt(const struct device *dev)
 {
-	config_t *config = dev->chip_info;
+	const struct southbridge_intel_ibexpeak_config *config = dev->chip_info;
 	generate_sata_ssdt_ports("\\_SB_.PCI0.SATA", config->sata_port_map);
 }
 

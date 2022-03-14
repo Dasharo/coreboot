@@ -13,12 +13,9 @@ config NORTHBRIDGE_SPECIFIC_OPTIONS
 	select INTEL_GMA_SSC_ALTERNATE_REF
 	select INTEL_EDID
 	select HAVE_VGA_TEXT_FRAMEBUFFER if MAINBOARD_DO_NATIVE_VGA_INIT
-	select PARALLEL_MP
 
 config VBOOT
 	select VBOOT_STARTS_IN_BOOTBLOCK
-	select VBOOT_SEPARATE_VERSTAGE
-
 config NORTHBRIDGE_INTEL_SUBTYPE_I945GC
 	def_bool n
 config NORTHBRIDGE_INTEL_SUBTYPE_I945GM
@@ -38,10 +35,10 @@ config I945_LVDS
 	  for the LVDS port. A linear framebuffer is only supported for
 	  LVDS.
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xf0000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	int
 	default 64
 
@@ -66,7 +63,7 @@ config MAXIMUM_SUPPORTED_FREQUENCY
 config CHECK_SLFRCS_ON_RESUME
 	def_bool n
 	help
-	  On some boards it may be neccessary to hard reset early
+	  On some boards it may be necessary to hard reset early
 	  during resume from S3 if the SLFRCS register indicates that
 	  a memory channel is not guaranteed to be in self-refresh.
 	  On other boards the check always creates a false positive,

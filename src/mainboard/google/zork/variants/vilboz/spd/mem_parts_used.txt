@@ -3,8 +3,8 @@
 # Only include a fixed ID if it is required for legacy reasons!
 # Each part must also be listed in util/spd_tools/ddr4/global_ddr4_mem_parts.json.txt.
 # Generate an updated Makefile.inc and dram_id.generated.txt by running the
-# gen_part_id tool from util/spd_tools/ddr4.
-# See util/spd_tools/ddr4/README.md for more details and instructions.
+# part_id_gen tool from util/spd_tools.
+# See util/spd_tools/README.md for more details and instructions.
 
 # Part Name, Fixed ID (optional)
 K4A8G165WC-BCWE, 2
@@ -13,3 +13,8 @@ MT40A512M16TB-062E:J, 4
 K4AAG165WA-BCWE, 5
 MT40A1G16KD-062E:E, 6
 H5ANAG6NDMR-XNC, 7
+MT40A1G16RC-062E:B, 8
+H5ANAG6NCJR-XNC, 9
+MT40A512M16TB-062E:R, 10
+4JQA-0622AD, 11
+K4AAG165WB-BCWE, 12

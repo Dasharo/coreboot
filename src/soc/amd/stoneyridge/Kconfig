@@ -10,7 +10,7 @@ if SOC_AMD_STONEYRIDGE
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
 	select ACPI_SOC_NVS
-	select ARCH_ALL_STAGES_X86_32
+	select ARCH_X86
 	select BOOT_DEVICE_SUPPORTS_WRITES if BOOT_DEVICE_SPI_FLASH
 	select COLLECT_TIMESTAMPS_NO_TSC
 	select DRIVERS_I2C_DESIGNWARE
@@ -19,24 +19,25 @@ config CPU_SPECIFIC_OPTIONS
 	select HAVE_CF9_RESET
 	select HAVE_SMI_HANDLER
 	select HAVE_USBDEBUG_OPTIONS
-	select IOAPIC
-	select PARALLEL_MP
 	select PARALLEL_MP_AP_WORK
 	select RTC
 	select SOC_AMD_PI
 	select SOC_AMD_COMMON
 	select SOC_AMD_COMMON_BLOCK_ACPI
+	select SOC_AMD_COMMON_BLOCK_ACPI_GPIO
 	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
+	select SOC_AMD_COMMON_BLOCK_ACPIMMIO_BIOSRAM
 	select SOC_AMD_COMMON_BLOCK_AOAC
 	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
 	select SOC_AMD_COMMON_BLOCK_CAR
 	select SOC_AMD_COMMON_BLOCK_HDA
+	select SOC_AMD_COMMON_BLOCK_I2C
 	select SOC_AMD_COMMON_BLOCK_IOMMU
 	select SOC_AMD_COMMON_BLOCK_LPC
+	select SOC_AMD_COMMON_BLOCK_MCA
 	select SOC_AMD_COMMON_BLOCK_PCI
-	select SOC_AMD_COMMON_BLOCK_PI
+	select SOC_AMD_COMMON_BLOCK_PM
 	select SOC_AMD_COMMON_BLOCK_PSP_GEN1
-	select SOC_AMD_COMMON_BLOCK_S3
 	select SOC_AMD_COMMON_BLOCK_SATA
 	select SOC_AMD_COMMON_BLOCK_SMBUS
 	select SOC_AMD_COMMON_BLOCK_SMI
@@ -108,10 +109,6 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	help
 	  Increase this value if preram cbmem console is getting truncated
 
-config CPU_ADDR_BITS
-	int
-	default 48
-
 config BOTTOMIO_POSITION
 	hex "Bottom of 32-bit IO space"
 	default 0xD0000000
@@ -124,10 +121,10 @@ config BOTTOMIO_POSITION
 	  option is useful when PCI peripherals requesting large address
 	  ranges are present.
 
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xF8000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	default 64
 
 config VGA_BIOS_ID
@@ -358,7 +355,6 @@ comment "AMD Firmware Directory Table set to location for 16MB ROM"
 	depends on AMD_FWM_POSITION_INDEX = 5
 
 config DIMM_SPD_SIZE
-	int
 	default 512	# DDR4
 
 config RO_REGION_ONLY
@@ -370,12 +366,12 @@ config DRIVERS_I2C_DESIGNWARE_CLOCK_MHZ
 	int
 	default 133
 
-config MAINBOARD_POWER_RESTORE
-	def_bool n
+config DISABLE_KEYBOARD_RESET_PIN
+	bool
 	help
-	  This option determines what state to go to once power is restored
-	  after having been lost in S0.  Select this option to automatically
-	  return to S0.  Otherwise the system will remain in S5 once power
-	  is restored.
+	  Instruct the SoC to not use the state of GPIO_129 as keyboard reset
+	  signal. When this pin is used as GPIO and the keyboard reset
+	  functionality isn't disabled, configuring it as an output and driving
+	  it as 0 will cause a reset.
 
 endif # SOC_AMD_STONEYRIDGE

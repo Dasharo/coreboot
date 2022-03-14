@@ -148,6 +148,17 @@ struct device {
 	u8 smbios_slot_data_width;
 	u8 smbios_slot_length;
 	const char *smbios_slot_designation;
+
+#if CONFIG(SMBIOS_TYPE41_PROVIDED_BY_DEVTREE)
+	/*
+	 * These fields are intentionally guarded so that attempts to use
+	 * the corresponding devicetree syntax without selecting the Kconfig
+	 * option result in build-time errors. Smaller size is a side effect.
+	 */
+	bool smbios_instance_id_valid;
+	u8 smbios_instance_id;
+	const char *smbios_refdes;
+#endif
 #endif
 #endif
 	DEVTREE_CONST void *chip_info;
@@ -168,12 +179,6 @@ extern struct bus	*free_links;
 
 extern const char mainboard_name[];
 
-#if CONFIG(GFXUMA)
-/* IGD UMA memory */
-extern uint64_t uma_memory_base;
-extern uint64_t uma_memory_size;
-#endif
-
 /* Generic device interface functions */
 struct device *alloc_dev(struct bus *parent, struct device_path *path);
 void dev_initialize_chips(void);
@@ -181,9 +186,10 @@ void dev_enumerate(void);
 void dev_configure(void);
 void dev_enable(void);
 void dev_initialize(void);
-void dev_optimize(void);
 void dev_finalize(void);
 void dev_finalize_chips(void);
+/* Function used to override device state */
+void devfn_disable(const struct bus *bus, unsigned int devfn);
 
 /* Generic device helper functions */
 int reset_bus(struct bus *bus);
@@ -197,11 +203,8 @@ void dev_set_enabled(struct device *dev, int enable);
 void disable_children(struct bus *bus);
 bool dev_is_active_bridge(struct device *dev);
 void add_more_links(struct device *dev, unsigned int total_links);
-
-static inline bool is_dev_enabled(const struct device *const dev)
-{
-	return dev && dev->enabled;
-}
+bool is_dev_enabled(const struct device *const dev);
+bool is_devfn_enabled(unsigned int devfn);
 
 /* Option ROM helper functions */
 void run_bios(struct device *dev, unsigned long addr);
@@ -222,20 +225,6 @@ DEVTREE_CONST struct device *dev_find_path(
 		enum device_path_type path_type);
 struct device *dev_find_lapic(unsigned int apic_id);
 int dev_count_cpu(void);
-
-/*
- * Signature for matching function that is used by dev_find_matching_device_on_bus() to decide
- * if the device being considered is the one that matches the caller's criteria. This function
- * is supposed to return true if the provided device matches the criteria, else false.
- */
-typedef bool (*match_device_fn)(DEVTREE_CONST struct device *dev);
-/*
- * Returns the first device on the bus that the match_device_fn returns true for. If no such
- * device is found, it returns NULL.
- */
-DEVTREE_CONST struct device *dev_find_matching_device_on_bus(const struct bus *bus,
-							match_device_fn fn);
-
 struct device *add_cpu_device(struct bus *cpu_bus, unsigned int apic_id,
 				int enabled);
 void set_cpu_topology(struct device *cpu, unsigned int node,
@@ -250,6 +239,17 @@ void set_cpu_topology(struct device *cpu, unsigned int node,
 void mp_init_cpus(DEVTREE_CONST struct bus *cpu_bus);
 static inline void mp_cpu_bus_init(struct device *dev)
 {
+	/*
+	 * When no LAPIC device is specified in the devietree inside the CPU cluster device,
+	 * neither a LAPIC device nor the link/bus between the CPU cluster and the LAPIC device
+	 * will be present in the static device tree and the link_list struct element of the
+	 * CPU cluster device will be NULL. In this case add one link, so that the
+	 * alloc_find_dev calls in init_bsp and allocate_cpu_devices will be able to add a
+	 * LAPIC device for the BSP and the APs on this link/bus.
+	 */
+	if (!dev->link_list)
+		add_more_links(dev, 1);
+
 	mp_init_cpus(dev->link_list);
 }
 
@@ -398,5 +398,13 @@ void enable_static_devices(struct device *bus);
 void scan_smbus(struct device *bus);
 void scan_generic_bus(struct device *bus);
 void scan_static_bus(struct device *bus);
+
+/* Macro to generate `struct device *` name that points to a device with the given alias. */
+#define DEV_PTR(_alias)		_dev_##_alias##_ptr
+
+/* Macro to generate weak `struct device *` definition that points to a device with the given
+   alias. */
+#define WEAK_DEV_PTR(_alias)			\
+	__weak DEVTREE_CONST struct device *const DEV_PTR(_alias)
 
 #endif /* DEVICE_H */

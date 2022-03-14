@@ -1,16 +1,30 @@
 # Coding Style
 
-This is a short document describing the preferred coding style for the
+This document describes the preferred C coding style for the
 coreboot project. It is in many ways exactly the same as the Linux
 kernel coding style. In fact, most of this document has been copied from
 the [Linux kernel coding style](http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/Documentation/CodingStyle?id=HEAD)
 
-Please at least consider the points made here.
+The guidelines in this file should be seen as a strong suggestion, and
+should overrule personal preference. But they may be ignored in
+individual instances when there are good practical reasons to do so, and
+reviewers are in agreement.
 
-First off, I'd suggest printing out a copy of the GNU coding standards,
-and NOT read it. Burn them, it's a great symbolic gesture.
+Any style questions that are not mentioned in here should be decided
+between the author and reviewers on a case-by-case basis. When modifying
+existing files, authors should try to match the prevalent style in that
+file -- otherwise, they should try to match similar existing files in
+coreboot.
 
-Anyway, here goes:
+Bulk style changes to existing code ("cleanup patches") should avoid
+changing existing style choices unless they actually violate this style
+guide, or there is broad consensus that the new version is an
+improvement. By default the style choices of the original author should
+be honored. (Note that `checkpatch.pl` is not part of this style guide,
+and neither is `clang-format`. These tools can be useful to find
+potential issues or simplify formatting in new submissions, but they
+were not designed to directly match this guide and may have false
+positives. They should not be bulk-applied to change existing code.)
 
 ## Indentation
 
@@ -787,7 +801,7 @@ There are a LOT of cpu cycles that can go into these 5 milliseconds.
 
 A reasonable rule of thumb is to not put inline at functions that have
 more than 3 lines of code in them. An exception to this rule are the
-cases where a parameter is known to be a compiletime constant, and as a
+cases where a parameter is known to be a compile time constant, and as a
 result of this constantness you *know* the compiler will be able to
 optimize most of your function away at compile time. For a good example
 of this later case, see the kmalloc() inline function.
@@ -837,14 +851,16 @@ pointers; they use NULL or the ERR_PTR mechanism to report failure.
 Headers and includes
 ---------------
 
-Headers should always be included at the top of the file, preferrably in
-alphabetical order. Includes should always use the `#include <file.h>`
-notation, except for rare cases where a file in the same directory that
-is not part of a normal include path gets included (e.g. local headers
-in mainboard directories), which should use `#include "file.h"`. Headers
-that can be included from both assembly files and .c files should keep
-all C code wrapped in `#ifndef __ASSEMBLER__` blocks, including includes
-to other headers that don't follow that provision.
+Headers should always be included at the top of the file. Includes should
+always use the `#include <file.h>` notation, except for rare cases where a file
+in the same directory that is not part of a normal include path gets included
+(e.g. local headers in mainboard directories), which should use `#include
+"file.h"`. Local "file.h" includes should always come separately after all
+<file.h> includes.  Headers that can be included from both assembly files and
+.c files should keep all C code wrapped in `#ifndef __ASSEMBLER__` blocks,
+including includes to other headers that don't follow that provision. Where a
+specific include order is required for technical reasons, it should be clearly
+documented with comments.
 
 Files should generally include every header they need a definition from
 directly (and not include any unnecessary extra headers). Excepted from

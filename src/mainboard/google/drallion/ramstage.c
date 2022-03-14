@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <acpi/acpi.h>
 #include <smbios.h>
-#include <soc/gpio.h>
 #include <soc/ramstage.h>
 #include <variant/gpio.h>
-#include <vendorcode/google/chromeos/chromeos.h>
 
 /* mainboard silk screen shows DIMM-A and DIMM-B */
 void smbios_fill_dimm_locator(const struct dimm_info *dimm,
@@ -30,15 +27,9 @@ static void mainboard_init(void *chip_info)
 	size_t num_gpios;
 
 	gpio_table = variant_gpio_table(&num_gpios);
-	cnl_configure_pads(gpio_table, num_gpios);
-}
-
-static void mainboard_enable(struct device *dev)
-{
-	dev->ops->acpi_inject_dsdt = chromeos_dsdt_generator;
+	gpio_configure_pads(gpio_table, num_gpios);
 }
 
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
-	.enable_dev = mainboard_enable,
 };

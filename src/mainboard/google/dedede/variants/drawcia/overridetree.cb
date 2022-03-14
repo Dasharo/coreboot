@@ -1,3 +1,10 @@
+fw_config
+	field AUDIO_CODEC_SOURCE 40 42
+		option AUDIO_CODEC_UNPROVISIONED 0
+		option AUDIO_CODEC_ALC5682 	1
+		option AUDIO_CODEC_ALC5682I_VS 	2
+	end
+end
 chip soc/intel/jasperlake
 
 	# USB Port Configuration
@@ -144,9 +151,48 @@ chip soc/intel/jasperlake
 			chip drivers/usb/acpi
 				device usb 0.0 on
 					chip drivers/usb/acpi
+						register "desc" = ""LTE""
+						register "type" = "UPC_TYPE_INTERNAL"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						register "has_power_resource" = "1"
+						register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H17)"
+						register "reset_off_delay_ms" = "20"
+						register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A10)"
+						register "enable_delay_ms" = "20"
+						device usb 2.3 alias lte_usb2 on
+							probe DB_PORTS DB_PORTS_1A_HDMI_LTE
+						end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Right Type-A Port""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device usb 2.3 on
+							probe DB_PORTS DB_PORTS_1A_HDMI
+							probe DB_PORTS DB_PORTS_1C_1A
+						end
+					end
+					chip drivers/usb/acpi
 						register "desc" = ""Camera""
 						register "type" = "UPC_TYPE_INTERNAL"
 						device usb 2.5 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""LTE""
+						register "type" = "UPC_TYPE_INTERNAL"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device usb 3.3 on
+							probe DB_PORTS DB_PORTS_1A_HDMI_LTE
+						end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""Right Type-A Port""
+						register "type" = "UPC_TYPE_USB3_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device usb 3.3 on
+							probe DB_PORTS DB_PORTS_1A_HDMI
+							probe DB_PORTS DB_PORTS_1C_1A
+						end
 					end
 				end
 			end
@@ -159,6 +205,15 @@ chip soc/intel/jasperlake
 				register "wake" = "GPE0_DW0_03"
 				register "probed" = "1"
 				device i2c 15 on end
+			end
+			chip drivers/i2c/hid
+				register "generic.hid" = ""PNP0C50""
+				register "generic.desc" = ""Synaptics Touchpad""
+				register "generic.irq" = "ACPI_IRQ_WAKE_LEVEL_LOW(GPP_B3_IRQ)"
+				register "generic.wake" = "GPE0_DW0_03"
+				register "generic.probed" = "1"
+				register "hid_desc_reg_offset" = "0x20"
+				device i2c 0x2c on end
 			end
 		end #I2C 0
 		device pci 15.2 on
@@ -248,6 +303,8 @@ chip soc/intel/jasperlake
 				register "remote_name" = ""IPU0""
 
 				register "has_power_resource" = "1"
+				register "low_power_probe" = "1"
+
 				#Controls
 				register "clk_panel.clks[0].clknum" = "1" #IMGCLKOUT_1
 				register "clk_panel.clks[0].freq" = "1" #19.2 Mhz
@@ -257,12 +314,13 @@ chip soc/intel/jasperlake
 				register "gpio_panel.gpio[2].gpio_num" = "GPP_D12" #reset
 
 				#_ON
-				register "on_seq.ops_cnt" = "5"
+				register "on_seq.ops_cnt" = "6"
 				register "on_seq.ops[0]" = "SEQ_OPS_CLK_ENABLE(0, 0)"
 				register "on_seq.ops[1]" = "SEQ_OPS_GPIO_ENABLE(0, 5)"
 				register "on_seq.ops[2]" = "SEQ_OPS_GPIO_ENABLE(1, 5)"
-				register "on_seq.ops[3]" = "SEQ_OPS_GPIO_DISABLE(2, 5)"
-				register "on_seq.ops[4]" = "SEQ_OPS_GPIO_ENABLE(2, 5)"
+				register "on_seq.ops[3]" = "SEQ_OPS_GPIO_ENABLE(2, 5)"
+				register "on_seq.ops[4]" = "SEQ_OPS_GPIO_DISABLE(2, 5)"
+				register "on_seq.ops[5]" = "SEQ_OPS_GPIO_ENABLE(2, 0)"
 
 				#_OFF
 				register "off_seq.ops_cnt" = "4"
@@ -280,8 +338,20 @@ chip soc/intel/jasperlake
 				register "chip_name" = ""DW AF DAC""
 				register "device_type" = "INTEL_ACPI_CAMERA_VCM"
 
-				register "pr0" = ""\\_SB.PCI0.I2C3.CAM1.PRIC""
+				register "has_power_resource" = "1"
 				register "vcm_compat" = ""dongwoon,dw9714""
+				register "low_power_probe" = "1"
+
+				register "gpio_panel.gpio[0].gpio_num" = "GPP_D13" #power_enable_2p8
+				register "gpio_panel.gpio[1].gpio_num" = "GPP_D12" #reset
+				#_ON
+				register "on_seq.ops_cnt" = "2"
+				register "on_seq.ops[0]" = "SEQ_OPS_GPIO_ENABLE(0, 0)"
+				register "on_seq.ops[1]" = "SEQ_OPS_GPIO_ENABLE(1, 5)"
+				#_OFF
+				register "off_seq.ops_cnt" = "2"
+				register "off_seq.ops[0]" = "SEQ_OPS_GPIO_DISABLE(0, 0)"
+				register "off_seq.ops[1]" = "SEQ_OPS_GPIO_DISABLE(1, 5)"
 
 				device i2c 0C on end
 			end
@@ -296,7 +366,17 @@ chip soc/intel/jasperlake
 				register "nvm_readonly" = "1"
 				register "nvm_width" = "0x08"
 				register "nvm_compat" = ""atmel,24c08""
+				register "low_power_probe" = "1"
 
+				register "has_power_resource" = "1"
+
+				register "gpio_panel.gpio[0].gpio_num" = "GPP_D14" #power_enable_1p2
+				#_ON
+				register "on_seq.ops_cnt" = "1"
+				register "on_seq.ops[0]" = "SEQ_OPS_GPIO_ENABLE(0, 0)"
+				#_OFF
+				register "off_seq.ops_cnt" = "1"
+				register "off_seq.ops[0]" = "SEQ_OPS_GPIO_DISABLE(0, 0)"
 				device i2c 50 on end
 			end
 		end # I2C 3
@@ -311,7 +391,24 @@ chip soc/intel/jasperlake
 				register "property_list[0].type" = "ACPI_DP_TYPE_INTEGER"
 				register "property_list[0].name" = ""realtek,jd-src""
 				register "property_list[0].integer" = "1"
-				device i2c 1a on end
+				device i2c 1a on
+					probe AUDIO_CODEC_SOURCE AUDIO_CODEC_UNPROVISIONED
+					probe AUDIO_CODEC_SOURCE AUDIO_CODEC_ALC5682
+				end
+			end
+			chip drivers/i2c/generic
+				register "hid" = ""RTL5682""
+				register "name" = ""RT58""
+				register "desc" = ""Headset Codec""
+				register "irq_gpio" = "ACPI_GPIO_IRQ_EDGE_BOTH(GPP_D16)"
+				# Set the jd_src to RT5668_JD1 for jack detection
+				register "property_count" = "1"
+				register "property_list[0].type" = "ACPI_DP_TYPE_INTEGER"
+				register "property_list[0].name" = ""realtek,jd-src""
+				register "property_list[0].integer" = "1"
+				device i2c 1a on
+					probe AUDIO_CODEC_SOURCE AUDIO_CODEC_ALC5682I_VS
+				end
 			end
 		end #I2C 4
 		device pci 1f.3 on

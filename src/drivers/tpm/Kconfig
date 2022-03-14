@@ -1,14 +1,15 @@
-config TPM_INIT
+config TPM_INIT_RAMSTAGE
 	bool
-	default y if TPM1 || TPM2
-	depends on !VBOOT
+	default y if TPM
+	depends on !VBOOT && !VENDORCODE_ELTAN_VBOOT && !VENDORCODE_ELTAN_MBOOT \
+		&& !TPM_MEASURED_BOOT_INIT_BOOTBLOCK
 	help
 	  This driver automatically initializes the TPM if vboot is not used.
 	  The TPM driver init is done during the ramstage chip init phase.
 
 config TPM_PPI
 	bool "Generate ACPI code to implement TPM physical presence interface"
-	depends on TPM1 || TPM2
+	depends on TPM
 	depends on HAVE_ACPI_TABLES
 	depends on !CHROMEOS
 	default y if PAYLOAD_TIANOCORE

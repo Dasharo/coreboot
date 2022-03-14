@@ -3,9 +3,10 @@
 #ifndef __ARCH_CPU_H__
 #define __ARCH_CPU_H__
 
-#define asmlinkage
+/* TODO: Implement using SEV/WFE if this is ever actually used. */
+static inline void cpu_relax(void) { }
 
-static inline unsigned int smp_processor_id(void) { return 0; }
+#define asmlinkage
 
 struct cpu_driver { };
 

@@ -43,12 +43,15 @@ FSP_S_CBFS = $(call strip_quotes,$(CONFIG_FSP_S_CBFS))
 
 # Add FSP blobs into cbfs. SoC code may supply  additional options with
 # -options, e.g --xip or -b
-cbfs-files-$(CONFIG_FSP_CAR) += $(FSP_T_CBFS)
+ifeq ($(CONFIG_ADD_FSP_BINARIES)$(CONFIG_FSP_CAR),yy)
+cbfs-files-y += $(FSP_T_CBFS)
 $(FSP_T_CBFS)-file := $(call strip_quotes,$(CONFIG_FSP_T_FILE))
 $(FSP_T_CBFS)-type := fsp
 ifeq ($(CONFIG_FSP_T_XIP),y)
 $(FSP_T_CBFS)-options := --xip $(TXTIBB)
-endif
+$(FSP_T_CBFS)-position = $(CONFIG_FSP_T_LOCATION)
+endif # CONFIG_FSP_T_XIP
+endif # CONFIG_ADD_FSP_BINARIES && CONFIG_FSP_CAR
 
 cbfs-files-$(CONFIG_ADD_FSP_BINARIES) += $(FSP_M_CBFS)
 $(FSP_M_CBFS)-file := $(call strip_quotes,$(CONFIG_FSP_M_FILE))
@@ -62,6 +65,9 @@ endif
 ifeq ($(CONFIG_FSP_COMPRESS_FSP_M_LZ4),y)
 $(FSP_M_CBFS)-compression := LZ4
 endif
+ifneq ($(CONFIG_FSP_ALIGNMENT_FSP_M),)
+$(FSP_M_CBFS)-align := $(CONFIG_FSP_ALIGNMENT_FSP_M)
+endif
 
 cbfs-files-$(CONFIG_ADD_FSP_BINARIES) += $(FSP_S_CBFS)
 $(FSP_S_CBFS)-file := $(call strip_quotes,$(CONFIG_FSP_S_FILE))
@@ -72,10 +78,13 @@ endif
 ifeq ($(CONFIG_FSP_COMPRESS_FSP_S_LZ4),y)
 $(FSP_S_CBFS)-compression := LZ4
 endif
+ifneq ($(CONFIG_FSP_ALIGNMENT_FSP_S),)
+$(FSP_S_CBFS)-align := $(CONFIG_FSP_ALIGNMENT_FSP_S)
+endif
 
 ifeq ($(CONFIG_FSP_FULL_FD),y)
 $(obj)/Fsp_M.fd: $(call strip_quotes,$(CONFIG_FSP_FD_PATH)) $(DOTCONFIG)
-	python2 3rdparty/fsp/Tools/SplitFspBin.py split -f $(CONFIG_FSP_FD_PATH) -o "$(obj)" -n "Fsp.fd"
+	python 3rdparty/fsp/Tools/SplitFspBin.py split -f $(CONFIG_FSP_FD_PATH) -o "$(obj)" -n "Fsp.fd"
 
 $(obj)/Fsp_S.fd: $(call strip_quotes,$(CONFIG_FSP_FD_PATH)) $(obj)/Fsp_M.fd
 	true
@@ -93,6 +102,30 @@ logo.bmp-compression := LZMA
 ifneq ($(call strip_quotes,$(CONFIG_FSP_HEADER_PATH)),)
 CPPFLAGS_common+=-I$(CONFIG_FSP_HEADER_PATH)
 endif
+
+# check if the FSP files that are supposed to be added are specified
+ifeq ($(CONFIG_ADD_FSP_BINARIES),y)
+ifeq ($(CONFIG_FSP_CAR),y)
+ifeq ($(call strip_quotes,$(CONFIG_FSP_T_FILE)),)
+$(error No FSP-T binary file specified.)
+endif # CONFIG_FSP_T_FILE
+endif # CONFIG_FSP_CAR
+ifeq ($(call strip_quotes,$(CONFIG_FSP_M_FILE)),)
+$(error No FSP-M binary file specified.)
+endif # CONFIG_FSP_M_FILE
+ifeq ($(call strip_quotes,$(CONFIG_FSP_S_FILE)),)
+$(error No FSP-S binary file specified.)
+endif # CONFIG_FSP_S_FILE
+else # CONFIG_ADD_FSP_BINARIES
+build_complete:: warn_no_fsp_binaries
+endif # CONFIG_ADD_FSP_BINARIES
+
+PHONY+=warn_no_fsp_binaries
+warn_no_fsp_binaries:
+	printf "\n\t** WARNING **\n"
+	printf "ADD_FSP_BINARIES isn't selected even though this SoC relies on the FSP.\n"
+	printf "The resulting image won't contain the FSP binaries and will not boot unless\n"
+	printf "they are added later.\n"
 
 subdirs-y += ppi
 

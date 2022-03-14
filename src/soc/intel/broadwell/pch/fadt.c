@@ -29,18 +29,12 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->pm2_cnt_len = 1;
 	fadt->pm_tmr_len = 4;
 	fadt->gpe0_blk_len = 32;
-	fadt->p_lvl2_lat = 1;
-	fadt->p_lvl3_lat = 87;
-	fadt->duty_offset = 1;
-	fadt->duty_width = 0;
 	fadt->day_alrm = 0xd;
 	fadt->mon_alrm = 0x00;
-	fadt->century = 0x00;
 	fadt->iapc_boot_arch = ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
 
 	fadt->flags |= ACPI_FADT_WBINVD |
 		       ACPI_FADT_C1_SUPPORTED |
-		       ACPI_FADT_C2_MP_SUPPORTED |
 		       ACPI_FADT_SLEEP_BUTTON |
 		       ACPI_FADT_SEALED_CASE |
 		       ACPI_FADT_S4_RTC_WAKE |

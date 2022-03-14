@@ -10,10 +10,13 @@
 #define CFG2			0x48
 #define   CFG2_LAT_L1_MASK	((0x7 << 12) | (0x7 << 3))
 #define   CFG2_LAT_L1_64US	((0x6 << 12) | (0x6 << 3))
+#define   CFG2_L0S_SUPPORT	(0x1 << 6)
 #define LTR			0x5C
 #define   SNOOP_VALUE		0x25
 #define   SNOOP_SCALE		(0x3 << 10)
 #define   NO_SNOOP_VALUE	(0x25 << 16)
 #define   NO_SNOOP_SCALE	(0x3 << 26)
+#define CFG3			0x70
+#define	  SCP_DEBUG		(0x1 << 19)
 
 #endif /* DRIVERS_GENESYSLOGIC_GL9755_H */

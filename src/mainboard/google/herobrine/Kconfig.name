@@ -1,0 +1,31 @@
+comment "Herobrine"
+
+if USE_QC_BLOBS
+
+config BOARD_GOOGLE_HEROBRINE
+	bool "->  Herobrine"
+	select BOARD_GOOGLE_HEROBRINE_COMMON
+
+config BOARD_GOOGLE_HEROBRINE_REV0
+	bool "->  Herobrine_Rev0"
+	select BOARD_GOOGLE_HEROBRINE_COMMON
+
+config BOARD_GOOGLE_SENOR
+	bool "->  Senor"
+	select BOARD_GOOGLE_HEROBRINE_COMMON
+
+config BOARD_GOOGLE_PIGLIN
+	bool "->  Piglin"
+	select BOARD_GOOGLE_HEROBRINE_COMMON
+
+config BOARD_GOOGLE_HOGLIN
+	bool "-> Hoglin"
+	select BOARD_GOOGLE_HEROBRINE_COMMON
+
+config BOARD_GOOGLE_VILLAGER
+	bool "-> Villager"
+	select BOARD_GOOGLE_HEROBRINE_COMMON
+endif
+
+comment "(Herobrine requires 'Allow QC blobs repository')"
+	depends on !USE_QC_BLOBS

@@ -8,6 +8,28 @@ config PROVIDES_ROM_SHARING
 	help
 	  Select this option if the LPC bridge supports ROM sharing.
 
+config SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA
+	bool
+	select X86_CUSTOM_BOOTMEDIA
+	select SOC_AMD_COMMON_BLOCK_SPI_4DW_BURST
+	depends on !SOC_AMD_PICASSO && !SOC_AMD_STONEYRIDGE
+	help
+	  Select this option to enable SPI DMA support.
+
+# The LPC SPI DMA controller requires the source and destination to be 64 byte
+# aligned.
+config CBFS_CACHE_ALIGN
+	int
+	default 64 if SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA
+
+config FSP_ALIGNMENT_FSP_S
+	int
+	default 64 if SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA
+
+config FSP_ALIGNMENT_FSP_M
+	int
+	default 64 if SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA
+
 config SOC_AMD_COMMON_BLOCK_HAS_ESPI
 	bool
 	help

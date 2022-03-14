@@ -10,7 +10,7 @@ Device (EC0)
 {
 	Name (_HID, EISAID ("PNP0C09"))
 	Name (_UID, 1)
-	Name (_GPE, Add(EC_SCI_GPI, 16)) // GPE for Runtime SCI
+	Name (_GPE, EC_SCI_GPI + 16) // GPE for Runtime SCI
 
 	// EC RAM fields
 	OperationRegion(ERAM, EmbeddedControl, 0, 0xFF)
@@ -444,7 +444,7 @@ Device (EC0)
 		MBTH, 4,        //   bit 3-0: battery 0 highest level
 		SBTH, 4,        //   bit 7-4: battery 1 highest level
 		                //   note: if highest level is 0 or 0xF, it means not defined
-		                //         (in this case, use default hightest level, it is 6)
+		                //         (in this case, use default highest level, it is 6)
 
 		Offset(0xEF),   // [EC Function Specification Major Version]
 		Offset(0xF0),   // [Build ID]~ offset:0F7h
@@ -556,8 +556,7 @@ Device (EC0)
 		// TODO Which temperature corresponds to the CPU?
 		Store (TMP0, Local0)
 		/* So that we don't get a warning that Local0 is unused.  */
-		Increment (Local0)
-
+		Local0++
 	}
 
 /* Attention Codes

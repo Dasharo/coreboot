@@ -1,0 +1,47 @@
+config SOC_QUALCOMM_SC7280
+	bool
+	default n
+	depends on USE_QC_BLOBS
+	select ARCH_BOOTBLOCK_ARMV8_64
+	select ARCH_RAMSTAGE_ARMV8_64
+	select ARCH_ROMSTAGE_ARMV8_64
+	select ARCH_VERSTAGE_ARMV8_64
+	select ARM64_USE_ARM_TRUSTED_FIRMWARE
+	select GENERIC_GPIO_LIB
+	select GENERIC_UDELAY
+	select HAVE_MONOTONIC_TIMER
+	select ARM64_USE_ARCH_TIMER
+	select SOC_QUALCOMM_COMMON
+	select CACHE_MRC_SETTINGS
+	select HAS_RECOVERY_MRC_CACHE
+	select COMPRESS_BOOTBLOCK
+	select HAVE_UART_SPECIAL
+
+if SOC_QUALCOMM_SC7280
+
+config MEMLAYOUT_LD_FILE
+	string
+	default "src/soc/qualcomm/sc7280/memlayout.ld"
+
+config VBOOT
+	select VBOOT_SEPARATE_VERSTAGE
+	select VBOOT_RETURN_FROM_VERSTAGE
+	select VBOOT_MUST_REQUEST_DISPLAY
+	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config SC7280_QSPI
+	bool
+	default y if COMMON_CBFS_SPI_WRAPPER
+	prompt "Build Flash Using SPI-NOR"
+
+config BOOT_DEVICE_SPI_FLASH_BUS
+	int
+	default 16
+
+config UART_FOR_CONSOLE
+	int
+	default 5
+	help
+	 Select the QUP instance to be used for UART console output.
+
+endif

@@ -3,22 +3,9 @@
 #include <arch/io.h>
 #include <cf9_reset.h>
 #include <reset.h>
-#include <soc/reset.h>
 #include <soc/southbridge.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/reset.h>
-
-void set_warm_reset_flag(void)
-{
-	uint8_t ncp = inw(NCP_ERR);
-
-	outb(NCP_ERR, ncp | NCP_WARM_BOOT);
-}
-
-int is_warm_reset(void)
-{
-	return !!(inb(NCP_ERR) & NCP_WARM_BOOT);
-}
 
 void do_cold_reset(void)
 {
@@ -30,8 +17,6 @@ void do_cold_reset(void)
 
 void do_warm_reset(void)
 {
-	set_warm_reset_flag();
-
 	/* Assert reset signals only. */
 	outb(RST_CPU | SYS_RST, RST_CNT);
 }

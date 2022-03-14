@@ -193,8 +193,7 @@ void raminit(struct romstage_params *params)
 
 	/* Verify all the HOBs are present */
 	if (fsp_verification_failure)
-		printk(BIOS_ERR,
-			"ERROR - Missing one or more required FSP HOBs!\n");
+		printk(BIOS_ERR, "Missing one or more required FSP HOBs!\n");
 
 	/* Display the HOBs */
 	if (CONFIG(DISPLAY_HOBS))
@@ -209,8 +208,7 @@ void raminit(struct romstage_params *params)
 	if ((fsp_memory != NULL) && (cbmem_root != NULL) &&
 		(cbmem_root->PhysicalStart <= fsp_memory->PhysicalStart)) {
 		fsp_verification_failure = 1;
-		printk(BIOS_ERR,
-			"ERROR - FSP reserved memory above CBMEM root!\n");
+		printk(BIOS_ERR, "FSP reserved memory above CBMEM root!\n");
 	}
 
 	/* Verify that the FSP memory was properly reserved */
@@ -218,7 +216,7 @@ void raminit(struct romstage_params *params)
 		(fsp_memory->PhysicalStart !=
 			(unsigned int)fsp_reserved_memory_area))) {
 		fsp_verification_failure = 1;
-		printk(BIOS_ERR, "ERROR - Reserving FSP memory area!\n");
+		printk(BIOS_ERR, "Reserving FSP memory area!\n");
 
 		if (CONFIG(HAVE_SMI_HANDLER) && cbmem_root != NULL) {
 			size_t delta_bytes = smm_base
@@ -247,30 +245,6 @@ void raminit(struct romstage_params *params)
 		params->data_to_save_size = ALIGN_UP(
 			((u32)GET_HOB_LENGTH(mrc_hob)), 16);
 	}
-}
-
-/* Initialize the UPD parameters for MemoryInit */
-__weak void mainboard_memory_init_params(
-	struct romstage_params *params,
-	MEMORY_INIT_UPD *upd_ptr)
-{
-	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
-}
-
-/* Display the UPD parameters for MemoryInit */
-__weak void soc_display_memory_init_params(
-	const MEMORY_INIT_UPD *old, MEMORY_INIT_UPD *new)
-{
-	printk(BIOS_SPEW, "UPD values for MemoryInit:\n");
-	hexdump32(BIOS_SPEW, new, sizeof(*new));
-}
-
-/* Initialize the UPD parameters for MemoryInit */
-__weak void soc_memory_init_params(
-	struct romstage_params *params,
-	MEMORY_INIT_UPD *upd)
-{
-	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
 }
 
 /* Initialize the SoC after MemoryInit */

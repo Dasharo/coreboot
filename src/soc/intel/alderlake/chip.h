@@ -4,25 +4,181 @@
 #define _SOC_CHIP_H_
 
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <device/pci_ids.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/power_limit.h>
 #include <intelblocks/pcie_rp.h>
+#include <intelblocks/tcss.h>
 #include <soc/gpe.h>
 #include <soc/pci_devs.h>
 #include <soc/pmc.h>
 #include <soc/serialio.h>
 #include <soc/usb.h>
+#include <soc/vr_config.h>
 #include <stdint.h>
 
-#define MAX_HD_AUDIO_DMIC_LINKS 2
-#define MAX_HD_AUDIO_SNDW_LINKS 4
-#define MAX_HD_AUDIO_SSP_LINKS  6
+/* Types of different SKUs */
+enum soc_intel_alderlake_power_limits {
+	ADL_P_142_242_282_15W_CORE,
+	ADL_P_282_482_28W_CORE,
+	ADL_P_682_28W_CORE,
+	ADL_P_442_482_45W_CORE,
+	ADL_P_642_682_45W_CORE,
+	ADL_M_282_12W_CORE,
+	ADL_M_282_15W_CORE,
+	ADL_M_242_CORE,
+	ADL_P_442_45W_CORE,
+	ADL_POWER_LIMITS_COUNT
+};
+
+/* TDP values for different SKUs */
+enum soc_intel_alderlake_cpu_tdps {
+	TDP_9W  = 9,
+	TDP_12W = 12,
+	TDP_15W = 15,
+	TDP_28W = 28,
+	TDP_45W = 45
+};
+
+/* Mapping of different SKUs based on CPU ID and TDP values */
+static const struct {
+	unsigned int cpu_id;
+	enum soc_intel_alderlake_power_limits limits;
+	enum soc_intel_alderlake_cpu_tdps cpu_tdp;
+} cpuid_to_adl[] = {
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_10, ADL_P_142_242_282_15W_CORE, TDP_15W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_7, ADL_P_142_242_282_15W_CORE, TDP_15W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_6, ADL_P_142_242_282_15W_CORE, TDP_15W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_7, ADL_P_282_482_28W_CORE, TDP_28W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_5, ADL_P_282_482_28W_CORE, TDP_28W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_3, ADL_P_682_28W_CORE, TDP_28W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_5, ADL_P_442_482_45W_CORE, TDP_45W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_4, ADL_P_642_682_45W_CORE, TDP_45W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_3, ADL_P_642_682_45W_CORE, TDP_45W },
+	{ PCI_DEVICE_ID_INTEL_ADL_P_ID_1, ADL_P_442_482_45W_CORE, TDP_45W },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_1, ADL_M_282_12W_CORE, TDP_12W },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_1, ADL_M_282_15W_CORE, TDP_15W },
+	{ PCI_DEVICE_ID_INTEL_ADL_M_ID_2, ADL_M_242_CORE, TDP_9W },
+};
+
+/* Types of display ports */
+enum ddi_ports {
+	DDI_PORT_A,
+	DDI_PORT_B,
+	DDI_PORT_C,
+	DDI_PORT_1,
+	DDI_PORT_2,
+	DDI_PORT_3,
+	DDI_PORT_4,
+	DDI_PORT_COUNT,
+};
+
+enum ddi_port_flags {
+	DDI_ENABLE_DDC = 1 << 0,
+	DDI_ENABLE_HPD = 1 << 1,
+};
+
+/*
+ * Enable External V1P05/Vnn/VnnSx Rail in: BIT0:S0i1/S0i2,
+ * BIT1:S0i3, BIT2:S3, BIT3:S4, BIT4:S5
+ */
+enum fivr_enable_states {
+	FIVR_ENABLE_S0i1_S0i2	= BIT(0),
+	FIVR_ENABLE_S0i3	= BIT(1),
+	FIVR_ENABLE_S3		= BIT(2),
+	FIVR_ENABLE_S4		= BIT(3),
+	FIVR_ENABLE_S5		= BIT(4),
+};
+
+/*
+ * Enable the following for External V1p05 rail
+ * BIT0: Retention active switch support
+ * BIT1: Normal Active voltage supported
+ * BIT2: Minimum active voltage supported
+ * BIT3: Minimum Retention voltage supported
+ */
+enum fivr_voltage_supported {
+	FIVR_RET_ACTIVE_SWITCH_SUPPORT	= BIT(0),
+	FIVR_VOLTAGE_NORMAL		= BIT(1),
+	FIVR_VOLTAGE_MIN_ACTIVE		= BIT(2),
+	FIVR_VOLTAGE_MIN_RETENTION	= BIT(3),
+};
+
+#define FIVR_ENABLE_ALL_SX (FIVR_ENABLE_S0i1_S0i2 | FIVR_ENABLE_S0i3 |	\
+			    FIVR_ENABLE_S3 | FIVR_ENABLE_S4 | FIVR_ENABLE_S5)
+/*
+ * The Max Pkg Cstate
+ * Values 0 - C0/C1, 1 - C2, 2 - C3, 3 - C6, 4 - C7, 5 - C7S, 6 - C8, 7 - C9, 8 - C10,
+ * 254 - CPU Default , 255 - Auto.
+ */
+enum pkgcstate_limit {
+	LIMIT_C0_C1      = 0,
+	LIMIT_C2         = 1,
+	LIMIT_C3         = 2,
+	LIMIT_C6         = 3,
+	LIMIT_C7         = 4,
+	LIMIT_C7S        = 5,
+	LIMIT_C8         = 6,
+	LIMIT_C9         = 7,
+	LIMIT_C10        = 8,
+	LIMIT_CPUDEFAULT = 254,
+	LIMIT_AUTO       = 255,
+};
+
+/* Bit values for use in LpmStateEnableMask. */
+enum lpm_state_mask {
+	LPM_S0i2_0 = BIT(0),
+	LPM_S0i2_1 = BIT(1),
+	LPM_S0i2_2 = BIT(2),
+	LPM_S0i3_0 = BIT(3),
+	LPM_S0i3_1 = BIT(4),
+	LPM_S0i3_2 = BIT(5),
+	LPM_S0i3_3 = BIT(6),
+	LPM_S0i3_4 = BIT(7),
+	LPM_S0iX_ALL = LPM_S0i2_0 | LPM_S0i2_1 | LPM_S0i2_2
+		     | LPM_S0i3_0 | LPM_S0i3_1 | LPM_S0i3_2 | LPM_S0i3_3 | LPM_S0i3_4,
+};
+
+/*
+ * FivrSpreadSpectrum:
+ * Values
+ *  0 - 0.5%, 3 - 1%, 8 - 1.5%, 18 - 2%, 28 - 3%, 34 - 4%, 39 - 5%, 44 - 6%
+ */
+enum fivr_spread_spectrum_ratio {
+	FIVR_SS_0_5 = 0,
+	FIVR_SS_1 = 3,
+	FIVR_SS_1_5 = 8,
+	FIVR_SS_2 = 18,
+	FIVR_SS_3 = 28,
+	FIVR_SS_4 = 34,
+	FIVR_SS_5 = 39,
+	FIVR_SS_6 = 44,
+};
+
+/*
+ * Slew Rate configuration for Deep Package C States for VR domain.
+ * They are fast time divided by 2.
+ * 0 - Fast/2
+ * 1 - Fast/4
+ * 2 - Fast/8
+ * 3 - Fast/16
+ */
+enum slew_rate {
+	SLEW_FAST_2,
+	SLEW_FAST_4,
+	SLEW_FAST_8,
+	SLEW_FAST_16
+};
 
 struct soc_intel_alderlake_config {
 
 	/* Common struct containing soc config data required by common code */
 	struct soc_intel_common_config common_soc_config;
+
+	/* Common struct containing power limits configuration information */
+	struct soc_power_limits_config power_limits_config[ADL_POWER_LIMITS_COUNT];
 
 	/* Gpio group routed to each dword of the GPE0 block. Values are
 	 * of the form PMC_GPP_[A:U] or GPD. */
@@ -83,6 +239,8 @@ struct soc_intel_alderlake_config {
 	uint16_t usb2_wake_enable_bitmap;
 	/* Wake Enable Bitmap for USB3 ports */
 	uint16_t usb3_wake_enable_bitmap;
+	/* Program OC pins for TCSS */
+	struct tcss_port_config tcss_ports[MAX_TYPE_C_PORTS];
 
 	/* SATA related */
 	uint8_t SataEnable;
@@ -110,13 +268,22 @@ struct soc_intel_alderlake_config {
 
 	/* Audio related */
 	uint8_t PchHdaDspEnable;
-	uint8_t PchHdaAudioLinkHdaEnable;
-	uint8_t PchHdaAudioLinkDmicEnable[MAX_HD_AUDIO_DMIC_LINKS];
-	uint8_t PchHdaAudioLinkSspEnable[MAX_HD_AUDIO_SSP_LINKS];
-	uint8_t PchHdaAudioLinkSndwEnable[MAX_HD_AUDIO_SNDW_LINKS];
-	uint8_t PchHdaIDispLinkTmode;
-	uint8_t PchHdaIDispLinkFrequency;
-	uint8_t PchHdaIDispCodecDisconnect;
+
+	/* iDisp-Link T-Mode 0: 2T, 2: 4T, 3: 8T, 4: 16T */
+	enum {
+		HDA_TMODE_2T = 0,
+		HDA_TMODE_4T = 2,
+		HDA_TMODE_8T = 3,
+		HDA_TMODE_16T = 4,
+	} PchHdaIDispLinkTmode;
+
+	/* iDisp-Link Freq 4: 96MHz, 3: 48MHz. */
+	enum {
+		HDA_LINKFREQ_48MHZ = 3,
+		HDA_LINKFREQ_96MHZ = 4,
+	} PchHdaIDispLinkFrequency;
+
+	bool PchHdaIDispCodecEnable;
 
 	struct pcie_rp_config pch_pcie_rp[CONFIG_MAX_PCH_ROOT_PORTS];
 	struct pcie_rp_config cpu_pcie_rp[CONFIG_MAX_CPU_ROOT_PORTS];
@@ -145,31 +312,14 @@ struct soc_intel_alderlake_config {
 		IGD_SM_56MB = 0xFD,
 		IGD_SM_60MB = 0xFE,
 	} IgdDvmt50PreAlloc;
-	uint8_t InternalGfx;
 	uint8_t SkipExtGfxScan;
-
-	/* HeciEnabled decides the state of Heci1 at end of boot
-	 * Setting to 0 (default) disables Heci1 and hides the device from OS */
-	uint8_t HeciEnabled;
-	/* PL2 Override value in Watts */
-	uint32_t tdp_pl2_override;
 
 	/* Enable/Disable EIST. 1b:Enabled, 0b:Disabled */
 	uint8_t eist_enable;
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-	/*
-	 * PRMRR size setting with below options
-	 * Disable: 0x0
-	 * 32MB: 0x2000000
-	 * 64MB: 0x4000000
-	 * 128 MB: 0x8000000
-	 * 256 MB: 0x10000000
-	 * 512 MB: 0x20000000
-	 */
-	uint32_t PrmrrSize;
-	uint8_t PmTimerDisabled;
+
 	/*
 	 * SerialIO device mode selection:
 	 * PchSerialIoDisabled,
@@ -206,21 +356,21 @@ struct soc_intel_alderlake_config {
 	/* Enable Pch iSCLK */
 	uint8_t pch_isclk;
 
+	/* CNVi BT Core Enable/Disable */
+	bool CnviBtCore;
+
 	/* CNVi BT Audio Offload: Enable/Disable BT Audio Offload. */
 	bool CnviBtAudioOffload;
 
 	/*
-	 * IOM Port Config
-	 * If a port orientation needs to be controlled by the SOC this setting must be
-	 * updated to reflect the correct GPIOs being used for the SOC port flipping.
-	 * There are 4 ports each with a pair of GPIOs for Pull Up and Pull Down
-	 * 0,1 are pull up and pull down for port 0
-	 * 2,3 are pull up and pull down for port 1
-	 * 4,5 are pull up and pull down for port 2
-	 * 6,7 are pull up and pull down for port 3
-	 * values to be programmed correspond to the GPIO family and offsets
+	 * These GPIOs will be programmed by the IOM to handle biasing of the
+	 * Type-C aux (SBU) signals when certain alternate modes are used.
+	 * `pad_auxn_dc` should be assigned to the GPIO pad providing negative
+	 * bias (name usually contains `AUXN_DC` or `AUX_N`); similarly,
+	 * `pad_auxp_dc` should be assigned to the GPIO providing positive bias
+	 * (name often contains `AUXP_DC` or `_AUX_P`).
 	 */
-	uint32_t IomTypeCPortPadCfg[8];
+	struct typec_aux_bias_pads typec_aux_bias_pads[MAX_TYPE_C_PORTS];
 
 	/*
 	 * SOC Aux orientation override:
@@ -261,28 +411,18 @@ struct soc_intel_alderlake_config {
 	uint8_t DdiPortAConfig;
 	uint8_t DdiPortBConfig;
 
-	/* Enable(1)/Disable(0) HPD */
-	uint8_t DdiPortAHpd;
-	uint8_t DdiPortBHpd;
-	uint8_t DdiPortCHpd;
-	uint8_t DdiPort1Hpd;
-	uint8_t DdiPort2Hpd;
-	uint8_t DdiPort3Hpd;
-	uint8_t DdiPort4Hpd;
-
-	/* Enable(1)/Disable(0) DDC */
-	uint8_t DdiPortADdc;
-	uint8_t DdiPortBDdc;
-	uint8_t DdiPortCDdc;
-	uint8_t DdiPort1Ddc;
-	uint8_t DdiPort2Ddc;
-	uint8_t DdiPort3Ddc;
-	uint8_t DdiPort4Ddc;
+	/* Enable(1)/Disable(0) HPD/DDC */
+	uint8_t ddi_ports_config[DDI_PORT_COUNT];
 
 	/* Hybrid storage mode enable (1) / disable (0)
 	 * This mode makes FSP detect Optane and NVME and set PCIe lane mode
 	 * accordingly */
 	uint8_t HybridStorageMode;
+
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_N)
+	/* eMMC HS400 mode */
+	uint8_t emmc_enable_hs400_mode;
+#endif
 
 	/*
 	 * Override CPU flex ratio value:
@@ -314,6 +454,116 @@ struct soc_intel_alderlake_config {
 		ISA_SERIAL_BASE_ADDR_3F8,
 		ISA_SERIAL_BASE_ADDR_2F8,
 	} IsaSerialUartBase;
+
+	/* structure containing various settings for PCH FIVRs */
+	struct {
+		bool configure_ext_fivr;
+		enum fivr_enable_states v1p05_enable_bitmap;
+		enum fivr_enable_states vnn_enable_bitmap;
+		enum fivr_enable_states vnn_sx_enable_bitmap;
+		enum fivr_voltage_supported v1p05_supported_voltage_bitmap;
+		enum fivr_voltage_supported vnn_supported_voltage_bitmap;
+		/* V1p05 Rail Voltage in mv  */
+		int v1p05_voltage_mv;
+		/* Vnn Rail Voltage in mv  */
+		int vnn_voltage_mv;
+		/* VnnSx Rail Voltage in mv  */
+		int vnn_sx_voltage_mv;
+		/* External Icc Max for V1p05 rail in mA  */
+		int v1p05_icc_max_ma;
+		/* External Icc Max for VnnSx rail in mA  */
+		int vnn_icc_max_ma;
+	} ext_fivr_settings;
+
+	/* VrConfig Settings.
+	* 0 = VR_DOMAIN_IA Core 1 = VR_DOMAIN_GT.
+	*/
+	struct vr_config domain_vr_config[NUM_VR_DOMAINS];
+
+	uint16_t MaxDramSpeed;
+
+	enum {
+		SLP_S3_ASSERTION_DEFAULT,
+		SLP_S3_ASSERTION_60_US,
+		SLP_S3_ASSERTION_1_MS,
+		SLP_S3_ASSERTION_50_MS,
+		SLP_S3_ASSERTION_2_S,
+	} pch_slp_s3_min_assertion_width;
+
+	enum {
+		SLP_S4_ASSERTION_DEFAULT,
+		SLP_S4_ASSERTION_1S,
+		SLP_S4_ASSERTION_2S,
+		SLP_S4_ASSERTION_3S,
+		SLP_S4_ASSERTION_4S,
+	} pch_slp_s4_min_assertion_width;
+
+	enum {
+		SLP_SUS_ASSERTION_DEFAULT,
+		SLP_SUS_ASSERTION_0_MS,
+		SLP_SUS_ASSERTION_500_MS,
+		SLP_SUS_ASSERTION_1_S,
+		SLP_SUS_ASSERTION_4_S,
+	} pch_slp_sus_min_assertion_width;
+
+	enum {
+		SLP_A_ASSERTION_DEFAULT,
+		SLP_A_ASSERTION_0_MS,
+		SLP_A_ASSERTION_4_S,
+		SLP_A_ASSERTION_98_MS,
+		SLP_A_ASSERTION_2_S,
+	} pch_slp_a_min_assertion_width;
+
+	/*
+	 * PCH PM Reset Power Cycle Duration
+	 * NOTE: Duration programmed in the PchPmPwrCycDur should never be smaller than the
+	 * stretch duration programmed in the following registers:
+	 *  - GEN_PMCON_A.SLP_S3_MIN_ASST_WDTH (PchPmSlpS3MinAssert)
+	 *  - GEN_PMCON_A.S4MAW (PchPmSlpS4MinAssert)
+	 *  - PM_CFG.SLP_A_MIN_ASST_WDTH (PchPmSlpAMinAssert)
+	 *  - PM_CFG.SLP_LAN_MIN_ASST_WDTH
+	 */
+	enum {
+		POWER_CYCLE_DURATION_DEFAULT,
+		POWER_CYCLE_DURATION_1S,
+		POWER_CYCLE_DURATION_2S,
+		POWER_CYCLE_DURATION_3S,
+		POWER_CYCLE_DURATION_4S,
+	} pch_reset_power_cycle_duration;
+
+	/* Platform Power Pmax */
+	uint16_t PsysPmax;
+	/*
+	 * FivrRfiFrequency
+	 * PCODE MMIO Mailbox: Set the desired RFI frequency, in increments of 100KHz.
+	 * 0: Auto
+	 * Range varies based on XTAL clock:
+	 *   0-1918*100 KHz (Up to 191.8MHz) for 24MHz clock
+	 *   0-1535*100 KHz (Up to 153.5MHz) for 19MHz clock
+	 */
+	uint32_t FivrRfiFrequency;
+	/*
+	 * FivrSpreadSpectrum
+	 * Set the Spread Spectrum Range.
+	 *   Range: 0.5%, 1%, 1.5%, 2%, 3%, 4%, 5%, 6%.
+	 *   Each Range is translated to an encoded value for FIVR register.
+	 *   0.5% = 0, 1% = 3, 1.5% = 8, 2% = 18, 3% = 28, 4% = 34, 5% = 39, 6% = 44.
+	 */
+	uint8_t FivrSpreadSpectrum;
+	/* Enable or Disable Acoustic Noise Mitigation feature */
+	uint8_t AcousticNoiseMitigation;
+	/* Disable Fast Slew Rate for Deep Package C States for VR domains */
+	uint8_t FastPkgCRampDisable[NUM_VR_DOMAINS];
+	/*
+	 * Slew Rate configuration for Deep Package C States for VR domains
+	 * 0: Fast/2, 1: Fast/4, 2: Fast/8, 3: Fast/16; see enum slew_rate for values
+	 */
+	uint8_t SlowSlewRate[NUM_VR_DOMAINS];
+
+	/* CNVi DDR RFIM Enable/Disable
+	 * Default 0. Setting this to 1 enable CNVi DDR RFIM.
+	 */
+	bool CnviDdrRfim;
 };
 
 typedef struct soc_intel_alderlake_config config_t;

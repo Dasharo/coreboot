@@ -6,9 +6,9 @@
 
 
 #if CONFIG_STACK_SIZE == 0
-# define STACK_SIZE 0x1000
+#define STACK_SIZE 0x1000
 #else
-# define STACK_SIZE CONFIG_STACK_SIZE
+#define STACK_SIZE CONFIG_STACK_SIZE
 #endif
 
 /* Value used for stack initialization. Change if implementation changes. */
@@ -73,7 +73,7 @@ static void test_full_stack(void **state)
 
 	/* Expect failure when checking full stack as absence of guard value at the end of
 	   the stack indicates stack overrun. */
-	assert_int_equal(-1, checkstack(top_of_stack, 0));
+	expect_assert_failure(checkstack(top_of_stack, 0));
 }
 
 static void test_partialy_filled_stack(void **state)
@@ -115,7 +115,7 @@ static void test_incorrectly_initialized_stack(void **state)
 
 	/* Expect failure when there is no last stack guard value even if no other value was
 	   changed. */
-	assert_int_equal(-1, checkstack(top_of_stack, 0));
+	expect_assert_failure(checkstack(top_of_stack, 0));
 }
 
 int main(void)
@@ -129,5 +129,5 @@ int main(void)
 		cmocka_unit_test_setup(test_incorrectly_initialized_stack, setup_stack_test),
 	};
 
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	return cb_run_group_tests(tests, NULL, NULL);
 }

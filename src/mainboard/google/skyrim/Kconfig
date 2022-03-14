@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+config BOARD_GOOGLE_BASEBOARD_SKYRIM
+	def_bool n
+
+if BOARD_GOOGLE_BASEBOARD_SKYRIM
+
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
+config AMD_FWM_POSITION_INDEX
+	int
+	default 3
+	help
+	  TODO: might need to be adapted for better placement of files in cbfs
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select AMD_SOC_CONSOLE_UART
+	select BOARD_ROMSIZE_KB_16384
+	select EC_GOOGLE_CHROMEEC
+	select EC_GOOGLE_CHROMEEC_ESPI
+	select FW_CONFIG
+	select MAINBOARD_HAS_CHROMEOS
+	select SOC_AMD_SABRINA
+
+config CHROMEOS
+	select EC_GOOGLE_CHROMEEC_SWITCHES
+
+config DEVICETREE
+	default "variants/baseboard/devicetree.cb"
+
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/chromeos.fmd"
+
+config MAINBOARD_DIR
+	default "google/skyrim"
+
+config MAINBOARD_FAMILY
+	string
+	default "Google_Skyrim"
+
+config MAINBOARD_PART_NUMBER
+	default "Skyrim" if BOARD_GOOGLE_SKYRIM
+
+config OVERRIDE_DEVICETREE
+	string
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
+
+config VARIANT_DIR
+	string
+	default "skyrim" if BOARD_GOOGLE_SKYRIM
+
+config VBOOT
+	select VBOOT_LID_SWITCH
+	select VBOOT_SEPARATE_VERSTAGE
+	select VBOOT_STARTS_IN_BOOTBLOCK
+
+endif # BOARD_GOOGLE_BASEBOARD_SKYRIM

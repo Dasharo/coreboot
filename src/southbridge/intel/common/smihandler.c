@@ -95,13 +95,12 @@ __weak void southbridge_smm_xhci_sleep(u8 slp_type)
 
 static int power_on_after_fail(void)
 {
-	u8 s5pwr = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-
 	/* save and recover RTC port values */
 	u8 tmp70, tmp72;
 	tmp70 = inb(0x70);
 	tmp72 = inb(0x72);
-	get_option(&s5pwr, "power_on_after_fail");
+	const unsigned int s5pwr = get_uint_option("power_on_after_fail",
+					 CONFIG_MAINBOARD_POWER_FAILURE_STATE);
 	outb(tmp70, 0x70);
 	outb(tmp72, 0x72);
 
@@ -374,7 +373,7 @@ static void southbridge_smi_tco(void)
 	if (tco_sts & (1 << 8)) { // BIOSWR
 		u8 bios_cntl;
 
-		bios_cntl = pci_read_config16(PCI_DEV(0, 0x1f, 0), 0xdc);
+		bios_cntl = pci_read_config8(PCI_DEV(0, 0x1f, 0), 0xdc);
 
 		if (bios_cntl & 1) {
 			/* BWE is RW, so the SMI was caused by a
@@ -388,7 +387,7 @@ static void southbridge_smi_tco(void)
 			 * box.
 			 */
 			printk(BIOS_DEBUG, "Switching back to RO\n");
-			pci_write_config32(PCI_DEV(0, 0x1f, 0), 0xdc,
+			pci_write_config8(PCI_DEV(0, 0x1f, 0), 0xdc,
 					(bios_cntl & ~1));
 		} /* No else for now? */
 	} else if (tco_sts & (1 << 3)) { /* TIMEOUT */

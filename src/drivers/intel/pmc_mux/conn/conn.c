@@ -1,9 +1,78 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <acpi/acpigen.h>
+#include <boot/coreboot_tables.h>
+#include <cbmem.h>
 #include <console/console.h>
 #include <intelblocks/acpi.h>
+
 #include "chip.h"
+
+/* Number of registered connectors */
+static size_t total_conn_count;
+
+static void conn_init(struct device *dev)
+{
+	total_conn_count++;
+}
+
+static unsigned int get_usb_port_number(const struct device *usb_port)
+{
+	return usb_port->path.usb.port_id + 1;
+}
+
+static struct type_c_info *conn_get_cbmem_buffer(void)
+{
+	struct type_c_info *info;
+	size_t size;
+
+	info = cbmem_find(CBMEM_ID_TYPE_C_INFO);
+	if (info)
+		return info;
+
+	size = sizeof(struct type_c_info) + total_conn_count * sizeof(struct type_c_port_info);
+	info = cbmem_add(CBMEM_ID_TYPE_C_INFO, size);
+
+	if (!info)
+		return NULL;
+
+	memset(info, 0, size);
+	return info;
+}
+
+static void conn_write_cbmem_entry(struct device *dev)
+{
+	const struct drivers_intel_pmc_mux_conn_config *config = dev->chip_info;
+	struct type_c_port_info *port_info;
+	struct type_c_info *info;
+	size_t count;
+
+	/*
+	 * Do not re-run this code on resume as the cbmem data is populated on boot-up
+	 * (non-S3 path) and stays intact across S3 suspend/resume.
+	 */
+	if (acpi_is_wakeup_s3())
+		return;
+
+	info = conn_get_cbmem_buffer();
+	if (!info || (info->port_count >= total_conn_count)) {
+		printk(BIOS_ERR, "No space for Type-C port info!\n");
+		return;
+	}
+
+	count = info->port_count;
+	port_info = &info->port_info[count];
+	port_info->usb2_port_number = get_usb_port_number(config->usb2_port);
+	port_info->usb3_port_number = get_usb_port_number(config->usb3_port);
+	port_info->sbu_orientation = config->sbu_orientation;
+	port_info->data_orientation = config->hsl_orientation;
+
+	printk(BIOS_INFO, "added type-c port%zu info to cbmem: usb2:%d usb3:%d sbu:%d data:%d\n",
+			count, port_info->usb2_port_number, port_info->usb3_port_number,
+			port_info->sbu_orientation, port_info->data_orientation);
+
+	info->port_count++;
+}
 
 static const char *conn_acpi_name(const struct device *dev)
 {
@@ -12,14 +81,14 @@ static const char *conn_acpi_name(const struct device *dev)
 	return name;
 }
 
-static const char *orientation_to_str(enum typec_orientation ori)
+static const char *orientation_to_str(enum type_c_orientation ori)
 {
 	switch (ori) {
 	case TYPEC_ORIENTATION_NORMAL:
 		return "normal";
 	case TYPEC_ORIENTATION_REVERSE:
 		return "reverse";
-	case TYPEC_ORIENTATION_FOLLOW_CC: /* Intentional fallthrough */
+	case TYPEC_ORIENTATION_NONE: /* Intentional fallthrough */
 	default:
 		return "";
 	}
@@ -45,18 +114,18 @@ static void conn_fill_ssdt(const struct device *dev)
 
 	/* _DSD, Device-Specific Data */
 	dsd = acpi_dp_new_table("_DSD");
-	acpi_dp_add_integer(dsd, "usb2-port-number", config->usb2_port_number);
-	acpi_dp_add_integer(dsd, "usb3-port-number", config->usb3_port_number);
+	acpi_dp_add_integer(dsd, "usb2-port-number", get_usb_port_number(config->usb2_port));
+	acpi_dp_add_integer(dsd, "usb3-port-number", get_usb_port_number(config->usb3_port));
 
 	/*
 	 * The kernel assumes that these Type-C signals (SBUs and HSLs) follow the CC lines,
 	 * unless they are explicitly called out otherwise.
 	 */
-	if (config->sbu_orientation != TYPEC_ORIENTATION_FOLLOW_CC)
+	if (config->sbu_orientation != TYPEC_ORIENTATION_NONE)
 		acpi_dp_add_string(dsd, "sbu-orientation",
 				   orientation_to_str(config->sbu_orientation));
 
-	if (config->hsl_orientation != TYPEC_ORIENTATION_FOLLOW_CC)
+	if (config->hsl_orientation != TYPEC_ORIENTATION_NONE)
 		acpi_dp_add_string(dsd, "hsl-orientation",
 				   orientation_to_str(config->hsl_orientation));
 
@@ -74,6 +143,8 @@ static struct device_operations conn_dev_ops = {
 	.set_resources	= noop_set_resources,
 	.acpi_name	= conn_acpi_name,
 	.acpi_fill_ssdt	= conn_fill_ssdt,
+	.init		= conn_init,
+	.final		= conn_write_cbmem_entry,
 };
 
 static void conn_enable(struct device *dev)
@@ -84,4 +155,19 @@ static void conn_enable(struct device *dev)
 struct chip_operations drivers_intel_pmc_mux_conn_ops = {
 	CHIP_NAME("Intel PMC MUX CONN Driver")
 	.enable_dev	= conn_enable,
+};
+
+bool intel_pmc_mux_conn_get_ports(const struct device *conn, unsigned int *usb2_port,
+					unsigned int *usb3_port)
+{
+	const struct drivers_intel_pmc_mux_conn_config *mux_config;
+
+	if (!conn->chip_info || conn->chip_ops != &drivers_intel_pmc_mux_conn_ops)
+		return false;
+
+	mux_config = conn->chip_info;
+	*usb2_port = get_usb_port_number(mux_config->usb2_port);
+	*usb3_port = get_usb_port_number(mux_config->usb3_port);
+
+	return true;
 };

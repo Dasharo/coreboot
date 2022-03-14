@@ -6,6 +6,28 @@
 #include <device/pci_type.h>
 #include <types.h>
 
+#define PCH_PMC_EPOC			0x18EC
+
+/**
+ * enum pch_pmc_xtal - External crystal oscillator frequency.
+ * @XTAL_24_MHZ: 24 MHz external crystal.
+ * @XTAL_19_2_MHZ: 19.2 MHz external crystal.
+ * @XTAL_38_4_MHZ: 38.4 MHz external crystal.
+ * @XTAL_UNKNOWN_FREQ: Unsupported external crystal.
+ */
+enum pch_pmc_xtal {
+	XTAL_24_MHZ,
+	XTAL_19_2_MHZ,
+	XTAL_38_4_MHZ,
+	XTAL_UNKNOWN_FREQ = 0xf,
+};
+
+/*
+ * pmc_get_xtal_freq() - Return &enum pch_pmc_xtal corresponding to
+ * frequency of external oscillator.
+ */
+enum pch_pmc_xtal pmc_get_xtal_freq(void);
+
 /* Forward declare the power state struct here */
 struct chipset_power_state;
 
@@ -228,9 +250,6 @@ void pmc_set_power_failure_state(bool target_on);
  */
 uint8_t get_pm_pwr_cyc_dur(uint8_t slp_s4_min_assert, uint8_t slp_s3_min_assert,
 					uint8_t slp_a_min_assert, uint8_t pm_pwr_cyc_dur);
-
-/* Disabling ACPI PM timer to ensure switches off TCO and necessary of XTAL OSC shutdown */
-void pmc_disable_acpi_timer(void);
 
 /* API to set ACPI mode */
 void pmc_set_acpi_mode(void);

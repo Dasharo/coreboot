@@ -13,16 +13,12 @@ objutil ?= $(obj)/util
 objk := $(objutil)/kconfig
 absobj := $(abspath $(obj))
 
+additional-dirs :=
+
 VBOOT_HOST_BUILD ?= $(abspath $(objutil)/vboot_lib)
 
 COREBOOT_EXPORTS := COREBOOT_EXPORTS
 COREBOOT_EXPORTS += top src srck obj objutil objk
-
-# reproducible builds
-LANG:=C
-LC_ALL:=C
-TZ:=UTC0
-COREBOOT_EXPORTS += LANG LC_ALL TZ
 
 DOTCONFIG ?= $(top)/.config
 KCONFIG_CONFIG = $(DOTCONFIG)
@@ -30,7 +26,7 @@ KCONFIG_AUTOADS := $(obj)/cb-config.ads
 KCONFIG_AUTOHEADER := $(obj)/config.h
 KCONFIG_AUTOCONFIG := $(obj)/auto.conf
 KCONFIG_DEPENDENCIES := $(obj)/auto.conf.cmd
-KCONFIG_SPLITCONFIG := $(obj)/config
+KCONFIG_SPLITCONFIG := $(obj)/config/
 KCONFIG_TRISTATE := $(obj)/tristate.conf
 KCONFIG_NEGATIVES := 1
 KCONFIG_STRICT := 1
@@ -56,6 +52,7 @@ ifneq ($(V),1)
 ifneq ($(Q),)
 .SILENT:
 MAKEFLAGS += -s
+quiet_errors := 2>/dev/null
 endif
 endif
 
@@ -109,15 +106,21 @@ NOCOMPILE:=1
 endif
 ifneq ($(filter %clean lint% help% what-jenkins-does,$(MAKECMDGOALS)),)
 NOMKDIR:=1
+UNIT_TEST:=1
 endif
 endif
 
-ifneq ($(filter %-test %-tests,$(MAKECMDGOALS)),)
-ifneq ($(filter-out %-test %-tests, $(MAKECMDGOALS)),)
+ifneq ($(filter help%, $(MAKECMDGOALS)), )
+NOCOMPILE:=1
+UNIT_TEST:=1
+else
+ifneq ($(filter %-test %-tests %coverage-report, $(MAKECMDGOALS)),)
+ifneq ($(filter-out %-test %-tests %coverage-report, $(MAKECMDGOALS)),)
 $(error Cannot mix unit-tests targets with other targets)
 endif
 UNIT_TEST:=1
 NOCOMPILE:=
+endif
 endif
 
 $(xcompile): util/xcompile/xcompile
@@ -136,6 +139,7 @@ include $(TOPLEVEL)/Makefile.inc
 include $(TOPLEVEL)/payloads/Makefile.inc
 include $(TOPLEVEL)/util/testing/Makefile.inc
 -include $(TOPLEVEL)/site-local/Makefile.inc
+include $(TOPLEVEL)/tests/Makefile.inc
 real-all:
 	@echo "Error: Expected config file ($(DOTCONFIG)) not present." >&2
 	@echo "Please specify a config file or run 'make menuconfig' to" >&2
@@ -161,6 +165,17 @@ $(error $(xcompile) deleted because it's invalid. \
 	Restarting the build should fix that, or explain the problem)
 endif
 
+# reproducible builds
+LANG:=C
+LC_ALL:=C
+TZ:=UTC0
+ifneq ($(NOCOMPILE),1)
+SOURCE_DATE_EPOCH := $(shell $(top)/util/genbuild_h/genbuild_h.sh . | sed -n 's/^.define COREBOOT_BUILD_EPOCH\>.*"\(.*\)".*/\1/p')
+endif
+# don't use COREBOOT_EXPORTS to ensure build steps outside the coreboot build system
+# are reproducible
+export LANG LC_ALL TZ SOURCE_DATE_EPOCH
+
 ifneq ($(CONFIG_MMX),y)
 CFLAGS_x86_32 += -mno-mmx
 endif
@@ -182,7 +197,8 @@ real-all: real-target
 .DELETE_ON_ERROR:
 
 $(KCONFIG_AUTOHEADER): $(KCONFIG_CONFIG) $(objutil)/kconfig/conf
-	+$(MAKE) oldconfig
+	$(MAKE) olddefconfig
+	$(MAKE) syncconfig
 
 $(KCONFIG_AUTOCONFIG): $(KCONFIG_AUTOHEADER)
 	true

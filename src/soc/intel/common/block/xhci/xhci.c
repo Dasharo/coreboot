@@ -33,7 +33,7 @@ static bool is_usb_port_connected(const struct xhci_usb_info *info,
 		return false;
 
 	/* Calculate port status register address and read the status */
-	res = find_resource(PCH_DEV_XHCI, PCI_BASE_ADDRESS_0);
+	res = probe_resource(PCH_DEV_XHCI, PCI_BASE_ADDRESS_0);
 	/* If the memory BAR is not allocated for XHCI, leave the devices enabled */
 	if (!res)
 		return true;
@@ -113,12 +113,13 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_SPT_H_XHCI,
 	PCI_DEVICE_ID_INTEL_LWB_XHCI,
 	PCI_DEVICE_ID_INTEL_LWB_XHCI_SUPER,
-	PCI_DEVICE_ID_INTEL_KBP_H_XHCI,
+	PCI_DEVICE_ID_INTEL_UPT_H_XHCI,
 	PCI_DEVICE_ID_INTEL_CNP_H_XHCI,
 	PCI_DEVICE_ID_INTEL_ICP_LP_XHCI,
 	PCI_DEVICE_ID_INTEL_CMP_LP_XHCI,
 	PCI_DEVICE_ID_INTEL_CMP_H_XHCI,
 	PCI_DEVICE_ID_INTEL_TGP_LP_XHCI,
+	PCI_DEVICE_ID_INTEL_TGP_H_XHCI,
 	PCI_DEVICE_ID_INTEL_MCC_XHCI,
 	PCI_DEVICE_ID_INTEL_JSP_XHCI,
 	PCI_DEVICE_ID_INTEL_ADP_P_XHCI,

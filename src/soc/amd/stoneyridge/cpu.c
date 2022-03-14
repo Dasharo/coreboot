@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/mca.h>
+#include <amdblocks/reset.h>
 #include <amdblocks/smm.h>
 #include <cpu/amd/msr.h>
 #include <cpu/cpu.h>
@@ -7,7 +9,6 @@
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/smm.h>
-#include <cpu/x86/lapic.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 #include <soc/pci_devs.h>
@@ -16,6 +17,7 @@
 #include <soc/smi.h>
 #include <soc/iomap.h>
 #include <console/console.h>
+#include <types.h>
 
 /*
  * MP and SMM loading initialization.
@@ -36,8 +38,7 @@ static void pre_mp_init(void)
 
 static int get_cpu_count(void)
 {
-	return (pci_read_config16(SOC_HT_DEV, D18F0_CPU_CNT) & CPU_CNT_MASK)
-									+ 1;
+	return (pci_read_config16(SOC_HT_DEV, D18F0_CPU_CNT) & CPU_CNT_MASK) + 1;
 }
 
 static const struct mp_ops mp_ops = {
@@ -50,9 +51,9 @@ static const struct mp_ops mp_ops = {
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	/* Clear for take-off */
-	if (mp_init_with_smm(cpu_bus, &mp_ops) < 0)
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	if (mp_init_with_smm(cpu_bus, &mp_ops) != CB_SUCCESS)
+		die_with_post_code(POST_HW_INIT_FAILURE,
+				"mp_init_with_smm failed. Halting.\n");
 
 	/* The flash is now no longer cacheable. Reset to WP for performance. */
 	mtrr_use_temp_range(FLASH_BASE_ADDR, CONFIG_ROM_SIZE, MTRR_TYPE_WRPROT);
@@ -63,7 +64,6 @@ void mp_init_cpus(struct bus *cpu_bus)
 static void model_15_init(struct device *dev)
 {
 	check_mca();
-	setup_lapic();
 
 	/*
 	 * Per AMD, sync an undocumented MSR with the PSP base address.

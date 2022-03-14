@@ -11,19 +11,21 @@ NVRAMTOOL:=$(objutil)/nvramtool/nvramtool
 OPTION_TABLE_H:=
 ifeq ($(CONFIG_HAVE_OPTION_TABLE),y)
 
+CMOS_LAYOUT_FILE := $(top)/$(call strip_quotes,$(CONFIG_CMOS_LAYOUT_FILE))
+
 cbfs-files-y += cmos_layout.bin
 cmos_layout.bin-file = $(obj)/cmos_layout.bin
 cmos_layout.bin-type = cmos_layout
 
-$(obj)/cmos_layout.bin: $(NVRAMTOOL) $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout
+$(obj)/cmos_layout.bin: $(NVRAMTOOL) $(CMOS_LAYOUT_FILE)
 	@printf "    OPTION     $(subst $(obj)/,,$(@))\n"
-	$(NVRAMTOOL) -y $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout -L $@
+	$(NVRAMTOOL) -y $(CMOS_LAYOUT_FILE) -L $@
 
 OPTION_TABLE_H:=$(obj)/option_table.h
 
-$(OPTION_TABLE_H): $(NVRAMTOOL) $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout
+$(OPTION_TABLE_H): $(NVRAMTOOL) $(CMOS_LAYOUT_FILE)
 	@printf "    OPTION     $(subst $(obj)/,,$(@))\n"
-	$(NVRAMTOOL) -y $(top)/src/mainboard/$(MAINBOARDDIR)/cmos.layout -H $@
+	$(NVRAMTOOL) -y $(CMOS_LAYOUT_FILE) -H $@
 endif # CONFIG_HAVE_OPTION_TABLE
 
 stripped_vgabios_id = $(call strip_quotes,$(CONFIG_VGA_BIOS_ID))
@@ -40,6 +42,13 @@ stripped_vgabios_dgpu_id = $(call strip_quotes,$(CONFIG_VGA_BIOS_DGPU_ID))
 cbfs-files-$(CONFIG_VGA_BIOS_DGPU) += pci$(stripped_vgabios_dgpu_id).rom
 pci$(stripped_vgabios_dgpu_id).rom-file := $(call strip_quotes,$(CONFIG_VGA_BIOS_DGPU_FILE))
 pci$(stripped_vgabios_dgpu_id).rom-type := optionrom
+
+# The AMD LPC SPI DMA controller requires source files to be 64 byte aligned.
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA),y)
+pci$(stripped_vgabios_id).rom-align := 64
+pci$(stripped_second_vbios_id).rom-align := 64
+pci$(stripped_vgabios_dgpu_id).rom-align := 64
+endif # CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA
 
 ###############################################################################
 # common support for early assembly includes
@@ -91,7 +100,8 @@ else
 $(eval $(call early_x86_stage,bootblock,elf64-x86-64))
 endif
 
-bootblock-$(CONFIG_MICROCODE_UPDATE_PRE_RAM) += walkcbfs.S
+$(call src-to-obj,bootblock,$(dir)/walkcbfs.S): $(obj)/fmap_config.h
+bootblock-y += walkcbfs.S
 
 endif # CONFIG_ARCH_BOOTBLOCK_X86_32 / CONFIG_ARCH_BOOTBLOCK_X86_64
 
@@ -101,7 +111,7 @@ endif # CONFIG_ARCH_BOOTBLOCK_X86_32 / CONFIG_ARCH_BOOTBLOCK_X86_64
 
 ifeq ($(CONFIG_ARCH_VERSTAGE_X86_32)$(CONFIG_ARCH_VERSTAGE_X86_64),y)
 
-verstage-y += assembly_entry.S
+verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += assembly_entry.S
 verstage-y += boot.c
 verstage-y += post.c
 verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += gdt_init.S
@@ -151,6 +161,8 @@ romstage-$(CONFIG_X86_TOP4G_BOOTMEDIA_MAP) += mmap_boot.c
 romstage-y += postcar_loader.c
 romstage-$(CONFIG_COLLECT_TIMESTAMPS_TSC) += timestamp.c
 romstage-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
+romstage-$(CONFIG_COOP_MULTITASKING) += thread.c
+romstage-$(CONFIG_COOP_MULTITASKING) += thread_switch.S
 
 romstage-srcs += $(wildcard $(src)/mainboard/$(MAINBOARDDIR)/romstage.c)
 romstage-libs ?=

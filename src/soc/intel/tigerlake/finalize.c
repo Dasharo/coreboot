@@ -6,18 +6,19 @@
  * Chapter number: 4, 29
  */
 
-#include <device/mmio.h>
 #include <bootstate.h>
+#include <commonlib/console/post_codes.h>
 #include <console/console.h>
-#include <console/post_codes.h>
 #include <cpu/x86/smm.h>
+#include <device/mmio.h>
 #include <device/pci.h>
+#include <intelblocks/cse.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/systemagent.h>
 #include <intelblocks/tco.h>
-#include <intelblocks/thermal.h>
-#include <spi-generic.h>
+#include <intelpch/lockdown.h>
 #include <soc/p2sb.h>
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
@@ -25,30 +26,14 @@
 #include <soc/smbus.h>
 #include <soc/soc_chip.h>
 #include <soc/systemagent.h>
+#include <spi-generic.h>
 
 static void pch_finalize(void)
 {
-	config_t *config;
-
 	/* TCO Lock down */
 	tco_lockdown();
 
 	/* TODO: Add Thermal Configuration */
-
-	/*
-	 * Disable ACPI PM timer based on dt policy
-	 *
-	 * Disabling ACPI PM timer is necessary for XTAL OSC shutdown.
-	 * Disabling ACPI PM timer also switches off TCO
-	 *
-	 * SA_DEV_ROOT device is used here instead of PCH_DEV_PMC since it is
-	 * just required to get to chip config. PCH_DEV_PMC is hidden by this
-	 * point and hence removed from the root bus. pcidev_path_on_root thus
-	 * returns NULL for PCH_DEV_PMC device.
-	 */
-	config = config_of_soc();
-	if (config->PmTimerDisabled)
-		pmc_disable_acpi_timer();
 
 	pmc_clear_pmcon_sts();
 }
@@ -66,6 +51,12 @@ static void tbt_finalize(void)
 	}
 }
 
+static void sa_finalize(void)
+{
+	if (get_lockdown_config() == CHIPSET_LOCKDOWN_COREBOOT)
+		sa_lock_pam();
+}
+
 static void soc_finalize(void *unused)
 {
 	printk(BIOS_DEBUG, "Finalizing chipset.\n");
@@ -73,6 +64,9 @@ static void soc_finalize(void *unused)
 	pch_finalize();
 	apm_control(APM_CNT_FINALIZE);
 	tbt_finalize();
+	sa_finalize();
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+		heci1_disable();
 
 	/* Indicate finalize step with post code */
 	post_code(POST_OS_BOOT);

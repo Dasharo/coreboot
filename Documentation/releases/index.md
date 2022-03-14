@@ -14,6 +14,9 @@ Release notes for previous releases
 * [4.11 - November 2019](coreboot-4.11-relnotes.md)
 * [4.12 - May 2020](coreboot-4.12-relnotes.md)
 * [4.13 - November 2020](coreboot-4.13-relnotes.md)
+* [4.14 - May 2021](coreboot-4.14-relnotes.md)
+* [4.15 - November 2021](coreboot-4.15-relnotes.md)
+* [4.16 - Feb 2022](coreboot-4.16-relnotes.md)
 
 The checklist contains instructions to ensure that a release covers all
 important things and provides a reliable format for tarballs, branch
@@ -21,8 +24,13 @@ names etc.
 
 * [checklist](checklist.md)
 
+For release related communications consider using a template so everything
+important is taken care of.
+
+* [templates](templates.md)
+
 Upcoming release
 ----------------
 
 Please add to the release notes as changes are added:
-* [4.14 - May 2021](coreboot-4.14-relnotes.md)
+* [4.17 - May 2022](coreboot-4.17-relnotes.md)

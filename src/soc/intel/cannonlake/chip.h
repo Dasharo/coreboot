@@ -64,6 +64,19 @@ struct soc_intel_cannonlake_config {
 	/* Enable DPTF support */
 	int dptf_enable;
 
+	enum {
+		MAX_PC_DEFAULT	= 0,
+		MAX_PC0_1	= 1,
+		MAX_PC2		= 2,
+		MAX_PC3		= 3,
+		MAX_PC6		= 4,
+		MAX_PC7		= 5,
+		MAX_PC7S	= 6,
+		MAX_PC8		= 7,
+		MAX_PC9		= 8,
+		MAX_PC10	= 9,
+	} max_package_c_state;
+
 	/* Deep SX enable for both AC and DC */
 	int deep_s3_enable_ac;
 	int deep_s3_enable_dc;
@@ -156,10 +169,10 @@ struct soc_intel_cannonlake_config {
 	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
-	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCKS];
+	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCK_SRC];
 	/* PCIe ClkReq-to-ClkSrc mapping, number of clkreq signal assigned to
 	 * clksrc. */
-	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
+	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCK_SRC];
 	/* PCIe LTR(Latency Tolerance Reporting) mechanism */
 	uint8_t PcieRpLtrEnable[CONFIG_MAX_ROOT_PORTS];
 	/* Implemented as slot or built-in? */
@@ -222,13 +235,6 @@ struct soc_intel_cannonlake_config {
 
 	/* Enables support for Teton Glacier hybrid storage device */
 	uint8_t TetonGlacierMode;
-
-	/* Enable VR specific mailbox command
-	 * 00b - no VR specific cmd sent
-	 * 01b - VR mailbox cmd specifically for the MPS IMPV8 VR will be sent
-	 * 10b - VR specific cmd sent for PS4 exit issue
-	 * 11b - Reserved */
-	uint8_t SendVrMbxCmd;
 
 	/* Enable/Disable EIST. 1b:Enabled, 0b:Disabled */
 	uint8_t eist_enable;
@@ -430,7 +436,7 @@ struct soc_intel_cannonlake_config {
 	 *
 	 * In general descriptor provides option to set default cpu flex ratio.
 	 * Default cpu flex ratio is 0 ensures booting with non-turbo max frequency.
-	 * Thats the reason FSP skips cpu_ratio override if cpu_ratio is 0.
+	 * That's the reason FSP skips cpu_ratio override if cpu_ratio is 0.
 	 *
 	 * Only override CPU flex ratio if don't want to boot with non-turbo max.
 	 */
@@ -442,6 +448,8 @@ struct soc_intel_cannonlake_config {
 
 	/* Disable CPU Turbo in IA32_MISC_ENABLE */
 	bool cpu_turbo_disable;
+
+	bool disable_vmx;
 };
 
 typedef struct soc_intel_cannonlake_config config_t;

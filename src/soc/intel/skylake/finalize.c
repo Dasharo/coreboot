@@ -1,21 +1,21 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <device/mmio.h>
-#include <device/pci_ops.h>
 #include <bootstate.h>
+#include <commonlib/console/post_codes.h>
 #include <console/console.h>
-#include <console/post_codes.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/smm.h>
+#include <device/mmio.h>
 #include <device/pci.h>
+#include <device/pci_ops.h>
 #include <intelblocks/cpulib.h>
+#include <intelblocks/cse.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/p2sb.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/thermal.h>
-#include <spi-generic.h>
 #include <soc/me.h>
 #include <soc/p2sb.h>
 #include <soc/pci_devs.h>
@@ -23,6 +23,7 @@
 #include <soc/pm.h>
 #include <soc/smbus.h>
 #include <soc/systemagent.h>
+#include <spi-generic.h>
 
 #include "chip.h"
 
@@ -30,7 +31,7 @@
 #define PCR_PSFX_T0_SHDW_PCIEN	0x1C
 #define PCR_PSFX_T0_SHDW_PCIEN_FUNDIS	(1 << 8)
 
-static void pch_disable_heci(void)
+void soc_disable_heci1_using_pcr(void)
 {
 	/* unhide p2sb device */
 	p2sb_unhide();
@@ -44,14 +45,10 @@ static void pch_disable_heci(void)
 
 static void pch_finalize_script(struct device *dev)
 {
-	config_t *config;
-
 	tco_lockdown();
 
 	/* Display me status before we hide it */
 	intel_me_status();
-
-	config = config_of(dev);
 
 	/*
 	 * Set low maximum temp value used for dynamic thermal sensor
@@ -62,12 +59,14 @@ static void pch_finalize_script(struct device *dev)
 	 */
 	pch_thermal_configuration();
 
-	/* we should disable Heci1 based on the devicetree policy */
-	if (config->HeciEnabled == 0)
-		pch_disable_heci();
+	/* we should disable Heci1 based on the config */
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+		heci1_disable();
 
 	/* Hide p2sb device as the OS must not change BAR0. */
 	p2sb_hide();
+
+	pmc_clear_pmcon_sts();
 }
 
 static void soc_lockdown(struct device *dev)
@@ -84,8 +83,12 @@ static void soc_lockdown(struct device *dev)
 		pci_write_config8(dev, GEN_PMCON_A, reg8);
 	}
 
-	/* Lock chipset memory registers to protect SMM */
-	mp_run_on_all_cpus(cpu_lt_lock_memory, NULL);
+	/*
+	 * Lock chipset memory registers to protect SMM.
+	 * When SkipMpInit=0, this is done by FSP.
+	 */
+	if (!CONFIG(USE_INTEL_FSP_MP_INIT))
+		cpu_lt_lock_memory();
 }
 
 static void soc_finalize(void *unused)

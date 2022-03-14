@@ -13,22 +13,28 @@ config BOARD_PRODRIVE_HERMES_BASEBOARD
 	select MAINBOARD_HAS_LPC_TPM
 	select INTEL_GMA_HAVE_VBT
 	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
-	select AZALIA_PLUGIN_SUPPORT
 	select ONBOARD_VGA_IS_PRIMARY
-	select HAVE_ACPI_RESUME
+	select SMBIOS_TYPE41_PROVIDED_BY_DEVTREE
+	select HAVE_ACPI_RESUME if !HERMES_USES_SPS_FIRMWARE
+	select DISABLE_ACPI_HIBERNATE if HERMES_USES_SPS_FIRMWARE
 
 if BOARD_PRODRIVE_HERMES_BASEBOARD
+
+config HERMES_USES_SPS_FIRMWARE
+	bool "Build for use with SPS (Server Platform Services) firmware"
+	help
+	  Depending on the intended use case, the Hermes mainboard can use either
+	  CSME or SPS firmware SKUs. Choose this option if using SPS firmware, as
+	  SPS doesn't support ACPI S3 and S4 sleep states.
 
 config MAINBOARD_FAMILY
 	string
 	default "PRODRIVE_HERMES_SERIES"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Hermes CFL"
 
 config MAINBOARD_DIR
-	string
 	default "prodrive/hermes"
 
 config PCIEXP_L1_SUB_STATE
@@ -39,21 +45,9 @@ config PCIEXP_CLK_PM
 	bool
 	default n
 
-config VARIANT_DIR
-	string
-	default "baseboard"	if BOARD_PRODRIVE_HERMES_BASEBOARD
-
 config MAX_CPUS
 	int
 	default 16
-
-config OVERRIDE_DEVICETREE
-	string
-	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
-
-config DIMM_SPD_SIZE
-	int
-	default 512
 
 config CONSOLE_POST
 	bool
@@ -64,7 +58,6 @@ config POST_IO
 	default n
 
 config CBFS_SIZE
-	hex
 	default 0x900000
 
 endif # BOARD_PRODRIVE_HERMES_BASEBOARD

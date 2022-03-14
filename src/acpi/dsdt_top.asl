@@ -2,9 +2,8 @@
 
 #include <acpi/acpigen_extern.asl>
 
-#if CONFIG(CHROMEOS)
+#if CONFIG(CHROMEOS_NVS)
 /* Chrome OS specific */
-#include <vendorcode/google/chromeos/acpi/gnvs.asl>
 #include <vendorcode/google/chromeos/acpi/chromeos.asl>
 #endif
 
@@ -31,13 +30,13 @@ Method (_PIC, 1)
 	PICM = Arg0
 }
 
-#if CONFIG(MMCONF_SUPPORT)
+#if CONFIG(ECAM_MMCONF_SUPPORT)
 Scope(\_SB) {
 	/* Base address of PCIe config space */
-	Name(PCBA, CONFIG_MMCONF_BASE_ADDRESS)
+	Name(PCBA, CONFIG_ECAM_MMCONF_BASE_ADDRESS)
 
 	/* Length of PCIe config space, 1MB each bus */
-	Name(PCLN, CONFIG_MMCONF_LENGTH)
+	Name(PCLN, CONFIG_ECAM_MMCONF_LENGTH)
 
 	/* PCIe Configuration Space */
 	OperationRegion(PCFG, SystemMemory, PCBA, PCLN) /* Each bus consumes 1MB */

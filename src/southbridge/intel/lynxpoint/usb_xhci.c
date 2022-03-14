@@ -11,8 +11,6 @@
 #include "iobp.h"
 #include "pch.h"
 
-typedef struct southbridge_intel_lynxpoint_config config_t;
-
 #ifdef __SIMPLE_DEVICE__
 static u8 *usb_xhci_mem_base(pci_devfn_t dev)
 #else
@@ -28,18 +26,19 @@ static u8 *usb_xhci_mem_base(struct device *dev)
 	return (u8 *)(mem_base & ~0xf);
 }
 
-#ifdef __SIMPLE_DEVICE__
-static int usb_xhci_port_count_usb3(pci_devfn_t dev)
-#else
-static int usb_xhci_port_count_usb3(struct device *dev)
-#endif
+static int usb_xhci_port_count_usb3(u8 *mem_base)
 {
+	if (!mem_base) {
+		/* Do not proceed if BAR is invalid */
+		return 0;
+	}
+
 	if (pch_is_lp()) {
 		/* LynxPoint-LP has 4 SS ports */
 		return 4;
 	}
-		/* LynxPoint-H can have 0, 2, 4, or 6 SS ports */
-	u8 *mem_base = usb_xhci_mem_base(dev);
+
+	/* LynxPoint-H can have 0, 2, 4, or 6 SS ports */
 	u32 fus = read32(mem_base + XHCI_USB3FUS);
 	fus >>= XHCI_USB3FUS_SS_SHIFT;
 	fus &= XHCI_USB3FUS_SS_MASK;
@@ -87,10 +86,10 @@ static void usb_xhci_reset_usb3(struct device *dev, int all)
 {
 	u32 status, port_disabled;
 	int timeout, port;
-	int port_count = usb_xhci_port_count_usb3(dev);
 	u8 *mem_base = usb_xhci_mem_base(dev);
+	int port_count = usb_xhci_port_count_usb3(mem_base);
 
-	if (!mem_base || !port_count)
+	if (!port_count)
 		return;
 
 	/* Get mask of disabled ports */
@@ -276,7 +275,7 @@ static void usb_xhci_init(struct device *dev)
 {
 	u32 reg32;
 	u8 *mem_base = usb_xhci_mem_base(dev);
-	config_t *config = dev->chip_info;
+	struct southbridge_intel_lynxpoint_config *config = dev->chip_info;
 
 	/* D20:F0:74h[1:0] = 00b (set D0 state) */
 	pci_update_config16(dev, XHCI_PWR_CTL_STS, ~PWR_CTL_SET_MASK, PWR_CTL_SET_D0);

@@ -4,11 +4,14 @@
 #define _SOC_CHIP_H_
 
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <drivers/intel/gma/gma.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/gspi.h>
+#include <intelblocks/lpc_lib.h>
 #include <intelblocks/pcie_rp.h>
 #include <intelblocks/power_limit.h>
+#include <intelblocks/tcss.h>
 #include <soc/gpe.h>
 #include <soc/gpio.h>
 #include <soc/pch.h>
@@ -23,11 +26,15 @@
 #define MAX_HD_AUDIO_SSP_LINKS  6
 
 /* The first two are for TGL-U */
-#define POWER_LIMITS_U_2_CORE	0
-#define POWER_LIMITS_U_4_CORE	1
-#define POWER_LIMITS_Y_2_CORE	2
-#define POWER_LIMITS_Y_4_CORE	3
-#define POWER_LIMITS_MAX	4
+enum soc_intel_tigerlake_power_limits {
+	POWER_LIMITS_U_2_CORE,
+	POWER_LIMITS_U_4_CORE,
+	POWER_LIMITS_Y_2_CORE,
+	POWER_LIMITS_Y_4_CORE,
+	POWER_LIMITS_H_6_CORE,
+	POWER_LIMITS_H_8_CORE,
+	POWER_LIMITS_MAX
+};
 
 /*
  * Enable External V1P05 Rail in: BIT0:S0i1/S0i2,
@@ -114,6 +121,9 @@ struct soc_intel_tigerlake_config {
 	uint8_t pmc_gpe0_dw1; /* GPE0_63_32 STS/EN */
 	uint8_t pmc_gpe0_dw2; /* GPE0_95_64 STS/EN */
 
+	/* LPC fixed enables and ranges */
+	uint32_t lpc_ioe;
+
 	/* Generic IO decode ranges */
 	uint32_t gen1_dec;
 	uint32_t gen2_dec;
@@ -174,6 +184,10 @@ struct soc_intel_tigerlake_config {
 	uint16_t usb2_wake_enable_bitmap;
 	/* Wake Enable Bitmap for USB3 ports */
 	uint16_t usb3_wake_enable_bitmap;
+	/* PCH USB2 PHY Power Gating disable */
+	uint8_t usb2_phy_sus_pg_disable;
+	/* Program OC pins for TCSS */
+	struct tcss_port_config tcss_ports[MAX_TYPE_C_PORTS];
 
 	/*
 	 * Acoustic Noise Mitigation
@@ -184,25 +198,23 @@ struct soc_intel_tigerlake_config {
 
 	/*
 	 * Offset 0x054B - Disable Fast Slew Rate for Deep Package
-	 * C States for VR domains. Disable Fast Slew Rate for Deep
-	 * Package C States based on Acoustic Noise Mitigation feature
-	 * enabled. The domains are IA,GT,SA,VLCC and FIVR.
+	 * C States for VCCin in VR domain. Disable Fast Slew Rate
+	 * for Deep Package C States based on Acoustic Noise
+	 * Mitigation feature enabled.
 	 * 0 - False
 	 * 1 - True
 	 */
-	uint8_t FastPkgCRampDisable[VR_DOMAIN_MAX];
+	uint8_t FastPkgCRampDisable;
 
 	/*
 	 * Offset 0x0550 - Slew Rate configuration for Deep Package
-	 * C States for VR domains. Slew Rate configuration for Deep
-	 * Package C States for VR domains based on Acoustic Noise
-	 * Mitigation feature enabled. The domains are IA,GT,SA,VLCC and FIVR.
-	 * Slew rates are defined as enum slew_rate.
+	 * C States for VCCin in VR domain. Slew Rate configuration
+	 * for Deep Package C States for VR domain based on Acoustic
+	 * Noise Mitigation feature enabled.
 	 */
-	uint8_t SlowSlewRate[VR_DOMAIN_MAX];
+	uint8_t SlowSlewRate;
 
 	/* SATA related */
-	uint8_t SataEnable;
 	uint8_t SataMode;
 	uint8_t SataSalpSupport;
 	uint8_t SataPortsEnable[8];
@@ -236,13 +248,15 @@ struct soc_intel_tigerlake_config {
 	/* PCIe Root Ports */
 	uint8_t PcieRpEnable[CONFIG_MAX_ROOT_PORTS];
 	uint8_t PcieRpHotPlug[CONFIG_MAX_ROOT_PORTS];
+	/* Implemented as slot or built-in? */
+	uint8_t PcieRpSlotImplemented[CONFIG_MAX_ROOT_PORTS];
 	/* PCIe output clocks type to PCIe devices.
 	 * 0-23: PCH rootport, 0x70: LAN, 0x80: unspecified but in use,
 	 * 0xFF: not used */
-	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCKS];
+	uint8_t PcieClkSrcUsage[CONFIG_MAX_PCIE_CLOCK_SRC];
 	/* PCIe ClkReq-to-ClkSrc mapping, number of clkreq signal assigned to
 	 * clksrc. */
-	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCKS];
+	uint8_t PcieClkSrcClkReq[CONFIG_MAX_PCIE_CLOCK_SRC];
 
 	/* Probe CLKREQ# signal before enabling CLKREQ# based power management.*/
 	uint8_t PcieRpClkReqDetect[CONFIG_MAX_ROOT_PORTS];
@@ -259,24 +273,15 @@ struct soc_intel_tigerlake_config {
 	/* PCIE RP Advanced Error Report: Enable (1) / Disable (0) */
 	uint8_t PcieRpAdvancedErrorReporting[CONFIG_MAX_ROOT_PORTS];
 
-	/* SMBus */
-	uint8_t SmbusEnable;
-
 	/* Gfx related */
 	uint8_t SkipExtGfxScan;
-
-	uint8_t Device4Enable;
-
-	/* HeciEnabled decides the state of Heci1 at end of boot
-	 * Setting to 0 (default) disables Heci1 and hides the device from OS */
-	uint8_t HeciEnabled;
 
 	/* Enable/Disable EIST. 1b:Enabled, 0b:Disabled */
 	uint8_t eist_enable;
 
 	/* Enable C6 DRAM */
 	uint8_t enable_c6dram;
-	uint8_t PmTimerDisabled;
+
 	/*
 	 * SerialIO device mode selection:
 	 * PchSerialIoDisabled,
@@ -316,6 +321,9 @@ struct soc_intel_tigerlake_config {
 		DEBUG_INTERFACE_TRACEHUB = (1 << 5),
 	} debug_interface_flag;
 
+	/* CNVi BT Core Enable/Disable */
+	bool CnviBtCore;
+
 	/* CNVi BT Audio Offload: Enable/Disable BT Audio Offload. */
 	bool CnviBtAudioOffload;
 
@@ -331,17 +339,14 @@ struct soc_intel_tigerlake_config {
 	uint8_t UsbTcPortEn;
 
 	/*
-	 * IOM Port Config
-	 * If a port orientation needs to be controlled by the SOC this setting must be
-	 * updated to reflect the correct GPIOs being used for the SOC port flipping.
-	 * There are 4 ports each with a pair of GPIOs for Pull Up and Pull Down
-	 * 0,1 are pull up and pull down for port 0
-	 * 2,3 are pull up and pull down for port 1
-	 * 4,5 are pull up and pull down for port 2
-	 * 6,7 are pull up and pull down for port 3
-	 * values to be programmed correspond to the GPIO family and offsets
+	 * These GPIOs will be programmed by the IOM to handle biasing of the
+	 * Type-C aux (SBU) signals when certain alternate modes are used.
+	 * `pad_auxn_dc` should be assigned to the GPIO pad providing negative
+	 * bias (name usually contains `AUXN_DC` or `AUX_N`); similarly,
+	 * `pad_auxp_dc` should be assigned to the GPIO providing positive bias
+	 * (name often contains `AUXP_DC` or `_AUX_P`).
 	 */
-	uint32_t IomTypeCPortPadCfg[8];
+	struct typec_aux_bias_pads typec_aux_bias_pads[MAX_TYPE_C_PORTS];
 
 	/*
 	 * SOC Aux orientation override:
@@ -520,6 +525,9 @@ struct soc_intel_tigerlake_config {
 	 *
 	 */
 	bool external_bypass;
+
+	/* i915 struct for GMA backlight control */
+	struct i915_gpu_controller_info gfx;
 };
 
 typedef struct soc_intel_tigerlake_config config_t;

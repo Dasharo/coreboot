@@ -12,6 +12,8 @@ settings. `Perl`
 * __apcb__ - AMD PSP Control Block tools
 	* _apcb_edit.py_ - This tool allows patching an existing APCB
 binary with specific SPDs and GPIO selection pins. `Python3`
+	* _apcb_v3_edit.py_ - This tool allows patching an existing APCB V3
+binary with specific SPDs. `Python3`
 * __archive__ - Concatenate files and create an archive `C`
 * __autoport__ - Automated porting coreboot to Sandy Bridge/Ivy Bridge
 platforms `Go`
@@ -57,7 +59,7 @@ even if hidden `C`
 hardware configuration (register contents, MSRs, etc). `C`
 * __intelvbttool__ - Parse VBT from VGA BIOS `C`
 * __ipqheader__
-	* _createxbl.py_ - Concatentates XBL segments into one ELF
+	* _createxbl.py_ - Concatenates XBL segments into one ELF
 image `Python`
 	* _ipqheader.py_ - Returns a packed MBN header image with the
 specified base and size `Python`

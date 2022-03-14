@@ -50,6 +50,13 @@ CFLAGS_x86_32	+=
 CFLAGS_x86_64	+= -mcmodel=large -mno-red-zone
 CFLAGS_ppc64	+=
 
+GCC_ADAFLAGS_arm	+=
+GCC_ADAFLAGS_arm64	+= -mgeneral-regs-only
+GCC_ADAFLAGS_riscv	+=
+GCC_ADAFLAGS_x86_32	+=
+GCC_ADAFLAGS_x86_64	+= -mcmodel=large -mno-red-zone
+GCC_ADAFLAGS_ppc64	+=
+
 # Some boards only provide 2K stacks, so storing lots of data there leads to
 # problems. Since C rules don't allow us to statically determine the maximum
 # stack use, we use 1.5K as heuristic, assuming that we typically have lots
@@ -101,7 +108,8 @@ standard-archs = $(sort $(foreach stagearch, \
 # e.g.: smm special class uses i386 as compiler set
 define create_class_compiler
 $(if $(2),,$(warning *** The toolchain architecture for $(1) is unknown.) \
-	$(error Check your .config file for CONFIG_ARCH_$(1)_* settings))
+	$(warning CONFIG_ARCH_$(1)_* settings in $(DOTCONFIG):) \
+	$(error $(shell grep CONFIG_ARCH_$(1)_ $(DOTCONFIG))))
 CC_$(1) := $(CC_$(2))
 GCC_$(1) := $(GCC_CC_$(2))
 LD_$(1) := $(LD_$(2))

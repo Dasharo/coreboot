@@ -7,6 +7,7 @@ subdirs-y += intel
 subdirs-y += ti
 subdirs-$(CONFIG_ARCH_X86) += x86
 subdirs-$(CONFIG_CPU_QEMU_X86) += qemu-x86
+subdirs-$(CONFIG_CPU_POWER9) += power9
 
 $(eval $(call create_class_compiler,cpu_microcode,x86_32))
 ################################################################################
@@ -56,7 +57,12 @@ $(obj)/cpu_microcode_blob.bin: $$(wildcard $$(cpu_microcode_bins))
 
 cpu_microcode_blob.bin-file ?= $(obj)/cpu_microcode_blob.bin
 cpu_microcode_blob.bin-type := microcode
+# The AMD LPC SPI DMA controller requires source files to be 64 byte aligned.
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_LPC_SPI_DMA),y)
+cpu_microcode_blob.bin-align := 64
+else
 cpu_microcode_blob.bin-align := 16
+endif
 
 ifneq ($(CONFIG_CPU_MICROCODE_CBFS_LOC),)
 cpu_microcode_blob.bin-COREBOOT-position := $(CONFIG_CPU_MICROCODE_CBFS_LOC)

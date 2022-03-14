@@ -1,13 +1,22 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <boot_device.h>
-#include <cbfs.h>
 #include <fmap.h>
+#include <fmap_config.h>
 #include <commonlib/helpers.h>
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <smmstore.h>
 #include <types.h>
+
+#define SMMSTORE_REGION "SMMSTORE"
+
+
+_Static_assert(IS_ALIGNED(FMAP_SECTION_SMMSTORE_START, SMM_BLOCK_SIZE),
+	       "SMMSTORE FMAP region not aligned to 64K");
+
+_Static_assert(SMM_BLOCK_SIZE <= FMAP_SECTION_SMMSTORE_SIZE,
+	       "SMMSTORE FMAP region must be at least 64K");
 
 /*
  * The region format is still not finalized, but so far it looks like this:
@@ -33,26 +42,11 @@
 
 static enum cb_err lookup_store_region(struct region *region)
 {
-	if (CONFIG(SMMSTORE_IN_CBFS)) {
-		struct cbfsf file;
-		if (cbfs_locate_file_in_region(&file,
-					       CONFIG_SMMSTORE_REGION,
-					       CONFIG_SMMSTORE_FILENAME, NULL) < 0) {
-			printk(BIOS_WARNING,
-			       "smm store: Unable to find SMM store file in region '%s'\n",
-			       CONFIG_SMMSTORE_REGION);
-			return CB_ERR;
-		}
-		struct region_device rdev;
-		cbfs_file_data(&rdev, &file);
-		*region = *region_device_region(&rdev);
-	} else {
-		if (fmap_locate_area(CONFIG_SMMSTORE_REGION, region)) {
-			printk(BIOS_WARNING,
-			       "smm store: Unable to find SMM store FMAP region '%s'\n",
-			       CONFIG_SMMSTORE_REGION);
-			return CB_ERR;
-		}
+	if (fmap_locate_area(SMMSTORE_REGION, region)) {
+		printk(BIOS_WARNING,
+		       "smm store: Unable to find SMM store FMAP region '%s'\n",
+		       SMMSTORE_REGION);
+		return CB_ERR;
 	}
 
 	return CB_SUCCESS;
@@ -267,14 +261,14 @@ int smmstore_clear_region(void)
 /* Implementation of Version 2 */
 
 static bool store_initialized;
-static struct mem_region_device mdev_com_buf;
+static struct region_device mdev_com_buf;
 
 static int smmstore_rdev_chain(struct region_device *rdev)
 {
 	if (!store_initialized)
 		return -1;
 
-	return rdev_chain_full(rdev, &mdev_com_buf.rdev);
+	return rdev_chain_full(rdev, &mdev_com_buf);
 }
 
 /**
@@ -289,7 +283,7 @@ int smmstore_init(void *buf, size_t len)
 	if (store_initialized)
 		return -1;
 
-	mem_region_device_rw_init(&mdev_com_buf, buf, len);
+	rdev_chain_mem_rw(&mdev_com_buf, buf, len);
 
 	store_initialized = true;
 

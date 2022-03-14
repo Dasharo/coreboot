@@ -2,6 +2,9 @@
 
 if BOARD_PORTWELL_M107
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_8192
@@ -9,8 +12,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_OPTION_TABLE
 	select SOC_INTEL_BRASWELL
 	select PCIEXP_L1_SUB_STATE
-	select HAVE_FSP_BIN
-	select CACHE_MRC_SETTINGS
 	select DISABLE_HPET
 	select HAVE_SPD_IN_CBFS
 
@@ -36,16 +37,13 @@ config ONBOARD_MEM_KINGSTON
 endchoice
 
 config MAINBOARD_DIR
-	string
 	default "portwell/m107"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "PQ7-M107"
 
 config CBFS_SIZE
-	hex
-	default 0x00800000
+	default 0x00600000
 
 config MRC_SETTINGS_CACHE_SIZE
 	hex

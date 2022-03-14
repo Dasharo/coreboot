@@ -5,6 +5,7 @@
 #include <device/pci.h>
 #include <fsp/api.h>
 #include <fsp/util.h>
+#include <option.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/xdci.h>
 #include <soc/intel/common/vbt.h>
@@ -12,7 +13,7 @@
 #include <soc/ramstage.h>
 #include <soc/soc_chip.h>
 #include <string.h>
-#include <intelblocks/mp_init.h>
+#include <types.h>
 #include <fsp/ppi/mp_service_ppi.h>
 
 static void parse_devicetree(FSP_S_CONFIG *params)
@@ -33,28 +34,12 @@ static void parse_devicetree(FSP_S_CONFIG *params)
 		params->SerialIoUartMode[i] = config->SerialIoUartMode[i];
 }
 
-static const pci_devfn_t serial_io_dev[] = {
-	PCH_DEVFN_I2C0,
-	PCH_DEVFN_I2C1,
-	PCH_DEVFN_I2C2,
-	PCH_DEVFN_I2C3,
-	PCH_DEVFN_I2C4,
-	PCH_DEVFN_I2C5,
-	PCH_DEVFN_GSPI0,
-	PCH_DEVFN_GSPI1,
-	PCH_DEVFN_GSPI2,
-	PCH_DEVFN_UART0,
-	PCH_DEVFN_UART1,
-	PCH_DEVFN_UART2
-};
-
 /* UPD parameters to be initialized before SiliconInit */
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 {
 	int i;
 	FSP_S_CONFIG *params = &supd->FspsConfig;
 
-	struct device *dev;
 	struct soc_intel_icelake_config *config;
 	config = config_of_soc();
 
@@ -70,11 +55,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	mainboard_silicon_init_params(params);
 
-	dev = pcidev_path_on_root(SA_DEVFN_IGD);
-	if (CONFIG(RUN_FSP_GOP) && dev && dev->enabled)
-		params->PeiGraphicsPeimInit = 1;
-	else
-		params->PeiGraphicsPeimInit = 0;
+	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	params->PavpEnable = CONFIG(PAVP);
 
@@ -83,11 +64,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 
 	params->CnviBtAudioOffload = config->CnviBtAudioOffload;
 	/* SATA */
-	dev = pcidev_on_root(PCH_DEV_SLOT_SATA, 0);
-	if (!dev)
-		params->SataEnable = 0;
-	else {
-		params->SataEnable = dev->enabled;
+	params->SataEnable = is_devfn_enabled(PCH_DEVFN_SATA);
+	if (params->SataEnable) {
 		params->SataMode = config->SataMode;
 		params->SataSalpSupport = config->SataSalpSupport;
 		memcpy(params->SataPortsEnable, config->SataPortsEnable,
@@ -97,11 +75,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* Lan */
-	dev = pcidev_on_root(PCH_DEV_SLOT_ESPI, 6);
-	if (!dev)
-		params->PchLanEnable = 0;
-	else
-		params->PchLanEnable = dev->enabled;
+	params->PchLanEnable = is_devfn_enabled(PCH_DEVFN_GBE);
 
 	/* Audio */
 	params->PchHdaDspEnable = config->PchHdaDspEnable;
@@ -120,8 +94,18 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
 	/* Legacy 8254 timer support */
-	params->Enable8254ClockGating = !CONFIG(USE_LEGACY_8254_TIMER);
-	params->Enable8254ClockGatingOnS3 = !CONFIG(USE_LEGACY_8254_TIMER);
+	bool use_8254 = get_uint_option("legacy_8254_timer", CONFIG(USE_LEGACY_8254_TIMER));
+	params->Enable8254ClockGating = !use_8254;
+	params->Enable8254ClockGatingOnS3 = !use_8254;
+
+	/*
+	 * Legacy PM ACPI Timer (and TCO Timer)
+	 * This *must* be 1 in any case to keep FSP from
+	 *  1) enabling PM ACPI Timer emulation in uCode.
+	 *  2) disabling the PM ACPI Timer.
+	 * We handle both by ourself!
+	 */
+	params->EnableTcoTimer = 1;
 
 	/* S0ix */
 	params->PchPmSlpS0Enable = config->s0ix_enable;
@@ -164,11 +148,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 		}
 	}
 
-	/* Enable xDCI controller if enabled in devicetree and allowed */
-	dev = pcidev_on_root(PCH_DEV_SLOT_XHCI, 1);
-	if (!xdci_can_enable())
-		dev->enabled = 0;
-	params->XdciEnable = dev->enabled;
+	params->XdciEnable = xdci_can_enable(PCH_DEVFN_USBOTG);
 
 	/* PCI Express */
 	for (i = 0; i < ARRAY_SIZE(config->PcieClkSrcUsage); i++) {
@@ -181,11 +161,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	       sizeof(config->PcieClkSrcClkReq));
 
 	/* eMMC */
-	dev = pcidev_on_root(PCH_DEV_SLOT_STORAGE, 0);
-	if (!dev)
-		params->ScsEmmcEnabled = 0;
-	else {
-		params->ScsEmmcEnabled = dev->enabled;
+	params->ScsEmmcEnabled = is_devfn_enabled(PCH_DEVFN_EMMC);
+	if (params->ScsEmmcEnabled) {
 		params->ScsEmmcHs400Enabled = config->ScsEmmcHs400Enabled;
 		params->EmmcUseCustomDlls = config->EmmcUseCustomDlls;
 		if (config->EmmcUseCustomDlls == 1) {
@@ -205,14 +182,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* SD */
-	dev = pcidev_on_root(PCH_DEV_SLOT_XHCI, 5);
-	if (!dev)
-		params->ScsSdCardEnabled = 0;
-	else {
-		params->ScsSdCardEnabled = dev->enabled;
-		params->SdCardPowerEnableActiveHigh =
-				config->SdCardPowerEnableActiveHigh;
-	}
+	params->ScsSdCardEnabled = is_devfn_enabled(PCH_DEVFN_SDCARD);
+	params->SdCardPowerEnableActiveHigh = config->SdCardPowerEnableActiveHigh;
 
 	params->Heci3Enabled = config->Heci3Enabled;
 	params->Device4Enable = config->Device4Enable;
@@ -222,11 +193,4 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 __weak void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	printk(BIOS_DEBUG, "WEAK: %s/%s called\n", __FILE__, __func__);
-}
-
-/* Return list of SOC LPSS controllers */
-const pci_devfn_t *soc_lpss_controllers_list(size_t *size)
-{
-	*size = ARRAY_SIZE(serial_io_dev);
-	return serial_io_dev;
 }

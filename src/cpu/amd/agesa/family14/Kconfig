@@ -2,12 +2,5 @@
 
 config CPU_AMD_AGESA_FAMILY14
 	bool
+	select NO_SMM
 	select X86_AMD_FIXED_MTRRS
-
-if CPU_AMD_AGESA_FAMILY14
-
-config CPU_ADDR_BITS
-	int
-	default 36
-
-endif

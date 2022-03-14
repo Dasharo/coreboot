@@ -1,5 +1,8 @@
 if BOARD_FACEBOOK_MONOLITH
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_16384
@@ -13,20 +16,16 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_GMA_HAVE_VBT
 	select VPD
 
+config DISABLE_HECI1_AT_PRE_BOOT
+	default y
+
 config CBFS_SIZE
-	hex "CBFS_SIZE"
 	default 0x00900000
 
-config IRQ_SLOT_COUNT
-	int
-	default 18
-
 config MAINBOARD_DIR
-	string
 	default "facebook/monolith"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Monolith"
 
 config MAINBOARD_FAMILY
@@ -57,7 +56,6 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	default 0xd00
 
 config DIMM_SPD_SIZE
-	int
 	default 512  #DDR4
 
 config UART_FOR_CONSOLE
@@ -65,12 +63,7 @@ config UART_FOR_CONSOLE
 	default 0
 
 config DIMM_MAX
-	int
 	default 2
-
-config TPM_INIT
-	bool
-	default n
 
 config MAINBOARD_SUPPORTS_SKYLAKE_CPU
 	bool
@@ -80,13 +73,14 @@ config MAINBOARD_SUPPORTS_KABYLAKE_QUAD
 	bool
 	default n
 
+config VBOOT
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_SLOTS_RW_A
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select VBOOT_ENABLE_CBFS_FALLBACK
+
 config RW_REGION_ONLY
 	string "Files in RW only"
-
-config VBOOT_ENABLE_CBFS_FALLBACK
-	bool
-	default y
-	depends on VBOOT
 
 config VBOOT_ALWAYS_ALLOW_UDC
 	def_bool y

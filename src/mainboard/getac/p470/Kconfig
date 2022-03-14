@@ -23,19 +23,13 @@ config BOARD_SPECIFIC_OPTIONS
 	select I945_LVDS
 
 config MAINBOARD_DIR
-	string
 	default "getac/p470"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "P470"
 
 config IRQ_SLOT_COUNT
 	int
 	default 18
-
-config VGA_BIOS_FILE
-	string
-	default "getac-pci8086,27a2.rom"
 
 endif # BOARD_GETAC_P470

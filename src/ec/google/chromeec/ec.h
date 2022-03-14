@@ -9,6 +9,7 @@
 #include <types.h>
 #include <device/device.h>
 #include "ec_commands.h"
+#include <device/usbc_mux.h>
 
 /* Fill in base and size of the IO port resources used. */
 void google_chromeec_ioport_range(uint16_t *base, size_t *size);
@@ -19,24 +20,39 @@ uint64_t google_chromeec_get_wake_mask(void);
 int google_chromeec_set_sci_mask(uint64_t mask);
 int google_chromeec_set_smi_mask(uint64_t mask);
 int google_chromeec_set_wake_mask(uint64_t mask);
-uint8_t google_chromeec_get_event(void);
+enum host_event_code google_chromeec_get_event(void);
 
 /* Check if EC supports feature EC_FEATURE_UNIFIED_WAKE_MASKS */
 bool google_chromeec_is_uhepi_supported(void);
 int google_ec_running_ro(void);
 enum ec_image google_chromeec_get_current_image(void);
 void google_chromeec_init(void);
-int google_chromeec_pd_get_amode(uint16_t svid);
 /* Check for the current mux state in EC
  * in: int port physical port number of the type-c port
  * out: uint8_t flags representing the status of the mux such as
  *	usb capability, dp capability, cable type, etc
  */
 int google_chromeec_usb_get_pd_mux_info(int port, uint8_t *flags);
-/* Returns data role and type of device connected */
-int google_chromeec_usb_pd_control(int port, bool *ufp, bool *dbg_acc,
-					uint8_t *dp_mode);
-int google_chromeec_wait_for_displayport(long timeout);
+/* Poll (up to `timeout_ms` ms) for DisplayPort to be ready
+ * Return:	-1: Error. 0: Timeout.
+ *              >=1: Bitmask of the ports that DP device is connected
+ */
+int google_chromeec_wait_for_displayport(long timeout_ms);
+/* Poll (up to `timeout_ms` ms) for a Hot-Plug Detect (HPD)
+ * event on the specified port.
+ * Return: 0 on HPD ready, -1 on timeout */
+int google_chromeec_wait_for_dp_hpd(int port, long timeout_ms);
+/* Send command to EC to request to enter DisplayPort ALT mode on the
+ * specified port.
+ * Return: 0 on success, -1 on error */
+int google_chromeec_typec_control_enter_dp_mode(int port);
+/*
+ * Obtain any USB-C mux data needed for the specified port
+ * in: int port physical port number of the type-c port
+ * out: struct usbc_mux_info mux_info stores USB-C mux data
+ * Return: 0 on success, -1 on error
+ */
+int google_chromeec_get_usbc_mux_info(int port, struct usbc_mux_info *mux_info);
 
 /* Device events */
 uint64_t google_chromeec_get_device_enabled_events(void);
@@ -161,7 +177,7 @@ int crosec_command_proto(struct chromeec_command *cec_command,
 			 crosec_io_t crosec_io, void *context);
 
 /**
- * Performs light verification of the EC<->AP communcation channel.
+ * Performs light verification of the EC<->AP communication channel.
  *
  * @return		0 on success, -1 on error
  */
@@ -330,7 +346,7 @@ struct usb_pd_port_caps {
  * Get role-based capabilities for a USB-PD port
  *
  * @param port			Which port to get information about
- * @param *power_role_cap	The power-role capabillity of the port
+ * @param *power_role_cap	The power-role capability of the port
  * @param *try_power_role_cap	The Try-power-role capability of the port
  * @param *data_role_cap	The data role capability of the port
  * @param *port_location	Location of the port on the device

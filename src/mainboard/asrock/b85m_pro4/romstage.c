@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <stdint.h>
 #include <northbridge/intel/haswell/haswell.h>
 #include <northbridge/intel/haswell/raminit.h>
 #include <southbridge/intel/lynxpoint/pch.h>
@@ -17,15 +16,15 @@ void mainboard_config_rcba(void)
 	RCBA16(D20IR) = DIR_ROUTE(PIRQA, PIRQB, PIRQC, PIRQD);
 }
 
-void mb_get_spd_map(uint8_t spd_map[4])
+void mb_get_spd_map(struct spd_info *spdi)
 {
-	spd_map[0] = 0xa0;
-	spd_map[1] = 0xa2;
-	spd_map[2] = 0xa4;
-	spd_map[3] = 0xa6;
+	spdi->addresses[0] = 0x50;
+	spdi->addresses[1] = 0x51;
+	spdi->addresses[2] = 0x52;
+	spdi->addresses[3] = 0x53;
 }
 
-const struct usb2_port_setting mainboard_usb2_ports[MAX_USB2_PORTS] = {
+const struct usb2_port_config mainboard_usb2_ports[MAX_USB2_PORTS] = {
 	/* Length, Enable, OCn#, Location */
 	{ 0x0040, 1, 0, USB_PORT_BACK_PANEL },
 	{ 0x0040, 1, 0, USB_PORT_BACK_PANEL },
@@ -43,7 +42,7 @@ const struct usb2_port_setting mainboard_usb2_ports[MAX_USB2_PORTS] = {
 	{ 0x0040, 1, 6, USB_PORT_BACK_PANEL },
 };
 
-const struct usb3_port_setting mainboard_usb3_ports[MAX_USB3_PORTS] = {
+const struct usb3_port_config mainboard_usb3_ports[MAX_USB3_PORTS] = {
 	{ 1, 0 },
 	{ 1, 0 },
 	{ 1, 1 },

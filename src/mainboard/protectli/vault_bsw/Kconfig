@@ -1,5 +1,8 @@
 if BOARD_PROTECTLI_FW2B || BOARD_PROTECTLI_FW4B
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_8192
@@ -14,20 +17,16 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_IT8613E
 
 config MAINBOARD_DIR
-	string
 	default "protectli/vault_bsw"
 
 config VARIANT_DIR
-	string
 	default "fw2b" if BOARD_PROTECTLI_FW2B
 	default "fw4b" if BOARD_PROTECTLI_FW4B
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "FW2B" if BOARD_PROTECTLI_FW2B
 	default "FW4B" if BOARD_PROTECTLI_FW4B
 
@@ -36,11 +35,9 @@ config MAINBOARD_VENDOR
 	default "Protectli"
 
 config DIMM_MAX
-	int
 	default 1
 
 config DIMM_SPD_SIZE
-	int
 	default 256
 
 config MAX_CPUS
@@ -49,7 +46,6 @@ config MAX_CPUS
 	default 4 if BOARD_PROTECTLI_FW4B
 
 config CBFS_SIZE
-	hex
 	default 0x500000
 
 config PXE_ROM_ID
@@ -58,13 +54,6 @@ config PXE_ROM_ID
 	default "8086,157b" if BOARD_PROTECTLI_FW4B
 
 if !RUN_FSP_GOP
-config VGA_BIOS_FILE
-	string
-	default "3rdparty/blobs/mainboard/protectli/vault_bsw/vgabios.bin"
-	help
-	  The C0 version of the video bios gets computed from this name
-	  so that they can both be added.  Only the correct one for the
-	  system will be run.
 
 config VGA_BIOS_ID
 	string

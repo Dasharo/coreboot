@@ -29,6 +29,7 @@ int print_rcba(struct pci_dev *sb)
 	case PCI_DEVICE_ID_INTEL_ICH9M:
 	case PCI_DEVICE_ID_INTEL_ICH9ME:
 	case PCI_DEVICE_ID_INTEL_ICH10:
+	case PCI_DEVICE_ID_INTEL_ICH10D:
 	case PCI_DEVICE_ID_INTEL_ICH10DO:
 	case PCI_DEVICE_ID_INTEL_ICH10R:
 	case PCI_DEVICE_ID_INTEL_NM10:
@@ -138,6 +139,8 @@ int print_rcba(struct pci_dev *sb)
 		if (read32(rcba + i))
 			printf("0x%04x: 0x%08x\n", i, read32(rcba + i));
 	}
+
+	print_iobp(sb, rcba);
 
 	unmap_physical((void *)rcba, size);
 	return 0;

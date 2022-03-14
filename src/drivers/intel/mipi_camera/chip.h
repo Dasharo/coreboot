@@ -12,8 +12,16 @@
 #define MAX_LINK_FREQ_ENTRIES	4
 #define MAX_CLK_CONFIGS		2
 #define MAX_GPIO_CONFIGS	4
-#define MAX_PWR_OPS		5
+#define MAX_PWR_OPS		6
 #define MAX_GUARDED_RESOURCES	10
+#define IMGCLKOUT_0		0
+#define IMGCLKOUT_1		1
+#define IMGCLKOUT_2		2
+#define IMGCLKOUT_3		3
+#define IMGCLKOUT_4		4
+#define IMGCLKOUT_5		5
+#define FREQ_24_MHZ		0
+#define FREQ_19_2_MHZ		1
 
 #define SEQ_OPS_CLK_ENABLE(ind, delay) \
 	{ .type = IMGCLK, .index = (ind), .action = ENABLE, .delay_ms = (delay) }
@@ -106,31 +114,31 @@ struct clk_config {
 	uint8_t clknum;
 	/* frequency setting: 0:24Mhz, 1:19.2 Mhz */
 	uint8_t freq;
-} __packed;
+};
 
 struct gpio_config {
-	uint8_t gpio_num;
-} __packed;
+	uint16_t gpio_num;
+};
 
 struct clock_ctrl_panel {
 	struct clk_config clks[MAX_CLK_CONFIGS];
-} __packed;
+};
 
 struct gpio_ctrl_panel {
 	struct gpio_config gpio[MAX_GPIO_CONFIGS];
-} __packed;
+};
 
 struct operation_type {
 	enum ctrl_type type;
 	uint8_t index;
 	enum action_type action;
 	uint32_t delay_ms;
-} __packed;
+};
 
 struct operation_seq {
 	struct operation_type ops[MAX_PWR_OPS];
 	uint8_t ops_cnt;
-} __packed;
+};
 
 struct intel_ssdb {
 	uint8_t version;			/* Current version */
@@ -247,6 +255,19 @@ struct drivers_intel_mipi_camera_config {
 	const char *vcm_compat;
 	/* Does the device have a power resource entries */
 	bool has_power_resource;
+	/* Perform low power probe */
+	bool low_power_probe;
+	/*
+	 * This will create a _DSC method in ACPI which returns an integer, to tell the kernel
+	 * the highest allowed D state for a device during probe
+	 * Number   State   Description
+	 * 0	    D0	    Device fully powered on
+	 * 1	    D1
+	 * 2	    D2
+	 * 3	    D3hot
+	 * 4	    D3cold  Off
+	 */
+	uint8_t max_dstate_for_probe;
 };
 
 #endif

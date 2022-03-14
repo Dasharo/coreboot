@@ -2,9 +2,11 @@
 
 #include <acpi/acpi.h>
 #include <baseboard/variants.h>
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <gpio.h>
 #include <soc/gpio.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
 void fill_lb_gpios(struct lb_gpios *gpios)

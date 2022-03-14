@@ -21,8 +21,8 @@
 
 #include "chip.h"
 
-/* PCH-LP redirection entries */
-#define PCH_LP_REDIR_ETR 120
+/* PCH I/O APIC redirection entries */
+#define PCH_REDIR_ETR 120
 
 /**
  * Set miscellaneous static southbridge features.
@@ -31,23 +31,10 @@
  */
 static void pch_enable_ioapic(struct device *dev)
 {
-	u32 reg32;
-
-	set_ioapic_id((void *)IO_APIC_ADDR, IO_APIC0);
-
 	/* affirm full set of redirection table entries ("write once") */
-	reg32 = io_apic_read((void *)IO_APIC_ADDR, 0x01);
+	ioapic_set_max_vectors(VIO_APIC_VADDR, PCH_REDIR_ETR);
 
-	reg32 &= ~0x00ff0000;
-	reg32 |= (PCH_LP_REDIR_ETR - 1) << 16;
-
-	io_apic_write((void *)IO_APIC_ADDR, 0x01, reg32);
-
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write((void *)IO_APIC_ADDR, 0x03, 0x01);
+	setup_ioapic((void *)IO_APIC_ADDR, IO_APIC0);
 }
 
 /* interrupt router lookup for internal devices */
@@ -548,7 +535,7 @@ static struct device_operations device_ops = {
 static const struct pci_driver lpc_driver __pci_driver = {
 	.ops = &device_ops,
 	.vendor = PCI_VENDOR_ID_INTEL,
-	.device = PCI_DEVICE_ID_INTEL_DENVERTON_LPC,
+	.device = PCI_DEVICE_ID_INTEL_DNV_LPC,
 };
 
 static void finalize_chipset(void *unused)

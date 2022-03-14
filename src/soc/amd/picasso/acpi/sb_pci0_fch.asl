@@ -2,8 +2,6 @@
 
 #include <arch/ioapic.h>
 
-External(\_SB.ALIB, MethodObj)
-
 /* System Bus */
 /*  _SB.PCI0 */
 
@@ -31,7 +29,7 @@ Name(CRES, ResourceTemplate() {
 	 * The Secondary bus range for PCI0 lets the system
 	 * know what bus values are allowed on the downstream
 	 * side of this PCI bus if there is a PCI-PCI bridge.
-	 * PCI busses can have 256 secondary busses which
+	 * PCI buses can have 256 secondary buses which
 	 * range from [0-0xFF] but they do not need to be
 	 * sequential.
 	 */
@@ -75,14 +73,14 @@ Method(_CRS, 0) {
 
 	/* Declare memory between TOM1 and MMCONF as available for PCI MMIO. */
 	MM1B = TOM1
-	Local0 = CONFIG_MMCONF_BASE_ADDRESS
+	Local0 = CONFIG_ECAM_MMCONF_BASE_ADDRESS
 	Local0 -= TOM1
 	MM1L = Local0
 
 	CreateWordField(CRES, ^PSB0._MAX, BMAX)
 	CreateWordField(CRES, ^PSB0._LEN, BLEN)
-	BMAX = CONFIG_MMCONF_BUS_NUMBER - 1
-	BLEN = CONFIG_MMCONF_BUS_NUMBER
+	BMAX = CONFIG_ECAM_MMCONF_BUS_NUMBER - 1
+	BLEN = CONFIG_ECAM_MMCONF_BUS_NUMBER
 
 	Return(CRES) /* note to change the Name buffer */
 } /* end of Method(_SB.PCI0._CRS) */

@@ -17,10 +17,8 @@
 
 static void power_control_init(struct device *dev)
 {
-	int power_on = MAINBOARD_POWER_OFF;
+	unsigned int power_on = get_uint_option("power_on_after_fail", MAINBOARD_POWER_OFF);
 	u8 value;
-
-	get_option(&power_on, "power_on_after_fail");
 
 	pnp_enter_conf_mode(dev);
 	pnp_set_logical_device(dev);
@@ -53,7 +51,7 @@ static void it8720f_init(struct device *dev)
 	switch (dev->path.pnp.device) {
 	case IT8720F_EC:
 		conf = dev->chip_info;
-		res = find_resource(dev, PNP_IDX_IO0);
+		res = probe_resource(dev, PNP_IDX_IO0);
 		if (!conf || !res)
 			break;
 		ite_ec_init(res->base, &conf->ec);

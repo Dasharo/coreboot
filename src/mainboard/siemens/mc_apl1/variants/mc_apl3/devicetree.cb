@@ -38,6 +38,22 @@ chip soc/intel/apollolake
 	# 0:HS400(Default), 1:HS200, 2:DDR50
 	register "emmc_host_max_speed" = "1"
 
+	# I2C0 controller used for RTC
+	register "common_soc_config" = "{
+		.i2c[0] = {
+			.speed = I2C_SPEED_STANDARD,
+			.rise_time_ns = 40,
+			.fall_time_ns = 10,
+			.data_hold_time_ns = 300,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_hcnt = 0x68,
+				.scl_lcnt = 0xd1,
+				.sda_hold = 0x28
+			},
+		},
+	}"
+
 	device domain 0 on
 		device pci 00.0 on  end	# - Host Bridge
 		device pci 00.1 off end	# - DPTF
@@ -51,7 +67,9 @@ chip soc/intel/apollolake
 		device pci 0e.0 on  end	# - Audio
 		device pci 0f.0 on  end	# - CSE
 		device pci 11.0 on  end	# - ISH
-		device pci 12.0 on  end	# - SATA
+		device pci 12.0 on	# - SATA
+			register "DisableSataSalpSupport" = "1"
+		end
 		device pci 13.0 on	# - RP 2 - PCIe A 0
 			register "pcie_rp_clkreq_pin[2]" = "CLKREQ_DISABLED"
 			register "pcie_rp_hotplug_enable[2]" = "0"

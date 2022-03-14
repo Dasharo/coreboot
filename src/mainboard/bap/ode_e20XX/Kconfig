@@ -2,6 +2,9 @@
 
 if BOARD_ODE_E20XX
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select CPU_AMD_AGESA_FAMILY16_KB
@@ -10,7 +13,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select DEFAULT_POST_ON_LPC
 	select HAVE_OPTION_TABLE
 	select HAVE_PIRQ_TABLE
-	select HAVE_MP_TABLE
 	select HAVE_ACPI_TABLES
 	select BOARD_ROMSIZE_KB_4096
 	select GFXUMA
@@ -18,11 +20,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SPD_IN_CBFS
 
 config MAINBOARD_DIR
-	string
 	default "bap/ode_e20XX"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ODE_E20XX"
 
 config HW_MEM_HOLE_SIZEK
@@ -64,7 +64,6 @@ config BAP_E20_DDR3_1066
 endchoice
 
 config DIMM_SPD_SIZE
-	int
 	default 128
 
 endif # BOARD_ODE_E20XX

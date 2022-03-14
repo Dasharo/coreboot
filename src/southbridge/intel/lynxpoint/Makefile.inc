@@ -30,7 +30,7 @@ ramstage-y += acpi.c
 ramstage-$(CONFIG_ELOG) += elog.c
 
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smi.c pmutil.c
-smm-y += smihandler.c me.c pch.c
+smm-y += smihandler.c pch.c
 smm-y += pmutil.c usb_ehci.c usb_xhci.c
 
 bootblock-y += early_pch.c
@@ -41,10 +41,14 @@ ifeq ($(CONFIG_INTEL_LYNXPOINT_LP),y)
 romstage-y += lp_gpio.c
 ramstage-y += lp_gpio.c
 smm-y += lp_gpio.c
+verstage-y += lp_gpio.c
+bootblock-$(CONFIG_SERIALIO_UART_CONSOLE) += uart_init.c
+bootblock-$(CONFIG_SERIALIO_UART_CONSOLE) += iobp.c
+all-$(CONFIG_SERIALIO_UART_CONSOLE) += uart.c
+smm-$(CONFIG_SERIALIO_UART_CONSOLE) += uart.c
 endif
 
-verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += pmutil.c
-verstage-$(CONFIG_VBOOT_SEPARATE_VERSTAGE) += lp_gpio.c
+verstage-y += pmutil.c
 
 CPPFLAGS_common += -I$(src)/southbridge/intel/lynxpoint/include
 

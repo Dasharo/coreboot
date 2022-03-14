@@ -32,9 +32,10 @@ enum fsp_notify_phase {
 };
 
 /* Main FSP stages */
+void preload_fspm(void);
 void fsp_memory_init(bool s3wake);
+void preload_fsps(void);
 void fsp_silicon_init(void);
-void fsp_temp_ram_exit(void);
 
 /*
  * Load FSP-S from stage cache or CBFS. This allows SoCs to load FSPS-S
@@ -48,8 +49,8 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version);
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd);
 /* Callbacks for SoC/Mainboard specific overrides */
 void platform_fsp_multi_phase_init_cb(uint32_t phase_index);
-/* Check if SoC sets EnableMultiPhaseSiliconInit UPD */
-int soc_fsp_multi_phase_init_is_enable(void);
+/* Check if MultiPhase Si Init is enabled */
+bool fsp_is_multi_phase_init_enabled(void);
 /*
  * The following functions are used when FSP_PLATFORM_MEMORY_SETTINGS_VERSION
  * is employed allowing the mainboard and SoC to supply their own version

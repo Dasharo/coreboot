@@ -6,12 +6,10 @@ chip northbridge/intel/sandybridge
 			register "acpi_c1" = "1"
 			register "acpi_c2" = "3"
 			register "acpi_c3" = "5"
-			device lapic 0x0 on end
+			device lapic 0 on end
 			device lapic 0xacac off end
 		end
 	end
-
-	register "pci_mmio_size" = "2048"
 
 	device domain 0 on
 		subsystemid 0x1043 0x844d inherit
@@ -21,7 +19,6 @@ chip northbridge/intel/sandybridge
 		device pci 02.0 on end # VGA controller
 
 		chip southbridge/intel/bd82x6x
-			register "c2_latency" = "101"
 			register "gen1_dec" = "0x00000295" # Super I/O HWM
 			register "sata_port_map" = "0x3f"
 			register "spi_lvscc" = "0x2005"

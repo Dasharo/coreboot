@@ -197,6 +197,18 @@ static int marshal_nv_define_space(struct obuf *ob,
 	return rc;
 }
 
+static int marshal_nv_setbits(struct obuf *ob,
+			      const struct tpm2_nv_setbits_cmd *command_body)
+{
+	int rc = 0;
+	const uint32_t handles[] = { TPM_RH_PLATFORM, command_body->nvIndex };
+
+	rc |= marshal_common_session_header(ob, handles, ARRAY_SIZE(handles));
+	rc |= obuf_write_be64(ob, command_body->bits);
+
+	return rc;
+}
+
 static int marshal_nv_write(struct obuf *ob,
 			    const struct tpm2_nv_write_cmd *command_body)
 {
@@ -333,6 +345,9 @@ static int marshal_cr50_vendor_command(struct obuf *ob, const void *command_body
 	case TPM2_CR50_SUB_CMD_GET_BOOT_MODE:
 		rc |= obuf_write_be16(ob, *sub_command);
 		break;
+	case TPM2_CR50_SUB_CMD_RESET_EC:
+		rc |= obuf_write_be16(ob, *sub_command);
+		break;
 	default:
 		/* Unsupported subcommand. */
 		printk(BIOS_WARNING, "Unsupported cr50 subcommand: 0x%04x\n",
@@ -381,6 +396,10 @@ int tpm_marshal_command(TPM_CC command, const void *tpm_command_body, struct obu
 
 	case TPM2_NV_DefineSpace:
 		rc |= marshal_nv_define_space(ob, tpm_command_body);
+		break;
+
+	case TPM2_NV_SetBits:
+		rc |= marshal_nv_setbits(ob, tpm_command_body);
 		break;
 
 	case TPM2_NV_Write:
@@ -560,6 +579,8 @@ static int unmarshal_vendor_command(struct ibuf *ib,
 		return ibuf_read_be8(ib, &vcr->tpm_mode);
 	case TPM2_CR50_SUB_CMD_GET_BOOT_MODE:
 		return ibuf_read_be8(ib, &vcr->boot_mode);
+	case TPM2_CR50_SUB_CMD_RESET_EC:
+		break;
 	default:
 		printk(BIOS_ERR,
 		       "%s:%d - unsupported vendor command %#04x!\n",
@@ -613,6 +634,7 @@ struct tpm2_response *tpm_unmarshal_response(TPM_CC command, struct ibuf *ib)
 	case TPM2_Clear:
 	case TPM2_ClearControl:
 	case TPM2_NV_DefineSpace:
+	case TPM2_NV_SetBits:
 	case TPM2_NV_Write:
 	case TPM2_NV_WriteLock:
 	case TPM2_PCR_Extend:
@@ -658,7 +680,7 @@ struct tpm2_response *tpm_unmarshal_response(TPM_CC command, struct ibuf *ib)
 		return NULL;
 	}
 	if (rc)
-		printk(BIOS_WARNING, "Warning: %s had one or more failures.\n",
+		printk(BIOS_WARNING, "%s had one or more failures.\n",
 					__func__);
 
 	/* The entire message have been parsed. */

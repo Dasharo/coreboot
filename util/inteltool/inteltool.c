@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <errno.h>
+#include <limits.h>
 #include "inteltool.h"
 #include "pcr.h"
 
@@ -21,6 +22,7 @@
 
 enum long_only_opts {
 	LONG_OPT_PCR = 0x100,
+	LONG_OPT_RANGE = 0x101,
 };
 
 /*
@@ -142,9 +144,26 @@ static const struct {
 	  "10th generation (Comet Lake family) Core Processor (Mobile)" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_HEWITTLAKE,
 	  "Xeon E7 v4/Xeon E5 v4/Xeon E3 v4/Xeon D (Hewitt Lake)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_SAPPHIRERAPIDS_SP,
+	  "Xeon Scalable Processor 4th generation (Sapphire Rapids SP)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_U_2,
+	 "11th generation (Tiger Lake UP3 family) Core Processor (Mobile)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_U_4,
+	 "11th generation (Tiger Lake UP3 family) Core Processor (Mobile)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_Y_2,
+	 "11th generation (Tiger Lake UP4 family) Core Processor (Mobile)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_Y_4,
+	 "11th generation (Tiger Lake UP4 family) Core Processor (Mobile)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_H_4,
+	 "11th generation (Tiger Lake H family) Core Processor (Mobile)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_H_6,
+	 "11th generation (Tiger Lake H family) Core Processor (Mobile)" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_TGL_ID_H_8,
+	 "11th generation (Tiger Lake H family) Core Processor (Mobile)" },
 	/* Southbridges (LPC controllers) */
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82371XX, "371AB/EB/MB" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH10, "ICH10" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH10D, "ICH10D" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH10DO, "ICH10DO" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH10R, "ICH10R" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH9DH, "ICH9DH" },
@@ -262,6 +281,16 @@ static const struct {
 	  "Comet Point-LP U Premium/Cometlake" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_COMETPOINT_LP_U_BASE,
 	  "Comet Point-LP U Base/Cometlake" },
+	{ PCI_VENDOR_ID_INTEL,  PCI_DEVICE_ID_INTEL_TIGERPOINT_U_SUPER,
+	  "Tiger Point U Engineering Sample" },
+	{ PCI_VENDOR_ID_INTEL,  PCI_DEVICE_ID_INTEL_TIGERPOINT_U_PREM,
+	  "Tiger Point U Premium/Tigerlake" },
+	{ PCI_VENDOR_ID_INTEL,  PCI_DEVICE_ID_INTEL_TIGERPOINT_U_BASE,
+	  "Tiger Point U Base/Tigerlake" },
+	{ PCI_VENDOR_ID_INTEL,  PCI_DEVICE_ID_INTEL_TIGERPOINT_Y_SUPER,
+	  "Tiger Point Y Engineering Sample" },
+	{ PCI_VENDOR_ID_INTEL,  PCI_DEVICE_ID_INTEL_TIGERPOINT_Y_PREM,
+	  "Tiger Point Y Premium/Tigerlake" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H110, "H110" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H170, "H170" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Z170, "Z170" },
@@ -290,6 +319,15 @@ static const struct {
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_C621_SUPER, "C621 Super SKU" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_C627_SUPER_2, "C627 Super SKU" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_C628_SUPER, "C628 Super SKU" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_EBG, "Emmits Burg" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H270, "H270" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Z270, "Z270"	},
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Q270, "Q270"	},
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Q250, "Q250"	},
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_B250, "B250"	},
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Z370, "Z370" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H310C, "H310C" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_X299, "X299" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H310, "H310" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H370, "H370" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Z390, "Z390" },
@@ -317,6 +355,17 @@ static const struct {
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H81, "H81"},
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_APL_LPC, "Apollo Lake" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_DNV_LPC, "Denverton" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H510, "H510" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_H570, "H570" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Z590, "Z590" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_Q570, "Q570" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_B560, "B560" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_W580, "W580" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_C256, "C256" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_C252, "C252" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_HM570, "HM570" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_QM580, "QM580" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_WM590, "WM590" },
 	/* Intel GPUs */
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_G35_EXPRESS,
 	  "Intel(R) G35 Express Chipset Family" },
@@ -450,6 +499,18 @@ static const struct {
 	  "Intel(R) Iris Plus Graphics 655" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_IRIS_PLUS_G7,
 	  "Intel(R) Iris Plus Graphics G7" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_TGL_GT2_UY,
+	  "Intel(R) Iris Xe Graphics" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_TGL_GT2_Y,
+	  "Intel(R) Iris Xe Graphics" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_TGL_GT1,
+	  "Intel(R) UHD Graphics for 11th Gen Intel(R) Processors" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_TGL_GT1_2,
+	  "Intel(R) UHD Graphics for 11th Gen Intel(R) Processors" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_TGL_GT2_ULT_1,
+	  "Intel(R) UHD Graphics for 11th Gen Intel(R) Processors" },
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_TGL_GT2_ULT_2,
+	  "Intel(R) UHD Graphics for 11th Gen Intel(R) Processors" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_UHD_GRAPHICS,
 	  "Intel(R) UHD Graphics" },
 };
@@ -513,6 +574,7 @@ static void print_usage(const char *name)
 	     "   -d | --dmibar:                    dump northbridge DMIBAR registers\n"
 	     "   -P | --pciexpress:                dump northbridge PCIEXBAR registers\n\n"
 	     "   -M | --msrs:                      dump CPU MSRs\n"
+	     "        --cpu-range <start>[-<end>]: (optional) set CPU cores range for -M (--msrs) option\n"
 	     "   -A | --ambs:                      dump AMB registers\n"
 	     "   -x | --sgx:                       dump SGX status\n"
 	     "   -t | --tme:                       dump TME status\n"
@@ -582,6 +644,8 @@ int main(int argc, char *argv[])
 	size_t pcr_count = 0;
 	uint8_t dump_pcr[MAX_PCR_PORTS];
 
+	unsigned int cores_range_start = 0, cores_range_end = UINT_MAX;
+
 	static struct option long_options[] = {
 		{"version", 0, 0, 'v'},
 		{"help", 0, 0, 'h'},
@@ -595,6 +659,7 @@ int main(int argc, char *argv[])
 		{"dmibar", 0, 0, 'd'},
 		{"pciexpress", 0, 0, 'P'},
 		{"msrs", 0, 0, 'M'},
+		{"cpu-range", required_argument, 0, LONG_OPT_RANGE},
 		{"ambs", 0, 0, 'A'},
 		{"spi", 0, 0, 's'},
 		{"spd", 0, 0, 'S'},
@@ -653,6 +718,24 @@ int main(int argc, char *argv[])
 			break;
 		case 'M':
 			dump_coremsrs = 1;
+			break;
+		case LONG_OPT_RANGE:
+			if (strlen(optarg) == 0) {
+				print_usage(argv[0]);
+				exit(1);
+			}
+			const int sscanf_ret = sscanf(optarg, "%u-%u", &cores_range_start, &cores_range_end);
+			if (sscanf_ret == 1) {
+				/* the end of the range is not specified - only for one core */
+				cores_range_end = cores_range_start;
+			} else if (sscanf_ret != 2) {
+				print_usage(argv[0]);
+				exit(1);
+			} else if (cores_range_end < cores_range_start) {
+				printf("Error: invalid cores range <%u-%u>!\n",
+						cores_range_start, cores_range_end);
+				exit(1);
+			}
 			break;
 		case 'a':
 			dump_gpios = 1;
@@ -856,7 +939,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (dump_coremsrs) {
-		print_intel_core_msrs();
+		print_intel_msrs(cores_range_start, cores_range_end);
 		printf("\n\n");
 	}
 

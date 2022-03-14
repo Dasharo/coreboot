@@ -3,10 +3,6 @@ ifeq ($(CONFIG_SOC_INTEL_JASPERLAKE),y)
 subdirs-y += romstage
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
-subdirs-y += ../../../cpu/x86/lapic
-subdirs-y += ../../../cpu/x86/mtrr
-subdirs-y += ../../../cpu/x86/smm
-subdirs-y += ../../../cpu/x86/tsc
 
 # all (bootblock, verstage, romstage, postcar, ramstage)
 all-y += gspi.c
@@ -30,6 +26,7 @@ romstage-y += reset.c
 ramstage-y += acpi.c
 ramstage-y += chip.c
 ramstage-y += cpu.c
+ramstage-y += dptf.c
 ramstage-y += elog.c
 ramstage-y += espi.c
 ramstage-y += finalize.c
@@ -46,7 +43,6 @@ ramstage-y += xhci.c
 
 smm-y += gpio.c
 smm-y += p2sb.c
-smm-y += pmc.c
 smm-y += pmutil.c
 smm-y += smihandler.c
 smm-y += uart.c
@@ -57,5 +53,7 @@ verstage-y += gpio.c
 
 CPPFLAGS_common += -I$(src)/soc/intel/jasperlake
 CPPFLAGS_common += -I$(src)/soc/intel/jasperlake/include
+
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9c-00
 
 endif

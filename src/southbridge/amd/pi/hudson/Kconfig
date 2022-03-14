@@ -1,25 +1,23 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config SOUTHBRIDGE_AMD_PI_BOLTON
-	bool
-
 config SOUTHBRIDGE_AMD_PI_AVALON
 	bool
 
 config SOUTHBRIDGE_AMD_PI_KERN
 	bool
 
-if SOUTHBRIDGE_AMD_PI_AVALON || SOUTHBRIDGE_AMD_PI_BOLTON || SOUTHBRIDGE_AMD_PI_KERN
+if SOUTHBRIDGE_AMD_PI_AVALON || SOUTHBRIDGE_AMD_PI_KERN
 
 config SOUTHBRIDGE_SPECIFIC_OPTIONS
 	def_bool y
-	select IOAPIC
 	select HAVE_USBDEBUG_OPTIONS
 	select HAVE_CF9_RESET
 	select HAVE_CF9_RESET_PREPARE
 	select SOC_AMD_COMMON
 	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
+	select SOC_AMD_COMMON_BLOCK_ACPIMMIO_BIOSRAM
 	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
+	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS_NON_SOC_CODEBASE
 	select SOC_AMD_COMMON_BLOCK_PCI_MMCONF
 
 config EHCI_BAR
@@ -71,14 +69,12 @@ config AMDFW_CONFIG_FILE
 config HUDSON_XHCI_FWM_FILE
 	string "XHCI firmware path and filename"
 	default "3rdparty/blobs/southbridge/amd/avalon/xhci.bin" if SOUTHBRIDGE_AMD_PI_AVALON
-	default "3rdparty/blobs/southbridge/amd/bolton/xhci.bin" if SOUTHBRIDGE_AMD_PI_BOLTON
 	default "3rdparty/blobs/southbridge/amd/kern/xhci.bin" if SOUTHBRIDGE_AMD_PI_KERN
 	depends on HUDSON_XHCI_FWM
 
 config HUDSON_IMC_FWM_FILE
 	string "IMC firmware path and filename"
 	default "3rdparty/blobs/southbridge/amd/avalon/imc.bin" if SOUTHBRIDGE_AMD_PI_AVALON
-	default "3rdparty/blobs/southbridge/amd/bolton/imc.bin" if SOUTHBRIDGE_AMD_PI_BOLTON
 	default "3rdparty/blobs/southbridge/amd/kern/imc.bin" if SOUTHBRIDGE_AMD_PI_KERN
 	depends on HUDSON_IMC_FWM
 
@@ -208,18 +204,3 @@ config HUDSON_ACPI_IO_BASE
 	  This value must match the hardcoded value of AGESA.
 
 endif
-
-config HUDSON_UART
-	bool "UART controller on Kern"
-	default n
-	depends on SOUTHBRIDGE_AMD_PI_KERN
-	select DRIVERS_UART_8250MEM
-	select DRIVERS_UART_8250MEM_32
-	select NO_UART_ON_SUPERIO
-	select UART_OVERRIDE_REFCLK
-	help
-	  There are two UART controllers in Kern.
-	  The UART registers are memory-mapped. UART
-	  controller 0 registers range from FEDC_6000h
-	  to FEDC_6FFFh. UART controller 1 registers
-	  range from FEDC_8000h to FEDC_8FFFh.

@@ -5,12 +5,13 @@ if BOARD_AMD_MAJOLICA
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_16384
+	select HAVE_ACPI_RESUME
 	select SOC_AMD_CEZANNE
+	select SOC_AMD_COMMON_BLOCK_USE_ESPI
 	select AMD_SOC_CONSOLE_UART
 	select MAINBOARD_HAS_CHROMEOS
 
 config FMDFILE
-	string
 	default "src/mainboard/amd/majolica/chromeos.fmd" if CHROMEOS
 	default "src/mainboard/amd/majolica/board.fmd"
 
@@ -51,5 +52,26 @@ config VBOOT_VBNV_OFFSET
 config CHROMEOS
 	# Use default libpayload config
 	select LP_DEFCONFIG_OVERRIDE if PAYLOAD_DEPTHCHARGE
+
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
+config EFS_SPI_READ_MODE
+	default 3	# Quad IO (1-1-4)
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+
+config EFS_SPI_MICRON_FLAG
+	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 1	# 33MHz
+
+config TPM_SPI_SPEED
+	default 1	# 33MHz
+
+endif # !EM100
 
 endif # BOARD_AMD_MAJOLICA

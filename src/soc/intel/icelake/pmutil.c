@@ -178,6 +178,22 @@ static int rtc_failed(uint32_t gen_pmcon_b)
 	return !!(gen_pmcon_b & RTC_BATTERY_DEAD);
 }
 
+static void clear_rtc_failed(void)
+{
+	clrbits8(pmc_mmio_regs() + GEN_PMCON_B, RTC_BATTERY_DEAD);
+}
+
+static int check_rtc_failed(uint32_t gen_pmcon_b)
+{
+	const int failed = rtc_failed(gen_pmcon_b);
+	if (failed) {
+		clear_rtc_failed();
+		printk(BIOS_DEBUG, "rtc_failed = 0x%x\n", failed);
+	}
+
+	return failed;
+}
+
 int soc_get_rtc_failed(void)
 {
 	const struct chipset_power_state *ps;
@@ -185,12 +201,12 @@ int soc_get_rtc_failed(void)
 	if (acpi_pm_state_for_rtc(&ps) < 0)
 		return 1;
 
-	return rtc_failed(ps->gen_pmcon_b);
+	return check_rtc_failed(ps->gen_pmcon_b);
 }
 
 int vbnv_cmos_failed(void)
 {
-	return rtc_failed(read32(pmc_mmio_regs() + GEN_PMCON_B));
+	return check_rtc_failed(read32(pmc_mmio_regs() + GEN_PMCON_B));
 }
 
 static inline int deep_s3_enabled(void)
@@ -258,4 +274,21 @@ void soc_fill_power_state(struct chipset_power_state *ps)
 uint16_t get_pmbase(void)
 {
 	return (uint16_t) ACPI_BASE_ADDRESS;
+}
+
+/*
+ * Set which power state system will be after reapplying
+ * the power (from G3 State)
+ */
+void pmc_soc_set_afterg3_en(const bool on)
+{
+	uint8_t reg8;
+	uint8_t *const pmcbase = pmc_mmio_regs();
+
+	reg8 = read8(pmcbase + GEN_PMCON_A);
+	if (on)
+		reg8 &= ~SLEEP_AFTER_POWER_FAIL;
+	else
+		reg8 |= SLEEP_AFTER_POWER_FAIL;
+	write8(pmcbase + GEN_PMCON_A, reg8);
 }

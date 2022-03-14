@@ -4,11 +4,6 @@ ifeq ($(CONFIG_SOC_INTEL_DENVERTON_NS),y)
 
 subdirs-y += ../../../cpu/intel/microcode
 subdirs-y += ../../../cpu/intel/turbo
-subdirs-y += ../../../cpu/x86/lapic
-subdirs-y += ../../../cpu/x86/mtrr
-subdirs-y += ../../../cpu/x86/smm
-subdirs-y += ../../../cpu/x86/tsc
-subdirs-y += ../../../cpu/x86/cache
 
 bootblock-y += bootblock/bootblock.c
 bootblock-y += spi.c
@@ -52,6 +47,7 @@ ramstage-y += tsc_freq.c
 ramstage-y += spi.c
 ramstage-y += fiamux.c
 ramstage-y += hob_mem.c
+ramstage-y += gpio.c
 ramstage-$(CONFIG_DRIVERS_UART_8250MEM) += uart_debug.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += acpi.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smm.c
@@ -73,11 +69,6 @@ verstage-y += tsc_freq.c
 verstage-$(CONFIG_DRIVERS_UART_8250MEM) += uart_debug.c
 
 CPPFLAGS_common += -I$(src)/soc/intel/denverton_ns/include
-
-##Set FSP binary blobs memory location
-$(call strip_quotes,$(CONFIG_FSP_T_CBFS))-options := -b $(CONFIG_FSP_T_ADDR) --xip
-$(call strip_quotes,$(CONFIG_FSP_M_CBFS))-options := -b $(CONFIG_FSP_M_ADDR) --xip
-$(call strip_quotes,$(CONFIG_FSP_S_CBFS))-options := -b $(CONFIG_FSP_S_ADDR) --xip
 
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-5f-01
 

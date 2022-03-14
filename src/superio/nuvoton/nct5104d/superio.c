@@ -156,7 +156,7 @@ static void disable_gpio_io_port(struct device *dev)
 	if (!((gpio0 && gpio0->enabled) || (gpio1 && gpio1->enabled) ||
 	      (gpio6 && gpio6->enabled))) {
 		dev->enabled = 0;
-		printk(BIOS_WARNING, "WARNING: GPIO IO port configured,"
+		printk(BIOS_WARNING, "GPIO IO port configured,"
 				     " but no GPIO enabled. Disabling...");
 	}
 }
@@ -183,7 +183,7 @@ static void nct5104d_init(struct device *dev)
 	case NCT5104D_GPIO0:
 	case NCT5104D_GPIO1:
 		route_pins_to_uart(dev, false);
-		/* FALLTHROUGH */
+		__fallthrough;
 	case NCT5104D_GPIO6:
 		if (conf->reset_gpios)
 			reset_gpio_default_in(dev);

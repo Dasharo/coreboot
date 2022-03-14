@@ -3,6 +3,7 @@
 #include <device/mmio.h>
 #include <console/console.h>
 #include <delay.h>
+#include <stdint.h>
 #include "raminit.h"
 #include "x4x.h"
 
@@ -10,7 +11,7 @@
 #define DQS_HIGH 1
 #define DQS_LOW 0
 
-#define RESET_CNTL(channel) (0x5d8 + channel * 0x400)
+#define RESET_CNTL(channel) (0x5d8 + (channel) * 0x400)
 
 struct rec_timing {
 	u8 medium;
@@ -30,44 +31,42 @@ static u8 sampledqs(u32 addr, u8 lane, u8 channel)
 
 	/* Reset the DQS probe, on both channels? */
 	for (u8 i = 0; i < TOTAL_CHANNELS; i++) {
-		MCHBAR8(RESET_CNTL(i)) &= ~0x2;
+		mchbar_clrbits8(RESET_CNTL(i), 1 << 1);
 		udelay(1);
-		MCHBAR8(RESET_CNTL(i)) |= 0x2;
+		mchbar_setbits8(RESET_CNTL(i), 1 << 1);
 		udelay(1);
 	}
 	mfence();
 	/* Read strobe */
-	read32((u32 *)addr);
+	read32p(addr);
 	mfence();
-	return (MCHBAR8(sample_offset) >> 6) & 1;
+	return mchbar_read8(sample_offset) >> 6 & 1;
 }
 
-static void program_timing(const struct rec_timing *timing, u8 channel,
-			u8 lane)
+static void program_timing(const struct rec_timing *timing, u8 channel, u8 lane)
 {
 	u32 reg32;
 	u16 reg16;
 	u8 reg8;
 
-	printk(RAM_SPEW, "      Programming timings:"
-		"Coarse: %d, Medium: %d, TAP: %d, PI: %d\n",
+	printk(RAM_SPEW, "      Programming timings:Coarse: %d, Medium: %d, TAP: %d, PI: %d\n",
 		timing->coarse, timing->medium, timing->tap, timing->pi);
 
-	reg32 = MCHBAR32(0x400 * channel + 0x248);
+	reg32 = mchbar_read32(0x400 * channel + 0x248);
 	reg32 &= ~0xf0000;
 	reg32 |= timing->coarse << 16;
-	MCHBAR32(0x400 * channel + 0x248) = reg32;
+	mchbar_write32(0x400 * channel + 0x248, reg32);
 
-	reg16 = MCHBAR16(0x400 * channel + 0x58c);
+	reg16 = mchbar_read16(0x400 * channel + 0x58c);
 	reg16 &= ~(3 << (lane * 2));
 	reg16 |= timing->medium << (lane * 2);
-	MCHBAR16(0x400 * channel + 0x58c) = reg16;
+	mchbar_write16(0x400 * channel + 0x58c, reg16);
 
-	reg8 = MCHBAR8(0x400 * channel + 0x560 + lane * 4);
+	reg8 = mchbar_read8(0x400 * channel + 0x560 + lane * 4);
 	reg8 &= ~0x7f;
 	reg8 |= timing->tap;
 	reg8 |= timing->pi << 4;
-	MCHBAR8(0x400 * channel + 0x560 + lane * 4) = reg8;
+	mchbar_write8(0x400 * channel + 0x560 + lane * 4, reg8);
 }
 
 static int increase_medium(struct rec_timing *timing)
@@ -122,15 +121,12 @@ static int decrease_tap(struct rec_timing *timing)
 	return 0;
 }
 
-static int decr_coarse_low(u8 channel, u8 lane, u32 addr,
-			struct rec_timing *timing)
+static int decr_coarse_low(u8 channel, u8 lane, u32 addr, struct rec_timing *timing)
 {
-	printk(RAM_DEBUG,
-		"  Decreasing coarse until high to low transition is found\n");
+	printk(RAM_DEBUG, "  Decreasing coarse until high to low transition is found\n");
 	while (sampledqs(addr, lane, channel) != DQS_LOW) {
 		if (timing->coarse == 0) {
-			printk(BIOS_CRIT,
-				"Couldn't find DQS-high 0 indicator, halt\n");
+			printk(BIOS_CRIT, "Couldn't find DQS-high 0 indicator, halt\n");
 			return -1;
 		}
 		timing->coarse--;
@@ -141,11 +137,9 @@ static int decr_coarse_low(u8 channel, u8 lane, u32 addr,
 	return 0;
 }
 
-static int fine_search_dqs_high(u8 channel, u8 lane, u32 addr,
-				struct rec_timing *timing)
+static int fine_search_dqs_high(u8 channel, u8 lane, u32 addr, struct rec_timing *timing)
 {
-	printk(RAM_DEBUG,
-		"  Increasing TAP until low to high transition is found\n");
+	printk(RAM_DEBUG, "  Increasing TAP until low to high transition is found\n");
 	/*
 	 * We use a do while loop since it happens that the strobe read
 	 * is inconsistent, with the strobe already high. The current
@@ -164,8 +158,7 @@ static int fine_search_dqs_high(u8 channel, u8 lane, u32 addr,
 	}
 	do {
 		if (increase_tap(timing)) {
-			printk(BIOS_CRIT,
-				"Could not find DQS-high on fine search.\n");
+			printk(BIOS_CRIT, "Could not find DQS-high on fine search.\n");
 			return -1;
 		}
 		program_timing(timing, channel, lane);
@@ -176,15 +169,13 @@ static int fine_search_dqs_high(u8 channel, u8 lane, u32 addr,
 	return 0;
 }
 
-static int find_dqs_low(u8 channel, u8 lane, u32 addr,
-			struct rec_timing *timing)
+static int find_dqs_low(u8 channel, u8 lane, u32 addr, struct rec_timing *timing)
 {
 	/* Look for DQS low, using quarter steps. */
 	printk(RAM_DEBUG, "  Increasing medium until DQS LOW is found\n");
 	while (sampledqs(addr, lane, channel) != DQS_LOW) {
 		if (increase_medium(timing)) {
-			printk(BIOS_CRIT,
-				"Coarse > 15: DQS tuning failed, halt\n");
+			printk(BIOS_CRIT, "Coarse > 15: DQS tuning failed, halt\n");
 			return -1;
 		}
 		program_timing(timing, channel, lane);
@@ -200,8 +191,7 @@ static int find_dqs_high(u8 channel, u8 lane, u32 addr,
 	printk(RAM_DEBUG, "  Increasing medium until DQS HIGH is found\n");
 	while (sampledqs(addr, lane, channel) != DQS_HIGH) {
 		if (increase_medium(timing)) {
-			printk(BIOS_CRIT,
-				"Coarse > 16: DQS tuning failed, halt\n");
+			printk(BIOS_CRIT, "Coarse > 16: DQS tuning failed, halt\n");
 			return -1;
 		}
 		program_timing(timing, channel, lane);
@@ -252,8 +242,7 @@ static int calibrate_receive_enable(u8 channel, u8 lane,
 {
 	program_timing(timing, channel, lane);
 	/* Set receive enable bit */
-	MCHBAR16(0x400 * channel + 0x588) = (MCHBAR16(0x400 * channel + 0x588)
-				& ~(3 << (lane * 2))) | (1 << (lane * 2));
+	mchbar_clrsetbits16(0x400 * channel + 0x588, 3 << (lane * 2), 1 << (lane * 2));
 
 	if (find_dqs_low(channel, lane, addr, timing))
 		return -1;
@@ -286,8 +275,7 @@ static int calibrate_receive_enable(u8 channel, u8 lane,
 	program_timing(timing, channel, lane);
 
 	/* Unset receive enable bit */
-	MCHBAR16(0x400 * channel + 0x588) = MCHBAR16(0x400 * channel + 0x588) &
-		~(3 << (lane * 2));
+	mchbar_clrbits16(0x400 * channel + 0x588, 3 << (lane * 2));
 	return 0;
 }
 
@@ -305,9 +293,9 @@ void rcven(struct sysinfo *s)
 
 	printk(BIOS_DEBUG, "Starting DQS receiver enable calibration\n");
 
-	MCHBAR8(0x5d8) = MCHBAR8(0x5d8) & ~0xc;
-	MCHBAR8(0x9d8) = MCHBAR8(0x9d8) & ~0xc;
-	MCHBAR8(0x5dc) = MCHBAR8(0x5dc) & ~0x80;
+	mchbar_clrbits8(0x5d8, 3 << 2);
+	mchbar_clrbits8(0x9d8, 3 << 2);
+	mchbar_clrbits8(0x5dc, 1 << 7);
 	FOR_EACH_POPULATED_CHANNEL(s->dimms, channel) {
 		mincoarse = 0xff;
 		/*
@@ -344,8 +332,7 @@ void rcven(struct sysinfo *s)
 			timing[lane].tap = 0;
 			timing[lane].pi = 0;
 
-			if (calibrate_receive_enable(channel, lane, addr,
-							&timing[lane]))
+			if (calibrate_receive_enable(channel, lane, addr, &timing[lane]))
 				die("Receive enable calibration failed\n");
 			if (mincoarse > timing[lane].coarse)
 				mincoarse = timing[lane].coarse;
@@ -359,17 +346,16 @@ void rcven(struct sysinfo *s)
 				reg8 = 0;
 			else
 				reg8 = timing[lane].coarse - mincoarse;
-			printk(BIOS_DEBUG, "ch %d lane %d: coarse offset: %d;"
-				"medium: %d; tap: %d\n",
+			printk(BIOS_DEBUG,
+				"ch %d lane %d: coarse offset: %d;medium: %d; tap: %d\n",
 				channel, lane, reg8, timing[lane].medium,
 				timing[lane].tap);
 			s->rcven_t[channel].coarse_offset[lane] = reg8;
 			s->rcven_t[channel].medium[lane] = timing[lane].medium;
 			s->rcven_t[channel].tap[lane] = timing[lane].tap;
 			s->rcven_t[channel].pi[lane] = timing[lane].pi;
-			MCHBAR16(0x400 * channel + 0x5fa) =
-				(MCHBAR16(0x400 * channel + 0x5fa) &
-				~(3 << (lane * 2))) | (reg8 << (lane * 2));
+			mchbar_clrsetbits16(0x400 * channel + 0x5fa, 3 << (lane * 2),
+								  reg8 << (lane * 2));
 		}
 		/* simply use timing[0] to program mincoarse */
 		timing[0].coarse = mincoarse;

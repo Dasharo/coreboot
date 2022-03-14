@@ -4,6 +4,7 @@
 #include <bootmem.h>
 #include <bootmode.h>
 #include <cbfs.h>
+#include <fmap_config.h>
 #include <vboot_check.h>
 #include <vboot_common.h>
 #include <vb2_internals_please_do_not_use.h>
@@ -35,13 +36,13 @@ int verified_boot_check_manifest(void)
 
 	buffer = cbfs_map(RSA_PUBLICKEY_FILE_NAME, &size);
 	if (!buffer || !size) {
-		printk(BIOS_ERR, "ERROR: Public key not found!\n");
+		printk(BIOS_ERR, "Public key not found!\n");
 		goto fail;
 	}
 
 	if ((size != CONFIG_VENDORCODE_ELTAN_VBOOT_KEY_SIZE) ||
 	    (buffer != (void *)CONFIG_VENDORCODE_ELTAN_VBOOT_KEY_LOCATION)) {
-		printk(BIOS_ERR, "ERROR: Illegal public key!\n");
+		printk(BIOS_ERR, "Illegal public key!\n");
 		goto fail;
 	}
 
@@ -52,7 +53,7 @@ int verified_boot_check_manifest(void)
 	if ((sd->workbuf_used + size + sizeof(struct vb2_kernel_preamble) +
 	    ((CONFIG_VENDORCODE_ELTAN_OEM_MANIFEST_ITEMS * DIGEST_SIZE) + (2048/8))) >
 	    sizeof(wb_buffer)) {
-		printk(BIOS_ERR, "ERROR: Work buffer too small\n");
+		printk(BIOS_ERR, "Work buffer too small\n");
 		goto fail;
 	}
 
@@ -73,7 +74,7 @@ int verified_boot_check_manifest(void)
 	/* Fill body_signature (vb2_structure). RSA2048 key is used */
 	cbfs_map("oemmanifest.bin", &size);
 	if (size != ((CONFIG_VENDORCODE_ELTAN_OEM_MANIFEST_ITEMS * DIGEST_SIZE) + (2048/8))) {
-		printk(BIOS_ERR, "ERROR: Incorrect manifest size!\n");
+		printk(BIOS_ERR, "Incorrect manifest size!\n");
 		goto fail;
 	}
 	pre->body_signature.data_size = CONFIG_VENDORCODE_ELTAN_OEM_MANIFEST_ITEMS *
@@ -177,6 +178,12 @@ static void verified_boot_check_buffer(const char *name, void *start, size_t siz
 	}
 }
 
+#if FMAP_SECTION_COREBOOT_START < (0xffffffff - CONFIG_ROM_SIZE + 1)
+#define COREBOOT_CBFS_START (0xffffffff - CONFIG_ROM_SIZE + 1 + FMAP_SECTION_COREBOOT_START)
+#else
+#define COREBOOT_CBFS_START FMAP_SECTION_COREBOOT_START
+#endif
+
 void verified_boot_check_cbfsfile(const char *name, uint32_t type, uint32_t hash_index,
 				  void **buffer, uint32_t *filesize, int32_t pcr)
 {
@@ -189,7 +196,7 @@ void verified_boot_check_cbfsfile(const char *name, uint32_t type, uint32_t hash
 		if (!ENV_ROMSTAGE_OR_BEFORE && (type & VERIFIED_BOOT_COPY_BLOCK)) {
 
 			if ((buffer) && (*buffer) && (*filesize >= size) &&
-			    ((uint32_t) start > (uint32_t)(~(CONFIG_CBFS_SIZE-1)))) {
+			    ((uint32_t) start > COREBOOT_CBFS_START)) {
 
 				/* Use the buffer passed in if possible */
 				printk(BIOS_DEBUG, "%s: move buffer to memory\n", __func__);

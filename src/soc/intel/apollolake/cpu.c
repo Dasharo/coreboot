@@ -5,7 +5,6 @@
 #include <console/console.h>
 #include "chip.h"
 #include <cpu/cpu.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/intel/microcode.h>
 #include <cpu/intel/turbo.h>
@@ -64,6 +63,14 @@ static const struct reg_script core_msr_script[] = {
 	REG_MSR_RMW(MSR_POWER_CTL, ~POWER_CTL_C1E_MASK, 0),
 	REG_SCRIPT_END
 };
+
+bool cpu_soc_is_in_untrusted_mode(void)
+{
+	msr_t msr;
+
+	msr = rdmsr(MSR_POWER_MISC);
+	return !!(msr.lo & ENABLE_IA_UNTRUSTED);
+}
 
 void soc_core_init(struct device *cpu)
 {
@@ -177,8 +184,6 @@ static void pre_mp_init(void)
 	x86_setup_mtrrs_with_detect();
 	x86_mtrr_check();
 
-	/* Enable the local CPU apics */
-	setup_lapic();
 }
 
 #if !CONFIG(SOC_INTEL_COMMON_BLOCK_CPU_MPINIT)
@@ -282,8 +287,8 @@ static const struct mp_ops mp_ops = {
 void soc_init_cpus(struct bus *cpu_bus)
 {
 	/* Clear for take-off */
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 }
 
 void apollolake_init_cpus(struct device *dev)

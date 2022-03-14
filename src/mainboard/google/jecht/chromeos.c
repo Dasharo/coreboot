@@ -1,17 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootmode.h>
 #include <boot/coreboot_tables.h>
 #include <device/pci_ops.h>
 #include <device/device.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 #include <ec/google/chromeec/ec.h>
 #include <soc/chromeos.h>
 #include <soc/sata.h>
 #include <southbridge/intel/lynxpoint/lp_gpio.h>
 #include "onboard.h"
-
-#define GPIO_SPI_WP	58
-#define GPIO_REC_MODE	12
 
 #define FLAG_SPI_WP	0
 #define FLAG_REC_MODE	1
@@ -26,6 +25,16 @@ void fill_lb_gpios(struct lb_gpios *gpios)
 		{-1, ACTIVE_HIGH, gfx_get_init_done(), "oprom"},
 	};
 	lb_add_gpios(gpios, chromeos_gpios, ARRAY_SIZE(chromeos_gpios));
+}
+
+static bool raw_write_protect_state(void)
+{
+	return get_gpio(GPIO_SPI_WP);
+}
+
+static bool raw_recovery_mode_switch(void)
+{
+	return !get_gpio(GPIO_REC_MODE);
 }
 
 int get_write_protect_state(void)
@@ -46,11 +55,11 @@ void init_bootmode_straps(void)
 	const pci_devfn_t dev = PCI_DEV(0, 0x1f, 2);
 
 	/* Write Protect: GPIO58 = GPIO_SPI_WP, active high */
-	if (get_gpio(GPIO_SPI_WP))
+	if (raw_write_protect_state())
 		flags |= (1 << FLAG_SPI_WP);
 
 	/* Recovery: GPIO12 = RECOVERY_L, active low */
-	if (!get_gpio(GPIO_REC_MODE))
+	if (raw_recovery_mode_switch())
 		flags |= (1 << FLAG_REC_MODE);
 
 	/* Developer: Virtual */
@@ -66,4 +75,11 @@ static const struct cros_gpio cros_gpios[] = {
 void mainboard_chromeos_acpi_generate(void)
 {
 	chromeos_acpi_gpio_generate(cros_gpios, ARRAY_SIZE(cros_gpios));
+}
+
+int get_ec_is_trusted(void)
+{
+	/* Do not have a Chrome EC involved in entering recovery mode;
+	   Always return trusted. */
+	return 1;
 }

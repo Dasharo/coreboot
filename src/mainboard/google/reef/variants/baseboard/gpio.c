@@ -2,7 +2,8 @@
 
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
-#include <commonlib/helpers.h>
+#include <types.h>
+#include <vendorcode/google/chromeos/chromeos.h>
 
 /*
  * Pad configuration in ramstage. The order largely follows the 'GPIO Muxing'
@@ -367,6 +368,8 @@ static const struct pad_config early_gpio_table[] = {
 
 	/* WLAN_PE_RST - default to deasserted just in case FSP misbehaves. */
 	PAD_CFG_GPO(GPIO_122, 0, DEEP),		 /* SIO_SPI_2_RXD */
+
+	PAD_CFG_GPI(GPIO_41, NONE, DEEP),	 /* LPSS_UART0_CTS - EC_IN_RW */
 };
 
 const struct pad_config * __weak

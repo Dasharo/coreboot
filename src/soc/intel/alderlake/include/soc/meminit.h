@@ -3,8 +3,6 @@
 #ifndef _SOC_ALDERLAKE_MEMINIT_H_
 #define _SOC_ALDERLAKE_MEMINIT_H_
 
-#include <stddef.h>
-#include <stdint.h>
 #include <types.h>
 #include <fsp/soc_binding.h>
 #include <intelblocks/meminit.h>
@@ -19,14 +17,6 @@ enum mem_type {
 struct mem_ddr_config {
 	/* Dqs Pins Interleaved Setting. Enable/Disable Control */
 	bool dq_pins_interleaved;
-	/*
-	 * Rcomp resistor values.  These values represent the resistance in
-	 * ohms of the three rcomp resistors attached to the DDR_COMP_0,
-	 * DDR_COMP_1, and DDR_COMP_2 pins on the DRAM.
-	 */
-	uint16_t rcomp_resistor[3];
-	/* Rcomp target values. */
-	uint16_t rcomp_targets[5];
 };
 
 struct lpx_dq {
@@ -65,9 +55,22 @@ struct mem_lp5x_config {
 	uint8_t ccc_config;
 };
 
+struct rcomp {
+	/*
+	 * Rcomp resistor value. This values represents the resistance in
+	 * ohms of the rcomp resistor attached to the DDR_COMP pin on the SoC.
+	 *
+	 * Note: If mainboard users don't want to override rcomp related settings
+	 * then associated rcomp UPDs will have its default value.
+	 */
+	uint16_t resistor;
+	/* Rcomp target values. */
+	uint16_t targets[5];
+};
+
 struct mb_cfg {
 	enum mem_type type;
-
+	struct rcomp rcomp;
 	union {
 		/*
 		 * DQ CPU<>DRAM map:
@@ -98,6 +101,12 @@ struct mb_cfg {
 
 	/* Board type */
 	uint8_t UserBd;
+
+	/* Command Mirror */
+	uint8_t CmdMirror;
+
+	/* Enable/Disable TxDqDqs Retraining for Lp4/Lp5/DDR */
+	uint8_t LpDdrDqDqsReTraining;
 };
 
 void memcfg_init(FSP_M_CONFIG *mem_cfg, const struct mb_cfg *mb_cfg,

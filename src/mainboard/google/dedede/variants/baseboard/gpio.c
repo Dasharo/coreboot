@@ -2,10 +2,10 @@
 
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
-#include <commonlib/helpers.h>
+#include <types.h>
 #include <vendorcode/google/chromeos/chromeos.h>
 
-/* Pad configuration in ramstage*/
+/* Pad configuration in ramstage */
 static const struct pad_config gpio_table[] = {
 	/* GPP_A0 thru GPP_A6 come configured out of reset, do not touch */
 	/* A0  : ESPI_IO0 */
@@ -72,6 +72,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_B13, NONE, DEEP, NF1),
 	/* B14 : SPKR/GSPI0_CS1_N */
 	PAD_NC(GPP_B14, NONE),
+#if CONFIG(BOARD_GOOGLE_BASEBOARD_DEDEDE_CR50)
 	/* B15 : H1_SLAVE_SPI_CS_L */
 	PAD_CFG_NF(GPP_B15, NONE, DEEP, NF1),
 	/* B16 : H1_SLAVE_SPI_CLK */
@@ -80,6 +81,19 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* B18 : H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
+#else /* BOARD_GOOGLE_BASEBOARD_DEDEDE_TPM2 */
+	/* Nothing connected on GSPI1 */
+	PAD_NC(GPP_B15, NONE),
+	/*
+	 * B16: AP_CBI_EEPROM_WP_L
+	 *
+	 * We default to 0 to keep the EEPROM protected until we know it is safe to
+	 * deassert the write protect signal.
+	 */
+	PAD_CFG_GPO(GPP_B16, 0, DEEP),
+	PAD_NC(GPP_B17, NONE),
+	PAD_NC(GPP_B18, NONE),
+#endif
 	/* B19 : GSPI1_CS0_N */
 	PAD_NC(GPP_B19, NONE),
 	/* B20 : GSPI1_CLK */
@@ -389,6 +403,7 @@ static const struct pad_config gpio_table[] = {
 static const struct pad_config early_gpio_table[] = {
 	/* B4 : H1_PCH_INT_ODL */
 	PAD_CFG_GPI_APIC(GPP_B4, NONE, PLTRST, LEVEL, INVERT),
+#if CONFIG(BOARD_GOOGLE_BASEBOARD_DEDEDE_CR50)
 	/* B15 : H1_SLAVE_SPI_CS_L */
 	PAD_CFG_NF(GPP_B15, NONE, DEEP, NF1),
 	/* B16 : H1_SLAVE_SPI_CLK */
@@ -397,6 +412,7 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF1),
 	/* B18 : H1_SLAVE_SPI_MOSI_R */
 	PAD_CFG_NF(GPP_B18, NONE, DEEP, NF1),
+#endif
 
 	/* C0  : RAM_STRAP_0 */
 	PAD_CFG_GPI(GPP_C0, NONE, DEEP),
@@ -406,6 +422,9 @@ static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_GPI(GPP_C4, NONE, DEEP),
 	/* C5  : RAM_STRAP_3 */
 	PAD_CFG_GPI(GPP_C5, NONE, DEEP),
+
+	/* C14 : EC_IN_RW_OD */
+	PAD_CFG_GPI(GPP_C14, NONE, DEEP),
 
 	/* C20 : UART2 RX */
 	PAD_CFG_NF(GPP_C20, NONE, DEEP, NF1),

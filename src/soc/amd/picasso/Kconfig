@@ -9,34 +9,54 @@ if SOC_AMD_PICASSO
 
 config CPU_SPECIFIC_OPTIONS
 	def_bool y
+	select ACPI_SOC_NVS
+	select ADD_FSP_BINARIES if USE_AMD_BLOBS
 	select ARCH_BOOTBLOCK_X86_32
 	select ARCH_VERSTAGE_X86_32 if !VBOOT_STARTS_BEFORE_BOOTBLOCK
 	select ARCH_ROMSTAGE_X86_32
 	select ARCH_RAMSTAGE_X86_32
-	select RESET_VECTOR_IN_RAM
-	select X86_AMD_FIXED_MTRRS
-	select X86_AMD_INIT_SIPI
-	select ACPI_SOC_NVS
+	select ARCH_X86
+	select BOOT_DEVICE_SUPPORTS_WRITES if BOOT_DEVICE_SPI_FLASH
+	select CONSOLE_CBMEM_PRINT_PRE_BOOTBLOCK_CONTENTS if VBOOT_STARTS_BEFORE_BOOTBLOCK
 	select DRIVERS_I2C_DESIGNWARE
 	select DRIVERS_USB_PCI_XHCI
+	select FSP_COMPRESS_FSP_M_LZMA
+	select FSP_COMPRESS_FSP_S_LZMA
 	select GENERIC_GPIO_LIB
-	select IDT_IN_EVERY_STAGE
-	select IOAPIC
 	select HAVE_ACPI_TABLES
+	select HAVE_CF9_RESET
 	select HAVE_EM100_SUPPORT
+	select HAVE_SMI_HANDLER
+	select IDT_IN_EVERY_STAGE
+	select PARALLEL_MP_AP_WORK
+	select PLATFORM_USES_FSP2_0
+	select PROVIDES_ROM_SHARING
+	select RESET_VECTOR_IN_RAM
+	select RTC
 	select SOC_AMD_COMMON
+	select SOC_AMD_COMMON_BLOCK_ACP_GEN1
 	select SOC_AMD_COMMON_BLOCK_ACPI
 	select SOC_AMD_COMMON_BLOCK_ACPIMMIO
+	select SOC_AMD_COMMON_BLOCK_ACPI_ALIB
+	select SOC_AMD_COMMON_BLOCK_ACPI_GPIO
+	select SOC_AMD_COMMON_BLOCK_ACPI_IVRS
 	select SOC_AMD_COMMON_BLOCK_AOAC
+	select SOC_AMD_COMMON_BLOCK_APOB
 	select SOC_AMD_COMMON_BLOCK_BANKED_GPIOS
 	select SOC_AMD_COMMON_BLOCK_DATA_FABRIC
 	select SOC_AMD_COMMON_BLOCK_GRAPHICS
 	select SOC_AMD_COMMON_BLOCK_HAS_ESPI
 	select SOC_AMD_COMMON_BLOCK_HDA
+	select SOC_AMD_COMMON_BLOCK_I2C
+	select SOC_AMD_COMMON_BLOCK_I2C_PAD_CTRL
 	select SOC_AMD_COMMON_BLOCK_IOMMU
 	select SOC_AMD_COMMON_BLOCK_LPC
+	select SOC_AMD_COMMON_BLOCK_MCAX
 	select SOC_AMD_COMMON_BLOCK_NONCAR
 	select SOC_AMD_COMMON_BLOCK_PCI
+	select SOC_AMD_COMMON_BLOCK_PCIE_GPP_DRIVER
+	select SOC_AMD_COMMON_BLOCK_PM
+	select SOC_AMD_COMMON_BLOCK_PM_CHIPSET_STATE_SAVE
 	select SOC_AMD_COMMON_BLOCK_PSP_GEN2
 	select SOC_AMD_COMMON_BLOCK_SATA
 	select SOC_AMD_COMMON_BLOCK_SMBUS
@@ -47,21 +67,24 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_AMD_COMMON_BLOCK_TSC_FAM17H_19H
 	select SOC_AMD_COMMON_BLOCK_UART
 	select SOC_AMD_COMMON_BLOCK_UCODE
-	select PROVIDES_ROM_SHARING
-	select BOOT_DEVICE_SUPPORTS_WRITES if BOOT_DEVICE_SPI_FLASH
-	select PARALLEL_MP
-	select PARALLEL_MP_AP_WORK
-	select HAVE_SMI_HANDLER
+	select SOC_AMD_COMMON_FSP_DMI_TABLES
 	select SSE2
-	select RTC
-	select PLATFORM_USES_FSP2_0
-	select FSP_COMPRESS_FSP_M_LZMA
-	select FSP_COMPRESS_FSP_S_LZMA
 	select UDK_2017_BINDING
-	select HAVE_CF9_RESET
+	select USE_FSP_NOTIFY_PHASE_POST_PCI_ENUM
+	select USE_FSP_NOTIFY_PHASE_READY_TO_BOOT
+	select USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE
+	select X86_AMD_FIXED_MTRRS
+	select X86_INIT_NEED_1_SIPI
+
+config ARCH_ALL_STAGES_X86
+	default n
 
 config SOC_AMD_COMMON_BLOCK_UCODE_SIZE
 	default 3200
+
+config CHIPSET_DEVICETREE
+	string
+	default "soc/amd/picasso/chipset.cb"
 
 config FSP_M_FILE
 	string "FSP-M (memory init) binary path and filename"
@@ -104,9 +127,9 @@ config PSP_SHAREDMEM_BASE
 	default 0x0
 	help
 	  This variable defines the base address in DRAM memory where PSP copies
-	  vboot workbuf to. This is used in linker script to have a static
+	  the vboot workbuf. This is used in the linker script to have a static
 	  allocation for the buffer as well as for adding relevant entries in
-	  BIOS directory table for the PSP.
+	  the BIOS directory table for the PSP.
 
 config PSP_SHAREDMEM_SIZE
 	hex
@@ -119,11 +142,21 @@ config PSP_SHAREDMEM_SIZE
 	  started.  The workbuf's base depends on the address of the reset
 	  vector.
 
+config PRE_X86_CBMEM_CONSOLE_SIZE
+	hex
+	default 0x1600
+	help
+	  Size of the CBMEM console used in PSP verstage.
+
 config PRERAM_CBMEM_CONSOLE_SIZE
 	hex
 	default 0x1600
 	help
 	  Increase this value if preram cbmem console is getting truncated
+
+config CBFS_MCACHE_SIZE
+	hex
+	default 0x2000 if VBOOT_STARTS_BEFORE_BOOTBLOCK
 
 config C_ENV_BOOTBLOCK_SIZE
 	hex
@@ -154,14 +187,14 @@ config FSP_M_ADDR
 
 config FSP_M_SIZE
 	hex
-	default 0x80000
+	default 0xC0000
 	help
 	  Sets the size of DRAM allocation for FSP-M in linker script.
 
 config VERSTAGE_ADDR
 	hex
 	depends on VBOOT_SEPARATE_VERSTAGE
-	default 0x2140000
+	default 0x2180000
 	help
 	  Sets the address in DRAM where verstage should be loaded if running
 	  as a separate stage on x86.
@@ -178,14 +211,10 @@ config RAMBASE
 	hex
 	default 0x10000000
 
-config CPU_ADDR_BITS
-	int
-	default 48
-
-config MMCONF_BASE_ADDRESS
+config ECAM_MMCONF_BASE_ADDRESS
 	default 0xF8000000
 
-config MMCONF_BUS_NUMBER
+config ECAM_MMCONF_BUS_NUMBER
 	default 64
 
 config VERSTAGE_ADDR
@@ -195,6 +224,8 @@ config VERSTAGE_ADDR
 config MAX_CPUS
 	int
 	default 8
+	help
+	  Maximum number of threads the platform can have.
 
 config VGA_BIOS_ID
 	string
@@ -253,7 +284,7 @@ config CONSOLE_UART_BASE_ADDRESS
 	hex
 	default 0xfedc9000 if UART_FOR_CONSOLE = 0
 	default 0xfedca000 if UART_FOR_CONSOLE = 1
-	default 0xfedc3000 if UART_FOR_CONSOLE = 2
+	default 0xfedce000 if UART_FOR_CONSOLE = 2
 	default 0xfedcf000 if UART_FOR_CONSOLE = 3
 
 config SMM_TSEG_SIZE
@@ -318,13 +349,13 @@ config DISABLE_SPI_FLASH_ROM_SHARING
 	  removes arbitration with board and assumes the chipset controls
 	  the SPI flash bus entirely.
 
-config MAINBOARD_POWER_RESTORE
-	def_bool n
+config DISABLE_KEYBOARD_RESET_PIN
+	bool
 	help
-	  This option determines what state to go to once power is restored
-	  after having been lost in S0.  Select this option to automatically
-	  return to S0.  Otherwise the system will remain in S5 once power
-	  is restored.
+	  Instruct the SoC to not use the state of GPIO_129 as keyboard reset
+	  signal. When this pin is used as GPIO and the keyboard reset
+	  functionality isn't disabled, configuring it as an output and driving
+	  it as 0 will cause a reset.
 
 config FSP_TEMP_RAM_SIZE
 	hex
@@ -400,16 +431,6 @@ config PSP_WHITELIST_FILE
 	depends on HAVE_PSP_WHITELIST_FILE
 	default "3rdparty/amd_blobs/picasso/PSP/wtl-rvn.sbin"
 
-config PSP_SHAREDMEM_SIZE
-	hex "Maximum size of shared memory area"
-	default 0x3000 if VBOOT
-	default 0x0
-	help
-	  Sets the maximum size for the PSP to pass the vboot workbuf and
-	  any logs or timestamps back to coreboot.  This will be copied
-	  into main memory by the PSP and will be available when the x86 is
-	  started.
-
 config PSP_UNLOCK_SECURE_DEBUG
 	bool "Unlock secure debug"
 	default n
@@ -419,7 +440,7 @@ config PSP_UNLOCK_SECURE_DEBUG
 config PSP_VERSTAGE_FILE
 	string "Specify the PSP_verstage file path"
 	depends on VBOOT_STARTS_BEFORE_BOOTBLOCK
-	default "$(obj)/psp_verstage.bin"
+	default "\$(obj)/psp_verstage.bin"
 	help
 	  Add psp_verstage file to the build & PSP Directory Table
 
@@ -429,6 +450,17 @@ config PSP_VERSTAGE_SIGNING_TOKEN
 	default ""
 	help
 	  Add psp_verstage signature token to the build & PSP Directory Table
+
+config PSP_SOFTFUSE_BITS
+	string "PSP Soft Fuse bits to enable"
+	default "28"
+	help
+	  Space separated list of Soft Fuse bits to enable.
+	  Bit 0:  Enable secure debug (Set by PSP_UNLOCK_SECURE_DEBUG)
+	  Bit 15: PSP post code destination: 0=LPC 1=eSPI
+	  Bit 29: Disable MP2 firmware loading (Set by PSP_LOAD_MP2_FW)
+
+	  See #55758 (NDA) for additional bit definitions.
 
 endmenu
 
@@ -487,16 +519,6 @@ config RWB_REGION_ONLY
 	help
 	  Add a space-delimited list of filenames that should only be in the
 	  RW-B section.
-
-config PICASSO_FW_A_POSITION
-	hex
-	help
-	  Location of the AMD firmware in the RW_A region
-
-config PICASSO_FW_B_POSITION
-	hex
-	help
-	  Location of the AMD firmware in the RW_B region
 
 endif # VBOOT_SLOTS_RW_AB && VBOOT_STARTS_BEFORE_BOOTBLOCK
 

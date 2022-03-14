@@ -201,6 +201,15 @@ int rand(void);
 void srand(unsigned int seed);
 /** @} */
 
+/**
+ * @defgroup misc Misc functions
+ * @{
+ */
+int abs(int j);
+long int labs(long int j);
+long long int llabs(long long int j);
+/** @} */
+
 /* Enter remote GDB mode. Will initialize connection if not already up. */
 void gdb_enter(void);
 /* Disconnect existing GDB connection if one exists. */
@@ -216,8 +225,6 @@ void exit(int status) __attribute__((noreturn));
 /* Override abort()/halt() to trap into GDB if it is enabled. */
 #define halt() do { gdb_enter(); halt(); } while (0)
 #endif
-
-/** @} */
 
 void qsort(void *aa, size_t n, size_t es, int (*cmp)(const void *, const void *));
 char *getenv(const char*);

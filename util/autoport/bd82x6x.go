@@ -230,7 +230,6 @@ func (b bd82x6x) Scan(ctx Context, addr PCIDevData) {
 
 			"sata_port_map": fmt.Sprintf("0x%x", PCIMap[PCIAddr{Bus: 0, Dev: 0x1f, Func: 2}].ConfigDump[0x92]&0x3f),
 
-			"c2_latency":                 FormatHexLE16(FADT[96:98]),
 			"docking_supported":          (FormatBool((FADT[113] & (1 << 1)) != 0)),
 			"spi_uvscc":                  fmt.Sprintf("0x%x", inteltool.RCBA[0x38c8]),
 			"spi_lvscc":                  fmt.Sprintf("0x%x", inteltool.RCBA[0x38c4]&^(1<<23)),
@@ -297,6 +296,7 @@ func (b bd82x6x) Scan(ctx Context, addr PCIDevData) {
 
 	sb.WriteString(`
 #include <bootblock_common.h>
+#include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/raminit_native.h>
 #include <southbridge/intel/bd82x6x/pch.h>
 
@@ -360,7 +360,7 @@ void mainboard_get_spd(spd_raw_data *spd, bool id_only)
 
 	Add_gpl(gnvs)
 	gnvs.WriteString(`#include <acpi/acpi_gnvs.h>
-#include <southbridge/intel/bd82x6x/nvs.h>
+#include <soc/nvs.h>
 
 /* FIXME: check this function.  */
 void mainboard_fill_gnvs(struct global_nvs *gnvs)

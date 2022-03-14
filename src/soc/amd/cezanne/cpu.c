@@ -1,18 +1,23 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/cpu.h>
+#include <amdblocks/mca.h>
+#include <amdblocks/reset.h>
 #include <amdblocks/smm.h>
+#include <assert.h>
 #include <console/console.h>
 #include <cpu/amd/microcode.h>
 #include <cpu/cpu.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>
 #include <device/device.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
-#include <soc/reset.h>
+#include <types.h>
+
+_Static_assert(CONFIG_MAX_CPUS == 16, "Do not override MAX_CPUS. To reduce the number of "
+	"available cores, use the downcore_mode and disable_smt devicetree settings instead.");
 
 /* MP and SMM loading initialization */
 
@@ -45,19 +50,17 @@ static const struct mp_ops mp_ops = {
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	/* Clear for take-off */
-	if (mp_init_with_smm(cpu_bus, &mp_ops) < 0)
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	if (mp_init_with_smm(cpu_bus, &mp_ops) != CB_SUCCESS)
+		die_with_post_code(POST_HW_INIT_FAILURE,
+				"mp_init_with_smm failed. Halting.\n");
 
 	/* pre_mp_init made the flash not cacheable. Reset to WP for performance. */
 	mtrr_use_temp_range(FLASH_BASE_ADDR, CONFIG_ROM_SIZE, MTRR_TYPE_WRPROT);
-
-	set_warm_reset_flag();
 }
 
 static void zen_2_3_init(struct device *dev)
 {
-	setup_lapic();
+	check_mca();
 	set_cstate_io_addr();
 
 	amd_update_microcode_from_cbfs();

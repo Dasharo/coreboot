@@ -1,5 +1,8 @@
 if BOARD_INTEL_BASKING_RIDGE
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select NORTHBRIDGE_INTEL_HASWELL
@@ -16,19 +19,13 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "intel/baskingridge"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "BASKING RIDGE"
 
 config MAX_CPUS
 	int
 	default 16
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0166.rom"
 
 endif # BOARD_INTEL_BASKING_RIDGE

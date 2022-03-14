@@ -47,6 +47,15 @@ u8 pnp_read_config(struct device *dev, u8 reg)
 	return inb(dev->path.pnp.port + 1);
 }
 
+void pnp_unset_and_set_config(struct device *dev, u8 reg, u8 unset, u8 set)
+{
+	outb(reg, dev->path.pnp.port);
+	u8 value = inb(dev->path.pnp.port + 1);
+	value &= ~unset;
+	value |= set;
+	outb(value, dev->path.pnp.port + 1);
+}
+
 void pnp_set_logical_device(struct device *dev)
 {
 	pnp_write_config(dev, 0x07, dev->path.pnp.device & 0xff);
@@ -117,12 +126,12 @@ static void pnp_set_resource(struct device *dev, struct resource *resource)
 		if (resource->flags & IORESOURCE_IRQ &&
 		    (resource->index != PNP_IDX_IRQ0) &&
 		    (resource->index != PNP_IDX_IRQ1))
-			printk(BIOS_WARNING, "WARNING: %s %02lx %s size: "
+			printk(BIOS_WARNING, "%s %02lx %s size: "
 			       "0x%010llx not assigned in devicetree\n", dev_path(dev),
 			       resource->index, resource_type(resource),
 			       resource->size);
 		else
-			printk(BIOS_ERR, "ERROR: %s %02lx %s size: 0x%010llx "
+			printk(BIOS_ERR, "%s %02lx %s size: 0x%010llx "
 			       "not assigned in devicetree\n", dev_path(dev), resource->index,
 			       resource_type(resource), resource->size);
 		return;
@@ -136,7 +145,7 @@ static void pnp_set_resource(struct device *dev, struct resource *resource)
 	} else if (resource->flags & IORESOURCE_IRQ) {
 		pnp_set_irq(dev, resource->index, resource->base);
 	} else {
-		printk(BIOS_ERR, "ERROR: %s %02lx unknown resource type\n",
+		printk(BIOS_ERR, "%s %02lx unknown resource type\n",
 		       dev_path(dev), resource->index);
 		return;
 	}
@@ -204,7 +213,7 @@ static void pnp_get_ioresource(struct device *dev, u8 index, u16 mask)
 	/* If none of the mask bits is set, the resource would occupy the whole
 	   IO space leading to IO resource conflicts with the other devices */
 	if (!mask) {
-		printk(BIOS_ERR, "ERROR: device %s index %d has no mask.\n",
+		printk(BIOS_ERR, "device %s index %d has no mask.\n",
 				dev_path(dev), index);
 		return;
 	}
@@ -229,11 +238,10 @@ static void pnp_get_ioresource(struct device *dev, u8 index, u16 mask)
 	resource->limit = (1 << (bit + 1)) - 1;
 
 	/* The block of ones in the mask is expected to be continuous.
-	   If there is any zero inbetween the block of ones, it is ignored
+	   If there is any zero in between the block of ones, it is ignored
 	   in the calculation of the resource size and limit. */
 	if (mask != (resource->limit ^ (resource->size - 1)))
-		printk(BIOS_WARNING,
-			"WARNING: mask of device %s index %d is wrong.\n",
+		printk(BIOS_WARNING, "mask of device %s index %d is wrong.\n",
 			dev_path(dev), index);
 }
 

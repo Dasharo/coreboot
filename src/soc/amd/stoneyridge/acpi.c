@@ -4,12 +4,12 @@
  * ACPI - create the Fixed ACPI Description Tables (FADT)
  */
 
-#include <string.h>
 #include <console/console.h>
 #include <acpi/acpi.h>
 #include <acpi/acpigen.h>
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
+#include <arch/smp/mpspec.h>
 #include <cpu/x86/smm.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -35,19 +35,20 @@ unsigned long acpi_fill_madt(unsigned long current)
 	current += acpi_create_madt_ioapic((acpi_madt_ioapic_t *)current,
 			GNB_IOAPIC_ID, IO_APIC2_ADDR, 24);
 
-	/* 0: mean bus 0--->ISA */
-	/* 0: PIC 0 */
-	/* 2: APIC 2 */
-	/* 5 mean: 0101 --> Edge-triggered, Active high */
-	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)
-						current, 0, 0, 2, 0);
-	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)
-						current, 0, 9, 9, 0xf);
+	/* PIT is connected to legacy IRQ 0, but IOAPIC GSI 2 */
+	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)current,
+			MP_BUS_ISA, 0, 2,
+			MP_IRQ_TRIGGER_DEFAULT | MP_IRQ_POLARITY_DEFAULT);
+	/* SCI IRQ type override */
+	current += acpi_create_madt_irqoverride((acpi_madt_irqoverride_t *)current,
+			MP_BUS_ISA, 9, 9,
+			MP_IRQ_TRIGGER_LEVEL | MP_IRQ_POLARITY_LOW);
 
 	/* create all subtables for processors */
 	current += acpi_create_madt_lapic_nmi((acpi_madt_lapic_nmi_t *)current,
-			0xff, 5, 1);
-	/* 1: LINT1 connect to NMI */
+			ACPI_MADT_LAPIC_NMI_ALL_PROCESSORS,
+			MP_IRQ_TRIGGER_EDGE | MP_IRQ_POLARITY_HIGH,
+			1 /* 1: LINT1 connect to NMI */);
 
 	return current;
 }
@@ -82,9 +83,8 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->p_lvl3_lat = ACPI_FADT_C3_NOT_SUPPORTED;
 	fadt->duty_offset = 1;	/* CLK_VAL bits 3:1 */
 	fadt->duty_width = 3;	/* CLK_VAL bits 3:1 */
-	fadt->day_alrm = 0;	/* 0x7d these have to be */
-	fadt->mon_alrm = 0;	/* 0x7e added to cmos.layout */
-	fadt->century = 0;	/* 0x7f to make rtc alarm work */
+	fadt->day_alrm = RTC_DATE_ALARM;
+	fadt->mon_alrm = 0;	/* Not supported */
 	fadt->iapc_boot_arch = FADT_BOOT_ARCH;	/* See table 5-10 */
 	fadt->res2 = 0;		/* reserved, MUST be 0 ACPI 3.0 */
 	fadt->flags |= ACPI_FADT_WBINVD | /* See table 5-10 ACPI 3.0a spec */
@@ -97,8 +97,7 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 				ACPI_FADT_S4_RTC_VALID |
 				ACPI_FADT_REMOTE_POWER_ON;
 
-	fadt->ARM_boot_arch = 0;	/* MUST be 0 ACPI 3.0 */
-	fadt->FADT_MinorVersion = 0;	/* MUST be 0 ACPI 3.0 */
+	fadt->ARM_boot_arch = 0;	/* Must be zero if ACPI Revision <= 5.0 */
 
 	fadt->x_firmware_ctl_l = 0;	/* set to 0 if firmware_ctrl is used */
 	fadt->x_firmware_ctl_h = 0;
@@ -155,106 +154,4 @@ void generate_cpu_entries(const struct device *device)
 	acpigen_write_scope("\\");
 	acpigen_write_name_integer("PCNT", cores);
 	acpigen_pop_len();
-}
-
-static void acpigen_soc_get_gpio_in_local5(uintptr_t addr)
-{
-	/*
-	 *   Store (\_SB.GPR2 (addr), Local5)
-	 * \_SB.GPR2 is used to read control byte 2 from control register.
-	 * / It is defined in gpio_lib.asl.
-	 */
-	acpigen_write_store();
-	acpigen_emit_namestring("\\_SB.GPR2");
-	acpigen_write_integer(addr);
-	acpigen_emit_byte(LOCAL5_OP);
-}
-
-static int acpigen_soc_get_gpio_val(unsigned int gpio_num, uint32_t mask)
-{
-	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
-		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
-					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
-		return -1;
-	}
-	uintptr_t addr = gpio_get_address(gpio_num);
-
-	acpigen_soc_get_gpio_in_local5(addr);
-
-	/* If (And (Local5, mask)) */
-	acpigen_write_if_and(LOCAL5_OP, mask);
-
-	/* Store (One, Local0) */
-	acpigen_write_store_ops(ONE_OP, LOCAL0_OP);
-
-	acpigen_pop_len();	/* If */
-
-	/* Else */
-	acpigen_write_else();
-
-	/* Store (Zero, Local0) */
-	acpigen_write_store_ops(ZERO_OP, LOCAL0_OP);
-
-	acpigen_pop_len();	/* Else */
-
-	return 0;
-}
-
-static int acpigen_soc_set_gpio_val(unsigned int gpio_num, uint32_t val)
-{
-	if (gpio_num >= SOC_GPIO_TOTAL_PINS) {
-		printk(BIOS_WARNING, "Warning: Pin %d should be smaller than"
-					" %d\n", gpio_num, SOC_GPIO_TOTAL_PINS);
-		return -1;
-	}
-	uintptr_t addr = gpio_get_address(gpio_num);
-
-	/* Store (0x40, Local0) */
-	acpigen_write_store();
-	acpigen_write_integer(GPIO_PIN_OUT);
-	acpigen_emit_byte(LOCAL0_OP);
-
-	acpigen_soc_get_gpio_in_local5(addr);
-
-	if (val) {
-		/* Or (Local5, GPIO_PIN_OUT, Local5) */
-		acpigen_write_or(LOCAL5_OP, LOCAL0_OP, LOCAL5_OP);
-	} else {
-		/* Not (GPIO_PIN_OUT, Local6) */
-		acpigen_write_not(LOCAL0_OP, LOCAL6_OP);
-
-		/* And (Local5, Local6, Local5) */
-		acpigen_write_and(LOCAL5_OP, LOCAL6_OP, LOCAL5_OP);
-	}
-
-	/*
-	 *   SB.GPW2 (addr, Local5)
-	 * \_SB.GPW2 is used to write control byte in control register
-	 * / byte 2. It is defined in gpio_lib.asl.
-	 */
-	acpigen_emit_namestring("\\_SB.GPW2");
-	acpigen_write_integer(addr);
-	acpigen_emit_byte(LOCAL5_OP);
-
-	return 0;
-}
-
-int acpigen_soc_read_rx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_val(gpio_num, GPIO_PIN_IN);
-}
-
-int acpigen_soc_get_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_get_gpio_val(gpio_num, GPIO_PIN_OUT);
-}
-
-int acpigen_soc_set_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_set_gpio_val(gpio_num, 1);
-}
-
-int acpigen_soc_clear_tx_gpio(unsigned int gpio_num)
-{
-	return acpigen_soc_set_gpio_val(gpio_num, 0);
 }

@@ -1,0 +1,59 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip northbridge/intel/sandybridge
+	device domain 0 on
+		subsystemid 0x1043 0x84ca inherit
+		chip southbridge/intel/bd82x6x
+			register "gen1_dec" = "0x000c0291"
+			register "gen4_dec" = "0x0000ff29"
+			register "pcie_port_coalesce" = "true"
+
+			device pci 1c.0 on  end	# PCIe Port 1 PCIEX_16_3
+			device pci 1c.1 on  end	# PCIe Port 2 RTL8111F
+			device pci 1c.2 off end	# PCIe Port 3 unused
+			device pci 1c.3 off end	# PCIe Port 4 unused
+			device pci 1c.4 off end	# PCIe Port 5 unused
+			device pci 1c.5 on  end	# PCIe Port 6 ASM1042 USB3
+			device pci 1c.6 on  end	# PCIe Port 7 ASM1061 eSATA
+			device pci 1c.7 off end	# PCIe Port 8 unused
+
+			device pci 1f.0 on	# LPC bridge
+				chip superio/nuvoton/nct6779d
+					device pnp 2e.1 off end	# Parallel
+					device pnp 2e.2 off end	# UART A
+					device pnp 2e.3 on	# UART B, IR
+						io 0x60 = 0x2f8		# COM2 address
+					end
+					device pnp 2e.5 on	# PS2 KBC
+						io  0x60 = 0x0060	# KBC1 base
+						io  0x62 = 0x0064	# KBC2 base
+						irq 0x70 = 1		# Keyboard IRQ
+						irq 0x72 = 12		# Mouse IRQ
+
+						# KBC 12Mhz/A20 speed/sw KBRST
+						drq 0xf0 = 0x82
+					end
+					device pnp 2e.6 off end	# CIR
+					device pnp 2e.7 on  end	# GPIOs 6-8
+					device pnp 2e.8 off end	# WDT1 GPIO 0-1
+					device pnp 2e.9 off end	# GPIO 1-8
+					device pnp 2e.a on	# ACPI
+						drq 0xe4 = 0x10	# Enable 3VSBS to power RAM on S3
+						drq 0xe7 = 0x10	# 0.5s S3 delay for compatibility
+					end
+					device pnp 2e.b off end	# HWM, LED
+					device pnp 2e.d off end	# WDT1
+					device pnp 2e.e off end	# CIR wake-up
+					device pnp 2e.f on	# GPIO PP/OD
+						drq 0xe6 = 0x7f	# GP7 PP
+					end
+					device pnp 2e.14 on end	# Port 80 UART
+					device pnp 2e.16 off end	# Deep sleep
+				end
+				chip drivers/pc80/tpm
+					device pnp 4e.0 on end	# TPM
+				end
+			end
+		end
+	end
+end

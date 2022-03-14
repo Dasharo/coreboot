@@ -14,7 +14,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select AMD_SOC_CONSOLE_UART if !AMD_LPC_DEBUG_CARD
 
 config FMDFILE
-	string
 	default "src/mainboard/amd/mandolin/variants/\$(CONFIG_VARIANT_DIR)/board.fmd"
 
 config AMD_LPC_DEBUG_CARD
@@ -47,26 +46,21 @@ config SUPERIO_ADDR_BASE
 	default 0x164e	if SMSC_SIO1036_BASE_164E
 
 config CBFS_SIZE
-	hex
 	default 0x7cf000 if BOARD_AMD_MANDOLIN # Maximum size for the Mandolin FMAP
 	default 0xfcf000 if BOARD_AMD_CEREME # Maximum size for the Cereme FMAP
 
 config MAINBOARD_DIR
-	string
 	default "amd/mandolin"
 
 config VARIANT_DIR
-	string
 	default "mandolin" if BOARD_AMD_MANDOLIN
 	default "cereme" if BOARD_AMD_CEREME
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "MANDOLIN" if BOARD_AMD_MANDOLIN
 	default "CEREME" if BOARD_AMD_CEREME
 
 config DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 
 config ONBOARD_VGA_IS_PRIMARY
@@ -130,20 +124,25 @@ config VGA_BIOS_DGPU_FILE
 	default "3rdparty/amd_blobs/picasso/PicassoGenericVbios.bin" if BOARD_AMD_MANDOLIN
 	default "3rdparty/amd_blobs/picasso/Raven2GenericVbios.bin" if BOARD_AMD_CEREME
 
+if !EM100	# EM100 defaults in soc/amd/common/blocks/spi/Kconfig
 config EFS_SPI_READ_MODE
-	int
-	default 0 if EM100
-	default 0 if BOARD_AMD_CEREME
-	default 3
+	default 3	# Quad IO (1-1-4)
 
 config EFS_SPI_SPEED
-	int
-	default 3 if EM100
-	default 1 if BOARD_AMD_CEREME
-	default 0
+	default 0	# 66MHz
 
 config EFS_SPI_MICRON_FLAG
-	int
 	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 1	# 33MHz
+
+config TPM_SPI_SPEED
+	default 1	# 33MHz
+
+endif # !EM100
 
 endif # BOARD_AMD_MANDOLIN || BOARD_AMD_CEREME

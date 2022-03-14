@@ -317,7 +317,7 @@ Scope (\_SB.PCI0)
 {
 	Device (IOM)
 	{
-		Name (_HID, "INTC1072")
+		Name (_HID, "INTC1079")
 		Name (_DDN, "Intel(R) Alder Lake Input Output Manager(IOM) driver")
 		/* IOM preserved MMIO range from 0xFBC10000 to 0xFBC11600. */
 		Name (_CRS, ResourceTemplate () {
@@ -511,7 +511,7 @@ Scope (\_SB.PCI0)
 		TACK, 1,          /* [16:16] IOM Acknowledge bit */
 		DPOF, 1,          /* [17:17] Set 1 to indicate IOM, all the */
 				  /* display is OFF, clear otherwise */
-		Offset(0x70),     /* Pyhsical addr is offset 0x70. */
+		Offset(0x70),     /* Physical addr is offset 0x70. */
 		IMCD, 32,         /* R_SA_IOM_BIOS_MAIL_BOX_CMD */
 		IMDA, 32          /* R_SA_IOM_BIOS_MAIL_BOX_DATA */
 	}
@@ -557,6 +557,10 @@ Scope (\_SB.PCI0)
 			If (\_SB.PCI0.TDM0.STAT == 1) {
 				/* DMA0 is not in D3Cold now. */
 				\_SB.PCI0.TDM0.D3CE()  /* Enable DMA RTD3 */
+
+				If (\_SB.PCI0.TDM0.IF30 != 1) {
+					Return
+				}
 
 				Printf("Push TBT RPs to D3Cold together")
 				If (\_SB.PCI0.TRP0.VDID != 0xFFFFFFFF) {
@@ -612,6 +616,10 @@ Scope (\_SB.PCI0)
 			If (\_SB.PCI0.TDM1.STAT == 1) {
 				/* DMA1 is not in D3Cold now */
 				\_SB.PCI0.TDM1.D3CE()  /* Enable DMA RTD3. */
+
+				If (\_SB.PCI0.TDM1.IF30 != 1) {
+					Return
+				}
 
 				Printf("Push TBT RPs to D3Cold together")
 				If (\_SB.PCI0.TRP2.VDID != 0xFFFFFFFF) {

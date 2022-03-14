@@ -4,29 +4,13 @@
 #include <console/console.h>
 #include <device/device.h>
 #include <device/mmio.h>
+#include <intelblocks/acpi.h>
 #include <intelblocks/pmc.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/rtc.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/soc_chip.h>
-
-/*
- * Set which power state system will be after reapplying
- * the power (from G3 State)
- */
-void pmc_soc_set_afterg3_en(const bool on)
-{
-	uint8_t reg8;
-	uint8_t *const pmcbase = pmc_mmio_regs();
-
-	reg8 = read8(pmcbase + GEN_PMCON_A);
-	if (on)
-		reg8 &= ~SLEEP_AFTER_POWER_FAIL;
-	else
-		reg8 |= SLEEP_AFTER_POWER_FAIL;
-	write8(pmcbase + GEN_PMCON_A, reg8);
-}
 
 static void config_deep_sX(uint32_t offset, uint32_t mask, int sx, int enable)
 {
@@ -69,7 +53,7 @@ static void config_deep_sx(uint32_t deepsx_config)
 	write32(pmcbase + DSX_CFG, reg);
 }
 
-static void pmc_init(struct device *dev)
+static void soc_pmc_enable(struct device *dev)
 {
 	const config_t *config = config_of_soc();
 
@@ -96,7 +80,7 @@ static void soc_pmc_read_resources(struct device *dev)
 	res->flags = IORESOURCE_IO | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 }
 
-static void soc_acpi_mode_init(struct device *dev)
+static void soc_pmc_init(struct device *dev)
 {
 	/*
 	 * pmc_set_acpi_mode() should be delayed until BS_DEV_INIT in order
@@ -108,11 +92,46 @@ static void soc_acpi_mode_init(struct device *dev)
 	 * done from the "ops->init" callback.
 	 */
 	pmc_set_acpi_mode();
+
+	/*
+	 * Disable ACPI PM timer based on Kconfig
+	 *
+	 * Disabling ACPI PM timer is necessary for XTAL OSC shutdown.
+	 * Disabling ACPI PM timer also switches off TCO
+	 */
+	if (!CONFIG(USE_PM_ACPI_TIMER))
+		setbits8(pmc_mmio_regs() + PCH_PWRM_ACPI_TMR_CTL, ACPI_TIM_DIS);
+}
+
+static void pmc_fill_ssdt(const struct device *dev)
+{
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_PEP))
+		generate_acpi_power_engine();
+}
+
+/*
+ * `pmc_final` function is native implementation of equivalent events performed by
+ * each FSP NotifyPhase() API invocations.
+ *
+ *
+ * Clear PMCON status bits (Global Reset/Power Failure/Host Reset Status bits)
+ *
+ * Perform the PMCON status bit clear operation from `.final`
+ * to cover any such chances where later boot stage requested a global
+ * reset and PMCON status bit remains set.
+ */
+static void pmc_final(struct device *dev)
+{
+	pmc_clear_pmcon_sts();
 }
 
 struct device_operations pmc_ops = {
 	.read_resources		= soc_pmc_read_resources,
 	.set_resources		= noop_set_resources,
-	.init			= soc_acpi_mode_init,
-	.enable			= pmc_init,
+	.init			= soc_pmc_init,
+	.enable			= soc_pmc_enable,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.acpi_fill_ssdt		= pmc_fill_ssdt,
+#endif
+	.final			= pmc_final,
 };

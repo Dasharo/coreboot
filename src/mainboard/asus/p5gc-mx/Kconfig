@@ -19,11 +19,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_GMA_HAVE_VBT
 
 config MAINBOARD_DIR
-	string
 	default "asus/p5gc-mx"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "P5GC-MX"
 
 endif # BOARD_ASUS_P5GC_MX

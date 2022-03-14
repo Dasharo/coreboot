@@ -3,15 +3,15 @@
 #ifndef __PICASSO_CHIP_H__
 #define __PICASSO_CHIP_H__
 
-#include <stddef.h>
-#include <stdint.h>
 #include <amdblocks/chip.h>
 #include <commonlib/helpers.h>
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <gpio.h>
 #include <soc/i2c.h>
 #include <soc/iomap.h>
 #include <soc/southbridge.h>
 #include <arch/x86/include/arch/smp/mpspec.h> /* point from top level */
+#include <types.h>
 
 /*
   USB 2.0 PHY Parameters
@@ -23,7 +23,7 @@ struct __packed usb2_phy_tune {
 	uint8_t	sq_rx_tune;
 	/* FS/LS Source Impedance Adjustment. Range 0 - 0xF */
 	uint8_t	tx_fsls_tune;
-	/* HS Transmitter Pre-Emphasis Curent Control. Range 0 - 0x3 */
+	/* HS Transmitter Pre-Emphasis Current Control. Range 0 - 0x3 */
 	uint8_t	tx_pre_emp_amp_tune;
 	/* HS Transmitter Pre-Emphasis Duration Control. Range: 0 - 0x1 */
 	uint8_t	tx_pre_emp_pulse_tune;
@@ -97,28 +97,15 @@ enum sysinfo_dpphy_override {
 struct soc_amd_picasso_config {
 	struct soc_amd_common_config common_config;
 	/*
-	 * If sb_reset_i2c_slaves() is called, this devicetree register
+	 * If sb_reset_i2c_peripherals() is called, this devicetree register
 	 * defines which I2C SCL will be toggled 9 times at 100 KHz.
-	 * For example, should we need I2C0 and  I2C3 have their slave
-	 * devices reseted by toggling SCL, use:
+	 * For example, should we need I2C0 and  I2C3 have their peripheral
+	 * devices reset by toggling SCL, use:
 	 *
 	 * register i2c_scl_reset = (GPIO_I2C0_SCL | GPIO_I2C3_SCL)
 	 */
 	u8 i2c_scl_reset;
-	struct dw_i2c_bus_config i2c[I2C_MASTER_DEV_COUNT];
-	enum {
-		I2S_PINS_MAX_HDA = 0,	/* HDA w/reset  3xSDI, SW w/Data0 */
-		I2S_PINS_MAX_MHDA = 1,	/* HDA no reset 3xSDI, SW w/Data0-1 */
-		I2S_PINS_MIN_HDA = 2,	/* HDA w/reset  1xSDI, SW w/Data0-2 */
-		I2S_PINS_MIN_MHDA = 3,	/* HDA no reset 1xSDI, SW w/Data0-3 */
-		I2S_PINS_I2S_TDM = 4,
-		I2S_PINS_UNCONF = 7,	/* All pads will be input mode */
-	} acp_pin_cfg;
-
-	/* Enable ACP I2S wake feature (0 = disable, 1 = enable) */
-	u8 acp_i2s_wake_enable;
-	/* Enable ACP PME (0 = disable, 1 = enable) */
-	u8 acp_pme_enable;
+	struct dw_i2c_bus_config i2c[I2C_CTRLR_COUNT];
 
 	/* System config index */
 	uint8_t system_config;
@@ -143,11 +130,11 @@ struct soc_amd_picasso_config {
 
 	enum {
 		DOWNCORE_AUTO = 0,
-		DOWNCORE_1 = 1, /* Run with single core */
-		DOWNCORE_2 = 3, /* Run with two cores */
-		DOWNCORE_3 = 4, /* Run with three cores */
+		DOWNCORE_1 = 1, /* Run with 1 physical core */
+		DOWNCORE_2 = 3, /* Run with 2 physical cores */
+		DOWNCORE_3 = 4, /* Run with 3 physical cores */
 	} downcore_mode;
-	uint8_t smt_disable; /* 1=disable SMT, 0=enable SMT */
+	bool smt_disable; /* true=disable SMT on all physical cores */
 
 	/* Lower die temperature limit */
 	uint32_t thermctl_limit_degreeC;
@@ -174,6 +161,12 @@ struct soc_amd_picasso_config {
 	uint32_t telemetry_vddcr_vdd_offset;
 	uint32_t telemetry_vddcr_soc_slope_mA;
 	uint32_t telemetry_vddcr_soc_offset;
+
+	/*
+	 * HDMI 2.0 disable setting
+	 * bit0~3: disable HDMI 2.0 DDI0~3
+	*/
+	uint8_t hdmi2_disable;
 
 	struct {
 		/*
@@ -263,8 +256,22 @@ struct soc_amd_picasso_config {
 	/* Enable override value for tx_vboost_lvl. Range: 0 - 0x1. */
 	uint8_t usb_3_tx_vboost_lvl_en_x;
 
-	/* The array index is the general purpose PCIe clock output number. */
-	enum gpp_clk_req_setting gpp_clk_config[GPP_CLK_OUTPUT_COUNT];
+	/* The array index is the general purpose PCIe clock output number. Values in here
+	   aren't the values written to the register to have the default to be always on. */
+	enum {
+		GPP_CLK_ON,	/* GPP clock always on; default */
+		GPP_CLK_REQ,	/* GPP clock controlled by corresponding #CLK_REQx pin */
+		GPP_CLK_OFF,	/* GPP clk off */
+	} gpp_clk_config[GPP_CLK_OUTPUT_COUNT];
+
+	/* performance policy for the PCIe links: power consumption vs. link speed */
+	enum {
+		DXIO_PSPP_DISABLED = 0,
+		DXIO_PSPP_PERFORMANCE,
+		DXIO_PSPP_BALANCED,
+		DXIO_PSPP_POWERSAVE,
+	} pspp_policy;
+
 	/* If using an external 48MHz OSC for codec, will disable internal X48M_OSC */
 	bool acp_i2s_use_external_48mhz_osc;
 

@@ -2,15 +2,15 @@
 
 #include <acpi/acpi.h>
 #include <arch/io.h>
-#include <bcd.h>
-#include <fallback.h>
-#include <version.h>
+#include <commonlib/bsd/bcd.h>
 #include <console/console.h>
+#include <fallback.h>
 #include <pc80/mc146818rtc.h>
 #include <rtc.h>
 #include <security/vboot/vbnv.h>
 #include <security/vboot/vbnv_layout.h>
 #include <types.h>
+#include <version.h>
 
 static void cmos_reset_date(void)
 {
@@ -175,6 +175,15 @@ static void wait_uip(void)
 		;
 }
 
+/* Perform a sanity check of current date and time. */
+static int cmos_date_invalid(void)
+{
+	struct rtc_time now;
+
+	rtc_get(&now);
+	return rtc_invalid(&now);
+}
+
 /*
  * If the CMOS is cleared, the rtc_reg has the invalid date. That
  * hurts some OSes. Even if we don't set USE_OPTION_TABLE, we need
@@ -182,19 +191,19 @@ static void wait_uip(void)
  */
 void cmos_check_update_date(void)
 {
-	u8 year, century;
+	u8 year, century = 0;
 
-	/* Assume hardware always supports RTC_CLK_ALTCENTURY. */
 	wait_uip();
-	century = cmos_read(RTC_CLK_ALTCENTURY);
+	if (CONFIG(USE_PC_CMOS_ALTCENTURY))
+		century = cmos_read(RTC_CLK_ALTCENTURY);
 	year = cmos_read(RTC_CLK_YEAR);
 
 	/*
-	 * TODO: If century is 0xFF, 100% that the CMOS is cleared.
-	 * Other than that, so far rtc_year is the only entry to check
-	 * if the date is valid.
+	 * If century is 0xFF, 100% that the CMOS is cleared.
+	 * In addition, check the sanity of all values and reset the date in case of
+	 * insane values.
 	 */
-	if (century > 0x99 || year > 0x99) /* Invalid date */
+	if (century > 0x99 || year > 0x99 || cmos_date_invalid()) /* Invalid date */
 		cmos_reset_date();
 }
 
@@ -206,8 +215,8 @@ int rtc_set(const struct rtc_time *time)
 	cmos_write(bin2bcd(time->mday), RTC_CLK_DAYOFMONTH);
 	cmos_write(bin2bcd(time->mon), RTC_CLK_MONTH);
 	cmos_write(bin2bcd(time->year % 100), RTC_CLK_YEAR);
-	/* Same assumption as above: We always have RTC_CLK_ALTCENTURY */
-	cmos_write(bin2bcd(time->year / 100), RTC_CLK_ALTCENTURY);
+	if (CONFIG(USE_PC_CMOS_ALTCENTURY))
+		cmos_write(bin2bcd(time->year / 100), RTC_CLK_ALTCENTURY);
 	cmos_write(bin2bcd(time->wday + 1), RTC_CLK_DAYOFWEEK);
 	return 0;
 }
@@ -221,8 +230,13 @@ int rtc_get(struct rtc_time *time)
 	time->mday = bcd2bin(cmos_read(RTC_CLK_DAYOFMONTH));
 	time->mon = bcd2bin(cmos_read(RTC_CLK_MONTH));
 	time->year = bcd2bin(cmos_read(RTC_CLK_YEAR));
-	/* Same assumption as above: We always have RTC_CLK_ALTCENTURY */
-	time->year += bcd2bin(cmos_read(RTC_CLK_ALTCENTURY)) * 100;
+	if (CONFIG(USE_PC_CMOS_ALTCENTURY)) {
+		time->year += bcd2bin(cmos_read(RTC_CLK_ALTCENTURY)) * 100;
+	} else {
+		time->year += 1900;
+		if (time->year < 1970)
+			time->year += 100;
+	}
 	time->wday = bcd2bin(cmos_read(RTC_CLK_DAYOFWEEK)) - 1;
 	return 0;
 }

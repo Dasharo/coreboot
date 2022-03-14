@@ -45,25 +45,20 @@ config VBOOT_VBNV_OFFSET
 	default 0x2a
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT
 
 config MAINBOARD_DIR
-	string
 	default "lenovo/t430s"
 
 config VARIANT_DIR
-	string
 	default "t430s" if BOARD_LENOVO_T430S
 	default "t431s" if BOARD_LENOVO_T431S
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "ThinkPad T430s" if BOARD_LENOVO_T430S
 	default "ThinkPad T431s" if BOARD_LENOVO_T431S
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config USBDEBUG_HCD_INDEX
@@ -73,10 +68,6 @@ config USBDEBUG_HCD_INDEX
 config DRAM_RESET_GATE_GPIO
 	int
 	default 10
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0166.rom"
 
 config ONBOARD_VGA_IS_PRIMARY
 	bool

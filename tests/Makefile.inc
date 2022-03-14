@@ -1,31 +1,43 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-testsrc = $(top)/tests
-testobj = $(obj)/tests
-cmockasrc = 3rdparty/cmocka
-cmockaobj = $(objutil)/cmocka
+testsrc := $(top)/tests
+
+# Place the build output in one of two places depending on COV, so that code
+# built with code coverage never mixes with code built without code coverage.
+ifeq ($(COV),1)
+testobj := $(obj)/coverage
+else
+testobj := $(obj)/tests
+endif
+
+cmockasrc := 3rdparty/cmocka
+cmockaobj := $(objutil)/cmocka
+coverage_dir := coverage_reports
 
 CMOCKA_LIB := $(cmockaobj)/src/libcmocka.so
 
-CMAKE:= cmake
+CMAKE := cmake
+OBJCOPY ?= objcopy
+OBJDUMP ?= objdump
 
-TEST_DEFAULT_CONFIG = $(top)/configs/config.emulation_qemu_x86_i440fx
-TEST_DOTCONFIG = $(testobj)/.config
-TEST_KCONFIG_AUTOHEADER := $(testobj)/config.h
+TEST_DEFAULT_CONFIG := $(top)/configs/config.emulation_qemu_x86_i440fx
+TEST_DOTCONFIG := $(testobj)/.config
+TEST_KCONFIG_AUTOHEADER := $(testobj)/config.src.h
 TEST_KCONFIG_AUTOCONFIG := $(testobj)/auto.conf
 TEST_KCONFIG_DEPENDENCIES := $(testobj)/auto.conf.cmd
-TEST_KCONFIG_SPLITCONFIG := $(testobj)/config
+TEST_KCONFIG_SPLITCONFIG := $(testobj)/config/
 TEST_KCONFIG_TRISTATE := $(testobj)/tristate.conf
 
-TEST_CFLAGS = -include $(src)/include/kconfig.h \
+TEST_CFLAGS := -include $(src)/include/kconfig.h \
 	-include $(src)/commonlib/bsd/include/commonlib/bsd/compiler.h \
 	-include $(src)/include/rules.h
 
 # Include generic test mock headers, before original ones
 TEST_CFLAGS += -I$(testsrc)/include/mocks -I$(testsrc)/include
 
-TEST_CFLAGS += -I$(src)/include -I$(src)/commonlib/include \
-	-I$(src)/commonlib/bsd/include -I$(src)/arch/x86/include
+TEST_CFLAGS += -I$(src) -I$(src)/include -I$(src)/commonlib/include \
+	-I$(src)/commonlib/bsd/include -I$(src)/arch/x86/include \
+	-I$(top)/3rdparty/vboot/firmware/include
 
 # Note: This is intentionally just a subset of the warnings in the toplevel
 # Makefile.inc. We don't need to be as strict with test code, and things like
@@ -33,50 +45,66 @@ TEST_CFLAGS += -I$(src)/include -I$(src)/commonlib/include \
 # Only put conservative warnings here that really detect code that's obviously
 # unintentional.
 TEST_CFLAGS += -Wall -Werror -Wundef -Wstrict-prototypes -Wno-inline-asm
+TEST_CFLAGS += -Wno-unknown-warning-option -Wno-source-mgr -Wno-main-return-type
 
 # Path for Kconfig autoheader
 TEST_CFLAGS += -I$(dir $(TEST_KCONFIG_AUTOHEADER))
 
 TEST_CFLAGS += -std=gnu11 -Os -ffunction-sections -fdata-sections -fno-builtin
 
-# Checkout Cmocka repository
-forgetthis:=$(shell git submodule update --init --checkout 3rdparty/cmocka)
+TEST_CFLAGS += -D__TEST__
 
 TEST_CFLAGS += -I$(cmockasrc)/include
 
+ifneq ($(filter-out 0,$(TEST_PRINT)),)
+TEST_CFLAGS += -DTEST_PRINT=1
+endif
+
 # Link against Cmocka
-TEST_LDFLAGS = -L$(cmockaobj)/src -lcmocka -Wl,-rpath=$(cmockaobj)/src
+TEST_LDFLAGS := -L$(cmockaobj)/src -lcmocka -Wl,-rpath=$(cmockaobj)/src
 TEST_LDFLAGS += -Wl,--gc-sections
 
 # Some memlayout symbols don't work with userspace relocation -- disable it.
 TEST_CFLAGS += -fno-pie -fno-pic
 TEST_LDFLAGS += -no-pie
 
+# Enable code coverage if COV=1
+ifeq ($(COV),1)
+TEST_CFLAGS += --coverage
+TEST_LDFLAGS += --coverage
+endif
+
 # Extra attributes for unit tests, declared per test
-attributes:= srcs cflags mocks stage
+attributes := srcs cflags config mocks stage
 
-stages:= decompressor bootblock romstage smm verstage
-stages+= ramstage rmodule postcar libagesa
+stages := decompressor bootblock romstage smm verstage
+stages += ramstage rmodule postcar libagesa
 
-alltests:=
-subdirs:= tests/arch tests/acpi tests/commonlib tests/console tests/cpu
-subdirs+= tests/device tests/drivers tests/ec tests/lib tests/mainboard
-subdirs+= tests/northbridge tests/security tests/soc tests/southbridge
-subdirs+= tests/superio tests/vendorcode
+alltests :=
+subdirs := tests/arch tests/acpi tests/commonlib tests/console tests/cpu
+subdirs += tests/device tests/drivers tests/ec tests/lib tests/mainboard
+subdirs += tests/northbridge tests/security tests/soc tests/southbridge
+subdirs += tests/superio tests/vendorcode
 
 define tests-handler
 alltests += $(1)$(2)
 $(foreach attribute,$(attributes),
 	$(eval $(1)$(2)-$(attribute) += $($(2)-$(attribute))))
 $(foreach attribute,$(attributes),
-	$(eval $(2)-$(attribute):=))
+	$(eval $(2)-$(attribute) := ))
 
 # Sanity check for stage attribute value
-$(eval $(1)$(2)-stage:=$(if $($(1)$(2)-stage),$($(1)$(2)-stage),ramstage))
+$(eval $(1)$(2)-stage := $(if $($(1)$(2)-stage),$($(1)$(2)-stage),ramstage))
 $(if $(findstring $($(1)$(2)-stage), $(stages)),,
 	$(error Wrong $(1)$(2)-stage value $($(1)$(2)-stage). \
 		Check your $(dir $(1)$(2))Makefile.inc))
 endef
+
+# Copy attributes of one test to another.
+# $1 - input test name
+# $2 - output test name
+copy-test = $(foreach attr,$(attributes), \
+		$(eval $(strip $(2))-$(attr) := $($(strip $(1))-$(attr))))
 
 $(call add-special-class, tests)
 $(call evaluate_subdirs)
@@ -84,31 +112,80 @@ $(call evaluate_subdirs)
 # Create actual targets for unit test binaries
 # $1 - test name
 define TEST_CC_template
-$($(1)-objs): TEST_CFLAGS+= \
-	-D__$$(shell echo $$($(1)-stage) | tr '[:lower:]' '[:upper:]')__
-$($(1)-objs): $(obj)/$(1)/%.o: $$$$*.c $(TEST_KCONFIG_AUTOHEADER)
-	mkdir -p $$(dir $$@)
-	$(HOSTCC) $(HOSTCFLAGS) $$(TEST_CFLAGS) $($(1)-cflags)  -MMD \
-		-MT $$@ -c $$< -o $$@
 
-$($(1)-bin): TEST_LDFLAGS+= $$(foreach mock,$$($(1)-mocks),-Wl,--wrap=$$(mock))
+# Generate custom config.h redefining given config symbols, and declaring mocked
+# functions weak. It is important that the compiler already sees that they are
+# weak (and they aren't just turned weak at a later stage) to prevent certain
+# optimizations that would break if the function gets replaced. (For clang this
+# file needs to be marked `system_header` to prevent it from warning about
+# #pragma weak entries without a matching function declaration, since there's no
+# -Wno-xxx command line option for that.)
+$(1)-config-file := $(testobj)/$(1)/config.h
+$$($(1)-config-file): $(TEST_KCONFIG_AUTOHEADER)
+	mkdir -p $$(dir $$@)
+	printf '// File generated by tests/Makefile.inc\n// Do not change\n' > $$@
+	printf '#include <%s>\n\n' "$(notdir $(TEST_KCONFIG_AUTOHEADER))" >> $$@
+	for kv in $$($(1)-config); do \
+		key="`echo $$$$kv | cut -d '=' -f -1`"; \
+		value="`echo $$$$kv | cut -d '=' -f 2-`"; \
+		printf '#undef %s\n' "$$$$key" >> $$@; \
+		printf '#define %s %s\n\n' "$$$$key" "$$$$value" >> $$@; \
+	done
+	printf '#ifdef __clang__\n' >> $$@;
+	printf '#pragma clang system_header\n' >> $$@;
+	printf '#endif\n' >> $$@;
+	printf '#ifdef __TEST_SRCOBJ__\n' >> $$@;
+	for m in $$($(1)-mocks); do \
+		printf '#pragma weak %s\n' "$$$$m" >> $$@; \
+	done
+	printf '#endif\n' >> $$@;
+
+$($(1)-objs): TEST_CFLAGS += -I$$(dir $$($(1)-config-file)) \
+	-D__$$(shell echo $$($(1)-stage) | tr '[:lower:]' '[:upper:]')__ \
+	-D__TEST_NAME__=\"$(subst /,_,$(1))\" \
+	-D__TEST_DATA_DIR__=\"$(testsrc)/data\"
+
+# Give us a way to distinguish between coreboot source files and test files in code.
+$($(1)-srcobjs): TEST_CFLAGS += -D__TEST_SRCOBJ__
+
+# Compile sources and apply mocking/wrapping of selected symbols.
+# For each listed mock add new symbol with prefix `__real_`,
+# and pointing to the same section:address.
+$($(1)-objs): $(testobj)/$(1)/%.o: $$$$*.c $$($(1)-config-file)
+	mkdir -p $$(dir $$@)
+	$(HOSTCC) $(HOSTCFLAGS) $$(TEST_CFLAGS) $($(1)-cflags) -MMD \
+		-MF $$(basename $$@).d -MT $$@ -c $$< -o $$@.orig
+	objcopy_wrap_flags=''; \
+	for sym in $$($(1)-mocks); do \
+		sym_line="$$$$($(OBJDUMP) -t $$@.orig \
+			| grep -E "[0-9a-fA-F]+\\s+w\\s+F\\s+.*\\s$$$$sym$$$$")"; \
+		if [ ! -z "$$$$sym_line" ] ; then \
+			addr="$$$$(echo "$$$$sym_line" | awk '{ print $$$$1 }')"; \
+			section="$$$$(echo "$$$$sym_line" | awk '{ print $$$$(NF - 2) }')"; \
+			objcopy_wrap_flags="$$$$objcopy_wrap_flags --add-symbol __real_$$$${sym}=$$$${section}:0x$$$${addr},function,global"; \
+		fi \
+	done ; \
+	$(OBJCOPY) $$@.orig $$$$objcopy_wrap_flags $$@
+
 $($(1)-bin): $($(1)-objs) $(CMOCKA_LIB)
 	$(HOSTCC) $$^ $($(1)-cflags) $$(TEST_LDFLAGS) -o $$@
 
 endef
 
 $(foreach test, $(alltests), \
-	$(eval $(test)-objs:=$(addprefix $(obj)/$(test)/, \
+	$(eval $(test)-srcobjs := $(addprefix $(testobj)/$(test)/, \
+		$(patsubst %.c,%.o,$(filter src/%,$($(test)-srcs))))) \
+	$(eval $(test)-objs := $(addprefix $(testobj)/$(test)/, \
 		$(patsubst %.c,%.o,$($(test)-srcs)))))
 $(foreach test, $(alltests), \
-	$(eval $(test)-bin:=$(obj)/$(test)/run))
+	$(eval $(test)-bin := $(testobj)/$(test)/run))
 $(foreach test, $(alltests), \
 	$(eval $(call TEST_CC_template,$(test))))
 
 $(foreach test, $(alltests), \
-	$(eval all-test-objs+=$($(test)-objs)))
+	$(eval all-test-objs += $($(test)-objs)))
 $(foreach test, $(alltests), \
-	$(eval test-bins+=$($(test)-bin)))
+	$(eval test-bins += $($(test)-bin)))
 
 DEPENDENCIES += $(addsuffix .d,$(basename $(all-test-objs)))
 -include $(DEPENDENCIES)
@@ -127,7 +204,7 @@ $(TEST_DOTCONFIG):
 
 # Don't override default Kconfig variables, since this will affect all
 # Kconfig targets. Change them only when calling sub-make instead.
-$(TEST_KCONFIG_AUTOHEADER): TEST_KCONFIG_FLAGS:= DOTCONFIG=$(TEST_DOTCONFIG) \
+$(TEST_KCONFIG_AUTOHEADER): TEST_KCONFIG_FLAGS := DOTCONFIG=$(TEST_DOTCONFIG) \
         KCONFIG_AUTOHEADER=$(TEST_KCONFIG_AUTOHEADER) \
         KCONFIG_AUTOCONFIG=$(TEST_KCONFIG_AUTOCONFIG) \
         KCONFIG_DEPENDENCIES=$(TEST_KCONFIG_DEPENDENCIES) \
@@ -137,8 +214,8 @@ $(TEST_KCONFIG_AUTOHEADER): TEST_KCONFIG_FLAGS:= DOTCONFIG=$(TEST_DOTCONFIG) \
 
 $(TEST_KCONFIG_AUTOHEADER): $(TEST_DOTCONFIG) $(objutil)/kconfig/conf
 	mkdir -p $(dir $@)
-	+$(MAKE) $(TEST_KCONFIG_FLAGS) olddefconfig
-	+$(MAKE) $(TEST_KCONFIG_FLAGS) silentoldconfig
+	$(MAKE) $(TEST_KCONFIG_FLAGS) olddefconfig
+	$(MAKE) $(TEST_KCONFIG_FLAGS) syncconfig
 
 $(TEST_KCONFIG_AUTOCONFIG): $(TEST_KCONFIG_AUTOHEADER)
 	true
@@ -146,14 +223,43 @@ $(TEST_KCONFIG_AUTOCONFIG): $(TEST_KCONFIG_AUTOHEADER)
 .PHONY: $(alltests) $(addprefix clean-,$(alltests))
 .PHONY: unit-tests build-unit-tests run-unit-tests clean-unit-tests
 
+# %g in CMOCKA_XML_FILE will be replaced with "__TEST_NAME__(<test-group-name>)"
+# by macro cb_run_group_tests(), which should be used for running tests.
+# __TEST_NAME__ contains test name including path e.g. tests_lib_rtc-test
 ifeq ($(JUNIT_OUTPUT),y)
 $(alltests): export CMOCKA_MESSAGE_OUTPUT=xml
-$(alltests): export CMOCKA_XML_FILE=$(testobj)/junit-$(subst /,_,$^).xml
+$(alltests): export CMOCKA_XML_FILE=$(testobj)/junit-%g.xml
 endif
 
 $(alltests): $$($$(@)-bin)
-	rm -f $(testobj)/junit-$(subst /,_,$^).xml $(testobj)/$(subst /,_,$^).failed
-	-./$^ || echo failed > $(testobj)/$(subst /,_,$^).failed
+	rm -f $(testobj)/junit-$(subst /,_,$(patsubst $(testobj)/%/,%,$(dir $^)))\(*\).xml
+	rm -f $(testobj)/$(subst /,_,$^).failed
+	-$^ || echo failed > $(testobj)/$(subst /,_,$^).failed
+
+# Build a code coverage report by collecting all the gcov files into a single
+# report. If COV is not set, this might be a user error, and they're trying
+# to generate a coverage report without first having built and run the code
+# with code coverage. So instead of silently correcting it by adding COV=1,
+# let's flag it to the user so they can be sure they're doing the thing they
+# want to do.
+
+.PHONY: coverage-report clean-coverage-report
+
+ifeq ($(COV),1)
+coverage-report:
+	lcov -o $(testobj)/tests.info -c -d $(testobj) --exclude '$(testsrc)/*'
+	genhtml -q -o $(testobj)/$(coverage_dir) -t "coreboot unit tests" \
+	-s $(testobj)/tests.info
+
+clean-coverage-report:
+	rm -Rf $(testobj)/$(coverage_dir)
+else
+coverage-report:
+	COV=1 V=$(V) $(MAKE) coverage-report
+
+clean-coverage-report:
+	COV=1 V=$(V) $(MAKE) clean-coverage-report
+endif
 
 unit-tests: build-unit-tests run-unit-tests
 
@@ -173,7 +279,25 @@ run-unit-tests: $(alltests)
 	fi
 
 $(addprefix clean-,$(alltests)): clean-%:
-	rm -rf $(obj)/$*
+	rm -rf $(testobj)/$*
 
 clean-unit-tests:
 	rm -rf $(testobj)
+
+list-unit-tests:
+	@echo "unit-tests:"
+	for t in $(sort $(alltests)); do \
+		echo "  $$t"; \
+	done
+
+help-unit-tests help::
+	@echo  '*** coreboot unit-tests targets ***'
+	@echo  '  Use "COV=1 make [target]" to enable code coverage for unit tests'
+	@echo  '  unit-tests            - Run all unit-tests from tests/'
+	@echo  '  clean-unit-tests      - Remove unit-tests build artifacts'
+	@echo  '  list-unit-tests       - List all unit-tests'
+	@echo  '  <unit-test>           - Build and run single unit-test'
+	@echo  '  clean-<unit-test>     - Remove single unit-test build artifacts'
+	@echo  '  coverage-report       - Generate a code coverage report'
+	@echo  '  clean-coverage-report - Remove the code coverage report'
+	@echo

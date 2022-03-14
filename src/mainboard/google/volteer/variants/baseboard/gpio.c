@@ -2,7 +2,8 @@
 
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
-#include <commonlib/helpers.h>
+#include <types.h>
+#include <vendorcode/google/chromeos/chromeos.h>
 
 /* Pad configuration in ramstage */
 /* Leave eSPI pins untouched from default settings */
@@ -24,7 +25,7 @@ static const struct pad_config gpio_table[] = {
 	/* A10 : I2S2_RXD ==> NC */
 	PAD_NC(GPP_A10, NONE),
 	/* A11 : PMC_I2C_SDA ==> SSD_PERST_L */
-	PAD_CFG_GPO(GPP_A11, 1, DEEP),
+	PAD_CFG_GPO(GPP_A11, 1, PLTRST),
 	/* A12 : SATAXPCIE1 ==> M2_SSD_PEDET */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
 	/* A13 : PMC_I2C_SCL ==> NC */
@@ -431,6 +432,9 @@ static const struct pad_config early_gpio_table[] = {
 
 	/* F11 : THC1_SPI2_CLK ==> EN_PP3300_WWAN */
 	PAD_CFG_GPO(GPP_F11, 1, DEEP),
+
+	/* A9  : I2S2_TXD ==> EC_IN_RW_OD */
+	PAD_CFG_GPI(GPP_A9, NONE, DEEP),
 };
 
 const struct pad_config *__weak variant_base_gpio_table(size_t *num)
@@ -449,6 +453,13 @@ const struct pad_config *__weak variant_early_gpio_table(size_t *num)
 {
 	*num = ARRAY_SIZE(early_gpio_table);
 	return early_gpio_table;
+}
+
+const struct pad_config *__weak variant_sleep_gpio_table(u8 slp_typ,
+		size_t *num)
+{
+	*num = 0;
+	return NULL;
 }
 
 static const struct cros_gpio cros_gpios[] = {

@@ -4,9 +4,10 @@
 #include <commonlib/helpers.h>
 #include <device/device.h>
 #include <device/mmio.h>
-#include <amdblocks/gpio_banks.h>
+#include <amdblocks/gpio.h>
 #include <amdblocks/aoac.h>
 #include <amdblocks/uart.h>
+#include <soc/aoac_defs.h>
 #include <soc/southbridge.h>
 #include <soc/gpio.h>
 #include <soc/uart.h>
@@ -52,7 +53,7 @@ void set_uart_config(unsigned int idx)
 	if (idx >= ARRAY_SIZE(uart_info))
 		return;
 
-	program_gpios(uart_info[idx].mux, 2);
+	gpio_configure_pads(uart_info[idx].mux, 2);
 }
 
 static const char *uart_acpi_name(const struct device *dev)
@@ -102,8 +103,13 @@ static void uart_enable(struct device *dev)
 	}
 }
 
+static void uart_read_resources(struct device *dev)
+{
+	mmio_resource(dev, 0, dev->path.mmio.addr / KiB, 4);
+}
+
 struct device_operations picasso_uart_mmio_ops = {
-	.read_resources = noop_read_resources,
+	.read_resources = uart_read_resources,
 	.set_resources = noop_set_resources,
 	.scan_bus = scan_static_bus,
 	.acpi_name = uart_acpi_name,

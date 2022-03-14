@@ -9,15 +9,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_ACPI_TABLES
 
 config MAINBOARD_DIR
-	string
 	default "intel/cedarisland_crb"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Cedar Island CRB"
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 endif

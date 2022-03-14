@@ -12,7 +12,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select EC_COMPAL_ENE932
 	select HAVE_OPTION_TABLE
 	select HAVE_PIRQ_TABLE
-	select HAVE_MP_TABLE
 	select HAVE_ACPI_RESUME
 	select HAVE_SMI_HANDLER
 	select HAVE_ACPI_TABLES
@@ -22,11 +21,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select NO_UART_ON_SUPERIO
 
 config MAINBOARD_DIR
-	string
 	default "hp/pavilion_m6_1035dx"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Pavilion m6 1035dx"
 
 config HW_MEM_HOLE_SIZEK

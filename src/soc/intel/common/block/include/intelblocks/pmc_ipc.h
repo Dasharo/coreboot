@@ -16,10 +16,31 @@
 #define PMC_IPC_CMD_SIZE_SHIFT		16
 #define PMC_IPC_CMD_SIZE_MASK		0xff
 
+/* IPC command to control FIVR Configuration */
+#define PMC_IPC_CMD_COMMAND_FIVR	0xA3
+/* IPC subcommand to read FIVR Register */
+#define PMC_IPC_CMD_CMD_ID_FIVR_READ	0x00
+/* IPC subcommand to write FIVR Register */
+#define PMC_IPC_CMD_CMD_ID_FIVR_WRITE	0x01
+/* IPC subcommand to control RFI Control 0 register logic write */
+#define PMC_IPC_SUBCMD_RFI_CTRL0_LOGIC	0
+/* IPC subcommand to control RFI Control 4 register logic write */
+#define PMC_IPC_SUBCMD_RFI_CTRL4_LOGIC	1
+/* IPC subcommand to control EMI Control 0 register logic write */
+#define PMC_IPC_SUBCMD_EMI_CTRL0_LOGIC	2
+/* IPC subcommand to control FFFC_FAULT_STATUS register logic read */
+#define PMC_IPC_SUBCMD_FFFC_FAULT_STATUS	3
+/* IPC subcommand to control FFFC_RFI_STATUS register logic read */
+#define PMC_IPC_SUBCMD_FFFC_RFI_STATUS	4
+
 #define PMC_IPC_CMD_FIELD(name, val) \
 	((((val) & PMC_IPC_CMD_##name##_MASK) << PMC_IPC_CMD_##name##_SHIFT))
 
 #define PMC_IPC_CMD_NO_MSI		0
+
+/* IPC command for reading PMC registers */
+#define PMC_IPC_CMD_RD_PMC_REG		0xA0
+#define PMC_IPC_CMD_SUBCMD_RD_PMC_REG	0x02
 
 /* IPC command to enable/disable PCIe SRCCLK */
 #define PMC_IPC_CMD_ID_SET_PCIE_CLOCK	0xAC

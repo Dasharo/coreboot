@@ -41,8 +41,7 @@ static void mch_domain_read_resources(struct device *dev)
 	tom = pci_read_config16(mch, D0F0_TOM) & 0x01ff;
 	tom <<= 26;
 
-	printk(BIOS_DEBUG, "TOUUD 0x%llx TOLUD 0x%08x TOM 0x%llx\n",
-	       touud, tolud, tom);
+	printk(BIOS_DEBUG, "TOUUD 0x%llx TOLUD 0x%08x TOM 0x%llx\n", touud, tolud, tom);
 
 	tomk = tolud >> 10;
 
@@ -73,12 +72,11 @@ static void mch_domain_read_resources(struct device *dev)
 
 	/* cbmem_top can be shifted downwards due to alignment.
 	   Mark the region between cbmem_top and tomk as unusable */
-	delta_cbmem = tomk - ((uint32_t)cbmem_top() >> 10);
+	delta_cbmem = tomk - ((uint32_t)(uintptr_t)cbmem_top() >> 10);
 	tomk -= delta_cbmem;
 	uma_sizek += delta_cbmem;
 
-	printk(BIOS_DEBUG, "Unused RAM between cbmem_top and TOM: 0x%xK\n",
-	       delta_cbmem);
+	printk(BIOS_DEBUG, "Unused RAM between cbmem_top and TOM: 0x%xK\n", delta_cbmem);
 
 	printk(BIOS_INFO, "Available memory below 4GB: %uM\n", tomk >> 10);
 
@@ -101,8 +99,8 @@ static void mch_domain_read_resources(struct device *dev)
 		       (touud - top32memk) >> 10);
 	}
 
-	printk(BIOS_DEBUG, "Adding UMA memory area base=0x%08x "
-		"size=0x%08x\n", tomk << 10, uma_sizek << 10);
+	printk(BIOS_DEBUG, "Adding UMA memory area base=0x%08x size=0x%08x\n",
+	       tomk << 10, uma_sizek << 10);
 	uma_resource(dev, index++, tomk, uma_sizek);
 
 	/* Reserve high memory where the NB BARs are up to 4GiB */

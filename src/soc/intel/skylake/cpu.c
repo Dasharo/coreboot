@@ -5,7 +5,6 @@
 #include <device/pci.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
-#include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/intel/common/common.h>
 #include <cpu/intel/microcode.h>
@@ -22,8 +21,19 @@
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <soc/systemagent.h>
+#include <types.h>
 
 #include "chip.h"
+
+bool cpu_soc_is_in_untrusted_mode(void)
+{
+	if (!CONFIG(MAINBOARD_SUPPORTS_COFFEELAKE_CPU))
+		return false;
+
+	/* IA_UNTRUSTED_MODE is not supported in Sky Lake */
+	msr_t msr = rdmsr(MSR_BIOS_DONE);
+	return !!(msr.lo & ENABLE_IA_UNTRUSTED);
+}
 
 static void configure_misc(void)
 {
@@ -49,7 +59,7 @@ static void configure_misc(void)
 	wrmsr(IA32_PACKAGE_THERM_INTERRUPT, msr);
 
 	msr = rdmsr(MSR_POWER_CTL);
-	msr.lo |= (1 << 0);	/* Enable Bi-directional PROCHOT as an input*/
+	msr.lo |= (1 << 0);	/* Enable Bi-directional PROCHOT as an input */
 	msr.lo |= (1 << 18);	/* Enable Energy/Performance Bias control */
 	msr.lo &= ~POWER_CTL_C1E_MASK;	/* Disable C1E */
 	msr.lo |= (1 << 23);	/* Lock it */
@@ -107,9 +117,7 @@ void soc_core_init(struct device *cpu)
 	 * every bank. */
 	mca_configure();
 
-	/* Enable the local CPU apics */
 	enable_lapic_tpr();
-	setup_lapic();
 
 	/* Configure c-state interrupt response time */
 	configure_c_states();
@@ -167,7 +175,7 @@ static void fc_lock_configure(void *unused)
 
 static void post_mp_init(void)
 {
-	int ret = 0;
+	bool failure = false;
 
 	/* Set Max Ratio */
 	cpu_set_max_ratio();
@@ -182,14 +190,17 @@ static void post_mp_init(void)
 	if (CONFIG(HAVE_SMI_HANDLER))
 		smm_lock();
 
-	ret |= mp_run_on_all_cpus(vmx_configure, NULL);
+	if (mp_run_on_all_cpus(vmx_configure, NULL) != CB_SUCCESS)
+		failure = true;
 
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
-		ret |= mp_run_on_all_cpus(sgx_configure, NULL);
+		if (mp_run_on_all_cpus(sgx_configure, NULL) != CB_SUCCESS)
+			failure = true;
 
-	ret |= mp_run_on_all_cpus(fc_lock_configure, NULL);
+	if (mp_run_on_all_cpus(fc_lock_configure, NULL) != CB_SUCCESS)
+		failure = true;
 
-	if (ret)
+	if (failure)
 		printk(BIOS_CRIT, "CRITICAL ERROR: MP post init failed\n");
 }
 
@@ -216,8 +227,8 @@ static const struct mp_ops mp_ops = {
 
 void soc_init_cpus(struct bus *cpu_bus)
 {
-	if (mp_init_with_smm(cpu_bus, &mp_ops))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, &mp_ops);
 
 	/* Thermal throttle activation offset */
 	configure_tcc_thermal_target();

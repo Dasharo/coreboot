@@ -16,6 +16,7 @@
 #include <soc/gpio.h>
 #include <soc/gpio_common.h>
 #include <soc/i2c.h>
+#include <soc/msdc.h>
 #include <soc/mtcmos.h>
 #include <soc/regulator.h>
 #include <soc/spm.h>
@@ -24,6 +25,9 @@
 #include "gpio.h"
 
 #include <arm-trusted-firmware/include/export/plat/mediatek/common/plat_params_exp.h>
+
+#define MSDC0_BASE	0x11f60000
+#define MSDC0_TOP_BASE	0x11f50000
 
 #define MSDC0_DRV_MASK	0x3fffffff
 #define MSDC1_DRV_MASK	0x3ffff000
@@ -60,6 +64,12 @@ static void register_reset_to_bl31(void)
 	register_bl31_aux_param(&param_reset.h);
 }
 
+/* Override hs_da_trail for ANX7625 */
+void mtk_dsi_override_phy_timing(struct mtk_phy_timing *timing)
+{
+	timing->da_hs_trail += 9;
+}
+
 /* Set up backlight control pins as output pin and power-off by default */
 static void configure_backlight_and_bridge(void)
 {
@@ -73,7 +83,7 @@ static void configure_backlight_and_bridge(void)
 	gpio_output(GPIO_EN_PP1000_EDPBRDG, 1);
 	gpio_output(GPIO_EN_PP1800_EDPBRDG_DX, 1);
 	gpio_output(GPIO_EN_PP3300_EDP_DX, 1);
-	mdelay(2);
+	mdelay(14);
 	gpio_output(GPIO_EDPBRDG_PWREN, 1);
 	mdelay(10);
 	gpio_output(GPIO_EDPBRDG_RST_ODL, 1);
@@ -98,10 +108,6 @@ static bool configure_display(void)
 		printk(BIOS_ERR, "%s: Can't get panel's edid\n", __func__);
 		return false;
 	}
-	if (anx7625_dp_start(i2c_bus, &edid) < 0) {
-		printk(BIOS_ERR, "%s: Can't start display via ANX7625\n", __func__);
-		return false;
-	}
 
 	const char *name = edid.ascii_string;
 	if (name[0] == '\0')
@@ -118,79 +124,22 @@ static bool configure_display(void)
 	u32 mipi_dsi_flags = (MIPI_DSI_MODE_VIDEO |
 			      MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			      MIPI_DSI_MODE_LPM |
+			      MIPI_DSI_MODE_LINE_END |
 			      MIPI_DSI_MODE_EOT_PACKET);
 
 	if (mtk_dsi_init(mipi_dsi_flags, MIPI_DSI_FMT_RGB888, 4, &edid, NULL) < 0) {
 		printk(BIOS_ERR, "%s: Failed in DSI init\n", __func__);
 		return false;
 	}
+
+	if (anx7625_dp_start(i2c_bus, &edid) < 0) {
+		printk(BIOS_ERR, "%s: Can't start display via ANX7625\n", __func__);
+		return false;
+	}
+
 	mtk_ddp_mode_set(&edid);
 	fb_new_framebuffer_info_from_edid(&edid, (uintptr_t)0);
 	return true;
-}
-
-static void configure_emmc(void)
-{
-	void *gpio_base = (void *)IOCFG_TL_BASE;
-	int i;
-
-	const gpio_t emmc_pu_pin[] = {
-		GPIO(MSDC0_DAT0), GPIO(MSDC0_DAT1),
-		GPIO(MSDC0_DAT2), GPIO(MSDC0_DAT3),
-		GPIO(MSDC0_DAT4), GPIO(MSDC0_DAT5),
-		GPIO(MSDC0_DAT6), GPIO(MSDC0_DAT7),
-		GPIO(MSDC0_CMD), GPIO(MSDC0_RSTB),
-	};
-
-	const gpio_t emmc_pd_pin[] = {
-		GPIO(MSDC0_DSL), GPIO(MSDC0_CLK),
-	};
-
-	for (i = 0; i < ARRAY_SIZE(emmc_pu_pin); i++)
-		gpio_set_pull(emmc_pu_pin[i], GPIO_PULL_ENABLE, GPIO_PULL_UP);
-
-	for (i = 0; i < ARRAY_SIZE(emmc_pd_pin); i++)
-		gpio_set_pull(emmc_pd_pin[i], GPIO_PULL_ENABLE, GPIO_PULL_DOWN);
-
-	/* set eMMC cmd/dat/clk/ds/rstb pins driving to 10mA */
-	clrsetbits32(gpio_base, MSDC0_DRV_MASK, MSDC0_DRV_VALUE);
-}
-
-static void configure_sdcard(void)
-{
-	void *gpio_base = (void *)IOCFG_RM_BASE;
-	void *gpio_mode0_base = (void *)MSDC1_GPIO_MODE0_BASE;
-	void *gpio_mode1_base = (void *)MSDC1_GPIO_MODE1_BASE;
-	uint8_t enable = 1;
-	int i;
-
-	const gpio_t sdcard_pu_pin[] = {
-		GPIO(MSDC1_DAT0), GPIO(MSDC1_DAT1),
-		GPIO(MSDC1_DAT2), GPIO(MSDC1_DAT3),
-		GPIO(MSDC1_CMD),
-	};
-
-	const gpio_t sdcard_pd_pin[] = {
-		GPIO(MSDC1_CLK),
-	};
-
-	for (i = 0; i < ARRAY_SIZE(sdcard_pu_pin); i++)
-		gpio_set_pull(sdcard_pu_pin[i], GPIO_PULL_ENABLE, GPIO_PULL_UP);
-
-	for (i = 0; i < ARRAY_SIZE(sdcard_pd_pin); i++)
-		gpio_set_pull(sdcard_pd_pin[i], GPIO_PULL_ENABLE, GPIO_PULL_DOWN);
-
-	/* set sdcard cmd/dat/clk pins driving to 8mA */
-	clrsetbits32(gpio_base, MSDC1_DRV_MASK, MSDC1_DRV_VALUE);
-
-	/* set sdcard dat2/dat0/dat3/cmd/clk pins to msdc1 mode */
-	clrsetbits32(gpio_mode0_base, MSDC1_GPIO_MODE0_MASK, MSDC1_GPIO_MODE0_VALUE);
-
-	/* set sdcard dat1 pin to msdc1 mode */
-	clrsetbits32(gpio_mode1_base, MSDC1_GPIO_MODE1_MASK, MSDC1_GPIO_MODE1_VALUE);
-
-	mainboard_enable_regulator(MTK_REGULATOR_VCC, enable);
-	mainboard_enable_regulator(MTK_REGULATOR_VCCQ, enable);
 }
 
 static void configure_audio(void)
@@ -207,8 +156,8 @@ static void configure_audio(void)
 
 static void mainboard_init(struct device *dev)
 {
-	configure_emmc();
-	configure_sdcard();
+	mtk_msdc_configure_emmc(true);
+	mtk_msdc_configure_sdcard();
 	configure_audio();
 	setup_usb_host();
 

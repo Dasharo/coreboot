@@ -141,6 +141,12 @@
 
 #define PRSTS		0x10
 
+/* P-state configuration */
+#define PSS_MAX_ENTRIES		8
+#define PSS_RATIO_STEP		2
+#define PSS_LATENCY_TRANSITION	10
+#define PSS_LATENCY_BUSMASTER	10
+
 struct chipset_power_state {
 	uint16_t pm1_sts;
 	uint16_t pm1_en;
@@ -154,9 +160,6 @@ struct chipset_power_state {
 	uint32_t gblrst_cause[2];
 	uint32_t prev_sleep_state;
 } __packed;
-
-/* Return the selected ACPI SCI IRQ */
-int acpi_sci_irq(void);
 
 /* Get base address PMC memory mapped registers. */
 uint8_t *pmc_mmio_regs(void);
@@ -185,5 +188,8 @@ static inline int deep_s5_enabled(void)
 
 /* STM Support */
 uint16_t get_pmbase(void);
+
+/* Clear PMCON status bits */
+void pmc_clear_pmcon_sts(void);
 
 #endif

@@ -13,8 +13,10 @@ struct device_operations ipu_pci_ops = {
 
 static const uint16_t pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_TGL_IPU,
+	PCI_DEVICE_ID_INTEL_TGL_H_IPU,
 	PCI_DEVICE_ID_INTEL_JSL_IPU,
 	PCI_DEVICE_ID_INTEL_ADL_IPU,
+	PCI_DEVICE_ID_INTEL_ADL_N_IPU,
 	0
 };
 

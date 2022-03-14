@@ -2,6 +2,9 @@
 
 if BOARD_ASROCK_H81M_HDS
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select BOARD_ROMSIZE_KB_4096
@@ -21,23 +24,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_NUVOTON_NCT6776
 
 config CBFS_SIZE
-	hex
 	default 0x200000
 
 config MAINBOARD_DIR
-	string
 	default "asrock/h81m-hds"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "H81M-HDS"
-
-#
-# Since this is a desktop board, the assumption is made that most users
-# would want CMOS configuration enabled by default.
-#
-config USE_OPTION_TABLE
-	bool
-	default y
 
 endif

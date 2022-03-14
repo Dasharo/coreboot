@@ -1,16 +1,47 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <console/uart.h>
 #include <drivers/ipmi/ipmi_kcs.h>
 #include <drivers/ipmi/ocp/ipmi_ocp.h>
 #include <drivers/vpd/vpd.h>
 #include <fsp/api.h>
 #include <FspmUpd.h>
 #include <soc/romstage.h>
+#include <FspmUpdHelper.h>
 
 #include "chip.h"
 #include "ipmi.h"
 #include "vpd.h"
+
+/* Convert the vpd integer to the DDR frenquency limit enum */
+static enum ddr_freq_limit ddr_freq_limit(int num)
+{
+	switch (num) {
+	case 0:
+		return DDR_AUTO;
+	case 1:
+		return DDR_1333;
+	case 2:
+		return DDR_1600;
+	case 3:
+		return DDR_1866;
+	case 4:
+		return DDR_2133;
+	case 5:
+		return DDR_2400;
+	case 6:
+		return DDR_2666;
+	case 7:
+		return DDR_2933;
+	case 8:
+		return DDR_3200;
+	default:
+		printk(BIOS_WARNING, "Invalid DdrFreqLimit value from VPD: "
+			"%d\n", num);
+		return DDR_AUTO;
+	};
+}
 
 /*
  * Search from VPD_RW first then VPD_RO for UPD config variables,
@@ -29,7 +60,10 @@ static void mainboard_config_upd(FSPM_UPD *mupd)
 			"SerialIoUartDebugEnable to %d\n", FSP_LOG, FSP_LOG_DEFAULT);
 		mupd->FspmConfig.SerialIoUartDebugEnable = FSP_LOG_DEFAULT;
 	}
-	mupd->FspmConfig.SerialIoUartDebugIoBase = 0x2f8;
+
+	/* Select UART IO of FSP */
+	static const unsigned int bases[] = { 0x3f8, 0x2f8, 0x3e8, 0x2e8 };
+	mupd->FspmConfig.SerialIoUartDebugIoBase = bases[get_uart_for_console()];
 
 	if (mupd->FspmConfig.SerialIoUartDebugEnable) {
 		/* FSP debug log level */
@@ -72,6 +106,17 @@ static void mainboard_config_upd(FSPM_UPD *mupd)
 		}
 		printk(BIOS_DEBUG, "Setting MemRefreshWatermark %d from VPD\n", val_int);
 		mupd->FspmConfig.UnusedUpdSpace0[0] = (uint8_t)val_int;
+	}
+
+	/* Select DDR Frequency Limit */
+	if (vpd_get_int(FSP_DIMM_FREQ, VPD_RW_THEN_RO, (int *const) &val_int)) {
+		printk(BIOS_INFO, "Setting DdrFreqLimit %d from VPD\n", val_int);
+		mupd->FspmConfig.DdrFreqLimit = ddr_freq_limit(val_int);
+	} else {
+		printk(BIOS_WARNING, "Not able to get VPD %s, default set "
+			"DdrFreqLimit to %d\n", FSP_DIMM_FREQ,
+			FSP_DIMM_FREQ_DEFAULT);
+		mupd->FspmConfig.DdrFreqLimit = ddr_freq_limit(FSP_DIMM_FREQ_DEFAULT);
 	}
 }
 
@@ -139,11 +184,21 @@ static void mainboard_config_iio(FSPM_UPD *mupd)
 
 void mainboard_memory_init_params(FSPM_UPD *mupd)
 {
+	uint8_t val;
+
 	/* Since it's the first IPMI command, it's better to run get BMC
 	   selftest result first */
 	if (ipmi_kcs_premem_init(CONFIG_BMC_KCS_BASE, 0) == CB_SUCCESS) {
 		ipmi_set_post_start(CONFIG_BMC_KCS_BASE);
 		init_frb2_wdt();
+	}
+
+	/* Enable force memory training */
+	if (vpd_get_bool(MEM_TRAIN_FORCE, VPD_RW_THEN_RO, &val)) {
+		if (mupd->FspmArchUpd.NvsBufferPtr && val) {
+			mupd->FspmArchUpd.NvsBufferPtr = 0;
+			printk(BIOS_DEBUG, "Force Memory Training...Start\n");
+		}
 	}
 
 	mainboard_config_gpios(mupd);

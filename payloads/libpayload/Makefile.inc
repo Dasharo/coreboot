@@ -33,6 +33,7 @@ export KERNELVERSION      := 0.2.0
 ARCHDIR-$(CONFIG_LP_ARCH_ARM)     := arm
 ARCHDIR-$(CONFIG_LP_ARCH_ARM64)   := arm64
 ARCHDIR-$(CONFIG_LP_ARCH_X86)     := x86
+ARCHDIR-$(CONFIG_LP_ARCH_MOCK)    := mock
 DESTDIR ?= install
 
 real-target: lib
@@ -45,6 +46,8 @@ classes-$(CONFIG_LP_CBFS) += libcbfs
 classes-$(CONFIG_LP_LZMA) += liblzma
 classes-$(CONFIG_LP_LZ4) += liblz4
 classes-$(CONFIG_LP_REMOTEGDB) += libgdb
+classes-$(CONFIG_LP_VBOOT_LIB) += vboot_fw
+classes-$(CONFIG_LP_VBOOT_LIB) += tlcl
 libraries := $(classes-y)
 classes-y += head.o
 
@@ -54,11 +57,14 @@ subdirs-$(CONFIG_LP_CURSES) += curses
 subdirs-$(CONFIG_LP_CBFS) += libcbfs
 subdirs-$(CONFIG_LP_LZMA) += liblzma
 subdirs-$(CONFIG_LP_LZ4) += liblz4
+subdirs-$(CONFIG_LP_VBOOT_LIB) += vboot
 
 INCLUDES := -Iinclude -Iinclude/$(ARCHDIR-y) -I$(obj)
 INCLUDES += -include include/kconfig.h -include include/compiler.h
+INCLUDES += -I$(coreboottop)/src/commonlib/bsd/include
+INCLUDES += -I$(VBOOT_SOURCE)/firmware/include
 
-CFLAGS +=  $(EXTRA_CFLAGS) $(INCLUDES) -Os -pipe -nostdinc -ggdb3
+CFLAGS += $(INCLUDES) -Os -pipe -nostdinc -ggdb3
 CFLAGS += -nostdlib -fno-builtin -ffreestanding -fomit-frame-pointer
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -Wall -Wundef -Wstrict-prototypes -Wmissing-prototypes -Wvla
@@ -89,11 +95,11 @@ includes-handler= \
 
 $(obj)/libpayload.a: $(foreach class,$(libraries),$$($(class)-objs))
 	printf "    AR         $(subst $(CURDIR)/,,$(@))\n"
-	$(AR) rc $@ $^
+	printf "create $@\n$(foreach objc,$(filter-out %.a,$^),addmod $(objc)\n)$(foreach lib,$(filter %.a,$^),addlib $(lib)\n)save\nend\n" | $(AR) -M
 
 $(obj)/%.a: $$(%-objs)
 	printf "    AR         $(subst $(CURDIR)/,,$(@))\n"
-	$(AR) rc $@ $^
+	printf "create $@\n$(foreach objc,$(filter-out %.a,$^),addmod $(objc)\n)$(foreach lib,$(filter %.a,$^),addlib $(lib)\n)save\nend\n" | $(AR) -M
 
 $(obj)/head.o: $(obj)/arch/$(ARCHDIR-y)/head.head.o.o
 	printf "    CP         $(subst $(CURDIR)/,,$(@))\n"
@@ -114,10 +120,24 @@ install: real-target
 		install -m 755 -d $(DESTDIR)/libpayload/`dirname $$file`; \
 		install -m 644 $$file $(DESTDIR)/libpayload/$$file; \
 	done
+	for file in `find $(coreboottop)/src/commonlib/bsd/include -name *.h -type f`; do \
+		dest_file=$$(realpath --relative-to=$(coreboottop)/src/commonlib/bsd/ $$file); \
+		install -m 755 -d "$(DESTDIR)/libpayload/`dirname $$dest_file`"; \
+		install -m 644 "$$file" "$(DESTDIR)/libpayload/$$dest_file"; \
+	done
 	install -m 644 $(obj)/libpayload-config.h $(DESTDIR)/libpayload/include
 	$(foreach item,$(includes), \
 		install -m 755 -d $(DESTDIR)/libpayload/include/$(call extract_nth,2,$(item)); \
 		install -m 644 $(call extract_nth,1,$(item)) $(DESTDIR)/libpayload/include/$(call extract_nth,2,$(item)); )
+	printf "    INSTALL    $(DESTDIR)/libpayload/vboot\n"
+	install -m 755 -d $(DESTDIR)/libpayload/vboot
+	for file in `find $(VBOOT_SOURCE)/firmware/include \
+			  $(VBOOT_SOURCE)/firmware/2lib/include \
+			  -iname '*.h' -type f \
+			  | sed 's,$(VBOOT_SOURCE)/firmware/,,'`; do \
+		install -m 755 -d $(DESTDIR)/libpayload/vboot/$$(dirname $$file); \
+		install -m 644 $(VBOOT_SOURCE)/firmware/$$file $(DESTDIR)/libpayload/vboot/$$file ; \
+	done
 	printf "    INSTALL    $(DESTDIR)/libpayload/bin\n"
 	install -m 755 -d $(DESTDIR)/libpayload/bin
 	install -m 755 bin/lpgcc $(DESTDIR)/libpayload/bin
@@ -134,7 +154,7 @@ prepare:
 
 junit.xml:
 	echo '<?xml version="1.0" encoding="utf-8"?><testsuite>' > $@.tmp
-	for i in $(filter-out %.old,$(wildcard configs/*)); do \
+	for i in $(filter-out %.old %.unit-tests,$(wildcard configs/*)); do \
 		$(MAKE) clean; \
 		echo "Building libpayload for $$i"; \
 		cp "$$i" junit_config; \
@@ -157,7 +177,7 @@ junit.xml:
 	mv $@.tmp $@
 
 test-configs:
-	for config in $(filter-out %.old,$(wildcard configs/*)); do \
+	for config in $(filter-out %.old %.unit-tests,$(wildcard configs/*)); do \
 		$(MAKE) clean; \
 		cp "$$config" test_config; \
 		echo "*** Making libpayload config $$config ***"; \

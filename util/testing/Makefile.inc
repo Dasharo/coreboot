@@ -10,6 +10,7 @@ test-help help::
 	@echo  '  test-abuild            - basic: Builds all platforms'
 	@echo  '  test-payloads          - basic: Builds internal payloads'
 	@echo  '  test-cleanup           - basic: Cleans coreboot directories'
+	@echo
 
 # junit.xml is a helper target to wrap builds that don't create junit.xml output
 # BLD = The name of the build
@@ -53,6 +54,7 @@ amdfwtool \
 cbmem \
 ectool \
 futility \
+ifdtool \
 intelmetool \
 inteltool \
 intelvbttool \
@@ -84,6 +86,12 @@ ifneq ($(JENKINS_SKIP_LINT_TESTS),y)
 	util/lint/lint lint-stable --junit
 	util/lint/lint lint-extended --junit
 endif
+	if [ ! -f 3rdparty/intel-sec-tools/go.mod ]; then \
+		echo "Please download 3rdparty/intel-sec-tools/:"; \
+		echo "git submodule update --init 3rdparty/intel-sec-tools"; \
+		exit 1; \
+	fi
+	cd 3rdparty/intel-sec-tools/ ; go mod vendor
 	util/abuild/abuild -o $(COREBOOT_BUILD_DIR)/chromeos $(ABUILD_OPTIONS) -x -X $(top)/abuild-chromeos.xml
 	util/abuild/abuild -o $(COREBOOT_BUILD_DIR)/default $(ABUILD_OPTIONS)
 	$(foreach tool, $(TOOLLIST), $(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR="util/$(tool)" BLD="$(tool)" MFLAGS= MAKEFLAGS= MAKETARGET= junit.xml; )
@@ -94,7 +102,10 @@ endif
 	$(MAKE) xcompile=$(COREBOOT_BUILD_DIR)/xcompile $(COREBOOT_BUILD_DIR)/xcompile
 	$(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR=src/soc/nvidia/tegra124/lp0 BLD=tegra124_lp0 MFLAGS= MAKEFLAGS=xcompile=$(COREBOOT_BUILD_DIR)/xcompile MAKETARGET=all junit.xml
 	$(MAKE) CPUS=$(CPUS) V=$(V) Q=$(Q) BLD_DIR=src/soc/nvidia/tegra210/lp0 BLD=tegra120_lp0 MFLAGS= MAKEFLAGS=xcompile=$(COREBOOT_BUILD_DIR)/xcompile MAKETARGET=all junit.xml
-	$(MAKE) unit-tests JUNIT_OUTPUT=y
+	$(MAKE) unit-tests JUNIT_OUTPUT=y COV=1
+	(cd payloads/libpayload; unset COREBOOT_BUILD_DIR; $(MAKE) unit-tests coverage-report JUNIT_OUTPUT=y COV=1)
+	$(MAKE) coverage-report JUNIT_OUTPUT=y COV=1
+	find . -name 'tests.info' -exec cat {} + >$(COREBOOT_BUILD_DIR)/coverage.info
 
 test-basic: test-lint test-tools test-abuild test-payloads test-cleanup
 

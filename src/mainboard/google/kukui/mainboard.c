@@ -124,7 +124,7 @@ struct panel_description *get_panel_from_cbfs(struct panel_description *desc)
 static struct panel_description *get_active_panel(void)
 {
 	/* TODO(hungte) Create a dedicated panel_id() in board_id.c */
-	int panel_id = sku_id() >> 4;
+	int panel_id = sku_id() >> 4 & 0x0F;
 
 	struct panel_description *panel = get_panel_description(panel_id);
 	if (!panel) {
@@ -162,7 +162,8 @@ static bool configure_display(void)
 			      MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 			      MIPI_DSI_MODE_LPM);
 	if (CONFIG(DRIVER_ANALOGIX_ANX7625))
-		mipi_dsi_flags |= MIPI_DSI_MODE_EOT_PACKET;
+		mipi_dsi_flags |= MIPI_DSI_MODE_EOT_PACKET |
+				  MIPI_DSI_MODE_LINE_END;
 	if (mtk_dsi_init(mipi_dsi_flags, MIPI_DSI_FMT_RGB888, 4, edid,
 			 panel->s->init) < 0) {
 		printk(BIOS_ERR, "%s: Failed in DSI init.\n", __func__);
@@ -175,7 +176,7 @@ static bool configure_display(void)
 	mtk_ddp_mode_set(edid);
 	struct fb_info *info = fb_new_framebuffer_info_from_edid(edid, 0);
 	if (info)
-		fb_set_orientation(info, panel->s->orientation);
+		fb_set_orientation(info, panel->orientation);
 
 	return true;
 }

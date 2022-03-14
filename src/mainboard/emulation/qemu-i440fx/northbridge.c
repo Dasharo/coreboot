@@ -8,11 +8,10 @@
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
 #include <arch/ioapic.h>
-#include <stdint.h>
 #include <device/device.h>
 #include <stdlib.h>
-#include <string.h>
 #include <smbios.h>
+#include <types.h>
 #include "memory.h"
 
 #include "fw_cfg.h"
@@ -155,7 +154,7 @@ static void cpu_pci_domain_read_resources(struct device *dev)
 	/* Reserve space for the LAPIC.  There's one in every processor, but
 	 * the space only needs to be reserved once, so we do it here. */
 	res = new_resource(dev, 3);
-	res->base = LOCAL_APIC_ADDR;
+	res->base = cpu_get_lapic_addr();
 	res->size = 0x10000UL;
 	res->limit = 0xffffffffUL;
 	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_STORED |
@@ -165,31 +164,25 @@ static void cpu_pci_domain_read_resources(struct device *dev)
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 static int qemu_get_smbios_data16(int handle, unsigned long *current)
 {
-	struct smbios_type16 *t = (struct smbios_type16 *)*current;
-	int len = sizeof(struct smbios_type16);
+	struct smbios_type16 *t = smbios_carve_table(*current, SMBIOS_PHYS_MEMORY_ARRAY,
+						     sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type16));
-	t->type = SMBIOS_PHYS_MEMORY_ARRAY;
-	t->handle = handle;
-	t->length = len - 2;
 	t->location = MEMORY_ARRAY_LOCATION_SYSTEM_BOARD;
 	t->use = MEMORY_ARRAY_USE_SYSTEM;
 	t->memory_error_correction = MEMORY_ARRAY_ECC_NONE;
 	t->maximum_capacity = qemu_get_memory_size();
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
 
 static int qemu_get_smbios_data17(int handle, int parent_handle, unsigned long *current)
 {
-	struct smbios_type17 *t = (struct smbios_type17 *)*current;
-	int len;
+	struct smbios_type17 *t = smbios_carve_table(*current, SMBIOS_MEMORY_DEVICE,
+						     sizeof(*t), handle);
 
-	memset(t, 0, sizeof(struct smbios_type17));
-	t->type = SMBIOS_MEMORY_DEVICE;
-	t->handle = handle;
 	t->phys_memory_array_handle = parent_handle;
-	t->length = sizeof(struct smbios_type17) - 2;
 	t->size = qemu_get_memory_size() / 1024;
 	t->data_width = 64;
 	t->total_width = 64;
@@ -200,7 +193,8 @@ static int qemu_get_smbios_data17(int handle, int parent_handle, unsigned long *
 	t->speed = 200;
 	t->clock_speed = 200;
 	t->manufacturer = smbios_add_string(t->eos, CONFIG_MAINBOARD_VENDOR);
-	len = t->length + smbios_string_table_len(t->eos);
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
 }
@@ -249,10 +243,14 @@ static const struct mp_ops mp_ops_no_smm = {
 	.get_cpu_count = fw_cfg_max_cpus,
 };
 
+extern const struct mp_ops mp_ops_with_smm;
+
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	if (mp_init_with_smm(cpu_bus, &mp_ops_no_smm))
-		printk(BIOS_ERR, "MP initialization failure.\n");
+	const struct mp_ops *ops = CONFIG(SMM_TSEG) ? &mp_ops_with_smm : &mp_ops_no_smm;
+
+	/* TODO: Handle mp_init_with_smm failure? */
+	mp_init_with_smm(cpu_bus, ops);
 }
 
 static void cpu_bus_init(struct device *dev)
@@ -265,11 +263,11 @@ static void cpu_bus_init(struct device *dev)
 
 static void cpu_bus_scan(struct device *bus)
 {
-	int max_cpus = fw_cfg_max_cpus();
+	unsigned int max_cpus = fw_cfg_max_cpus();
 	struct device *cpu;
 	int i;
 
-	if (max_cpus < 0)
+	if (max_cpus == 0)
 		return;
 	/*
 	 * Do not install more CPUs than supported by coreboot.

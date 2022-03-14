@@ -33,6 +33,7 @@ void fch_print_pmxc0_status(void)
 		[3] = "ThermalTripFromTemp",
 		[4] = "RemotePowerDownFromASF",
 		[5] = "ShutDownFan0",
+		[9] = "InternalThermalTrip",
 		[16] = "UserRst",
 		[17] = "SoftPciRst",
 		[18] = "DoInit",
@@ -40,13 +41,15 @@ void fch_print_pmxc0_status(void)
 		[20] = "DoFullReset",
 		[21] = "SleepReset",
 		[22] = "KbReset",
-		[23] = "LtReset",
+		[23] = "LtReset/ShutdownMsg",
 		[24] = "FailBootRst",
 		[25] = "WatchdogIssueReset",
 		[26] = "RemoteResetFromASF",
 		[27] = "SyncFlood",
 		[28] = "HangReset",
 		[29] = "EcWatchdogRst",
+		[30] = "SdpParityErr",
+		[31] = "SwSyncFloodFlag",
 	};
 
 	printk(BIOS_DEBUG, "PMxC0 STATUS: 0x%x ", pmxc0_status);

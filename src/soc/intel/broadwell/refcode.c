@@ -11,7 +11,7 @@
 #include <soc/pei_data.h>
 #include <soc/pei_wrapper.h>
 #include <soc/pm.h>
-#include <soc/ramstage.h>
+#include <soc/refcode.h>
 
 static pei_wrapper_entry_t load_reference_code(void)
 {
@@ -27,11 +27,6 @@ static pei_wrapper_entry_t load_reference_code(void)
 		.cbmem_id = CBMEM_ID_REFCODE,
 		.prog = &prog,
 	};
-
-	if (prog_locate(&prog)) {
-		printk(BIOS_DEBUG, "Couldn't locate reference code.\n");
-		return NULL;
-	}
 
 	if (rmodule_stage_load(&refcode)) {
 		printk(BIOS_DEBUG, "Error loading reference code.\n");

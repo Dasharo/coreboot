@@ -20,9 +20,6 @@
 #include <soc/lpc.h>
 #include <soc/southbridge.h>
 
-/* Most systems should have already enabled the bridge */
-void __weak soc_late_lpc_bridge_enable(void) { }
-
 static void setup_serirq(void)
 {
 	u8 byte;
@@ -40,8 +37,6 @@ static void setup_serirq(void)
 static void lpc_init(struct device *dev)
 {
 	u8 byte;
-
-	soc_late_lpc_bridge_enable();
 
 	/* Initialize isa dma */
 	isa_dma_init();
@@ -61,12 +56,6 @@ static void lpc_init(struct device *dev)
 	/* BIT 1 is not defined in public datasheet. */
 	byte &= ~(1 << 1);
 
-	/*
-	 * Keep the old way. i.e., when bus master/DMA cycle is going
-	 * on on LPC, it holds PCI grant, so no LPC slave cycle can
-	 * interrupt and visit LPC.
-	 */
-	byte &= ~LPC_NOHOG;
 	pci_write_config8(dev, LPC_MISC_CONTROL_BITS, byte);
 
 	/*
@@ -117,21 +106,13 @@ static void lpc_read_resources(struct device *dev)
 		     IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
 
 	/* Add a memory resource for the SPI BAR. */
-	fixed_mem_resource(dev, 2, SPI_BASE_ADDRESS / 1024, 1,
+	fixed_mem_resource(dev, 2, SPI_BASE_ADDRESS / KiB, 1,
 			IORESOURCE_SUBTRACTIVE);
 
 	res = new_resource(dev, 3); /* IOAPIC */
 	res->base = IO_APIC_ADDR;
 	res->size = 0x00001000;
 	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
-
-#ifdef I2C_BASE_ADDRESS
-	/* I2C devices */
-	res = new_resource(dev, 4);
-	res->base = I2C_BASE_ADDRESS;
-	res->size = I2C_DEVICE_SIZE * I2C_DEVICE_COUNT;
-	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
-#endif
 
 	compact_resources(dev);
 }
@@ -341,9 +322,10 @@ static struct device_operations lpc_ops = {
 };
 
 static const unsigned short pci_device_ids[] = {
+	/* PCI device ID is used on all discrete FCHs and Family 16h Models 00h-3Fh */
 	PCI_DEVICE_ID_AMD_SB900_LPC,
+	/* PCI device ID is used on all integrated FCHs except Family 16h Models 00h-3Fh */
 	PCI_DEVICE_ID_AMD_CZ_LPC,
-	PCI_DEVICE_ID_AMD_FAM17H_LPC,
 	0
 };
 static const struct pci_driver lpc_driver __pci_driver = {

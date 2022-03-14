@@ -10,6 +10,7 @@
 #include <device/pci_ids.h>
 #include <pc80/i8259.h>
 #include <pc80/i8254.h>
+#include <stdint.h>
 #include <string.h>
 #include <vbe.h>
 #include <framebuffer_info.h>
@@ -89,14 +90,19 @@ static int intXX_exception_handler(void)
 		.edi=X86_EDI,
 		.vector=M.x86.intno,
 		.error_code=0, // FIXME: fill in
-		.eip=X86_EIP,
 		.cs=X86_CS,
+#if ENV_X86_64
+		.rip=X86_EIP,
+		.rflags=X86_EFLAGS
+#else
+		.eip=X86_EIP,
 		.eflags=X86_EFLAGS
+#endif
 	};
 	struct eregs *regs = &reg_info;
 
 	printk(BIOS_INFO, "Oops, exception %d while executing option rom\n",
-			regs->vector);
+	       (uint32_t)regs->vector);
 	x86_exception(regs);	// Call coreboot exception handler
 
 	return 0;		// Never really returns
@@ -227,7 +233,7 @@ static u8 vbe_get_ctrl_info(vbe_info_block *info)
 			0x0000, buffer_seg, buffer_adr);
 	/* If the VBE function completed successfully, 0x0 is returned in AH */
 	if (X86_AH) {
-		printk(BIOS_WARNING, "Warning: Error from VGA BIOS in %s\n", __func__);
+		printk(BIOS_WARNING, "Error from VGA BIOS in %s\n", __func__);
 		return 1;
 	}
 	memcpy(info, buffer, sizeof(vbe_info_block));

@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <bl_uapp/bl_syscall_public.h>
+#include <psp_verstage.h>
 #include <stddef.h>
 
 void svc_exit(uint32_t status)

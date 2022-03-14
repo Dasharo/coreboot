@@ -9,7 +9,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select SOUTHBRIDGE_AMD_CIMX_SB800
 	select HAVE_OPTION_TABLE
 	select HAVE_PIRQ_TABLE
-	select HAVE_MP_TABLE
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select BOARD_ROMSIZE_KB_2048
@@ -17,11 +16,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SPD_IN_CBFS
 
 config MAINBOARD_DIR
-	string
 	default "gizmosphere/gizmo"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Gizmo"
 
 config HW_MEM_HOLE_SIZEK
@@ -40,10 +37,6 @@ config ONBOARD_VGA_IS_PRIMARY
 	bool
 	default y
 
-config VGA_BIOS
-	bool
-	default n
-
 config VGA_BIOS_ID
 	string
 	default "1002,9804"
@@ -53,7 +46,6 @@ config SB800_AHCI_ROM
 	default n
 
 config DIMM_SPD_SIZE
-	int
 	default 128
 
 endif # BOARD_GIZMOSPHERE_GIZMO

@@ -15,15 +15,9 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "intel/wtm2"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "WHITETIP MOUNTAIN 2"
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0166.rom"
 
 endif # BOARD_INTEL_WTM2

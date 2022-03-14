@@ -17,9 +17,6 @@
 #define MSR_BIOS_UPGD_TRIG	0x7a
 #define  SGX_ACTIVATE_BIT	(1)
 #define MSR_PMG_IO_CAPTURE_BASE	0xe4
-#define MSR_POWER_MISC		0x120
-#define  ENABLE_IA_UNTRUSTED	(1 << 6)
-#define  FLUSH_DL1_L2		(1 << 8)
 #define MSR_EMULATE_PM_TIMER	0x121
 #define  EMULATE_DELAY_OFFSET_VALUE	20
 #define  EMULATE_PM_TMR_EN	(1 << 16)
@@ -108,13 +105,5 @@
 #define SMRR_LOCK_SUPPORTED		(1<<14)
 
 #define SGX_SUPPORTED	(1<<2)
-/* Intel SDM: Table 36-6.
- * CPUID Leaf 12H, Sub-Leaf Index 2 or Higher for enumeration of
- * SGX Resources. Same Table  mentions about return values of the CPUID */
-#define SGX_RESOURCE_ENUM_CPUID_LEAF	(0x12)
-#define SGX_RESOURCE_ENUM_CPUID_SUBLEAF	(0x2)
-#define SGX_RESOURCE_ENUM_BIT	(0x1)
-#define SGX_RESOURCE_MASK_LO	(0xfffff000UL)
-#define SGX_RESOURCE_MASK_HI	(0xfffffUL)
 
 #endif	/* SOC_INTEL_COMMON_MSR_H */

@@ -10,7 +10,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select DEFAULT_POST_ON_LPC
 	select HAVE_OPTION_TABLE
 	select HAVE_PIRQ_TABLE
-	select HAVE_MP_TABLE
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
 	select BOARD_ROMSIZE_KB_4096
@@ -19,11 +18,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_SPD_IN_CBFS
 
 config MAINBOARD_DIR
-	string
 	default "gizmosphere/gizmo2"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Gizmo2"
 
 config HW_MEM_HOLE_SIZEK
@@ -47,7 +44,6 @@ config HUDSON_LEGACY_FREE
 	default y
 
 config DIMM_SPD_SIZE
-	int
 	default 128
 
 endif # BOARD_GIZMOSPHERE_GIZMO2

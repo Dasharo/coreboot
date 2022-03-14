@@ -10,11 +10,6 @@
 #define GNB_IO_APIC_ADDR		0xfec01000
 #define SPI_BASE_ADDRESS		0xfec10000
 
-#if CONFIG(HPET_ADDRESS_OVERRIDE)
-#error HPET address override is not allowed and must be fixed at 0xfed00000
-#endif
-#define HPET_BASE_ADDRESS		0xfed00000
-
 /* FCH AL2AHB Registers */
 #define ALINK_AHB_ADDRESS		0xfedc0000
 #define AL2AHB_CONTROL_CLK_OFFSET	0x10
@@ -39,19 +34,14 @@
  */
 #define I2C_MASTER_DEV_COUNT		4
 #define I2C_MASTER_START_INDEX		2
-#define I2C_SLAVE_DEV_COUNT		1
+#define I2C_PERIPHERAL_DEV_COUNT	1
+#define I2C_CTRLR_COUNT			(I2C_MASTER_DEV_COUNT + I2C_PERIPHERAL_DEV_COUNT)
 
 #if ENV_X86
 
 #define APU_I2C2_BASE			0xfedc4000
 #define APU_I2C3_BASE			0xfedc5000
 #define APU_I2C4_BASE			0xfedc6000
-
-/* I2C parameters for lpc_read_resources */
-#define I2C_BASE_ADDRESS		APU_I2C2_BASE
-#define I2C_DEVICE_SIZE			0x00001000
-#define I2C_DEVICE_COUNT		(I2C_MASTER_DEV_COUNT \
-					 - I2C_MASTER_START_INDEX)
 
 #define APU_DMAC0_BASE			0xfedc7000
 #define APU_DMAC1_BASE			0xfedc8000
@@ -66,9 +56,9 @@
 #define APU_EMMC_BASE			0xfedd5000
 #define APU_EMMC_CONFIG_BASE		0xfedd5800
 
-#define FLASH_BASE_ADDR			((0xffffffff - CONFIG_ROM_SIZE) + 1)
-
 #endif /* ENV_X86 */
+
+#define FLASH_BASE_ADDR			((0xffffffff - CONFIG_ROM_SIZE) + 1)
 
 /* I/O Ranges */
 #define ACPI_IO_BASE			0x400
@@ -82,7 +72,6 @@
 #define  ACPI_GPE0_BLK		(ACPI_IO_BASE + 0x20)     /* 8 bytes */
 #define  ACPI_GPE0_STS		(ACPI_GPE0_BLK + 0x00)		  /* 4 bytes */
 #define  ACPI_GPE0_EN		(ACPI_GPE0_BLK + 0x04)		  /* 4 bytes */
-#define NCP_ERR				0xf0
 #define SMB_BASE_ADDR			0xb00
 #define PM2_INDEX			0xcd0
 #define PM2_DATA			0xcd1

@@ -139,7 +139,7 @@ static ssize_t acpi_device_path_fill(const struct device *dev, char *buf,
 
 /*
  * Warning: just as with dev_path() this uses a static buffer
- * so should not be called mulitple times in one statement
+ * so should not be called multiple times in one statement
  */
 const char *acpi_device_path(const struct device *dev)
 {
@@ -598,23 +598,75 @@ void acpi_device_write_uart(const struct acpi_uart *uart)
 	acpi_device_fill_len(desc_length);
 }
 
+#define ACPI_POWER_RESOURCE_STATUS_ON_OP	ONE_OP
+#define ACPI_POWER_RESOURCE_STATUS_OFF_OP	ZERO_OP
+
+/**
+ * Writes an ACPI fragment that will check the GPIO and return 0 if the GPIO
+ * state does not match the active parameter.
+ */
+static void acpigen_write_gpio_STA(const struct acpi_gpio *gpio, bool active)
+{
+	if (!gpio || !gpio->pin_count)
+		return;
+
+	/* Read current GPIO status into Local0. */
+	acpigen_get_tx_gpio(gpio);
+
+	/*
+	 * If (!Local0)
+	 * {
+	 *     Return (Zero)
+	 * }
+	 */
+	acpigen_write_if();
+	if (active)
+		acpigen_emit_byte(LNOT_OP);
+	acpigen_emit_byte(LOCAL0_OP);
+	acpigen_write_return_op(ACPI_POWER_RESOURCE_STATUS_OFF_OP);
+	acpigen_write_if_end();
+}
+
+static void acpigen_write_power_res_STA(const struct acpi_power_res_params *params)
+{
+	acpigen_write_method_serialized("_STA", 0);
+
+	/* Verify all the GPIOs are in the ON state, otherwise return 0 */
+	acpigen_write_gpio_STA(params->enable_gpio, true);
+	acpigen_write_gpio_STA(params->reset_gpio, false);
+	acpigen_write_gpio_STA(params->stop_gpio, false);
+
+	/* All GPIOs are in the ON state */
+	acpigen_write_return_op(ACPI_POWER_RESOURCE_STATUS_ON_OP);
+
+	acpigen_pop_len(); /* Method */
+}
+
 /* PowerResource() with Enable and/or Reset control */
 void acpi_device_add_power_res(const struct acpi_power_res_params *params)
 {
+	static uint8_t id;
 	static const char * const power_res_dev_states[] = { "_PR0", "_PR3" };
 	unsigned int reset_gpio = params->reset_gpio ? params->reset_gpio->pins[0] : 0;
 	unsigned int enable_gpio = params->enable_gpio ? params->enable_gpio->pins[0] : 0;
 	unsigned int stop_gpio = params->stop_gpio ? params->stop_gpio->pins[0] : 0;
+	char pr_name[ACPI_NAME_BUFFER_SIZE];
 
 	if (!reset_gpio && !enable_gpio && !stop_gpio)
 		return;
 
-	/* PowerResource (PRIC, 0, 0) */
-	acpigen_write_power_res("PRIC", 0, 0, power_res_dev_states,
+	snprintf(pr_name, sizeof(pr_name), "PR%02X", id++);
+
+	/* PowerResource (PR##, 0, 0) */
+	acpigen_write_power_res(pr_name, 0, 0, power_res_dev_states,
 				ARRAY_SIZE(power_res_dev_states));
 
-	/* Method (_STA, 0, NotSerialized) { Return (0x1) } */
-	acpigen_write_STA(0x1);
+	if (params->use_gpio_for_status) {
+		acpigen_write_power_res_STA(params);
+	} else {
+		/* Method (_STA, 0, NotSerialized) { Return (0x1) } */
+		acpigen_write_STA(ACPI_POWER_RESOURCE_STATUS_ON_OP);
+	}
 
 	/* Method (_ON, 0, Serialized) */
 	acpigen_write_method_serialized("_ON", 0);
@@ -656,7 +708,7 @@ void acpi_device_add_power_res(const struct acpi_power_res_params *params)
 	}
 	acpigen_pop_len();		/* _OFF method */
 
-	acpigen_pop_len();		/* PowerResource PRIC */
+	acpigen_pop_len();		/* PowerResource PR## */
 }
 
 static void acpi_dp_write_array(const struct acpi_dp *array);

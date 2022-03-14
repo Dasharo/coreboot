@@ -16,12 +16,8 @@
  */
 void smihandler_soc_at_finalize(void)
 {
-	if (!CONFIG(HECI_DISABLE_USING_SMM))
-		return;
-
-	const struct device *dev = pcidev_path_on_root(PCH_DEVFN_CSE);
-	if (!is_dev_enabled(dev))
-		heci_disable();
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT) && CONFIG(HECI_DISABLE_USING_SMM))
+		heci1_disable();
 }
 
 const smi_handler_t southbridge_smi[SMI_STS_BITS] = {

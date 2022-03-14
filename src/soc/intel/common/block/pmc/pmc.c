@@ -5,8 +5,10 @@
 #include <console/console.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
+#include <intelblocks/acpi.h>
 #include <intelblocks/pmc.h>
 #include <soc/pci_devs.h>
+#include <soc/pm.h>
 
 static void pch_pmc_add_new_resource(struct device *dev,
 		uint8_t offset, uintptr_t base, size_t size,
@@ -73,6 +75,28 @@ static void pch_pmc_read_resources(struct device *dev)
 	pch_pmc_add_io_resources(dev, config);
 }
 
+static void pmc_fill_ssdt(const struct device *dev)
+{
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_ACPI_PEP))
+		generate_acpi_power_engine();
+}
+
+/*
+ * `pmc_final` function is native implementation of equivalent events performed by
+ * each FSP NotifyPhase() API invocations.
+ *
+ *
+ * Clear PMCON status bits (Global Reset/Power Failure/Host Reset Status bits)
+ *
+ * Perform the PMCON status bit clear operation from `.final`
+ * to cover any such chances where later boot stage requested a global
+ * reset and PMCON status bit remains set.
+ */
+static void pmc_final(struct device *dev)
+{
+	pmc_clear_pmcon_sts();
+}
+
 static struct device_operations device_ops = {
 	.read_resources		= pch_pmc_read_resources,
 	.set_resources		= pci_dev_set_resources,
@@ -80,14 +104,19 @@ static struct device_operations device_ops = {
 	.init			= pmc_soc_init,
 	.ops_pci		= &pci_dev_ops_pci,
 	.scan_bus		= scan_static_bus,
+#if CONFIG(HAVE_ACPI_TABLES)
+	.acpi_fill_ssdt		= pmc_fill_ssdt,
+#endif
+	.final			= pmc_final,
 };
 
 static const unsigned short pci_device_ids[] = {
+	PCI_DEVICE_ID_INTEL_DNV_PMC,
 	PCI_DEVICE_ID_INTEL_SPT_LP_PMC,
 	PCI_DEVICE_ID_INTEL_SPT_H_PMC,
 	PCI_DEVICE_ID_INTEL_LWB_PMC,
 	PCI_DEVICE_ID_INTEL_LWB_PMC_SUPER,
-	PCI_DEVICE_ID_INTEL_KBP_H_PMC,
+	PCI_DEVICE_ID_INTEL_UPT_H_PMC,
 	PCI_DEVICE_ID_INTEL_APL_PMC,
 	PCI_DEVICE_ID_INTEL_GLK_PMC,
 	PCI_DEVICE_ID_INTEL_CNP_H_PMC,
@@ -95,11 +124,12 @@ static const unsigned short pci_device_ids[] = {
 	PCI_DEVICE_ID_INTEL_CMP_PMC,
 	PCI_DEVICE_ID_INTEL_CMP_H_PMC,
 	PCI_DEVICE_ID_INTEL_TGP_PMC,
+	PCI_DEVICE_ID_INTEL_TGP_H_PMC,
 	PCI_DEVICE_ID_INTEL_MCC_PMC,
 	PCI_DEVICE_ID_INTEL_JSP_PMC,
 	PCI_DEVICE_ID_INTEL_ADP_P_PMC,
 	PCI_DEVICE_ID_INTEL_ADP_S_PMC,
-	PCI_DEVICE_ID_INTEL_ADP_M_PMC,
+	PCI_DEVICE_ID_INTEL_ADP_M_N_PMC,
 	0
 };
 

@@ -1,0 +1,4 @@
+config EC_LIBREM_EC
+	bool
+	help
+	  Purism Librem EC

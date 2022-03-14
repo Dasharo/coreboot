@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <arch/hpet.h>
+#include <arch/io.h>
+#include <arch/ioapic.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -8,8 +11,7 @@
 #include <option.h>
 #include <pc80/mc146818rtc.h>
 #include <pc80/isa-dma.h>
-#include <arch/io.h>
-#include <arch/ioapic.h>
+#include <pc80/i8259.h>
 #include "chip.h"
 #include "i82801dx.h"
 
@@ -32,7 +34,7 @@ static void i82801dx_enable_acpi(struct device *dev)
 }
 
 /**
- * Set miscellanous static southbridge features.
+ * Set miscellaneous static southbridge features.
  *
  * @param dev PCI device with I/O APIC control registers
  */
@@ -48,13 +50,9 @@ static void i82801dx_enable_ioapic(struct device *dev)
 	pci_write_config32(dev, GEN_CNTL, reg32);
 	printk(BIOS_DEBUG, "IOAPIC Southbridge enabled %x\n", reg32);
 
-	set_ioapic_id(VIO_APIC_VADDR, 0x02);
+	setup_ioapic(VIO_APIC_VADDR, 0x02);
 
-	/*
-	 * Select Boot Configuration register (0x03) and
-	 * use Processor System Bus (0x01) to deliver interrupts.
-	 */
-	io_apic_write(VIO_APIC_VADDR, 0x03, 0x01);
+	ioapic_set_boot_config(VIO_APIC_VADDR, true);
 }
 
 static void i82801dx_enable_serial_irqs(struct device *dev)
@@ -88,17 +86,13 @@ static void i82801dx_power_options(struct device *dev)
 	u32 reg32;
 	const char *state;
 
-	int pwr_on = CONFIG_MAINBOARD_POWER_FAILURE_STATE;
-	int nmi_option;
-
 	/* Which state do we want to goto after g3 (power restored)?
 	 * 0 == S0 Full On
 	 * 1 == S5 Soft Off
 	 *
 	 * If the option is not existent (Laptops), use MAINBOARD_POWER_ON.
 	 */
-	pwr_on = MAINBOARD_POWER_ON;
-	get_option(&pwr_on, "power_on_after_fail");
+	const unsigned int pwr_on = get_uint_option("power_on_after_fail", MAINBOARD_POWER_ON);
 
 	reg8 = pci_read_config8(dev, GEN_PMCON_3);
 	reg8 &= 0xfe;
@@ -133,8 +127,7 @@ static void i82801dx_power_options(struct device *dev)
 	outb(reg8, 0x61);
 
 	reg8 = inb(0x70);
-	nmi_option = NMI_OFF;
-	get_option(&nmi_option, "nmi");
+	const unsigned int nmi_option = get_uint_option("nmi", NMI_OFF);
 	if (nmi_option) {
 		printk(BIOS_INFO, "NMI sources enabled.\n");
 		reg8 &= ~(1 << 7);	/* Set NMI. */
@@ -221,7 +214,7 @@ static void enable_hpet(struct device *dev)
 	u32 reg32, hpet, val;
 
 	/* Set HPET base address and enable it */
-	printk(BIOS_DEBUG, "Enabling HPET at 0x%x\n", CONFIG_HPET_ADDRESS);
+	printk(BIOS_DEBUG, "Enabling HPET at 0x%x\n", HPET_BASE_ADDRESS);
 	reg32 = pci_read_config32(dev, GEN_CNTL);
 	/*
 	 * Bit 17 is HPET enable bit.
@@ -229,7 +222,7 @@ static void enable_hpet(struct device *dev)
 	 */
 	reg32 &= ~(3 << 15);	/* Clear it */
 
-	hpet = CONFIG_HPET_ADDRESS >> 12;
+	hpet = HPET_BASE_ADDRESS >> 12;
 	hpet &= 0x3;
 
 	reg32 |= (hpet << 15);
@@ -242,7 +235,7 @@ static void enable_hpet(struct device *dev)
 	val &= 0x7;
 
 	if ((val & 0x4) && (hpet == (val & 0x3))) {
-		printk(BIOS_INFO, "HPET enabled at 0x%x\n", CONFIG_HPET_ADDRESS);
+		printk(BIOS_INFO, "HPET enabled at 0x%x\n", HPET_BASE_ADDRESS);
 	} else {
 		printk(BIOS_WARNING, "HPET was not enabled correctly\n");
 		reg32 &= ~(1 << 17);	/* Clear Enable */
@@ -282,10 +275,12 @@ static void lpc_init(struct device *dev)
 	/* Initialize the High Precision Event Timers */
 	enable_hpet(dev);
 
+	setup_i8259();
+
 	/* Don't allow evil boot loaders, kernels, or
 	 * userspace applications to deceive us:
 	 */
-	if (CONFIG(HAVE_SMI_HANDLER) && !CONFIG(PARALLEL_MP))
+	if (CONFIG(SMM_LEGACY_ASEG))
 		aseg_smm_lock();
 }
 

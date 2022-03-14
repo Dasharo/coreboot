@@ -18,12 +18,10 @@ config BOARD_PURISM_BASEBOARD_LIBREM_SKL
 
 if BOARD_PURISM_BASEBOARD_LIBREM_SKL
 
-config IRQ_SLOT_COUNT
-	int
-	default 18
+config DISABLE_HECI1_AT_PRE_BOOT
+	default y
 
 config VARIANT_DIR
-	string
 	default "librem13" if BOARD_PURISM_LIBREM13_V2 || BOARD_PURISM_LIBREM13_V4
 	default "librem15" if BOARD_PURISM_LIBREM15_V3 || BOARD_PURISM_LIBREM15_V4
 
@@ -33,18 +31,15 @@ config MAINBOARD_FAMILY
 	default "Librem 15" if BOARD_PURISM_LIBREM15_V3 || BOARD_PURISM_LIBREM15_V4
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Librem 13 v2" if BOARD_PURISM_LIBREM13_V2
 	default "Librem 15 v3" if BOARD_PURISM_LIBREM15_V3
 	default "Librem 13 v4" if BOARD_PURISM_LIBREM13_V4
 	default "Librem 15 v4" if BOARD_PURISM_LIBREM15_V4
 
 config MAINBOARD_DIR
-	string
 	default "purism/librem_skl"
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config VGA_BIOS_ID
@@ -58,15 +53,12 @@ config INTEL_GMA_VBT_FILE
 	default "src/mainboard/\$(MAINBOARDDIR)/data.vbt"
 
 config DIMM_MAX
-	int
 	default 1
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config CBFS_SIZE
-	hex
 	default 0xe00000
 
 # This platform has limited means to display POST codes

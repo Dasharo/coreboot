@@ -1,11 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <device/dram/spd.h>
 #include <dimm_info_util.h>
 #include <smbios.h>
 #include <spd.h>
 #include <console/console.h>
 
-uint8_t smbios_bus_width_to_spd_width(uint16_t total_width, uint16_t data_width)
+uint8_t smbios_bus_width_to_spd_width(uint8_t ddr_type, uint16_t total_width,
+				      uint16_t data_width)
 {
 	uint8_t out;
 
@@ -38,7 +40,10 @@ uint8_t smbios_bus_width_to_spd_width(uint16_t total_width, uint16_t data_width)
 
 	switch (extension_bits) {
 	case 8:
-		out |= SPD_ECC_8BIT;
+		if (ddr_type == MEMORY_TYPE_DDR5 || ddr_type == MEMORY_TYPE_LPDDR5)
+			out |= SPD_ECC_8BIT_LP5_DDR5;
+		else
+			out |= SPD_ECC_8BIT;
 		break;
 	case 0:
 		/* No extension bits */
@@ -68,18 +73,8 @@ uint32_t smbios_memory_size_to_mib(uint16_t memory_size, uint32_t extended_size)
 		return memory_size;
 }
 
-uint8_t
-smbios_form_factor_to_spd_mod_type(smbios_memory_form_factor form_factor)
+uint8_t smbios_form_factor_to_spd_mod_type(smbios_memory_type memory_type,
+		smbios_memory_form_factor form_factor)
 {
-	/* This switch reverses the switch in smbios.c */
-	switch (form_factor) {
-	case MEMORY_FORMFACTOR_DIMM:
-		return SPD_UDIMM;
-	case MEMORY_FORMFACTOR_RIMM:
-		return SPD_RDIMM;
-	case MEMORY_FORMFACTOR_SODIMM:
-		return SPD_SODIMM;
-	default:
-		return SPD_UNDEFINED;
-	}
+	return convert_form_factor_to_module_type(memory_type, form_factor);
 }

@@ -43,14 +43,6 @@
 #define LPT_LP_STEP_B1		0x03
 #define LPT_LP_STEP_B2		0x04
 
-/*
- * It does not matter where we put the SMBus I/O base, as long as we
- * keep it consistent and don't interfere with other devices.  Stage2
- * will relocate this anyways.
- * Our solution is to have SMB initialization move the I/O to CONFIG_FIXED_SMBUS_IO_BASE
- * again. But handling static BARs is a generic problem that should be
- * solved in the device allocator.
- */
 #define SMBUS_SLAVE_ADDR	0x24
 
 #if CONFIG(INTEL_LYNXPOINT_LP)
@@ -63,11 +55,51 @@
 #define DEFAULT_GPIOSIZE	0x80
 #endif
 
-#define HPET_ADDR		0xfed00000
-
 #include <southbridge/intel/common/rcba.h>
 
 #ifndef __ACPI__
+
+#if CONFIG(INTEL_LYNXPOINT_LP)
+#define MAX_USB2_PORTS	10
+#define MAX_USB3_PORTS	4
+#else
+#define MAX_USB2_PORTS	14
+#define MAX_USB3_PORTS	6
+#endif
+
+/* There are 8 OC pins */
+#define USB_OC_PIN_SKIP	8
+
+enum usb2_port_location {
+	USB_PORT_SKIP = 0,
+	USB_PORT_BACK_PANEL,
+	USB_PORT_FRONT_PANEL,
+	USB_PORT_DOCK,
+	USB_PORT_MINI_PCIE,
+	USB_PORT_FLEX,
+	USB_PORT_INTERNAL,
+};
+
+/*
+ * USB port length is in MRC format: binary-coded decimal length in tenths of an inch.
+ *   4.2 inches -> 0x0042
+ *  12.7 inches -> 0x0127
+ */
+struct usb2_port_config {
+	uint16_t length;
+	bool enable;
+	unsigned short oc_pin;
+	enum usb2_port_location location;
+};
+
+struct usb3_port_config {
+	bool enable;
+	unsigned int oc_pin;
+};
+
+/* Mainboard-specific USB configuration */
+extern const struct usb2_port_config mainboard_usb2_ports[MAX_USB2_PORTS];
+extern const struct usb3_port_config mainboard_usb3_ports[MAX_USB3_PORTS];
 
 static inline int pch_is_lp(void)
 {
@@ -123,8 +155,9 @@ void pch_log_state(void);
 void acpi_create_serialio_ssdt(acpi_header_t *ssdt);
 
 void enable_usb_bar(void);
-int early_pch_init(void);
+void early_pch_init(void);
 void pch_enable_lpc(void);
+void uart_bootblock_init(void);
 void mainboard_config_superio(void);
 void mainboard_config_rcba(void);
 
@@ -164,8 +197,18 @@ void mainboard_config_rcba(void);
 #define SERIRQ_CNTL		0x64
 
 #define GEN_PMCON_1		0xa0
+#define  SMI_LOCK		(1 << 4)
 #define GEN_PMCON_2		0xa2
+#define  SYSTEM_RESET_STS	(1 << 4)
+#define  THERMTRIP_STS		(1 << 3)
+#define  SYSPWR_FLR		(1 << 1)
+#define  PWROK_FLR		(1 << 0)
 #define GEN_PMCON_3		0xa4
+#define  SUS_PWR_FLR		(1 << 14)
+#define  GEN_RST_STS		(1 << 9)
+#define  RTC_BATTERY_DEAD	(1 << 2)
+#define  PWR_FLR		(1 << 1)
+#define  SLEEP_AFTER_POWER_FAIL	(1 << 0)
 #define PMIR			0xac
 #define  PMIR_CF9LOCK		(1 << 31)
 #define  PMIR_CF9GR		(1 << 20)
@@ -330,6 +373,9 @@ void mainboard_config_rcba(void);
 
 #define SIO_REG_PPR_CLOCK		0x800
 #define  SIO_REG_PPR_CLOCK_EN		 (1 << 0)
+#define  SIO_REG_PPR_CLOCK_UPDATE	 (1 << 31)
+#define  SIO_REG_PPR_CLOCK_M_DIV	 0x25a
+#define  SIO_REG_PPR_CLOCK_N_DIV	 0x7fff
 #define SIO_REG_PPR_RST			0x804
 #define  SIO_REG_PPR_RST_ASSERT		 0x3
 #define SIO_REG_PPR_GEN			0x808
@@ -418,6 +464,8 @@ void mainboard_config_rcba(void);
 #define  IOBPS_WRITE	0x0700
 #define IOBPU		0x233a
 #define  IOBPU_MAGIC	0xf000
+#define  IOBP_PCICFG_READ	0x0400
+#define  IOBP_PCICFG_WRITE	0x0500
 
 #define D31IP		0x3100	/* 32bit */
 #define D31IP_TTIP	24	/* Thermal Throttle Pin */
@@ -575,6 +623,7 @@ void mainboard_config_rcba(void);
 #define TCO1_STS	0x64
 #define   DMISCI_STS	(1 << 9)
 #define TCO2_STS	0x66
+#define   SECOND_TO_STS	(1 << 1)
 #define ALT_GP_SMI_EN2	0x5c
 #define ALT_GP_SMI_STS2	0x5e
 
@@ -598,7 +647,7 @@ void mainboard_config_rcba(void);
 #define SPIBAR16(x) RCBA16((x) + SPIBAR_OFFSET)
 #define SPIBAR32(x) RCBA32((x) + SPIBAR_OFFSET)
 
-/* Reigsters within the SPIBAR */
+/* Registers within the SPIBAR */
 #define SSFC 0x91
 #define FDOC 0xb0
 #define FDOD 0xb4

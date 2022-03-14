@@ -46,19 +46,15 @@ struct temperature temperatures[] = {
 
 static void hwm_setup(void)
 {
-	int cpufan_control = 0, sysfan_control = 0;
-	int cpufan_speed = 0, sysfan_speed = 0;
-	int cpufan_temperature = 0, sysfan_temperature = 0;
+	unsigned int cpufan_control = 0, sysfan_control = 0;
+	unsigned int cpufan_speed = 0, sysfan_speed = 0;
+	unsigned int cpufan_temperature = 0, sysfan_temperature = 0;
 
-	cpufan_control = FAN_CRUISE_CONTROL_DISABLED;
-	get_option(&cpufan_control, "cpufan_cruise_control");
-	cpufan_speed = FAN_SPEED_5625;
-	get_option(&cpufan_speed, "cpufan_speed");
+	cpufan_control = get_uint_option("cpufan_cruise_control", FAN_CRUISE_CONTROL_DISABLED);
+	cpufan_speed = get_uint_option("cpufan_speed", FAN_SPEED_5625);
 
-	sysfan_control = FAN_CRUISE_CONTROL_DISABLED;
-	get_option(&sysfan_control, "sysfan_cruise_control");
-	sysfan_speed = FAN_SPEED_5625;
-	get_option(&sysfan_speed, "sysfan_speed");
+	sysfan_control = get_uint_option("sysfan_cruise_control", FAN_CRUISE_CONTROL_DISABLED);
+	sysfan_speed = get_uint_option("sysfan_speed", FAN_SPEED_5625);
 
 	nuvoton_hwm_select_bank(hwm_base, 0);
 	pnp_write_hwm5_index(hwm_base, 0x59, 0x20); /* Diode Selection */
@@ -140,11 +136,10 @@ static void mainboard_init(void *chip_info)
 	struct device *dev;
 
 	for (i = 1; i <= 3; i++) {
-		int ethernet_disable = 0;
 		char cmos_option_name[] = "ethernetx";
 		snprintf(cmos_option_name, sizeof(cmos_option_name),
 			 "ethernet%01d", i);
-		get_option(&ethernet_disable, cmos_option_name);
+		unsigned int ethernet_disable = get_uint_option(cmos_option_name, 0);
 		if (!ethernet_disable)
 			continue;
 		printk(BIOS_DEBUG, "Disabling Ethernet NIC #%d\n", i);

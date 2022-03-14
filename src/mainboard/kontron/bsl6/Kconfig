@@ -15,21 +15,21 @@ config BOARD_KONTRON_BSL6_COMMON
 	select MAINBOARD_HAS_LIBGFXINIT
 	select DRIVERS_I2C_NCT7802Y
 
-config BOARD_KONTRON_BSL6_OPTIONS
-	bool
+config BOARD_KONTRON_BSL6
 	select BOARD_KONTRON_BSL6_COMMON
 	select HAVE_ACPI_RESUME
 
-config BOARD_KONTRON_BOXER26_OPTIONS
-	bool
+config BOARD_SIEMENS_BOXER26
 	select BOARD_KONTRON_BSL6_COMMON
 	select DRIVERS_I2C_LM96000
 	select SECUNET_DMI
 
 if BOARD_KONTRON_BSL6_COMMON
 
+config DISABLE_HECI1_AT_PRE_BOOT
+	default y
+
 config MAINBOARD_DIR
-	string
 	default "kontron/bsl6"
 
 config MAINBOARD_VENDOR
@@ -37,29 +37,23 @@ config MAINBOARD_VENDOR
 	default "Siemens" if BOARD_SIEMENS_BOXER26
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "bSL6" if BOARD_KONTRON_BSL6
 	default "Boxer26" if BOARD_SIEMENS_BOXER26
 
 config VARIANT_DIR
-	string
 	default "bsl6" if BOARD_KONTRON_BSL6
 	default "boxer26" if BOARD_SIEMENS_BOXER26
 
 config OVERRIDE_DEVICETREE
-	string
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config CBFS_SIZE
-	hex
 	default 0x600000 if BOARD_SIEMENS_BOXER26
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 endif

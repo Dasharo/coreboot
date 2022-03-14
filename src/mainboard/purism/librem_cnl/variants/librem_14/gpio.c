@@ -1,0 +1,596 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+#include "../../variant.h"
+
+/* Pad configuration was generated automatically using intelp2m utility */
+static const struct pad_config gpio_table[] = {
+
+	/* ------- GPIO Group GPP_A ------- */
+
+	/* GPP_A0 - RCIN# */
+	PAD_CFG_NF(GPP_A0, NONE, DEEP, NF1),
+
+	/* GPP_A1 - LAD0 */
+	PAD_CFG_NF(GPP_A1, NATIVE, DEEP, NF1),
+
+	/* GPP_A2 - LAD1 */
+	PAD_CFG_NF(GPP_A2, NATIVE, DEEP, NF1),
+
+	/* GPP_A3 - LAD2 */
+	PAD_CFG_NF(GPP_A3, NATIVE, DEEP, NF1),
+
+	/* GPP_A4 - LAD3 */
+	PAD_CFG_NF(GPP_A4, NATIVE, DEEP, NF1),
+
+	/* GPP_A5 - LFRAME# */
+	PAD_CFG_NF(GPP_A5, NONE, DEEP, NF1),
+
+	/* GPP_A6 - SERIRQ */
+	PAD_CFG_NF(GPP_A6, NONE, DEEP, NF1),
+
+	/* GPP_A7 - TPM_SPI_PIRQ# */
+	PAD_CFG_NF(GPP_A7, NONE, DEEP, NF1),
+
+	/* GPP_A8 - CLKRUN# */
+	PAD_CFG_NF(GPP_A8, NONE, DEEP, NF1),
+
+	/* GPP_A9 - CLKOUT_LPC0 */
+	PAD_CFG_NF(GPP_A9, DN_20K, DEEP, NF1),
+
+	/* GPP_A10 - CLKOUT_LPC1 */
+	PAD_CFG_NF(GPP_A10, DN_20K, DEEP, NF1),
+
+	/* GPP_A11 - NC */
+	PAD_NC(GPP_A11, NONE),
+
+	/* GPP_A12 - NC */
+	PAD_NC(GPP_A12, NONE),
+
+	/* GPP_A13 - NC */
+	PAD_NC(GPP_A13, NONE),
+
+	/* GPP_A14 - SUS_STAT# */
+	PAD_CFG_NF(GPP_A14, NONE, DEEP, NF1),
+
+	/* GPP_A15 - NC */
+	PAD_NC(GPP_A15, NONE),
+
+	/* GPP_A16 - NC */
+	PAD_NC(GPP_A16, NONE),
+
+	/* GPP_A17 - NC */
+	PAD_NC(GPP_A17, NONE),
+
+	/* GPP_A18 - NC */
+	PAD_NC(GPP_A18, NONE),
+
+	/* GPP_A19 - NC */
+	PAD_NC(GPP_A19, NONE),
+
+	/* GPP_A20 - NC */
+	PAD_NC(GPP_A20, NONE),
+
+	/* GPP_A21 - NC */
+	PAD_NC(GPP_A21, NONE),
+
+	/* GPP_A22 - NC */
+	PAD_NC(GPP_A22, NONE),
+
+	/* GPP_A23 - NC */
+	PAD_NC(GPP_A23, NONE),
+
+	/* ------- GPIO Group GPP_B ------- */
+
+	/* GPP_B0 - CORE_VID0 */
+	PAD_CFG_NF(GPP_B0, NONE, DEEP, NF1),
+
+	/* GPP_B1 - CORE_VID1 */
+	PAD_CFG_NF(GPP_B1, NONE, DEEP, NF1),
+
+	/* GPP_B2 - VRALERT# */
+	PAD_CFG_NF(GPP_B2, NONE, PLTRST, NF1),
+
+	/* GPP_B3 - TP_INT# */
+	PAD_CFG_GPI_APIC_LOW(GPP_B3, NONE, PLTRST),
+
+	/* GPP_B4 - NC */
+	PAD_NC(GPP_B4, NONE),
+
+	/* GPP_B5 - SRCCLKREQ0# / SSD1 */
+	PAD_CFG_NF(GPP_B5, NONE, DEEP, NF1),
+
+	/* GPP_B6 - SRCCLKREQ1# / SSD0 */
+	PAD_CFG_NF(GPP_B6, NONE, DEEP, NF1),
+
+	/* GPP_B8 - SRCCLKREQ2# / WIFI */
+	PAD_CFG_NF(GPP_B7, NONE, DEEP, NF1),
+
+	/* GPP_B8 - SRCCLKREQ3# / LAN */
+	PAD_CFG_NF(GPP_B8, NONE, DEEP, NF1),
+
+	/* GPP_B9 - NC */
+	PAD_NC(GPP_B9, NONE),
+
+	/* GPP_B10 - NC */
+	PAD_NC(GPP_B10, NONE),
+
+	/* GPP_B11 - NC */
+	PAD_NC(GPP_B11, NONE),
+
+	/* GPP_B12 - SLP_S0# */
+	PAD_CFG_NF(GPP_B12, NONE, DEEP, NF1),
+
+	/* GPP_B13 - PLTRST# */
+	PAD_CFG_NF(GPP_B13, NONE, DEEP, NF1),
+
+	/* GPP_B14 - NC */
+	PAD_NC(GPP_B14, NONE),
+
+	/* GPP_B15 - NC */
+	PAD_NC(GPP_B15, NONE),
+
+	/* GPP_B16 - NC */
+	PAD_NC(GPP_B16, NONE),
+
+	/* GPP_B17 - NC */
+	PAD_NC(GPP_B17, NONE),
+
+	/* GPP_B18 - NC */
+	PAD_NC(GPP_B18, NONE),
+
+	/* GPP_B19 - USB3_P1_PWREN */
+	PAD_CFG_GPO(GPP_B19, 1, PLTRST),
+
+	/* GPP_B20 - NC */
+	PAD_NC(GPP_B20, NONE),
+
+	/* GPP_B21 - NC */
+	PAD_NC(GPP_B21, NONE),
+
+	/* GPP_B22 - NC */
+	PAD_NC(GPP_B22, NONE),
+
+	/* GPP_B23 - NC */
+	PAD_NC(GPP_B23, NONE),
+
+	/* ------- GPIO Group GPP_G ------- */
+
+	/* SDIO on M.2 slot */
+	/* GPP_G0 - SD_CMD */
+	PAD_CFG_NF(GPP_G0, NONE, DEEP, NF1),
+
+	/* GPP_G1 - SD_DATA0 */
+	PAD_CFG_NF(GPP_G1, NONE, DEEP, NF1),
+
+	/* GPP_G2 - SD_DATA1 */
+	PAD_CFG_NF(GPP_G2, NONE, DEEP, NF1),
+
+	/* GPP_G3 - SD_DATA2 */
+	PAD_CFG_NF(GPP_G3, NONE, DEEP, NF1),
+
+	/* GPP_G4 - SD_DATA3 */
+	PAD_CFG_NF(GPP_G4, NONE, DEEP, NF1),
+
+	/* GPP_G5 - SD_CD#, NC */
+	PAD_NC(GPP_G5, DN_20K),
+
+	/* GPP_G6 - SD_CLK */
+	PAD_CFG_NF(GPP_G6, NONE, DEEP, NF1),
+
+	/* GPP_G7 - SD_WP, NC */
+	PAD_NC(GPP_G7, DN_20K),
+
+	/* ------- GPIO Group GPP_D ------- */
+
+	/* GPP_D0 - NC */
+	PAD_NC(GPP_D0, NONE),
+
+	/* GPP_D1 - NC */
+	PAD_NC(GPP_D1, NONE),
+
+	/* GPP_D2 - NC */
+	PAD_NC(GPP_D2, NONE),
+
+	/* GPP_D3 - NC */
+	PAD_NC(GPP_D3, NONE),
+
+	/* GPP_D4 - NC */
+	PAD_NC(GPP_D4, NONE),
+
+	/* GPP_D5 - ISH_I2C0_SDA */
+	PAD_CFG_NF(GPP_D5, NONE, DEEP, NF1),
+
+	/* GPP_D6 - ISH_I2C0_SCL */
+	PAD_CFG_NF(GPP_D6, NONE, DEEP, NF1),
+
+	/* GPP_D7 - PCH_NVME_RST */
+	PAD_CFG_GPO(GPP_D7, 1, PLTRST),
+
+	/* GPP_D8 - PCH_NVME_RST1 */
+	PAD_CFG_GPO(GPP_D8, 1, PLTRST),
+
+	/* GPP_D9 - TP_RST */
+	PAD_CFG_GPO(GPP_D9, 1, PLTRST),
+
+	/* GPP_D10 - NC */
+	PAD_NC(GPP_D10, NONE),
+
+	/* GPP_D11 - NC */
+	PAD_NC(GPP_D11, NONE),
+
+	/* GPP_D12 - NC */
+	PAD_NC(GPP_D12, NONE),
+
+	/* GPP_D13 - NC */
+	PAD_NC(GPP_D13, NONE),
+
+	/* GPP_D14 - NC */
+	PAD_NC(GPP_D14, NONE),
+
+	/* GPP_D15 - NC */
+	PAD_NC(GPP_D15, NONE),
+
+	/* GPP_D16 - NC */
+	PAD_NC(GPP_D16, NONE),
+
+	/* GPP_D17 - NC */
+	PAD_NC(GPP_D17, NONE),
+
+	/* GPP_D18 - NC */
+	PAD_NC(GPP_D18, NONE),
+
+	/* GPP_D19 - NC */
+	PAD_NC(GPP_D19, NONE),
+
+	/* GPP_D20 - NC */
+	PAD_NC(GPP_D20, NONE),
+
+	/* GPP_D21 - NC */
+	PAD_NC(GPP_D21, NONE),
+
+	/* GPP_D22 - NC */
+	PAD_NC(GPP_D22, NONE),
+
+	/* GPP_D23 - NC */
+	PAD_NC(GPP_D23, NONE),
+
+	/* ------- GPIO Group GPP_F ------- */
+
+	/* GPP_F0 - NC */
+	PAD_NC(GPP_F0, NONE),
+
+	/* GPP_F1 - NC */
+	PAD_NC(GPP_F1, NONE),
+
+	/* GPP_F2 - NC */
+	PAD_NC(GPP_F2, NONE),
+
+	/* GPP_F3 - NC */
+	PAD_NC(GPP_F3, NONE),
+
+	/* GPP_F4 - NC */
+	PAD_NC(GPP_F4, NONE),
+
+	/* GPP_F5 - NC */
+	PAD_NC(GPP_F5, NONE),
+
+	/* GPP_F6 - NC */
+	PAD_NC(GPP_F6, NONE),
+
+	/* GPP_F7 - NC */
+	PAD_NC(GPP_F7, NONE),
+
+	/* GPP_F8 - NC */
+	PAD_NC(GPP_F8, NONE),
+
+	/* GPP_F9 - NC */
+	PAD_NC(GPP_F9, NONE),
+
+	/* GPP_F10 - NC */
+	PAD_NC(GPP_F10, NONE),
+
+	/* GPP_F11 - NC */
+	PAD_NC(GPP_F11, NONE),
+
+	/* GPP_F12 - NC */
+	PAD_NC(GPP_F12, NONE),
+
+	/* GPP_F13 - NC */
+	PAD_NC(GPP_F13, NONE),
+
+	/* GPP_F14 - NC */
+	PAD_NC(GPP_F14, NONE),
+
+	/* GPP_F15 - NC */
+	PAD_NC(GPP_F15, NONE),
+
+	/* GPP_F16 - NC */
+	PAD_NC(GPP_F16, NONE),
+
+	/* GPP_F17 - NC */
+	PAD_NC(GPP_F17, NONE),
+
+	/* GPP_F18 - NC */
+	PAD_NC(GPP_F18, NONE),
+
+	/* GPP_F19 - NC */
+	PAD_NC(GPP_F19, NONE),
+
+	/* GPP_F20 - NC */
+	PAD_NC(GPP_F20, NONE),
+
+	/* GPP_F21 - NC */
+	PAD_NC(GPP_F21, NONE),
+
+	/* GPP_F22 - NC */
+	PAD_NC(GPP_F22, NONE),
+
+	/* GPP_F23 - NC */
+	PAD_NC(GPP_F23, NONE),
+
+	/* ------- GPIO Group GPP_H ------- */
+
+	/* GPP_H0 - I2S2_SCLK */
+	PAD_CFG_NF(GPP_H0, NONE, DEEP, NF1),
+
+	/* GPP_H1 - I2S2_SFRM */
+	PAD_CFG_NF(GPP_H1, NONE, DEEP, NF1),
+
+	/* GPP_H2 - I2S2_TXD */
+	PAD_CFG_NF(GPP_H2, NONE, DEEP, NF1),
+
+	/* GPP_H3 - I2S2_RXD */
+	PAD_CFG_NF(GPP_H3, NONE, DEEP, NF1),
+
+	/* GPP_H4 - NC */
+	PAD_NC(GPP_H4, NONE),
+
+	/* GPP_H5 - NC */
+	PAD_NC(GPP_H5, NONE),
+
+	/* GPP_H6 - NC */
+	PAD_NC(GPP_H6, NONE),
+
+	/* GPP_H7 - MBV_DET1_PCH */
+	PAD_CFG_GPI(GPP_H7, NONE, PLTRST),
+
+	/* GPP_H8 - MBV_DET2_PCH */
+	PAD_CFG_GPI(GPP_H8, NONE, PLTRST),
+
+	/* GPP_H9 - MBV_DET3_PCH */
+	PAD_CFG_GPI(GPP_H9, NONE, PLTRST),
+
+	/* GPP_H10 - NC */
+	PAD_NC(GPP_H10, NONE),
+
+	/* GPP_H11 - NC */
+	PAD_NC(GPP_H11, NONE),
+
+	/* GPP_H12 - NC */
+	PAD_NC(GPP_H12, NONE),
+
+	/* GPP_H13 - NC */
+	PAD_NC(GPP_H13, NONE),
+
+	/* GPP_H14 - NC */
+	PAD_NC(GPP_H14, NONE),
+
+	/* GPP_H15 - NC */
+	PAD_NC(GPP_H15, NONE),
+
+	/* GPP_H16 - NC */
+	PAD_NC(GPP_H16, NONE),
+
+	/* GPP_H17 - NC */
+	PAD_NC(GPP_H17, NONE),
+
+	/* GPP_H18 - NC */
+	PAD_NC(GPP_H18, NONE),
+
+	/* GPP_H19 - NC */
+	PAD_NC(GPP_H19, NONE),
+
+	/* GPP_H20 - NC */
+	PAD_NC(GPP_H20, NONE),
+
+	/* GPP_H21 - NC */
+	PAD_NC(GPP_H21, NONE),
+
+	/* GPP_H22 - NC */
+	PAD_NC(GPP_H22, NONE),
+
+	/* GPP_H23 - NC */
+	PAD_NC(GPP_H23, NONE),
+
+	/* ------- GPIO Group GPD ------- */
+
+	/* GPD0 - BATLOW# */
+	PAD_CFG_NF(GPD0, NONE, RSMRST, NF1),
+
+	/* GPD1 - ACPRESENT */
+	PAD_CFG_NF(GPD1, NATIVE, RSMRST, NF1),
+
+	/* GPD2 - LAN_WAKE# */
+	PAD_CFG_NF(GPD2, NATIVE, RSMRST, NF1),
+
+	/* GPD3 - PRWBTN# */
+	PAD_CFG_NF(GPD3, NONE, RSMRST, NF1),
+
+	/* GPD4 - SLP_S3# */
+	PAD_CFG_NF(GPD4, NONE, RSMRST, NF1),
+
+	/* GPD5 - SLP_S4# */
+	PAD_CFG_NF(GPD5, NONE, RSMRST, NF1),
+
+	/* GPD6 - SLP_A# */
+	PAD_CFG_NF(GPD6, NONE, RSMRST, NF1),
+
+	/* GPD7 - NC */
+	PAD_NC(GPD7, NONE),
+
+	/* GPD8 - SUSCLK */
+	PAD_CFG_NF(GPD8, NONE, RSMRST, NF1),
+
+	/* GPD9 - SLP_WLAN# */
+	PAD_CFG_NF(GPD9, NONE, RSMRST, NF1),
+
+	/* GPD10 - SLP_S5# */
+	PAD_CFG_NF(GPD10, NONE, RSMRST, NF1),
+
+	/* GPD11 - LANPHYPC */
+	PAD_CFG_NF(GPD11, NONE, RSMRST, NF1),
+
+	/* ------- GPIO Group GPP_C ------- */
+
+	/* GPP_C0 - SMBCLK */
+	PAD_CFG_NF(GPP_C0, NONE, DEEP, NF1),
+
+	/* GPP_C1 - SMBDATA */
+	PAD_CFG_NF(GPP_C1, NONE, DEEP, NF1),
+
+	/* GPP_C2 - NC */
+	PAD_NC(GPP_C2, NONE),
+
+	/* GPP_C3 - SML0CLK */
+	PAD_CFG_NF(GPP_C3, NONE, DEEP, NF1),
+
+	/* GPP_C4 - SML0DATA */
+	PAD_CFG_NF(GPP_C4, NONE, DEEP, NF1),
+
+	/* GPP_C5 - NC */
+	PAD_NC(GPP_C5, NONE),
+
+	/* GPP_C6 - SMBL1CLK */
+	PAD_CFG_NF(GPP_C6, NONE, DEEP, NF1),
+
+	/* GPP_C7 - SMBL1DATA */
+	PAD_CFG_NF(GPP_C7, NONE, DEEP, NF1),
+
+	/* GPP_C8 - NC */
+	PAD_NC(GPP_C8, NONE),
+
+	/* GPP_C9 - NC */
+	PAD_NC(GPP_C9, NONE),
+
+	/* GPP_C10 - NC */
+	PAD_NC(GPP_C10, NONE),
+
+	/* GPP_C11 - NC */
+	PAD_NC(GPP_C11, NONE),
+
+	/* GPP_C12 - NC */
+	PAD_NC(GPP_C12, NONE),
+
+	/* GPP_C13 - NC */
+	PAD_NC(GPP_C13, NONE),
+
+	/* GPP_C14 - NC */
+	PAD_NC(GPP_C14, NONE),
+
+	/* GPP_C15 - NC */
+	PAD_NC(GPP_C15, NONE),
+
+	/* GPP_C16 - I2C0_SDA - TP */
+	PAD_CFG_NF(GPP_C16, NONE, PLTRST, NF1),
+
+	/* GPP_C17 - I2C0_SCL - TP */
+	PAD_CFG_NF(GPP_C17, NONE, PLTRST, NF1),
+
+	/* GPP_C18 - NC */
+	PAD_NC(GPP_C18, NONE),
+
+	/* GPP_C19 - NC */
+	PAD_NC(GPP_C19, NONE),
+
+	/* GPP_C20 - M.2 UART RXD */
+	PAD_CFG_NF(GPP_C20, NONE, PLTRST, NF1),
+
+	/* GPP_C21 - M.2 UART TXD */
+	PAD_CFG_NF(GPP_C21, NONE, PLTRST, NF1),
+
+	/* GPP_C22 - M.2 UART RTS# */
+	PAD_CFG_NF(GPP_C22, NONE, PLTRST, NF1),
+
+	/* GPP_C23 - M.2 UART CTS# */
+	PAD_CFG_NF(GPP_C23, NONE, PLTRST, NF1),
+
+	/* ------- GPIO Group GPP_E ------- */
+
+	/* GPP_E0 - NC */
+	PAD_NC(GPP_E0, NONE),
+
+	/* GPP_E1 - SATAXPCIE1 */
+	PAD_CFG_NF(GPP_E1, NONE, PLTRST, NF1),
+
+	/* GPP_E2 - SATAXPCIE2 */
+	PAD_CFG_NF(GPP_E2, NONE, PLTRST, NF1),
+
+	/* GPP_E3 - NC */
+	PAD_NC(GPP_E3, NONE),
+
+	/* GPP_E4 - SATA_DEVSLP0 */
+	PAD_CFG_NF(GPP_E4, NONE, DEEP, NF1),
+
+	/* GPP_E5 - SATA_DEVSLP1 */
+	PAD_CFG_NF(GPP_E5, NONE, DEEP, NF1),
+
+	/* GPP_E6 - NC */
+	PAD_NC(GPP_E6, NONE),
+
+	/* GPP_E7 - NC */
+	PAD_NC(GPP_E7, NONE),
+
+	/* GPP_E8 - NC */
+	PAD_NC(GPP_E8, NONE),
+
+	/* GPP_E9 - USB2_OC0# */
+	PAD_CFG_NF(GPP_E9, NONE, DEEP, NF1),
+
+	/* GPP_E10 - USB2_OC1# */
+	PAD_CFG_NF(GPP_E10, NONE, DEEP, NF1),
+
+	/* GPP_E11 - USB2_OC2# */
+	PAD_CFG_NF(GPP_E11, NONE, DEEP, NF1),
+
+	/* GPP_E12 - NC */
+	PAD_NC(GPP_E12, NONE),
+
+	/* GPP_E13 - DDPB_HPD0 */
+	PAD_CFG_NF(GPP_E13, NONE, DEEP, NF1),
+
+	/* GPP_E14 - DDPC_HPD1 */
+	PAD_CFG_NF(GPP_E14, NONE, DEEP, NF1),
+
+	/* GPP_E15 - SMC_EXTSMI# */
+	PAD_CFG_GPI_SMI_LOW(GPP_E15, NONE, DEEP, EDGE_SINGLE),
+
+	/* GPP_E16 - SMC_RUNTIME_SCI# */
+	PAD_CFG_GPI_SCI_LOW(GPP_E16, NONE, PLTRST, LEVEL),
+
+	/* GPP_E17 - EDP_HPD */
+	PAD_CFG_NF(GPP_E17, NONE, DEEP, NF1),
+
+	/* GPP_E18 - NC */
+	PAD_NC(GPP_E18, NONE),
+
+	/* GPP_E19 - NC */
+	PAD_NC(GPP_E19, NONE),
+
+	/* GPP_E20 - NC */
+	PAD_NC(GPP_E20, NONE),
+
+	/* GPP_E21 - NC */
+	PAD_NC(GPP_E21, NONE),
+
+	/* GPP_E22 - NC */
+	PAD_NC(GPP_E22, NONE),
+
+	/* GPP_E23 - NC */
+	PAD_NC(GPP_E23, NONE),
+};
+
+const struct pad_config *variant_gpio_table(size_t *num)
+{
+	*num = ARRAY_SIZE(gpio_table);
+	return gpio_table;
+}

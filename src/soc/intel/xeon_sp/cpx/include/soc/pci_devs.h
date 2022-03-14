@@ -3,30 +3,41 @@
 #ifndef _SOC_PCI_DEVS_H_
 #define _SOC_PCI_DEVS_H_
 
+#include <device/device.h>
 #include <device/pci_def.h>
 #include <types.h>
-
-#define _SA_DEVFN(slot)         PCI_DEVFN(SA_DEV_SLOT_ ## slot, 0)
-#define _PCH_DEVFN(slot, func)  PCI_DEVFN(PCH_DEV_SLOT_ ## slot, func)
-
-#if !defined(__SIMPLE_DEVICE__)
-#include <device/device.h>
-#define _SA_DEV(slot)           pcidev_path_on_root_debug(_SA_DEVFN(slot), __func__)
-#define _PCH_DEV(slot, func)    pcidev_path_on_root_debug(_PCH_DEVFN(slot, func), __func__)
-#else
-#define _SA_DEV(slot)           PCI_DEV(0, SA_DEV_SLOT_ ## slot, 0)
-#define _PCH_DEV(slot, func)    PCI_DEV(0, PCH_DEV_SLOT_ ## slot, func)
-#endif
+#include <soc/pch_pci_devs.h>
 
 #define SAD_ALL_DEV			29
 #define SAD_ALL_FUNC			0
 #define SAD_ALL_PAM0123_CSR		0x40
+#define   PAM_LOCK			BIT(0)
 #define SAD_ALL_PAM456_CSR		0x44
+
+#if !defined(__SIMPLE_DEVICE__)
+#define _PCU_DEV(bus, func)		pcidev_path_on_bus(bus, PCI_DEVFN(PCU_DEV, func))
+#else
+#define _PCU_DEV(bus, func)		PCI_DEV(bus, PCU_DEV, func)
+#endif
 
 #define PCU_IIO_STACK                   1
 #define PCU_DEV                         30
-#define PCU_CR1_FUN                     1
 
+#define PCU_CR0_FUN                     0
+#define PCU_DEV_CR0(bus)                                   _PCU_DEV(bus, PCU_CR0_FUN)
+#define PCU_CR0_PLATFORM_INFO                              0xa8
+#define PCU_CR0_TURBO_ACTIVATION_RATIO                     0xb0
+#define   TURBO_ACTIVATION_RATIO_LOCK                      BIT(31)
+#define PCU_CR0_P_STATE_LIMITS                             0xd8
+#define   P_STATE_LIMITS_LOCK                              BIT(31)
+#define PCU_CR0_PACKAGE_RAPL_LIMIT_LWR                     0xe8
+#define PCU_CR0_PACKAGE_RAPL_LIMIT_UPR                     (PCU_CR0_PACKAGE_RAPL_LIMIT_LWR + 4)
+#define   PKG_PWR_LIM_LOCK_UPR                             BIT(31)
+#define PCU_CR0_PMAX                                       0xf0
+#define   PMAX_LOCK                                        BIT(31)
+
+#define PCU_CR1_FUN                     1
+#define PCU_DEV_CR1(bus)                                   _PCU_DEV(bus, PCU_CR1_FUN)
 #define PCU_CR1_BIOS_MB_DATA_REG                           0x8c
 
 #define PCU_CR1_BIOS_MB_INTERFACE_REG                      0x90
@@ -48,6 +59,41 @@
 
 #define PCU_CR1_DESIRED_CORES_CFG2_REG                     0xa0
 #define PCU_CR1_DESIRED_CORES_CFG2_REG_LOCK_MASK           BIT(31)
+
+#define PCU_CR1_SAPMCTL                                    0xb0
+#define SAPMCTL_LOCK_MASK                                   BIT(31)
+
+#define PCU_CR2_FUN                     2
+#define PCU_DEV_CR2(bus)                                   _PCU_DEV(bus, PCU_CR2_FUN)
+#define PCU_CR2_DRAM_POWER_INFO_LWR                        0xa8
+#define PCU_CR2_DRAM_POWER_INFO_UPR                        (PCU_CR2_DRAM_POWER_INFO_LWR + 4)
+#define   DRAM_POWER_INFO_LOCK_UPR                         BIT(31)
+#define PCU_CR2_DRAM_PLANE_POWER_LIMIT                     0xf0
+#define PP_PWR_LIM_LOCK                                    BIT(31)
+
+#define PCU_CR3_FUN                     3
+#define PCU_DEV_CR3(bus)                                   _PCU_DEV(bus, PCU_CR3_FUN)
+#define PCU_CR3_CONFIG_TDP_CONTROL                         0x60
+#define   TDP_LOCK                                         BIT(31)
+#define PCU_CR3_FLEX_RATIO                                 0xa0
+#define   OC_LOCK                                          BIT(20)
+
+#if !defined(__SIMPLE_DEVICE__)
+#define _UBOX_DEV(func)		pcidev_path_on_root_debug(PCI_DEVFN(UBOX_DEV, func), __func__)
+#else
+#define _UBOX_DEV(func)		PCI_DEV(0, UBOX_DEV, func)
+#endif
+
+#define UBOX_DEV			8
+
+#define UBOX_PMON_BUS			0
+#define UBOX_PMON_DEV			8
+#define UBOX_PMON_FUNC			1
+#define UBOX_DEV_PMON			_UBOX_DEV(UBOX_PMON_FUNC)
+#define SMM_FEATURE_CONTROL		0x7c
+#define SMM_CODE_CHK_EN			BIT(2)
+#define SMM_FEATURE_CONTROL_LOCK	BIT(0)
+
 
 #define UBOX_DECS_BUS			0
 #define UBOX_DECS_DEV			8
@@ -71,6 +117,18 @@
 #define VTD_CAP_HIGH			0x0C
 #define VTD_EXT_CAP_HIGH		0x14
 #define VTD_LTDPR			0x290
+
+/* IMC Devices */
+/* Bus: B(2), Device: 9-8, Function: 0 (M2MEM) */
+#define IMC_M2MEM_DEVID			0x2066
+#define IMC_M2MEM_TIMEOUT		0x104
+#define   TIMEOUT_LOCK			BIT(1)
+
+/* UPI Devices */
+/* Bus: B(3), Device: 16,14, Function: 3 (LL_CR) */
+#define UPI_LL_CR_DEVID			0x205B
+#define UPI_LL_CR_KTIMISCMODLCK		0x300
+#define   KTIMISCMODLCK_LOCK		BIT(0)
 
 /* CPU Devices */
 #define CBDMA_DEV_NUM           0x04
@@ -102,47 +160,6 @@
 #define  RCVD_PCIE_UR_STS_MASK		(1 << 6)
 
 #define DEVICES_PER_IIO_STACK		4
-
-/* PCH Device info */
-
-#define  XHCI_BUS_NUMBER        0x0
-#define  PCH_DEV_SLOT_XHCI      0x14
-#define  XHCI_FUNC_NUM          0x0
-#define  PCH_DEVFN_XHCI		_PCH_DEVFN(XHCI, 0)
-#define  PCH_DEV_XHCI		_PCH_DEV(XHCI, 0)
-#define   PCH_DEVFN_THERMAL	_PCH_DEVFN(XHCI, 2)
-
-
-#define PCH_DEV_SLOT_CSE	0x16
-#define  PCH_DEVFN_CSE		_PCH_DEVFN(CSE, 0)
-#define  PCH_DEVFN_CSE_2	_PCH_DEVFN(CSE, 1)
-#define  PCH_DEVFN_CSE_3	_PCH_DEVFN(CSE, 4)
-#define  PCH_DEV_CSE		_PCH_DEV(CSE, 0)
-#define  PCH_DEV_CSE_2		_PCH_DEV(CSE, 1)
-#define  PCH_DEV_CSE_3		_PCH_DEV(CSE, 4)
-
-#define PCH_DEV_SLOT_LPC        0x1f
-#define  PCH_DEVFN_LPC          _PCH_DEVFN(LPC, 0)
-#define  PCH_DEVFN_P2SB         _PCH_DEVFN(LPC, 1)
-#define  PCH_DEVFN_PMC          _PCH_DEVFN(LPC, 2)
-#define  PCH_DEVFN_SMBUS        _PCH_DEVFN(LPC, 4)
-#define  PCH_DEVFN_SPI          _PCH_DEVFN(LPC, 5)
-#define  PCH_DEV_LPC            _PCH_DEV(LPC, 0)
-#define  PCH_DEV_P2SB           _PCH_DEV(LPC, 1)
-#define  PCH_DEV_PMC            _PCH_DEV(LPC, 2)
-#define  PCH_DEV_SMBUS          _PCH_DEV(LPC, 4)
-#define  PCH_DEV_SPI            _PCH_DEV(LPC, 5)
-
-#define HPET_BUS_NUM            0x0
-#define HPET_DEV_NUM            PCH_DEV_SLOT_LPC
-#define HPET0_FUNC_NUM          0x00
-
-#define PCH_IOAPIC_BUS_NUMBER   0xF0
-#define PCH_IOAPIC_DEV_NUM      0x1F
-#define PCH_IOAPIC_FUNC_NUM     0x00
-
-// ========== IOAPIC Definitions for DMAR/ACPI ========
-#define PCH_IOAPIC_ID                   0x08
 
 // DMI3 B0D0F0 registers
 #define DMI3_DEVID		0x2020

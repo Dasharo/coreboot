@@ -27,7 +27,7 @@
 void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 {
 	static const struct sa_mmio_descriptor soc_fixed_resources[] = {
-		{ PCIEXBAR, CONFIG_MMCONF_BASE_ADDRESS, CONFIG_MMCONF_LENGTH,
+		{ PCIEXBAR, CONFIG_ECAM_MMCONF_BASE_ADDRESS, CONFIG_ECAM_MMCONF_LENGTH,
 				"PCIEXBAR" },
 		{ MCHBAR, MCH_BASE_ADDRESS, MCH_BASE_SIZE, "MCHBAR" },
 		{ DMIBAR, DMI_BASE_ADDRESS, DMI_BASE_SIZE, "DMIBAR" },
@@ -89,6 +89,12 @@ void soc_systemagent_init(struct device *dev)
 		break;
 	case PCI_DEVICE_ID_INTEL_TGL_ID_Y_4_2:
 		soc_config = &config->power_limits_config[POWER_LIMITS_Y_4_CORE];
+		break;
+	case PCI_DEVICE_ID_INTEL_TGL_ID_H_6_1:
+		soc_config = &config->power_limits_config[POWER_LIMITS_H_6_CORE];
+		break;
+	case PCI_DEVICE_ID_INTEL_TGL_ID_H_8_1:
+		soc_config = &config->power_limits_config[POWER_LIMITS_H_8_CORE];
 		break;
 	default:
 		printk(BIOS_ERR, "TGL: unknown SA ID: 0x%4x, skipping power limits "

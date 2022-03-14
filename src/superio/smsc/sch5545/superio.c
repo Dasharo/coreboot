@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/io.h>
+#include <commonlib/bsd/helpers.h>
 #include <device/device.h>
 #include <device/pnp.h>
 #include <superio/conf_mode.h>
 #include <console/console.h>
 #include <pc80/keyboard.h>
-#include <stdlib.h>
+#include <stdint.h>
 
 #include "sch5545.h"
 
@@ -62,6 +63,12 @@ static void sch5545_init(struct device *dev)
 
 	switch (dev->path.pnp.device) {
 	case SCH5545_LDN_KBC:
+		pnp_enter_conf_mode(dev);
+		pnp_set_logical_device(dev);
+		/* Disable PS/2 clock and data isolation */
+		pnp_unset_and_set_config(dev, 0xf0,
+					 SCH5545_KBD_ISOLATION | SCH5545_MOUSE_ISOLATION, 0);
+		pnp_exit_conf_mode(dev);
 		pc_keyboard_init(NO_AUX_DEVICE);
 		break;
 	case SCH5545_LDN_LPC:
@@ -83,7 +90,7 @@ static void sch5545_set_iobase(struct device *dev, u8 index, u16 iobase)
 	lpc_if = dev_find_slot_pnp(dev->path.pnp.port, SCH5545_LDN_LPC);
 
 	if (!lpc_if) {
-		printk(BIOS_ERR, "ERROR: %s LPC interface LDN not present."
+		printk(BIOS_ERR, "%s LPC interface LDN not present."
 		       "Check the devicetree!\n", dev_path(dev));
 		return;
 	}
@@ -145,7 +152,7 @@ static void sch5545_set_irq(struct device *dev, u8 index, u8 irq)
 	lpc_if = dev_find_slot_pnp(dev->path.pnp.port, SCH5545_LDN_LPC);
 
 	if (!lpc_if) {
-		printk(BIOS_ERR, "ERROR: %s LPC interface LDN not present."
+		printk(BIOS_ERR, "%s LPC interface LDN not present."
 		       "Check the devicetree!\n", dev_path(dev));
 		return;
 	}
@@ -186,7 +193,7 @@ static void sch5545_set_drq(struct device *dev, u8 index, u8 drq)
 	struct device *lpc_if;
 
 	if (drq == 4) {
-		printk(BIOS_ERR, "ERROR: %s %02x: Trying to set reserved DMA channel 4!\n",
+		printk(BIOS_ERR, "%s %02x: Trying to set reserved DMA channel 4!\n",
 		       dev_path(dev), index);
 		printk(BIOS_ERR, "This configuration is untested. Trying to continue.\n");
 	}
@@ -195,7 +202,7 @@ static void sch5545_set_drq(struct device *dev, u8 index, u8 drq)
 	lpc_if = dev_find_slot_pnp(dev->path.pnp.port, SCH5545_LDN_LPC);
 
 	if (!lpc_if) {
-		printk(BIOS_ERR, "ERROR: %s LPC interface LDN not present."
+		printk(BIOS_ERR, "%s LPC interface LDN not present."
 		       "Check the devicetree!\n", dev_path(dev));
 		return;
 	}
@@ -226,12 +233,12 @@ static void sch5545_set_resource(struct device *dev, struct resource *resource)
 		if (resource->flags & IORESOURCE_IRQ &&
 		    (resource->index != PNP_IDX_IRQ0) &&
 		    (resource->index != PNP_IDX_IRQ1))
-			printk(BIOS_WARNING, "WARNING: %s %02lx %s size: "
+			printk(BIOS_WARNING, "%s %02lx %s size: "
 			       "0x%010llx not assigned\n", dev_path(dev),
 			       resource->index, resource_type(resource),
 			       resource->size);
 		else
-			printk(BIOS_ERR, "ERROR: %s %02lx %s size: 0x%010llx "
+			printk(BIOS_ERR, "%s %02lx %s size: 0x%010llx "
 			       "not assigned\n", dev_path(dev), resource->index,
 			       resource_type(resource), resource->size);
 		return;
@@ -245,7 +252,7 @@ static void sch5545_set_resource(struct device *dev, struct resource *resource)
 	} else if (resource->flags & IORESOURCE_IRQ) {
 		sch5545_set_irq(dev, resource->index, resource->base);
 	} else {
-		printk(BIOS_ERR, "ERROR: %s %02lx unknown resource type\n",
+		printk(BIOS_ERR, "%s %02lx unknown resource type\n",
 		       dev_path(dev), resource->index);
 		return;
 	}

@@ -129,7 +129,7 @@ chip northbridge/intel/x4x		# Northbridge
 						irq 0xe4 = 0x10 # Power dram during s3
 						irq 0xe6 = 0x8c
 					end
-					device pnp 2e.b on		# HWM, front pannel LED
+					device pnp 2e.b on		# HWM, front panel LED
 						io 0x60 = 0xa00
 						irq 0x70 = 0
 					end
@@ -145,7 +145,7 @@ chip northbridge/intel/x4x		# Northbridge
 			end
 			device pci 1f.3 on		# SMbus
 				subsystemid 0x8086 0x5756
-					chip drivers/i2c/ck505
+				chip drivers/i2c/ck505
 					register "mask" = "{ 0xff, 0xff, 0xff,
 						 0xff, 0xff, 0xff, 0xff, 0xff,
 						 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -158,7 +158,6 @@ chip northbridge/intel/x4x		# Northbridge
 						 0x06, 0x00, 0xea }"
 					device i2c 69 on end
 				end
-
 			end
 		end
 	end

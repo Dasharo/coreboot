@@ -46,7 +46,16 @@ chip soc/intel/apollolake
 	#+-------------------+---------------------------+
 	register "common_soc_config" = "{
 		.i2c[0] = {
-			.speed = I2C_SPEED_STANDARD
+			.speed = I2C_SPEED_STANDARD,
+			.rise_time_ns = 160,
+			.fall_time_ns = 110,
+			.data_hold_time_ns = 300,
+			.speed_config[0] = {
+				.speed = I2C_SPEED_FAST,
+				.scl_hcnt = 0x58,
+				.scl_lcnt = 0xcf,
+				.sda_hold = 0x28
+			},
 		},
 	}"
 
@@ -63,7 +72,9 @@ chip soc/intel/apollolake
 		device pci 0e.0 on  end	# - Audio
 		device pci 0f.0 on  end	# - CSE
 		device pci 11.0 on  end	# - ISH
-		device pci 12.0 on  end	# - SATA
+		device pci 12.0 on	# - SATA
+			register "DisableSataSalpSupport" = "1"
+		end
 		device pci 13.0 on	# - RP 2 - PCIe A 0 - MACPHY
 			register "pcie_rp_clkreq_pin[2]" = "0"
 			register "pcie_rp_hotplug_enable[2]" = "0"

@@ -14,14 +14,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select SUPERIO_ITE_IT8613E if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 	select MAINBOARD_HAS_CRB_TPM
 	select HAVE_INTEL_PTT
-	select TPM2
-
-config IRQ_SLOT_COUNT
-	int
-	default 18
+	select MAINBOARD_HAS_TPM2
 
 config MAINBOARD_DIR
-	string
 	default "protectli/vault_kbl"
 
 config VARIANT_DIR
@@ -40,11 +35,9 @@ config MAINBOARD_FAMILY
 	default "Protectli FW6"
 
 config DIMM_MAX
-	int
 	default 2
 
 config DIMM_SPD_SIZE
-	int
 	default 512
 
 config MAX_CPUS
@@ -71,7 +64,6 @@ config PXE_ROM_ID
 	default "8086,1539" if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 
 config CBFS_SIZE
-	hex
 	default 0x600000
 
 config USE_PM_ACPI_TIMER

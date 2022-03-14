@@ -1,0 +1,41 @@
+config SOC_MEDIATEK_MT8186
+	bool
+	default n
+	select ARCH_BOOTBLOCK_ARMV8_64
+	select ARCH_VERSTAGE_ARMV8_64
+	select ARCH_ROMSTAGE_ARMV8_64
+	select ARCH_RAMSTAGE_ARMV8_64
+	select ARM64_USE_ARM_TRUSTED_FIRMWARE
+	select CACHE_MRC_SETTINGS
+	select HAVE_UART_SPECIAL
+	select SOC_MEDIATEK_COMMON
+	select MEDIATEK_BLOB_FAST_INIT
+
+if SOC_MEDIATEK_MT8186
+
+config VBOOT
+	select VBOOT_MUST_REQUEST_DISPLAY
+	select VBOOT_STARTS_IN_BOOTBLOCK
+	select VBOOT_SEPARATE_VERSTAGE
+	select VBOOT_RETURN_FROM_VERSTAGE
+
+config SPM_FIRMWARE
+	string
+	default "spm_firmware.bin"
+	help
+	  The file name of the MediaTek SPM firmware.
+
+config SSPM_FIRMWARE
+	string
+	default "sspm.bin"
+	help
+	  The file name of the MediaTek SSPM firmware.
+
+config FLASH_DUAL_READ
+	bool
+	default y
+	help
+	  When this option is enabled, the flash controller provides the ability
+	  to dual IO read mode.
+
+endif

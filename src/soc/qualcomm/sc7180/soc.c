@@ -4,8 +4,8 @@
 #include <device/device.h>
 #include <soc/mmu.h>
 #include <soc/mmu_common.h>
-#include <soc/symbols.h>
-#include <soc/aop.h>
+#include <soc/symbols_common.h>
+#include <soc/aop_common.h>
 
 static void soc_read_resources(struct device *dev)
 {

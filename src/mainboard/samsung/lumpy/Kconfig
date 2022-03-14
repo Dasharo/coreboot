@@ -1,5 +1,8 @@
 if BOARD_SAMSUNG_LUMPY
 
+config IGNORE_IASL_MISSING_DEPENDENCY
+	def_bool y
+
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
 	select SYSTEM_TYPE_LAPTOP
@@ -30,16 +33,10 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 
 config MAINBOARD_DIR
-	string
 	default "samsung/lumpy"
 
 config MAINBOARD_PART_NUMBER
-	string
 	default "Lumpy"
-
-config VGA_BIOS_FILE
-	string
-	default "pci8086,0106.rom"
 
 if EARLY_PCI_BRIDGE
 

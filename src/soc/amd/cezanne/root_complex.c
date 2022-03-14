@@ -1,7 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpigen.h>
 #include <amdblocks/acpi.h>
+#include <amdblocks/alib.h>
+#include <amdblocks/ioapic.h>
 #include <amdblocks/memmap.h>
+#include <arch/ioapic.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/amd/msr.h>
@@ -9,7 +13,39 @@
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <fsp/util.h>
+#include <soc/iomap.h>
 #include <stdint.h>
+#include "chip.h"
+
+#define DPTC_TOTAL_UPDATE_PARAMS	4
+
+struct dptc_input {
+	uint16_t size;
+	struct alib_dptc_param params[DPTC_TOTAL_UPDATE_PARAMS];
+} __packed;
+
+#define DPTC_INPUTS(_thermctllmit, _sustained, _fast, _slow)			\
+	{									\
+		.size = sizeof(struct dptc_input),				\
+		.params = {							\
+			{							\
+				.id = ALIB_DPTC_THERMAL_CONTROL_LIMIT_ID,	\
+				.value = _thermctllmit,				\
+			},							\
+			{							\
+				.id = ALIB_DPTC_SUSTAINED_POWER_LIMIT_ID,	\
+				.value = _sustained,				\
+			},							\
+			{							\
+				.id = ALIB_DPTC_FAST_PPT_LIMIT_ID,		\
+				.value = _fast,					\
+			},							\
+			{							\
+				.id = ALIB_DPTC_SLOW_PPT_LIMIT_ID,		\
+				.value = _slow,					\
+			},							\
+		},								\
+	}
 
 /*
  *
@@ -70,6 +106,7 @@ static void read_resources(struct device *dev)
 	unsigned int idx = 0;
 	const struct hob_header *hob = fsp_get_hob_list();
 	const struct hob_resource *res;
+	struct resource *gnb_apic;
 
 	uintptr_t early_reserved_dram_start, early_reserved_dram_end;
 	const struct memmap_early_dram *e = memmap_get_early_dram_usage();
@@ -104,7 +141,7 @@ static void read_resources(struct device *dev)
 	mmconf_resource(dev, MMIO_CONF_BASE);
 
 	if (!hob) {
-		printk(BIOS_ERR, "Error: %s incomplete because no HOB list was found\n",
+		printk(BIOS_ERR, "%s incomplete because no HOB list was found\n",
 				__func__);
 		return;
 	}
@@ -126,14 +163,47 @@ static void read_resources(struct device *dev)
 		else if (res->type == EFI_RESOURCE_MEMORY_RESERVED)
 			reserved_ram_resource(dev, idx++, res->addr / KiB, res->length / KiB);
 		else
-			printk(BIOS_ERR, "Error: failed to set resources for type %d\n",
+			printk(BIOS_ERR, "failed to set resources for type %d\n",
 					res->type);
 	}
+
+	/* GNB IOAPIC resource */
+	gnb_apic = new_resource(dev, GNB_IO_APIC_ADDR);
+	gnb_apic->base = GNB_IO_APIC_ADDR;
+	gnb_apic->size = 0x00001000;
+	gnb_apic->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED | IORESOURCE_FIXED;
+}
+
+static void root_complex_init(struct device *dev)
+{
+	setup_ioapic((u8 *)GNB_IO_APIC_ADDR, GNB_IOAPIC_ID);
+}
+
+static void acipgen_dptci(void)
+{
+	const struct soc_amd_cezanne_config *config = config_of_soc();
+
+	if (!config->dptc_enable)
+		return;
+
+	struct dptc_input default_input = DPTC_INPUTS(config->thermctl_limit_degreeC,
+					config->sustained_power_limit_mW,
+					config->fast_ppt_limit_mW,
+					config->slow_ppt_limit_mW);
+	struct dptc_input tablet_mode_input = DPTC_INPUTS(
+					config->thermctl_limit_tablet_mode_degreeC,
+					config->sustained_power_limit_tablet_mode_mW,
+					config->fast_ppt_limit_tablet_mode_mW,
+					config->slow_ppt_limit_tablet_mode_mW);
+
+	acpigen_write_alib_dptc((uint8_t *)&default_input, sizeof(default_input),
+		(uint8_t *)&tablet_mode_input, sizeof(tablet_mode_input));
 }
 
 static void root_complex_fill_ssdt(const struct device *device)
 {
 	acpi_fill_root_complex_tom(device);
+	acipgen_dptci();
 }
 
 static const char *gnb_acpi_name(const struct device *dev)
@@ -145,6 +215,7 @@ static struct device_operations root_complex_operations = {
 	.read_resources		= read_resources,
 	.set_resources		= noop_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
+	.init			= root_complex_init,
 	.acpi_name		= gnb_acpi_name,
 	.acpi_fill_ssdt		= root_complex_fill_ssdt,
 };

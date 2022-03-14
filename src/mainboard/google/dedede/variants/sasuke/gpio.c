@@ -3,15 +3,15 @@
 #include <baseboard/gpio.h>
 #include <baseboard/variants.h>
 
-/* Pad configuration in ramstage*/
+/* Pad configuration in ramstage */
 static const struct pad_config gpio_table[] = {
 	/* A10 : WWAN_EN */
-	PAD_CFG_GPO(GPP_A10, 0, PLTRST),
+	PAD_CFG_GPO(GPP_A10, 1, PWROK),
 	/* A11 : TOUCH_RPT_EN ==> NC */
 	PAD_NC(GPP_A11, NONE),
 
 	/* B7  : PCIE_CLKREQ2_N ==> WWAN_SAR_DETECT_ODL*/
-	PAD_CFG_GPI_IRQ_WAKE(GPP_B7, NONE, DEEP, LEVEL, INVERT),
+	PAD_CFG_GPO(GPP_B7, 1, DEEP),
 	/* B8  : WLAN_CLKREQ_ODL ==> NC */
 	PAD_NC(GPP_B8, NONE),
 
@@ -57,7 +57,7 @@ static const struct pad_config gpio_table[] = {
 	/* H7  : AP_I2C_CAM_SCL ==> NC */
 	PAD_NC(GPP_H7, NONE),
 	/* H17 : WWAN_RST_L */
-	PAD_CFG_GPO(GPP_H17, 1, PLTRST),
+	PAD_CFG_GPO(GPP_H17, 0, PLTRST),
 
 	/* S2  : DMIC1_CLK ==> NC */
 	PAD_NC(GPP_S2, NONE),
