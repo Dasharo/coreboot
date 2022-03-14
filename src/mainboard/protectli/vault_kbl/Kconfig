@@ -1,4 +1,4 @@
-if BOARD_PROTECTLI_FW6
+if BOARD_PROTECTLI_FW6 || BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -10,7 +10,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
 	select SOC_INTEL_KABYLAKE
 	select SPI_FLASH_MACRONIX
-	select SUPERIO_ITE_IT8772F
+	select SUPERIO_ITE_IT8772F if BOARD_PROTECTLI_FW6
+	select SUPERIO_ITE_IT8613E if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 	select MAINBOARD_HAS_CRB_TPM
 	select HAVE_INTEL_PTT
 	select MAINBOARD_HAS_TPM2
@@ -18,8 +19,20 @@ config BOARD_SPECIFIC_OPTIONS
 config MAINBOARD_DIR
 	default "protectli/vault_kbl"
 
+config VARIANT_DIR
+	string
+	default "fw6" if BOARD_PROTECTLI_FW6
+	default	"fw6d" if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
+
 config MAINBOARD_PART_NUMBER
-	default "FW6"
+	string
+	default	"FW6" if BOARD_PROTECTLI_FW6
+	default	"FW6D" if BOARD_PROTECTLI_FW6D
+	default	"FW6E" if BOARD_PROTECTLI_FW6E
+
+config MAINBOARD_FAMILY
+	string
+	default "Protectli FW6"
 
 config DIMM_MAX
 	default 2
@@ -29,15 +42,26 @@ config DIMM_SPD_SIZE
 
 config MAX_CPUS
 	int
-	default 4
+	default 4 if BOARD_PROTECTLI_FW6
+	default 8 if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
+
+config DEVICETREE
+	string
+	default "variants/baseboard/devicetree.cb"
+
+config OVERRIDE_DEVICETREE
+	string
+	default	"variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config VGA_BIOS_ID
 	string
-	default "8086,5916" # 8086,5906 for FW6A
+	default "8086,5916" if BOARD_PROTECTLI_FW6 # 8086,5906 for FW6A
+	default "8086,5917" if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 
 config PXE_ROM_ID
 	string
-	default "8086,150c"
+	default "8086,150c" if BOARD_PROTECTLI_FW6
+	default "8086,1539" if BOARD_PROTECTLI_FW6D || BOARD_PROTECTLI_FW6E
 
 config CBFS_SIZE
 	default 0x600000

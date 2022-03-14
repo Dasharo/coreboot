@@ -334,19 +334,29 @@ static const char *get_bios_version(void)
 
 static int smbios_write_type0(unsigned long *current, int handle)
 {
-	struct smbios_type0 *t = smbios_carve_table(*current, SMBIOS_BIOS_INFORMATION,
-						    sizeof(*t), handle);
+	struct smbios_type0 *t = (struct smbios_type0 *)*current;
+	int len = sizeof(struct smbios_type0);
+	char bversion[100];
 
-	t->vendor = smbios_add_string(t->eos, "coreboot");
+	memset(t, 0, sizeof(struct smbios_type0));
+	t->type = SMBIOS_BIOS_INFORMATION;
+	t->handle = handle;
+	t->length = len - 2;
+
+	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
-	if (CONFIG(CHROMEOS_NVS)) {
+	snprintf(bversion, sizeof(bversion), "coreboot %s, Dasharo %s",
+		 get_bios_version(), coreboot_version);
+	t->bios_version = smbios_add_string(t->eos, bversion);
+
+	if (CONFIG(CHROMEOS) && CONFIG(HAVE_ACPI_TABLES)) {
 		uintptr_t version_address = (uintptr_t)t->eos;
 		/* SMBIOS offsets start at 1 rather than 0 */
 		version_address += (u32)smbios_string_table_len(t->eos) - 1;
 		smbios_type0_bios_version(version_address);
 	}
-	t->bios_version = smbios_add_string(t->eos, get_bios_version());
+
 	uint32_t rom_size = CONFIG_ROM_SIZE;
 	rom_size = MIN(CONFIG_ROM_SIZE, 16 * MiB);
 	t->bios_rom_size = (rom_size / 65535) - 1;
@@ -578,7 +588,9 @@ static int smbios_write_type4(unsigned long *current, int handle)
 	t->serial_number = smbios_add_string(t->eos, smbios_processor_serial_number());
 	t->status = SMBIOS_PROCESSOR_STATUS_CPU_ENABLED | SMBIOS_PROCESSOR_STATUS_POPULATED;
 	t->processor_upgrade = get_socket_type();
-	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0x16) {
+	len = t->length + smbios_string_table_len(t->eos);
+	if (cpu_have_cpuid() && cpuid_get_max_func() >= 0x16 &&
+	    cpuid_eax(0x16) != 0 && cpuid_ecx(0x16) != 0) {
 		t->current_speed = cpuid_eax(0x16); /* base frequency */
 		t->external_clock = cpuid_ecx(0x16);
 	} else {

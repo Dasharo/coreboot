@@ -137,7 +137,12 @@ void soc_core_init(struct device *cpu)
 	set_energy_perf_bias(ENERGY_POLICY_NORMAL);
 
 	/* Enable Turbo */
-	enable_turbo();
+	if (!CONFIG(BOARD_PROTECTLI_FW6D) && !CONFIG(BOARD_PROTECTLI_FW6E))
+		enable_turbo();
+
+	/* Configure Core PRMRR for SGX. */
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		prmrr_core_configure();
 }
 
 static void per_cpu_smm_trigger(void)

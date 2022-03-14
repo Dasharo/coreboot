@@ -22,11 +22,9 @@ ifeq ($(KERNELVERSION),)
 ifeq ($(BUILD_TIMELESS),1)
 KERNELVERSION := -TIMELESS--LESSTIME-
 else
-KERNELVERSION := $(strip $(if $(GIT),\
-	$(shell git describe --dirty --always || git describe),\
-	$(if $(wildcard $(top)/.coreboot-version),\
+KERNELVERSION := $(if $(wildcard $(top)/.coreboot-version),\
 		$(shell cat $(top)/.coreboot-version),\
-		coreboot-unknown$(KERNELREVISION))))
+		coreboot-unknown$(KERNELREVISION))
 endif
 endif
 COREBOOT_EXPORTS += KERNELVERSION
@@ -1256,9 +1254,16 @@ build_info-file := $(obj)/build_info
 build_info-type := raw
 
 BOOTSPLASH_SUFFIX=$(suffix $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE)))
+ifeq ($(CONFIG_COMPRESS_BOOTSPLASH),)
 cbfs-files-$(CONFIG_BOOTSPLASH_IMAGE) += bootsplash$(BOOTSPLASH_SUFFIX)
 bootsplash$(BOOTSPLASH_SUFFIX)-file := $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE))
 bootsplash$(BOOTSPLASH_SUFFIX)-type := bootsplash
+else
+cbfs-files-$(CONFIG_BOOTSPLASH_IMAGE) += bootsplash$(BOOTSPLASH_SUFFIX).lzma
+bootsplash$(BOOTSPLASH_SUFFIX).lzma-file := $(call strip_quotes,$(CONFIG_BOOTSPLASH_FILE))
+bootsplash$(BOOTSPLASH_SUFFIX).lzma-compression := $(CBFS_COMPRESS_FLAG)
+bootsplash$(BOOTSPLASH_SUFFIX).lzma-type := bootsplash
+endif
 
 # Ensure that no payload segment overlaps with memory regions used by ramstage
 # (not for x86 since it can relocate itself in that case)

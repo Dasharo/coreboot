@@ -11,6 +11,10 @@ project_name=iPXE
 project_dir=ipxe
 project_git_repo=https://git.ipxe.org/ipxe.git
 
+ifneq ($(CONFIG_PXE_CUSTOM_BUILD_ID),)
+PXE_MAKE_OPTS := BUILD_ID_CMD="echo 0x$(CONFIG_PXE_CUSTOM_BUILD_ID)"
+endif
+
 all: build
 
 $(project_dir):
@@ -28,6 +32,7 @@ fetch: $(project_dir)
 checkout: fetch
 	echo "    Checking out $(project_name) revision $(TAG-y)"
 	cd  $(project_dir); \
+		git checkout -- src/config/general.h; \
 		git checkout master; \
 		git branch -D coreboot 2>/dev/null; \
 		git checkout -b coreboot $(TAG-y)
@@ -60,10 +65,10 @@ endif
 build: config $(CONFIG_SCRIPT)
 ifeq ($(CONFIG_HAS_SCRIPT),y)
 	echo "    MAKE       $(project_name) $(TAG-y) EMBED=$(CONFIG_SCRIPT)"
-	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=$(CONFIG_SCRIPT)
+	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=$(CONFIG_SCRIPT) $(PXE_MAKE_OPTS)
 else
 	echo "    MAKE       $(project_name) $(TAG-y)"
-	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom
+	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom $(PXE_MAKE_OPTS)
 endif
 	cp $(project_dir)/src/bin/$(PXE_ROM_PCI_ID).rom $(project_dir)/ipxe.rom
 ifeq ($(CONSOLE_SERIAL),yy)

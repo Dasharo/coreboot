@@ -126,6 +126,8 @@ void meminit_lpddr4_by_sku(FSP_M_CONFIG *cfg,
 void save_lpddr4_dimm_info(const struct lpddr4_cfg *lpcfg, size_t mem_sku);
 void save_lpddr4_dimm_info_part_num(const char *dram_part_num);
 
+void save_ddr4_dimm_info(void);
+
 /* Retrieve the amount of memory configured in the system in MiB. It's only
  * valid during romstage. */
 size_t memory_in_system_in_mib(void);
