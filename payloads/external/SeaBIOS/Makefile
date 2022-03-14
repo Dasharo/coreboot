@@ -2,7 +2,7 @@ TAG-$(CONFIG_SEABIOS_MASTER)=origin/master
 TAG-$(CONFIG_SEABIOS_STABLE)=155821a1990b6de78dde5f98fa5ab90e802021e0
 TAG-$(CONFIG_SEABIOS_REVISION)=$(CONFIG_SEABIOS_REVISION_ID)
 
-project_git_repo=https://review.coreboot.org/seabios.git
+project_git_repo=https://github.com/Dasharo/SeaBIOS.git
 project_dir=seabios
 
 unexport KCONFIG_AUTOHEADER
@@ -11,6 +11,18 @@ unexport KCONFIG_DEPENDENCIES
 unexport KCONFIG_SPLITCONFIG
 unexport KCONFIG_TRISTATE
 unexport KCONFIG_NEGATIVES
+
+FLASH_START=$$(grep FMAP_SECTION_FLASH_START $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+FLASH_SIZE=$$(grep FMAP_SECTION_FLASH_SIZE $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+COREBOOT_START=$$(grep FMAP_SECTION_COREBOOT_START $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+COREBOOT_SIZE=$$(grep FMAP_SECTION_COREBOOT_SIZE $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+SI_DEVICEEXT_SIZE=$$(grep FMAP_SECTION_SI_DEVICEEXT_SIZE $(CONFIG_FMAP_FILE) | cut -d " " -f 3)
+
+# For platforms without DEVICEEXT this converts "" to "0x0"
+SI_DEVICEEXT_SIZE_VAL=$$(printf '0x%X' $(SI_DEVICEEXT_SIZE))
+# For platform with COREBOOT beginning at 4G it will evaluate to 4G which will
+# be truncated to 0 in 32bit SeaBIOS code
+CBFS_LOCATION = $$((0x100000000 - $(FLASH_SIZE) + $(COREBOOT_START) - $(FLASH_START) + $(COREBOOT_SIZE) + $(SI_DEVICEEXT_SIZE_VAL)))
 
 all: build
 
@@ -75,6 +87,7 @@ endif
 ifneq ($(CONFIG_SEABIOS_HARDWARE_IRQ),y)
 	echo "# CONFIG_HARDWARE_IRQ is not set" >> seabios/.config
 endif
+	echo "CONFIG_CBFS_LOCATION=$(shell printf '0x%X' $(CBFS_LOCATION))" >> seabios/.config
 #	This shows how to force a previously set .config option *off*
 #	echo "# CONFIG_SMBIOS is not set" >> seabios/.config
 	$(MAKE) -C seabios olddefconfig OUT=out/

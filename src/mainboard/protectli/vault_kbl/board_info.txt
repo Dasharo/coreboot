@@ -1,5 +1,5 @@
 Vendor name: Protectli
-Board name: FW6A/FW6B/FW6C
+Board name: FW6A/FW6B/FW6C/FW6D
 Category: sbc
 ROM protocol: SPI
 ROM socketed: n

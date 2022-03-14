@@ -27,7 +27,25 @@
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
-#include <types.h>
+#include <smbios.h>
+
+unsigned int smbios_cpu_get_max_speed_mhz(void)
+{
+	/* Apollolake and Geminilake do not support turbo */
+	return smbios_cpu_get_current_speed_mhz();
+}
+
+unsigned int smbios_cpu_get_current_speed_mhz(void)
+{
+	msr_t msr;
+	msr = rdmsr(MSR_PLATFORM_INFO);
+	return ((msr.lo >> 8) & 0xff) * 100;
+}
+
+unsigned int smbios_processor_external_clock(void)
+{
+	return 100;
+}
 
 static const struct reg_script core_msr_script[] = {
 #if !CONFIG(SOC_INTEL_GEMINILAKE)
@@ -66,6 +84,10 @@ void soc_core_init(struct device *cpu)
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE) || acpi_get_sleep_type() == ACPI_S5)
 		mca_configure();
 
+	/* Enable the local CPU apics */
+	enable_lapic_tpr();
+	setup_lapic();
+
 	/* Set core MSRs */
 	reg_script_run(core_msr_script);
 
@@ -78,6 +100,12 @@ void soc_core_init(struct device *cpu)
 	*/
 	enable_pm_timer_emulation();
 
+	/* Enable Direct Cache Access */
+	configure_dca_cap();
+
+	/* Set energy policy */
+	set_energy_perf_bias(ENERGY_POLICY_NORMAL);
+
 	/* Set Max Non-Turbo ratio if RAPL is disabled. */
 	if (CONFIG(APL_SKIP_SET_POWER_LIMITS)) {
 		cpu_set_p_state_to_max_non_turbo_ratio();
@@ -88,6 +116,9 @@ void soc_core_init(struct device *cpu)
 		/* Disable speed step */
 		cpu_set_eist(false);
 	}
+
+	/* Enable Vmx */
+	set_vmx_and_lock();
 }
 
 #if !CONFIG(SOC_INTEL_COMMON_BLOCK_CPU_MPINIT)

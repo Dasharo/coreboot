@@ -1,0 +1,5 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+config BOARD_PROTECTLI_FW4_GLK
+	bool "FW4_GLK"
+	select BOARD_PROTECTLI_FW4_GEMINI_LAKE

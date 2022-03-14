@@ -17,6 +17,8 @@ chip soc/intel/skylake
 	register "gen3_dec" = "0x000c03e1"
 	register "gen4_dec" = "0x001c02e1"
 
+	# Enable "Intel Speed Shift Technology"
+	register "speed_shift_enable" = "1"
 	register "eist_enable" = "1"
 
 	# Disable DPTF
@@ -40,6 +42,16 @@ chip soc/intel/skylake
 	register "PmConfigSlpS4MinAssert" = "4"		# 4s
 	register "PmConfigSlpSusMinAssert" = "1"	# 500ms
 	register "PmConfigSlpAMinAssert" = "3"		# 2s
+
+	register "pirqa_routing" = "PCH_IRQ11"
+	register "pirqb_routing" = "PCH_IRQ10"
+	register "pirqc_routing" = "PCH_IRQ11"
+	register "pirqd_routing" = "PCH_IRQ11"
+	register "pirqe_routing" = "PCH_IRQ11"
+	register "pirqf_routing" = "PCH_IRQ11"
+	register "pirqg_routing" = "PCH_IRQ11"
+	register "pirqh_routing" = "PCH_IRQ11"
+
 
 	# VR Settings Configuration for 4 Domains
 	#+----------------+-------+-------+-------+-------+
@@ -143,10 +155,6 @@ chip soc/intel/skylake
 	register "PcieRpLtrEnable[5]" = "1"
 	register "PcieRpLtrEnable[8]" = "1"
 
-	# Enable RP 9 CLKREQ# support
-	register "PcieRpClkReqSupport[8]" = "1"
-	# RP 9 uses CLKREQ0#
-	register "PcieRpClkReqNumber[8]" = "0"
 
 	# Clocks 0-5 for RP 1-6
 	register "PcieRpClkSrcNumber[0]" = "0"
@@ -166,8 +174,11 @@ chip soc/intel/skylake
 	register "usb2_ports[3]"  = "USB2_PORT_SHORT(OC_SKIP)"	# TYPE-A Port
 	register "usb2_ports[4]"  = "USB2_PORT_SHORT(OC_SKIP)"	# Type-A Port
 	register "usb2_ports[5]"  = "USB2_PORT_SHORT(OC_SKIP)"	# TYPE-A Port
-	register "usb2_ports[6]"  = "USB2_PORT_SHORT(OC_SKIP)"	# TYPE-A Port
-	register "usb2_ports[7]"  = "USB2_PORT_SHORT(OC_SKIP)"	# mPCIe slot
+	register "usb2_ports[7]"  = "USB2_PORT_SHORT(OC_SKIP)"  # FW6: mPCIe, FW6D: mSATA slot
+	register "usb2_ports[8]"  = "USB2_PORT_EMPTY"		# Disabled
+	register "usb2_ports[10]" = "USB2_PORT_EMPTY"		# Disabled
+	register "usb2_ports[11]" = "USB2_PORT_EMPTY"		# Disabled
+
 
 	# USB 3.0 enable ports 1-4, disable ports 5-6
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# TYPE-A Port
@@ -189,6 +200,10 @@ chip soc/intel/skylake
 		[PchSerialIoIndexUart2] = PchSerialIoDisabled, \
 	}"
 
+	# Lock Down CHIPSET_LOCKDOWN_COREBOOT
+	register "common_soc_config" = "{
+		.chipset_lockdown = CHIPSET_LOCKDOWN_COREBOOT,
+	}"
 	device cpu_cluster 0 on
 		device lapic 0 on end
 	end
@@ -239,28 +254,6 @@ chip soc/intel/skylake
 		device pci 1e.4 off end # eMMC
 		device pci 1e.5 off end # SDIO
 		device pci 1e.6 off end # SDCard
-		device pci 1f.0 on
-			chip superio/ite/it8772f
-				register "peci_tmpin" = "3"
-				register "tmpin1_mode" = "THERMAL_RESISTOR"
-				register "tmpin2_mode" = "THERMAL_RESISTOR"
-				# FAN2 available on fan header but unused
-				device pnp 2e.0 off end # FDC
-				device pnp 2e.1 on # Serial Port 1
-					io 0x60 = 0x3f8
-					irq 0x70 = 4
-				end
-				device pnp 2e.4 on # Environment Controller
-					io 0x60 = 0xa40
-					io 0x62 = 0xa30
-					irq 0x70 = 9
-				end
-				device pnp 2e.5 off end # Keyboard
-				device pnp 2e.6 off end # Mouse
-				device pnp 2e.7 off end # GPIO
-				device pnp 2e.a off end # IR
-			end
-		end # LPC Interface
 		device pci 1f.1 on  end # P2SB
 		device pci 1f.2 on  end # Power Management Controller
 		device pci 1f.3 off end # Intel HDA

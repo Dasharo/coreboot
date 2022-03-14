@@ -75,6 +75,9 @@ static void enable_pmcbar(void)
 
 void bootblock_soc_early_init(void)
 {
+	uint16_t io_enables = LPC_IOE_SUPERIO_2E_2F | LPC_IOE_KBC_60_64 |
+			      LPC_IOE_EC_62_66 | LPC_IOE_LGE_200;
+
 	enable_pmcbar();
 
 	/* Clear global reset promotion bit */
@@ -98,6 +101,9 @@ void bootblock_soc_early_init(void)
 		if (CONFIG(DRIVERS_UART_8250IO))
 			lpc_io_setup_comm_a_b();
 	}
+
+	/* IO Decode Enable */
+	lpc_enable_fixed_io_ranges(io_enables);
 
 	/* IO Decode Enable */
 	lpc_enable_fixed_io_ranges(io_enables);

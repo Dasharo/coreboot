@@ -3,6 +3,17 @@
 #ifndef _SOC_PCI_DEVS_H_
 #define _SOC_PCI_DEVS_H_
 
+#include <device/pci_def.h>
+
+#define _PCH_DEVFN(slot, func)	PCI_DEVFN(PCH_DEV_SLOT_ ## slot, func)
+
+#if !defined(__SIMPLE_DEVICE__)
+#include <device/device.h>
+#define _PCH_DEV(slot, func)	pcidev_path_on_root_debug(_PCH_DEVFN(slot, func), __func__)
+#else
+#define _PCH_DEV(slot, func)	PCI_DEV(0, PCH_DEV_SLOT_ ## slot, func)
+#endif
+
 /* All these devices live on bus 0 with the associated device and function */
 
 /* SoC transaction router */
@@ -102,6 +113,11 @@
 # define LPC_FUNC 0
 # define SMBUS_DEV PCU_DEV
 # define SMBUS_FUNC 3
+#define PCH_DEV_SLOT_LPC	PCU_DEV
+#define  PCH_DEVFN_LPC		_PCH_DEVFN(LPC, LPC_FUNC)
+#define  PCH_DEVFN_SMBUS	_PCH_DEVFN(LPC, SMBUS_FUNC)
+#define  PCH_DEV_LPC		_PCH_DEV(LPC, LPC_FUNC)
+#define  PCH_DEV_SMBUS		_PCH_DEV(LPC, SMBUS_FUNC)
 
 /* PCH SCC Device Modes */
 #define PCH_DISABLED 0

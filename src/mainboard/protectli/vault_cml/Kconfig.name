@@ -1,0 +1,2 @@
+config BOARD_PROTECTLI_FW6_CML
+	bool "FW6_CML"
