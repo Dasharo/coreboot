@@ -24,7 +24,7 @@ config MAINBOARD_PART_NUMBER
 
 config MAINBOARD_FAMILY
 	string
-	default "Protectli FW6"
+	default "Vault Pro"
 
 config DIMM_MAX
 	int
