@@ -439,13 +439,6 @@ struct lb_board_config {
 	uint32_t sku_id;
 };
 
-struct lb_logo {
-	uint32_t tag;
-	uint32_t size;
-	uint32_t logo_address;
-	uint32_t logo_size;
-};
-
 #define MAX_SERIALNO_LENGTH	32
 
 /* The following structures are for the CMOS definitions table */
