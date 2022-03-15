@@ -1,11 +1,14 @@
 releases:
-  - version: v0.1.0
+  - version: v0.3.0
     added:
-      - C bootblock support
-      - postcar stage and no CAR global migration support
-      - separated chipset and mainboard code
-      - put non-mainboard specific romstage initialization to northirdge
-      - support for relocatable ramstage with caching in CBMEM
+      - TPM support
+      - vboot support
+      - build targets for vboot with measured boot using TPM 1.2 and TPM 2.0
+    fixed:
+      - cmos.layout being incorrectly mapped from RW CBFS during coreboot tables generation
+      - CC6 storage area being incorrectly included in cbmem top calculations
+      - ACPI DSDT LPC device name which caused TPM to be undetected by OS
+      - SPI controller driver sometimes dropping bytes sent/received through SPI FIFO
     known_issues: None
   - version: v0.2.0
     added:
@@ -16,3 +19,12 @@ releases:
       - 2MB, 8MB and 16MB SPI flash targets
       - SeaBIOS, iPXE and nvramcui payloads
     known_issues: None
+  - version: v0.1.0
+    added:
+      - C bootblock support
+      - postcar stage and no CAR global migration support
+      - separated chipset and mainboard code
+      - put non-mainboard specific romstage initialization to northirdge
+      - support for relocatable ramstage with caching in CBMEM
+    known_issues: None
+
