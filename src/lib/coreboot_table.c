@@ -394,7 +394,7 @@ void __weak lb_spi_flash(struct lb_header *header) { /* NOOP */ }
 /*
  * Loads the logo bitmap file from the BOOTSPLASH fmap region into CBMEM
  */
-static void tianocore_logo_load(void)
+static void tianocore_logo_load(int ignored)
 {
 	const struct cbmem_entry *logo_entry;
 	struct region_device rdev;
@@ -433,6 +433,8 @@ static void tianocore_logo_load(void)
 	cbfs_load_and_decompress(&rdev, logo_buffer + sizeof(header),
 				 logo_size, compression, NULL);
 }
+
+RAMSTAGE_CBMEM_INIT_HOOK(tianocore_logo_load)
 
 static struct lb_forward *lb_forward(struct lb_header *header,
 	struct lb_header *next_header)
@@ -578,8 +580,6 @@ void *write_tables(void)
 	uintptr_t cbtable_end;
 	size_t cbtable_size;
 	const size_t max_table_size = COREBOOT_TABLE_SIZE;
-
-	tianocore_logo_load(); // wrong place for this
 
 	cbtable_start = (uintptr_t)cbmem_add(CBMEM_ID_CBTABLE, max_table_size);
 
