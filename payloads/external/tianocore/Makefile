@@ -171,7 +171,7 @@ build: update checktools
 	echo " build $(BUILD_STR)"
 	if [ -n "$(CONFIG_TIANOCORE_BOOTSPLASH_FILE)" ]; then \
 		echo "    Copying custom bootsplash image"; \
-		cp $(CONFIG_TIANOCORE_BOOTSPLASH_FILE) $(project_dir)/UefiPayloadPkg/Logo/Logo.bmp; \
+		cp $(CONFIG_TIANOCORE_BOOTSPLASH_FILE) $(project_dir)/MdeModulePkg/Logo/Logo.bmp; \
 	fi; \
 	cd $(project_dir); \
 		export EDK_TOOLS_PATH=$(project_dir)/BaseTools; \
@@ -184,7 +184,7 @@ build: update checktools
 		build $(BUILD_STR); \
 		mkdir -p $(project_dir)/../output
 		mv $(project_dir)/Build/$(bootloader)*/*/FV/UEFIPAYLOAD.fd $(project_dir)/../output/UEFIPAYLOAD.fd; \
-		git checkout UefiPayloadPkg/Logo/Logo.bmp > /dev/null 2>&1 || true
+		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true
 
 clean:
 	test -d $(project_dir) && (cd $(project_dir); rm -rf Build; rm -f Conf/tools_def.txt) || exit 0
