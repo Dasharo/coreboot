@@ -6,8 +6,6 @@ releases:
                 - Configurable boot order
                 - Configurable boot options
                 - UEFI Secure Boot support
-                - UEFI Shell selectable in boot menu
-                - iPXE selectable in boot menu
                 - Tuxedo boot logo
           known_issues:
                 - description: The touchpad ON/OFF switch Fn key is not functional
