@@ -34,7 +34,7 @@ platform:
 tests:
   hardware_matrix: https://docs.dasharo.com/variants/clevo_ns50/testing_configuration/
   results: https://docs.google.com/spreadsheets/d/126oG3VLk51sTIz-uVIAOTVPxA0qpH9wQ4P-ue2fJLtI/edit?pli=1#gid=1057842675
-  specification: https://novacustom.gitlab.io/dasharo-compatibility/dasharo-compatibility/ # FIXME
+  specification: https://docs.dasharo.com/unified-test-documentation/overview
 
 asciinema:
   signature_verification: https://asciinema.org/a/475997
