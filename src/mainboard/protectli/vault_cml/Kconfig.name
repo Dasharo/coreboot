@@ -1,2 +1,2 @@
-config BOARD_PROTECTLI_FW6_CML
-	bool "FW6_CML"
+config BOARD_PROTECTLI_VP4
+	bool "VP4"
