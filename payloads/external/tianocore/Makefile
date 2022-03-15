@@ -1,14 +1,8 @@
 ## SPDX-License-Identifier: GPL-2.0-only
-
 # force the shell to bash - the edksetup.sh script doesn't work with dash
 export SHELL := env bash
-
-project_name=Tianocore
-project_dir=$(CURDIR)/tianocore
-project_git_repo=https://github.com/Dasharo/edk2
-project_git_branch=dasharo
-upstream_git_repo=https://github.com/tianocore/edk2
-
+project_name = Tianocore
+project_dir = $(CURDIR)/$(word 3,$(subst /, ,$(CONFIG_TIANOCORE_REPOSITORY)))
 BUILD_STR = -a IA32 -a X64 -t COREBOOT
 ifeq ($(CONFIG_TIANOCORE_COREBOOTPAYLOAD),y)
 BUILD_STR += -p CorebootPayloadPkg/CorebootPayloadPkgIa32X64.dsc
@@ -16,7 +10,6 @@ else
 BUILD_STR += -p UefiPayloadPkg/UefiPayloadPkg.dsc
 endif
 BUILD_STR += -D BOOTLOADER=COREBOOT -q
-
 #
 # EDK II has the following build options relevant to coreboot:
 #
@@ -92,42 +85,6 @@ endif
 endif
 
 export EDK_TOOLS_PATH=$(project_dir)/BaseTools
-
-ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
-build_flavor+= -D NETWORK_IPXE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SERIAL),y)
-build_flavor+= -D SERIAL_TERMINAL=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SECURE_BOOT),y)
-build_flavor+= -D SECURE_BOOT_ENABLE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_SATA_PASSWORD),y)
-build_flavor+= -D SATA_PASSWORD_ENABLE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_OPAL_PASSWORD),y)
-build_flavor+= -D OPAL_PASSWORD_ENABLE=TRUE
-endif
-
-ifeq ($(CONFIG_TIANOCORE_TPM_ENABLE),y)
-build_flavor+= -D TPM_ENABLE=TRUE
-endif
-
-MENU_KEY=-D BOOT_MENU_KEY=$(CONFIG_TIANOCORE_BOOT_MENU_KEY)
-TIMEOUT=-D PLATFORM_BOOT_TIMEOUT=$(CONFIG_TIANOCORE_BOOT_TIMEOUT)
-
-ifeq ($(CONFIG_TIANOCORE_TARGET_IA32), y)
-ARCH=-a IA32 -p $(bootloader)/$(bootloader)Ia32.dsc
-else
-ARCH=-a IA32 -a X64 -p $(bootloader)/$(bootloader)Ia32X64.dsc
-endif
-
-BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(MENU_KEY) $(build_flavor)
-
 all: clean build
 
 $(project_dir):
