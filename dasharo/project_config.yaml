@@ -2,7 +2,7 @@
 file_version: v0.0.1
 
 dasharo:
-  platform: clevo_ns50mu
+  platform: tuxedo_ibs15
   newsletter:
     url: https://newsletter.3mdeb.com/subscription/7IPf_aUHR
 
