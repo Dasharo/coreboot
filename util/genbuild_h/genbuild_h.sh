@@ -66,6 +66,10 @@ printf "#define COREBOOT_VERSION %s\n" "\"$KERNELVERSION\""
 
 #See if the build is running in a git repo and the git command is available
 printf "/* timesource: $TIMESOURCE */\n"
+
+printf "#define DASHARO_VERSION \"%s\"\n" `git describe --tags --match "*v[0-9]*.[0-9]*.[0-9]*" | sed 's/^.*v\([0-9]\)\.\([0-9]\)\.\([0-9]\+\).*/v\1.\2.\3/'`
+printf "#define DASHARO_MAJOR_VERSION %d\n#define DASHARO_MINOR_VERSION %d\n#define DASHARO_PATCH_VERSION %d\n" `git describe --tags --match "*v[0-9]*.[0-9]*.[0-9]*" | sed 's/^.*v\([0-9]\)\.\([0-9]\)\.\([0-9]\+\).*/\1 \2 \3/'`
+
 printf "#define COREBOOT_VERSION_TIMESTAMP $DATE\n"
 printf "#define COREBOOT_ORIGIN_GIT_REVISION \"$GITREV\"\n"
 
