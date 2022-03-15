@@ -10,6 +10,7 @@ function usage {
     echo -e "\tfw6d - build Protectli FW6D coreboot image"
     echo -e "\tfw6e - build Protectli FW6E coreboot image"
     echo -e "\tfw4_glk - build Protectli FW4 GLK coreboot image"
+    echo -e "\tvp4xxx - build Protectli VP4xxx coreboot image"
     exit 1
 }
 
@@ -224,16 +225,19 @@ function buildFW6DImage {
 }
 
 
-function buildFW6CMLImage {
+function buildVP4XXXImage {
 
 	if [ ! -d 3rdparty/blobs/mainboard ]; then
 		git submodule update --init --checkout
 	fi
 
 	if [ ! -d 3rdparty/blobs/mainboard/protectli/vault_cml ]; then
-		wget https://cloud.3mdeb.com/index.php/s/FzF5fjqieEyQX4e/download -O protectli_blobs.zip
-		unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
-		rm protectli_blobs.zip
+		if [ -f protectli_blobs.zip ]; then
+			unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
+		else
+			echo "Platform blobs missing! You must obtain them first."
+			exit 1
+		fi
 	fi
 
 	version=$(cat .coreboot-version)
@@ -250,30 +254,12 @@ function buildFW6CMLImage {
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
-		/bin/bash -c "make olddefconfig && make && \
-		./build/cbfstool build/coreboot.rom add-int -i 0x85 -n etc/boot-menu-key && \
-		./build/cbfstool build/coreboot.rom add-int -i 1000 -n etc/usb-time-sigatt && \
-		./build/cbfstool build/coreboot.rom add-int -i 6000 -n etc/boot-menu-wait && \
-		echo \"Press F11 key for boot menu\" > build/message.txt &&
-		./build/cbfstool build/coreboot.rom add -f build/message.txt -n etc/boot-menu-message -t raw && \
-		echo \"/pci@i0cf8/pci-bridge@1d,4/*@0\" > build/bootorder.txt && \
-		echo \"/pci@i0cf8/*@17/drive@0/disk@0\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/*@17/drive@2/disk@0\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@14/usb-*@1\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@14/usb-*@2\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@14/usb-*@3\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/usb@14/usb-*@4\" >> build/bootorder.txt && \
-		echo \"/pci@i0cf8/*@1a\" >> build/bootorder.txt && \
-		./build/cbfstool build/coreboot.rom add -f build/bootorder.txt -n bootorder -t raw && \
-		echo \"pci8086,1533.rom pci8086,1539.rom\" > build/links.txt && \
-		echo \"pci8086,157b.rom pci8086,1539.rom\" >> build/links.txt && \
-		./build/cbfstool build/coreboot.rom add -f build/links.txt -n links -t raw && \
-		./build/cbfstool build/coreboot.rom print"
+		/bin/bash -c "make olddefconfig && make"
 
 	cp build/coreboot.rom protectli_$1_DF_$version.rom
 	if [ $? -eq 0 ]; then
 		echo "Result binary placed in $PWD/protectli_$1_DF_$version.rom" 
-		sha256sum protectli_$1_DF_$version.rom > protectli_$1_DF_$version.rom.sha256
+		sha256sum protectli_$1_DF_$version.rom > protectli_$1_DF_$version.rom.SHA256
 	else
 		echo "Build failed!"
 		exit 1
@@ -301,8 +287,8 @@ case "$CMD" in
     "fw4_glk")
         buildFW4GLKImage "fw4_glk"
         ;;
-    "fw6_cml")
-        buildFW6CMLImage "fw6_cml"
+    "vp4xxx")
+        buildVP4XXXImage "vp4xxx"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
