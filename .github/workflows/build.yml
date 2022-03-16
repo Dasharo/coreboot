@@ -5,6 +5,7 @@ on:
       - tuxedo_ibs15/develop
       - tuxedo_ibs15/release
       - 'tuxedo_ibs15/rel_*'
+      - tuxedo_ibs15/timeless # TODO remove
   pull_request:
     branches:
       - tuxedo_ibs15/develop
