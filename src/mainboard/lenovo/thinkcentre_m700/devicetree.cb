@@ -192,7 +192,7 @@ chip soc/intel/skylake
 					register "FAN3.smart.pwm_start"	= "48"
 					register "FAN3.smart.slope"	= "0x20"
 
-					register "ec.vin_mask" = "VIN_ALL"
+					register "ec.vin_mask" = "VIN0 | VIN2 | VIN3 | VIN4"
 				device pnp 2e.1 off end	# COM1 (internal header)
 				device pnp 2e.2 on		# COM2 (rear port)
 					io 0x60 = 0x3f8
