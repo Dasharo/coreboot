@@ -33,6 +33,10 @@ SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
 LOGO=""
 SDKVER="0ad5fbd48d"
+BUILD_TIMELESS=1
+
+CPUS=$(nproc)
+NUM_CPUS=$CPUS
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
 
@@ -63,8 +67,11 @@ build() {
     echo "Building with default logo"
   fi
   make clean
-  docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
-	  coreboot/coreboot-sdk:$SDKVER make -j "$(nproc)"
+  docker run -u $UID --rm -it -e BUILD_TIMELESS=$BUILD_TIMELESS \
+    -e CPUS=$CPUS -e NUM_CPUS=$NUM_CPUS \
+    -v $PWD:/home/coreboot/coreboot \
+    -w /home/coreboot/coreboot \
+    coreboot/coreboot-sdk:$SDKVER make -j "$(nproc)"
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
   cd "${ARTIFACTS_DIR}"
@@ -82,7 +89,7 @@ build-CI() {
     echo "Building with default logo"
   fi
   make clean
-  make -j "$(nproc)"
+  make -j "$(nproc)" BUILD_TIMELESS=$BUILD_TIMELESS
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
   sha256sum "${ARTIFACTS_DIR}/${FW_FILE}" > "${ARTIFACTS_DIR}/${HASH_FILE}"
