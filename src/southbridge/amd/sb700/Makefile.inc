@@ -18,6 +18,7 @@ ramstage-y += acpi.c
 ramstage-y += hda.c
 ramstage-y += ide.c
 ramstage-y += lpc.c
+ramstage-y += pci.c
 ramstage-y += reset.c
 ramstage-y += sata.c
 ramstage-y += sb700.c
