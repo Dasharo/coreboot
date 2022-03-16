@@ -4,8 +4,14 @@
 #define _SB700_SMBUS_C_
 
 #include <arch/io.h>
+#include <device/i2c_simple.h>
 #include <northbridge/amd/amdfam10/raminit.h>
 #include "smbus.h"
+
+int __weak platform_i2c_transfer(unsigned int bus, struct i2c_msg *msg, int count)
+{
+	return 0;
+}
 
 void alink_ab_indx(u32 reg_space, u32 reg_addr, u32 mask, u32 val)
 {
