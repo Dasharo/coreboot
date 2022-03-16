@@ -1,13 +1,13 @@
 releases:
         - version: v1.0.0
           added:
-                - Support for Tuxedo InfinityBook S 15 Gen6
+                - Support for TUXEDO InfinityBook S 15 Gen6
                 - Support for EC firmware 1.07.02
                 - UEFI Boot Support
                 - Configurable boot order
                 - Configurable boot options
                 - UEFI Secure Boot support
-                - Tuxedo boot logo
+                - TUXEDO boot logo
           known_issues:
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://github.com/Dasharo/dasharo-issues/issues/38
