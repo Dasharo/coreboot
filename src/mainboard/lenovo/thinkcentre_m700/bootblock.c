@@ -32,6 +32,7 @@ static void ite_disable_serial(pnp_devfn_t dev)
 static void ite_gpio_conf(pnp_devfn_t dev)
 {
 	ite_reg_write(dev, 0x23, 0x49);
+	ite_reg_write(dev, 0x24, 0x01);
 	ite_reg_write(dev, 0x25, 0x10);
 	ite_reg_write(dev, 0x25, 0x10);
 	ite_reg_write(dev, 0x26, 0x00);
