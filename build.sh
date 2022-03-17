@@ -64,12 +64,13 @@ replace_keys() {
 
   # Remove existing keys, if present
   if [[ -d "keys" ]]; then
-    chmod +w keys
+    chmod -R +w keys
     rm -rf keys
   fi
 
   # Generate new keys
   3rdparty/vboot/scripts/keygeneration/create_new_keys.sh --output keys/
+  chmod -R +w keys
 
   # Remove current keys from config, if present
   sed -i "/\b\(CONFIG_VBOOT_ROOT_KEY\|CONFIG_VBOOT_RECOVERY_KEY\|CONFIG_VBOOT_FIRMWARE_PRIVKEY\|CONFIG_VBOOT_KERNEL_KEY\|CONFIG_VBOOT_KEYBLOCK\)\b/d" .config
