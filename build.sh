@@ -59,6 +59,8 @@ replace_logo() {
 replace_keys() {
   # Build vboot utilities
   make -C 3rdparty/vboot
+  make -C 3rdparty/vboot/ install_for_test
+  PATH=$PATH:$PWD/3rdparty/vboot/build/install_for_test/usr/bin
 
   # Remove existing keys, if present
   if [[ -d "keys" ]]; then
