@@ -62,6 +62,13 @@ jobs:
         ./build.sh build-CI
         EOF
 
+    - name: Build NS5X target (vboot test binaries)
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
+        ./build.sh build-CI
+        EOF
+
     - name: Save NS5X artifacts
       uses: actions/upload-artifact@v2
       with:
