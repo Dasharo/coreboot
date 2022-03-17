@@ -16,8 +16,10 @@ errorCheck() {
 
 usage() {
   echo "${0} command"
-  echo "Available commands: build [-l path_to_logo.bmp], sign, upload"
-  exit 0
+  echo "Available commands: build [-l path_to_logo.bmp] [-s], sign, upload"
+  echo
+  echo "   -l path_to_logo.bmp: Build with custom boot logo"
+  echo "                    -s: Build with new vboot keys for testing vboot"
 }
 
 # FIXME
@@ -33,6 +35,7 @@ SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
 LOGO=""
 SDKVER="0ad5fbd48d"
+REPLACE_KEYS=0
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
 
@@ -53,6 +56,35 @@ replace_logo() {
   fi
 }
 
+replace_keys() {
+  # Build vboot utilities
+  make -C 3rdparty/vboot
+  make -C 3rdparty/vboot/ install_for_test
+  PATH=$PATH:$PWD/3rdparty/vboot/build/install_for_test/usr/bin
+
+  # Remove existing keys, if present
+  if [[ -d "keys" ]]; then
+    chmod -R +w keys
+    rm -rf keys
+  fi
+
+  # Generate new keys
+  3rdparty/vboot/scripts/keygeneration/create_new_keys.sh --output keys/
+  chmod -R +w keys
+
+  # Remove current keys from config, if present
+  sed -i "/\b\(CONFIG_VBOOT_ROOT_KEY\|CONFIG_VBOOT_RECOVERY_KEY\|CONFIG_VBOOT_FIRMWARE_PRIVKEY\|CONFIG_VBOOT_KERNEL_KEY\|CONFIG_VBOOT_KEYBLOCK\)\b/d" .config
+
+  # Add generated keys to .config
+  echo "CONFIG_VBOOT_ROOT_KEY=keys/root_key.vbpubk" >> .config
+  echo "CONFIG_VBOOT_RECOVERY_KEY=keys/recovery_key.vbpubk" >> .config
+  echo "CONFIG_VBOOT_FIRMWARE_PRIVKEY=keys/firmware_data_key.vbprivk" >> .config
+  echo "CONFIG_VBOOT_KERNEL_KEY=keys/kernel_subkey.vbpubk" >> .config
+  echo "CONFIG_VBOOT_KEYBLOCK=keys/firmware.keyblock" >> .config
+
+  echo "Building with test vboot keys"
+}
+
 build() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
@@ -61,6 +93,9 @@ build() {
     replace_logo $LOGO
   else
     echo "Building with default logo"
+  fi
+  if [[ $REPLACE_KEYS = 1 ]]; then
+    replace_keys
   fi
   make clean
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
@@ -80,6 +115,9 @@ build-CI() {
     replace_logo $LOGO
   else
     echo "Building with default logo"
+  fi
+  if [[ $REPLACE_KEYS = 1 ]]; then
+    replace_keys
   fi
   make clean
   make -j "$(nproc)"
@@ -119,14 +157,18 @@ upload() {
 CMD="$1"
 
 OPTIND=2
-while getopts "l" options; do
+while getopts "l:s" options; do
   case "${options}" in
     "l")
-      if [ -f $3 ]; then
-        LOGO=$3
+      if [ -f $OPTARG ]; then
+        LOGO=$OPTARG
       else
-        echo "File $3 does not exist"
+        echo "File $OPTARG does not exist"
       fi
+      ;;
+    "s")
+      REPLACE_KEYS=1
+      FW_FILE="${FW_FILE}.vboot_test"
       ;;
   esac
 done
