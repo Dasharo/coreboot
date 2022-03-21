@@ -14,6 +14,13 @@
 #include "istep_13_scom.h"
 #include "chip.h"
 #include "fsi.h"
+#include "pci.h"
+
+/*
+ * Chip ID, not sure why it's shifted (group id + chip id?).
+ * Might be specific to group pump mode.
+ */
+#define CHIP_ID(chip) ((chip) << 3)
 
 static uint64_t nominal_freq[MAX_CHIPS];
 
@@ -151,8 +158,8 @@ static void fill_cpu_node(struct device_tree *tree,
 	dt_add_u32_prop(node, "reg", pir);
 	dt_add_u32_prop(node, "ibm,pir", pir);
 
-	/* Chip ID of this core, not sure why it's shifted (group id + chip id?) */
-	dt_add_u32_prop(node, "ibm,chip-id", chip << 3);
+	/* Chip ID of this core */
+	dt_add_u32_prop(node, "ibm,chip-id", CHIP_ID(chip));
 
 	/*
 	 * Interrupt server numbers (aka HW processor numbers) of all threads
@@ -337,29 +344,39 @@ static void split_mem_node(struct device_tree *tree)
 		/*
 		 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
 		 * when chip ID is actually a group ID and "chip ID" field is zero.
-		 *
-		 * Don't know why the value needs to be shifted (group id + chip id?).
 		 */
 		chip = (new_addr.u64 >> 45) & 0xF;
-		dt_add_u32_prop(new_region, "ibm,chip-id", chip << 3);
+		dt_add_u32_prop(new_region, "ibm,chip-id", CHIP_ID(chip));
 	}
-};
+}
 
-/*
- * Device tree passed to Skiboot has to have phandles set either for all nodes
- * or none at all. Because relative phandles are set for cpu->l2_cache->l3_cache
- * chain, only first option is possible.
- */
-static int dt_platform_fixup(struct device_tree_fixup *fixup,
-			     struct device_tree *tree)
+/* Finds first root complex for a given chip that's present in DT else returns NULL */
+static bool dt_contains_pcie(struct device_tree *tree, uint8_t chip_id)
 {
-	uint8_t chips = fsi_get_present_chips();
+	int phb;
 
-	struct device_tree_node *cpus, *xscom;
+	/* See comment before pec0_lane_cfg global variable in istep_10_10.c */
+	for (phb = 0; phb < MAX_PHB_PER_PROC; phb++) {
+		struct device_tree_node *node;
 
-	split_mem_node(tree);
+		char path[40];
+		snprintf(path, sizeof(path), "/ibm,pcie-slots/root-complex@%d,%d", chip_id,
+			 phb);
 
-	/* Find xscom node, halt if not found */
+		node = dt_find_node_by_path(tree, path, NULL, NULL, 0);
+		if (node != NULL)
+			return true;
+	}
+
+	return false;
+}
+
+/* Checks input device tree for sanity and dies on failure */
+static void validate_dt(struct device_tree *tree, uint8_t chips)
+{
+	struct device_tree_node *xscom;
+	bool found_pcie;
+
 	/* TODO: is the address always the same? */
 	xscom = dt_find_node_by_path(tree, "/xscom@603fc00000000", NULL, NULL, 0);
 	if (xscom == NULL)
@@ -374,6 +391,36 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 		if (xscom != NULL)
 			die("Found 'xscom' node for missing chip#1 in device tree!\n");
 	}
+
+	if (!dt_contains_pcie(tree, /*chip_id=*/0))
+		die("No 'root-complex' nodes for chip#0 in device tree!\n");
+
+	/* Check for xscom node of the second CPU (assuming group pump mode) */
+	found_pcie = dt_contains_pcie(tree, /*chip_id=*/CHIP_ID(1));
+	if (chips & 0x2) {
+		if (!found_pcie)
+			die("No 'root-complex' node for chip#1 in device tree!\n");
+	} else {
+		if (found_pcie)
+			die("Found 'root-complex' node for missing chip#1 in device tree!\n");
+	}
+}
+
+/*
+ * Device tree passed to Skiboot has to have phandles set either for all nodes
+ * or none at all. Because relative phandles are set for cpu->l2_cache->l3_cache
+ * chain, only first option is possible.
+ */
+static int dt_platform_fixup(struct device_tree_fixup *fixup,
+			     struct device_tree *tree)
+{
+	uint8_t chips = fsi_get_present_chips();
+
+	struct device_tree_node *cpus;
+
+	validate_dt(tree, chips);
+
+	split_mem_node(tree);
 
 	/* Find "cpus" node */
 	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 0);
