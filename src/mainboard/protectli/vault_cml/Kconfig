@@ -1,4 +1,4 @@
-if BOARD_PROTECTLI_VP4
+if BOARD_PROTECTLI_VP4620
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -20,7 +20,7 @@ config MAINBOARD_DIR
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "VP4"
+	default "VP4620"
 
 config MAINBOARD_FAMILY
 	string
