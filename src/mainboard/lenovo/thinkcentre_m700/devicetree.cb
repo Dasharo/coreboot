@@ -51,8 +51,6 @@ chip soc/intel/skylake
 			register "Peg0MaxLinkWidth" = "Peg0_x16"
 
 			# Configure PCIe clockgen in PCH
-			register "PcieRpClkReqSupport[0]"	= "1"
-			register "PcieRpClkReqNumber[0]"	= "0"
 			register "PcieRpClkSrcNumber[0]"	= "0"
 		end
 		device pci 02.0 on # Integrated Graphics Device
@@ -94,8 +92,7 @@ chip soc/intel/skylake
 		device pci 15.1 off end # I2C #1
 		device pci 15.2 off end # I2C #2
 		device pci 15.3 off end # I2C #3
-		device pci 16.0 on      # Management Engine Interface 1
-		end
+		device pci 16.0 off end # Management Engine Interface 1
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
@@ -109,23 +106,21 @@ chip soc/intel/skylake
 				[2]     = 1, \
 				[3]     = 1, \
 			}"
+			register "SataPortsHotPlug" = "{ \
+				[0]     = 1, \
+				[1]     = 1, \
+				[2]     = 1, \
+				[3]     = 1, \
+			}"
 		end
 		device pci 19.0 off end # UART #2
 		device pci 19.1 off end # I2C #5
 		device pci 19.2 off end # I2C #4
-		device pci 1c.0 on  end # PCI Express Port 1
+		device pci 1c.0 off end # PCI Express Port 1
 		device pci 1c.1 off end # PCI Express Port 2
 		device pci 1c.2 off end # PCI Express Port 3
 		device pci 1c.3 off end # PCI Express Port 4
-		device pci 1c.4 on      # PCI Express Port 5 - PCIE slot
-			register "PcieRpEnable[4]"			= "1"
-			register "PcieRpClkReqSupport[4]"		= "1"
-			register "PcieRpClkReqNumber[4]"		= "2"
-			register "PcieRpAdvancedErrorReporting[4]"	= "1"
-			register "PcieRpLtrEnable[4]"			= "1"
-			register "PcieRpClkSrcNumber[4]"		= "2"
-			register "PcieRpHotPlug[4]"			= "1"
-		end
+		device pci 1c.4 off end # PCI Express Port 5
 		device pci 1c.5 on      # PCI Express Port 6 - Onboard LAN
 			register "PcieRpEnable[5]"			= "1"
 
@@ -133,18 +128,22 @@ chip soc/intel/skylake
 			register "PcieRpClkReqSupport[5]"		= "0"
 			register "PcieRpAdvancedErrorReporting[5]"	= "1"
 			register "PcieRpLtrEnable[5]"			= "1"
-			register "PcieRpClkSrcNumber[5]"		= "1"
+			register "PcieRpClkSrcNumber[5]"		= "6"
 		end
 		device pci 1c.6 on      # PCI Express Port 7 - PCIE slot
 			register "PcieRpEnable[6]"			= "1"
-			register "PcieRpClkReqSupport[6]"		= "1"
-			register "PcieRpClkReqNumber[6]"		= "3"
+			register "PcieRpClkReqSupport[6]"		= "0"
 			register "PcieRpAdvancedErrorReporting[6]"	= "1"
 			register "PcieRpLtrEnable[6]"			= "1"
-			register "PcieRpClkSrcNumber[6]"		= "3"
-			register "PcieRpHotPlug[6]"			= "1"
+			register "PcieRpClkSrcNumber[6]"		= "7"
 		end
-		device pci 1c.7 off end # PCI Express Port 8
+		device pci 1c.7 on      # PCI Express Port 8 - PCIE slot
+			register "PcieRpEnable[7]"			= "1"
+			register "PcieRpClkReqSupport[7]"		= "0"
+			register "PcieRpAdvancedErrorReporting[7]"	= "1"
+			register "PcieRpLtrEnable[7]"			= "1"
+			register "PcieRpClkSrcNumber[7]"		= "8"
+		end
 		device pci 1d.0 off end # PCI Express Port 9
 		device pci 1d.1 off end # PCI Express Port 10
 		device pci 1d.2 off end # PCI Express Port 11
@@ -157,6 +156,14 @@ chip soc/intel/skylake
 		device pci 1e.5 off end # SDIO
 		device pci 1e.6 off end # SDCard
 		device pci 1f.0 on      # LPC bridge
+			register "lpc_iod" = "0x0070"
+			# TODO: Do we really need to enable everything here? Stock FW does this
+			register "lpc_ioe" = "LPC_IOE_COMA_EN | LPC_IOE_COMB_EN |
+					     LPC_IOE_LPT_EN | LPC_IOE_FDD_EN |
+					     LPC_IOE_LGE_200 | LPC_IOE_HGE_208 |
+					     LPC_IOE_KBC_60_64 | LPC_IOE_EC_62_66 |
+					     LPC_IOE_SUPERIO_2E_2F | LPC_IOE_EC_4E_4F"
+
 			register "gen1_dec" = "0x00fc0201"
 			register "gen2_dec" = "0x003c0a01"
 			register "gen3_dec" = "0x000c0081"
@@ -198,7 +205,6 @@ chip soc/intel/skylake
 					io 0x60 = 0x3f8
 					irq 0x70 = 4
 				end
-				device pnp 2e.3 off end		# Parallel port
 				device pnp 2e.3 on		# Parallel port
 					io 0x60 = 0x378
 					io 0x62 = 0x000		# for ECP mode
@@ -218,7 +224,7 @@ chip soc/intel/skylake
 				device pnp 2e.6 on		# PS/2 mouse
 					irq 0x70 = 12
 				end
-				device pnp 2e.7 on end		# GPIO
+				device pnp 2e.7 on end  # GPIO
 			end	#superio/ite/it8625e
 			chip drivers/pc80/tpm
 				device pnp 4e.0 on end  # TPM module
