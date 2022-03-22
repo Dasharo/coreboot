@@ -258,8 +258,8 @@ function buildVP4620Image {
 
 	cp build/coreboot.rom protectli_$1_DF_$version.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_$1_DF_$version.rom" 
-		sha256sum protectli_$1_DF_$version.rom > protectli_$1_DF_$version.rom.SHA256
+		echo "Result binary placed in $PWD/protectli_vault_cml_$version.rom" 
+		sha256sum protectli_vault_cml_$version.rom > protectli_vault_cml_$version.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
