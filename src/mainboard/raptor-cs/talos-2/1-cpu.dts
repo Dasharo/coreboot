@@ -63,54 +63,6 @@
 				ipmi-sensor-type = <0xc1>;
 			};
 
-			sensor@b {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x0b>;
-				ipmi-sensor-type = <0x0c>;
-			};
-
-			sensor@d {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x0d>;
-				ipmi-sensor-type = <0x0c>;
-			};
-
-			sensor@f {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x0f>;
-				ipmi-sensor-type = <0x0c>;
-			};
-
-			sensor@11 {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x11>;
-				ipmi-sensor-type = <0x0c>;
-			};
-
-			sensor@1b {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x1b>;
-				ipmi-sensor-type = <0x01>;
-			};
-
-			sensor@1d {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x1d>;
-				ipmi-sensor-type = <0x01>;
-			};
-
-			sensor@1f {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x1f>;
-				ipmi-sensor-type = <0x01>;
-			};
-
-			sensor@21 {
-				compatible = "ibm,ipmi-sensor";
-				reg = <0x21>;
-				ipmi-sensor-type = <0x01>;
-			};
-
 			sensor@8b {
 				compatible = "ibm,ipmi-sensor";
 				reg = <0x8b>;
