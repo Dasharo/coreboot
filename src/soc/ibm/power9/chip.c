@@ -411,6 +411,49 @@ static void validate_dt(struct device_tree *tree, uint8_t chips)
 	}
 }
 
+/* Mind that this function creates nodes without chip ID, but some types of sensors need it */
+static void add_sensor_node(struct device_tree *tree, uint8_t number, uint8_t ipmi_type)
+{
+	char path[32];
+	struct device_tree_node *node;
+
+	snprintf(path, sizeof(path), "/bmc/sensors/sensor@%x", number);
+	node = dt_find_node_by_path(tree, path, NULL, NULL, 1);
+
+	dt_add_string_prop(node, "compatible", "ibm,ipmi-sensor");
+	dt_add_u32_prop(node, "reg", number);
+	dt_add_u32_prop(node, "ipmi-sensor-type", ipmi_type);
+}
+
+static void add_dimm_sensor_nodes(struct device_tree *tree, uint8_t chips)
+{
+	enum {
+		/* Base numbers for sensor ids */
+		DIMM_STATE_BASE = 0x0B,
+		DIMM_TEMP_BASE = 0x1B,
+
+		/* IPMI sensor types */
+		STATE_IPMI_SENSOR = 0x0C,
+		TEMP_IPMI_SENSOR = 0x01,
+	};
+
+	int dimm_i;
+	for (dimm_i = 0; dimm_i < MAX_CHIPS * DIMMS_PER_PROC; dimm_i++) {
+		int chip = dimm_i / DIMMS_PER_PROC;
+		int mcs = (dimm_i % DIMMS_PER_PROC) / DIMMS_PER_MCS;
+		int mca = (dimm_i % DIMMS_PER_MCS) / DIMMS_PER_MCA;
+		int dimm = dimm_i % DIMMS_PER_MCA;
+
+		if (!(chips & (1 << chip)))
+			continue;
+		if (!mem_data[chip].mcs[mcs].mca[mca].dimm[dimm].present)
+			continue;
+
+		add_sensor_node(tree, DIMM_STATE_BASE + dimm_i, STATE_IPMI_SENSOR);
+		add_sensor_node(tree, DIMM_TEMP_BASE + dimm_i, TEMP_IPMI_SENSOR);
+	}
+}
+
 /*
  * Device tree passed to Skiboot has to have phandles set either for all nodes
  * or none at all. Because relative phandles are set for cpu->l2_cache->l3_cache
@@ -426,6 +469,7 @@ static int dt_platform_fixup(struct device_tree_fixup *fixup,
 	validate_dt(tree, chips);
 
 	split_mem_node(tree);
+	add_dimm_sensor_nodes(tree, chips);
 
 	/* Find "cpus" node */
 	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 0);
