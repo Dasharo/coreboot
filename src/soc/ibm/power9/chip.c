@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <assert.h>
+#include <cbmem.h>
+#include <commonlib/cbmem_id.h>
 #include <drivers/ipmi/ipmi_bt.h>
 #include <program_loading.h>
 #include <fit.h>
@@ -21,6 +23,9 @@
  * Might be specific to group pump mode.
  */
 #define CHIP_ID(chip) ((chip) << 3)
+
+/* Copy of data put together by the romstage */
+mcbist_data_t mem_data[MAX_CHIPS];
 
 static uint64_t nominal_freq[MAX_CHIPS];
 
@@ -732,3 +737,39 @@ struct chip_operations soc_ibm_power9_ops = {
   CHIP_NAME("POWER9")
   .enable_dev = enable_soc_dev,
 };
+
+/* Restores global mem_data variable from cbmem */
+static void restore_mem_data(int is_recovery)
+{
+	const struct cbmem_entry *entry;
+	uint8_t *data;
+	int dimm_i;
+
+	(void)is_recovery; /* unused */
+
+	entry = cbmem_entry_find(CBMEM_ID_MEMINFO);
+	if (entry == NULL)
+		die("Failed to find mem_data entry in CBMEM in ramstage!");
+
+	/* Layout: mem_data itself then SPD data of each dimm which has it */
+	data = cbmem_entry_start(entry);
+
+	memcpy(&mem_data, data, sizeof(mem_data));
+	data += sizeof(mem_data);
+
+	for (dimm_i = 0; dimm_i < MAX_CHIPS * DIMMS_PER_PROC; dimm_i++) {
+		int chip = dimm_i / DIMMS_PER_PROC;
+		int mcs = (dimm_i % DIMMS_PER_PROC) / DIMMS_PER_MCS;
+		int mca = (dimm_i % DIMMS_PER_MCS) / DIMMS_PER_MCA;
+		int dimm = dimm_i % DIMMS_PER_MCA;
+
+		rdimm_data_t *dimm_data = &mem_data[chip].mcs[mcs].mca[mca].dimm[dimm];
+		if (dimm_data->spd == NULL)
+			continue;
+
+		/* We're not deleting the entry so this is valid */
+		dimm_data->spd = data;
+		data += CONFIG_DIMM_SPD_SIZE;
+	}
+}
+RAMSTAGE_CBMEM_INIT_HOOK(restore_mem_data);

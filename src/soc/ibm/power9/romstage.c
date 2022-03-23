@@ -15,6 +15,7 @@
 #include <spd_bin.h>
 #include <endian.h>
 #include <cbmem.h>
+#include <commonlib/cbmem_id.h>
 #include <timestamp.h>
 
 #include "fsi.h"
@@ -443,3 +444,39 @@ void main(void)
 	cbmem_initialize_empty();
 	run_ramstage();
 }
+
+/* Stores global mem_data variable into cbmem for future use by ramstage */
+static void store_mem_data(int is_recovery)
+{
+	const struct cbmem_entry *entry;
+	uint8_t *data;
+	int dimm_i;
+
+	(void)is_recovery; /* unused */
+
+	/* Layout: mem_data itself then SPD data of each dimm which has it */
+	entry = cbmem_entry_add(CBMEM_ID_MEMINFO, sizeof(mem_data) +
+				MAX_CHIPS * DIMMS_PER_PROC * CONFIG_DIMM_SPD_SIZE);
+	if (entry == NULL)
+		die("Failed to add mem_data entry to CBMEM in romstage!");
+
+	data = cbmem_entry_start(entry);
+
+	memcpy(data, &mem_data, sizeof(mem_data));
+	data += sizeof(mem_data);
+
+	for (dimm_i = 0; dimm_i < MAX_CHIPS * DIMMS_PER_PROC; dimm_i++) {
+		int chip = dimm_i / DIMMS_PER_PROC;
+		int mcs = (dimm_i % DIMMS_PER_PROC) / DIMMS_PER_MCS;
+		int mca = (dimm_i % DIMMS_PER_MCS) / DIMMS_PER_MCA;
+		int dimm = dimm_i % DIMMS_PER_MCA;
+
+		rdimm_data_t *dimm_data = &mem_data[chip].mcs[mcs].mca[mca].dimm[dimm];
+		if (dimm_data->spd == NULL)
+			continue;
+
+		memcpy(data, dimm_data->spd, CONFIG_DIMM_SPD_SIZE);
+		data += CONFIG_DIMM_SPD_SIZE;
+	}
+}
+ROMSTAGE_CBMEM_INIT_HOOK(store_mem_data);
