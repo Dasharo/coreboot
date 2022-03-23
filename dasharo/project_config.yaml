@@ -23,8 +23,8 @@ components:
 documentation:
         name: Dasharo Documentation
         url: https://docs.dasharo.com/
-        building_url: http://localhost:8000/variants/protectli_vp4620/building-manual/
-        flashing_url: http://localhost:8000/variants/protectli_vp4620/installation-manual/
+        building_url: http://docs.dasharo.com/variants/protectli_vp4620/building-manual/
+        flashing_url: http://docs.dasharo.com/variants/protectli_vp4620/installation-manual/
 
 platform:
         vendor: Protectli
@@ -32,7 +32,7 @@ platform:
 
 tests:
         specification: https://docs.dasharo.com/unified-test-documentation/overview/
-        hardware_matrix: TBD
+        hardware_matrix: http://docs.dasharo.com/variants/protectli_vp4620/hardware-matrix/
         results: https://docs.google.com/spreadsheets/d/19YnBLxHw0mae-SQ2xl6BgPeims9hH_oVGwyF70pj9EY/edit#gid=1614315669
 
 asciinema:

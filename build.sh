@@ -256,7 +256,7 @@ function buildVP4620Image {
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make"
 
-	cp build/coreboot.rom protectli_$1_DF_$version.rom
+	cp build/coreboot.rom protectli_vault_cml_$version.rom
 	if [ $? -eq 0 ]; then
 		echo "Result binary placed in $PWD/protectli_vault_cml_$version.rom" 
 		sha256sum protectli_vault_cml_$version.rom > protectli_vault_cml_$version.rom.sha256
