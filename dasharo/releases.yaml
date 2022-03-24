@@ -3,11 +3,13 @@ releases:
           added:
                 - UEFI boot support
                 - UEFI Shell selectable in boot menu
-                - i225 network controller network boot support
+                - Intel i225 controller network boot support
                 - Customized boot menu keys
                 - Customized setup menu keys
                 - Configurable boot order
                 - Configurable boot options
+          changed:
+                - ME version to 14.0.47.1558
           known_issues:
                 - description: i225 network controller initialization takes too much time
                   url: https://github.com/Dasharo/dasharo-issues/issues/65
