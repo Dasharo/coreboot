@@ -287,8 +287,8 @@ case "$CMD" in
     "fw4_glk")
         buildFW4GLKImage "fw4_glk"
         ;;
-    "VP4620")
-        buildVP4620Image "VP4620"
+    "vp4620")
+        buildVP4620Image "vp4620"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
