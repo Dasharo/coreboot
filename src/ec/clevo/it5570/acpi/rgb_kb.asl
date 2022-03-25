@@ -66,6 +66,8 @@ Method (KBPN, 0, NotSerialized) // Keyboard Preset Next
 
 Method (KBUP, 0, NotSerialized) // Keyboard Update
 {
+	Debug = "EC: Keyboard Update"
+
 	// Left zone colors
 	FDAT = 0x03
 	FBUF = KBCB
@@ -94,7 +96,7 @@ Method (KBUP, 0, NotSerialized) // Keyboard Update
 
 	// Enable
 	FDAT = 0x0C
-	If (KBEN) {
+	If (KBEN & LSTE) {
 		FBUF = 0x3F
 	} Else {
 		FBUF = 0x20

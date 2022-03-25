@@ -97,6 +97,7 @@ Device (EC0)
 		If (ECOK) {
 			UPB ()
 			\_SB.PCI0.LPCB.EC0.SFCV ()
+			KBUP ()
 		}
 	}
 
