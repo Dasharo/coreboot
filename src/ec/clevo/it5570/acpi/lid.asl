@@ -8,6 +8,7 @@ Device (LID0)
 	Method (_LID, 0, NotSerialized) {
 		DEBUG = "LID: _LID"
 		If (^^PCI0.LPCB.EC0.ECOK) {
+			^^PCI0.LPCB.EC0.KBUP ()
 			Return (^^PCI0.LPCB.EC0.LSTE)
 		} Else {
 			Return (One)
