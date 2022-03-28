@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 Name (KBEN, 0x01) // Keyboard Backlight Enable
 Name (KBBR, 0xFF) // Keyboard Brightness
 Name (KBCR, 0xFF) // Keyboard Color Red
@@ -96,7 +98,7 @@ Method (KBUP, 0, NotSerialized) // Keyboard Update
 
 	// Enable
 	FDAT = 0x0C
-	If (KBEN & LSTE) {
+	If (KBEN & LSTE) { // Always disable when lid is closed
 		FBUF = 0x3F
 	} Else {
 		FBUF = 0x20
