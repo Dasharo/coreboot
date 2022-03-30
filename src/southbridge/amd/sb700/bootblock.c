@@ -225,7 +225,7 @@ static void sb700_enable_tpm_decoding(void)
 	dev = PCI_DEV(0, 0x14, 3);
 
 	reg8 = pci_read_config8(dev, 0x7c);
-	reg8 |= 0x81;	/* Tpm12_en and decode 0xfed4xxxx*/
+	reg8 |= 1;	/* Tpm12_en */
 	pci_write_config8(dev, 0x7c, reg8);
 }
 
