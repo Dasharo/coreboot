@@ -18,7 +18,7 @@
 #define NMI_OFF 0
 
 #define SB_MMIO_CFG_REG 0x9c
-#define SB_MMIO_BASE_ADDRESS 0xfeb00000
+#define SB_MMIO_BASE_ADDRESS 0xfed80000
 
 #define PRIMARY_SMBUS_RESOURCE_NUMBER 0x90
 #define AUXILIARY_SMBUS_RESOURCE_NUMBER 0x58
@@ -310,6 +310,13 @@ static void sm_init(struct device *dev)
 
 		byte |= 1 << 3;
 		pci_write_config8(dev, 0x43, byte);
+
+		/* Enable southbridge MMIO decode */
+		dword = pci_read_config32(dev, SB_MMIO_CFG_REG);
+		dword &= ~(0xffffff << 8);
+		dword |= SB_MMIO_BASE_ADDRESS;
+		dword |= 0x1;
+		pci_write_config32(dev, SB_MMIO_CFG_REG, dword);
 	}
 
 	/* 4.11:Programming Cycle Delay for AB and BIF Clock Gating */
@@ -450,7 +457,7 @@ static void sb700_sm_read_resources(struct device *dev)
 	res = new_resource(dev, PRIMARY_SMBUS_RESOURCE_NUMBER);
 	res->base  = SMBUS_IO_BASE;
 	res->size = 0x10;
-	res->limit = 0xFFFFUL;	/* res->base + res->size -1; */
+	res->limit = 0xffffUL;	/* res->base + res->size -1; */
 	res->align = 8;
 	res->gran = 8;
 	res->flags = IORESOURCE_IO | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
@@ -459,7 +466,7 @@ static void sb700_sm_read_resources(struct device *dev)
 	res = new_resource(dev, AUXILIARY_SMBUS_RESOURCE_NUMBER);
 	res->base  = SMBUS_AUX_IO_BASE;
 	res->size = 0x10;
-	res->limit = 0xFFFFUL;	/* res->base + res->size -1; */
+	res->limit = 0xffffUL;	/* res->base + res->size -1; */
 	res->align = 8;
 	res->gran = 8;
 	res->flags = IORESOURCE_IO | IORESOURCE_FIXED | IORESOURCE_ASSIGNED;
@@ -475,11 +482,13 @@ static void sb700_sm_read_resources(struct device *dev)
 	 * write address in set_resources() below.
 	 */
 	res = new_resource(dev, SB_MMIO_CFG_REG);
+	res->base  = SB_MMIO_BASE_ADDRESS;
 	res->size = 0x1000;
 	res->limit = 0xffffffffUL;
 	res->align = 12;
 	res->gran = 12;
-	res->flags = IORESOURCE_MEM | IORESOURCE_ASSIGNED;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_ASSIGNED |
+		     IORESOURCE_STORED;
 
 	compact_resources(dev);
 }
