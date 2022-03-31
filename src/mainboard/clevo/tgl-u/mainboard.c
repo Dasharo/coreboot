@@ -5,8 +5,15 @@
 #include <device/device.h>
 #include <intelblocks/lpc_lib.h>
 #include <soc/gpio.h>
+#include <soc/ramstage.h>
 #include <smbios.h>
 #include <string.h>
+
+void mainboard_silicon_init_params(FSP_S_CONFIG *params)
+{
+	/* Disable AER for the SSD slot to support SSDs with buggy firmware */
+	params->CpuPcieRpAdvancedErrorReporting[0] = 0;
+}
 
 const char *smbios_system_sku(void)
 {
