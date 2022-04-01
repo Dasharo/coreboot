@@ -82,7 +82,7 @@ upload() {
 CMD="$1"
 
 OPTIND=2
-while getopts "l" options; do
+while getopts "ln:" options; do
   case "${options}" in
     "l")
       if [ -f $3 ]; then
@@ -91,6 +91,12 @@ while getopts "l" options; do
         echo "File $3 does not exist"
       fi
       ;;
+    "n")
+      if [ ! -z "${OPTARG}" ]; then
+        FW_FILE="${OPTARG}"
+      else
+        echo "Invalid filename. Using default $FW_FILE"
+      fi
   esac
 done
 
