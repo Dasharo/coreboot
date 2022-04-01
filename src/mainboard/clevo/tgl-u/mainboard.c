@@ -11,7 +11,7 @@
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
-	/* Disable AER for the SSD slot to support SSDs with buggy firmware */
+	/* Disable AER for the SSD slot to support S0ix with SSDs containing buggy firmware */
 	params->CpuPcieRpAdvancedErrorReporting[0] = 0;
 }
 
