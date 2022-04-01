@@ -92,11 +92,8 @@ while getopts "ln:" options; do
       fi
       ;;
     "n")
-      if [ ! -z "${OPTARG}" ]; then
-        FW_FILE="${OPTARG}"
-      else
-        echo "Invalid filename. Using default $FW_FILE"
-      fi
+      FW_FILE="${OPTARG}"
+      ;;
   esac
 done
 
