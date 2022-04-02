@@ -5,9 +5,36 @@
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
 #include <superio/ite/common/env_ctrl.h>
+#include <superio/hwm5_conf.h>
 
 #include "chip.h"
 #include "it8625e.h"
+
+#define ITE_EC_SMI_MASK_3	0x06
+#define BANK_SEL_MASK		0x60
+
+static inline void it8625e_ec_select_bank(const u16 base, const u8 bank)
+{
+	uint8_t reg;
+
+	/* BANK_SEL: SMI# Mask Register 3, bits 6-5 */
+	reg = pnp_read_hwm5_index(base, ITE_EC_SMI_MASK_3);
+	reg &= ~BANK_SEL_MASK;
+	reg |= (bank << 5);
+	pnp_write_hwm5_index(base, ITE_EC_SMI_MASK_3, reg);
+}
+
+static void it8625e_ec_setup_tss(u16 base, const struct it8625e_tmpin_config *conf)
+{
+	/* Program TSS1 registers */
+	it8625e_ec_select_bank(base, 0x2);
+	pnp_write_hwm5_index(base, 0x1d, conf->tss1[0] << 4 | conf->tss1[1]);
+	pnp_write_hwm5_index(base, 0x1e, conf->tss1[2] << 4 | conf->tss1[3]);
+	pnp_write_hwm5_index(base, 0x1f, conf->tss1[4] << 4 | conf->tss1[5]);
+
+	/* Return to bank 0 */
+	it8625e_ec_select_bank(base, 0x0);
+}
 
 static void it8625e_init(struct device *dev)
 {
@@ -23,6 +50,7 @@ static void it8625e_init(struct device *dev)
 		if (!conf || !res)
 			break;
 		ite_ec_init(res->base, &conf->ec);
+		it8625e_ec_setup_tss(res->base, &conf->extra);
 		break;
 	case IT8625E_KBCK:
 		pc_keyboard_init(NO_AUX_DEVICE);

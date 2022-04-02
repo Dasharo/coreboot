@@ -49,9 +49,9 @@ static void ite_gpio_conf(pnp_devfn_t dev)
 
 void bootblock_mainboard_early_init(void)
 {
-    /* Configure GPIOs like stock firmware does */
+    /* Configure GPIOs */
     ite_gpio_conf(GPIO_DEV);
 
-    /* Enable early serial console on the rear serial port */
+    /* Enable early serial console */
     ite_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);
 }
