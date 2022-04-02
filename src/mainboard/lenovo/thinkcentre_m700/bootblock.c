@@ -7,8 +7,14 @@
 #include "include/gpio.h"
 
 #define GPIO_DEV PNP_DEV(0x2e, IT8625E_GPIO)
-#define SERIAL1_DEV PNP_DEV(0x2e, IT8625E_SP1)
-#define SERIAL2_DEV PNP_DEV(0x2e, IT8625E_SP2)
+
+#if CONFIG_UART_FOR_CONSOLE == 0
+#define SERIAL_DEV		PNP_DEV(0x2e, IT8625E_SP1)
+#elif CONFIG_UART_FOR_CONSOLE == 1
+#define SERIAL_DEV		PNP_DEV(0x2e, IT8625E_SP2)
+#else
+#error "Invalid value for CONFIG_UART_FOR_CONSOLE"
+#endif
 
 static void early_config_gpio(void)
 {
@@ -18,15 +24,6 @@ static void early_config_gpio(void)
 void bootblock_mainboard_init(void)
 {
 	early_config_gpio();
-}
-
-static void ite_disable_serial(pnp_devfn_t dev)
-{
-	ite_reg_write(dev, 0x30, 0x00);
-	ite_reg_write(dev, 0x60, 0x00);
-	ite_reg_write(dev, 0x61, 0x00);
-	ite_reg_write(dev, 0x70, 0x00);
-	ite_reg_write(dev, 0xf0, 0x00);
 }
 
 static void ite_gpio_conf(pnp_devfn_t dev)
@@ -52,12 +49,9 @@ static void ite_gpio_conf(pnp_devfn_t dev)
 
 void bootblock_mainboard_early_init(void)
 {
-    /* Disable internal serial port */
-    ite_disable_serial(SERIAL1_DEV);
-
     /* Configure GPIOs like stock firmware does */
     ite_gpio_conf(GPIO_DEV);
 
     /* Enable early serial console on the rear serial port */
-    ite_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
+    ite_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);
 }

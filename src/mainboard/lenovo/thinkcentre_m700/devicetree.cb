@@ -156,14 +156,6 @@ chip soc/intel/skylake
 		device pci 1e.5 off end # SDIO
 		device pci 1e.6 off end # SDCard
 		device pci 1f.0 on      # LPC bridge
-			register "lpc_iod" = "0x0070"
-			# TODO: Do we really need to enable everything here? Stock FW does this
-			register "lpc_ioe" = "LPC_IOE_COMA_EN | LPC_IOE_COMB_EN |
-					     LPC_IOE_LPT_EN | LPC_IOE_FDD_EN |
-					     LPC_IOE_LGE_200 | LPC_IOE_HGE_208 |
-					     LPC_IOE_KBC_60_64 | LPC_IOE_EC_62_66 |
-					     LPC_IOE_SUPERIO_2E_2F | LPC_IOE_EC_4E_4F"
-
 			register "gen1_dec" = "0x00fc0201"
 			register "gen2_dec" = "0x003c0a01"
 			register "gen3_dec" = "0x000c0081"
@@ -200,21 +192,29 @@ chip soc/intel/skylake
 					register "FAN3.smart.slope"	= "0x20"
 
 					register "ec.vin_mask" = "VIN0 | VIN2 | VIN3 | VIN4"
-				device pnp 2e.1 off end	# COM1 (internal header)
-				device pnp 2e.2 on		# COM2 (rear port)
+				device pnp 2e.1 on		# COM1 (internal header)
 					io 0x60 = 0x3f8
 					irq 0x70 = 4
 				end
+				device pnp 2e.2 on		# COM2 (rear port)
+					io 0x60 = 0x2f8
+					irq 0x70 = 3
+				end
 				device pnp 2e.3 on		# Parallel port
 					io 0x60 = 0x378
-					io 0x62 = 0x000		# for ECP mode
+					io 0x62 = 0x778		# for ECP mode
 					irq 0x70 = 5
-					drq 0x74 = 4
+					drq 0x74 = 3
+					irq 0xf0 = 0x09
 				end
 				device pnp 2e.4 on		# EC
 					io 0x60 = 0xa20
 					io 0x62 = 0x230
 					irq 0x70 = 9
+					irq 0xf0 = 0x80
+					irq 0xf4 = 0xe0
+					irq 0xf6 = 0xf0
+					irq 0xfa = 0x2c
 				end
 				device pnp 2e.5 on		# PS/2 keyboard
 					io 0x60 = 0x60
@@ -223,8 +223,9 @@ chip soc/intel/skylake
 				end
 				device pnp 2e.6 on		# PS/2 mouse
 					irq 0x70 = 12
+					irq 0x71 = 2
 				end
-				device pnp 2e.7 on end  # GPIO
+				device pnp 2e.7 off end  # GPIO
 			end	#superio/ite/it8625e
 			chip drivers/pc80/tpm
 				device pnp 4e.0 on end  # TPM module
