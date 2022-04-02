@@ -164,9 +164,9 @@ chip soc/intel/skylake
 			register "serirq_mode" = "SERIRQ_CONTINUOUS"
 			chip superio/ite/it8625e
 					register "ec.smbus_en"		= "1"
-					register "ec.smbus_24mhz"	= "1"
 					register "TMPIN1.mode"		= "THERMAL_DIODE" # EXT_SYS_TEMP
-					register "TMPIN2.mode"		= "THERMAL_DIODE"
+					register "TMPIN2.mode"		= "THERMAL_PECI"
+					register "TMPIN2.offset"	= "100"
 					register "TMPIN3.mode"		= "THERMAL_DIODE" # VR_TEMP_DA
 
 					register "FAN1.mode" = "FAN_MODE_OFF"
@@ -191,7 +191,7 @@ chip soc/intel/skylake
 					register "FAN3.smart.pwm_start"	= "48"
 					register "FAN3.smart.slope"	= "0x20"
 
-					register "ec.vin_mask" = "VIN0 | VIN2 | VIN3 | VIN4"
+					register "ec.vin_mask" = "VIN_ALL"
 				device pnp 2e.1 on		# COM1 (internal header)
 					io 0x60 = 0x3f8
 					irq 0x70 = 4
