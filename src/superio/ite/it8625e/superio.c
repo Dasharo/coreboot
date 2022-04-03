@@ -54,11 +54,8 @@ static void it8625e_ec_extra_setup(u16 base, const struct it8625e_tmpin_config *
 	/* Program TSS1 registers */
 	it8625e_ec_select_bank(base, 0x2);
 	pnp_write_hwm5_index(base, 0x1d, conf->tss1[1] << 4 | conf->tss1[0]);
-	printk(BIOS_DEBUG, "Wrote TSS1 #1: %x\n", conf->tss1[1] << 4 | conf->tss1[0]);
 	pnp_write_hwm5_index(base, 0x1e, conf->tss1[3] << 4 | conf->tss1[2]);
-	printk(BIOS_DEBUG, "Wrote TSS1 #2: %x\n", conf->tss1[3] << 4 | conf->tss1[2]);
 	pnp_write_hwm5_index(base, 0x1f, conf->tss1[5] << 4 | conf->tss1[4]);
-	printk(BIOS_DEBUG, "Wrote TSS1 #3: %x\n", conf->tss1[5] << 4 | conf->tss1[4]);
 
 	/* Return to bank 0 */
 	it8625e_ec_select_bank(base, 0x0);
