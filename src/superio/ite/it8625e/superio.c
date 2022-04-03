@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <console/console.h>
 #include <device/device.h>
 #include <device/pnp.h>
 #include <pc80/keyboard.h>
@@ -19,18 +20,23 @@ static inline void it8625e_ec_select_bank(const u16 base, const u8 bank)
 
 	/* BANK_SEL: SMI# Mask Register 3, bits 6-5 */
 	reg = pnp_read_hwm5_index(base, ITE_EC_SMI_MASK_3);
+	printk(BIOS_DEBUG, "Current SMI_MASK_3: %x\n", reg);
 	reg &= ~BANK_SEL_MASK;
 	reg |= (bank << 5);
 	pnp_write_hwm5_index(base, ITE_EC_SMI_MASK_3, reg);
+	printk(BIOS_DEBUG, "Wrote SMI_MASK_3: %x\n", reg);
 }
 
 static void it8625e_ec_setup_tss(u16 base, const struct it8625e_tmpin_config *conf)
 {
 	/* Program TSS1 registers */
 	it8625e_ec_select_bank(base, 0x2);
-	pnp_write_hwm5_index(base, 0x1d, conf->tss1[0] << 4 | conf->tss1[1]);
-	pnp_write_hwm5_index(base, 0x1e, conf->tss1[2] << 4 | conf->tss1[3]);
-	pnp_write_hwm5_index(base, 0x1f, conf->tss1[4] << 4 | conf->tss1[5]);
+	pnp_write_hwm5_index(base, 0x1d, conf->tss1[1] << 4 | conf->tss1[0]);
+	printk(BIOS_DEBUG, "Wrote TSS1 #1: %x\n", conf->tss1[1] << 4 | conf->tss1[0]);
+	pnp_write_hwm5_index(base, 0x1e, conf->tss1[3] << 4 | conf->tss1[2]);
+	printk(BIOS_DEBUG, "Wrote TSS1 #2: %x\n", conf->tss1[3] << 4 | conf->tss1[2]);
+	pnp_write_hwm5_index(base, 0x1f, conf->tss1[5] << 4 | conf->tss1[4]);
+	printk(BIOS_DEBUG, "Wrote TSS1 #3: %x\n", conf->tss1[5] << 4 | conf->tss1[4]);
 
 	/* Return to bank 0 */
 	it8625e_ec_select_bank(base, 0x0);
