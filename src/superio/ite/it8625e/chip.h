@@ -15,6 +15,9 @@ struct it8625e_tmpin_config {
 	/* TMPIN Source Select 2 register */
 	uint8_t tss2[6];
 
+	/* Config for logical TMPINs 4-6 */
+	struct ite_ec_thermal_config tmpin[3];
+
 	/* Enable PECI */
 	bool enable_peci;
 };
@@ -42,5 +45,9 @@ enum {
 	TSS1_SM_LINK_DIMM2 = 0xe,
 	TSS1_SM_LINK_DIMM3 = 0xf,
 };
+
+#define TMPIN4	extra.tmpin[0]
+#define TMPIN5	extra.tmpin[1]
+#define TMPIN6	extra.tmpin[2]
 
 #endif /* SUPERIO_ITE_IT8625E_CHIP_H */

@@ -14,6 +14,8 @@
 #define ITE_EC_SMI_MASK_3	0x06
 #define BANK_SEL_MASK		0x60
 
+static const u8 ITE_EC_EXTRA_TEMP_ADJUST[] = { 0x5a, 0x90, 0x91 };
+
 static inline void it8625e_ec_select_bank(const u16 base, const u8 bank)
 {
 	uint8_t reg;
@@ -44,6 +46,11 @@ static void enable_peci(const u16 base)
 
 static void it8625e_ec_extra_setup(u16 base, const struct it8625e_tmpin_config *conf)
 {
+	int i;
+	/* Program offsets for TMPINs 4-6 */
+	for (i = 0; i < 3; ++i)
+		pnp_write_hwm5_index(base, ITE_EC_EXTRA_TEMP_ADJUST[i], conf->tmpin[i].offset);
+
 	/* Program TSS1 registers */
 	it8625e_ec_select_bank(base, 0x2);
 	pnp_write_hwm5_index(base, 0x1d, conf->tss1[1] << 4 | conf->tss1[0]);
