@@ -27,7 +27,22 @@ static inline void it8625e_ec_select_bank(const u16 base, const u8 bank)
 	printk(BIOS_DEBUG, "Wrote SMI_MASK_3: %x\n", reg);
 }
 
-static void it8625e_ec_setup_tss(u16 base, const struct it8625e_tmpin_config *conf)
+static void enable_peci(const u16 base)
+{
+	/* Enable PECI interface */
+	pnp_write_hwm5_index(base, ITE_EC_INTERFACE_SELECT,
+			   ITE_EC_INTERFACE_SEL_PECI | ITE_EC_INTERFACE_SPEED_TOLERANCE);
+
+	/* Setup External Temperature using PECI GetTemp */
+	pnp_write_hwm5_index(base, ITE_EC_EXTEMP_ADDRESS, PECI_CLIENT_ADDRESS);
+	pnp_write_hwm5_index(base, ITE_EC_EXTEMP_COMMAND, PECI_GETTEMP_COMMAND);
+	pnp_write_hwm5_index(base, ITE_EC_EXTEMP_WRITE_LENGTH, PECI_GETTEMP_WRITE_LENGTH);
+	pnp_write_hwm5_index(base, ITE_EC_EXTEMP_READ_LENGTH, PECI_GETTEMP_READ_LENGTH);
+	pnp_write_hwm5_index(base, ITE_EC_EXTEMP_CONTROL,
+		ITE_EC_EXTEMP_CTRL_AUTO_4HZ | ITE_EC_EXTEMP_CTRL_AUTO_START);
+}
+
+static void it8625e_ec_extra_setup(u16 base, const struct it8625e_tmpin_config *conf)
 {
 	/* Program TSS1 registers */
 	it8625e_ec_select_bank(base, 0x2);
@@ -40,6 +55,11 @@ static void it8625e_ec_setup_tss(u16 base, const struct it8625e_tmpin_config *co
 
 	/* Return to bank 0 */
 	it8625e_ec_select_bank(base, 0x0);
+
+	/* TODO: Check if PECI is used based on TSS regs */
+	if (conf->enable_peci)
+		enable_peci(base);
+
 }
 
 static void it8625e_init(struct device *dev)
@@ -56,7 +76,7 @@ static void it8625e_init(struct device *dev)
 		if (!conf || !res)
 			break;
 		ite_ec_init(res->base, &conf->ec);
-		it8625e_ec_setup_tss(res->base, &conf->extra);
+		it8625e_ec_extra_setup(res->base, &conf->extra);
 		break;
 	case IT8625E_KBCK:
 		pc_keyboard_init(NO_AUX_DEVICE);
