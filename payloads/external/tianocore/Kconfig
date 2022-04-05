@@ -79,19 +79,6 @@ config TIANOCORE_RELEASE
 
 endchoice
 
-if TIANOCORE_UEFIPAYLOAD
-
-config TIANOCORE_ABOVE_4G_MEMORY
-	bool "Enable above 4G memory"
-	default n
-	help
-	  Select this option to enable Above 4G Decode. This will allow the
-	  payload to use all of the memory, rather than an maximum of 4G.
-
-	  Disabling memory above 4G is useful for bootloaders that are not
-	  fully 64-bit aware such as Qubes R4.0.4 bootloader.
-
-
 config TIANOCORE_BOOTSPLASH_FILE
 	string "Tianocore Bootsplash path and filename"
 	default "bootsplash.bmp"
@@ -118,6 +105,24 @@ config TIANOCORE_BOOTSPLASH_FILE
 
 	  If an absolute path is not given, the path will assumed to be
 	  relative to the coreboot root directory.
+
+config TIANOCORE_HAVE_EFI_SHELL
+	bool "Include EFI Shell"
+	default y
+	help
+	  Include the EFI shell Binary
+
+if TIANOCORE_UEFIPAYLOAD
+
+config TIANOCORE_ABOVE_4G_MEMORY
+	bool "Enable above 4G memory"
+	default n
+	help
+	  Select this option to enable Above 4G Decode. This will allow the
+	  payload to use all of the memory, rather than an maximum of 4G.
+
+	  Disabling memory above 4G is useful for bootloaders that are not
+	  fully 64-bit aware such as Qubes R4.0.4 bootloader.
 
 config TIANOCORE_BOOT_MANAGER_ESCAPE
 	bool "Use Escape key for Boot Manager"
@@ -149,12 +154,6 @@ config TIANOCORE_FOLLOW_BGRT_SPEC
 	  Follow the BGRT Specification implemented by Microsoft and
 	  the Boot Logo 38.2% will be vertically centered 38.2% from
 	  the top of the display.
-
-config TIANOCORE_HAVE_EFI_SHELL
-	bool "Include EFI Shell"
-	default y
-	help
-	  Include the EFI shell Binary
 
 config TIANOCORE_PRIORITIZE_INTERNAL
 	bool "Prioritize internal boot devices"
