@@ -1,0 +1,228 @@
+chip soc/intel/alderlake
+
+	# GPE configuration
+	# Note that GPE events called out in ASL code rely on this
+	# route. i.e. If this route changes then the affected GPE
+	# offset bits also need to be changed.
+	#register "pmc_gpe0_dw0" = "GPP_B" FIXME
+	#register "pmc_gpe0_dw1" = "GPP_D" FIXME
+	#register "pmc_gpe0_dw2" = "GPP_E" FIXME
+
+	# FSP configuration
+
+	# Enable CNVi BT
+	# register "cnvi_bt_core" = "true" FIXME
+
+	# Sagv Configuration
+	register "sagv" = "SaGv_Enabled"
+
+	# USB FIXME
+
+	#register "usb2_ports[0]" = "USB2_PORT_MID(OC0)"		# Type-C Port1
+	#register "usb2_ports[1]" = "USB2_PORT_MID(OC0)"		# Type-C Port2
+	#register "usb2_ports[2]" = "USB2_PORT_MID(OC3)"		# Type-C Port3
+	#register "usb2_ports[3]" = "USB2_PORT_MID(OC_SKIP)"	# M.2 WWAN
+	#register "usb2_ports[4]" = "USB2_PORT_MID(OC3)"		# Type-C Port4
+	#register "usb2_ports[5]" = "USB2_PORT_MID(OC_SKIP)"	# FPS connector
+	#register "usb2_ports[6]" = "USB2_PORT_MID(OC0)"		# USB3/2 Type A port1
+	#register "usb2_ports[7]" = "USB2_PORT_MID(OC0)"		# USB3/2 Type A port2
+	#register "usb2_ports[8]" = "USB2_PORT_MID(OC3)"		# USB3/2 Type A port3
+	#register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# M.2 WLAN
+
+	#register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC3)"	# USB3/2 Type A port1
+	#register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC0)"	# USB3/2 Type A port2
+	#register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC0)"	# USB3/2 Type A port3
+	#register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# M.2 WWAN
+
+	# FIXME
+	#register "gen1_dec" = "0x00fc0801"
+	#register "gen2_dec" = "0x000c0201"
+	#register "gen3_dec" = "0x00fc0901"
+
+#	PCIe FIXME
+#	# Enable PCH PCIE RP 5 using CLK 2
+#	register "pch_pcie_rp[PCH_RP(5)]" = "{
+#		.clk_src = 2,
+#		.clk_req = 2,
+#		.flags = PCIE_RP_CLK_REQ_DETECT,
+#	}"
+#
+#	# Enable PCH PCIE RP 6 using CLK 5
+#	register "pch_pcie_rp[PCH_RP(6)]" = "{
+#		.clk_src = 5,
+#		.clk_req = 5,
+#		.flags = PCIE_RP_CLK_REQ_DETECT,
+#	}"
+#
+#	# Enable PCH PCIE RP 8 using free running CLK (0x80)
+#	# Clock source is shared with LAN and hence marked as free running.
+#	register "pch_pcie_rp[PCH_RP(8)]" = "{
+#		.flags = PCIE_RP_CLK_SRC_UNUSED,
+#	}"
+#	register "pcie_clk_config_flag[6]" = "PCIE_CLK_FREE_RUNNING"
+#
+#	# Enable PCH PCIE RP 9 using CLK 1
+#	register "pch_pcie_rp[PCH_RP(9)]" = "{
+#		.clk_src = 1,
+#		.clk_req = 1,
+#		.flags = PCIE_RP_CLK_REQ_DETECT,
+#	}"
+#
+#	# Enable PCH PCIE RP 11 for optane
+#	register "pch_pcie_rp[PCH_RP(11)]" = "{
+#		.flags = PCIE_RP_CLK_SRC_UNUSED,
+#	}"
+#
+#	# Hybrid storage mode
+#	# register "hybrid_storage_mode" = "1"
+#
+#	# Enable CPU PCIE RP 1 using CLK 0
+#	register "cpu_pcie_rp[CPU_RP(1)]" = "{
+#		.clk_req = 0,
+#		.clk_src = 0,
+#		.flags = PCIE_RP_LTR | PCIE_RP_AER,
+#	}"
+#
+#	# Enable CPU PCIE RP 2 using CLK 3
+#	register "cpu_pcie_rp[CPU_RP(2)]" = "{
+#		.clk_req = 3,
+#		.clk_src = 3,
+#		.flags = PCIE_RP_LTR | PCIE_RP_AER,
+#	}"
+#
+#	# Enable CPU PCIE RP 3 using CLK 4
+#	register "cpu_pcie_rp[CPU_RP(3)]" = "{
+#		.clk_req = 4,
+#		.clk_src = 4,
+#		.flags = PCIE_RP_LTR | PCIE_RP_AER,
+#	}"
+
+	register "sata_salp_support" = "1"
+
+	register "sata_ports_enable" = "{
+		[0] = 1,
+		[1] = 1,
+		[2] = 1,
+		[3] = 1,
+	}"
+
+# FIXME
+#	register "sata_ports_dev_slp" = "{
+#		[0] = 1,
+#		[1] = 1,
+#		[2] = 1,
+#		[3] = 1,
+#	}"
+
+# FIXME
+#	# Enable EDP in PortA
+#	register "ddi_portA_config" = "1"
+#	# Enable HDMI in Port B
+#	register "ddi_ports_config" = "{
+#		[DDI_PORT_B] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
+#	}"
+
+
+	register "s0ix_enable" = "1"
+#	register "dptf_enable" = "1"
+
+# FIXME
+#	register "serial_io_i2c_mode" = "{
+#		[PchSerialIoIndexI2C0] = PchSerialIoPci,
+#		[PchSerialIoIndexI2C1] = PchSerialIoPci,
+#		[PchSerialIoIndexI2C2] = PchSerialIoPci,
+#		[PchSerialIoIndexI2C3] = PchSerialIoPci,
+#		[PchSerialIoIndexI2C4] = PchSerialIoDisabled,
+#		[PchSerialIoIndexI2C5] = PchSerialIoPci,
+#	}"
+#
+#	register "serial_io_gspi_mode" = "{
+#		[PchSerialIoIndexGSPI0] = PchSerialIoPci,
+#		[PchSerialIoIndexGSPI1] = PchSerialIoDisabled,
+#		[PchSerialIoIndexGSPI2] = PchSerialIoDisabled,
+#		[PchSerialIoIndexGSPI3] = PchSerialIoDisabled,
+#	}"
+#
+#	register "serial_io_gspi_cs_mode" = "{
+#		[PchSerialIoIndexGSPI0] = 0,
+#		[PchSerialIoIndexGSPI1] = 0,
+#		[PchSerialIoIndexGSPI2] = 0,
+#		[PchSerialIoIndexGSPI3] = 0,
+#	}"
+#
+#	register "serial_io_gspi_cs_state" = "{
+#		[PchSerialIoIndexGSPI0] = 0,
+#		[PchSerialIoIndexGSPI1] = 0,
+#		[PchSerialIoIndexGSPI2] = 0,
+#		[PchSerialIoIndexGSPI3] = 0,
+#	}"
+#
+#	register "serial_io_uart_mode" = "{
+#		[PchSerialIoIndexUART0] = PchSerialIoSkipInit,
+#		[PchSerialIoIndexUART1] = PchSerialIoDisabled,
+#		[PchSerialIoIndexUART2] = PchSerialIoDisabled,
+#	}"
+
+# FIXME
+#	# HD Audio
+#	register "pch_hda_dsp_enable" = "1"
+#	register "pch_hda_idisp_link_tmode" = "HDA_TMODE_8T"
+#	register "pch_hda_idisp_link_frequency" = "HDA_LINKFREQ_96MHZ"
+#	register "pch_hda_idisp_codec_enable" = "1"
+
+#	register "cnvi_bt_audio_offload" = "true"
+
+# FIXME
+#	# set EPP to 45%: 45 * 256/100 = 115 = 0x73
+#	register "enable_energy_perf_pref" = "true"
+#	register "energy_perf_pref_value" = "0x73"
+
+#	# Intel Common SoC Config FIXME
+#	register "common_soc_config" = "{
+#		.i2c[0] = {
+#			.speed = I2C_SPEED_FAST,
+#		},
+#		.i2c[1] = {
+#			.speed = I2C_SPEED_FAST,
+#		},
+#		.i2c[2] = {
+#			.speed = I2C_SPEED_FAST,
+#		},
+#		.i2c[3] = {
+#			.speed = I2C_SPEED_FAST,
+#		},
+#		.i2c[5] = {
+#			.speed = I2C_SPEED_FAST,
+#		},
+#	}"
+
+	device domain 0 on
+		device ref pcie5 on end
+		device ref igpu on end
+		device ref pcie4_0 on end
+		device ref pcie4_1 on end
+		device ref crashlog off end
+		device ref xhci on end
+		device ref heci1 on end
+		device ref heci2 off end
+		device ref ide_r off end
+		device ref kt off end
+		device ref heci3 off end
+		device ref heci4 off end
+		device ref sata on end
+		device ref pcie_rp1 on end
+		device ref pcie_rp2 on end
+		device ref pcie_rp3 on end
+		device ref pcie_rp4 on end
+		device ref pcie_rp5 on end
+		device ref pcie_rp6 on end
+		device ref pcie_rp7 on end
+		device ref pcie_rp8 on end
+		device ref pcie_rp9 on end
+		device ref pcie_rp10 on end
+		device ref pcie_rp11 on end
+		device ref p2sb on end
+		device ref hda on end
+		device ref smbus on end
+	end
+end
