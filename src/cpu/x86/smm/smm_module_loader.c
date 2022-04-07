@@ -41,7 +41,6 @@ extern unsigned char _binary_smmstub_start[];
 struct cpu_smm_info {
 	uint8_t active;
 	uintptr_t smbase;
-	uintptr_t entry;
 	uintptr_t ss_start;
 	uintptr_t code_start;
 	uintptr_t code_end;
@@ -118,13 +117,13 @@ static int smm_create_map(const uintptr_t smbase, const unsigned int num_cpus,
 		printk(BIOS_DEBUG, "CPU 0x%x\n", i);
 		/* We copy the same stub for each CPU so they all need the same 'smbase'. */
 		const size_t segment_number = i / cpus_per_segment;
-		cpus[i].entry = smbase - SMM_CODE_SEGMENT_SIZE * segment_number
-			- needed_ss_size * (i % cpus_per_segment) + SMM_ENTRY_OFFSET;
-		cpus[i].smbase = cpus[i].entry - SMM_ENTRY_OFFSET;
+		cpus[i].code_start = smbase - SMM_CODE_SEGMENT_SIZE * segment_number
+				     - needed_ss_size * (i % cpus_per_segment)
+				     + SMM_ENTRY_OFFSET;
+		cpus[i].smbase = cpus[i].code_start - SMM_ENTRY_OFFSET;
 		cpus[i].ss_start =
-			cpus[i].entry + (SMM_ENTRY_OFFSET - needed_ss_size);
-		cpus[i].code_start = cpus[i].entry;
-		cpus[i].code_end = cpus[i].entry + stub_size;
+			cpus[i].code_start + (SMM_ENTRY_OFFSET - needed_ss_size);
+		cpus[i].code_end = cpus[i].code_start + stub_size;
 		printk(BIOS_DEBUG, "  Stub       [0x%lx-0x%lx[\n", cpus[i].code_start,
 		       cpus[i].code_end);
 		printk(BIOS_DEBUG, "  Save state [0x%lx-0x%lx[\n",
