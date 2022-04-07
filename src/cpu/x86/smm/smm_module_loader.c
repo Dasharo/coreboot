@@ -42,6 +42,7 @@ struct cpu_smm_info {
 	uint8_t active;
 	uintptr_t smbase;
 	uintptr_t ss_start;
+	uintptr_t ss_top;
 	uintptr_t code_start;
 	uintptr_t code_end;
 };
@@ -121,14 +122,13 @@ static int smm_create_map(const uintptr_t smbase, const unsigned int num_cpus,
 				     - needed_ss_size * (i % cpus_per_segment)
 				     + SMM_ENTRY_OFFSET;
 		cpus[i].smbase = cpus[i].code_start - SMM_ENTRY_OFFSET;
-		cpus[i].ss_start =
-			cpus[i].code_start + (SMM_ENTRY_OFFSET - needed_ss_size);
+		cpus[i].ss_top = cpus[i].code_start + SMM_ENTRY_OFFSET;
+		cpus[i].ss_start = cpus[i].ss_top - params->real_cpu_save_state_size;
 		cpus[i].code_end = cpus[i].code_start + stub_size;
 		printk(BIOS_DEBUG, "  Stub       [0x%lx-0x%lx[\n", cpus[i].code_start,
 		       cpus[i].code_end);
-		printk(BIOS_DEBUG, "  Save state [0x%lx-0x%lx[\n",
-		       cpus[i].ss_start + needed_ss_size - params->real_cpu_save_state_size,
-		       cpus[i].ss_start + needed_ss_size);
+		printk(BIOS_DEBUG, "  Save state [0x%lx-0x%lx[\n", cpus[i].ss_start,
+		       cpus[i].ss_top);
 		cpus[i].active = 1;
 	}
 
@@ -431,10 +431,8 @@ static void setup_smihandler_params(struct smm_runtime *mod_params,
 		mod_params->cbmemc_size = 0;
 	}
 
-	for (int i = 0; i < loader_params->num_cpus; i++) {
-		mod_params->save_state_top[i] = cpus[i].ss_start
-			+ loader_params->per_cpu_save_state_size;
-	}
+	for (int i = 0; i < loader_params->num_cpus; i++)
+		mod_params->save_state_top[i] = cpus[i].ss_top;
 }
 
 /*
