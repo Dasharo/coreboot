@@ -416,6 +416,34 @@
 				#address-cells = <0x01>;
 				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
 				bus-frequency = <0x61a80>;
+
+				eeprom@50 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x12>;
+					reg = <0x50>;
+				};
+
+				eeprom@51 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x0c>;
+					reg = <0x51>;
+				};
+
+				eeprom@52 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x01>;
+					reg = <0x52>;
+				};
+
+				eeprom@53 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x03>;
+					reg = <0x53>;
+				};
 			};
 
 			i2c-bus@1 {
@@ -424,6 +452,34 @@
 				#address-cells = <0x01>;
 				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
 				bus-frequency = <0x61a80>;
+
+				eeprom@54 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x0d>;
+					reg = <0x54>;
+				};
+
+				eeprom@55 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x0e>;
+					reg = <0x55>;
+				};
+
+				eeprom@56 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x10>;
+					reg = <0x56>;
+				};
+
+				eeprom@57 {
+					compatible = "spd";
+					label = "dimm-spd";
+					link-id = <0x00>;
+					reg = <0x57>;
+				};
 			};
 		};
 
