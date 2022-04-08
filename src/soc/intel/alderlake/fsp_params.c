@@ -100,6 +100,7 @@ static const struct slot_irq_constraints irq_constraints[] = {
 			FIXED_INT_ANY_PIRQ(SA_DEVFN_GNA, PCI_INT_A),
 		},
 	},
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	{
 		.slot = SA_DEV_SLOT_TCSS,
 		.fns = {
@@ -116,6 +117,7 @@ static const struct slot_irq_constraints irq_constraints[] = {
 			ANY_PIRQ(PCH_DEVFN_THC1),
 		},
 	},
+#endif
 	{
 		.slot = PCH_DEV_SLOT_SIO6,
 		.fns = {
@@ -411,6 +413,7 @@ static void fill_fsps_igd_params(FSP_S_CONFIG *s_cfg,
 static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	const struct device *tcss_port_arr[] = {
 		DEV_PTR(tcss_usb3_port1),
 		DEV_PTR(tcss_usb3_port2),
@@ -439,6 +442,7 @@ static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
 		if (is_dev_enabled(tcss_port_arr[i]))
 			s_cfg->UsbTcPortEn |= BIT(i);
 	}
+#endif
 }
 
 static void fill_fsps_chipset_lockdown_params(FSP_S_CONFIG *s_cfg,
@@ -593,17 +597,21 @@ static void fill_fsps_vmd_params(FSP_S_CONFIG *s_cfg,
 static void fill_fsps_thc_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	/* THC */
 	s_cfg->ThcPort0Assignment = is_devfn_enabled(PCH_DEVFN_THC0) ? THC_0 : THC_NONE;
 	s_cfg->ThcPort1Assignment = is_devfn_enabled(PCH_DEVFN_THC1) ? THC_1 : THC_NONE;
+#endif
 }
 
 static void fill_fsps_tbt_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	/* USB4/TBT */
 	for (int i = 0; i < ARRAY_SIZE(s_cfg->ITbtPcieRootPortEn); i++)
 		s_cfg->ITbtPcieRootPortEn[i] = is_devfn_enabled(SA_DEVFN_TBT(i));
+#endif
 }
 
 static void fill_fsps_8254_params(FSP_S_CONFIG *s_cfg,
