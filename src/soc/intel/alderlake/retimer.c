@@ -7,6 +7,7 @@
 
 int retimer_get_index_for_typec(uint8_t typec_port)
 {
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	int ec_port = 0;
 
 	const struct device *tcss_port_arr[] = {
@@ -26,7 +27,7 @@ int retimer_get_index_for_typec(uint8_t typec_port)
 		if (is_dev_enabled(tcss_port_arr[i]))
 			ec_port++;
 	}
-
+#endif
 	// Code should not come here if typec_port input is correct
 	return -1;
 }
