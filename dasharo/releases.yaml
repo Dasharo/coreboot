@@ -82,8 +82,10 @@ releases:
       - Switch to ELF payload, clean up Device Tree generation
       - Various boot time optimizations
     fixed:
-      - Only one CPU is started
-      - SPDs are not exposed in sysfs automatically
+      - description: Only one CPU is started
+        url: https://github.com/Dasharo/dasharo-issues/issues/30
+      - description: SPDs are not exposed in sysfs automatically
+        url: https://github.com/Dasharo/dasharo-issues/issues/31
     known_issues:
       - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
         url: https://github.com/Dasharo/dasharo-issues/issues/32

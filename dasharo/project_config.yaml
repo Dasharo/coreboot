@@ -1,7 +1,10 @@
 # Dasharo project configuration data
+file_version: 0.0.1
 
 dasharo:
   platform: raptor-cs_talos-2
+  newsletter:
+    url: https://newsletter.3mdeb.com/subscription/w2Y2G4Rrj
 
 client:
   name: Insurgo
@@ -14,7 +17,7 @@ framework:
 components:
 - name: skiboot
   version: 04-16-2019
-  url_template: https://git.raptorcs.com/git/talos-skiboot/tree/COMMIT_HASH
+  url_template: https://git.raptorcs.com/git/talos-skiboot/tree/?id=COMMIT_HASH
   path: payloads/external/skiboot/talos-skiboot
 
 documentation:
