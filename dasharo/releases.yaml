@@ -71,3 +71,21 @@ releases:
         url: https://github.com/Dasharo/dasharo-issues/issues/31
       - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
         url: https://github.com/Dasharo/dasharo-issues/issues/32
+
+  - version: v0.5.0
+    changed:
+      - Add FSI initialization and functions for accessing devices behind FSI bus
+      - Cache MVPD between stages
+      - Initialize and train XBus links
+      - Change SCOM API to be able to access second CPU
+      - Initialize PCIe, MCS, OCC and TOD for second CPU
+      - Switch to ELF payload, clean up Device Tree generation
+      - Various boot time optimizations
+    fixed:
+      - Only one CPU is started
+      - SPDs are not exposed in sysfs automatically
+    known_issues:
+      - description: Missing parts of Device Tree describing specific unit (VPD, serial numbers)
+        url: https://github.com/Dasharo/dasharo-issues/issues/32
+      - description: CBMEM can no longer be accessed from OS
+        url: https://github.com/Dasharo/dasharo-issues/issues/69
