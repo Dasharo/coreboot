@@ -11,22 +11,14 @@
 #include "chip.h"
 #include "it8625e.h"
 
-#define ITE_EC_SMI_MASK_3	0x06
-#define BANK_SEL_MASK		0x60
-
-static const u8 ITE_EC_EXTRA_TEMP_ADJUST[] = { 0x5a, 0x90, 0x91 };
-
 static inline void it8625e_ec_select_bank(const u16 base, const u8 bank)
 {
 	uint8_t reg;
 
-	/* BANK_SEL: SMI# Mask Register 3, bits 6-5 */
-	reg = pnp_read_hwm5_index(base, ITE_EC_SMI_MASK_3);
-	printk(BIOS_DEBUG, "Current SMI_MASK_3: %x\n", reg);
-	reg &= ~BANK_SEL_MASK;
+	reg = pnp_read_hwm5_index(base, IT8625E_EC_REG_SMI_MASK_3);
+	reg &= ~IT8625E_EC_BANK_SEL_MASK;
 	reg |= (bank << 5);
-	pnp_write_hwm5_index(base, ITE_EC_SMI_MASK_3, reg);
-	printk(BIOS_DEBUG, "Wrote SMI_MASK_3: %x\n", reg);
+	pnp_write_hwm5_index(base, IT8625E_EC_REG_SMI_MASK_3, reg);
 }
 
 static void enable_peci(const u16 base)
@@ -44,26 +36,42 @@ static void enable_peci(const u16 base)
 		ITE_EC_EXTEMP_CTRL_AUTO_4HZ | ITE_EC_EXTEMP_CTRL_AUTO_START);
 }
 
-static void it8625e_ec_extra_setup(u16 base, const struct it8625e_tmpin_config *conf)
+static int source_is_peci(enum it8625e_thermal_source source)
+{
+	if (source >= PECI1 && source <= PECI5)
+		return 1;
+
+	return 0;
+}
+
+/* initialize it8625e-specific thermal settings */
+static void it8625e_ec_thermal_init(u16 base, const struct superio_ite_it8625e_config *conf)
 {
 	int i;
-	/* Program offsets for TMPINs 4-6 */
-	for (i = 0; i < 3; ++i)
-		pnp_write_hwm5_index(base, ITE_EC_EXTRA_TEMP_ADJUST[i], conf->tmpin[i].offset);
+	u8 max;
 
-	/* Program TSS1 registers */
+	/* Set temperature offsets and limits */
+	for (i = 0; i < IT8625E_EC_TMP_REG_CNT; ++i) {
+		pnp_write_hwm5_index(base, IT8625E_EC_TEMP_ADJUST[i], conf->thermal[i].offset);
+		max = conf->thermal[i].max;
+		pnp_write_hwm5_index(base, ITE_EC_HIGH_TEMP_LIMIT(i), max ? max : 127);
+		pnp_write_hwm5_index(base, ITE_EC_LOW_TEMP_LIMIT(i), conf->thermal[i].min);
+	}
+
+	/* Set temperature sources */
 	it8625e_ec_select_bank(base, 0x2);
-	pnp_write_hwm5_index(base, 0x1d, conf->tss1[1] << 4 | conf->tss1[0]);
-	pnp_write_hwm5_index(base, 0x1e, conf->tss1[3] << 4 | conf->tss1[2]);
-	pnp_write_hwm5_index(base, 0x1f, conf->tss1[5] << 4 | conf->tss1[4]);
-
-	/* Return to bank 0 */
+	pnp_write_hwm5_index(base, 0x1d, conf->thermal[1].source << 4 | conf->thermal[0].source);
+	pnp_write_hwm5_index(base, 0x1e, conf->thermal[3].source << 4 | conf->thermal[2].source);
+	pnp_write_hwm5_index(base, 0x1f, conf->thermal[5].source << 4 | conf->thermal[4].source);
 	it8625e_ec_select_bank(base, 0x0);
 
-	/* TODO: Check if PECI is used based on TSS regs */
-	if (conf->enable_peci)
-		enable_peci(base);
-
+	/* Enable PECI if needed */
+	for (i = 0; i < IT8625E_EC_TMP_REG_CNT; ++i) {
+		if (source_is_peci(conf->thermal[i].source)) {
+			enable_peci(base);
+			return;
+		}
+	}
 }
 
 static void it8625e_init(struct device *dev)
@@ -80,7 +88,7 @@ static void it8625e_init(struct device *dev)
 		if (!conf || !res)
 			break;
 		ite_ec_init(res->base, &conf->ec);
-		it8625e_ec_extra_setup(res->base, &conf->extra);
+		it8625e_ec_thermal_init(res->base, conf);
 		break;
 	case IT8625E_KBCK:
 		pc_keyboard_init(NO_AUX_DEVICE);
