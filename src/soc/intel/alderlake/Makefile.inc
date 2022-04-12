@@ -69,6 +69,10 @@ endif
 CPPFLAGS_common += -I$(src)/soc/intel/alderlake
 CPPFLAGS_common += -I$(src)/soc/intel/alderlake/include
 
+ifeq ($(CONFIG_USE_ADLS_IOT_FSP),y)
+CPPFLAGS_common += -I$(src)/soc/intel/alderlake/include/fsp
+endif
+
 ifeq ($(CONFIG_STITCH_ME_BIN),y)
 
 $(eval $(call cse_add_dummy_to_bp1_bp2,DLMP))
