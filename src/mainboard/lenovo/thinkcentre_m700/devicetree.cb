@@ -165,23 +165,18 @@ chip soc/intel/skylake
 			chip superio/ite/it8625e
 					register "ec.smbus_en"		= "1"
 
-					# Physical TMPINs
 					register "TMPIN1.mode"		= "THERMAL_DIODE" # EXT_SYS_TEMP
-					register "TMPIN2.mode"		= "THERMAL_DIODE" # Not used
 					register "TMPIN3.mode"		= "THERMAL_DIODE" # VR_TEMP_DA
 
-					# Logical TMPINs
-					register "TMPIN2.offset"	= "100"
-					register "TMPIN5.offset"	= "100"
+					register "TEMP1.offset"	= "100"
+					register "TEMP5.offset"	= "100"
 
-					register "extra.tss1[0]"	= "TSS1_TMPIN1"
-					register "extra.tss1[1]"	= "TSS1_PECI1"
-					register "extra.tss1[2]"	= "TSS1_TMPIN3"
-					register "extra.tss1[3]"	= "TSS1_TMPIN1"
-					register "extra.tss1[4]"	= "TSS1_PECI1"
-					register "extra.tss1[5]"	= "TSS1_TMPIN3"
-
-					register "extra.enable_peci"	= "true"
+					register "TEMP1.source"	= "PIN1"
+					register "TEMP2.source"	= "PECI1"
+					register "TEMP3.source"	= "PIN3"
+					register "TEMP4.source"	= "PIN1"
+					register "TEMP5.source"	= "PECI1"
+					register "TEMP6.source"	= "PIN3"
 
 					register "FAN1.mode" = "FAN_MODE_OFF"
 					register "FAN2.mode" = "FAN_SMART_AUTOMATIC"
