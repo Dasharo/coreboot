@@ -60,4 +60,4 @@ echo "Building Dasharo compatible with MSI PRO Z690-A WiFi DDR4"
 
 docker run --rm -it -u 1000 -v $PWD:/home/coreboot/coreboot \
         -w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
-        /bin/bash -c "BUILD_TIMELESS=1 make olddefconfig && make"
+        /bin/bash -c "make olddefconfig && make"
