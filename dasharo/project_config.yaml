@@ -1,0 +1,36 @@
+# Dasharo project configuration data
+
+dasharo:
+  platform: msi_ms7d25
+
+client:
+  name: Zir Blazer
+
+framework:
+  name: coreboot
+  version: a552cfc9
+  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+
+components:
+      - name: edk2
+        version: 4d2846ba
+        path: payloads/external/tianocore/Dasharo
+        url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
+
+documentation:
+  name: Dasharo Compatibility
+  url: https://docs.dasharo.com/
+  building_url: https://docs.dasharo.com/variants/msi_z690/building-manual/
+  flashing_url: https://docs.dasharo.com/variants/msi_z690/setup/#flashing
+
+platform:
+  vendor: MSI
+  model: PRO Z690-A WIFI DDR4
+
+tests:
+  specification: https://docs.dasharo.com/variants/msi_z690/test-matrix/
+  hardware_matrix: https://docs.dasharo.com/variants/msi_z690/hardware-matrix/
+  results: https://docs.google.com/spreadsheets/d/16wokQYhtS7XA1DQC3Om7FY-IImG6SZisGK7NnzyRGVY/edit?usp=sharing
+
+asciinema:
+  signature_verification: TBD
