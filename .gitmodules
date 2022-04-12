@@ -25,8 +25,8 @@
 [submodule "3rdparty/fsp"]
 	path = 3rdparty/fsp
 	url = https://review.coreboot.org//fsp.git
-	update = none
 	ignore = dirty
+	branch = master
 [submodule "opensbi"]
 	path = 3rdparty/opensbi
 	url = https://review.coreboot.org//opensbi.git
