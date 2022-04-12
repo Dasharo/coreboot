@@ -12,7 +12,7 @@ client:
 framework:
   name: coreboot
   version: 5621a1e
-  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+  url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
 
 components:
 - name: skiboot
