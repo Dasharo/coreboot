@@ -7,14 +7,13 @@ docker run --rm -it -u 1000 -v $PWD:/home/coreboot/coreboot \
 git reset --hard HEAD
 git clean -df
 
-git fetch https://review.coreboot.org/coreboot refs/changes/78/63578/1 && \
-        git format-patch -20 --stdout FETCH_HEAD |git apply
+git fetch https://review.coreboot.org/coreboot refs/changes/78/63578/2 && \
+        git format-patch -20 --stdout FETCH_HEAD | git apply
 
 cp configs/config.msi_ms7d25 .config
 
 echo "CONFIG_USE_ADLS_IOT_FSP=y" >> .config
 echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
-echo "CONFIG_POWER_STATE_OFF_AFTER_FAILURE=y"  >> .config
 
 git submodule update --init --checkout
 
