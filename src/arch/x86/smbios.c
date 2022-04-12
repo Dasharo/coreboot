@@ -295,7 +295,7 @@ static int smbios_write_type0(unsigned long *current, int handle)
 
 	char bversion[100];
 
-	t->vendor = smbios_add_string(t->eos, "3mdeb Embedded Systems Consulting");
+	t->vendor = smbios_add_string(t->eos, "3mdeb");
 	t->bios_release_date = smbios_add_string(t->eos, coreboot_dmi_date);
 
 	snprintf(bversion, sizeof(bversion), "Dasharo (%s) %s",
