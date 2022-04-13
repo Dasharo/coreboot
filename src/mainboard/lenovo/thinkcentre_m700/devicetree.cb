@@ -2,7 +2,12 @@
 
 chip soc/intel/skylake
 
-	register "deep_sx_config" = "DSX_EN_WAKE_PIN"
+	# Enable deep Sx states
+	register "deep_s3_enable_ac" = "1"
+	register "deep_s3_enable_dc" = "1"
+	register "deep_s5_enable_ac" = "1"
+	register "deep_s5_enable_dc" = "1"
+	register "deep_sx_config" = "DSX_EN_LAN_WAKE_PIN"
 
 	register "eist_enable" = "1"
 
@@ -92,7 +97,7 @@ chip soc/intel/skylake
 		device pci 15.1 off end # I2C #1
 		device pci 15.2 off end # I2C #2
 		device pci 15.3 off end # I2C #3
-		device pci 16.0 off end # Management Engine Interface 1
+		device pci 16.0 on  end # Management Engine Interface 1
 		device pci 16.1 off end # Management Engine Interface 2
 		device pci 16.2 off end # Management Engine IDE-R
 		device pci 16.3 off end # Management Engine KT Redirection
@@ -124,8 +129,8 @@ chip soc/intel/skylake
 		device pci 1c.5 on      # PCI Express Port 6 - Onboard LAN
 			register "PcieRpEnable[5]"			= "1"
 
-			# Disable CLKREQ#, since onboard LAN is always present
-			register "PcieRpClkReqSupport[5]"		= "0"
+			register "PcieRpClkReqSupport[5]"		= "1"
+			register "PcieRpClkReqNumber[5]"		= "5"
 			register "PcieRpAdvancedErrorReporting[5]"	= "1"
 			register "PcieRpLtrEnable[5]"			= "1"
 			register "PcieRpClkSrcNumber[5]"		= "6"
@@ -165,11 +170,16 @@ chip soc/intel/skylake
 			chip superio/ite/it8625e
 					register "ec.smbus_en"		= "1"
 
+					# Replicate EC settings from stock FW
 					register "TMPIN1.mode"		= "THERMAL_DIODE" # EXT_SYS_TEMP
 					register "TMPIN3.mode"		= "THERMAL_DIODE" # VR_TEMP_DA
 
-					register "TEMP1.offset"	= "100"
+					register "TEMP1.max"	= "32"
+					register "TEMP2.offset"	= "100"
+					register "TEMP3.max"	= "90"
+					register "TEMP4.max"	= "32"
 					register "TEMP5.offset"	= "100"
+					register "TEMP6.max"	= "90"
 
 					register "TEMP1.source"	= "PIN1"
 					register "TEMP2.source"	= "PECI1"
@@ -179,6 +189,7 @@ chip soc/intel/skylake
 					register "TEMP6.source"	= "PIN3"
 
 					register "FAN1.mode" = "FAN_MODE_OFF"
+
 					register "FAN2.mode" = "FAN_SMART_AUTOMATIC"
 					register "FAN2.smart.tmpin"	= "2"
 					register "FAN2.smart.tmp_off"	= "0"
@@ -187,8 +198,10 @@ chip soc/intel/skylake
 					register "FAN2.smart.tmp_delta"	= "2"
 					register "FAN2.smart.full_lmt"	= "0"
 					register "FAN2.smart.smoothing"	= "0"
+					register "FAN2.smart.clsd_loop"	= "0"
 					register "FAN2.smart.pwm_start"	= "48"
 					register "FAN2.smart.slope"	= "0x20"
+
 					register "FAN3.mode" = "FAN_SMART_AUTOMATIC"
 					register "FAN3.smart.tmpin"	= "2"
 					register "FAN3.smart.tmp_off"	= "0"
@@ -197,6 +210,7 @@ chip soc/intel/skylake
 					register "FAN3.smart.tmp_delta"	= "2"
 					register "FAN3.smart.full_lmt"	= "0"
 					register "FAN3.smart.smoothing"	= "0"
+					register "FAN3.smart.clsd_loop"	= "0"
 					register "FAN3.smart.pwm_start"	= "48"
 					register "FAN3.smart.slope"	= "0x20"
 
