@@ -1,7 +1,10 @@
 # Dasharo project configuration data
+file_version: 0.0.1
 
 dasharo:
   platform: msi_ms7d25
+  newsletter:
+    url:  https://newsletter.3mdeb.com/subscription/aKgTJjYEA
 
 client:
   name: Zir Blazer
