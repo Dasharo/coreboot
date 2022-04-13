@@ -10,6 +10,7 @@
 #include <intelblocks/smbus.h>
 #include <memory_info.h>
 #include <soc/intel/common/smbios.h>
+#include <soc/intel/common/reset.h>
 #include <soc/iomap.h>
 #include <soc/pm.h>
 #include <soc/romstage.h>
@@ -124,6 +125,7 @@ static void save_dimm_info(void)
 void mainboard_romstage_entry(void)
 {
 	bool s3wake;
+	uint32_t me_features;
 	struct chipset_power_state *ps = pmc_get_power_state();
 
 	/* Program MCHBAR, DMIBAR, GDXBAR and EDRAMBAR */
@@ -135,6 +137,13 @@ void mainboard_romstage_entry(void)
 
 	s3wake = pmc_fill_power_state(ps) == ACPI_S3;
 	fsp_memory_init(s3wake);
+
+	if (CONFIG(DISABLE_PTT)) {
+		me_features = cse_get_feature_state();
+		if (me_features & BIT(29) && !cse_set_ptt_state(0))
+			do_global_reset();
+	}
+
 	pmc_set_disb();
 	if (!s3wake) {
 		/*

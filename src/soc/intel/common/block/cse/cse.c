@@ -1028,6 +1028,68 @@ void cse_control_global_reset_lock(void)
 		pmc_global_reset_enable(false);
 }
 
+uint32_t cse_get_feature_state(void)
+{
+	struct me_get_feature_state_command {
+		uint32_t hdr;
+		uint32_t rule_id;
+	} __packed get_feature_state = {
+		.hdr = 0x203,
+		.rule_id = 0x20,
+	};
+
+	struct me_get_feature_state_reply {
+		struct mkhi_hdr hdr;
+		uint32_t rule_id;
+		uint8_t rule_len;
+		uint32_t rule_data;
+	} __packed;
+
+	struct me_get_feature_state_reply feature_state_reply;
+
+	size_t feature_state_reply_size = sizeof(feature_state_reply);
+	int send;
+	int result;
+
+	send = heci_send_receive(&get_feature_state, sizeof(get_feature_state),
+		&feature_state_reply, &feature_state_reply_size, HECI_MKHI_ADDR);
+	result = feature_state_reply.hdr.result;
+
+	return feature_state_reply.rule_data;
+}
+
+uint32_t cse_set_ptt_state(uint8_t state)
+{
+	printk(BIOS_DEBUG, "ME: send set ptt state command\n");
+
+	struct me_set_ptt_state_command {
+		uint32_t hdr;
+		uint32_t enable;
+		uint32_t disable;
+	} __packed set_ptt_state = {
+		.hdr = 0x14ff,
+		.enable = state ? BIT(29) : 0,
+		.disable = state ? 0 : BIT(29),
+	};
+
+	struct me_set_ptt_state_reply {
+		struct mkhi_hdr hdr;
+		uint32_t data;
+	} __packed;
+
+	struct me_set_ptt_state_reply set_ptt_state_reply;
+
+	size_t set_ptt_state_reply_size = sizeof(set_ptt_state_reply);
+	int send;
+	int result;
+
+	send = heci_send_receive(&set_ptt_state, sizeof(set_ptt_state),
+		&set_ptt_state_reply, &set_ptt_state_reply_size, HECI_MKHI_ADDR);
+	result = set_ptt_state_reply.data;
+
+	return result;
+}
+
 #if ENV_RAMSTAGE
 
 /*

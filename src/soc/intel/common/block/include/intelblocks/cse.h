@@ -314,6 +314,10 @@ int heci_reset(void);
 /* Disable HECI1 using Sideband interface communication */
 void heci1_disable(void);
 
+/* Get current feature enablement status */
+uint32_t cse_get_feature_state(void);
+uint32_t cse_set_ptt_state(uint8_t state);
+
 /* Reads config value from a specified offset in the CSE PCI Config space. */
 uint32_t me_read_config32(int offset);
 

@@ -235,6 +235,13 @@ config VBOOT
 	select VBOOT_VBNV_CMOS
 	select VBOOT_VBNV_CMOS_BACKUP_TO_FLASH
 
+config DISABLE_PTT
+	bool "Disable Platform Trust Technology"
+	default n
+	help
+	  This option allows to disable the Intel PTT fTPM using HECI FW feature
+	  shipment override message.
+
 config CBFS_SIZE
 	default 0x200000
 
