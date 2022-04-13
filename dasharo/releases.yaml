@@ -1,15 +1,22 @@
 releases:
     - version: v0.1.0
       added:
-          - Initial support for the MSI PRO Z690-A WIFI DDR4 platform
-          - Dasharo boot logo
-          - UEFI compatibility
-          - UEFI shell
-          - Configurable boot order
-          - Configurable boot options
-          - One-time boot feature
-          - External HDMI and Display Port rear panel display support
-          - USB support
+          - description: Initial support for the MSI PRO Z690-A WIFI DDR4 platform
+          - description: Dasharo boot logo
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/304-custom-logo/
+          - description: Dasharo SMBIOS compatibility
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/31L-smbios/
+          - description: UEFI compatibility
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/30M-uefi-compatible-interface/
+          - description: UEFI shell
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/30P-uefi-shell/
+          - description: Configurable boot order
+          - description: Configurable boot options
+          - description: One-time boot feature
+          - description: External HDMI and Display Port rear panel display support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/31E-display-ports-and-lcd/
+          - description: USB support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/306-usb-hid-and-msc-support/
       known_issues:
           - description: USB storage devices disappear after reboot/power failure
             url: https://github.com/Dasharo/dasharo-issues/issues/70
