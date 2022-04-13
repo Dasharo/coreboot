@@ -2,10 +2,10 @@
 
 function extract_microcode()
 {
-        if [[ $(which UEFIExtract) ]]; then
+        if which UEFIExtract &> /dev/null; then
                 echo "Downloading and extracting vendor firmware"
                 wget https://download.msi.com/bos_exe/mb/7D25v13.zip 2> /dev/null && \
-                         unzip 7D25v13.zip > /dev/null 
+                         unzip 7D25v13.zip > /dev/null
                 if [[ -f 7D25v13/E7D25IMS.130 ]]; then
                         echo "Extracting microcode from vendor firmware"
                         UEFIExtract 7D25v13/E7D25IMS.130 17088572-377F-44EF-8F4E-B09FFF46A070 \
@@ -19,10 +19,9 @@ function extract_microcode()
                 echo "Failed to extract microcode"
                 rm -rf 7D25v13*
         else
-                echo "UEFIExtract files found."
-                echo "Install it from https://github.com/LongSoft/UEFITool/tree/new_engine"
-                echo "and put into a directory exporeted by PATH variable to"
-                echo "be able to extract microcode"
+                echo "UEFIExtract not found, but it's required to extract microcode!"
+                echo "Install it from: https://github.com/LongSoft/UEFITool/releases/download/A59/UEFIExtract_NE_A59_linux_x86_64.zip"
+                exit 1
         fi
 }
 
