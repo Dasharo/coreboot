@@ -54,8 +54,8 @@ static void it8625e_ec_thermal_init(u16 base, const struct superio_ite_it8625e_c
 	for (i = 0; i < IT8625E_EC_TMP_REG_CNT; ++i) {
 		pnp_write_hwm5_index(base, IT8625E_EC_TEMP_ADJUST[i], conf->thermal[i].offset);
 		max = conf->thermal[i].max;
-		pnp_write_hwm5_index(base, ITE_EC_HIGH_TEMP_LIMIT(i), max ? max : 127);
-		pnp_write_hwm5_index(base, ITE_EC_LOW_TEMP_LIMIT(i), conf->thermal[i].min);
+		pnp_write_hwm5_index(base, IT8625E_EC_HIGH_TEMP_LIMIT[i], max ? max : 127);
+		pnp_write_hwm5_index(base, IT8625E_EC_LOW_TEMP_LIMIT[i], conf->thermal[i].min);
 	}
 
 	/* Set temperature sources */
