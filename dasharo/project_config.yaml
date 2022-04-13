@@ -21,7 +21,7 @@ components:
         url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
 
 documentation:
-  name: Dasharo Compatibility
+  name: Dasharo documentation
   url: https://docs.dasharo.com/
   building_url: https://docs.dasharo.com/variants/msi_z690/building-manual/
   flashing_url: https://docs.dasharo.com/variants/msi_z690/installation-manual/#flashing
