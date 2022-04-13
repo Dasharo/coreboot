@@ -40,6 +40,7 @@ git fetch https://review.coreboot.org/coreboot refs/changes/78/63578/2 && \
 
 cp configs/config.msi_ms7d25 .config
 
+echo "# CONFIG_CONSOLE_SERIAL is not set"
 echo "CONFIG_USE_ADLS_IOT_FSP=y" >> .config
 echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
 sed -i 's/origin\/dasharo/4d2846baa98c253eadfb4c4e3085138e0d1396ab/g' .config
