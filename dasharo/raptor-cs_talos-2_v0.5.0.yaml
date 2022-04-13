@@ -1,0 +1,96 @@
+client:
+  name: Insurgo
+config:
+  file_version: 0.0.1
+dasharo:
+  components:
+  - name: skiboot
+    path: payloads/external/skiboot/talos-skiboot
+    url_template: https://git.raptorcs.com/git/talos-skiboot/tree/?id=COMMIT_HASH
+    version: 04-16-2019
+  documentation:
+    building_url: https://docs.dasharo.com/variants/talos_2/building-manual/
+    flashing_url: https://docs.dasharo.com/variants/talos_2/installation-manual/
+    name: Dasharo Compatibility
+    url: https://docs.dasharo.com/
+  framework:
+    name: coreboot
+    url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
+    version: 5621a1e
+  newsletter:
+    url: https://newsletter.3mdeb.com/subscription/w2Y2G4Rrj
+  platform:
+    model: Talos II
+    name: raptor-cs_talos-2
+    vendor: Raptor Computing Systems
+release:
+  artifacts:
+  - file_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/v0.5.0/raptor-cs_talos-2_bootblock_v0.5.0.signed.ecc
+    hash: sha256
+    hash_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/v0.5.0/raptor-cs_talos-2_bootblock_v0.5.0.signed.ecc.sha256
+    name: raptor-cs_talos-2_bootblock_v0.5.0.signed.ecc
+    signature: sha256.sig
+    signature_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/v0.5.0/raptor-cs_talos-2_bootblock_v0.5.0.signed.ecc.sha256.sig
+  - file_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/v0.5.0/raptor-cs_talos-2_coreboot_v0.5.0.rom.signed.ecc
+    hash: sha256
+    hash_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/v0.5.0/raptor-cs_talos-2_coreboot_v0.5.0.rom.signed.ecc.sha256
+    name: raptor-cs_talos-2_coreboot_v0.5.0.rom.signed.ecc
+    signature: sha256.sig
+    signature_url: https://3mdeb.com/open-source-firmware/Dasharo/raptor-cs_talos-2/v0.5.0/raptor-cs_talos-2_coreboot_v0.5.0.rom.signed.ecc.sha256.sig
+  asciinema:
+    signature_verification: https://asciinema.org/a/415457
+  changelog:
+    changed:
+    - Add FSI initialization and functions for accessing devices behind FSI bus
+    - Cache MVPD between stages
+    - Initialize and train XBus links
+    - Change SCOM API to be able to access second CPU
+    - Initialize PCIe, MCS, OCC and TOD for second CPU
+    - Switch to ELF payload, clean up Device Tree generation
+    - Various boot time optimizations
+    fixed:
+    - description: Only one CPU is started
+      url: https://github.com/Dasharo/dasharo-issues/issues/30
+    - description: SPDs are not exposed in sysfs automatically
+      url: https://github.com/Dasharo/dasharo-issues/issues/31
+    known_issues:
+    - description: Missing parts of Device Tree describing specific unit (VPD, serial
+        numbers)
+      url: https://github.com/Dasharo/dasharo-issues/issues/32
+    - description: CBMEM can no longer be accessed from OS
+      url: https://github.com/Dasharo/dasharo-issues/issues/69
+  date: '2022-04-12'
+  diffstat:
+    deletions: 392
+    files_changed: 180
+    insertions: 33590
+  sbom:
+  - name: coreboot
+    revision: c92383f9
+    url: https://github.com/Dasharo/coreboot/tree/c92383f9
+    version: 5621a1e
+  - name: skiboot
+    revision: '98581863'
+    url: https://git.raptorcs.com/git/talos-skiboot/tree/?id=98581863
+    version: 04-16-2019
+  tag: raptor-cs_talos-2_v0.5.0
+  tests:
+    added:
+    - TBD
+    changed:
+    - TBD
+    hardware_matrix:
+      url: https://docs.dasharo.com/variants/talos_2/hardware-matrix/
+    known_issues:
+    - TBD
+    removed:
+    - TBD
+    results:
+      failed: TBD
+      not_tested: TBD
+      passed: TBD
+      passed_percent: TBD
+      url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
+    specification:
+      url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
+  version: v0.5.0
