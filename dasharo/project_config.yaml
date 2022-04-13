@@ -12,7 +12,7 @@ client:
 framework:
   name: coreboot
   version: a552cfc9
-  url_template: https://github.com/Dasharo/coreboot/commit/COMMIT_HASH
+  url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
 
 components:
       - name: edk2
