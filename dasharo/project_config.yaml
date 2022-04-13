@@ -24,7 +24,7 @@ documentation:
   name: Dasharo Compatibility
   url: https://docs.dasharo.com/
   building_url: https://docs.dasharo.com/variants/msi_z690/building-manual/
-  flashing_url: https://docs.dasharo.com/variants/msi_z690/setup/#flashing
+  flashing_url: https://docs.dasharo.com/variants/msi_z690/installation-manual/#flashing
 
 platform:
   vendor: MSI
