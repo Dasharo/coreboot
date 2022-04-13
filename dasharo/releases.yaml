@@ -4,6 +4,7 @@ releases:
           - UEFI boot support
           - USB support
           - HDMI and DP rear panel display support
+          - UEFI Shell
       known_issues:
           - description: USB storage devices disappear after reboot/power failure
             url: https://github.com/Dasharo/dasharo-issues/issues/70
