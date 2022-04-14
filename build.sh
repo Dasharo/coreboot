@@ -21,7 +21,6 @@ function extract_microcode()
         else
                 echo "UEFIExtract not found, but it's required to extract microcode!"
                 echo "Install it from: https://github.com/LongSoft/UEFITool/releases/download/A59/UEFIExtract_NE_A59_linux_x86_64.zip"
-                exit 1
         fi
 }
 
