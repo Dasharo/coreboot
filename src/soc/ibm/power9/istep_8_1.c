@@ -157,7 +157,7 @@ static void setup_sbe_config(uint8_t chip)
 
 	scratch = PPC_SHIFT(read_cfam(chip, MBOX_SCRATCH_REG1_FSI + 2), 31);
 
-	boot_flags = (read_scom(MBOX_SCRATCH_REG1 + 2) >> 32);
+	boot_flags = (read_rscom(0, MBOX_SCRATCH_REG1 + 2) >> 32);
 	risk_level = (get_dd() < 0x23 ? 0 : 4);
 
 	/* Note that the two fields overlap (boot flags include risk level), so
@@ -264,7 +264,7 @@ static void setup_sbe_config(uint8_t chip)
 static int get_master_sbe_boot_seeprom(void)
 {
 	enum { PERV_SB_CS_SCOM = 0x00050008 };
-	return (read_scom(PERV_SB_CS_SCOM) & SBE_BOOT_SELECT_MASK) ? 1 : 0;
+	return (read_rscom(0, PERV_SB_CS_SCOM) & SBE_BOOT_SELECT_MASK) ? 1 : 0;
 }
 
 static void set_sbe_boot_seeprom(uint8_t chip, int seeprom_side)

@@ -981,36 +981,36 @@ static uint64_t get_available_cores(uint8_t chip, int *me)
 static void psu_command(uint8_t flags, long time)
 {
 	/* TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG */
-	if (read_scom(0x000D0060) & PPC_BIT(0))
+	if (read_rscom(0, 0x000D0060) & PPC_BIT(0))
 		die("MBOX to SBE busy, this should not happen\n");
 
-	if (read_scom(0x000D0063) & PPC_BIT(0)) {
+	if (read_rscom(0, 0x000D0063) & PPC_BIT(0)) {
 		printk(BIOS_ERR, "SBE to Host doorbell already active, clearing it\n");
-		write_scom(0x000D0064, ~PPC_BIT(0));
+		write_rscom(0, 0x000D0064, ~PPC_BIT(0));
 	}
 
 	/* https://github.com/open-power/hostboot/blob/master/src/include/usr/sbeio/sbe_psudd.H#L418 */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
 	/* REQUIRE_RESPONSE, CLASS_CORE_STATE, CMD_CONTROL_DEADMAN_LOOP, flags */
-	write_scom(0x000D0050, 0x000001000000D101 | PPC_PLACE(flags, 24, 8));
+	write_rscom(0, 0x000D0050, 0x000001000000D101 | PPC_PLACE(flags, 24, 8));
 
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG */
-	write_scom(0x000D0051, time);
+	write_rscom(0, 0x000D0051, time);
 
 	/* Ring the host->SBE doorbell */
 	/* TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG_OR */
-	write_scom(0x000D0062, PPC_BIT(0));
+	write_rscom(0, 0x000D0062, PPC_BIT(0));
 
 	/* Wait for response */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG */
-	time = wait_ms(time, read_scom(0x000D0063) & PPC_BIT(0));
+	time = wait_ms(time, read_rscom(0, 0x000D0063) & PPC_BIT(0));
 
 	if (!time)
 		die("Timed out while waiting for SBE response\n");
 
 	/* Clear SBE->host doorbell */
 	/* TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND */
-	write_scom(0x000D0064, ~PPC_BIT(0));
+	write_rscom(0, 0x000D0064, ~PPC_BIT(0));
 }
 
 #define DEADMAN_LOOP_START	0x0001
@@ -1022,11 +1022,11 @@ static void block_wakeup_int(int core, int state)
 	/* Depending on requested state we write to SCOM1 (CLEAR) or SCOM2 (OR). */
 	uint64_t scom = state ? 0x200F0102 : 0x200F0101;
 
-	write_scom_for_chiplet(EC00_CHIPLET_ID + core, 0x200F0108, PPC_BIT(1));
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + core, 0x200F0108, PPC_BIT(1));
 	/* Register is documented, but its bits are reserved... */
-	write_scom_for_chiplet(EC00_CHIPLET_ID + core, scom, PPC_BIT(6));
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + core, scom, PPC_BIT(6));
 
-	write_scom_for_chiplet(EC00_CHIPLET_ID + core, 0x200F0107, PPC_BIT(1));
+	write_rscom_for_chiplet(0, EC00_CHIPLET_ID + core, 0x200F0107, PPC_BIT(1));
 }
 
 /*
@@ -1148,9 +1148,9 @@ static void istep_16_1(int this_core)
 	 * No need to handle the timeout, if it happens, SBE will checkstop the
 	 * system anyway.
 	 */
-	wait_us(time, read_scom(0x000D0063) & PPC_BIT(2));
+	wait_us(time, read_rscom(0, 0x000D0063) & PPC_BIT(2));
 
-	write_scom(0x000D0064, ~PPC_BIT(2));
+	write_rscom(0, 0x000D0064, ~PPC_BIT(2));
 
 	/*
 	 * This tells SBE that we were properly awoken. Hostboot uses default
