@@ -24,8 +24,9 @@ FLASH@0xff000000 0x1000000 {
 		RW_FWID_A 0x40
 	}
 
-	# align this with a WP region?
-	WP_RO 0x400000 {
+	# T/B = 0
+	# BP3 = 0 BP2 = 1 BP1 = 1 BP0 = 1
+	WP_RO@0xC00000 0x400000 {
 		RO_VPD(PRESERVE)@0x0 0x4000
 		RO_SECTION@0x4000 0x3fc000 {
 			FMAP@0x0 0x800
