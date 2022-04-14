@@ -113,9 +113,6 @@ void write_rscom(uint8_t chip, uint64_t addr, uint64_t data) asm("write_xscom");
 uint64_t read_rscom(uint8_t chip, uint64_t addr) asm("read_xscom");
 #endif
 
-/* "rscom" are generic ("r" is for remote) SCOM functions, other functions are
- * equivalent to rscom calls for chip #0 */
-
 static inline void rscom_and_or(uint8_t chip, uint64_t addr, uint64_t and, uint64_t or)
 {
 	uint64_t data = read_rscom(chip, addr);
@@ -164,18 +161,6 @@ static inline void rscom_or_for_chiplet(uint8_t chip, chiplet_id_t chiplet, uint
 	rscom_and_or_for_chiplet(chip, chiplet, addr, ~0, or);
 }
 
-/* "scom" are functions with chip number being fixed at 0 */
-
-static inline void write_scom(uint64_t addr, uint64_t data)
-{
-	return write_rscom(0, addr, data);
-}
-
-static inline uint64_t read_scom(uint64_t addr)
-{
-	return read_rscom(0, addr);
-}
-
 #if CONFIG(DEBUG_SCOM) && !defined(SKIP_SCOM_DEBUG)
 #include <console/console.h>
 
@@ -199,49 +184,9 @@ static inline uint64_t read_scom(uint64_t addr)
 
 #endif
 
-static inline void scom_and_or(uint64_t addr, uint64_t and, uint64_t or)
-{
-	rscom_and_or(0, addr, and, or);
-}
-
-static inline void scom_and(uint64_t addr, uint64_t and)
-{
-	scom_and_or(addr, and, 0);
-}
-
-static inline void scom_or(uint64_t addr, uint64_t or)
-{
-	scom_and_or(addr, ~0, or);
-}
-
-static inline void write_scom_for_chiplet(chiplet_id_t chiplet, uint64_t addr, uint64_t data)
-{
-	write_rscom_for_chiplet(0, chiplet, addr, data);
-}
-
-static inline uint64_t read_scom_for_chiplet(chiplet_id_t chiplet, uint64_t addr)
-{
-	return read_rscom_for_chiplet(0, chiplet, addr);
-}
-
-static inline void scom_and_or_for_chiplet(chiplet_id_t chiplet, uint64_t addr, uint64_t and, uint64_t or)
-{
-	rscom_and_or_for_chiplet(0, chiplet, addr, and, or);
-}
-
-static inline void scom_and_for_chiplet(chiplet_id_t chiplet, uint64_t addr, uint64_t and)
-{
-	scom_and_or_for_chiplet(chiplet, addr, and, 0);
-}
-
-static inline void scom_or_for_chiplet(chiplet_id_t chiplet, uint64_t addr, uint64_t or)
-{
-	scom_and_or_for_chiplet(chiplet, addr, ~0, or);
-}
-
 static inline uint8_t get_dd(void)
 {
-	uint64_t val = read_scom(0xF000F);
+	uint64_t val = read_rscom(0, 0xF000F);
 	val = ((val >> 52) & 0x0F) | ((val >> 56) & 0xF0);
 	return (uint8_t) val;
 }
