@@ -447,13 +447,13 @@ void main(void)
 	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
-	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_scom(0xF000F));
+	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_rscom(0, 0xF000F));
 
 	/*
 	 * Halt to give a chance to inspect FIRs, otherwise checkstops from
 	 * ramstage may cover up the failure in romstage.
 	 */
-	if (read_scom(0xF000F) == 0xFFFFFFFFFFFFFFFF)
+	if (read_rscom(0, 0xF000F) == 0xFFFFFFFFFFFFFFFF)
 		die("SCOM stopped working, check FIRs, halting now\n");
 
 	cbmem_initialize_empty();
