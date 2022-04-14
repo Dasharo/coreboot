@@ -175,7 +175,7 @@ static void basic_master_init(void)
 	fsi_reset_pib2opb(chip);
 
 	/* Ensure we don't have any errors before we even start */
-	tmp = read_scom(FSI2OPB_OFFSET_0 | OPB_REG_STAT);
+	tmp = read_rscom(0, FSI2OPB_OFFSET_0 | OPB_REG_STAT);
 	if (tmp & OPB_STAT_NON_MFSI_ERR)
 		die("Unclearable errors on MFSI initialization: 0x%016llx\n", tmp);
 
@@ -341,10 +341,10 @@ static inline uint64_t poll_opb(uint8_t chip)
 
 	/* Timeout after 10ms, check every 10us, supposedly there is hardware
 	 * timeout after 1ms */
-	tmp = read_scom(stat_addr);
+	tmp = read_rscom(0, stat_addr);
 	for (i = 0; (tmp & OPB_STAT_BUSY) && !(tmp & err_mask) && i < MAX_WAIT_LOOPS; i++) {
 		udelay(TIMEOUT_STEP_US);
-		tmp = read_scom(stat_addr);
+		tmp = read_rscom(0, stat_addr);
 	}
 
 	if (tmp & err_mask)
@@ -393,7 +393,7 @@ uint32_t fsi_op(uint8_t chip, uint32_t addr, uint32_t data, bool is_read, uint8_
 	if (!is_read)
 		cmd |= WRITE_NOT_READ;
 
-	write_scom(FSI2OPB_OFFSET_0 | OPB_REG_CMD, cmd);
+	write_rscom(0, FSI2OPB_OFFSET_0 | OPB_REG_CMD, cmd);
 
 	/* Poll for complete and get the data back. */
 	response = poll_opb(chip);

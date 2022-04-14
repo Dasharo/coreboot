@@ -4,7 +4,6 @@ ifeq ($(CONFIG_SOC_IBM_POWER9),y)
 
 bootblock-y += bootblock.c
 bootblock-y += rom_media.c
-bootblock-y += xscom.c
 
 romstage-y += cbmem.c
 romstage-y += ccs.c
