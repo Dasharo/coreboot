@@ -420,17 +420,17 @@ static void mss_draminit(uint8_t chip)
 			[8-23]  CCS_MODEQ_DDR_CAL_TIMEOUT_CNT =       0xffff
 			[30-31] CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT =  3
 		*/
-		rscom_and_or_for_chiplet(chip, mcs_ids[mcs_i], CCS_MODEQ,
-		                         ~(PPC_BIT(CCS_MODEQ_CCS_STOP_ON_ERR) |
-		                           PPC_BIT(CCS_MODEQ_CCS_UE_DISABLE)),
-		                         PPC_BIT(CCS_MODEQ_CFG_CCS_PARITY_AFTER_CMD) |
-		                         PPC_BIT(CCS_MODEQ_COPY_CKE_TO_SPARE_CKE) |
-		                         PPC_PLACE(0xFFFF,
-		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT,
-		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_LEN) |
-		                         PPC_PLACE(0x3,
-		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT,
-		                                   CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT_LEN));
+		scom_and_or_for_chiplet(chip, mcs_ids[mcs_i], CCS_MODEQ,
+		                        ~(PPC_BIT(CCS_MODEQ_CCS_STOP_ON_ERR) |
+		                          PPC_BIT(CCS_MODEQ_CCS_UE_DISABLE)),
+		                        PPC_BIT(CCS_MODEQ_CFG_CCS_PARITY_AFTER_CMD) |
+		                        PPC_BIT(CCS_MODEQ_COPY_CKE_TO_SPARE_CKE) |
+		                        PPC_PLACE(0xFFFF,
+		                                  CCS_MODEQ_DDR_CAL_TIMEOUT_CNT,
+		                                  CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_LEN) |
+		                        PPC_PLACE(0x3,
+		                                  CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT,
+		                                  CCS_MODEQ_DDR_CAL_TIMEOUT_CNT_MULT_LEN));
 
 		for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 			mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];

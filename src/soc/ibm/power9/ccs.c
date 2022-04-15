@@ -64,25 +64,25 @@ void ccs_add_instruction(uint8_t chip, chiplet_id_t id, mrs_cmd_t mrs, uint8_t c
 	      [32-33] CCS_INST_ARR0_00_CCS_DDR_CSN_0_1 =  csn[0:1]
 	      [36-37] CCS_INST_ARR0_00_CCS_DDR_CSN_2_3 =  csn[2:3]
 	*/
-	write_rscom_for_chiplet(chip, id, CCS_INST_ARR0_00 + instr,
-	                        mrs64 | PPC_BIT(CCS_INST_ARR0_00_CCS_DDR_ACTN) |
-	                        PPC_PLACE(cke, CCS_INST_ARR0_00_CCS_DDR_CKE,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
-	                        PPC_PLACE(csn >> 2, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
-	                        PPC_PLACE(csn, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN));
+	write_scom_for_chiplet(chip, id, CCS_INST_ARR0_00 + instr,
+	                       mrs64 | PPC_BIT(CCS_INST_ARR0_00_CCS_DDR_ACTN) |
+	                       PPC_PLACE(cke, CCS_INST_ARR0_00_CCS_DDR_CKE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
+	                       PPC_PLACE(csn >> 2, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
+	                       PPC_PLACE(csn, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN));
 
 	/* MC01.MCBIST.CCS.CCS_INST_ARR1_n
 	      [all]   0
 	      [0-15]  CCS_INST_ARR1_00_IDLES =    idles
 	      [59-63] CCS_INST_ARR1_00_GOTO_CMD = instr + 1
 	*/
-	write_rscom_for_chiplet(chip, id, CCS_INST_ARR1_00 + instr,
-	                        PPC_PLACE(idles, CCS_INST_ARR1_00_IDLES,
-	                                  CCS_INST_ARR1_00_IDLES_LEN) |
-	                        PPC_PLACE(instr + 1, CCS_INST_ARR1_00_GOTO_CMD,
-	                                  CCS_INST_ARR1_00_GOTO_CMD_LEN));
+	write_scom_for_chiplet(chip, id, CCS_INST_ARR1_00 + instr,
+	                       PPC_PLACE(idles, CCS_INST_ARR1_00_IDLES,
+	                                 CCS_INST_ARR1_00_IDLES_LEN) |
+	                       PPC_PLACE(instr + 1, CCS_INST_ARR1_00_GOTO_CMD,
+	                                 CCS_INST_ARR1_00_GOTO_CMD_LEN));
 
 	/*
 	 * For the last instruction in the stream we could decrease it by one (final
@@ -102,7 +102,7 @@ void ccs_add_instruction(uint8_t chip, chiplet_id_t id, mrs_cmd_t mrs, uint8_t c
 static void dump_cal_errors(uint8_t chip, chiplet_id_t id, int mca_i)
 {
 	/* Stop CCS so it won't mess up with the values */
-	write_rscom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_STOP));
+	write_scom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_STOP));
 
 #if CONFIG(DEBUG_RAM_SETUP)
 	int dp;
@@ -171,8 +171,8 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 		total_cycles = 8;
 	poll_timeout = nck_to_us(chip, (total_cycles * 7 * 4) / 8);
 
-	write_rscom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_STOP));
-	time = wait_us(1, !(read_rscom_for_chiplet(chip, id, CCS_STATQ) &
+	write_scom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_STOP));
+	time = wait_us(1, !(read_scom_for_chiplet(chip, id, CCS_STATQ) &
 	                    PPC_BIT(CCS_STATQ_CCS_IP)));
 
 	/* Is it always as described below (CKE, CSN) or is it a copy of last instr? */
@@ -189,26 +189,26 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 	      [all]   0
 	      [58]    CCS_INST_ARR1_00_CCS_END = 1
 	*/
-	write_rscom_for_chiplet(chip, id, CCS_INST_ARR0_00 + instr,
-	                        PPC_BIT(CCS_INST_ARR0_00_CCS_DDR_ACTN) |
-	                        PPC_PLACE(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
-	                        PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
-	                        PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN));
-	write_rscom_for_chiplet(chip, id, CCS_INST_ARR1_00 + instr,
-	                        PPC_BIT(CCS_INST_ARR1_00_CCS_END));
+	write_scom_for_chiplet(chip, id, CCS_INST_ARR0_00 + instr,
+	                       PPC_BIT(CCS_INST_ARR0_00_CCS_DDR_ACTN) |
+	                       PPC_PLACE(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN));
+	write_scom_for_chiplet(chip, id, CCS_INST_ARR1_00 + instr,
+	                       PPC_BIT(CCS_INST_ARR1_00_CCS_END));
 
 	/* Select ports
 	MC01.MCBIST.MBA_SCOMFIR.MCB_CNTLQ
 	      // Broadcast mode is not supported, set only one bit at a time
 	      [2-5]   MCB_CNTLQ_MCBCNTL_PORT_SEL = bitmap with MCA index
 	*/
-	rscom_and_or_for_chiplet(chip, id, MCB_CNTLQ, ~PPC_BITMASK(2, 5), PPC_BIT(2 + mca_i));
+	scom_and_or_for_chiplet(chip, id, MCB_CNTLQ, ~PPC_BITMASK(2, 5), PPC_BIT(2 + mca_i));
 
 	/* Lets go */
-	write_rscom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_START));
+	write_scom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_START));
 
 	/* With microsecond resolution we are probably wasting a lot of time here. */
 	delay_nck(chip, total_cycles / 8);
@@ -218,7 +218,7 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 	  delay(10ns)
 	if MC01.MCBIST.MBA_SCOMFIR.CCS_STATQ != 0x40..00: report failure  // only [1] set, others 0
 	*/
-	time = wait_us(poll_timeout, (udelay(1), !(read_rscom_for_chiplet(chip, id, CCS_STATQ) &
+	time = wait_us(poll_timeout, (udelay(1), !(read_scom_for_chiplet(chip, id, CCS_STATQ) &
 	                               PPC_BIT(CCS_STATQ_CCS_IP))));
 
 	/* This isn't useful for anything but calibration steps, do we want it? */
@@ -229,9 +229,9 @@ void ccs_execute(uint8_t chip, chiplet_id_t id, int mca_i)
 	       time + nck_to_us(chip, total_cycles / 8),
 	       poll_timeout + nck_to_us(chip, total_cycles / 8), instr);
 
-	if (read_rscom_for_chiplet(chip, id, CCS_STATQ) != PPC_BIT(CCS_STATQ_CCS_DONE))
+	if (read_scom_for_chiplet(chip, id, CCS_STATQ) != PPC_BIT(CCS_STATQ_CCS_DONE))
 		die("(%#16.16llx) CCS execution error\n",
-		    read_rscom_for_chiplet(chip, id, CCS_STATQ));
+		    read_scom_for_chiplet(chip, id, CCS_STATQ));
 
 	instr = 0;
 	total_cycles = 0;
@@ -324,15 +324,15 @@ void ccs_phy_hw_step(uint8_t chip, chiplet_id_t id, int mca_i, int rp, enum cal_
 		[36-37] CCS_INST_ARR0_00_CCS_DDR_CSN_2_3 =  3     // Not used by the engine for calibration?
 		[56-59] CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE = 0xc
 	*/
-	write_rscom_for_chiplet(chip, id, CCS_INST_ARR0_00 + instr,
-	                        PPC_PLACE(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
-	                        PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
-	                        PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN) |
-	                        PPC_PLACE(0xC, CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE,
-	                                  CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE_LEN));
+	write_scom_for_chiplet(chip, id, CCS_INST_ARR0_00 + instr,
+	                       PPC_PLACE(0xF, CCS_INST_ARR0_00_CCS_DDR_CKE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CKE_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_0_1,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_0_1_LEN) |
+	                       PPC_PLACE(3, CCS_INST_ARR0_00_CCS_DDR_CSN_2_3,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CSN_2_3_LEN) |
+	                       PPC_PLACE(0xC, CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE,
+	                                 CCS_INST_ARR0_00_CCS_DDR_CAL_TYPE_LEN));
 
 	/* MC01.MCBIST.CCS.CCS_INST_ARR1_n
 		[all]   0
@@ -340,12 +340,12 @@ void ccs_phy_hw_step(uint8_t chip, chiplet_id_t id, int mca_i, int rp, enum cal_
 		[57]    CCS_INST_ARR1_00_DDR_CALIBRATION_ENABLE = 1
 		[59-63] CCS_INST_ARR1_00_GOTO_CMD =               instr + 1
 	*/
-	write_rscom_for_chiplet(chip, id, CCS_INST_ARR1_00 + instr,
-	                        PPC_PLACE(rp, CCS_INST_ARR1_00_DDR_CAL_RANK,
-	                                  CCS_INST_ARR1_00_DDR_CAL_RANK_LEN) |
-	                        PPC_BIT(CCS_INST_ARR1_00_DDR_CALIBRATION_ENABLE) |
-	                        PPC_PLACE(instr + 1, CCS_INST_ARR1_00_GOTO_CMD,
-	                                  CCS_INST_ARR1_00_GOTO_CMD_LEN));
+	write_scom_for_chiplet(chip, id, CCS_INST_ARR1_00 + instr,
+	                       PPC_PLACE(rp, CCS_INST_ARR1_00_DDR_CAL_RANK,
+	                                 CCS_INST_ARR1_00_DDR_CAL_RANK_LEN) |
+	                       PPC_BIT(CCS_INST_ARR1_00_DDR_CALIBRATION_ENABLE) |
+	                       PPC_PLACE(instr + 1, CCS_INST_ARR1_00_GOTO_CMD,
+	                                 CCS_INST_ARR1_00_GOTO_CMD_LEN));
 
 	total_cycles += step_cycles;
 	instr++;

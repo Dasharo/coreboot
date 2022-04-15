@@ -71,7 +71,7 @@ static void commit_mcbist_memreg_cache(uint8_t chip, int mcs_i)
 		die("Too many MCBIST instructions added\n");
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBMR<reg>Q */
-	write_rscom_for_chiplet(chip, id, MCBMR0Q + reg, mcbist_memreg_cache[chip]);
+	write_scom_for_chiplet(chip, id, MCBMR0Q + reg, mcbist_memreg_cache[chip]);
 	mcbist_memreg_cache[chip] = 0;
 }
 
@@ -164,7 +164,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 
 	/* Check if in progress */
 	/* TODO: we could force it to stop, but dying will help with debugging */
-	if ((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
+	if ((val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
 	    PPC_BIT(MCB_CNTLSTATQ_MCB_IP))
 		die("MCBIST in progress already (%#16.16llx), this shouldn't happen\n", val);
 
@@ -180,17 +180,17 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 	/* MC01.MCBIST.MBA_SCOMFIR.MCB_CNTLQ
 	 * [0] MCB_CNTLQ_MCB_START
 	 */
-	rscom_and_or_for_chiplet(chip, id, MCB_CNTLQ, ~0, PPC_BIT(MCB_CNTLQ_MCB_START));
+	scom_and_or_for_chiplet(chip, id, MCB_CNTLQ, ~0, PPC_BIT(MCB_CNTLQ_MCB_START));
 
 	/* Wait for MCBIST to start. Test for IP and DONE, it may finish early. */
-	if (((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
+	if (((val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
 	     (PPC_BIT(MCB_CNTLSTATQ_MCB_IP) | PPC_BIT(MCB_CNTLSTATQ_MCB_DONE))) == 0) {
 		/*
 		 * TODO: how long do we want to wait? Hostboot uses 10*100us polling,
 		 * but so far it seems to always be already started on the first read.
 		 */
 		udelay(1);
-		if (((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
+		if (((val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ)) &
 		     (PPC_BIT(MCB_CNTLSTATQ_MCB_IP) | PPC_BIT(MCB_CNTLSTATQ_MCB_DONE))) == 0)
 			die("MCBIST failed (%#16.16llx) to start twice\n", val);
 
@@ -209,7 +209,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 int mcbist_is_done(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	uint64_t val = val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ);
+	uint64_t val = val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ);
 
 	/* Still in progress */
 	if (val & PPC_BIT(MCB_CNTLSTATQ_MCB_IP))
