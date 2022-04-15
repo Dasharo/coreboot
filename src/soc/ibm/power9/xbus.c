@@ -36,12 +36,12 @@ void put_scom(uint8_t chip, uint64_t addr, uint64_t data)
 {
 	addr = xbus_addr(/*xbus=*/1, addr);
 
-	write_rscom(chip, addr, data);
+	write_scom(chip, addr, data);
 }
 
 uint64_t get_scom(uint8_t chip, uint64_t addr)
 {
 	addr = xbus_addr(/*xbus=*/1, addr);
 
-	return read_rscom(chip, addr);
+	return read_scom(chip, addr);
 }

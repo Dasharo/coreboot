@@ -22,13 +22,13 @@ static void enable_ridi(uint8_t chip)
 		chiplet_id_t chiplet = PCI0_CHIPLET_ID + pec;
 
 		/* Getting NET_CTRL0 register value and checking its CHIPLET_ENABLE bit */
-		if (read_rscom_for_chiplet(chip, chiplet, PERV_NET_CTRL0) & PPC_BIT(0)) {
+		if (read_scom_for_chiplet(chip, chiplet, PERV_NET_CTRL0) & PPC_BIT(0)) {
 			/* Enable Receivers, Drivers DI1 & DI2 */
 			uint64_t val = 0;
 			val |= PPC_BIT(19); // NET_CTRL0.RI_N = 1
 			val |= PPC_BIT(20); // NET_CTRL0.DI1_N = 1
 			val |= PPC_BIT(21); // NET_CTRL0.DI2_N = 1
-			write_rscom_for_chiplet(chip, chiplet, PERV_NET_CTRL0_WOR, val);
+			write_scom_for_chiplet(chip, chiplet, PERV_NET_CTRL0_WOR, val);
 		}
 	}
 }

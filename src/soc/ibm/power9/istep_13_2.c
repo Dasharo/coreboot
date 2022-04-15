@@ -32,16 +32,15 @@ static void mem_pll_reset(uint8_t chip)
 		  [all] 0
 		  [1]   PCB_EP_RESET =  1
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
-		                        PPC_BIT(PCBSLMC01_NET_CTRL0_PCB_EP_RESET));
+		write_scom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
+		                       PPC_BIT(PCBSLMC01_NET_CTRL0_PCB_EP_RESET));
 
 		// Mask PLL unlock error in PCB slave
 		/*
 		TP.TPCHIP.NET.PCBSLMC01.SLAVE_CONFIG_REG
 		  [12]  (part of) ERROR_MASK =  1
 		*/
-		rscom_or_for_chiplet(chip, mcs_ids[i], PCBSLMC01_SLAVE_CONFIG_REG,
-		                     PPC_BIT(12));
+		scom_or_for_chiplet(chip, mcs_ids[i], PCBSLMC01_SLAVE_CONFIG_REG, PPC_BIT(12));
 
 		// Move MC PLL into reset state (3 separate writes, no delays between them)
 		/*
@@ -55,12 +54,12 @@ static void mem_pll_reset(uint8_t chip)
 		  [all] 0
 		  [3]   PLL_TEST_EN = 1
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
-		                        PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_BYPASS));
-		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
-		                        PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_RESET));
-		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
-		                        PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_TEST_EN));
+		write_scom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
+		                       PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_BYPASS));
+		write_scom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
+		                       PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_RESET));
+		write_scom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WOR,
+		                       PPC_BIT(PCBSLMC01_NET_CTRL0_PLL_TEST_EN));
 
 		// Assert MEM PLDY and DCC bypass
 		/*
@@ -69,9 +68,9 @@ static void mem_pll_reset(uint8_t chip)
 		  [1]   CLK_DCC_BYPASS_EN =   1
 		  [2]   CLK_PDLY_BYPASS_EN =  1
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL1_WOR,
-		                        PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_DCC_BYPASS_EN) |
-		                        PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_PDLY_BYPASS_EN));
+		write_scom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL1_WOR,
+		                       PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_DCC_BYPASS_EN) |
+		                       PPC_BIT(PCBSLMC01_NET_CTRL1_CLK_PDLY_BYPASS_EN));
 
 		// Drop endpoint reset
 		/*
@@ -79,16 +78,16 @@ static void mem_pll_reset(uint8_t chip)
 		  [all] 1
 		  [1]   PCB_EP_RESET =  0
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
-		                        ~PPC_BIT(PCBSLMC01_NET_CTRL0_PCB_EP_RESET));
+		write_scom_for_chiplet(chip, mcs_ids[i], PCBSLMC01_NET_CTRL0_WAND,
+		                       ~PPC_BIT(PCBSLMC01_NET_CTRL0_PCB_EP_RESET));
 
 		// Disable listen to sync pulse to MC chiplet, when MEM is not in sync to nest
 		/*
 		TP.TCMC01.MCSLOW.SYNC_CONFIG
 		  [4] LISTEN_TO_SYNC_PULSE_DIS = 1
 		*/
-		rscom_or_for_chiplet(chip, mcs_ids[i], MCSLOW_SYNC_CONFIG,
-		                     PPC_BIT(MCSLOW_SYNC_CONFIG_LISTEN_TO_SYNC_PULSE_DIS));
+		scom_or_for_chiplet(chip, mcs_ids[i], MCSLOW_SYNC_CONFIG,
+		                    PPC_BIT(MCSLOW_SYNC_CONFIG_LISTEN_TO_SYNC_PULSE_DIS));
 
 		// Initialize OPCG_ALIGN register
 		/*
@@ -99,7 +98,7 @@ static void mem_pll_reset(uint8_t chip)
 		  [47-51] SCAN_RATIO =        0         // 1:1
 		  [52-63] OPCG_WAIT_CYCLES =  0x20
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_ALIGN,
+		write_scom_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_ALIGN,
 		                       PPC_PLACE(5, MCSLOW_OPCG_ALIGN_INOP_ALIGN,
 		                                 MCSLOW_OPCG_ALIGN_INOP_ALIGN_LEN) |
 		                       PPC_PLACE(0x20, MCSLOW_OPCG_ALIGN_OPCG_WAIT_CYCLES,
@@ -123,18 +122,18 @@ static void mem_pll_reset(uint8_t chip)
 		TP.TCMC01.MCSLOW.OPCG_REG0
 		  [2]     RUN_SCAN0 =           1
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], MCSLOW_CLK_REGION,
-		                        PPC_BIT(MCSLOW_CLK_REGION_CLOCK_REGION_UNIT10) |
-		                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_SL) |
-		                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_NSL) |
-		                        PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_ARY));
-		write_rscom_for_chiplet(chip, mcs_ids[i], MCSLOW_SCAN_REGION_TYPE,
-		                        PPC_BIT(MCSLOW_SCAN_REGION_TYPE_SCAN_REGION_UNIT10) |
-		                        PPC_BIT(MCSLOW_SCAN_REGION_TYPE_SCAN_TYPE_BNDY));
-		rscom_and_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_REG0,
-		                      ~PPC_BIT(MCSLOW_OPCG_RUNN_MODE));
-		rscom_or_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_REG0,
-		                     PPC_BIT(MCSLOW_OPCG_RUN_SCAN0));
+		write_scom_for_chiplet(chip, mcs_ids[i], MCSLOW_CLK_REGION,
+		                       PPC_BIT(MCSLOW_CLK_REGION_CLOCK_REGION_UNIT10) |
+		                       PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_SL) |
+		                       PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_NSL) |
+		                       PPC_BIT(MCSLOW_CLK_REGION_SEL_THOLD_ARY));
+		write_scom_for_chiplet(chip, mcs_ids[i], MCSLOW_SCAN_REGION_TYPE,
+		                       PPC_BIT(MCSLOW_SCAN_REGION_TYPE_SCAN_REGION_UNIT10) |
+		                       PPC_BIT(MCSLOW_SCAN_REGION_TYPE_SCAN_TYPE_BNDY));
+		scom_and_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_REG0,
+		                     ~PPC_BIT(MCSLOW_OPCG_RUNN_MODE));
+		scom_or_for_chiplet(chip, mcs_ids[i], MCSLOW_OPCG_REG0,
+		                    PPC_BIT(MCSLOW_OPCG_RUN_SCAN0));
 	}
 
 	/* Separate loop so we won't have to wait for timeout twice */
@@ -150,8 +149,8 @@ static void mem_pll_reset(uint8_t chip)
 		  delay(16us)
 		*/
 		time_elapsed = wait_us(200 * 16 - time_elapsed,
-		                       read_rscom_for_chiplet(chip, mcs_ids[i],
-		                                              MCSLOW_CPLT_STAT0) &
+		                       read_scom_for_chiplet(chip, mcs_ids[i],
+		                                             MCSLOW_CPLT_STAT0) &
 		                       PPC_BIT(MCSLOW_CPLT_STAT0_CC_CTRL_OPCG_DONE_DC));
 
 		if (!time_elapsed)
@@ -164,8 +163,8 @@ static void mem_pll_reset(uint8_t chip)
 		TP.TCMC01.MCSLOW.SCAN_REGION_TYPE
 		  [all]   0
 		*/
-		write_rscom_for_chiplet(chip, mcs_ids[i], MCSLOW_CLK_REGION, 0);
-		write_rscom_for_chiplet(chip, mcs_ids[i], MCSLOW_SCAN_REGION_TYPE, 0);
+		write_scom_for_chiplet(chip, mcs_ids[i], MCSLOW_CLK_REGION, 0);
+		write_scom_for_chiplet(chip, mcs_ids[i], MCSLOW_SCAN_REGION_TYPE, 0);
 	}
 }
 
