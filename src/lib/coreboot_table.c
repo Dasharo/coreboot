@@ -253,6 +253,7 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_FMAP, LB_TAG_FMAP},
 		{CBMEM_ID_VBOOT_WORKBUF, LB_TAG_VBOOT_WORKBUF},
 		{CBMEM_ID_TYPE_C_INFO, LB_TAG_TYPE_C_INFO},
+		{CBMEM_ID_TIANOCORE_LOGO, LB_TAG_LOGO},
 	};
 	int i;
 
@@ -388,6 +389,40 @@ void __weak lb_board(struct lb_header *header) { /* NOOP */ }
  * not known.
  */
 void __weak lb_spi_flash(struct lb_header *header) { /* NOOP */ }
+
+/*
+ * Loads the logo bitmap file from the BOOTSPLASH fmap region into CBMEM
+ */
+static void tianocore_logo_load(int ignored)
+{
+	const struct cbmem_entry *logo_entry;
+	struct bootlogo_header header;
+	void *logo_buffer;
+	void *logo_file;
+	size_t logo_size;
+
+	logo_file = cbfs_unverified_area_map("BOOTSPLASH", "logo.bmp", &logo_size);
+	if (!logo_file)
+		return;
+
+	if (logo_size == 0 || logo_size + sizeof(header) > 4 * MiB)
+		return;
+
+	logo_entry = cbmem_entry_add(CBMEM_ID_TIANOCORE_LOGO, logo_size + sizeof(header));
+	if (!logo_entry)
+		return;
+
+	logo_buffer = cbmem_entry_start(logo_entry);
+	if (!logo_buffer)
+		return;
+
+	/* Header of the CBMEM region, describes size of the bitmap */
+	header.size = logo_size;
+	memcpy(logo_buffer, &header, sizeof(header));
+	memcpy(logo_buffer + sizeof(header), logo_file, logo_size);
+}
+
+RAMSTAGE_CBMEM_INIT_HOOK(tianocore_logo_load)
 
 static struct lb_forward *lb_forward(struct lb_header *header,
 	struct lb_header *next_header)
