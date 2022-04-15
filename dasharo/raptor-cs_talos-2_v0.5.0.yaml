@@ -75,21 +75,13 @@ release:
     version: 04-16-2019
   tag: raptor-cs_talos-2_v0.5.0
   tests:
-    added:
-    - TBD
-    changed:
-    - TBD
     hardware_matrix:
       url: https://docs.dasharo.com/variants/talos_2/hardware-matrix/
-    known_issues:
-    - TBD
-    removed:
-    - TBD
     results:
-      failed: TBD
-      not_tested: TBD
-      passed: TBD
-      passed_percent: TBD
+      failed: 1
+      not_tested: 3
+      passed: 22
+      passed_percent: 95.65
       url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
     specification:
       url: https://docs.google.com/spreadsheets/d/1KpmuPEkWOj3SieophUbgf7CF6mydliMsEDLtOFOrKn0/edit?usp=sharing
