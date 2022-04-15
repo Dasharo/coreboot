@@ -85,6 +85,7 @@ enum {
 	LB_TAG_BOARD_CONFIG		= 0x0040,
 	LB_TAG_ACPI_CNVS		= 0x0041,
 	LB_TAG_TYPE_C_INFO		= 0x0042,
+	LB_TAG_LOGO                     = 0x0043,
 	/* The following options are CMOS-related */
 	LB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	LB_TAG_OPTION			= 0x00c9,
@@ -573,5 +574,13 @@ struct lb_tpm_physical_presence {
 	uint32_t ppi_address;	/* Address of ACPI PPI communication buffer */
 	uint8_t tpm_version;	/* 1: TPM1.2, 2: TPM2.0 */
 	uint8_t ppi_version;	/* BCD encoded */
+} __packed;
+
+/*
+ * Bootlogo header for TianoCore boot logo
+ * * size   Contains the size of the BMP file
+ */
+struct bootlogo_header {
+	uint64_t size;
 } __packed;
 #endif
