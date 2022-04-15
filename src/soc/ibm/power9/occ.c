@@ -41,14 +41,14 @@ enum fir_offset {
 
 static void pm_ocb_setup(uint8_t chip, uint32_t ocb_bar)
 {
-	write_rscom(chip, PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
-	write_rscom(chip, PU_OCB_PIB_OCBCSR0_CLEAR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_TYPE));
-	write_rscom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)ocb_bar << 32);
+	write_scom(chip, PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
+	write_scom(chip, PU_OCB_PIB_OCBCSR0_CLEAR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_TYPE));
+	write_scom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)ocb_bar << 32);
 }
 
 static void check_ocb_mode(uint8_t chip, uint64_t OCBCSR_address, uint64_t OCBSHCS_address)
 {
-	uint64_t ocb_pib = read_rscom(chip, OCBCSR_address);
+	uint64_t ocb_pib = read_scom(chip, OCBCSR_address);
 
 	/*
 	 * The following check for circular mode is an additional check
@@ -61,7 +61,7 @@ static void check_ocb_mode(uint8_t chip, uint64_t OCBCSR_address, uint64_t OCBSH
 		 * anyway to let the PIB error response return occur. (That is
 		 * what will happen if this checking code were not here.)
 		 */
-		uint64_t stream_push_control = read_rscom(chip, OCBSHCS_address);
+		uint64_t stream_push_control = read_scom(chip, OCBSHCS_address);
 
 		if (stream_push_control & PPC_BIT(OCB_OCI_OCBSHCS0_PUSH_ENABLE)) {
 			uint8_t counter = 0;
@@ -70,7 +70,7 @@ static void check_ocb_mode(uint8_t chip, uint64_t OCBCSR_address, uint64_t OCBSH
 				if (!(stream_push_control & PPC_BIT(OCB_OCI_OCBSHCS0_PUSH_FULL)))
 					break;
 
-				stream_push_control = read_rscom(chip, OCBSHCS_address);
+				stream_push_control = read_scom(chip, OCBSHCS_address);
 			}
 
 			if (counter == 4)
@@ -82,20 +82,20 @@ static void check_ocb_mode(uint8_t chip, uint64_t OCBCSR_address, uint64_t OCBSH
 static void put_ocb_indirect(uint8_t chip, uint32_t ocb_req_length,
 			     uint32_t oci_address, uint64_t *ocb_buffer)
 {
-	write_rscom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
+	write_scom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
 
 	check_ocb_mode(chip, PU_OCB_PIB_OCBCSR0_RO, PU_OCB_OCI_OCBSHCS0_SCOM);
 
 	for (uint32_t index = 0; index < ocb_req_length; index++)
-		write_rscom(chip, PU_OCB_PIB_OCBDR0, ocb_buffer[index]);
+		write_scom(chip, PU_OCB_PIB_OCBDR0, ocb_buffer[index]);
 }
 
 static void get_ocb_indirect(uint8_t chip, uint32_t ocb_req_length,
 			     uint32_t oci_address, uint64_t *ocb_buffer)
 {
-	write_rscom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
+	write_scom(chip, PU_OCB_PIB_OCBAR0, (uint64_t)oci_address << 32);
 	for (uint32_t loopCount = 0; loopCount < ocb_req_length; loopCount++)
-		ocb_buffer[loopCount] = read_rscom(chip, PU_OCB_PIB_OCBDR0);
+		ocb_buffer[loopCount] = read_scom(chip, PU_OCB_PIB_OCBDR0);
 }
 
 void writeOCCSRAM(uint8_t chip, uint32_t address, uint64_t *buffer, size_t data_length)
@@ -113,7 +113,7 @@ void readOCCSRAM(uint8_t chip, uint32_t address, uint64_t *buffer, size_t data_l
 void write_occ_command(uint8_t chip, uint64_t write_data)
 {
 	check_ocb_mode(chip, PU_OCB_PIB_OCBCSR1_RO, PU_OCB_OCI_OCBSHCS1_SCOM);
-	write_rscom(chip, PU_OCB_PIB_OCBDR1, write_data);
+	write_scom(chip, PU_OCB_PIB_OCBDR1, write_data);
 }
 
 void clear_occ_special_wakeups(uint8_t chip, uint64_t cores)
@@ -121,8 +121,8 @@ void clear_occ_special_wakeups(uint8_t chip, uint64_t cores)
 	for (size_t i = 0; i < MAX_CORES_PER_CHIP; i += 2) {
 		if (!IS_EX_FUNCTIONAL(i, cores))
 			continue;
-		rscom_and_for_chiplet(chip, EC00_CHIPLET_ID + i, EX_PPM_SPWKUP_OCC,
-				      ~PPC_BIT(0));
+		scom_and_for_chiplet(chip, EC00_CHIPLET_ID + i, EX_PPM_SPWKUP_OCC,
+				     ~PPC_BIT(0));
 	}
 }
 
@@ -134,9 +134,9 @@ void special_occ_wakeup_disable(uint8_t chip, uint64_t cores)
 		if (!IS_EC_FUNCTIONAL(i, cores))
 			continue;
 
-		write_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP, 0);
+		write_scom_for_chiplet(chip, EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP, 0);
 		/* This puts an inherent delay in the propagation of the reset transition */
-		(void)read_rscom_for_chiplet(chip, EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP);
+		(void)read_scom_for_chiplet(chip, EC00_CHIPLET_ID + i, PPM_SPWKUP_FSP);
 	}
 }
 
@@ -183,21 +183,21 @@ void occ_start_from_mem(uint8_t chip)
 		PU_OCB_PIB_OCR_OR    = 0x0006D002,
 	};
 
-	write_rscom(chip, PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
+	write_scom(chip, PU_OCB_PIB_OCBCSR0_OR, PPC_BIT(OCB_PIB_OCBCSR0_OCB_STREAM_MODE));
 
 	/*
 	 * Set up Boot Vector Registers in SRAM:
 	 *  - set bv0-2 to all 0's (illegal instructions)
 	 *  - set bv3 to proper branch instruction
 	 */
-	write_rscom(chip, PU_SRAM_SRBV0_SCOM, 0);
-	write_rscom(chip, PU_SRAM_SRBV0_SCOM + 1, 0);
-	write_rscom(chip, PU_SRAM_SRBV0_SCOM + 2, 0);
-	write_rscom(chip, PU_SRAM_SRBV0_SCOM + 3, setup_memory_boot(chip));
+	write_scom(chip, PU_SRAM_SRBV0_SCOM, 0);
+	write_scom(chip, PU_SRAM_SRBV0_SCOM + 1, 0);
+	write_scom(chip, PU_SRAM_SRBV0_SCOM + 2, 0);
+	write_scom(chip, PU_SRAM_SRBV0_SCOM + 3, setup_memory_boot(chip));
 
-	write_rscom(chip, PU_JTG_PIB_OJCFG_AND, ~PPC_BIT(JTG_PIB_OJCFG_DBG_HALT_BIT));
-	write_rscom(chip, PU_OCB_PIB_OCR_OR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
-	write_rscom(chip, PU_OCB_PIB_OCR_CLEAR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
+	write_scom(chip, PU_JTG_PIB_OJCFG_AND, ~PPC_BIT(JTG_PIB_OJCFG_DBG_HALT_BIT));
+	write_scom(chip, PU_OCB_PIB_OCR_OR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
+	write_scom(chip, PU_OCB_PIB_OCR_CLEAR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
 }
 
 void pm_occ_fir_init(uint8_t chip)
@@ -293,15 +293,15 @@ void pm_occ_fir_init(uint8_t chip)
 		| PPC_BIT(SRAM_WRITE_ERR)          | PPC_BIT(SRT_FSM_ERR)
 		| PPC_BIT(STOP_RCV_NOTIFY_PRD)     | PPC_BIT(C405_ECC_UE);
 
-	uint64_t mask = read_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_INCR);
+	uint64_t mask = read_scom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_INCR);
 	mask &= ~action0_bits;
 	mask &= ~action1_bits;
 
-	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR, 0);
-	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + ACTION0_INCR, action0_bits);
-	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + ACTION1_INCR, action1_bits);
-	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_WOR_INCR, mask);
-	write_rscom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_WAND_INCR, mask);
+	write_scom(chip, PERV_TP_OCC_SCOM_OCCLFIR, 0);
+	write_scom(chip, PERV_TP_OCC_SCOM_OCCLFIR + ACTION0_INCR, action0_bits);
+	write_scom(chip, PERV_TP_OCC_SCOM_OCCLFIR + ACTION1_INCR, action1_bits);
+	write_scom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_WOR_INCR, mask);
+	write_scom(chip, PERV_TP_OCC_SCOM_OCCLFIR + MASK_WAND_INCR, mask);
 }
 
 void pm_pba_fir_init(uint8_t chip)
@@ -372,9 +372,9 @@ void pm_pba_fir_init(uint8_t chip)
 	mask &= ~action0_bits;
 	mask &= ~action1_bits;
 
-	write_rscom(chip, PU_PBAFIR, 0);
-	write_rscom(chip, PU_PBAFIR + ACTION0_INCR, action0_bits);
-	write_rscom(chip, PU_PBAFIR + ACTION1_INCR, action1_bits);
-	write_rscom(chip, PU_PBAFIR + MASK_WOR_INCR, mask);
-	write_rscom(chip, PU_PBAFIR + MASK_WAND_INCR, mask);
+	write_scom(chip, PU_PBAFIR, 0);
+	write_scom(chip, PU_PBAFIR + ACTION0_INCR, action0_bits);
+	write_scom(chip, PU_PBAFIR + ACTION1_INCR, action1_bits);
+	write_scom(chip, PU_PBAFIR + MASK_WOR_INCR, mask);
+	write_scom(chip, PU_PBAFIR + MASK_WAND_INCR, mask);
 }

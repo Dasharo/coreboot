@@ -1028,15 +1028,15 @@ static int process_initial_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 	 * calibration engine itself. Check for latter.
 	 */
 	/* IOM0.IOM_PHY0_DDRPHY_FIR_REG */
-	if (read_rscom_for_chiplet(chip, id, IOM_PHY0_DDRPHY_FIR_REG) &
+	if (read_scom_for_chiplet(chip, id, IOM_PHY0_DDRPHY_FIR_REG) &
 	    PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2)) {
 		/*
 		 * "Clear the PHY FIR ERROR 2 bit so we don't keep failing training and
 		 * training advance on this port"
 		 */
-		rscom_and_or_for_chiplet(chip, id, IOM_PHY0_DDRPHY_FIR_REG,
-		                         ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2),
-		                         0);
+		scom_and_or_for_chiplet(chip, id, IOM_PHY0_DDRPHY_FIR_REG,
+		                        ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2),
+		                        0);
 
 		return 1;
 	}
@@ -1164,15 +1164,15 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRMASK
 		  [1] MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT =  0     //recoverable_error (0,1,0)
 	 */
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
-	                         ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
-	                         0);
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
-	                         ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
-	                         PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT));
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
-	                         ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
-	                         0);
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
+	                        ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
+	                        0);
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                        ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
+	                        PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT));
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
+	                        ~PPC_BIT(MCBISTFIRQ_COMMAND_ADDRESS_TIMEOUT),
+	                        0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)

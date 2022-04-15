@@ -218,21 +218,21 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 		[13]  MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE =  0   // recoverable_error (0,1,0)
 		[14]  MCBISTFIRQ_SCOM_FATAL_REG_PE =        0   // checkstop (0,0,0)
 	*/
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
-	                         ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
-	                           PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
-	                           PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
-	                         0);
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
-	                         ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
-	                           PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
-	                           PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
-	                         PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE));
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
-	                         ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
-	                           PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
-	                           PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
-	                         0);
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
+	                        ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
+	                          PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
+	                          PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
+	                        0);
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                        ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
+	                          PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
+	                          PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
+	                        PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE));
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
+	                        ~(PPC_BIT(MCBISTFIRQ_INTERNAL_FSM_ERROR) |
+	                          PPC_BIT(MCBISTFIRQ_SCOM_RECOVERABLE_REG_PE) |
+	                          PPC_BIT(MCBISTFIRQ_SCOM_FATAL_REG_PE)),
+	                        0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)

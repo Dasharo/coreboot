@@ -329,12 +329,12 @@ static void add_memory_nodes(struct device_tree *tree)
 
 			/* These registers are undocumented, see istep 14.5. */
 			/* MCS_MCFGP */
-			reg = read_rscom_for_chiplet(chip, nest, 0x0501080A);
+			reg = read_scom_for_chiplet(chip, nest, 0x0501080A);
 			if (reg & PPC_BIT(0))
 				add_memory_node(tree, chip, reg);
 
 			/* MCS_MCFGPM */
-			reg = read_rscom_for_chiplet(chip, nest, 0x0501080C);
+			reg = read_scom_for_chiplet(chip, nest, 0x0501080C);
 			if (reg & PPC_BIT(0))
 				add_memory_node(tree, chip, reg);
 		}
@@ -514,7 +514,7 @@ static int dt_platform_update(struct device_tree *tree, uint8_t chips)
 		if (!(chips & (1 << chip)))
 			continue;
 
-		cores = read_rscom(chip, 0x0006C090);
+		cores = read_scom(chip, 0x0006C090);
 		assert(cores != 0);
 
 		for (int core_id = 0; core_id < MAX_CORES_PER_CHIP; core_id++) {
@@ -613,9 +613,9 @@ static void rng_init(uint8_t chips)
 		 *   [0-9]   FAIL_REG - abort if any of these bits is set
 		 *   [17]    BIST_COMPLETE - should be 1 at this point
 		 */
-		uint64_t rng_status = read_rscom(chip, 0x020110E0);
+		uint64_t rng_status = read_scom(chip, 0x020110E0);
 		assert(rng_status & PPC_BIT(17));
-		while (!((rng_status = read_rscom(chip, 0x020110E0)) & PPC_BIT(17)));
+		while (!((rng_status = read_scom(chip, 0x020110E0)) & PPC_BIT(17)));
 
 		if (rng_status & PPC_BITMASK(0, 9))
 			die("RNG initialization failed, NX_RNG_CFG = %#16.16llx\n", rng_status);
@@ -624,7 +624,7 @@ static void rng_init(uint8_t chips)
 		 * Hostboot sets 'enable' bit again even though it was already set.
 		 * Following that behavior just in case.
 		 */
-		write_rscom(chip, 0x020110E0, rng_status | PPC_BIT(63));
+		write_scom(chip, 0x020110E0, rng_status | PPC_BIT(63));
 
 		/*
 		 * This would be the place to set BARs, but it is done as part of quad SCOM
@@ -632,7 +632,7 @@ static void rng_init(uint8_t chips)
 		 */
 
 		/* Lock NX RNG configuration */
-		rscom_or(chip, 0x00010005, PPC_BIT(9));
+		scom_or(chip, 0x00010005, PPC_BIT(9));
 	}
 }
 
@@ -655,7 +655,7 @@ static void enable_soc_dev(struct device *dev)
 
 			/* These registers are undocumented, see istep 14.5. */
 			/* MCS_MCFGP */
-			reg = read_rscom_for_chiplet(chip, nest, 0x0501080A);
+			reg = read_scom_for_chiplet(chip, nest, 0x0501080A);
 			if (reg & PPC_BIT(0)) {
 				uint64_t end = base_k(reg) + size_k(reg);
 				ram_resource(dev, idx++, base_k(reg), size_k(reg));
@@ -664,7 +664,7 @@ static void enable_soc_dev(struct device *dev)
 			}
 
 			/* MCS_MCFGPM */
-			reg = read_rscom_for_chiplet(chip, nest, 0x0501080C);
+			reg = read_scom_for_chiplet(chip, nest, 0x0501080C);
 			if (reg & PPC_BIT(0)) {
 				uint64_t end = base_k(reg) + size_k(reg);
 				ram_resource(dev, idx++, base_k(reg), size_k(reg));
@@ -703,7 +703,7 @@ static void activate_slave_cores(uint8_t chip)
 	uint8_t i;
 
 	/* Read OCC CCSR written by the code earlier */
-	const uint64_t functional_cores = read_rscom(chip, 0x0006C090);
+	const uint64_t functional_cores = read_scom(chip, 0x0006C090);
 
 	/*
 	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
