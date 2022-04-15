@@ -41,32 +41,32 @@ void configure_xive(int core)
 	memcpy((void *)0xEA0, hyp_virt_int, CODE_SIZE(hyp_virt_int));
 
 	/* IVPE BAR + enable bit */
-	write_rscom(0, 0x05013012, IVPE_BAR | PPC_BIT(0));
+	write_scom(0, 0x05013012, IVPE_BAR | PPC_BIT(0));
 
 	/* FSP BAR */
-	write_rscom(0, 0x0501290B, FSP_BAR);
+	write_scom(0, 0x0501290B, FSP_BAR);
 
 	/* PSI HB BAR + enable bit */
 	/* TODO: check if 2 separate writes are required */
-	write_rscom(0, 0x0501290A, PSI_HB_BAR);
-	write_rscom(0, 0x0501290A, PSI_HB_BAR | PPC_BIT(63));
+	write_scom(0, 0x0501290A, PSI_HB_BAR);
+	write_scom(0, 0x0501290A, PSI_HB_BAR | PPC_BIT(63));
 
 	/* Disable VPC Pull error */
-	rscom_and(0, 0x05013179, ~PPC_BIT(30));
+	scom_and(0, 0x05013179, ~PPC_BIT(30));
 
 	/* PSI HB ESB BAR + enable bit */
 	/* TODO: check if 2 separate writes are required */
-	write_rscom(0, 0x05012916, PSI_HB_ESB_BAR);
-	write_rscom(0, 0x05012916, PSI_HB_ESB_BAR | PPC_BIT(63));
+	write_scom(0, 0x05012916, PSI_HB_ESB_BAR);
+	write_scom(0, 0x05012916, PSI_HB_ESB_BAR | PPC_BIT(63));
 
 	/* XIVE IC BAR + enable bit */
-	write_rscom(0, 0x05013010, XIVE_IC_BAR | PPC_BIT(0));
+	write_scom(0, 0x05013010, XIVE_IC_BAR | PPC_BIT(0));
 
 	/* Set HB mode on P3PC register */
-	rscom_or(0, 0x05013110, PPC_BIT(33));
+	scom_or(0, 0x05013110, PPC_BIT(33));
 
 	/* Disable PSI interrupts */
-	write_rscom(0, 0x05012913, PPC_BIT(3));
+	write_scom(0, 0x05012913, PPC_BIT(3));
 
 	void *esb_bar = (void *)PSI_HB_ESB_BAR;
 	/* Mask all interrupt sources */

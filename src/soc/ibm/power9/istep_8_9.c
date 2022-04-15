@@ -30,7 +30,7 @@ static void p9_fbc_no_hp_scom(uint8_t chip)
 		PB_EAST_MODE             = 0x501200A,
 	};
 
-	const uint64_t scratch_reg6 = read_rscom(0, MBOX_SCRATCH_REG1 + 5);
+	const uint64_t scratch_reg6 = read_scom(0, MBOX_SCRATCH_REG1 + 5);
 	/* ATTR_PROC_FABRIC_PUMP_MODE, it's either node or group pump mode */
 	const bool node_pump_mode = !(scratch_reg6 & PPC_BIT(MBOX_SCRATCH_REG6_GROUP_PUMP_MODE));
 

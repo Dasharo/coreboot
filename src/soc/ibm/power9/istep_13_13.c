@@ -406,17 +406,16 @@ static void setup_xlate_map(uint8_t chip, int mcs_i, int mca_i)
 	}
 
 	/* MCS_PORT02_MCP0XLT0 (?) */
-	write_rscom_for_chiplet(chip, nest, 0x05010820 + mca_i * mca_mul,
-	                        dimms_rank_config(mca, xlt_tables[cfg][0], update_d));
+	write_scom_for_chiplet(chip, nest, 0x05010820 + mca_i * mca_mul,
+	                       dimms_rank_config(mca, xlt_tables[cfg][0], update_d));
 
 	/* MCS_PORT02_MCP0XLT1 (?) */
-	write_rscom_for_chiplet(chip, nest, 0x05010821 + mca_i * mca_mul,
-	                        xlt_tables[cfg][1]);
+	write_scom_for_chiplet(chip, nest, 0x05010821 + mca_i * mca_mul,
+	                       xlt_tables[cfg][1]);
 
 	/* MCS_PORT02_MCP0XLT2 (?) */
-	write_rscom_for_chiplet(chip, nest, 0x05010822 + mca_i * mca_mul,
-	                        xlt_tables[cfg][2]);
-
+	write_scom_for_chiplet(chip, nest, 0x05010822 + mca_i * mca_mul,
+	                       xlt_tables[cfg][2]);
 }
 
 static void enable_pm(uint8_t chip, int mcs_i, int mca_i)
@@ -494,18 +493,18 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	 * TODO: check if this works with bootblock in SEEPROM too. We don't have
 	 * interrupt handlers set up in that case.
 	 */
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
-	                         ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
-	                           PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
-	                         PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE));
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
-	                         ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
-	                           PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
-	                         PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC));
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
-	                         ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
-	                           PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
-	                         0);
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT0,
+	                        ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
+	                          PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
+	                        PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE));
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                        ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
+	                          PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
+	                        PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC));
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRMASK,
+	                        ~(PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC) |
+	                          PPC_BIT(MCBISTFIRQ_MCBIST_PROGRAM_COMPLETE)),
+	                        0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		if (!mem_data[chip].mcs[mcs_i].mca[mca_i].functional)

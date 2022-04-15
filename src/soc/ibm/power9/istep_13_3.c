@@ -65,7 +65,7 @@ static void mem_pll_initf(uint8_t chip)
 	 * making a function from this.
 	 */
 	// TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG
-	if (read_rscom(chip, PSU_SBE_DOORBELL_REG) & PPC_BIT(0))
+	if (read_scom(chip, PSU_SBE_DOORBELL_REG) & PPC_BIT(0))
 		die("MBOX to SBE busy, this should not happen\n");
 
 
@@ -85,17 +85,17 @@ static void mem_pll_initf(uint8_t chip)
 		 * variable for it, which probably implies wrapping this into a function and
 		 * moving it to separate file.
 		 */
-		write_rscom(chip, PSU_HOST_SBE_MBOX0_REG, 0x000001000000D301);
+		write_scom(chip, PSU_HOST_SBE_MBOX0_REG, 0x000001000000D301);
 
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_SBE_MBOX0_REG
 		/* TARGET_TYPE_PERV, chiplet ID = 0x07, ring ID, RING_MODE_SET_PULSE_NSL */
-		write_rscom(chip, PSU_HOST_SBE_MBOX1_REG, 0x0002000000000004 |
-		            PPC_PLACE(ring_id, 32, 16) |
-		            PPC_PLACE(mcs_ids[mcs_i], 24, 8));
+		write_scom(chip, PSU_HOST_SBE_MBOX1_REG, 0x0002000000000004 |
+		           PPC_PLACE(ring_id, 32, 16) |
+		           PPC_PLACE(mcs_ids[mcs_i], 24, 8));
 
 		// Ring the host->SBE doorbell
 		// TP.TPCHIP.PIB.PSU.PSU_SBE_DOORBELL_REG_OR
-		write_rscom(chip, PSU_SBE_DOORBELL_REG_WOR, PPC_BIT(0));
+		write_scom(chip, PSU_SBE_DOORBELL_REG_WOR, PPC_BIT(0));
 
 		// Wait for response
 		/*
@@ -108,7 +108,7 @@ static void mem_pll_initf(uint8_t chip)
 		 */
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG
 		time = wait_ms(90 * MSECS_PER_SEC,
-		               read_rscom(chip, PSU_HOST_DOORBELL_REG) & PPC_BIT(0));
+		               read_scom(chip, PSU_HOST_DOORBELL_REG) & PPC_BIT(0));
 
 		if (!time)
 			die("Timed out while waiting for SBE response\n");
@@ -119,7 +119,7 @@ static void mem_pll_initf(uint8_t chip)
 
 		// Clear SBE->host doorbell
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND
-		write_rscom(chip, PSU_HOST_DOORBELL_REG_WAND, ~PPC_BIT(0));
+		write_scom(chip, PSU_HOST_DOORBELL_REG_WAND, ~PPC_BIT(0));
 	}
 }
 

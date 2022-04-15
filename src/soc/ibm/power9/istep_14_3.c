@@ -43,7 +43,7 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 	bool node_pump_mode = false;
 	uint8_t dd = get_dd();
 
-	scratch_reg6 = read_rscom(chip, MBOX_SCRATCH_REG1 + 5);
+	scratch_reg6 = read_scom(chip, MBOX_SCRATCH_REG1 + 5);
 
 	/* ATTR_PROC_FABRIC_PUMP_MODE, it's either node or group pump mode */
 	node_pump_mode = !(scratch_reg6 & PPC_BIT(MBOX_SCRATCH_REG6_GROUP_PUMP_MODE));
@@ -57,10 +57,10 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 		 * ATTR_FABRIC_ADDR_EXTENSION_GROUP_ID = 0
 		 * ATTR_FABRIC_ADDR_EXTENSION_CHIP_ID = 0
 		 */
-		rscom_and_or_for_chiplet(chip, N2_CHIPLET_ID,
-					 pec_addr(pec, P9N2_PEC_ADDREXTMASK_REG),
-					 ~PPC_BITMASK(0, 6),
-					 PPC_PLACE(0, 0, 7));
+		scom_and_or_for_chiplet(chip, N2_CHIPLET_ID,
+					pec_addr(pec, P9N2_PEC_ADDREXTMASK_REG),
+					~PPC_BITMASK(0, 6),
+					PPC_PLACE(0, 0, 7));
 
 		/*
 		 * Phase2 init step 1
@@ -76,8 +76,8 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 		 * if HW423589_option1, set Disable Group Scope (r/w) and Use Vg(sys) at Vg scope
 		 */
 
-		val = read_rscom_for_chiplet(chip, N2_CHIPLET_ID,
-					     pec_addr(pec, PEC_PBCQHWCFG_REG));
+		val = read_scom_for_chiplet(chip, N2_CHIPLET_ID,
+					    pec_addr(pec, PEC_PBCQHWCFG_REG));
 		/* Set hang poll scale */
 		val &= ~PPC_BITMASK(0, 3);
 		val |= PPC_PLACE(1, 0, 4);
@@ -141,8 +141,8 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 		if (pec == 1 || (pec == 2 && iovalid_enable[pec] != 0x4))
 			val |= PPC_BIT(PEC_PBCQHWCFG_REG_PE_DISABLE_TCE_ARBITRATION);
 
-		write_rscom_for_chiplet(chip, N2_CHIPLET_ID, pec_addr(pec, PEC_PBCQHWCFG_REG),
-					val);
+		write_scom_for_chiplet(chip, N2_CHIPLET_ID, pec_addr(pec, PEC_PBCQHWCFG_REG),
+				       val);
 
 		/*
 		 * Phase2 init step 2
@@ -156,9 +156,9 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 		 * Set bits 00:03 = 0b1001 Enable trace, and select
 		 *                         inbound operations with addr information
 		 */
-		rscom_and_or_for_chiplet(chip, N2_CHIPLET_ID, pec_addr(pec, PEC_NESTTRC_REG),
-					 ~PPC_BITMASK(0, 3),
-					 PPC_PLACE(9, 0, 4));
+		scom_and_or_for_chiplet(chip, N2_CHIPLET_ID, pec_addr(pec, PEC_NESTTRC_REG),
+					~PPC_BITMASK(0, 3),
+					PPC_PLACE(9, 0, 4));
 
 		/*
 		 * Phase2 init step 4
@@ -181,7 +181,7 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 		val |= PPC_BIT(PEC_PBAIBHWCFG_REG_PE_PCIE_CLK_TRACE_EN);
 		val |= PPC_PLACE(7, PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT,
 				 PEC_AIB_HWCFG_OSBM_HOL_BLK_CNT_LEN);
-		write_rscom_for_chiplet(chip, PCI0_CHIPLET_ID + pec, PEC_PBAIBHWCFG_REG, val);
+		write_scom_for_chiplet(chip, PCI0_CHIPLET_ID + pec, PEC_PBAIBHWCFG_REG, val);
 	}
 }
 
@@ -204,7 +204,7 @@ static void phb_write(uint8_t chip, uint8_t phb, uint64_t addr, uint64_t data)
 	addr &= ~PPC_BITMASK(54, 57);
 	addr |= PPC_PLACE(sat_id, 54, 4);
 
-	write_rscom_for_chiplet(chip, chiplet, addr, data);
+	write_scom_for_chiplet(chip, chiplet, addr, data);
 }
 
 /* See src/import/chips/p9/common/scominfo/p9_scominfo.C in Hostboot */
@@ -231,7 +231,7 @@ static void phb_nest_write(uint8_t chip, uint8_t phb, uint64_t addr, uint64_t da
 	addr &= ~PPC_BITMASK(54, 57);
 	addr |= PPC_PLACE(sat_id, 54, 4);
 
-	write_rscom_for_chiplet(chip, N2_CHIPLET_ID, addr, data);
+	write_scom_for_chiplet(chip, N2_CHIPLET_ID, addr, data);
 }
 
 static void init_phbs(uint8_t chip, uint8_t phb_active_mask, const uint8_t *iovalid_enable)

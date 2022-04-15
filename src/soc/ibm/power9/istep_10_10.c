@@ -398,7 +398,7 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 			      PEC0_IOP_CONFIG_START_BIT, PEC0_IOP_BIT_COUNT * 2,
 			      PEC1_IOP_CONFIG_START_BIT, PEC1_IOP_BIT_COUNT * 2,
 			      PEC2_IOP_CONFIG_START_BIT, PEC2_IOP_BIT_COUNT * 2);
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR, val);
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR, val);
 
 		/* Phase1 init step 2b */
 
@@ -406,7 +406,7 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 			      PEC0_IOP_SWAP_START_BIT, PEC0_IOP_BIT_COUNT,
 			      PEC1_IOP_SWAP_START_BIT, PEC1_IOP_BIT_COUNT,
 			      PEC2_IOP_SWAP_START_BIT, PEC2_IOP_BIT_COUNT);
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR, val);
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR, val);
 
 		/* Phase1 init step 3a */
 
@@ -422,23 +422,23 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 			val |= PPC_BIT(PEC_IOP_IOVALID_ENABLE_STACK1_BIT);
 		}
 
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR, val);
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR, val);
 
 		/* Phase1 init step 3b (enable clock) */
 		/* ATTR_PROC_PCIE_REFCLOCK_ENABLE, all PECs are enabled. */
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CTRL0_OR,
-					PPC_BIT(PEC_IOP_REFCLOCK_ENABLE_START_BIT));
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CTRL0_OR,
+				       PPC_BIT(PEC_IOP_REFCLOCK_ENABLE_START_BIT));
 
 		/* Phase1 init step 4 (PMA reset) */
 
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_CLEAR,
-					PPC_BIT(PEC_IOP_PMA_RESET_START_BIT));
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_CLEAR,
+				       PPC_BIT(PEC_IOP_PMA_RESET_START_BIT));
 		udelay(1); /* at least 400ns */
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR,
-					PPC_BIT(PEC_IOP_PMA_RESET_START_BIT));
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_OR,
+				       PPC_BIT(PEC_IOP_PMA_RESET_START_BIT));
 		udelay(1); /* at least 400ns */
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_CLEAR,
-					PPC_BIT(PEC_IOP_PMA_RESET_START_BIT));
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_CLEAR,
+				       PPC_BIT(PEC_IOP_PMA_RESET_START_BIT));
 
 		/*
 		 * Poll for PRTREADY status on PLLA and PLLB:
@@ -447,22 +447,22 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 		 * PEC_IOP_HSS_PORT_READY_START_BIT = 58
 		 */
 		time = wait_us(40,
-				(read_rscom_for_chiplet(chip, chiplet, 0x800005010D010C3F) & PPC_BIT(58)) ||
-				(read_rscom_for_chiplet(chip, chiplet, 0x800005410D010C3F) & PPC_BIT(58)));
+				(read_scom_for_chiplet(chip, chiplet, 0x800005010D010C3F) & PPC_BIT(58)) ||
+				(read_scom_for_chiplet(chip, chiplet, 0x800005410D010C3F) & PPC_BIT(58)));
 		if (!time)
 			die("IOP HSS Port Ready status is not set!");
 
 		/* Phase1 init step 5 (Set IOP FIR action0) */
-		write_rscom_for_chiplet(chip, chiplet, PEC_FIR_ACTION0_REG,
-					PCI_IOP_FIR_ACTION0_REG);
+		write_scom_for_chiplet(chip, chiplet, PEC_FIR_ACTION0_REG,
+				       PCI_IOP_FIR_ACTION0_REG);
 
 		/* Phase1 init step 6 (Set IOP FIR action1) */
-		write_rscom_for_chiplet(chip, chiplet, PEC_FIR_ACTION1_REG,
-					PCI_IOP_FIR_ACTION1_REG);
+		write_scom_for_chiplet(chip, chiplet, PEC_FIR_ACTION1_REG,
+				       PCI_IOP_FIR_ACTION1_REG);
 
 		/* Phase1 init step 7 (Set IOP FIR mask) */
-		write_rscom_for_chiplet(chip, chiplet, PEC_FIR_MASK_REG,
-					PCI_IOP_FIR_MASK_REG);
+		write_scom_for_chiplet(chip, chiplet, PEC_FIR_MASK_REG,
+				       PCI_IOP_FIR_MASK_REG);
 
 		/* Phase1 init step 8-11 (Config 0 - 3) */
 
@@ -470,32 +470,32 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 			uint8_t lane;
 
 			/* RX Config Mode */
-			write_rscom_for_chiplet(chip, chiplet, PEC_PCS_RX_CONFIG_MODE_REG,
-						pcs_config_mode[i]);
+			write_scom_for_chiplet(chip, chiplet, PEC_PCS_RX_CONFIG_MODE_REG,
+					       pcs_config_mode[i]);
 
 			/* RX CDR GAIN */
-			rscom_and_or_for_chiplet(chip, chiplet, PEC_PCS_RX_CDR_GAIN_REG,
-						 ~PPC_BITMASK(56, 63),
-						 pcs_cdr_gain[i]);
+			scom_and_or_for_chiplet(chip, chiplet, PEC_PCS_RX_CDR_GAIN_REG,
+						~PPC_BITMASK(56, 63),
+						pcs_cdr_gain[i]);
 
 			for (lane = 0; lane < NUM_PCIE_LANES; ++lane) {
 				/* RX INITGAIN */
-				rscom_and_or_for_chiplet(chip, chiplet,
-							 RX_VGA_CTRL3_REGISTER[lane],
-							 ~PPC_BITMASK(48, 52),
-							 PPC_PLACE(pcs_init_gain, 48, 5));
+				scom_and_or_for_chiplet(chip, chiplet,
+							RX_VGA_CTRL3_REGISTER[lane],
+							~PPC_BITMASK(48, 52),
+							PPC_PLACE(pcs_init_gain, 48, 5));
 
 				/* RX PKINIT */
-				rscom_and_or_for_chiplet(chip, chiplet,
-							 RX_LOFF_CNTL_REGISTER[lane],
-							 ~PPC_BITMASK(58, 63),
-							 pcs_pk_init);
+				scom_and_or_for_chiplet(chip, chiplet,
+							RX_LOFF_CNTL_REGISTER[lane],
+							~PPC_BITMASK(58, 63),
+							pcs_pk_init);
 			}
 
 			/* RX SIGDET LVL */
-			rscom_and_or_for_chiplet(chip, chiplet, PEC_PCS_RX_SIGDET_CONTROL_REG,
-						 ~PPC_BITMASK(59, 63),
-						 pcs_sigdet_lvl);
+			scom_and_or_for_chiplet(chip, chiplet, PEC_PCS_RX_SIGDET_CONTROL_REG,
+						~PPC_BITMASK(59, 63),
+						pcs_sigdet_lvl);
 		}
 
 		/*
@@ -507,43 +507,43 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 		 *  - ATTR_PROC_PCIE_PCS_RX_ROT_EXTEL (59)
 		 *  - ATTR_PROC_PCIE_PCS_RX_ROT_RST_FW (62)
 		 */
-		rscom_and_for_chiplet(chip, chiplet, PEC_PCS_RX_ROT_CNTL_REG,
-				      ~(PPC_BIT(55) | PPC_BIT(63) | PPC_BIT(59) | PPC_BIT(62)));
+		scom_and_for_chiplet(chip, chiplet, PEC_PCS_RX_ROT_CNTL_REG,
+				     ~(PPC_BIT(55) | PPC_BIT(63) | PPC_BIT(59) | PPC_BIT(62)));
 
 		/* Phase1 init step 13 (RX Config Mode Enable External Config Control) */
-		write_rscom_for_chiplet(chip, chiplet, PEC_PCS_RX_CONFIG_MODE_REG, 0x8600);
+		write_scom_for_chiplet(chip, chiplet, PEC_PCS_RX_CONFIG_MODE_REG, 0x8600);
 
 		/* Phase1 init step 14 (PCLCK Control Register - PLLA) */
 		/* ATTR_PROC_PCIE_PCS_PCLCK_CNTL_PLLA = 0xF8 */
-		rscom_and_or_for_chiplet(chip, chiplet, PEC_PCS_PCLCK_CNTL_PLLA_REG,
-					 ~PPC_BITMASK(56, 63),
-					 0xF8);
+		scom_and_or_for_chiplet(chip, chiplet, PEC_PCS_PCLCK_CNTL_PLLA_REG,
+					~PPC_BITMASK(56, 63),
+					0xF8);
 
 		/* Phase1 init step 15 (PCLCK Control Register - PLLB) */
 		/* ATTR_PROC_PCIE_PCS_PCLCK_CNTL_PLLB = 0xF8 */
-		rscom_and_or_for_chiplet(chip, chiplet, PEC_PCS_PCLCK_CNTL_PLLB_REG,
-					 ~PPC_BITMASK(56, 63),
-					 0xF8);
+		scom_and_or_for_chiplet(chip, chiplet, PEC_PCS_PCLCK_CNTL_PLLB_REG,
+					~PPC_BITMASK(56, 63),
+					0xF8);
 
 		/* Phase1 init step 16 (TX DCLCK Rotator Override) */
 		/* ATTR_PROC_PCIE_PCS_TX_DCLCK_ROT = 0x0022 */
-		write_rscom_for_chiplet(chip, chiplet, PEC_PCS_TX_DCLCK_ROTATOR_REG, 0x0022);
+		write_scom_for_chiplet(chip, chiplet, PEC_PCS_TX_DCLCK_ROTATOR_REG, 0x0022);
 
 		/* Phase1 init step 17 (TX PCIe Receiver Detect Control Register 1) */
 		/* ATTR_PROC_PCIE_PCS_TX_PCIE_RECV_DETECT_CNTL_REG1 = 0xAA7A */
-		write_rscom_for_chiplet(chip, chiplet, PEC_PCS_TX_PCIE_REC_DETECT_CNTL1_REG,
-					0xAA7A);
+		write_scom_for_chiplet(chip, chiplet, PEC_PCS_TX_PCIE_REC_DETECT_CNTL1_REG,
+				       0xAA7A);
 
 		/* Phase1 init step 18 (TX PCIe Receiver Detect Control Register 2) */
 		/* ATTR_PROC_PCIE_PCS_TX_PCIE_RECV_DETECT_CNTL_REG2 = 0x2000 */
-		write_rscom_for_chiplet(chip, chiplet, PEC_PCS_TX_PCIE_REC_DETECT_CNTL2_REG,
-					0x2000);
+		write_scom_for_chiplet(chip, chiplet, PEC_PCS_TX_PCIE_REC_DETECT_CNTL2_REG,
+				       0x2000);
 
 		/* Phase1 init step 19 (TX Power Sequence Enable) */
 		/* ATTR_PROC_PCIE_PCS_TX_POWER_SEQ_ENABLE = 0xFF, but field is 7 bits */
-		rscom_and_or_for_chiplet(chip, chiplet, PEC_PCS_TX_POWER_SEQ_ENABLE_REG,
-					 ~PPC_BITMASK(56, 62),
-					 PPC_PLACE(0x7F, 56, 7));
+		scom_and_or_for_chiplet(chip, chiplet, PEC_PCS_TX_POWER_SEQ_ENABLE_REG,
+					~PPC_BITMASK(56, 62),
+					PPC_PLACE(0x7F, 56, 7));
 
 		/* Phase1 init step 20 (RX VGA Control Register 1) */
 
@@ -552,21 +552,21 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 
 		/* ATTR_CHIP_EC_FEATURE_HW414759 = 0, so not setting PEC_SCOM0X0B_EDMOD */
 
-		write_rscom_for_chiplet(chip, chiplet, PEC_PCS_RX_VGA_CONTROL1_REG, val);
+		write_scom_for_chiplet(chip, chiplet, PEC_PCS_RX_VGA_CONTROL1_REG, val);
 
 		/* Phase1 init step 21 (RX VGA Control Register 2) */
 		/* ATTR_PROC_PCIE_PCS_RX_VGA_CNTL_REG2 = 0 */
-		write_rscom_for_chiplet(chip, chiplet, PEC_PCS_RX_VGA_CONTROL2_REG, 0);
+		write_scom_for_chiplet(chip, chiplet, PEC_PCS_RX_VGA_CONTROL2_REG, 0);
 
 		/* Phase1 init step 22 (RX DFE Func Control Register 1) */
 		/* ATTR_PROC_PCIE_PCS_RX_DFE_FDDC = 1 */
-		rscom_or_for_chiplet(chip, chiplet, PEC_IOP_RX_DFE_FUNC_REGISTER1, PPC_BIT(50));
+		scom_or_for_chiplet(chip, chiplet, PEC_IOP_RX_DFE_FUNC_REGISTER1, PPC_BIT(50));
 
 		/* Phase1 init step 23 (PCS System Control) */
 		/* ATTR_PROC_PCIE_PCS_SYSTEM_CNTL computed above */
-		rscom_and_or_for_chiplet(chip, chiplet, PEC_PCS_SYS_CONTROL_REG,
-					 ~PPC_BITMASK(55, 63),
-					 pec_cfgs[pec]->phb_to_pcie_mac);
+		scom_and_or_for_chiplet(chip, chiplet, PEC_PCS_SYS_CONTROL_REG,
+					~PPC_BITMASK(55, 63),
+					pec_cfgs[pec]->phb_to_pcie_mac);
 
 		/*
 		 * All values in ATTR_PROC_PCIE_PCS_M_CNTL are 0.
@@ -575,24 +575,24 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 		 */
 
 		/* Phase1 init step 24 (PCS M1 Control) */
-		rscom_and_for_chiplet(chip, chiplet, PEC_PCS_M1_CONTROL_REG,
-				      ~PPC_BITMASK(55, 63));
+		scom_and_for_chiplet(chip, chiplet, PEC_PCS_M1_CONTROL_REG,
+				     ~PPC_BITMASK(55, 63));
 		/* Phase1 init step 25 (PCS M2 Control) */
-		rscom_and_for_chiplet(chip, chiplet, PEC_PCS_M2_CONTROL_REG,
-				      ~PPC_BITMASK(55, 63));
+		scom_and_for_chiplet(chip, chiplet, PEC_PCS_M2_CONTROL_REG,
+				     ~PPC_BITMASK(55, 63));
 		/* Phase1 init step 26 (PCS M3 Control) */
-		rscom_and_for_chiplet(chip, chiplet, PEC_PCS_M3_CONTROL_REG,
-				      ~PPC_BITMASK(55, 63));
+		scom_and_for_chiplet(chip, chiplet, PEC_PCS_M3_CONTROL_REG,
+				     ~PPC_BITMASK(55, 63));
 		/* Phase1 init step 27 (PCS M4 Control) */
-		rscom_and_for_chiplet(chip, chiplet, PEC_PCS_M4_CONTROL_REG,
-				      ~PPC_BITMASK(55, 63));
+		scom_and_for_chiplet(chip, chiplet, PEC_PCS_M4_CONTROL_REG,
+				     ~PPC_BITMASK(55, 63));
 
 		/* Delay a minimum of 200ns to allow prior SCOM programming to take effect */
 		udelay(1);
 
 		/* Phase1 init step 28 */
-		write_rscom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_CLEAR,
-					PPC_BIT(PEC_IOP_PIPE_RESET_START_BIT));
+		write_scom_for_chiplet(chip, chiplet, PEC_CPLT_CONF1_CLEAR,
+				       PPC_BIT(PEC_IOP_PIPE_RESET_START_BIT));
 
 		/*
 		 * Delay a minimum of 300ns for reset to complete.
