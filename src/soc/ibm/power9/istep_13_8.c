@@ -59,8 +59,8 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	/* P9N2_MCS_PORT02_MCPERF0 (?)
 	    [22-27] = 0x20                              // AMO_LIMIT
 	*/
-	rscom_and_or_for_chiplet(chip, nest, 0x05010823 + mca_i * mca_mul,
-	                         ~PPC_BITMASK(22,27), PPC_PLACE(0x20, 22, 6));
+	scom_and_or_for_chiplet(chip, nest, 0x05010823 + mca_i * mca_mul,
+	                        ~PPC_BITMASK(22,27), PPC_PLACE(0x20, 22, 6));
 
 	/* P9N2_MCS_PORT02_MCPERF2 (?)
 	    [0-2]   = 1                                 // PF_DROP_VALUE0
@@ -92,24 +92,24 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	uint64_t en_ref_blk = (log_ranks <= 1 || log_ranks > 8) ? 0 :
 	                      (n_dimms == 1 && mranks == 4 && log_ranks == 8) ? 0 : 3;
 
-	rscom_and_or_for_chiplet(chip, nest, 0x05010824 + mca_i * mca_mul,
-	                         /* and */
-	                         ~(PPC_BITMASK(0,11) | PPC_BITMASK(13,18) | PPC_BITMASK(28,31)
-	                           | PPC_BITMASK(28,31) | PPC_BITMASK(50,54) | PPC_BIT(61)),
-	                         /* or */
-	                         PPC_PLACE(1, 0, 3) | PPC_PLACE(3, 3, 3) | PPC_PLACE(5, 6, 3)
-	                         | PPC_PLACE(7, 9, 3) /* PF_DROP_VALUEs */
-	                         | PPC_PLACE(ref_blk_cfg, 13, 3) | PPC_PLACE(en_ref_blk, 16, 2)
-	                         | PPC_PLACE(0x4, 28, 4) | PPC_PLACE(0x1C, 50, 5));
+	scom_and_or_for_chiplet(chip, nest, 0x05010824 + mca_i * mca_mul,
+	                        /* and */
+	                        ~(PPC_BITMASK(0,11) | PPC_BITMASK(13,18) | PPC_BITMASK(28,31)
+	                          | PPC_BITMASK(28,31) | PPC_BITMASK(50,54) | PPC_BIT(61)),
+	                        /* or */
+	                        PPC_PLACE(1, 0, 3) | PPC_PLACE(3, 3, 3) | PPC_PLACE(5, 6, 3)
+	                        | PPC_PLACE(7, 9, 3) /* PF_DROP_VALUEs */
+	                        | PPC_PLACE(ref_blk_cfg, 13, 3) | PPC_PLACE(en_ref_blk, 16, 2)
+	                        | PPC_PLACE(0x4, 28, 4) | PPC_PLACE(0x1C, 50, 5));
 
 	/* P9N2_MCS_PORT02_MCAMOC (?)
 	    [1]     = 0                                 // FORCE_PF_DROP0
 	    [4-28]  = 0x19fffff                         // WRTO_AMO_COLLISION_RULES
 	    [29-31] = 1                                 // AMO_SIZE_SELECT, 128B_RW_64B_DATA
 	*/
-	rscom_and_or_for_chiplet(chip, nest, 0x05010825 + mca_i * mca_mul,
-	                         ~(PPC_BIT(1) | PPC_BITMASK(4,31)),
-	                         PPC_PLACE(0x19FFFFF, 4, 25) | PPC_PLACE(1, 29, 3));
+	scom_and_or_for_chiplet(chip, nest, 0x05010825 + mca_i * mca_mul,
+	                        ~(PPC_BIT(1) | PPC_BITMASK(4,31)),
+	                        PPC_PLACE(0x19FFFFF, 4, 25) | PPC_PLACE(1, 29, 3));
 
 	/* P9N2_MCS_PORT02_MCEPSQ (?)
 	    [0-7]   = 1                                 // JITTER_EPSILON
@@ -122,13 +122,13 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	    [40-47] = (ATTR_PROC_EPS_READ_CYCLES_T2 + 6) / 4        // VECTOR_GROUP_EPSILON
 	 */
 	#define F(X)	(((X) + 6) / 4)
-	rscom_and_or_for_chiplet(chip, nest, 0x05010826 + mca_i * mca_mul, ~PPC_BITMASK(0,47),
-	                         PPC_PLACE(1, 0, 8)
-	                         | PPC_PLACE(F(pb_cfg->eps_r[0]), 8, 8)
-	                         | PPC_PLACE(F(pb_cfg->eps_r[1]), 16, 8)
-	                         | PPC_PLACE(F(pb_cfg->eps_r[1]), 24, 8)
-	                         | PPC_PLACE(F(pb_cfg->eps_r[2]), 32, 8)
-	                         | PPC_PLACE(F(pb_cfg->eps_r[2]), 40, 8));
+	scom_and_or_for_chiplet(chip, nest, 0x05010826 + mca_i * mca_mul, ~PPC_BITMASK(0,47),
+	                        PPC_PLACE(1, 0, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[0]), 8, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[1]), 16, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[1]), 24, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[2]), 32, 8)
+	                        | PPC_PLACE(F(pb_cfg->eps_r[2]), 40, 8));
 	#undef F
 //~ static const uint32_t EPSILON_R_T0_LE[] = {    7,    7,    8,    8,   10,   22 };  // T0, T1
 //~ static const uint32_t EPSILON_R_T2_LE[] = {   67,   69,   71,   74,   79,  103 };  // T2
@@ -140,9 +140,9 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	    [14-23] = 51                                // BUSY_COUNTER_THRESHOLD1
 	    [24-33] = 64                                // BUSY_COUNTER_THRESHOLD2
 	*/
-	rscom_and_or_for_chiplet(chip, nest, 0x05010827 + mca_i * mca_mul, ~PPC_BITMASK(0,33),
-	                         PPC_BIT(0) | PPC_PLACE(1, 1, 3) | PPC_PLACE(38, 4, 10)
-	                         | PPC_PLACE(51, 14, 10) | PPC_PLACE(64, 24, 10));
+	scom_and_or_for_chiplet(chip, nest, 0x05010827 + mca_i * mca_mul, ~PPC_BITMASK(0,33),
+	                        PPC_BIT(0) | PPC_PLACE(1, 1, 3) | PPC_PLACE(38, 4, 10)
+	                        | PPC_PLACE(51, 14, 10) | PPC_PLACE(64, 24, 10));
 
 	/* P9N2_MCS_PORT02_MCPERF3 (?)
 	    [31] = 1                                    // ENABLE_CL0
@@ -151,9 +151,9 @@ static void p9n_mca_scom(uint8_t chip, int mcs_i, int mca_i)
 	    [44] = 1                                    // DISABLE_WRTO_IG
 	    [45] = 1                                    // AMO_LIMIT_SEL
 	*/
-	rscom_or_for_chiplet(chip, nest, 0x0501082B + mca_i * mca_mul,
-	                     PPC_BIT(31) | PPC_BIT(41) | PPC_BIT(43) | PPC_BIT(44)
-	                     | PPC_BIT(45));
+	scom_or_for_chiplet(chip, nest, 0x0501082B + mca_i * mca_mul,
+	                    PPC_BIT(31) | PPC_BIT(41) | PPC_BIT(43) | PPC_BIT(44)
+	                    | PPC_BIT(45));
 
 	/* MC01.PORT0.SRQ.MBA_DSM0Q =
 	    // These are set per port so all latencies should be calculated from both DIMMs (if present)
@@ -807,86 +807,86 @@ static void p9n_mcbist_scom(uint8_t chip, int mcs_i)
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG0AQ =
 	    [0-47]  WATCFG0AQ_CFG_WAT_EVENT_SEL =  0x400000000000
 	*/
-	rscom_and_or_for_chiplet(chip, id, WATCFG0AQ, ~PPC_BITMASK(0, 47),
-	                         PPC_PLACE(0x400000000000, WATCFG0AQ_CFG_WAT_EVENT_SEL,
-	                                   WATCFG0AQ_CFG_WAT_EVENT_SEL_LEN));
+	scom_and_or_for_chiplet(chip, id, WATCFG0AQ, ~PPC_BITMASK(0, 47),
+	                        PPC_PLACE(0x400000000000, WATCFG0AQ_CFG_WAT_EVENT_SEL,
+	                                  WATCFG0AQ_CFG_WAT_EVENT_SEL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG0BQ =
 	    [0-43]  WATCFG0BQ_CFG_WAT_MSKA =  0x3fbfff
 	    [44-60] WATCFG0BQ_CFG_WAT_CNTL =  0x10000
 	*/
-	rscom_and_or_for_chiplet(chip, id, WATCFG0BQ, ~PPC_BITMASK(0, 60),
-	                         PPC_PLACE(0x3fbfff, WATCFG0BQ_CFG_WAT_MSKA,
-	                                   WATCFG0BQ_CFG_WAT_MSKA_LEN) |
-	                         PPC_PLACE(0x10000, WATCFG0BQ_CFG_WAT_CNTL,
-	                                   WATCFG0BQ_CFG_WAT_CNTL_LEN));
+	scom_and_or_for_chiplet(chip, id, WATCFG0BQ, ~PPC_BITMASK(0, 60),
+	                        PPC_PLACE(0x3fbfff, WATCFG0BQ_CFG_WAT_MSKA,
+	                                  WATCFG0BQ_CFG_WAT_MSKA_LEN) |
+	                        PPC_PLACE(0x10000, WATCFG0BQ_CFG_WAT_CNTL,
+	                                  WATCFG0BQ_CFG_WAT_CNTL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG0DQ =
 	    [0-43]  WATCFG0DQ_CFG_WAT_PATA =  0x80200004000
 	*/
-	rscom_and_or_for_chiplet(chip, id, WATCFG0DQ, ~PPC_BITMASK(0, 43),
-	                         PPC_PLACE(0x80200004000, WATCFG0DQ_CFG_WAT_PATA,
-	                                   WATCFG0DQ_CFG_WAT_PATA_LEN));
+	scom_and_or_for_chiplet(chip, id, WATCFG0DQ, ~PPC_BITMASK(0, 43),
+	                        PPC_PLACE(0x80200004000, WATCFG0DQ_CFG_WAT_PATA,
+	                                  WATCFG0DQ_CFG_WAT_PATA_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG3AQ =
 	    [0-47]  WATCFG3AQ_CFG_WAT_EVENT_SEL = 0x800000000000
 	*/
-	rscom_and_or_for_chiplet(chip, id, WATCFG3AQ, ~PPC_BITMASK(0, 47),
-	                         PPC_PLACE(0x800000000000, WATCFG3AQ_CFG_WAT_EVENT_SEL,
-	                                   WATCFG3AQ_CFG_WAT_EVENT_SEL_LEN));
+	scom_and_or_for_chiplet(chip, id, WATCFG3AQ, ~PPC_BITMASK(0, 47),
+	                        PPC_PLACE(0x800000000000, WATCFG3AQ_CFG_WAT_EVENT_SEL,
+	                                  WATCFG3AQ_CFG_WAT_EVENT_SEL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.WATCFG3BQ =
 	    [0-43]  WATCFG3BQ_CFG_WAT_MSKA =  0xfffffffffff
 	    [44-60] WATCFG3BQ_CFG_WAT_CNTL =  0x10400
 	*/
-	rscom_and_or_for_chiplet(chip, id, WATCFG3BQ, ~PPC_BITMASK(0, 60),
-	                         PPC_PLACE(0xfffffffffff, WATCFG3BQ_CFG_WAT_MSKA,
-	                                   WATCFG3BQ_CFG_WAT_MSKA_LEN) |
-	                         PPC_PLACE(0x10400, WATCFG3BQ_CFG_WAT_CNTL,
-	                                   WATCFG3BQ_CFG_WAT_CNTL_LEN));
+	scom_and_or_for_chiplet(chip, id, WATCFG3BQ, ~PPC_BITMASK(0, 60),
+	                        PPC_PLACE(0xfffffffffff, WATCFG3BQ_CFG_WAT_MSKA,
+	                                  WATCFG3BQ_CFG_WAT_MSKA_LEN) |
+	                        PPC_PLACE(0x10400, WATCFG3BQ_CFG_WAT_CNTL,
+	                                  WATCFG3BQ_CFG_WAT_CNTL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBCFGQ =
 	    [36]    MCBCFGQ_CFG_LOG_COUNTS_IN_TRACE = 0
 	*/
-	rscom_and_for_chiplet(chip, id, MCBCFGQ, ~PPC_BIT(MCBCFGQ_CFG_LOG_COUNTS_IN_TRACE));
+	scom_and_for_chiplet(chip, id, MCBCFGQ, ~PPC_BIT(MCBCFGQ_CFG_LOG_COUNTS_IN_TRACE));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG0Q =
 	    [0]     DBGCFG0Q_CFG_DBG_ENABLE =         1
 	    [23-33] DBGCFG0Q_CFG_DBG_PICK_MCBIST01 =  0x780
 	*/
-	rscom_and_or_for_chiplet(chip, id, DBGCFG0Q, ~PPC_BITMASK(23, 33),
-	                         PPC_BIT(DBGCFG0Q_CFG_DBG_ENABLE) |
-	                         PPC_PLACE(0x780, DBGCFG0Q_CFG_DBG_PICK_MCBIST01,
-	                                   DBGCFG0Q_CFG_DBG_PICK_MCBIST01_LEN));
+	scom_and_or_for_chiplet(chip, id, DBGCFG0Q, ~PPC_BITMASK(23, 33),
+	                        PPC_BIT(DBGCFG0Q_CFG_DBG_ENABLE) |
+	                        PPC_PLACE(0x780, DBGCFG0Q_CFG_DBG_PICK_MCBIST01,
+	                                  DBGCFG0Q_CFG_DBG_PICK_MCBIST01_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG1Q =
 	    [0]     DBGCFG1Q_CFG_WAT_ENABLE = 1
 	*/
-	rscom_or_for_chiplet(chip, id, DBGCFG1Q, PPC_BIT(DBGCFG1Q_CFG_WAT_ENABLE));
+	scom_or_for_chiplet(chip, id, DBGCFG1Q, PPC_BIT(DBGCFG1Q_CFG_WAT_ENABLE));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG2Q =
 	    [0-19]  DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL = 0x10000
 	    [20-39] DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL = 0x08000
 	*/
-	rscom_and_or_for_chiplet(chip, id, DBGCFG2Q, ~PPC_BITMASK(0, 39),
-	                         PPC_PLACE(0x10000, DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL,
-	                                   DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL_LEN) |
-	                         PPC_PLACE(0x08000, DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL,
-	                                   DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL_LEN));
+	scom_and_or_for_chiplet(chip, id, DBGCFG2Q, ~PPC_BITMASK(0, 39),
+	                        PPC_PLACE(0x10000, DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL,
+	                                  DBGCFG2Q_CFG_WAT_LOC_EVENT0_SEL_LEN) |
+	                        PPC_PLACE(0x08000, DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL,
+	                                  DBGCFG2Q_CFG_WAT_LOC_EVENT1_SEL_LEN));
 
 	/* MC01.MCBIST.MBA_SCOMFIR.DBGCFG3Q =
 	    [20-22] DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL =      0x4
 	    [23-25] DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL =      0x4
 	    [37-40] DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE = 0x4
 	*/
-	rscom_and_or_for_chiplet(chip, id, DBGCFG3Q,
-	                         ~(PPC_BITMASK(20, 25) | PPC_BITMASK(37, 40)),
-	                         PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL,
-	                                   DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL_LEN) |
-	                         PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL,
-	                                   DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL_LEN) |
-	                         PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE,
-	                                   DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE_LEN));
+	scom_and_or_for_chiplet(chip, id, DBGCFG3Q,
+	                        ~(PPC_BITMASK(20, 25) | PPC_BITMASK(37, 40)),
+	                        PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL,
+	                                  DBGCFG3Q_CFG_WAT_GLOB_EVENT0_SEL_LEN) |
+	                        PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL,
+	                                  DBGCFG3Q_CFG_WAT_GLOB_EVENT1_SEL_LEN) |
+	                        PPC_PLACE(0x4, DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE,
+	                                  DBGCFG3Q_CFG_WAT_ACT_SET_SPATTN_PULSE_LEN));
 }
 
 static void set_rank_pairs(uint8_t chip, int mcs_i, int mca_i)

@@ -167,7 +167,7 @@ static inline void mca_and_or(uint8_t chip, chiplet_id_t mcs, int mca, uint64_t 
 	 */
 	unsigned mul = (scom & PPC_BIT(0) ||
 	                (scom & 0xFFFFF000) == 0x07011000) ? 0x400 : 0x40;
-	rscom_and_or_for_chiplet(chip, mcs, scom + mca * mul, and, or);
+	scom_and_or_for_chiplet(chip, mcs, scom + mca * mul, and, or);
 }
 
 static inline void dp_mca_and_or(uint8_t chip, chiplet_id_t mcs, int dp, int mca,
@@ -182,7 +182,7 @@ static inline uint64_t mca_read(uint8_t chip, chiplet_id_t mcs, int mca, uint64_
 	 * general, except for (only?) direct PHY registers. */
 	unsigned mul = (scom & PPC_BIT(0) ||
 	                (scom & 0xFFFFF000) == 0x07011000) ? 0x400 : 0x40;
-	return read_rscom_for_chiplet(chip, mcs, scom + mca * mul);
+	return read_scom_for_chiplet(chip, mcs, scom + mca * mul);
 }
 
 static inline void mca_write(uint8_t chip, chiplet_id_t mcs, int mca, uint64_t scom,
@@ -192,7 +192,7 @@ static inline void mca_write(uint8_t chip, chiplet_id_t mcs, int mca, uint64_t s
 	 * general, except for (only?) direct PHY registers. */
 	unsigned mul = (scom & PPC_BIT(0) ||
 	                (scom & 0xFFFFF000) == 0x07011000) ? 0x400 : 0x40;
-	write_rscom_for_chiplet(chip, mcs, scom + mca * mul, val);
+	write_scom_for_chiplet(chip, mcs, scom + mca * mul, val);
 }
 static inline uint64_t dp_mca_read(uint8_t chip, chiplet_id_t mcs, int dp, int mca,
 				   uint64_t scom)
