@@ -100,6 +100,9 @@ config FMDFILE
 	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
 
+config CBFS_SIZE
+	default 0xa00000 if !VBOOT
+
 config UART_FOR_CONSOLE
 	int
 	default 2
