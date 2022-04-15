@@ -47,8 +47,8 @@ static void fir_unmask(uint8_t chip, int mcs_i)
 	MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRACT1
 		  [3]   MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC =  0 // checkstop (0,0,0)
 	*/
-	rscom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
-	                         ~PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC), 0);
+	scom_and_or_for_chiplet(chip, id, MCBISTFIRACT1,
+	                        ~PPC_BIT(MCBISTFIRQ_MCBIST_BRODCAST_OUT_OF_SYNC), 0);
 
 	for (mca_i = 0; mca_i < MCA_PER_MCS; mca_i++) {
 		uint64_t val;
@@ -282,11 +282,11 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBSA0Q
 	 * [0-37] MCBSA0Q_CFG_START_ADDR_0
 	 */
-	write_rscom_for_chiplet(chip, id, MCBSA0Q, 0);
+	write_scom_for_chiplet(chip, id, MCBSA0Q, 0);
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBEA0Q
 	 * [0-37] MCBSA0Q_CFG_END_ADDR_0
 	 */
-	write_rscom_for_chiplet(chip, id, MCBEA0Q, PPC_BITMASK(3, 37));
+	write_scom_for_chiplet(chip, id, MCBEA0Q, PPC_BITMASK(3, 37));
 
 	/* Hostboot stops MCBIST engine, die() if it is already started instead */
 	/* TODO: check all bits (MCBIST was ever started) or just "in progress"? */
@@ -295,7 +295,7 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [1] MCB_CNTLSTATQ_MCB_DONE
 	 * [2] MCB_CNTLSTATQ_MCB_FAIL
 	 */
-	if ((val = read_rscom_for_chiplet(chip, id, MCB_CNTLSTATQ)) != 0)
+	if ((val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ)) != 0)
 		die("MCBIST started already (%#16.16llx), this shouldn't happen\n", val);
 
 	/*
@@ -305,10 +305,10 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * - MBS Memory Scrub/Read Error Count Register 1 - MC01.MCBIST.MBA_SCOMFIR.MBSEC1Q
 	 * - MCBIST Fault Isolation Register - MC01.MCBIST.MBA_SCOMFIR.MCBISTFIRQ
 	 */
-	write_rscom_for_chiplet(chip, id, MCBSTATQ, 0);
-	write_rscom_for_chiplet(chip, id, MBSEC0Q, 0);
-	write_rscom_for_chiplet(chip, id, MBSEC1Q, 0);
-	write_rscom_for_chiplet(chip, id, MCBISTFIR, 0);
+	write_scom_for_chiplet(chip, id, MCBSTATQ, 0);
+	write_scom_for_chiplet(chip, id, MBSEC0Q, 0);
+	write_scom_for_chiplet(chip, id, MBSEC1Q, 0);
+	write_scom_for_chiplet(chip, id, MCBISTFIR, 0);
 
 	/* Enable FIFO mode */
 	set_fifo_mode(chip, mcs_i, 1);
@@ -326,9 +326,9 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [10]  MCBAGRAQ_CFG_MAINT_ADDR_MODE_EN =            1
 	 * [12]  MCBAGRAQ_CFG_MAINT_DETECT_SRANK_BOUNDARIES = 1
 	 */
-	write_rscom_for_chiplet(chip, id, MCBAGRAQ,
-	                        PPC_BIT(MCBAGRAQ_CFG_MAINT_ADDR_MODE_EN) |
-	                        PPC_BIT(MCBAGRAQ_CFG_MAINT_DETECT_SRANK_BOUNDARIES));
+	write_scom_for_chiplet(chip, id, MCBAGRAQ,
+	                       PPC_BIT(MCBAGRAQ_CFG_MAINT_ADDR_MODE_EN) |
+	                       PPC_BIT(MCBAGRAQ_CFG_MAINT_DETECT_SRANK_BOUNDARIES));
 
 	/*
 	 * Configure MCBIST
@@ -351,16 +351,16 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [57-58] MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE = 0 for patterns, 0b10 for scrub
 	 * [63]    MCBCFGQ_CFG_ENABLE_HOST_ATTN =    see above
 	 */
-	write_rscom_for_chiplet(chip, id, MCBCFGQ,
-	                        PPC_PLACE(0x2, MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE,
-	                                  MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE_LEN));
+	write_scom_for_chiplet(chip, id, MCBCFGQ,
+	                       PPC_PLACE(0x2, MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE,
+	                                 MCBCFGQ_CFG_PAUSE_ON_ERROR_MODE_LEN));
 
 	/*
 	 * This sets up memory parameters, mostly gaps between commands. For as fast
 	 * as possible, gaps of 0 are configured here.
 	 */
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBPARMQ */
-	write_rscom_for_chiplet(chip, id, MCBPARMQ, 0);
+	write_scom_for_chiplet(chip, id, MCBPARMQ, 0);
 
 	/*
 	 * Steps done from this point should be moved out of this function, they
@@ -371,7 +371,7 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	/* Data pattern: 8 data registers + 1 ECC register */
 	/* TODO: different patterns can be used */
 	for (i = 0; i < 9; i++) {
-		write_rscom_for_chiplet(chip, id, MCBFD0Q + i, patterns[0][i]);
+		write_scom_for_chiplet(chip, id, MCBFD0Q + i, patterns[0][i]);
 	}
 
 	/* TODO: random seeds */
@@ -394,9 +394,9 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * inverting.
 	 */
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBDRCRQ */
-	write_rscom_for_chiplet(chip, id, MCBDRCRQ, 0);
+	write_scom_for_chiplet(chip, id, MCBDRCRQ, 0);
 	/* MC01.MCBIST.MBA_SCOMFIR.MCBDRSRQ */
-	write_rscom_for_chiplet(chip, id, MCBDRSRQ, 0);
+	write_scom_for_chiplet(chip, id, MCBDRSRQ, 0);
 
 	/*
 	 * The following step may be done just once, as long as the same set of
@@ -424,13 +424,13 @@ static void init_mcbist(uint8_t chip, int mcs_i)
 	 * [56]   MBSTRQ_CFG_NCE_INTER_SYMBOL_COUNT_ENABLE  } counts all NCE
 	 * [57]   MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE  /
 	 */
-	write_rscom_for_chiplet(chip, id, MBSTRQ, PPC_BITMASK(0, 31) |
-	                        PPC_BIT(MBSTRQ_CFG_PAUSE_ON_MPE) |
-	                        PPC_BIT(MBSTRQ_CFG_PAUSE_ON_UE) |
-	                        PPC_BIT(MBSTRQ_CFG_PAUSE_ON_AUE) |
-	                        PPC_BIT(MBSTRQ_CFG_NCE_SOFT_SYMBOL_COUNT_ENABLE) |
-	                        PPC_BIT(MBSTRQ_CFG_NCE_INTER_SYMBOL_COUNT_ENABLE) |
-	                        PPC_BIT(MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE));
+	write_scom_for_chiplet(chip, id, MBSTRQ, PPC_BITMASK(0, 31) |
+	                       PPC_BIT(MBSTRQ_CFG_PAUSE_ON_MPE) |
+	                       PPC_BIT(MBSTRQ_CFG_PAUSE_ON_UE) |
+	                       PPC_BIT(MBSTRQ_CFG_PAUSE_ON_AUE) |
+	                       PPC_BIT(MBSTRQ_CFG_NCE_SOFT_SYMBOL_COUNT_ENABLE) |
+	                       PPC_BIT(MBSTRQ_CFG_NCE_INTER_SYMBOL_COUNT_ENABLE) |
+	                       PPC_BIT(MBSTRQ_CFG_NCE_HARD_SYMBOL_COUNT_ENABLE));
 }
 
 static void mss_memdiag(uint8_t chips)
@@ -524,8 +524,8 @@ static void mss_memdiag(uint8_t chips)
 			/* TODO: dump error/status registers on failure */
 			if (!time) {
 				die("MCBIST%d of chip %d times out (%#16.16llx)\n", mcs_i, chip,
-				    read_rscom_for_chiplet(chip, mcs_ids[mcs_i],
-							   MCB_CNTLSTATQ));
+				    read_scom_for_chiplet(chip, mcs_ids[mcs_i],
+							  MCB_CNTLSTATQ));
 			}
 
 			/* Unmask mainline FIRs. */

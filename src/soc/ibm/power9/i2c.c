@@ -102,7 +102,7 @@ void get_spd_i2c(uint8_t bus, struct spd_block *blk)
 static void write_i2c(enum i2c_type type, uint64_t addr, uint64_t data)
 {
 	if (type != FSI_I2C)
-		write_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr, data);
+		write_scom(type == HOST_I2C_CPU0 ? 0 : 1, addr, data);
 	else
 		write_fsi_i2c(/*chip=*/1, addr, data >> 32, /*size=*/4);
 }
@@ -110,7 +110,7 @@ static void write_i2c(enum i2c_type type, uint64_t addr, uint64_t data)
 static uint64_t read_i2c(enum i2c_type type, uint64_t addr)
 {
 	if (type != FSI_I2C)
-		return read_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr);
+		return read_scom(type == HOST_I2C_CPU0 ? 0 : 1, addr);
 	else
 		return (uint64_t)read_fsi_i2c(/*chip=*/1, addr, /*size=*/4) << 32;
 }
@@ -118,7 +118,7 @@ static uint64_t read_i2c(enum i2c_type type, uint64_t addr)
 static void write_i2c_byte(enum i2c_type type, uint64_t addr, uint8_t data)
 {
 	if (type != FSI_I2C)
-		write_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr, (uint64_t)data << 56);
+		write_scom(type == HOST_I2C_CPU0 ? 0 : 1, addr, (uint64_t)data << 56);
 	else
 		write_fsi_i2c(/*chip=*/1, addr, (uint32_t)data << 24, /*size=*/1);
 }
@@ -126,7 +126,7 @@ static void write_i2c_byte(enum i2c_type type, uint64_t addr, uint8_t data)
 static uint8_t read_i2c_byte(enum i2c_type type, uint64_t addr)
 {
 	if (type != FSI_I2C)
-		return read_rscom(type == HOST_I2C_CPU0 ? 0 : 1, addr) >> 56;
+		return read_scom(type == HOST_I2C_CPU0 ? 0 : 1, addr) >> 56;
 	else
 		return read_fsi_i2c(/*chip=*/1, addr, /*size=*/1) >> 24;
 }

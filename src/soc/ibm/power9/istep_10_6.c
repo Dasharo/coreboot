@@ -13,7 +13,7 @@ static void mcs_scom(uint8_t chip, chiplet_id_t chiplet)
 	uint64_t data;
 
 	{
-		data = read_rscom_for_chiplet(chip, chiplet, 0x5010810);
+		data = read_scom_for_chiplet(chip, chiplet, 0x5010810);
 
 		PPC_INSERT(data, 25, 32, 7);
 		PPC_INSERT(data, 0x7, 46, 4);
@@ -24,11 +24,11 @@ static void mcs_scom(uint8_t chip, chiplet_id_t chiplet)
 		/* MC01_PBI01_SCOMFIR_MCPERF1_ENABLE_PREFETCH_PROMOTE_ON */
 		data |= PPC_BIT(63);
 
-		write_rscom_for_chiplet(chip, chiplet, 0x5010810, data);
+		write_scom_for_chiplet(chip, chiplet, 0x5010810, data);
 	}
 
 	{
-		data = read_rscom_for_chiplet(chip, chiplet, 0x5010811);
+		data = read_scom_for_chiplet(chip, chiplet, 0x5010811);
 
 		/* MC01_PBI01_SCOMFIR_MCMODE0_ENABLE_CENTAUR_SYNC_ON */
 		data |= PPC_BIT(20);
@@ -45,24 +45,24 @@ static void mcs_scom(uint8_t chip, chiplet_id_t chiplet)
 		/* MC01_PBI01_SCOMFIR_MCMODE0_FORCE_COMMANDLIST_VALID_ON */
 		data |= PPC_BIT(17);
 
-		write_rscom_for_chiplet(chip, chiplet, 0x5010811, data);
+		write_scom_for_chiplet(chip, chiplet, 0x5010811, data);
 	}
 	{
-		data = read_rscom_for_chiplet(chip, chiplet, 0x5010812);
+		data = read_scom_for_chiplet(chip, chiplet, 0x5010812);
 
 		/* MC01_PBI01_SCOMFIR_MCMODE1_DISABLE_FP_M_BIT_ON */
 		data |= PPC_BIT(10);
 		PPC_INSERT(data, 0x40, 33, 19);
 
-		write_rscom_for_chiplet(chip, chiplet, 0x5010812, data);
+		write_scom_for_chiplet(chip, chiplet, 0x5010812, data);
 	}
 	{
-		data = read_rscom_for_chiplet(chip, chiplet, 0x5010813);
+		data = read_scom_for_chiplet(chip, chiplet, 0x5010813);
 		PPC_INSERT(data, 0x8, 24, 16);
-		write_rscom_for_chiplet(chip, chiplet, 0x5010813, data);
+		write_scom_for_chiplet(chip, chiplet, 0x5010813, data);
 	}
 	{
-		data = read_rscom_for_chiplet(chip, chiplet, 0x501081B);
+		data = read_scom_for_chiplet(chip, chiplet, 0x501081B);
 
 		/* MC01_PBI01_SCOMFIR_MCTO_SELECT_PB_HANG_PULSE_ON */
 		data |= PPC_BIT(0);
@@ -76,7 +76,7 @@ static void mcs_scom(uint8_t chip, chiplet_id_t chiplet)
 		PPC_INSERT(data, 0x1, 24, 8);
 		PPC_INSERT(data, 0x7, 5, 3);
 
-		write_rscom_for_chiplet(chip, chiplet, 0x501081B, data);
+		write_scom_for_chiplet(chip, chiplet, 0x501081B, data);
 	}
 }
 
@@ -85,20 +85,20 @@ static void fbc_ioo_tl_scom(uint8_t chip)
 	uint64_t data;
 
 	/* PB_IOO_SCOM_A0_MODE_BLOCKED */
-	rscom_or(chip, 0x501380A, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
+	scom_or(chip, 0x501380A, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
 
 	/* PB_IOO_SCOM_A1_MODE_BLOCKED */
-	rscom_or(chip, 0x501380B, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
+	scom_or(chip, 0x501380B, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
 
 	/* PB_IOO_SCOM_A2_MODE_BLOCKED */
-	rscom_or(chip, 0x501380C, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
+	scom_or(chip, 0x501380C, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
 
 	/* PB_IOO_SCOM_A3_MODE_BLOCKED */
-	rscom_or(chip, 0x501380D, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
+	scom_or(chip, 0x501380D, PPC_BIT(20) | PPC_BIT(25) | PPC_BIT(52) | PPC_BIT(57));
 
 	/* 0x5013810, 0x5013811, 0x5013812 and 0x5013813 are not modified */
 
-	data = read_rscom(chip, 0x5013823);
+	data = read_scom(chip, 0x5013823);
 
 	data &= ~PPC_BIT(0);  // PB_IOO_SCOM_PB_CFG_IOO01_IS_LOGICAL_PAIR_OFF
 	data &= ~PPC_BIT(1);  // PB_IOO_SCOM_PB_CFG_IOO23_IS_LOGICAL_PAIR_OFF
@@ -109,7 +109,7 @@ static void fbc_ioo_tl_scom(uint8_t chip)
 	data &= ~PPC_BIT(10); // PB_IOO_SCOM_LINKS45_TOD_ENABLE_OFF
 	data &= ~PPC_BIT(11); // PB_IOO_SCOM_LINKS67_TOD_ENABLE_OFF
 
-	write_rscom(chip, 0x5013823, data);
+	write_scom(chip, 0x5013823, data);
 
 	/* 0x5013824 is not modified */
 }
@@ -119,7 +119,7 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 	uint64_t data;
 
 	{
-		data = read_rscom(chip, 0x2011041);
+		data = read_scom(chip, 0x2011041);
 
 		data |= PPC_BIT(63); // NX_DMA_CH0_EFT_ENABLE_ON
 		data |= PPC_BIT(62); // NX_DMA_CH1_EFT_ENABLE_ON
@@ -127,10 +127,10 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 		data |= PPC_BIT(57); // NX_DMA_CH3_SYM_ENABLE_ON
 		data |= PPC_BIT(61); // NX_DMA_CH4_GZIP_ENABLE_ON
 
-		write_rscom(chip, 0x2011041, data);
+		write_scom(chip, 0x2011041, data);
 	}
 	{
-		data = read_rscom(chip, 0x2011042);
+		data = read_scom(chip, 0x2011042);
 
 		PPC_INSERT(data, 0xF, 8, 4);  // NX_DMA_GZIPCOMP_MAX_INRD_MAX_15_INRD
 		PPC_INSERT(data, 0xF, 12, 4); // NX_DMA_GZIPDECOMP_MAX_INRD_MAX_15_INRD
@@ -144,10 +144,10 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 		data |= PPC_BIT(17);  // NX_DMA_GZIP_DECOMP_PREFETCH_ENABLE_ON
 		data &= ~PPC_BIT(56); // NX_DMA_EFT_SPBC_WRITE_ENABLE_OFF
 
-		write_rscom(chip, 0x2011042, data);
+		write_scom(chip, 0x2011042, data);
 	}
 	{
-		data = read_rscom(chip, 0x201105C);
+		data = read_scom(chip, 0x201105C);
 
 		PPC_INSERT(data, 0x9, 1, 4);  // NX_DMA_CH0_WATCHDOG_REF_DIV_DIVIDE_BY_512
 		PPC_INSERT(data, 0x9, 6, 4);  // NX_DMA_CH1_WATCHDOG_REF_DIV_DIVIDE_BY_512
@@ -163,10 +163,10 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 		data |= PPC_BIT(20); // NX_DMA_CH4_WATCHDOG_TIMER_ENBL_ON
 		data |= PPC_BIT(25); // NX_DMA_DMA_HANG_TIMER_ENBL_ON
 
-		write_rscom(chip, 0x201105C, data);
+		write_scom(chip, 0x201105C, data);
 	}
 	{
-		data = read_rscom(chip, 0x2011087);
+		data = read_scom(chip, 0x2011087);
 
 		data &= ~0x93EFDFFF3FF00000;
 		data |= 0x48102000C0000000;
@@ -176,10 +176,10 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 		else
 			data |= 0x2400000000000000;
 
-		write_rscom(chip, 0x2011087, data);
+		write_scom(chip, 0x2011087, data);
 	}
 	{
-		data = read_rscom(chip, 0x2011095);
+		data = read_scom(chip, 0x2011095);
 
 		data |= PPC_BIT(24);  // NX_PBI_CQ_WRAP_NXCQ_SCOM_SKIP_G_ON
 		data |= PPC_BIT(1);   // NX_PBI_CQ_WRAP_NXCQ_SCOM_DMA_WR_DISABLE_GROUP_ON
@@ -199,18 +199,18 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 		PPC_INSERT(data, 0xFC, 40, 8);
 		PPC_INSERT(data, 0xFC, 48, 8);
 
-		write_rscom(chip, 0x2011095, data);
+		write_scom(chip, 0x2011095, data);
 	}
 	{
-		data = read_rscom(chip, 0x20110D6);
+		data = read_scom(chip, 0x20110D6);
 
 		PPC_INSERT(data, 0x2, 9, 3);
 		data |= PPC_BIT(6); // NX_PBI_DISABLE_PROMOTE_ON
 
-		write_rscom(chip, 0x20110D6, data);
+		write_scom(chip, 0x20110D6, data);
 	}
 	{
-		data = read_rscom(chip, 0x2011107);
+		data = read_scom(chip, 0x2011107);
 
 		data &= ~0xF0839FFFC2FFC000;
 		data |= 0x0A7400003D000000;
@@ -220,44 +220,44 @@ static void nx_scom(uint8_t chip, uint8_t dd)
 		else
 			data |= 0x0508600000000000;
 
-		write_rscom(chip, 0x2011107, data);
+		write_scom(chip, 0x2011107, data);
 	}
 
-	rscom_and_or(chip, 0x2011083, ~0xEEF8FF9CFD000000, 0x1107006302F00000);
-	rscom_and(chip, 0x2011086, ~0xFFFFFFFFFFF00000);
-	rscom_and_or(chip, 0x20110A8, ~0x0FFFF00000000000, 0x0888800000000000);
-	rscom_and_or(chip, 0x20110C3, ~0x0000001F00000000, 0x0000000080000000);
-	rscom_and_or(chip, 0x20110C4, ~PPC_BITMASK(27, 35), PPC_PLACE(0x8, 27, 9));
-	rscom_and_or(chip, 0x20110C5, ~PPC_BITMASK(27, 35), PPC_PLACE(0x8, 27, 9));
-	rscom_or(chip, 0x20110D5, PPC_BIT(1)); // NX_PBI_PBI_UMAC_CRB_READS_ENBL_ON
-	rscom_and_or(chip, 0x2011103, ~0xCF7DEF81BF003000, 0x3082107E40FFC000);
-	rscom_and(chip, 0x2011106, ~0xFFFFFFFFFFFFC000);
+	scom_and_or(chip, 0x2011083, ~0xEEF8FF9CFD000000, 0x1107006302F00000);
+	scom_and(chip, 0x2011086, ~0xFFFFFFFFFFF00000);
+	scom_and_or(chip, 0x20110A8, ~0x0FFFF00000000000, 0x0888800000000000);
+	scom_and_or(chip, 0x20110C3, ~0x0000001F00000000, 0x0000000080000000);
+	scom_and_or(chip, 0x20110C4, ~PPC_BITMASK(27, 35), PPC_PLACE(0x8, 27, 9));
+	scom_and_or(chip, 0x20110C5, ~PPC_BITMASK(27, 35), PPC_PLACE(0x8, 27, 9));
+	scom_or(chip, 0x20110D5, PPC_BIT(1)); // NX_PBI_PBI_UMAC_CRB_READS_ENBL_ON
+	scom_and_or(chip, 0x2011103, ~0xCF7DEF81BF003000, 0x3082107E40FFC000);
+	scom_and(chip, 0x2011106, ~0xFFFFFFFFFFFFC000);
 }
 
 static void cxa_scom(uint8_t chip, uint8_t dd)
 {
 	uint64_t data;
 
-	data = read_rscom(chip, 0x2010803);
+	data = read_scom(chip, 0x2010803);
 	data &= ~PPC_BITMASK(0, 52);
 	data |= (dd == 0x20 ? 0x801B1F98C8717000 : 0x801B1F98D8717000);
-	write_rscom(chip, 0x2010803, data);
+	write_scom(chip, 0x2010803, data);
 
-	data = read_rscom(chip, 0x2010818);
+	data = read_scom(chip, 0x2010818);
 	data &= ~PPC_BIT(1);          // CAPP0_CXA_TOP_CXA_APC0_APCCTL_ADR_BAR_MODE_OFF
 	data |= PPC_BIT(6);           // CAPP0_CXA_TOP_CXA_APC0_APCCTL_SKIP_G_ON
 	data &= ~PPC_BITMASK(21, 24); // ATTR_FABRIC_ADDR_EXTENSION_GROUP_ID
 	data &= ~PPC_BITMASK(25, 27); // ATTR_FABRIC_ADDR_EXTENSION_CHIP_ID
 	data |= PPC_BIT(4);           // CAPP0_CXA_TOP_CXA_APC0_APCCTL_DISABLE_G_ON
 	data |= PPC_BIT(3);           // CAPP0_CXA_TOP_CXA_APC0_APCCTL_DISABLE_VG_NOT_SYS_ON
-	write_rscom(chip, 0x2010818, data);
+	write_scom(chip, 0x2010818, data);
 
-	rscom_and(chip, 0x2010806, ~PPC_BITMASK(0, 52));
-	rscom_or(chip, 0x2010807, PPC_BIT(2) | PPC_BIT(8) | PPC_BIT(34) | PPC_BIT(44));
-	rscom_and(chip, 0x2010819, ~PPC_BITMASK(4, 7));
-	rscom_and_or(chip, 0x201081B,
-		     ~PPC_BITMASK(45, 51), PPC_PLACE(0x7, 45, 3) | PPC_PLACE(0x2, 48, 4));
-	rscom_and_or(chip, 0x201081C, ~PPC_BITMASK(18, 21), PPC_PLACE(0x1, 18, 4));
+	scom_and(chip, 0x2010806, ~PPC_BITMASK(0, 52));
+	scom_or(chip, 0x2010807, PPC_BIT(2) | PPC_BIT(8) | PPC_BIT(34) | PPC_BIT(44));
+	scom_and(chip, 0x2010819, ~PPC_BITMASK(4, 7));
+	scom_and_or(chip, 0x201081B,
+		    ~PPC_BITMASK(45, 51), PPC_PLACE(0x7, 45, 3) | PPC_PLACE(0x2, 48, 4));
+	scom_and_or(chip, 0x201081C, ~PPC_BITMASK(18, 21), PPC_PLACE(0x1, 18, 4));
 }
 
 static void int_scom(uint8_t chip, uint8_t dd)
@@ -268,38 +268,38 @@ static void int_scom(uint8_t chip, uint8_t dd)
 	 * [5-8]  ATTR_FABRIC_ADDR_EXTENSION_GROUP_ID
 	 * [9-11] ATTR_FABRIC_ADDR_EXTENSION_CHIP_ID
 	 */
-	rscom_and_or(chip, 0x501300A, ~(PPC_BITMASK(0, 1) | PPC_BITMASK(5, 11)), PPC_BIT(1));
+	scom_and_or(chip, 0x501300A, ~(PPC_BITMASK(0, 1) | PPC_BITMASK(5, 11)), PPC_BIT(1));
 
-	rscom_or(chip, 0x5013021,
-		 PPC_BIT(46) | // INT_CQ_PBO_CTL_DISABLE_VG_NOT_SYS_ON
-		 PPC_BIT(47) | // INT_CQ_PBO_CTL_DISABLE_G_ON
-		 PPC_BIT(49));
+	scom_or(chip, 0x5013021,
+		PPC_BIT(46) | // INT_CQ_PBO_CTL_DISABLE_VG_NOT_SYS_ON
+		PPC_BIT(47) | // INT_CQ_PBO_CTL_DISABLE_G_ON
+		PPC_BIT(49));
 
 	if (dd <= 0x20)
-		write_rscom(chip, 0x5013033, 0x2000005C040281C3);
+		write_scom(chip, 0x5013033, 0x2000005C040281C3);
 	else
-		write_rscom(chip, 0x5013033, 0x0000005C040081C3);
+		write_scom(chip, 0x5013033, 0x0000005C040081C3);
 
-	write_rscom(chip, 0x5013036, 0);
-	write_rscom(chip, 0x5013037, 0x9554021F80110E0C);
+	write_scom(chip, 0x5013036, 0);
+	write_scom(chip, 0x5013037, 0x9554021F80110E0C);
 
-	rscom_and_or(chip, 0x5013130,
-		     ~(PPC_BITMASK(2, 7) | PPC_BITMASK(10, 15)),
-		     PPC_PLACE(0x18, 2, 6) | PPC_PLACE(0x18, 10, 6));
+	scom_and_or(chip, 0x5013130,
+		    ~(PPC_BITMASK(2, 7) | PPC_BITMASK(10, 15)),
+		    PPC_PLACE(0x18, 2, 6) | PPC_PLACE(0x18, 10, 6));
 
-	write_rscom(chip, 0x5013140, 0x050043EF00100020);
-	write_rscom(chip, 0x5013141, 0xFADFBB8CFFAFFFD7);
-	write_rscom(chip, 0x5013178, 0x0002000610000000);
+	write_scom(chip, 0x5013140, 0x050043EF00100020);
+	write_scom(chip, 0x5013141, 0xFADFBB8CFFAFFFD7);
+	write_scom(chip, 0x5013178, 0x0002000610000000);
 
-	rscom_and_or(chip, 0x501320E, ~PPC_BITMASK(0, 47), PPC_PLACE(0x626222024216, 0, 48));
-	rscom_and_or(chip, 0x5013214, ~PPC_BITMASK(16, 31), PPC_PLACE(0x5BBF, 16, 16));
-	rscom_and_or(chip, 0x501322B, ~PPC_BITMASK(58, 63), PPC_PLACE(0x18, 58, 6));
+	scom_and_or(chip, 0x501320E, ~PPC_BITMASK(0, 47), PPC_PLACE(0x626222024216, 0, 48));
+	scom_and_or(chip, 0x5013214, ~PPC_BITMASK(16, 31), PPC_PLACE(0x5BBF, 16, 16));
+	scom_and_or(chip, 0x501322B, ~PPC_BITMASK(58, 63), PPC_PLACE(0x18, 58, 6));
 
 	if (dd == 0x20) {
-		rscom_and_or(chip, 0x5013272,
-			     ~PPC_BITMASK(0, 43), PPC_PLACE(0x0002C018006, 0, 44));
-		rscom_and_or(chip, 0x5013273,
-			     ~PPC_BITMASK(0, 43), PPC_PLACE(0xFFFCFFEFFFA, 0, 44));
+		scom_and_or(chip, 0x5013272,
+			    ~PPC_BITMASK(0, 43), PPC_PLACE(0x0002C018006, 0, 44));
+		scom_and_or(chip, 0x5013273,
+			    ~PPC_BITMASK(0, 43), PPC_PLACE(0xFFFCFFEFFFA, 0, 44));
 	}
 }
 
@@ -307,21 +307,21 @@ static void vas_scom(uint8_t chip, uint8_t dd)
 {
 	uint64_t data;
 
-	rscom_and_or(chip, 0x3011803, ~PPC_BITMASK(0, 53), 0x00210102540D7C00);
-	rscom_and(chip, 0x3011806, ~PPC_BITMASK(0, 53));
+	scom_and_or(chip, 0x3011803, ~PPC_BITMASK(0, 53), 0x00210102540D7C00);
+	scom_and(chip, 0x3011806, ~PPC_BITMASK(0, 53));
 
-	data = read_rscom(chip, 0x3011807);
+	data = read_scom(chip, 0x3011807);
 	data &= ~PPC_BITMASK(0, 53);
 	data |= (dd == 0x20 ? 0x00DD020180000000 : 0x00DF020180000000);
-	write_rscom(chip, 0x3011807, data);
+	write_scom(chip, 0x3011807, data);
 
 	/*
 	 * [0-3] ATTR_FABRIC_ADDR_EXTENSION_GROUP_ID
 	 * [4-6] ATTR_FABRIC_ADDR_EXTENSION_CHIP_ID
 	 */
-	rscom_and(chip, 0x301184D, ~PPC_BITMASK(0, 6));
+	scom_and(chip, 0x301184D, ~PPC_BITMASK(0, 6));
 
-	data = read_rscom(chip, 0x301184E);
+	data = read_scom(chip, 0x301184E);
 	data &= ~PPC_BIT(13); // SOUTH_VA_EG_SCF_ADDR_BAR_MODE_OFF
 	data |= PPC_BIT(14);  // SOUTH_VA_EG_SCF_SKIP_G_ON
 	data |= PPC_BIT(1);   // SOUTH_VA_EG_SCF_DISABLE_G_WR_ON
@@ -330,10 +330,10 @@ static void vas_scom(uint8_t chip, uint8_t dd)
 	data |= PPC_BIT(6);   // SOUTH_VA_EG_SCF_DISABLE_VG_RD_ON
 	PPC_INSERT(data, 0xFC, 20, 8);
 	PPC_INSERT(data, 0xFC, 28, 8);
-	write_rscom(chip, 0x301184E, data);
+	write_scom(chip, 0x301184E, data);
 
 	if (dd == 0x20)
-		rscom_or(chip, 0x301184F, PPC_BIT(0));
+		scom_or(chip, 0x301184F, PPC_BIT(0));
 }
 
 static void chiplet_scominit(uint8_t chip, uint8_t dd)
@@ -366,19 +366,19 @@ static void chiplet_scominit(uint8_t chip, uint8_t dd)
 	 * present units, and code here will be run to mask resources associated with
 	 * non-functional units.
 	 */
-	if (read_rscom(chip, PU_PB_CENT_SM0_PB_CENT_FIR_REG) &
+	if (read_scom(chip, PU_PB_CENT_SM0_PB_CENT_FIR_REG) &
 	    PPC_BIT(PU_PB_CENT_SM0_PB_CENT_FIR_MASK_REG_SPARE_13)) {
 		/* Masking XBUS FIR resources for unused links */
 
 		/* XBUS0 FBC TL */
-		write_rscom(chip, PU_PB_IOE_FIR_MASK_REG_OR, FBC_IOE_TL_FIR_MASK_X0_NF);
+		write_scom(chip, PU_PB_IOE_FIR_MASK_REG_OR, FBC_IOE_TL_FIR_MASK_X0_NF);
 		/* XBUS0 EXTFIR */
-		write_rscom(chip, PU_PB_CENT_SM1_EXTFIR_MASK_REG_OR, FBC_EXT_FIR_MASK_X0_NF);
+		write_scom(chip, PU_PB_CENT_SM1_EXTFIR_MASK_REG_OR, FBC_EXT_FIR_MASK_X0_NF);
 
 		/* XBUS2 FBC TL */
-		write_rscom(chip, PU_PB_IOE_FIR_MASK_REG_OR, FBC_IOE_TL_FIR_MASK_X2_NF);
+		write_scom(chip, PU_PB_IOE_FIR_MASK_REG_OR, FBC_IOE_TL_FIR_MASK_X2_NF);
 		/* XBUS2 EXTFIR */
-		write_rscom(chip, PU_PB_CENT_SM1_EXTFIR_MASK_REG_OR, FBC_EXT_FIR_MASK_X2_NF);
+		write_scom(chip, PU_PB_CENT_SM1_EXTFIR_MASK_REG_OR, FBC_EXT_FIR_MASK_X2_NF);
 	}
 
 	fbc_ioo_tl_scom(chip);
@@ -388,22 +388,22 @@ static void chiplet_scominit(uint8_t chip, uint8_t dd)
 	vas_scom(chip, dd);
 
 	/* Setup NMMU epsilon write cycles */
-	rscom_and_or(chip, PU_NMMU_MM_EPSILON_COUNTER_VALUE,
-		     ~(PPC_BITMASK(0, 11) | PPC_BITMASK(16, 27)),
-		     PPC_PLACE(pb_cfg->eps_w[0], 0, 12) | PPC_PLACE(pb_cfg->eps_w[1], 16, 12));
+	scom_and_or(chip, PU_NMMU_MM_EPSILON_COUNTER_VALUE,
+		    ~(PPC_BITMASK(0, 11) | PPC_BITMASK(16, 27)),
+		    PPC_PLACE(pb_cfg->eps_w[0], 0, 12) | PPC_PLACE(pb_cfg->eps_w[1], 16, 12));
 }
 
 static void psi_scom(uint8_t chip)
 {
-	rscom_or(chip, 0x4011803, PPC_BITMASK(0, 6));
-	rscom_and(chip, 0x4011806, ~PPC_BITMASK(0, 6));
-	rscom_and(chip, 0x4011807, ~PPC_BITMASK(0, 6));
+	scom_or(chip, 0x4011803, PPC_BITMASK(0, 6));
+	scom_and(chip, 0x4011806, ~PPC_BITMASK(0, 6));
+	scom_and(chip, 0x4011807, ~PPC_BITMASK(0, 6));
 
-	rscom_and_or(chip, 0x5012903, ~PPC_BITMASK(0, 28), PPC_PLACE(0x7E040DF, 0, 29));
-	rscom_and_or(chip, 0x5012906, ~PPC_BITMASK(0, 28), PPC_PLACE(0x0, 0, 29));
-	rscom_and_or(chip, 0x5012907, ~PPC_BITMASK(0, 28), PPC_PLACE(0x18050020, 0, 29));
+	scom_and_or(chip, 0x5012903, ~PPC_BITMASK(0, 28), PPC_PLACE(0x7E040DF, 0, 29));
+	scom_and_or(chip, 0x5012906, ~PPC_BITMASK(0, 28), PPC_PLACE(0x0, 0, 29));
+	scom_and_or(chip, 0x5012907, ~PPC_BITMASK(0, 28), PPC_PLACE(0x18050020, 0, 29));
 
-	rscom_and(chip, 0x501290F, ~(PPC_BITMASK(16, 27) | PPC_BITMASK(48, 52)));
+	scom_and(chip, 0x501290F, ~(PPC_BITMASK(16, 27) | PPC_BITMASK(48, 52)));
 }
 
 void istep_10_6(uint8_t chips)
