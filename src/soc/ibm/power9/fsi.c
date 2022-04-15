@@ -77,8 +77,8 @@ enum {
 
 void fsi_reset_pib2opb(uint8_t chip)
 {
-	write_rscom(chip, FSI2OPB_OFFSET_0 | OPB_REG_RES, 0x8000000000000000);
-	write_rscom(chip, FSI2OPB_OFFSET_0 | OPB_REG_STAT, 0x8000000000000000);
+	write_scom(chip, FSI2OPB_OFFSET_0 | OPB_REG_RES, 0x8000000000000000);
+	write_scom(chip, FSI2OPB_OFFSET_0 | OPB_REG_STAT, 0x8000000000000000);
 }
 
 static void cleanup_port_maeb_error(uint8_t port)
@@ -175,7 +175,7 @@ static void basic_master_init(void)
 	fsi_reset_pib2opb(chip);
 
 	/* Ensure we don't have any errors before we even start */
-	tmp = read_rscom(0, FSI2OPB_OFFSET_0 | OPB_REG_STAT);
+	tmp = read_scom(0, FSI2OPB_OFFSET_0 | OPB_REG_STAT);
 	if (tmp & OPB_STAT_NON_MFSI_ERR)
 		die("Unclearable errors on MFSI initialization: 0x%016llx\n", tmp);
 
@@ -341,10 +341,10 @@ static inline uint64_t poll_opb(uint8_t chip)
 
 	/* Timeout after 10ms, check every 10us, supposedly there is hardware
 	 * timeout after 1ms */
-	tmp = read_rscom(0, stat_addr);
+	tmp = read_scom(0, stat_addr);
 	for (i = 0; (tmp & OPB_STAT_BUSY) && !(tmp & err_mask) && i < MAX_WAIT_LOOPS; i++) {
 		udelay(TIMEOUT_STEP_US);
-		tmp = read_rscom(0, stat_addr);
+		tmp = read_scom(0, stat_addr);
 	}
 
 	if (tmp & err_mask)
@@ -393,7 +393,7 @@ uint32_t fsi_op(uint8_t chip, uint32_t addr, uint32_t data, bool is_read, uint8_
 	if (!is_read)
 		cmd |= WRITE_NOT_READ;
 
-	write_rscom(0, FSI2OPB_OFFSET_0 | OPB_REG_CMD, cmd);
+	write_scom(0, FSI2OPB_OFFSET_0 | OPB_REG_CMD, cmd);
 
 	/* Poll for complete and get the data back. */
 	response = poll_opb(chip);

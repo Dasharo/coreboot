@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
-/* Avoids defining read/write_rscom as a macro */
+/* Avoids defining read/write_scom as a macro */
 #define SKIP_SCOM_DEBUG
 
 #include <cpu/power/scom.h>
@@ -22,7 +22,7 @@ void switch_secondary_scom_to_xscom(void)
 	write_scom_secondary = write_xscom;
 }
 
-uint64_t read_rscom(uint8_t chip, uint64_t addr)
+uint64_t read_scom(uint8_t chip, uint64_t addr)
 {
 	if (chip == 0)
 		return read_xscom(chip, addr);
@@ -30,7 +30,7 @@ uint64_t read_rscom(uint8_t chip, uint64_t addr)
 		return read_scom_secondary(chip, addr);
 }
 
-void write_rscom(uint8_t chip, uint64_t addr, uint64_t data)
+void write_scom(uint8_t chip, uint64_t addr, uint64_t data)
 {
 	if (chip == 0)
 		write_xscom(chip, addr, data);
