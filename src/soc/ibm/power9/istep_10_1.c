@@ -8,7 +8,6 @@
 #include <delay.h>
 
 #include "fsi.h"
-#include "xbus.h"
 
 enum build_smp_adu_action {
 	SWITCH_AB = 1,
@@ -171,7 +170,7 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 	uint64_t tmp;
 
 	val = PPC_PLACE(0x08, 54, 5) | PPC_PLACE(0x03, 59, 5);
-	put_scom(chip, 0x90000CB205012011, val);
+	write_scom(chip, 0x90000CB205012011, val);
 
 	tmp = 0;
 	if (100 * xbus_freq_mhz >= 120 * pb_freq_mhz)
@@ -183,60 +182,60 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 	else if (125 * xbus_freq_mhz >= 100 * pb_freq_mhz)
 		tmp = 0x0C;
 	val = PPC_PLACE(tmp, 54, 5) | PPC_PLACE(3, 59, 5);
-	put_scom(chip, 0x90000CB305012011, val);
+	write_scom(chip, 0x90000CB305012011, val);
 
 	val = PPC_PLACE(0x10, 51, 5) | PPC_PLACE(2, 58, 2) | PPC_PLACE(0xF, 60, 4);
-	put_scom(chip, 0x90000CDB05011C11, val);
+	write_scom(chip, 0x90000CDB05011C11, val);
 
 	val = PPC_PLACE(7, 49, 3) | PPC_PLACE(4, 52, 6);
-	put_scom(chip, 0x90000CF405011C11, val);
+	write_scom(chip, 0x90000CF405011C11, val);
 
 	val = PPC_PLACE(0xC, 45, 4) | PPC_PLACE(1, 57, 2);
-	put_scom(chip, 0x90000D3F05011C11, val);
+	write_scom(chip, 0x90000D3F05011C11, val);
 
 	val = PPC_PLACE(3, 41, 2) | PPC_PLACE(1, 43, 2) | PPC_PLACE(3, 45, 4)
 	    | PPC_PLACE(0xC0, 49, 8);
-	put_scom(chip, 0x90000D7805011C11, val);
+	write_scom(chip, 0x90000D7805011C11, val);
 
 	val = PPC_PLACE(8, 38, 4) | PPC_PLACE(4, 42, 4) | PPC_PLACE(1, 57, 3)
 	    | PPC_PLACE(0xF, 60, 4);
-	put_scom(chip, 0x90000DAA05011C11, val);
+	write_scom(chip, 0x90000DAA05011C11, val);
 
 	val = PPC_PLACE(4, 36, 3) | PPC_PLACE(0x20, 41, 8) | PPC_BIT(49) | PPC_BIT(51)
 	    | PPC_BIT(52) | PPC_BIT(53) | PPC_BIT(55) | PPC_BIT(56) | PPC_BIT(57)
 	    | PPC_PLACE(0xF, 60, 4);
-	put_scom(chip, 0x90000DCC05011C11, val);
+	write_scom(chip, 0x90000DCC05011C11, val);
 
 	val = PPC_PLACE(1, 41, 3) | PPC_PLACE(1, 44, 3) | PPC_PLACE(2, 47, 3)
 	    | PPC_PLACE(3, 50, 3) | PPC_PLACE(5, 53, 3) | PPC_PLACE(5, 57, 3);
-	put_scom(chip, 0x90000E0605011C11, val);
+	write_scom(chip, 0x90000E0605011C11, val);
 
 	val = PPC_PLACE(0x06, 33, 5) | PPC_PLACE(0x0D, 38, 5) | PPC_PLACE(0x1E, 48, 5)
 	    | PPC_PLACE(0x19, 53, 5) | PPC_BIT(63);
-	put_scom(chip, 0x90000E4305011C11, val);
+	write_scom(chip, 0x90000E4305011C11, val);
 
 	val = PPC_PLACE(0x400, 22, 12) | PPC_PLACE(0x400, 34, 12)
 	    | PPC_PLACE(2, 46, 3) | PPC_PLACE(2, 49, 3) | PPC_PLACE(2, 52, 3)
 	    | PPC_PLACE(2, 55, 3) | PPC_PLACE(2, 58, 3) | PPC_PLACE(2, 61, 3);
-	put_scom(chip, 0x90000EA205011C11, val);
+	write_scom(chip, 0x90000EA205011C11, val);
 
 	/* 44 - set because ATTR_CHIP_EC_FEATURE_HW409019 == 1 */
 	val = PPC_PLACE(0x0C, 20, 8) | PPC_BIT(44);
-	put_scom(chip, 0x90000EC705011C11, val);
+	write_scom(chip, 0x90000EC705011C11, val);
 
 	val = PPC_PLACE(0x4, 18, 10) | PPC_PLACE(0x141, 28, 12) | PPC_PLACE(0x21B, 40, 12)
 	    | PPC_PLACE(0x30D, 52, 12);
-	put_scom(chip, 0x90000EE105011C11, val);
+	write_scom(chip, 0x90000EE105011C11, val);
 
 	val = PPC_PLACE(1, 25, 3) | PPC_PLACE(1, 28, 3) | PPC_PLACE(2, 31, 3)
 	    | PPC_PLACE(3, 34, 3) | PPC_PLACE(5, 37, 3) | PPC_PLACE(1, 49, 3)
 	    | PPC_PLACE(1, 52, 3) | PPC_PLACE(2, 55, 3) | PPC_PLACE(3, 58, 3)
 	    | PPC_PLACE(5, 61, 3);
-	put_scom(chip, 0x90000F0505011C11, val);
+	write_scom(chip, 0x90000F0505011C11, val);
 
 	val = PPC_PLACE(0x7, 14, 10) | PPC_PLACE(0x5, 24, 10) | PPC_PLACE(0x5, 34, 10)
 	    | PPC_PLACE(0x4, 44, 10) | PPC_PLACE(0x5, 54, 10);
-	put_scom(chip, 0x90000F2005011C11, val);
+	write_scom(chip, 0x90000F2005011C11, val);
 
 	val = PPC_BIT(20) | PPC_PLACE(3, 32, 2) | PPC_PLACE(7, 34, 3) | PPC_PLACE(3, 37, 2)
 	    | PPC_PLACE(1, 41, 1) | PPC_PLACE(1, 42, 1);
@@ -244,15 +243,15 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 		val |= PPC_PLACE(3, 24, 2) | PPC_PLACE(3, 44, 2);
 	tmp = (pb_cfg->core_ceiling_ratio == FABRIC_CORE_CEILING_RATIO_RATIO_8_8 ? 3 : 2);
 	val |= PPC_PLACE(tmp, 28, 2);
-	put_scom(chip, 0x90000F4005011811, val);
-	put_scom(chip, 0x90000F4005012011, val);
+	write_scom(chip, 0x90000F4005011811, val);
+	write_scom(chip, 0x90000F4005012011, val);
 
 	val = PPC_BIT(12) | PPC_PLACE(4, 13, 4) | PPC_PLACE(4, 17, 4) | PPC_PLACE(4, 21, 4)
 	    | PPC_PLACE(1, 25, 3) | PPC_PLACE(1, 28, 3) | PPC_PLACE(1, 31, 3)
 	    | PPC_PLACE(0xFE, 34, 8) | PPC_PLACE(0xFE, 42, 8) | PPC_PLACE(1, 50, 2)
 	    | PPC_PLACE(2, 54, 3) | PPC_PLACE(2, 57, 2) | PPC_BIT(60) | PPC_BIT(61)
 	    | PPC_BIT(63);
-	put_scom(chip, 0x90000F4D05011C11, val);
+	write_scom(chip, 0x90000F4D05011C11, val);
 
 	val = PPC_BIT(35) | PPC_PLACE(1, 36, 2) | PPC_PLACE(2, 39, 2) | PPC_BIT(49)
 	    | PPC_PLACE(1, 51, 2);
@@ -273,8 +272,8 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 		tmp = 2;
 	val |= PPC_PLACE(tmp, 44, 2);
 
-	put_scom(chip, 0x90000E6105011811, val);
-	put_scom(chip, 0x90000E6105012011, val);
+	write_scom(chip, 0x90000E6105011811, val);
+	write_scom(chip, 0x90000E6105012011, val);
 }
 
 /*
@@ -289,14 +288,14 @@ static void p9_fbc_cd_hp23_scom(uint8_t chip, int seq)
 
 	val = PPC_PLACE(8, 38, 4) | PPC_PLACE(4, 42, 4) | PPC_PLACE(tmp, 50, 1)
 	    | PPC_PLACE(1, 57, 3) | PPC_PLACE(0xF, 60, 4);
-	put_scom(chip, 0x90000DAA05011C11, val);
+	write_scom(chip, 0x90000DAA05011C11, val);
 
 	val = PPC_BIT(12) | PPC_PLACE(4, 13, 4) | PPC_PLACE(4, 17, 4) | PPC_PLACE(4, 21, 4)
 	    | PPC_PLACE(1, 25, 3) | PPC_PLACE(1, 28, 3) | PPC_PLACE(1, 31, 3)
 	    | PPC_PLACE(0xFE, 34, 8) | PPC_PLACE(0xFE, 42, 8) | PPC_PLACE(1, 50, 2)
 	    | PPC_PLACE(2, 54, 3) | PPC_PLACE(2, 57, 2) | PPC_PLACE(tmp, 59, 1)
 	    | PPC_PLACE(tmp, 60, 1) | PPC_BIT(61) | PPC_BIT(63);
-	put_scom(chip, 0x90000F4D05011C11, val);
+	write_scom(chip, 0x90000F4D05011C11, val);
 }
 
 /* Set action which will occur on fabric pmisc switch command */
@@ -311,16 +310,16 @@ static void p9_adu_coherent_utils_set_switch_action(uint8_t chip, enum adu_op ad
 	if (adu_op == PRE_SWITCH_CD)
 		data |= PPC_BIT(PU_SND_MODE_REG_ENABLE_PB_SWITCH_CD);
 
-	and_or_scom(chip, PU_SND_MODE_REG, ~mask, data);
+	scom_and_or(chip, PU_SND_MODE_REG, ~mask, data);
 }
 
 static void p9_adu_coherent_utils_check_fbc_state(uint8_t chip)
 {
 	/* PU_PB_CENT_SM0_PB_CENT_MODE_PB_CENT_PBIXXX_INIT */
-	if (!(get_scom(chip, PU_PB_CENT_SM0_PB_CENT_MODE) & PPC_BIT(0)))
+	if (!(read_scom(chip, PU_PB_CENT_SM0_PB_CENT_MODE) & PPC_BIT(0)))
 		die("FBC isn't initialized!\n");
 
-	if (get_scom(chip, PU_SND_MODE_REG) & PPC_BIT(PU_SND_MODE_REG_PB_STOP))
+	if (read_scom(chip, PU_SND_MODE_REG) & PPC_BIT(PU_SND_MODE_REG_PB_STOP))
 		die("FBC isn't running!\n");
 }
 
@@ -334,7 +333,7 @@ static void lock_adu(uint8_t chip)
 	data |= PPC_BIT(PU_ALTD_CMD_REG_FBC_CLEAR_STATUS);
 
 	/* Write ADU command register to attempt lock manipulation */
-	put_scom(chip, PU_ALTD_CMD_REG, data);
+	write_scom(chip, PU_ALTD_CMD_REG, data);
 }
 
 /* Setup the value for ADU option register to enable quiesce & init around a
@@ -363,7 +362,7 @@ static void set_quiesce_init(uint8_t chip)
 	/* Setup workaround for HW397129 to re-enable fastpath for DD2 */
 	data |= PPC_BIT(PU_ALTD_OPTION_REG_FBC_ALTD_HW397129);
 
-	put_scom(chip, PU_ALTD_OPTION_REG, data);
+	write_scom(chip, PU_ALTD_OPTION_REG, data);
 }
 
 static void p9_adu_coherent_setup_adu(uint8_t chip, enum adu_op adu_op)
@@ -374,7 +373,7 @@ static void p9_adu_coherent_setup_adu(uint8_t chip, enum adu_op adu_op)
 
 	/* Write the address. Not sure if operations we support actually need
 	 * this. */
-	put_scom(chip, PU_ALTD_ADDR_REG, 0);
+	write_scom(chip, PU_ALTD_ADDR_REG, 0);
 
 	/* This routine assumes the lock is held by the caller, preserve this
 	 * locked state */
@@ -407,7 +406,7 @@ static void p9_adu_coherent_setup_adu(uint8_t chip, enum adu_op adu_op)
 	PPC_INSERT(cmd, ttype, PU_ALTD_CMD_REG_FBC_TTYPE, PU_ALTD_CMD_REG_FBC_TTYPE_LEN);
 	PPC_INSERT(cmd, tsize, PU_ALTD_CMD_REG_FBC_TSIZE, PU_ALTD_CMD_REG_FBC_TSIZE_LEN);
 
-	put_scom(chip, PU_ALTD_CMD_REG, cmd);
+	write_scom(chip, PU_ALTD_CMD_REG, cmd);
 }
 
 static void p9_adu_setup(uint8_t chip, enum adu_op adu_op)
@@ -438,7 +437,7 @@ static void p9_adu_coherent_status_check(uint8_t chip, bool is_addr_only)
 
 	//Check for a successful status 10 times
 	for (i = 0; i < 10; i++) {
-		status = get_scom(chip, PU_ALTD_STATUS_REG);
+		status = read_scom(chip, PU_ALTD_STATUS_REG);
 
 		if (!(status & PPC_BIT(PU_ALTD_STATUS_REG_FBC_ALTD_BUSY)))
 			break;
@@ -488,8 +487,8 @@ static void p9_adu_access(uint8_t chip, enum adu_op adu_op)
 	if (is_addr_only) {
 		udelay(10);
 	} else {
-		put_scom(chip, PU_ALTD_DATA_REG, 0);
-		or_scom(chip, PU_ALTD_CMD_REG, PPC_BIT(PU_ALTD_CMD_REG_FBC_START_OP));
+		write_scom(chip, PU_ALTD_DATA_REG, 0);
+		scom_or(chip, PU_ALTD_CMD_REG, PPC_BIT(PU_ALTD_CMD_REG_FBC_START_OP));
 
 		/* If it's not a cache inhibit operation, we just want to delay
 		 * for a while and then it's done */
@@ -500,7 +499,7 @@ static void p9_adu_access(uint8_t chip, enum adu_op adu_op)
 	p9_adu_coherent_status_check(chip, is_addr_only);
 
 	/* If it's the last read/write cleanup the ADU */
-	put_scom(chip, PU_ALTD_CMD_REG, 0);
+	write_scom(chip, PU_ALTD_CMD_REG, 0);
 }
 
 /* We don't write any specific data to ADU, just execute an action on it */
@@ -600,7 +599,7 @@ static void p9_fbc_ab_hp_scom(uint8_t chip)
 
 		/* *_HP_MODE_NEXT */
 
-		val = get_scom(chip, PB_HP_MODE_NEXT_SHADOWS[i]);
+		val = read_scom(chip, PB_HP_MODE_NEXT_SHADOWS[i]);
 
 		if (!is_fabric_master) {
 			val &= ~PPC_BIT(0); // PB_COM_PB_CFG_MASTER_CHIP_NEXT_OFF
@@ -616,11 +615,11 @@ static void p9_fbc_ab_hp_scom(uint8_t chip)
 
 		val &= ~PPC_BIT(29); // PB_COM_PB_CFG_HOP_MODE_NEXT_OFF
 
-		put_scom(chip, PB_HP_MODE_NEXT_SHADOWS[i], val);
+		write_scom(chip, PB_HP_MODE_NEXT_SHADOWS[i], val);
 
 		/* *_HPX_MODE_NEXT */
 
-		val = get_scom(chip, PB_HPX_MODE_NEXT_SHADOWS[i]);
+		val = read_scom(chip, PB_HPX_MODE_NEXT_SHADOWS[i]);
 
 		val |= PPC_BIT(1); // PB_COM_PB_CFG_LINK_X1_EN_NEXT_ON
 
@@ -639,7 +638,7 @@ static void p9_fbc_ab_hp_scom(uint8_t chip)
 			tmp = (cmd_rate_4b_n / cmd_rate_d) - 1;
 		PPC_INSERT(val, tmp, 56, 8);
 
-		put_scom(chip, PB_HPX_MODE_NEXT_SHADOWS[i], val);
+		write_scom(chip, PB_HPX_MODE_NEXT_SHADOWS[i], val);
 	}
 }
 
@@ -648,7 +647,7 @@ static uint64_t p9_build_smp_get_hp_ab_shadow(uint8_t chip, const uint64_t shado
 	uint64_t last_data = 0;
 
 	for (uint8_t i = 0; i < P9_BUILD_SMP_NUM_SHADOWS; i++) {
-		const uint64_t data = get_scom(chip, shadow_regs[i]);
+		const uint64_t data = read_scom(chip, shadow_regs[i]);
 
 		/* Check consistency of west/center/east register copies while
 		 * reading them */
@@ -665,7 +664,7 @@ static void p9_build_smp_set_hp_ab_shadow(uint8_t chip, const uint64_t shadow_re
 					  uint64_t data)
 {
 	for (uint8_t i = 0; i < P9_BUILD_SMP_NUM_SHADOWS; i++)
-		put_scom(chip, shadow_regs[i], data);
+		write_scom(chip, shadow_regs[i], data);
 }
 
 static void p9_build_smp_copy_hp_ab_next_curr(uint8_t chip)
