@@ -45,23 +45,23 @@ static void p9_fbc_no_hp_scom(uint8_t chip)
 	const int num_x_links_cfg = 1;
 
 	/* Power Bus PB West Mode Configuration Register */
-	uint64_t pb_west_mode = get_scom(chip, PB_WEST_MODE);
+	uint64_t pb_west_mode = read_scom(chip, PB_WEST_MODE);
 	/* Power Bus PB CENT Mode Register */
-	uint64_t pb_cent_mode = get_scom(chip, PB_CENT_MODE);
+	uint64_t pb_cent_mode = read_scom(chip, PB_CENT_MODE);
 	/* Power Bus PB CENT GP command RATE DP0 Register */
-	uint64_t pb_cent_gp_cmd_rate_dp0 = get_scom(chip, PB_CENT_GP_CMD_RATE_DP0);
+	uint64_t pb_cent_gp_cmd_rate_dp0 = read_scom(chip, PB_CENT_GP_CMD_RATE_DP0);
 	/* Power Bus PB CENT GP command RATE DP1 Register */
-	uint64_t pb_cent_gp_cmd_rate_dp1 = get_scom(chip, PB_CENT_GP_CMD_RATE_DP1);
+	uint64_t pb_cent_gp_cmd_rate_dp1 = read_scom(chip, PB_CENT_GP_CMD_RATE_DP1);
 	/* Power Bus PB CENT RGP command RATE DP0 Register */
-	uint64_t pb_cent_rgp_cmd_rate_dp0 = get_scom(chip, PB_CENT_RGP_CMD_RATE_DP0);
+	uint64_t pb_cent_rgp_cmd_rate_dp0 = read_scom(chip, PB_CENT_RGP_CMD_RATE_DP0);
 	/* Power Bus PB CENT RGP command RATE DP1 Register */
-	uint64_t pb_cent_rgp_cmd_rate_dp1 = get_scom(chip, PB_CENT_RGP_CMD_RATE_DP1);
+	uint64_t pb_cent_rgp_cmd_rate_dp1 = read_scom(chip, PB_CENT_RGP_CMD_RATE_DP1);
 	/* Power Bus PB CENT SP command RATE DP0 Register */
-	uint64_t pb_cent_sp_cmd_rate_dp0 = get_scom(chip, PB_CENT_SP_CMD_RATE_DP0);
+	uint64_t pb_cent_sp_cmd_rate_dp0 = read_scom(chip, PB_CENT_SP_CMD_RATE_DP0);
 	/* Power Bus PB CENT SP command RATE DP1 Register */
-	uint64_t pb_cent_sp_cmd_rate_dp1 = get_scom(chip, PB_CENT_SP_CMD_RATE_DP1);
+	uint64_t pb_cent_sp_cmd_rate_dp1 = read_scom(chip, PB_CENT_SP_CMD_RATE_DP1);
 	/* Power Bus PB East Mode Configuration Register */
-	uint64_t pb_east_mode = get_scom(chip, PB_EAST_MODE);
+	uint64_t pb_east_mode = read_scom(chip, PB_EAST_MODE);
 
 	if (!node_pump_mode || num_x_links_cfg == 0) {
 		pb_cent_gp_cmd_rate_dp0 = 0;
@@ -139,15 +139,15 @@ static void p9_fbc_no_hp_scom(uint8_t chip)
 	pb_east_mode &= 0xFFFFFFFC0FFFFFFF;
 	pb_east_mode |= 0x00000002A0000000;
 
-	put_scom(chip, PB_WEST_MODE, pb_west_mode);
-	put_scom(chip, PB_CENT_MODE, pb_cent_mode);
-	put_scom(chip, PB_CENT_GP_CMD_RATE_DP0, pb_cent_gp_cmd_rate_dp0);
-	put_scom(chip, PB_CENT_GP_CMD_RATE_DP1, pb_cent_gp_cmd_rate_dp1);
-	put_scom(chip, PB_CENT_RGP_CMD_RATE_DP0, pb_cent_rgp_cmd_rate_dp0);
-	put_scom(chip, PB_CENT_RGP_CMD_RATE_DP1, pb_cent_rgp_cmd_rate_dp1);
-	put_scom(chip, PB_CENT_SP_CMD_RATE_DP0, pb_cent_sp_cmd_rate_dp0);
-	put_scom(chip, PB_CENT_SP_CMD_RATE_DP1, pb_cent_sp_cmd_rate_dp1);
-	put_scom(chip, PB_EAST_MODE, pb_east_mode);
+	write_scom(chip, PB_WEST_MODE, pb_west_mode);
+	write_scom(chip, PB_CENT_MODE, pb_cent_mode);
+	write_scom(chip, PB_CENT_GP_CMD_RATE_DP0, pb_cent_gp_cmd_rate_dp0);
+	write_scom(chip, PB_CENT_GP_CMD_RATE_DP1, pb_cent_gp_cmd_rate_dp1);
+	write_scom(chip, PB_CENT_RGP_CMD_RATE_DP0, pb_cent_rgp_cmd_rate_dp0);
+	write_scom(chip, PB_CENT_RGP_CMD_RATE_DP1, pb_cent_rgp_cmd_rate_dp1);
+	write_scom(chip, PB_CENT_SP_CMD_RATE_DP0, pb_cent_sp_cmd_rate_dp0);
+	write_scom(chip, PB_CENT_SP_CMD_RATE_DP1, pb_cent_sp_cmd_rate_dp1);
+	write_scom(chip, PB_EAST_MODE, pb_east_mode);
 }
 
 static void p9_fbc_ioe_tl_scom(uint8_t chip)
@@ -174,19 +174,19 @@ static void p9_fbc_ioe_tl_scom(uint8_t chip)
 	const uint64_t dd2_lo_limit_n = pb_freq_mhz * 82;
 
 	/* Processor bus Electrical Framer/Parser 01 configuration register */
-	uint64_t pb_fp01_cfg = get_scom(chip, PB_FP01_CFG);
+	uint64_t pb_fp01_cfg = read_scom(chip, PB_FP01_CFG);
 	/* Power Bus Electrical Framer/Parser 23 Configuration Register */
-	uint64_t pb_fp23_cfg = get_scom(chip, PB_FP23_CFG);
+	uint64_t pb_fp23_cfg = read_scom(chip, PB_FP23_CFG);
 	/* Power Bus Electrical Framer/Parser 45 Configuration Register */
-	uint64_t pb_fp45_cfg = get_scom(chip, PB_FP45_CFG);
+	uint64_t pb_fp45_cfg = read_scom(chip, PB_FP45_CFG);
 	/* Power Bus Electrical Link Data Buffer 23 Configuration Register */
-	uint64_t pb_elink_data_23_cfg_reg = get_scom(chip, PB_ELINK_DATA_23_CFG_REG);
+	uint64_t pb_elink_data_23_cfg_reg = read_scom(chip, PB_ELINK_DATA_23_CFG_REG);
 	/* Power Bus Electrical Link Data Buffer 45 Configuration Register */
-	uint64_t pb_elink_data_45_cfg_reg = get_scom(chip, PB_ELINK_DATA_45_CFG_REG);
+	uint64_t pb_elink_data_45_cfg_reg = read_scom(chip, PB_ELINK_DATA_45_CFG_REG);
 	/* Power Bus Electrical Miscellaneous Configuration Register */
-	uint64_t pb_misc_cfg = get_scom(chip, PB_MISC_CFG);
+	uint64_t pb_misc_cfg = read_scom(chip, PB_MISC_CFG);
 	/* Power Bus Electrical Link Trace Configuration Register */
-	uint64_t pb_trace_cfg = get_scom(chip, PB_TRACE_CFG);
+	uint64_t pb_trace_cfg = read_scom(chip, PB_TRACE_CFG);
 
 	pb_fp01_cfg |= 0x0000084000000840;
 
@@ -219,13 +219,13 @@ static void p9_fbc_ioe_tl_scom(uint8_t chip)
 	pb_misc_cfg |= PPC_BIT(1);
 	pb_misc_cfg &= ~PPC_BIT(2);
 
-	put_scom(chip, PB_FP01_CFG, pb_fp01_cfg);
-	put_scom(chip, PB_FP23_CFG, pb_fp23_cfg);
-	put_scom(chip, PB_FP45_CFG, pb_fp45_cfg);
-	put_scom(chip, PB_ELINK_DATA_23_CFG_REG, pb_elink_data_23_cfg_reg);
-	put_scom(chip, PB_ELINK_DATA_45_CFG_REG, pb_elink_data_45_cfg_reg);
-	put_scom(chip, PB_MISC_CFG, pb_misc_cfg);
-	put_scom(chip, PB_TRACE_CFG, pb_trace_cfg);
+	write_scom(chip, PB_FP01_CFG, pb_fp01_cfg);
+	write_scom(chip, PB_FP23_CFG, pb_fp23_cfg);
+	write_scom(chip, PB_FP45_CFG, pb_fp45_cfg);
+	write_scom(chip, PB_ELINK_DATA_23_CFG_REG, pb_elink_data_23_cfg_reg);
+	write_scom(chip, PB_ELINK_DATA_45_CFG_REG, pb_elink_data_45_cfg_reg);
+	write_scom(chip, PB_MISC_CFG, pb_misc_cfg);
+	write_scom(chip, PB_TRACE_CFG, pb_trace_cfg);
 }
 
 static void p9_fbc_ioe_dl_scom(uint8_t chip)
@@ -237,11 +237,11 @@ static void p9_fbc_ioe_dl_scom(uint8_t chip)
 	};
 
 	/* ELL Configuration Register */
-	uint64_t ioel_config = get_scom(chip, IOEL_CONFIG);
+	uint64_t ioel_config = read_scom(chip, xbus_addr(IOEL_CONFIG));
 	/* ELL Replay Threshold Register */
-	uint64_t ioel_replay_threshold = get_scom(chip, IOEL_REPLAY_THRESHOLD);
+	uint64_t ioel_replay_threshold = read_scom(chip, xbus_addr(IOEL_REPLAY_THRESHOLD));
 	/* ELL SL ECC Threshold Register */
-	uint64_t ioel_sl_ecc_threshold = get_scom(chip, IOEL_SL_ECC_THRESHOLD);
+	uint64_t ioel_sl_ecc_threshold = read_scom(chip, xbus_addr(IOEL_SL_ECC_THRESHOLD));
 
 	/* ATTR_LINK_TRAIN == fapi2::ENUM_ATTR_LINK_TRAIN_BOTH (from logs) */
 	ioel_config |= 0x8000000000000000;
@@ -256,9 +256,9 @@ static void p9_fbc_ioe_dl_scom(uint8_t chip)
 	ioel_sl_ecc_threshold &= 0x7FFFFFFFFFFFFFFF;
 	ioel_sl_ecc_threshold |= 0x7F00000000000000;
 
-	put_scom(chip, IOEL_CONFIG, ioel_config);
-	put_scom(chip, IOEL_REPLAY_THRESHOLD, ioel_replay_threshold);
-	put_scom(chip, IOEL_SL_ECC_THRESHOLD, ioel_sl_ecc_threshold);
+	write_scom(chip, xbus_addr(IOEL_CONFIG), ioel_config);
+	write_scom(chip, xbus_addr(IOEL_REPLAY_THRESHOLD), ioel_replay_threshold);
+	write_scom(chip, xbus_addr(IOEL_SL_ECC_THRESHOLD), ioel_sl_ecc_threshold);
 }
 
 static void chiplet_fabric_scominit(uint8_t chip)
@@ -298,28 +298,31 @@ static void chiplet_fabric_scominit(uint8_t chip)
 	p9_fbc_ioe_tl_scom(chip);
 
 	/* TL/DL FIRs are configured by us only if not already setup by SBE */
-	fbc_cent_fir = get_scom(chip, PU_PB_CENT_SM0_IR_REG);
+	fbc_cent_fir = read_scom(chip, PU_PB_CENT_SM0_IR_REG);
 	init_firs = !(fbc_cent_fir & PU_PB_CENT_SM0_IR_MASK_REG_SPARE_13);
 
 	if (init_firs) {
 		uint64_t fir_mask;
 
-		put_scom(chip, PU_PB_IOE_FIR_ACTION0_REG, FBC_IOE_TL_FIR_ACTION0);
-		put_scom(chip, PU_PB_IOE_FIR_ACTION1_REG, FBC_IOE_TL_FIR_ACTION1);
+		write_scom(chip, PU_PB_IOE_FIR_ACTION0_REG, FBC_IOE_TL_FIR_ACTION0);
+		write_scom(chip, PU_PB_IOE_FIR_ACTION1_REG, FBC_IOE_TL_FIR_ACTION1);
 
 		fir_mask = FBC_IOE_TL_FIR_MASK
 			 | FBC_IOE_TL_FIR_MASK_X0_NF
 			 | FBC_IOE_TL_FIR_MASK_X2_NF;
-		put_scom(chip, PU_PB_IOE_FIR_MASK_REG, fir_mask);
+		write_scom(chip, PU_PB_IOE_FIR_MASK_REG, fir_mask);
 	}
 
 	/* Setup IOE (XBUS FBC IO) DL SCOMs */
 	p9_fbc_ioe_dl_scom(chip);
 
 	if (init_firs) {
-		put_scom(chip, XBUS_LL0_IOEL_FIR_ACTION0_REG, FBC_IOE_DL_FIR_ACTION0);
-		put_scom(chip, XBUS_LL0_IOEL_FIR_ACTION1_REG, FBC_IOE_DL_FIR_ACTION1);
-		put_scom(chip, XBUS_LL0_IOEL_FIR_MASK_REG, FBC_IOE_DL_FIR_MASK);
+		write_scom(chip, xbus_addr(XBUS_LL0_IOEL_FIR_ACTION0_REG),
+			   FBC_IOE_DL_FIR_ACTION0);
+		write_scom(chip, xbus_addr(XBUS_LL0_IOEL_FIR_ACTION1_REG),
+			   FBC_IOE_DL_FIR_ACTION1);
+		write_scom(chip, xbus_addr(XBUS_LL0_IOEL_FIR_MASK_REG),
+			   FBC_IOE_DL_FIR_MASK);
 	}
 }
 
