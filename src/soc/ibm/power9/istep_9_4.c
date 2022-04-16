@@ -18,24 +18,24 @@ static void tx_serializer_sync_power_on(uint8_t master_chip, uint8_t slave_chip,
 	 *  it should not be necessary to use the sync logic on the clock slice
 	 *  since it has no fifo but control is available just in case)
 	 */
-	and_scom(master_chip, 0x800C1C0006010C3F + offset, ~PPC_BIT(50));
-	and_scom(slave_chip, 0x800C1C0006010C3F + offset, ~PPC_BIT(50));
+	scom_and(master_chip, xbus_addr(0x800C1C0006010C3F + offset), ~PPC_BIT(50));
+	scom_and(slave_chip, xbus_addr(0x800C1C0006010C3F + offset), ~PPC_BIT(50));
 
 	/*
 	 * EDIP_TX_CLK_RUN_COUNT
 	 * (set to 1 to enable the tx clock slice serializer; this should be
 	 *  enabled at all times but control is available just in case)
 	 */
-	and_scom(master_chip, 0x800C1C0006010C3F + offset, ~PPC_BIT(51));
-	and_scom(slave_chip, 0x800C1C0006010C3F + offset, ~PPC_BIT(51));
+	scom_and(master_chip, xbus_addr(0x800C1C0006010C3F + offset), ~PPC_BIT(51));
+	scom_and(slave_chip, xbus_addr(0x800C1C0006010C3F + offset), ~PPC_BIT(51));
 
 	/* EDIP_TX_CLK_RUN_COUNT (see above) */
-	or_scom(master_chip, 0x800C1C0006010C3F + offset, PPC_BIT(51));
-	or_scom(slave_chip, 0x800C1C0006010C3F + offset, PPC_BIT(51));
+	scom_or(master_chip, xbus_addr(0x800C1C0006010C3F + offset), PPC_BIT(51));
+	scom_or(slave_chip, xbus_addr(0x800C1C0006010C3F + offset), PPC_BIT(51));
 
 	/* EDIP_TX_CLK_UNLOAD_CLK_DISABLE (see above) */
-	or_scom(master_chip, 0x800C1C0006010C3F + offset, PPC_BIT(50));
-	or_scom(slave_chip, 0x800C1C0006010C3F + offset, PPC_BIT(50));
+	scom_or(master_chip, xbus_addr(0x800C1C0006010C3F + offset), PPC_BIT(50));
+	scom_or(slave_chip, xbus_addr(0x800C1C0006010C3F + offset), PPC_BIT(50));
 
 	for (int i = 0; i < XBUS_LANE_COUNT; ++i) {
 		uint64_t lane_offset = PPC_PLACE(i, 27, 5);
@@ -44,8 +44,10 @@ static void tx_serializer_sync_power_on(uint8_t master_chip, uint8_t slave_chip,
 		 * (set to 0 to enable sync of tx custom serializer via tx_fifo_init register,
 		 *  set to 1 to clock off sync logic and save power)
 		 */
-		and_scom(master_chip, 0x80040C0006010C3F | offset | lane_offset, ~PPC_BIT(56));
-		and_scom(slave_chip, 0x80040C0006010C3F | offset | lane_offset, ~PPC_BIT(56));
+		scom_and(master_chip, xbus_addr(0x80040C0006010C3F | offset | lane_offset),
+			 ~PPC_BIT(56));
+		scom_and(slave_chip, xbus_addr(0x80040C0006010C3F | offset | lane_offset),
+			 ~PPC_BIT(56));
 	}
 }
 
@@ -81,9 +83,9 @@ static void xbus_linktrain(uint8_t master_chip, uint8_t slave_chip, int group)
 	 * EDIP_RX_START_WDERF_ALIAS (alias for rx_start_* bits)
 	 * Slave training must start first.
 	 */
-	and_or_scom(slave_chip, 0x8009F00006010C3F + offset,
+	scom_and_or(slave_chip, xbus_addr(0x8009F00006010C3F + offset),
 		    ~PPC_BITMASK(48, 52), PPC_PLACE(WDERF, 48, 5));
-	and_or_scom(master_chip, 0x8009F00006010C3F + offset,
+	scom_and_or(master_chip, xbus_addr(0x8009F00006010C3F + offset),
 		    ~PPC_BITMASK(48, 52), PPC_PLACE(WDERF, 48, 5));
 
 	/*
@@ -91,7 +93,7 @@ static void xbus_linktrain(uint8_t master_chip, uint8_t slave_chip, int group)
 	 * 56-60  EDIP_RX_WDERF_FAILED_ALIAS (alias for rx_*_failed bits)
 	 */
 	wait_ms(100 * 1,
-		(tmp = get_scom(master_chip, 0x800A380006010C3F + offset),
+		(tmp = read_scom(master_chip, xbus_addr(0x800A380006010C3F + offset)),
 		 (((tmp >> 11) & 0x1F) == WDERF || ((tmp >> 3) & 0x1F) != 0)));
 	if (((tmp >> 3) & 0x1F) != 0)
 		die("I/O EDI+ Xbus link training failed.\n");

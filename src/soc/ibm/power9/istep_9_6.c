@@ -19,7 +19,7 @@ static void smp_link_layer(uint8_t chip)
 
 	/* Hostboot uses PUTSCOMMASK operation of SBE IO. Assuming that it's
 	 * equivalent to a RMW sequence. */
-	or_scom(chip, XBUS_LL1_IOEL_CONTROL,
+	scom_or(chip, xbus_addr(XBUS_LL1_IOEL_CONTROL),
 		PPC_BIT(XBUS_LL0_IOEL_CONTROL_LINK0_STARTUP) |
 		PPC_BIT(XBUS_LL0_IOEL_CONTROL_LINK1_STARTUP));
 }
