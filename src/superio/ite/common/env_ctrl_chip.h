@@ -5,6 +5,12 @@
 
 #define ITE_EC_TMPIN_CNT	3
 
+#if CONFIG(SUPERIO_ITE_ENV_CTRL_6_TEMPS)
+#define ITE_EC_TEMP_CNT		6
+#else
+#define ITE_EC_TEMP_CNT		3
+#endif
+
 #if CONFIG(SUPERIO_ITE_ENV_CTRL_5FANS)
 #define ITE_EC_FAN_CNT		5
 #else
@@ -12,15 +18,26 @@
 #endif
 
 /* Supported thermal mode on TMPINx */
-enum ite_ec_thermal_mode {
+enum ite_ec_tmpin_mode {
 	THERMAL_MODE_DISABLED = 0,
 	THERMAL_DIODE,
 	THERMAL_RESISTOR,
 	THERMAL_PECI,
 };
 
+enum ite_ec_thermal_source {
+	THERMAL_SOURCE_TMPIN1 = 0,
+	THERMAL_SOURCE_TMPIN2 = 1,
+	THERMAL_SOURCE_TMPIN3 = 2,
+	THERMAL_SOURCE_PECI1 = 4,
+	THERMAL_SOURCE_PECI2 = 5,
+	THERMAL_SOURCE_PECI3 = 6,
+	THERMAL_SOURCE_PECI4 = 7,
+	THERMAL_SOURCE_PECI5 = 8,
+};
+
 struct ite_ec_thermal_config {
-	enum ite_ec_thermal_mode mode;
+	enum ite_ec_thermal_source source;
 	/* Offset is used for diode sensors and PECI */
 	u8 offset;
 	/* Limits */
@@ -78,7 +95,12 @@ struct ite_ec_config {
 	/*
 	 * Enable temperature sensors in given mode.
 	 */
-	struct ite_ec_thermal_config tmpin[ITE_EC_TMPIN_CNT];
+	enum ite_ec_tmpin_mode tmpin[ITE_EC_TMPIN_CNT];
+
+	/*
+	 * Configure temperature reading registers.
+	 */
+	struct ite_ec_thermal_config temp[ITE_EC_TEMP_CNT];
 
 	/*
 	 * Enable a FAN in given mode.
@@ -104,6 +126,13 @@ struct ite_ec_config {
 #define TMPIN1	ec.tmpin[0]
 #define TMPIN2	ec.tmpin[1]
 #define TMPIN3	ec.tmpin[2]
+
+#define TEMP1	ec.temp[0]
+#define TEMP2	ec.temp[1]
+#define TEMP3	ec.temp[2]
+#define TEMP4	ec.temp[3]
+#define TEMP5	ec.temp[4]
+#define TEMP6	ec.temp[5]
 
 #define FAN1	ec.fan[0]
 #define FAN2	ec.fan[1]

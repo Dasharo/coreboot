@@ -58,7 +58,7 @@ static void enable_peci(const u16 base)
  * into TMPINx register
  */
 static void enable_tmpin(const u16 base, const u8 tmpin,
-			 const struct ite_ec_thermal_config *const conf)
+			 const enum ite_ec_tmpin_mode mode)
 {
 	u8 reg;
 	u8 reg_extra;
@@ -66,7 +66,7 @@ static void enable_tmpin(const u16 base, const u8 tmpin,
 	reg = pnp_read_hwm5_index(base, ITE_EC_ADC_TEMP_CHANNEL_ENABLE);
 	reg_extra = pnp_read_hwm5_index(base, ITE_EC_ADC_TEMP_EXTRA_CHANNEL_ENABLE);
 
-	switch (conf->mode) {
+	switch (mode) {
 	case THERMAL_PECI:
 		/* Some chips can set any TMPIN as the target for PECI readings
 		   while others can only read to TMPIN3. In the latter case a
@@ -104,24 +104,65 @@ static void enable_tmpin(const u16 base, const u8 tmpin,
 		break;
 	default:
 		printk(BIOS_WARNING, "Unsupported thermal mode 0x%x on TMPIN%d\n",
-		       conf->mode, tmpin);
+		       mode, tmpin);
 		return;
 	}
 
 	pnp_write_hwm5_index(base, ITE_EC_ADC_TEMP_CHANNEL_ENABLE, reg);
 
-	/* Set temperature offsets */
-	if (conf->mode != THERMAL_RESISTOR) {
-		reg = pnp_read_hwm5_index(base, ITE_EC_BEEP_ENABLE);
-		reg |= ITE_EC_TEMP_ADJUST_WRITE_ENABLE;
-		pnp_write_hwm5_index(base, ITE_EC_BEEP_ENABLE, reg);
-		pnp_write_hwm5_index(base, ITE_EC_TEMP_ADJUST[tmpin-1], conf->offset);
+}
+
+static inline void ite_ec_select_bank(const u16 base, const u8 bank)
+{
+	uint8_t reg;
+
+	reg = pnp_read_hwm5_index(base, ITE_EC_REG_SMI_MASK_3);
+	reg &= ~ITE_EC_BANK_SEL_MASK;
+	reg |= (bank << 5);
+	pnp_write_hwm5_index(base, ITE_EC_REG_SMI_MASK_3, reg);
+}
+
+static int source_is_peci(enum ite_ec_thermal_source source)
+{
+	if (source >= THERMAL_SOURCE_PECI1 && source <= THERMAL_SOURCE_PECI5)
+		return 1;
+
+	return 0;
+}
+
+/*
+ * Configure temperature reading registers (offsets, limits, sources)
+ */
+static void enable_temp(const u16 base, const u8 temp,
+			 const struct ite_ec_thermal_config *const conf)
+
+{
+	u8 reg;
+
+	if (CONFIG(SUPERIO_ITE_ENV_CTRL_6_TEMPS)) {
+		/* Set temperature sources */
+		ite_ec_select_bank(base, 0x2);
+		reg = pnp_read_hwm5_index(base, ITE_EC_REG_TSS1(temp - 1));
+		reg &= ~ITE_EC_REG_TSS1_MASK(temp - 1);
+		reg |= conf->source << ITE_EC_REG_TSS1_OFFSET(temp - 1);
+		pnp_write_hwm5_index(base, ITE_EC_REG_TSS1(temp - 1), reg);
+		ite_ec_select_bank(base, 0x0);
+
+		/* Enable PECI if needed */
+		if (source_is_peci(conf->source))
+			enable_peci(base);
 	}
+
+	/* Set temperature offsets */
+	reg = pnp_read_hwm5_index(base, ITE_EC_BEEP_ENABLE);
+	reg |= ITE_EC_TEMP_ADJUST_WRITE_ENABLE;
+	pnp_write_hwm5_index(base, ITE_EC_BEEP_ENABLE, reg);
+	pnp_write_hwm5_index(base, ITE_EC_TEMP_ADJUST[temp - 1], conf->offset);
 
 	/* Set temperature limits */
 	u8 max = conf->max;
-	pnp_write_hwm5_index(base, ITE_EC_HIGH_TEMP_LIMIT(tmpin), max ? max : 127);
-	pnp_write_hwm5_index(base, ITE_EC_LOW_TEMP_LIMIT(tmpin), conf->min);
+	pnp_write_hwm5_index(base, ITE_EC_HIGH_TEMP_LIMIT[temp - 1], max ? max : 127);
+	pnp_write_hwm5_index(base, ITE_EC_LOW_TEMP_LIMIT[temp - 1], conf->min);
 
 	/* Enable the startup of monitoring operation */
 	reg = pnp_read_hwm5_index(base, ITE_EC_CONFIGURATION);
@@ -284,7 +325,11 @@ void ite_ec_init(const u16 base, const struct ite_ec_config *const conf)
 
 	/* Enable HWM if configured */
 	for (i = 0; i < ITE_EC_TMPIN_CNT; ++i)
-		enable_tmpin(base, i + 1, &conf->tmpin[i]);
+		enable_tmpin(base, i + 1, conf->tmpin[i]);
+
+	/* Configure temperature reading registers */
+	for (i = 0; i < ITE_EC_TEMP_CNT; ++i)
+		enable_temp(base, i + 1, &conf->temp[i]);
 
 	/* Enable External Sensor SMBus Host if configured */
 	if (conf->smbus_en) {
@@ -316,6 +361,6 @@ void ite_ec_init(const u16 base, const struct ite_ec_config *const conf)
 	 * processes if needed.
 	 */
 	for (i = 0; i < ITE_EC_TMPIN_CNT; ++i)
-		if (conf->tmpin[i].mode == THERMAL_PECI)
+		if (conf->tmpin[i] == THERMAL_PECI)
 			extemp_force_idle_status(base);
 }
