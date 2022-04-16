@@ -48,4 +48,10 @@ config SUPERIO_ITE_ENV_CTRL_EXT_ANY_TMPIN
 	  Temperature can be read to any TMPIN from an external sensor via SST/PECI
 	  (instead of TMPIN3 only).
 
+config SUPERIO_ITE_ENV_CTRL_6_TEMPS
+	bool
+	help
+	  Temperature can be read to 6 temperature reading registers from external
+	  or physical inputs, selectable using TSS registers in Bank 2.
+
 endif

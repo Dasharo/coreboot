@@ -119,8 +119,9 @@
 			: (_p / 16);	\
 	  })
 
-#define ITE_EC_HIGH_TEMP_LIMIT(x)		(0x40 + ((x-1) * 2))
-#define ITE_EC_LOW_TEMP_LIMIT(x)		(0x41 + ((x-1) * 2))
+
+static const uint8_t ITE_EC_HIGH_TEMP_LIMIT[] = { 0x40, 0x42, 0x44, 0x46, 0xb4, 0xb6 };
+static const uint8_t ITE_EC_LOW_TEMP_LIMIT[]  = { 0x41, 0x43, 0x45, 0x47, 0xb5, 0xb7 };
 
 #define ITE_EC_ADC_VOLTAGE_CHANNEL_ENABLE	0x50
 #define ITE_EC_ADC_TEMP_CHANNEL_ENABLE		0x51
@@ -131,8 +132,14 @@
 #define ITE_EC_ADC_TEMP_EXTRA_CHANNEL_ENABLE	0x55
 #define   ITE_EC_ADC_TEMP_EXTRA_TMPIN3_EXT	(1 << 7)
 
-/* Matches length of ITE_EC_TMPIN_CNT */
-static const u8 ITE_EC_TEMP_ADJUST[] = { 0x56, 0x57, 0x59 };
+#define ITE_EC_REG_SMI_MASK_3       0x06
+#define  ITE_EC_BANK_SEL_MASK	    0x60
+
+static const uint8_t ITE_EC_TEMP_ADJUST[]     = { 0x56, 0x57, 0x59, 0x5a, 0x90, 0x91 };
+
+#define ITE_EC_REG_TSS1(x)			(0x1D + ((x) / 2))
+#define ITE_EC_REG_TSS1_OFFSET(x)	(((x) % 2) ? 4 : 0)
+#define ITE_EC_REG_TSS1_MASK(x)		(0xF << ITE_EC_REG_TSS1_OFFSET(x))
 
 #define ITE_EC_BEEP_ENABLE			0x5C
 #define   ITE_EC_TEMP_ADJUST_WRITE_ENABLE	(1 << 7)
