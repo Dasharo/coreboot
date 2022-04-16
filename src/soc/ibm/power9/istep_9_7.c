@@ -23,7 +23,7 @@ static void p9_fab_iovalid_link_validate(uint8_t chip)
 		/* Only OBus seems to be retrained, so this XBus-only code is
 		 * much simpler compared to corresponding code in Hostboot */
 
-		uint64_t dl_fir_reg = get_scom(chip, XBUS_LL1_IOEL_FIR_REG);
+		uint64_t dl_fir_reg = read_scom(chip, xbus_addr(XBUS_LL1_IOEL_FIR_REG));
 
 		bool dl_trained = (dl_fir_reg & PPC_BIT(DL_FIR_LINK0_TRAINED_BIT))
 			       && (dl_fir_reg & PPC_BIT(DL_FIR_LINK1_TRAINED_BIT));
@@ -57,23 +57,23 @@ static void p9_fab_iovalid(uint8_t chip)
 	p9_fab_iovalid_link_validate(chip);
 
 	/* Clear RAS FIR mask for link if not already set up by SBE */
-	fbc_cent_fir_data = get_scom(chip, PU_PB_CENT_SM0_PB_CENT_FIR_REG);
+	fbc_cent_fir_data = read_scom(chip, PU_PB_CENT_SM0_PB_CENT_FIR_REG);
 	if (!(fbc_cent_fir_data & PPC_BIT(PU_PB_CENT_SM0_PB_CENT_FIR_MASK_REG_SPARE_13))) {
-		and_scom(chip, PU_PB_CENT_SM1_EXTFIR_ACTION0_REG,
+		scom_and(chip, PU_PB_CENT_SM1_EXTFIR_ACTION0_REG,
 			 ~PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D));
-		and_scom(chip, PU_PB_CENT_SM1_EXTFIR_ACTION1_REG,
+		scom_and(chip, PU_PB_CENT_SM1_EXTFIR_ACTION1_REG,
 			 ~PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D));
-		put_scom(chip, PU_PB_CENT_SM1_EXTFIR_MASK_REG_AND,
-			 ~PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D));
+		write_scom(chip, PU_PB_CENT_SM1_EXTFIR_MASK_REG_AND,
+			   ~PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D));
 	}
 
 	/*
 	 * Use AND/OR mask registers to atomically update link specific fields
 	 * in iovalid control register.
 	 */
-	put_scom(chip, PERV_XB_CPLT_CONF1_OR,
-		 PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D) |
-		 PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D + 1));
+	write_scom(chip, xbus_addr(PERV_XB_CPLT_CONF1_OR),
+		   PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D) |
+		   PPC_BIT(PERV_CPLT_CONF1_IOVALID_6D + 1));
 }
 
 void istep_9_7(uint8_t chips)
