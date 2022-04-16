@@ -15,13 +15,13 @@ static void xbus_enable_ridi(uint8_t chip)
 	};
 
 	/* Getting NET_CTRL0 register value and checking its CHIPLET_ENABLE bit */
-	if (get_scom(chip, PERV_NET_CTRL0) & PPC_BIT(0)) {
-		/* Enable Recievers, Drivers DI1 & DI2 */
+	if (read_scom(chip, xbus_addr(PERV_NET_CTRL0)) & PPC_BIT(0)) {
+		/* Enable Receivers, Drivers DI1 & DI2 */
 		uint64_t val = 0;
 		val |= PPC_BIT(19); // NET_CTRL0.RI_N = 1
 		val |= PPC_BIT(20); // NET_CTRL0.DI1_N = 1
 		val |= PPC_BIT(21); // NET_CTRL0.DI2_N = 1
-		put_scom(chip, PERV_NET_CTRL0_WOR, val);
+		write_scom(chip, xbus_addr(PERV_NET_CTRL0_WOR), val);
 	}
 }
 
