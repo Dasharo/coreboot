@@ -92,8 +92,8 @@ static void config_run_bus_group_mode(uint8_t chip, int group)
 	const uint64_t offset = group * XBUS_LINK_GROUP_OFFSET;
 
 	/* Same registers are read for both groups */
-	uint32_t pval = (get_scom(chip, P9A_XBUS_TX_IMPCAL_PVAL_PB) >> 7) & 0x1FF;
-	uint32_t nval = (get_scom(chip, P9A_XBUS_TX_IMPCAL_NVAL_PB) >> 7) & 0x1FF;
+	uint32_t pval = (read_scom(chip, xbus_addr(P9A_XBUS_TX_IMPCAL_PVAL_PB)) >> 7) & 0x1FF;
+	uint32_t nval = (read_scom(chip, xbus_addr(P9A_XBUS_TX_IMPCAL_NVAL_PB)) >> 7) & 0x1FF;
 
 	uint32_t sel_margin_pu;
 	uint32_t sel_margin_pd;
@@ -113,56 +113,56 @@ static void config_run_bus_group_mode(uint8_t chip, int group)
 	sel_margin_pd = MIN(sel_margin_pd,
 			    MIN(p.en_margin_pd, MIN(n.en_margin_pd, sel_margin_pu)));
 
-	val = get_scom(chip, 0x800D340006010C3F + offset);
+	val = read_scom(chip, xbus_addr(0x800D340006010C3F + offset));
 
 	/* EDIP_TX_PSEG_PRE_EN (pre bank pseg enable) */
 	PPC_INSERT(val, convert_4r_with_2r(PRE_4R_TOTAL, PRE_WIDTH), 51, 5);
 	/* EDIP_TX_PSEG_PRE_SEL (pre bank pseg mode selection) */
 	PPC_INSERT(val, convert_4r_with_2r(p.sel_pre, PRE_WIDTH), 56, 5);
 
-	put_scom(chip, 0x800D340006010C3F + offset, val);
-	val = get_scom(chip, 0x800D3C0006010C3F + offset);
+	write_scom(chip, xbus_addr(0x800D340006010C3F + offset), val);
+	val = read_scom(chip, xbus_addr(0x800D3C0006010C3F + offset));
 
 	/* EDIP_TX_NSEG_PRE_EN (pre bank nseg enable) */
 	PPC_INSERT(val, convert_4r_with_2r(PRE_4R_TOTAL, PRE_WIDTH), 51, 5);
 	/* EDIP_TX_NSEG_PRE_SEL (pre bank nseg mode selection) */
 	PPC_INSERT(val, convert_4r_with_2r(n.sel_pre, PRE_WIDTH), 56, 5);
 
-	put_scom(chip, 0x800D3C0006010C3F + offset, val);
-	val = get_scom(chip, 0x800D440006010C3F + offset);
+	write_scom(chip, xbus_addr(0x800D3C0006010C3F + offset), val);
+	val = read_scom(chip, xbus_addr(0x800D440006010C3F + offset));
 
 	/* EDIP_TX_PSEG_MARGINPD_EN (margin pull-down bank pseg enable) */
 	PPC_INSERT(val, convert_4r(p.en_margin_pd), 56, 8);
 	/* EDIP_TX_PSEG_MARGINPU_EN (margin pull-up bank pseg enable) */
 	PPC_INSERT(val, convert_4r(p.en_margin_pu), 48, 8);
 
-	put_scom(chip, 0x800D440006010C3F + offset, val);
-	val = get_scom(chip, 0x800D4C0006010C3F + offset);
+	write_scom(chip, xbus_addr(0x800D440006010C3F + offset), val);
+	val = read_scom(chip, xbus_addr(0x800D4C0006010C3F + offset));
 
 	/* EDIP_TX_NSEG_MARGINPD_EN (margin pull-down bank nseg enable) */
 	PPC_INSERT(val, convert_4r(n.en_margin_pd), 56, 8);
 	/* EDIP_TX_NSEG_MARGINPU_EN (margin pull-up bank nseg enable) */
 	PPC_INSERT(val, convert_4r(n.en_margin_pu), 48, 8);
 
-	put_scom(chip, 0x800D4C0006010C3F + offset, val);
-	val = get_scom(chip, 0x800D540006010C3F + offset);
+	write_scom(chip, xbus_addr(0x800D4C0006010C3F + offset), val);
+	val = read_scom(chip, xbus_addr(0x800D540006010C3F + offset));
 
 	/* EDIP_TX_MARGINPD_SEL (margin pull-down bank mode selection) */
 	PPC_INSERT(val, convert_4r(sel_margin_pd), 56, 8);
 	/* EDIP_TX_MARGINPU_SEL (margin pull-up bank mode selection) */
 	PPC_INSERT(val, convert_4r(sel_margin_pu), 48, 8);
 
-	put_scom(chip, 0x800D540006010C3F + offset, val);
+	write_scom(chip, xbus_addr(0x800D540006010C3F + offset), val);
 
 	/* EDIP_TX_PSEG_MAIN_EN (main bank pseg enable) */
-	val = get_scom(chip, 0x800D5C0006010C3F + offset);
+	val = read_scom(chip, xbus_addr(0x800D5C0006010C3F + offset));
 	PPC_INSERT(val, convert_4r_with_2r(p.en_main, 13), 51, 13);
-	put_scom(chip, 0x800D5C0006010C3F + offset, val);
+	write_scom(chip, xbus_addr(0x800D5C0006010C3F + offset), val);
 
 	/* EDIP_TX_NSEG_MAIN_EN (main bank nseg enable) */
-	val = get_scom(chip, 0x800D640006010C3F + offset);
+	val = read_scom(chip, xbus_addr(0x800D640006010C3F + offset));
 	PPC_INSERT(val, convert_4r_with_2r(n.en_main, 13), 51, 13);
-	put_scom(chip, 0x800D640006010C3F + offset, val);
+	write_scom(chip, xbus_addr(0x800D640006010C3F + offset), val);
 }
 
 static void config_run_bus_mode(uint8_t chip)
@@ -176,15 +176,15 @@ static void config_run_bus_mode(uint8_t chip)
 	long time;
 
 	/* Set EDIP_TX_ZCAL_REQ to start Tx Impedance Calibration */
-	or_scom(chip, P9A_XBUS_TX_IMPCAL_PB, PPC_BIT(49));
+	scom_or(chip, xbus_addr(P9A_XBUS_TX_IMPCAL_PB), PPC_BIT(49));
 	mdelay(20);
 
-	time = wait_us(200 * 10, get_scom(chip, P9A_XBUS_TX_IMPCAL_PB) &
+	time = wait_us(200 * 10, read_scom(chip, xbus_addr(P9A_XBUS_TX_IMPCAL_PB)) &
 		       (PPC_BIT(EDIP_TX_ZCAL_DONE) | PPC_BIT(EDIP_TX_ZCAL_ERROR)));
 	if (!time)
 		die("Timed out waiting for I/O EDI+ Xbus Tx Z Calibration\n");
 
-	if (get_scom(chip, P9A_XBUS_TX_IMPCAL_PB) & PPC_BIT(EDIP_TX_ZCAL_ERROR))
+	if (read_scom(chip, xbus_addr(P9A_XBUS_TX_IMPCAL_PB)) & PPC_BIT(EDIP_TX_ZCAL_ERROR))
 		die("I/O EDI+ Xbus Tx Z Calibration failed\n");
 
 	config_run_bus_group_mode(chip, /*group=*/0);
@@ -201,7 +201,8 @@ static void rx_dc_calibration_start(uint8_t chip, int group)
 	for (int i = 0; i < XBUS_LANE_COUNT; i++) {
 		uint64_t lane_offset = PPC_PLACE(i, 27, 5);
 		/* EDIP_RX_LANE_INVALID */
-		and_scom(chip, 0x8002400006010C3F | offset | lane_offset, ~PPC_BIT(50));
+		scom_and(chip, xbus_addr(0x8002400006010C3F | offset | lane_offset),
+			 ~PPC_BIT(50));
 	}
 
 	/* Start Cleanup Pll */
@@ -212,7 +213,7 @@ static void rx_dc_calibration_start(uint8_t chip, int group)
 	 *  51 - EDIP_RX_PLL_REFCLKSEL_SCOM_EN (0 - pll controls selects refclk,
 	 *                                      1 - and gcr register does it)
 	 */
-	or_scom(chip, 0x8009F80006010C3F + offset, PPC_BIT(50) | PPC_BIT(51));
+	scom_or(chip, xbus_addr(0x8009F80006010C3F + offset), PPC_BIT(50) | PPC_BIT(51));
 	udelay(150);
 
 	/*
@@ -220,21 +221,21 @@ static void rx_dc_calibration_start(uint8_t chip, int group)
 	 *  48 - EDIP_RX_WT_CU_PLL_PGOOD (0 - places rx pll in reset,
 	 *                                1 - sets pgood on rx pll for locking)
 	 */
-	or_scom(chip, 0x8009F80006010C3F + offset, PPC_BIT(48));
+	scom_or(chip, xbus_addr(0x8009F80006010C3F + offset), PPC_BIT(48));
 	udelay(5);
 
 	/*
 	 * EDIP_RX_DC_CALIBRATE_DONE
 	 * (when this bit is read as a 1, the dc calibration steps have been completed)
 	 */
-	and_scom(chip, 0x800A380006010C3F + offset, ~PPC_BIT(53));
+	scom_and(chip, xbus_addr(0x800A380006010C3F + offset), ~PPC_BIT(53));
 
 	/*
 	 * EDIP_RX_START_DC_CALIBRATE
 	 * (when this register is written to a 1 the training state machine will run the dc
 	 *  calibrate substeps defined in eye optimizations)
 	 */
-	or_scom(chip, 0x8009F00006010C3F + offset, PPC_BIT(53));
+	scom_or(chip, xbus_addr(0x8009F00006010C3F + offset), PPC_BIT(53));
 }
 
 static void rx_dc_calibration_poll(uint8_t chip, int group)
@@ -247,7 +248,8 @@ static void rx_dc_calibration_poll(uint8_t chip, int group)
 	 * EDIP_RX_DC_CALIBRATE_DONE
 	 * (when this bit is read as a 1, the dc calibration steps have been completed)
 	 */
-	time = wait_ms(200 * 10, get_scom(chip, 0x800A380006010C3F + offset) & PPC_BIT(53));
+	time = wait_ms(200 * 10,
+		       read_scom(chip, xbus_addr(0x800A380006010C3F + offset)) & PPC_BIT(53));
 	if (!time)
 		die("Timed out waiting for Rx Dc Calibration\n");
 
@@ -256,7 +258,7 @@ static void rx_dc_calibration_poll(uint8_t chip, int group)
 	 * (when this register is written to a 1 the training state machine will run the dc
 	 *  calibrate substeps defined in eye optimizations)
 	 */
-	and_scom(chip, 0x8009F00006010C3F + offset, ~PPC_BIT(53));
+	scom_and(chip, xbus_addr(0x8009F00006010C3F + offset), ~PPC_BIT(53));
 
 	/*
 	 * EDIP_RX_CTL_CNTL4_E_PG
@@ -266,14 +268,16 @@ static void rx_dc_calibration_poll(uint8_t chip, int group)
 	 *  51 - EDIP_RX_PLL_REFCLKSEL_SCOM_EN (0 - pll controls selects refclk,
 	 *                                      1 - and gcr register does it)
 	 */
-	and_scom(chip, 0x8009F80006010C3F + offset, ~(PPC_BIT(48) | PPC_BIT(50) | PPC_BIT(51)));
+	scom_and(chip, xbus_addr(0x8009F80006010C3F + offset),
+		 ~(PPC_BIT(48) | PPC_BIT(50) | PPC_BIT(51)));
 	udelay(111);
 
 	/* Restore the invalid bits, Wiretest will modify these as training is run */
 	for (int i = 0; i < XBUS_LANE_COUNT; i++) {
 		uint64_t lane_offset = PPC_PLACE(i, 27, 5);
 		/* EDIP_RX_LANE_INVALID */
-		or_scom(chip, 0x8002400006010C3F | offset | lane_offset, PPC_BIT(50));
+		scom_or(chip, xbus_addr(0x8002400006010C3F | offset | lane_offset),
+			PPC_BIT(50));
 	}
 }
 
