@@ -11,3 +11,9 @@ releases:
           known_issues:
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://github.com/Dasharo/dasharo-issues/issues/38
+
+        - version: v1.1.0
+          added:
+                - Support for NovaCustom NS7x
+                - Support for RGB Keyboard
+                - Persistent boot logo implementation
