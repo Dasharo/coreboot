@@ -252,8 +252,8 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_TCPA_LOG, LB_TAG_TCPA_LOG},
 		{CBMEM_ID_FMAP, LB_TAG_FMAP},
 		{CBMEM_ID_VBOOT_WORKBUF, LB_TAG_VBOOT_WORKBUF},
-		{CBMEM_ID_TYPE_C_INFO, LB_TAG_TYPE_C_INFO},
 		{CBMEM_ID_TIANOCORE_LOGO, LB_TAG_LOGO},
+		{CBMEM_ID_TYPE_C_INFO, LB_TAG_TYPE_C_INFO},
 	};
 	int i;
 
@@ -391,35 +391,33 @@ void __weak lb_board(struct lb_header *header) { /* NOOP */ }
 void __weak lb_spi_flash(struct lb_header *header) { /* NOOP */ }
 
 /*
+ * Allocator for bootlogo that prepends a header to the logo CBMEM entry
+ */
+static void *logo_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
+{
+	struct bootlogo_header header;
+	void *logo_loc;
+
+	header.size = (uint64_t) htobe32(size);
+	logo_loc = cbmem_entry_start(cbmem_entry_add((uintptr_t)arg, size + sizeof(header)));
+	memcpy(logo_loc, &header, sizeof(header));
+	return logo_loc + sizeof(header);
+}
+
+/*
  * Loads the logo bitmap file from the BOOTSPLASH fmap region into CBMEM
  */
 static void tianocore_logo_load(int ignored)
 {
-	const struct cbmem_entry *logo_entry;
-	struct bootlogo_header header;
-	void *logo_buffer;
-	void *logo_file;
 	size_t logo_size;
 
-	logo_file = cbfs_unverified_area_map("BOOTSPLASH", "logo.bmp", &logo_size);
-	if (!logo_file)
-		return;
+	cbfs_unverified_area_alloc("BOOTSPLASH",
+				"logo.bmp",
+				logo_cbmem_allocator,
+				(void *)CBMEM_ID_TIANOCORE_LOGO,
+				&logo_size);
 
-	if (logo_size == 0 || logo_size + sizeof(header) > 4 * MiB)
-		return;
-
-	logo_entry = cbmem_entry_add(CBMEM_ID_TIANOCORE_LOGO, logo_size + sizeof(header));
-	if (!logo_entry)
-		return;
-
-	logo_buffer = cbmem_entry_start(logo_entry);
-	if (!logo_buffer)
-		return;
-
-	/* Header of the CBMEM region, describes size of the bitmap */
-	header.size = logo_size;
-	memcpy(logo_buffer, &header, sizeof(header));
-	memcpy(logo_buffer + sizeof(header), logo_file, logo_size);
+	printk(BIOS_DEBUG, "logo size = %lx\n", logo_size);
 }
 
 RAMSTAGE_CBMEM_INIT_HOOK(tianocore_logo_load)

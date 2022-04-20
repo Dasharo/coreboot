@@ -440,6 +440,7 @@ static void *do_alloc(union cbfs_mdata *mdata, struct region_device *rdev,
 	}
 
 	size = cbfs_load_and_decompress(rdev, loc, size, compression, mdata, skip_verification);
+	DEBUG("Loaded %lx bytes of file to %p\n", size, loc);
 	if (!size)
 		return NULL;
 
