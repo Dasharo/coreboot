@@ -33,28 +33,11 @@ FW_FILE="dasharo_${BOARD}_${FW_VERSION}.rom"
 HASH_FILE="${FW_FILE%.*}.SHA256"
 SIG_FILE="${HASH_FILE}.sig"
 ARTIFACTS_DIR="artifacts"
-LOGO=""
+LOGO="3rdparty/dasharo-blobs/novacustom/bootsplash.bmp"
 SDKVER="0ad5fbd48d"
 REPLACE_KEYS=0
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
-
-replace_logo() {
-  path=custom_bootsplash.bmp
-  cp $1 $path
-
-  if [[ $(grep "CONFIG_TIANOCORE_BOOTSPLASH_IMAGE" .config; echo $?) == 1 ]]; then
-    echo "CONFIG_TIANOCORE_BOOTSPLASH_IMAGE=y" >> .config
-  else
-    sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_IMAGE/c\CONFIG_TIANOCORE_BOOTSPLASH_IMAGE=y" .config
-  fi
-
-  if [[ $(grep "CONFIG_TIANOCORE_BOOTSPLASH_FILE" .config; echo $?) == 1 ]]; then
-    echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" >> .config
-  else
-    sed -i "/CONFIG_TIANOCORE_BOOTSPLASH_FILE/c\CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"$path\"" .config
-  fi
-}
 
 replace_keys() {
   # Build vboot utilities
@@ -88,18 +71,16 @@ replace_keys() {
 build() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
-  if [[ -n $LOGO ]]; then
-    echo "Building with custom logo $LOGO"
-    replace_logo $LOGO
-  else
-    echo "Building with default logo"
-  fi
+  echo "Building with logo $LOGO"
   if [[ $REPLACE_KEYS = 1 ]]; then
     replace_keys
   fi
   make clean
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
 	  coreboot/coreboot-sdk:$SDKVER make -j "$(nproc)"
+  docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
+    make -C util/cbfstool
+  util/cbfstool/cbfstool build/coreboot.rom add -r BOOTSPLASH -f $LOGO -n logo.bmp -t raw -c lzma
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
   cd "${ARTIFACTS_DIR}"
@@ -110,17 +91,14 @@ build() {
 build-CI() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
-  if [[ -n $LOGO ]]; then
-    echo "Building with custom logo $LOGO"
-    replace_logo $LOGO
-  else
-    echo "Building with default logo"
-  fi
+  echo "Building with logo $LOGO"
   if [[ $REPLACE_KEYS = 1 ]]; then
     replace_keys
   fi
   make clean
   make -j "$(nproc)"
+  make -C util/cbfstool
+  util/cbfstool/cbfstool build/coreboot.rom add -r BOOTSPLASH -f $LOGO -n logo.bmp -t raw -c lzma
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
   sha256sum "${ARTIFACTS_DIR}/${FW_FILE}" > "${ARTIFACTS_DIR}/${HASH_FILE}"
