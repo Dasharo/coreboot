@@ -22,8 +22,8 @@ $(PROGRAM): ec.o ectool.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 install: $(PROGRAM)
-	$(INSTALL) -d $(PREFIX)/sbin
-	$(INSTALL) $(PROGRAM) $(PREFIX)/sbin
+	$(INSTALL) -d $(DESTDIR)$(PREFIX)/sbin
+	$(INSTALL) $(PROGRAM) $(DESTDIR)$(PREFIX)/sbin
 
 clean:
 	rm -f *.o $(PROGRAM) junit.xml
