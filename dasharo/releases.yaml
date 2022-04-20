@@ -1,22 +1,22 @@
 releases:
         - version: v1.0.0
           added:
-                - Support for NovaCustom NS5x
-                - Support for EC firmware 1.07.07
-                - UEFI Boot Support
-                - Configurable boot order
-                - Configurable boot options
-                - UEFI Secure Boot support
-                - NovaCustom boot logo
+                - description: Support for NovaCustom NS5x
+                - description: Support for EC firmware 1.07.07
+                - description: UEFI Boot Support
+                - description: Configurable boot order
+                - description: Configurable boot options
+                - description: UEFI Secure Boot support
+                - description: NovaCustom boot logo
           known_issues:
                 - description: The touchpad ON/OFF switch Fn key is not functional
                   url: https://github.com/Dasharo/dasharo-issues/issues/38
 
         - version: v1.1.0
           added:
-                - Support for NovaCustom NS7x
-                - Support for RGB Keyboard
-                - Persistent boot logo implementation
+                - description: Support for NovaCustom NS7x
+                - description: Support for RGB Keyboard
+                - description: Persistent boot logo implementation
           known_issues:
                 - description: CPU not running on expected frequency and usage NS50MU
                   url: https://github.com/Dasharo/dasharo-issues/issues/64
