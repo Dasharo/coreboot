@@ -1,19 +1,19 @@
-## SPDX-License-Identifier: GPL-2.0-onlycd ..
+## SPDX-License-Identifier: GPL-2.0-only
 
 CC ?= gcc
 WERROR=-Werror
 CFLAGS = -O2 -Wall -Wextra -Wshadow $(WERROR)
 PROGRAM = ectool
-INSTALL = /usr/bin/env install
-PREFIX  = /usr/local
+INSTALL ?= /usr/bin/env install
+PREFIX  ?= /usr/local
 OS_ARCH = $(shell uname)
 
 ifeq ($(shell uname -o 2>/dev/null), Cygwin)
-LDFLAGS = -lioperm
+LDFLAGS ?= -lioperm
 endif
 
 ifeq ($(OS_ARCH), $(filter $(OS_ARCH), NetBSD OpenBSD))
-LDFLAGS = -l$(shell uname -p)
+LDFLAGS ?= -l$(shell uname -p)
 endif
 
 all: $(PROGRAM)
@@ -22,6 +22,7 @@ $(PROGRAM): ec.o ectool.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 install: $(PROGRAM)
+	$(INSTALL) -d $(PREFIX)/sbin
 	$(INSTALL) $(PROGRAM) $(PREFIX)/sbin
 
 clean:
