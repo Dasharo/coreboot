@@ -1,6 +1,6 @@
-## SPDX-License-Identifier: GPL-2.0-only
+## SPDX-License-Identifier: GPL-2.0-onlycd ..
 
-CC = gcc
+CC ?= gcc
 WERROR=-Werror
 CFLAGS = -O2 -Wall -Wextra -Wshadow $(WERROR)
 PROGRAM = ectool
