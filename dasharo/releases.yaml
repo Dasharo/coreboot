@@ -17,3 +17,8 @@ releases:
                 - Support for NovaCustom NS7x
                 - Support for RGB Keyboard
                 - Persistent boot logo implementation
+          known_issues:
+                - description: CPU not running on expected frequency and usage NS50MU
+                  url: https://github.com/Dasharo/dasharo-issues/issues/64
+                - description:  UCM-UCSI ACPI device displays an error in Windows Device Manager
+                  url: https://github.com/Dasharo/dasharo-issues/issues/57
