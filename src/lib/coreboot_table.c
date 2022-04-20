@@ -398,7 +398,7 @@ static void *logo_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata
 	struct bootlogo_header header;
 	void *logo_loc;
 
-	header.size = (uint64_t) htobe32(size);
+	header.size = size;
 	logo_loc = cbmem_entry_start(cbmem_entry_add((uintptr_t)arg, size + sizeof(header)));
 	memcpy(logo_loc, &header, sizeof(header));
 	return logo_loc + sizeof(header);
@@ -416,8 +416,6 @@ static void tianocore_logo_load(int ignored)
 				logo_cbmem_allocator,
 				(void *)CBMEM_ID_TIANOCORE_LOGO,
 				&logo_size);
-
-	printk(BIOS_DEBUG, "logo size = %lx\n", logo_size);
 }
 
 RAMSTAGE_CBMEM_INIT_HOOK(tianocore_logo_load)
