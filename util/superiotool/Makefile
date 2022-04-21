@@ -54,9 +54,9 @@ $(PROGRAM): $(OBJS) superiotool.h
 	$(CC) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
 
 install: $(PROGRAM)
-    $(INSTALL) -d $(DESTDIR)$(PREFIX)/bin
-	$(INSTALL) $(PROGRAM) $(DESTDIR)$(PREFIX)/bin
-	$(INSTALL) -p -m644 $(PROGRAM).8 $(DESTDIR)$(PREFIX)/share/man/man8
+    $(INSTALL) -d $(DESTDIR)$(PREFIX)/sbin
+	$(INSTALL) $(PROGRAM) $(DESTDIR)$(PREFIX)/sbin
+#	$(INSTALL) -p -m644 $(PROGRAM).8 $(DESTDIR)$(PREFIX)/share/man/man8
 
 clean:
 	rm -f $(PROGRAM) *.o junit.xml
