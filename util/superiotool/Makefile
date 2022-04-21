@@ -54,9 +54,8 @@ $(PROGRAM): $(OBJS) superiotool.h
 	$(CC) $(LDFLAGS) -o $(PROGRAM) $(OBJS) $(LIBS)
 
 install: $(PROGRAM)
-	mkdir -p $(DESTDIR)$(PREFIX)/sbin
-	$(INSTALL) $(PROGRAM) $(DESTDIR)$(PREFIX)/sbin
-	mkdir -p $(DESTDIR)$(PREFIX)/share/man/man8
+    $(INSTALL) -d $(DESTDIR)$(PREFIX)/bin
+	$(INSTALL) $(PROGRAM) $(DESTDIR)$(PREFIX)/bin
 	$(INSTALL) -p -m644 $(PROGRAM).8 $(DESTDIR)$(PREFIX)/share/man/man8
 
 clean:
