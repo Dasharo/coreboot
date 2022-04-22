@@ -33,15 +33,15 @@ extract_microcode
 git reset --hard HEAD
 git clean -df
 
-git fetch https://review.coreboot.org/coreboot refs/changes/78/63578/2 && \
-        git format-patch -20 --stdout FETCH_HEAD | git apply
+git fetch https://review.coreboot.org/coreboot refs/changes/87/63787/1 && \
+        git format-patch -28 --stdout FETCH_HEAD | git apply
 
 cp configs/config.msi_ms7d25 .config
 
 echo "# CONFIG_CONSOLE_SERIAL is not set" >> .config
 echo "CONFIG_USE_ADLS_IOT_FSP=y" >> .config
 echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
-sed -i 's/origin\/dasharo/4d2846baa98c253eadfb4c4e3085138e0d1396ab/g' .config
+sed -i 's/origin\/dasharo/0a1887584408ffc01b42eeca8a967e2408b58519/g' .config
 
 git submodule update --init --checkout
 
