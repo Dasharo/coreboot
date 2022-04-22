@@ -175,6 +175,13 @@ config TIANOCORE_SD_MMC_TIMEOUT
 	  The amount of time allowed to initialize the SD Card reader and/or eMMC drive.
 	  Most only require 1000μs, but certain readers can take 1000000μs.
 
+config TIANOCORE_SERIAL
+	bool "Enable TianoCore serial terminal"
+	default n
+	help
+	  Enabel serial console in TianoCore payload. Note, it wil lslow down rendering
+	  graphical menu.
+
 endif
 
 if TIANOCORE_COREBOOTPAYLOAD
