@@ -1,4 +1,22 @@
 releases:
+    - version: v0.2.0
+      added:
+          - description: Configurable boot order
+          - description: Configurable boot options
+          - description: NVMe support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/312-nvme-support/
+          - description: Integrated WiFi and BT support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/318-m2-wifi-bluetooth/
+          - description: PCIe support
+          - description: Network boot with integrated Ethernet
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/315-network-boot/
+          - description: Audio support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/31F-audio-subsystem/
+      known_issues:
+          - description: USB storage devices disappear after reboot/power failure
+            url: https://github.com/Dasharo/dasharo-issues/issues/70
+          - description: Some PCIe ports are not working
+            url: https://github.com/Dasharo/dasharo-issues/issues/75
     - version: v0.1.0
       added:
           - description: Initial support for the MSI PRO Z690-A WIFI DDR4 platform
