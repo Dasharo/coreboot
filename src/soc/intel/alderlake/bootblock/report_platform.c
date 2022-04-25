@@ -29,6 +29,11 @@ static struct {
 	{ CPUID_ALDERLAKE_Q0, "Alderlake Q0 Platform" },
 	{ CPUID_ALDERLAKE_R0, "Alderlake R0 Platform" },
 	{ CPUID_ALDERLAKE_N_A0, "Alderlake-N Platform" },
+	{ CPUID_ALDERLAKE_S_A0, "Alderlake-S A0 Platform" },
+	{ CPUID_ALDERLAKE_S_B0, "Alderlake-S B0 Platform" },
+	{ CPUID_ALDERLAKE_S_C0, "Alderlake-S C0 Platform" },
+	{ CPUID_ALDERLAKE_S_G0, "Alderlake-S G0 Platform" },
+	{ CPUID_ALDERLAKE_S_H0, "Alderlake-S H0 Platform" },
 };
 
 static struct {
@@ -50,6 +55,20 @@ static struct {
 	{ PCI_DID_INTEL_ADL_N_ID_2, "Alderlake-N" },
 	{ PCI_DID_INTEL_ADL_N_ID_3, "Alderlake-N" },
 	{ PCI_DID_INTEL_ADL_N_ID_4, "Alderlake-N" },
+	{ PCI_DID_INTEL_ADL_S_ID_1, "Alderlake-S (8+8)" },
+	{ PCI_DID_INTEL_ADL_S_ID_2, "Alderlake-S" },
+	{ PCI_DID_INTEL_ADL_S_ID_3, "Alderlake-S (8+4)" },
+	{ PCI_DID_INTEL_ADL_S_ID_4, "Alderlake-S" },
+	{ PCI_DID_INTEL_ADL_S_ID_5, "Alderlake-S (8+0)" },
+	{ PCI_DID_INTEL_ADL_S_ID_6, "Alderlake-S" },
+	{ PCI_DID_INTEL_ADL_S_ID_7, "Alderlake-S" },
+	{ PCI_DID_INTEL_ADL_S_ID_8, "Alderlake-S (6+4)" },
+	{ PCI_DID_INTEL_ADL_S_ID_9, "Alderlake-S" },
+	{ PCI_DID_INTEL_ADL_S_ID_10, "Alderlake-S (6+0)" },
+	{ PCI_DID_INTEL_ADL_S_ID_11, "Alderlake-S (4+0)" },
+	{ PCI_DID_INTEL_ADL_S_ID_12, "Alderlake-S (2+0)" },
+	{ PCI_DID_INTEL_ADL_S_ID_13, "Alderlake-S" },
+	{ PCI_DID_INTEL_ADL_S_ID_14, "Alderlake-S" },
 
 };
 
@@ -94,6 +113,17 @@ static struct {
 	{ PCI_DID_INTEL_ADP_M_ESPI_32, "Alderlake-M SKU" },
 	{ PCI_DID_INTEL_ADP_M_N_ESPI_1, "Alderlake-N SKU" },
 	{ PCI_DID_INTEL_ADP_M_N_ESPI_2, "Alderlake-N SKU" },
+	{ PCI_DID_INTEL_ADP_S_H610, "AlderLake-S H610" },
+	{ PCI_DID_INTEL_ADP_S_B660, "AlderLake-S B660" },
+	{ PCI_DID_INTEL_ADP_S_H670, "AlderLake-S H670" },
+	{ PCI_DID_INTEL_ADP_S_Q670, "AlderLake-S Q670" },
+	{ PCI_DID_INTEL_ADP_S_Z690, "AlderLake-S Z690" },
+	{ PCI_DID_INTEL_ADP_S_W680, "AlderLake-S W680" },
+	{ PCI_DID_INTEL_ADP_S_W685, "AlderLake-S W685" },
+	{ PCI_DID_INTEL_ADP_S_WM690, "AlderLake-S WM690" },
+	{ PCI_DID_INTEL_ADP_S_HM670, "AlderLake-S HM670" },
+	{ PCI_DID_INTEL_ADP_S_WM790, "AlderLake-S WM790" },
+	{ PCI_DID_INTEL_ADP_S_HM770, "AlderLake-S HM770" },
 };
 
 static struct {
@@ -127,6 +157,11 @@ static struct {
 	{ PCI_DID_INTEL_ADL_N_GT1, "Alderlake N GT1" },
 	{ PCI_DID_INTEL_ADL_N_GT2, "Alderlake N GT2" },
 	{ PCI_DID_INTEL_ADL_N_GT3, "Alderlake N GT3" },
+	{ PCI_DID_INTEL_ADL_S_GT1,   "Alderlake S GT1" },
+	{ PCI_DID_INTEL_ADL_S_GT1_1, "Alderlake S GT1" },
+	{ PCI_DID_INTEL_ADL_S_GT2,   "Alderlake S GT2" },
+	{ PCI_DID_INTEL_ADL_S_GT2_1, "Alderlake S GT2" },
+	{ PCI_DID_INTEL_ADL_S_GT2_2, "Alderlake S GT2" },
 };
 
 static inline uint8_t get_dev_revision(pci_devfn_t dev)
