@@ -129,9 +129,11 @@ static const struct slot_irq_constraints irq_constraints[] = {
 		.slot = PCH_DEV_SLOT_SIO6,
 		.fns = {
 			DIRECT_IRQ(PCH_DEVFN_UART3),
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 			DIRECT_IRQ(PCH_DEVFN_UART4),
 			DIRECT_IRQ(PCH_DEVFN_UART5),
 			DIRECT_IRQ(PCH_DEVFN_UART6),
+#endif
 		},
 	},
 	{
@@ -139,16 +141,20 @@ static const struct slot_irq_constraints irq_constraints[] = {
 		.fns = {
 			DIRECT_IRQ(PCH_DEVFN_ISH),
 			DIRECT_IRQ(PCH_DEVFN_GSPI2),
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 			ANY_PIRQ(PCH_DEVFN_UFS),
+#endif
 		},
 	},
 	{
 		.slot = PCH_DEV_SLOT_SIO2,
 		.fns = {
 			DIRECT_IRQ(PCH_DEVFN_GSPI3),
+#if !CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 			DIRECT_IRQ(PCH_DEVFN_GSPI4),
 			DIRECT_IRQ(PCH_DEVFN_GSPI5),
 			DIRECT_IRQ(PCH_DEVFN_GSPI6),
+#endif
 		},
 	},
 	{
