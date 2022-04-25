@@ -42,6 +42,7 @@
 #define ICC_MAX_TDP_45W		34250
 #define ICC_MAX_TDP_15W_28W	32000
 #define ICC_MAX_ID_ADL_M_MA	12000
+#define ICC_MAX_ADL_S		33000
 
 /*
  * ME End of Post configuration
@@ -363,7 +364,7 @@ static unsigned int get_aspm_control(enum ASPM_control ctl)
 	return ctl - 1;
 }
 
-/* This function returns the VccIn Aux Imon IccMax values for ADL-P SKU's */
+/* This function returns the VccIn Aux Imon IccMax values for ADL-P and ADL-S SKU's */
 static uint16_t get_vccin_aux_imon_iccmax(void)
 {
 	uint16_t mch_id = 0;
@@ -391,6 +392,11 @@ static uint16_t get_vccin_aux_imon_iccmax(void)
 	case PCI_DID_INTEL_ADL_M_ID_1:
 	case PCI_DID_INTEL_ADL_M_ID_2:
 		return ICC_MAX_ID_ADL_M_MA;
+	case PCI_DID_INTEL_ADL_S_ID_1:
+	case PCI_DID_INTEL_ADL_S_ID_3:
+	case PCI_DID_INTEL_ADL_S_ID_8:
+	case PCI_DID_INTEL_ADL_S_ID_10:
+		return ICC_MAX_ADL_S;
 	default:
 		printk(BIOS_ERR, "Unknown MCH ID: 0x%4x, skipping VccInAuxImonIccMax config\n",
 			mch_id);
