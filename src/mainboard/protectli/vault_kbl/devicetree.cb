@@ -30,7 +30,7 @@ chip soc/intel/skylake
 	# Enable SERIRQ continuous
 	register "serirq_mode" = "SERIRQ_CONTINUOUS"
 
-	register "tcc_offset" = "5" # TCC of 95C
+	register "tcc_offset" = "25" # TCC of 75C
 
 	# FSP Configuration
 	register "ProbelessTrace" = "0"
