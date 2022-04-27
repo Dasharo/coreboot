@@ -1659,7 +1659,19 @@ static void wait_for_occ_response(struct homer_st *homer, uint32_t timeout_sec,
 				  uint8_t seq_num)
 {
 	enum {
-		OCC_RSP_SAMPLE_TIME_US = 10,
+		/*
+		 * With two CPUs OCC polls were failing with this set to 10 or 20 us.
+		 * Apparently, checks performed by the code might not guarantee
+		 * that poll data is available in full (checksum doesn't match).
+		 *
+		 * With one CPU wait_for_occ_status() reports OCC is asking for PCAP
+		 * configuration data if *this* delay (not the one in wait_for_occ_status)
+		 * is small (50 us or smaller), 100 us seems fine.
+		 *
+		 * Something is wrong with synchronization and huge delays in Hostboot
+		 * might be hiding the issue.
+		 */
+		OCC_RSP_SAMPLE_TIME_US = 100,
 		OCC_COMMAND_IN_PROGRESS = 0xFF,
 	};
 
@@ -1904,9 +1916,10 @@ static void wait_for_occ_status(uint8_t chip, struct homer_st *homer, uint8_t st
 		if (poll_response.status & status_bit)
 			break;
 
-		if (poll_response.requested_cfg != 0x00)
-			die("OCC requests 0x%02x configuration data\n",
+		if (poll_response.requested_cfg != 0x00) {
+			die("OCC#%d requests 0x%02x configuration data\n", chip,
 			    poll_response.requested_cfg);
+		}
 
 		if (num_polls < MAX_POLLS)
 			udelay(DELAY_BETWEEN_POLLS_US);
