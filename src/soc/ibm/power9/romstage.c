@@ -344,7 +344,8 @@ static void prepare_dimm_data(uint8_t chips)
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		int mcs;
 
-		prepare_cpu_dimm_data(chip);
+		if (chips & (1 << chip))
+			prepare_cpu_dimm_data(chip);
 
 		for (mcs = 0; mcs < MCS_PER_PROC; mcs++)
 			have_dimms |= mem_data[chip].mcs[mcs].functional;
