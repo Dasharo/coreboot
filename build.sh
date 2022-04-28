@@ -79,7 +79,7 @@ build() {
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
 	  coreboot/coreboot-sdk:$SDKVER make -j "$(nproc)"
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
-    make -C util/cbfstool
+	  coreboot/coreboot-sdk:$SDKVER make -C util/cbfstool
   util/cbfstool/cbfstool build/coreboot.rom add -r BOOTSPLASH -f $LOGO -n logo.bmp -t raw -c lzma
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
