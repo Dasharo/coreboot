@@ -42,6 +42,8 @@ echo "# CONFIG_CONSOLE_SERIAL is not set" >> .config
 echo "CONFIG_USE_ADLS_IOT_FSP=y" >> .config
 echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
 echo "CONFIG_TIANOCORE_SECURE_BOOT=y"  >> .config
+echo "CONFIG_TIANOCORE_BOOT_MENU_KEY=0x0015"  >> .config
+echo "CONFIG_TIANOCORE_SETUP_MENU_KEY=0x0008"  >> .config
 sed -i 's/origin\/dasharo/0a1887584408ffc01b42eeca8a967e2408b58519/g' .config
 
 git submodule update --init --checkout
