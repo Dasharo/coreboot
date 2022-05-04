@@ -1249,6 +1249,29 @@ static int smbios_walk_device_tree(struct device *tree, int *handle, unsigned lo
 	return len;
 }
 
+int smbios_write_type43(unsigned long *current, int *handle, const u32 vendor_id,
+			const u8 major_spec_ver, const u8 minor_spec_ver,
+			const u32 fw_ver1, const u32 fw_ver2, const char *description,
+			const u64 characteristics, const u32 oem_defined)
+{
+	struct smbios_type43 *t = smbios_carve_table(*current, SMBIOS_TPM_DEVICE,
+						     sizeof(*t), *handle);
+
+	t->vendor_id = vendor_id;
+	t->major_spec_ver = major_spec_ver;
+	t->minor_spec_ver = minor_spec_ver;
+	t->fw_ver1 = fw_ver1;
+	t->fw_ver2 = fw_ver2;
+	t->characteristics = characteristics;
+	t->oem_defined = oem_defined;
+	t->description = smbios_add_string(t->eos, description);
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
+	*current += len;
+	*handle += 1;
+	return len;
+}
+
 unsigned long smbios_write_tables(unsigned long current)
 {
 	struct smbios_entry *se;
