@@ -2,3 +2,6 @@ comment "Tiger Lake U"
 
 config BOARD_CLEVO_L140MU
 	bool "L140MU / L141MU / L142MU"
+
+config BOARD_CLEVO_NV40MZ
+	bool "NV4xMB/ME/MZ"
