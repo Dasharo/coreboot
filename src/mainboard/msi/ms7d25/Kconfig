@@ -29,6 +29,10 @@ config MAINBOARD_VENDOR
 	string
 	default "Micro-Star International Co., Ltd."
 
+config MAINBOARD_FAMILY
+	string
+	default "Default string"
+
 config DEVICETREE
 	default "devicetree.cb"
 
