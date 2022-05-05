@@ -33,8 +33,8 @@ extract_microcode
 git reset --hard HEAD
 git clean -df
 
-git fetch https://review.coreboot.org/coreboot refs/changes/87/63787/1 && \
-        git format-patch -28 --stdout FETCH_HEAD | git apply
+git fetch https://review.coreboot.org/coreboot refs/changes/51/64051/2 && \
+        git format-patch -44 --stdout FETCH_HEAD | git apply
 
 cp configs/config.msi_ms7d25 .config
 
