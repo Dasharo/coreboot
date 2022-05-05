@@ -1,4 +1,26 @@
 releases:
+    - version: v0.3.0
+      added:
+          - description: Mainboard-specific SMBIOS data for slots and ports
+          - description: PCI Subsystem ID configuration
+          - description: CPU VR and PCH FIVR configuration
+          - description: Memory HCL
+            url: https://docs.dasharo.com/variants/msi_z690/memory-hcl/
+          - description: UEFI Secure Boot
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-security/206-secure-boot/
+          - description: TPM Support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-security/200-tpm-support/
+          - description: Measured Boot
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-security/203-measured-boot/
+          - description: Custom boot menu keys
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-compatibility/303-custom-boot-menu-key/
+      known_issues:
+          - description: USB storage devices disappear after reboot/power failure
+            url: https://github.com/Dasharo/dasharo-issues/issues/70
+          - description: Some PCIe ports are not working
+            url: https://github.com/Dasharo/dasharo-issues/issues/75
+          - description: fTPM is not working
+            url: https://github.com/Dasharo/dasharo-issues/issues/76
     - version: v0.2.0
       added:
           - description: Configurable boot order
