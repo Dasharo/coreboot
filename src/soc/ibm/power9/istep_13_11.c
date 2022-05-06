@@ -129,11 +129,12 @@ static void clear_initial_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 	           ~PPC_BIT(IOM_PHY0_DDRPHY_FIR_REG_DDR_FIR_ERROR_2), 0);
 }
 
-static void dump_cal_errors(uint8_t chip, int mcs_i, int mca_i)
+static void dump_cal_errors(uint8_t chip, int mcs_i, int mca_i, int rp)
 {
 #if CONFIG(DEBUG_RAM_SETUP)
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
+	const uint64_t rp_mul = 0x0000010000000000;
 
 	/*
 	 * Values are printed before names for two reasons:
@@ -145,10 +146,14 @@ static void dump_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 		printk(BIOS_ERR, "DP %d\n", dp);
 		printk(BIOS_ERR, "\t%#16.16llx - RD_VREF_CAL_ERROR\n",
 		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - DQ_BIT_DISABLE_RP0\n",
-		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - DQS_BIT_DISABLE_RP0\n",
-		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0));
+		printk(BIOS_ERR, "\t%#16.16llx - DQ_BIT_DISABLE_RP%d\n",
+		       dp_mca_read(chip, id, dp, mca_i,
+		                   DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0 + rp * rp_mul),
+		       rp);
+		printk(BIOS_ERR, "\t%#16.16llx - DQS_BIT_DISABLE_RP%d\n",
+		       dp_mca_read(chip, id, dp, mca_i,
+		                   DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0 + rp * rp_mul),
+		       rp);
 		printk(BIOS_ERR, "\t%#16.16llx - WR_ERROR0\n",
 		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - RD_STATUS0\n",
@@ -858,6 +863,7 @@ static void write_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
 	uint64_t bad_bits = 0;
+	const uint64_t rp_mul = 0x0000010000000000;
 
 	/*
 	 * TODO: this just tests if workaround is needed, real workaround is not
@@ -865,7 +871,7 @@ static void write_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 	 */
 	for (dp = 0; dp < 5; dp++) {
 		bad_bits |= dp_mca_read(chip, id, dp, mca_i,
-					DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0);
+					DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0 + rp * rp_mul);
 	}
 
 	if (!bad_bits)
@@ -984,7 +990,7 @@ static void dispatch_step(uint8_t chip, struct phy_step *step, int mcs_i, int mc
 	if (step->post)
 		step->post(chip, mcs_i, mca_i, rp, ranks_present);
 
-	dump_cal_errors(chip, mcs_i, mca_i);
+	dump_cal_errors(chip, mcs_i, mca_i, rp);
 
 	if (mca_read(chip, mcs_ids[mcs_i], mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0) != 0)
 		die("%s failed, aborting\n", step->name);
@@ -1330,7 +1336,7 @@ static void mss_draminit_training(uint8_t chip)
 				if (!(ranks_present & (1 << rp)))
 					continue;
 
-				dump_cal_errors(chip, mcs_i, mca_i);
+				dump_cal_errors(chip, mcs_i, mca_i, rp);
 
 				for (int i = 0; i < ARRAY_SIZE(steps); i++)
 					dispatch_step(chip, &steps[i], mcs_i, mca_i, rp,
