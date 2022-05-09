@@ -220,7 +220,7 @@ static int mrc_data_valid(int type, const struct mrc_metadata *md,
 		return -1;
 
 	hash_idx = cr->tpm_hash_index;
-	if (hash_idx && CONFIG(MRC_SAVE_HASH_IN_TPM)) {
+	if (hash_idx && CONFIG(MRC_SAVE_HASH_IN_TPM) && !CONFIG(VBOOT_MOCK_SECDATA)) {
 		if (!mrc_cache_verify_hash(hash_idx, data, data_size))
 			return -1;
 	} else {
@@ -494,6 +494,7 @@ static void update_mrc_cache_by_type(int type,
 			.data = new_data,
 		},
 	};
+
 	if (region_file_update_data_arr(&cache_file, entries, ARRAY_SIZE(entries)) < 0) {
 		printk(BIOS_ERR, "MRC: failed to update '%s'.\n", cr->name);
 		log_event_cache_update(cr->elog_slot, UPDATE_FAILURE);
