@@ -1,5 +1,9 @@
+file_version: 0.0.1
+
 dasharo:
   platform: protectli_vault_kbl
+  newsletter:
+    url:  https://newsletter.3mdeb.com/subscription/n2EpSxtqL
 
 client:
   name: Protectli
@@ -30,6 +34,7 @@ documentation:
   url: https://protectli.com/
   building_url: N/A
   flashing_url: N/A
+  overview_url: N/A
 
 platform:
   vendor: Protectli
