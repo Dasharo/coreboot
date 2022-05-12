@@ -52,6 +52,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	memset(params->PcieRpSlotImplemented, 0, sizeof(params->PcieRpSlotImplemented));
 	memset(params->CpuPcieRpSlotImplemented, 0, sizeof(params->CpuPcieRpSlotImplemented));
 
+	params->UsbPdoProgramming = 1;
+
 	params->CnviWifiCore = 1;
 	params->CpuPcieFiaProgramming = 1;
 
