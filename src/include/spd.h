@@ -197,6 +197,16 @@ enum spd_memory_type {
 #define MODULE_BUFFERED                  1
 #define MODULE_REGISTERED                2
 
+/* DIMM SPD addresses */
+#define DIMM0                            0x50
+#define DIMM1                            0x51
+#define DIMM2                            0x52
+#define DIMM3                            0x53
+#define DIMM4                            0x54
+#define DIMM5                            0x55
+#define DIMM6                            0x56
+#define DIMM7                            0x57
+
 #define SPD_UNDEFINED 0x00
 #define SPD_ECC_8BIT (1<<3)
 #define SPD_ECC_8BIT_LP5_DDR5 (1<<4)
