@@ -33,8 +33,8 @@ extract_microcode
 git reset --hard HEAD
 git clean -df
 
-git fetch https://review.coreboot.org/coreboot refs/changes/51/64051/2 && \
-        git format-patch -44 --stdout FETCH_HEAD | git apply
+git fetch https://review.coreboot.org/coreboot refs/changes/95/64295/1  && \
+        git format-patch -47 --stdout FETCH_HEAD | git apply
 
 cp configs/config.msi_ms7d25 .config
 
@@ -45,6 +45,8 @@ echo "CONFIG_TIANOCORE_SECURE_BOOT=y"  >> .config
 echo "CONFIG_TIANOCORE_BOOT_MENU_KEY=0x0015"  >> .config
 echo "CONFIG_TIANOCORE_SETUP_MENU_KEY=0x0008"  >> .config
 sed -i 's/origin\/dasharo/5494c8e2ef855df7892d4e1b57e036a6d576212b/g' .config
+
+echo "CONFIG_VBOOT=y" >> .config
 
 git submodule update --init --checkout
 
