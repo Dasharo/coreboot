@@ -1,4 +1,16 @@
 releases:
+    - version: v0.4.0
+      fixed:
+          - description: Some PCIe ports are not working
+            url: https://github.com/Dasharo/dasharo-issues/issues/75
+      added:
+          - description: Verified boot support
+            url: https://docs.dasharo.com/unified-test-documentation/dasharo-security/201-verified-boot/
+      known_issues:
+          - description: USB storage devices disappear after reboot/power failure
+            url: https://github.com/Dasharo/dasharo-issues/issues/70
+          - description: fTPM is not working
+            url: https://github.com/Dasharo/dasharo-issues/issues/76
     - version: v0.3.0
       added:
           - description: Mainboard-specific SMBIOS data for slots and ports
