@@ -338,7 +338,7 @@ static void build_self_restore(struct homer_st *homer,
 	 * TODO: check if we can skip both cpureg and save_self for nonfunctional
 	 * cores
 	 */
-	for (int core = 0; core < MAX_CORES; core++) {
+	for (int core = 0; core < MAX_CORES_PER_CHIP; core++) {
 		struct smf_core_self_restore *csr = &homer->cpmr.core_self_restore[core];
 		uint32_t *csa = csr->core_save_area;
 
@@ -433,7 +433,7 @@ static void build_cme(struct homer_st *homer, struct xip_cme_header *cme,
 	hdr->common_ring_len = 0;
 
 	hdr->scom_offset = 0;
-	hdr->scom_len = CORE_SCOM_RESTORE_SIZE / MAX_CORES / 2;
+	hdr->scom_len = CORE_SCOM_RESTORE_SIZE / MAX_CORES_PER_CHIP / 2;
 
 	hdr->core_spec_ring_offset = 0;
 	hdr->max_spec_ring_len = 0;
@@ -681,7 +681,7 @@ static void stop_gpe_init(struct homer_st *homer)
 static uint64_t get_available_cores(int *me)
 {
 	uint64_t ret = 0;
-	for (int i = 0; i < MAX_CORES; i++) {
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		uint64_t val = read_scom_for_chiplet(EC00_CHIPLET_ID + i, 0xF0040);
 		if (val & PPC_BIT(0)) {
 			printk(BIOS_SPEW, "Core %d is functional%s\n", i,
@@ -1365,7 +1365,7 @@ void build_homer_image(void *homer_bar)
 	// customizeMagicWord( pChipHomer );
 
 	/* Set up wakeup mode */
-	for (int i = 0; i < MAX_CORES; i++) {
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if (!IS_EC_FUNCTIONAL(i, cores))
 			continue;
 
@@ -1390,7 +1390,7 @@ void build_homer_image(void *homer_bar)
 	/* 15.3 establish EX chiplet */
 	report_istep(15, 3);
 	/* Multicast groups for cores were assigned in get_available_cores() */
-	for (int i = 0; i < MAX_CORES/4; i++) {
+	for (int i = 0; i < MAX_QUADS_PER_CHIP; i++) {
 		if (IS_EQ_FUNCTIONAL(i, cores) &&
 		    (read_scom_for_chiplet(EP00_CHIPLET_ID + i, 0xF0001) & PPC_BITMASK(3,5))
 		    == PPC_BITMASK(3,5))
@@ -1404,7 +1404,7 @@ void build_homer_image(void *homer_bar)
 
 	/* Writing OCC QCSR */
 	uint64_t qcsr = 0;
-	for (int i = 0; i < MAX_CORES/2; i++) {
+	for (int i = 0; i < MAX_CMES_PER_CHIP; i++) {
 		if (IS_EX_FUNCTIONAL(i, cores))
 			qcsr |= PPC_BIT(i);
 	}
@@ -1414,7 +1414,7 @@ void build_homer_image(void *homer_bar)
 	report_istep(15, 4);
 
 	/* Initialize the PFET controllers */
-	for (int i = 0; i < MAX_CORES; i++) {
+	for (int i = 0; i < MAX_CORES_PER_CHIP; i++) {
 		if (IS_EC_FUNCTIONAL(i, cores)) {
 			// Periodic core quiesce workaround
 			/*
