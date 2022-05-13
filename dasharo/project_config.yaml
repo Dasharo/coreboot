@@ -30,20 +30,20 @@ components:
     version: v002
 
 documentation:
-  name: Protectli website
-  url: https://protectli.com/
-  building_url: N/A
-  flashing_url: N/A
-  overview_url: N/A
+  name: Dasharo Documentation
+  url: https://docs.dasharo.com/
+  building_url: https://docs.dasharo.com/variants/protectli_fw6/building-manual/
+  flashing_url: https://docs.dasharo.com/variants/protectli_fw6/installation-manual/
+  overview_url: https://docs.dasharo.com/variants/protectli_fw6/overview/
 
 platform:
   vendor: Protectli
   model: FW6
 
 tests:
-  specification: N/A
-  hardware_matrix: https://cloud.3mdeb.com/index.php/s/EkaHYAQmpHSxixj
-  results: N/A
+  specification: https://docs.dasharo.com/unified-test-documentation/overview/
+  hardware_matrix: http://docs.dasharo.com/variants/protectli_fw6/hardware-matrix/
+  results: https://docs.google.com/spreadsheets/d/1wI0qBSLdaluayYsm_lIa9iJ9LnPnCOZ9eNOyrKSc-j4/edit#gid=1325547345
 
 asciinema:
   signature_verification: https://asciinema.org/a/388861

@@ -1,11 +1,11 @@
 releases:
   - version: v1.0.14
     changed:
-      - Throttling temperature to 75 Celsius degrees 
+      - description: Throttling temperature to 75 Celsius degrees 
 
     known_issues:
       - description: Samsung memory modules do not work properly on older FW6A/B/C (SKU6LAV20)
-        url: N/A
+
 
   - version: v1.0.12
     added:
@@ -16,4 +16,4 @@ releases:
 
     known_issues:
       - description: Samsung memory modules do not work properly on older FW6A/B/C (SKU6LAV20)
-        url: N/A
+
