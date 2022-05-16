@@ -333,6 +333,7 @@ void main(void)
 	console_init();
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
+	istep_10_12();
 	istep_10_13();
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
