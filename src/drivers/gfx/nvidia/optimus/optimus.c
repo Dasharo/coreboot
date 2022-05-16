@@ -175,7 +175,7 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 	const char *scope = acpi_device_path(parent);
 
 	/* PCH RP PCIe configuration space */
-	const struct opregion rp_pci_config = OPREGION("PXCS", SYSTEMMEMORY, CONFIG_MMCONF_BASE_ADDRESS | (parent->path.pci.devfn << 12), 0x1000);
+	const struct opregion rp_pci_config = OPREGION("PXCS", SYSTEMMEMORY, CONFIG_ECAM_MMCONF_BASE_ADDRESS | (parent->path.pci.devfn << 12), 0x1000);
 	const struct fieldlist rp_fieldlist[] = {
 		FIELDLIST_OFFSET(PCH_PCIE_CFG_LSTS),
 		FIELDLIST_RESERVED(13),
