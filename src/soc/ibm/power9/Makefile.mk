@@ -31,6 +31,7 @@ romstage-y += vpd.c
 ramstage-y += cbmem.c
 ramstage-y += chip.c
 ramstage-y += homer.c
+ramstage-y += i2c.c
 ramstage-y += int_vectors.S
 ramstage-y += istep_18_11.c
 ramstage-y += istep_18_12.c
