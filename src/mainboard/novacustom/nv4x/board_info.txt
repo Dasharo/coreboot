@@ -1,0 +1,8 @@
+Vendor name: Novacustom
+Board name: NV4X
+Category: laptop
+Release year: 2021
+ROM package: SOIC-8
+ROM protocol: SPI
+ROM socketed: n
+Flashrom support: y

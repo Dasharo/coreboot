@@ -1,0 +1,6 @@
+if BOARD_NOVACUSTOM_NV4X
+
+config MAINBOARD_PART_NUMBER
+	default "nv41mz"
+
+endif # BOARD_NOVACUSTOM_NV4X

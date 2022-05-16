@@ -1,0 +1,4 @@
+config BOARD_NOVACUSTOM_NV4X
+	bool "NV4X"
+	select BOARD_CLEVO_NV41MZ_BASE
+
