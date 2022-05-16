@@ -17,6 +17,23 @@
 #include "tor.h"
 #include "xip.h"
 
+#define EX_0_NCU_DARN_BAR_REG 0x10011011
+
+#define MAX_EQ_SCOM_ENTRIES 31
+#define MAX_L2_SCOM_ENTRIES 16
+#define MAX_L3_SCOM_ENTRIES 16
+
+#define PPC_PLACE(val, pos, len) \
+	PPC_SHIFT((val) & ((1 << ((len) + 1)) - 1), ((pos) + ((len) - 1)))
+
+/* Subsections of STOP image that contain SCOM entries */
+enum scom_section {
+	STOP_SECTION_CORE_SCOM,
+	STOP_SECTION_EQ_SCOM,
+	STOP_SECTION_L2,
+	STOP_SECTION_L3,
+};
+
 struct ring_data {
 	void *rings_buf;
 	void *work_buf1;
@@ -52,6 +69,23 @@ struct sgpe_inst_ring_list {
 	uint16_t ring[MAX_QUADS_PER_CHIP][12];
 
 	uint8_t payload[];
+};
+
+struct scom_entry_t {
+	uint32_t hdr;
+	uint32_t address;
+	uint64_t data;
+};
+
+struct stop_cache_section_t {
+	struct scom_entry_t non_cache_area[MAX_EQ_SCOM_ENTRIES];
+	struct scom_entry_t l2_cache_area[MAX_L2_SCOM_ENTRIES];
+	struct scom_entry_t l3_cache_area[MAX_L3_SCOM_ENTRIES];
+};
+
+enum scom_operation {
+	SCOM_APPEND,
+	SCOM_REPLACE
 };
 
 enum operation_type {
@@ -183,6 +217,7 @@ static const uint32_t _SMF = 0x5F534D46; // "_SMF"
 
 static const uint32_t ATTN_OP             = 0x00000200;
 static const uint32_t BLR_OP              = 0x4E800020;
+static const uint32_t ORI_OP              = 0x60000000;
 static const uint32_t SKIP_SPR_REST_INST  = 0x4800001C;
 static const uint32_t MR_R0_TO_R10_OP     = 0x7C0A0378;
 static const uint32_t MR_R0_TO_R21_OP     = 0x7C150378;
@@ -1256,6 +1291,117 @@ static void layout_rings_for_sgpe(struct homer_st *homer,
 	}
 }
 
+static void stop_save_scom(struct homer_st *homer, uint32_t scom_address,
+			   uint64_t scom_data, enum scom_section section,
+			   enum scom_operation operation)
+{
+	enum {
+		STOP_API_VER = 0x00,
+		SCOM_ENTRY_START = 0xDEADDEAD,
+	};
+
+	chiplet_id_t chiplet_id = (scom_address >> 24) & 0x3F;
+	uint32_t max_scom_restore_entries = 0;
+	struct stop_cache_section_t *stop_cache_scom = NULL;
+	struct scom_entry_t *scom_entry = NULL;
+	struct scom_entry_t *nop_entry = NULL;
+	struct scom_entry_t *matching_entry = NULL;
+	struct scom_entry_t *end_entry = NULL;
+	struct scom_entry_t *entry = NULL;
+	uint32_t entry_limit = 0;
+
+	if (chiplet_id >= EC00_CHIPLET_ID) {
+		uint32_t offset = (chiplet_id - EC00_CHIPLET_ID)
+				* CORE_SCOM_RESTORE_SIZE_PER_CORE;
+		scom_entry = (struct scom_entry_t *)&homer->cpmr.core_scom[offset];
+		max_scom_restore_entries = homer->cpmr.header.core_max_scom_entry;
+	} else {
+		uint32_t offset = (chiplet_id - EP00_CHIPLET_ID)
+				* QUAD_SCOM_RESTORE_SIZE_PER_QUAD;
+		stop_cache_scom =
+			(struct stop_cache_section_t *)&homer->qpmr.cache_scom_region[offset];
+		max_scom_restore_entries = homer->qpmr.sgpe.header.max_quad_restore_entry;
+	}
+
+	if (stop_cache_scom == NULL)
+		die("Failed to prepare for updating STOP SCOM\n");
+
+	switch (section) {
+	case STOP_SECTION_CORE_SCOM:
+		entry_limit = max_scom_restore_entries;
+		break;
+	case STOP_SECTION_EQ_SCOM:
+		scom_entry = stop_cache_scom->non_cache_area;
+		entry_limit = MAX_EQ_SCOM_ENTRIES;
+		break;
+	default:
+		die("Unhandled STOP image section.\n");
+		break;
+	}
+
+	for (uint32_t i = 0; i < entry_limit; ++i) {
+		uint32_t entry_address = scom_entry[i].address;
+		uint32_t entry_hdr = scom_entry[i].hdr;
+
+		if (entry_address == scom_address && matching_entry == NULL)
+			matching_entry = &scom_entry[i];
+
+		if ((entry_address == ORI_OP || entry_address == ATTN_OP ||
+		     entry_address == BLR_OP) && nop_entry == NULL)
+			nop_entry = &scom_entry[i];
+
+		/* If entry is either 0xDEADDEAD or has SCOM entry limit in LSB of its header,
+		 * the place is already occupied */
+		if (entry_hdr == SCOM_ENTRY_START || (entry_hdr & 0x000000FF))
+			continue;
+
+		end_entry = &scom_entry[i];
+		break;
+	}
+
+	if (matching_entry == NULL && end_entry == NULL)
+		die("Failed to find SCOM entry in STOP image.\n");
+
+	entry = end_entry;
+	if (operation == SCOM_APPEND && nop_entry != NULL)
+		entry = nop_entry;
+	else if (operation == SCOM_REPLACE && matching_entry != NULL)
+		entry = matching_entry;
+
+	if (entry == NULL)
+		die("Failed to insert SCOM entry in STOP image.\n");
+
+	entry->hdr = (0x000000FF & max_scom_restore_entries)
+		   | ((STOP_API_VER & 0x7) << 28);
+	entry->address = scom_address;
+	entry->data = scom_data;
+}
+
+static void populate_ncu_rng_bar_scom_reg(struct homer_st *homer)
+{
+	enum { NX_RANGE_BAR_ADDR_OFFSET = 0x00000302031D0000 };
+
+	uint8_t ex = 0;
+
+	uint64_t regNcuRngBarData = PPC_PLACE(0x0, 8, 5)   // system ID
+				  | PPC_PLACE(0x3, 13, 2)  // msel
+				  | PPC_PLACE(0x0, 15, 4)  // group ID
+				  | PPC_PLACE(0x0, 19, 3); // chip ID
+
+	regNcuRngBarData += NX_RANGE_BAR_ADDR_OFFSET;
+
+	for (ex = 0; ex < MAX_CMES_PER_CHIP; ++ex) {
+		/* Create restore entry for NCU RNG register */
+
+		uint32_t scom_addr = EX_0_NCU_DARN_BAR_REG
+				   | ((ex / 2) << 24)
+				   | ((ex % 2) ? 0x0400 : 0x0000);
+
+		stop_save_scom(homer, scom_addr, regNcuRngBarData,
+			       STOP_SECTION_EQ_SCOM, SCOM_REPLACE);
+	}
+}
+
 static void update_headers(struct homer_st *homer, uint64_t cores)
 {
 	/*
@@ -1466,8 +1612,8 @@ void build_homer_image(void *homer_bar)
 	// Update L3 Refresh Timer Control SCOM Registers
 	// populateL3RefreshScomReg( pChipHomer, i_procTgt);
 
-	// Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register
-	// populateNcuRngBarScomReg( pChipHomer, i_procTgt );
+	/* Populate HOMER with SCOM restore value of NCU RNG BAR SCOM Register */
+	populate_ncu_rng_bar_scom_reg(homer);
 
 	/* Update flag fields in image headers */
 	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
