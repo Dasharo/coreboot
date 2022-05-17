@@ -4,6 +4,8 @@
 #include <commonlib/region.h>
 #include <console/console.h>
 #include <cpu/power/mvpd.h>
+#include <cpu/power/istep_13.h>
+#include <cpu/power/occ.h>
 #include <cpu/power/powerbus.h>
 #include <cpu/power/rom_media.h>
 #include <cpu/power/scom.h>
@@ -48,9 +50,54 @@ enum scom_section {
 	STOP_SECTION_L3,
 };
 
+#define INIT_CONFIG_VALUE    0x8000000C09800000ull
+#define QPMR_PROC_CONFIG_POS 0xBFC18
+
 /* Undocumented */
 #define PU_OCB_OCI_OCCFLG2_CLEAR 0x0006C18B
 #define PU_PBAXCFG_SCOM          0x00068021
+
+/* Host configuration information passed from host to OCC */
+struct occ_host_config {
+	uint32_t version;	// Version of this structure
+
+	uint32_t nest_freq;	// For computation of timebase frequency
+
+	/*
+	 * Interrupt type to the host:
+	 *  - 0x00000000 = FSI2HOST Mailbox
+	 *  - 0x00000001 = OCC interrupt line through PSIHB complex
+	 */
+	uint32_t interrupt_type;
+
+	uint32_t is_fir_master;	// If this OCC is the FIR master
+
+	/* FIR collection configuration data needed by FIR Master OCC in the
+	 * event of a checkstop */
+	uint8_t firdataConfig[3072];
+
+	uint32_t is_smf_mode;	// Whether SMF mode is enabled
+};
+
+/* Bit positions for various chiplets in host configuration vector */
+enum {
+	MCS_POS           = 1,
+	MBA_POS           = 9,	// This is actually MCA_POS
+	MEM_BUF_POS       = 17,
+	XBUS_POS          = 25,
+	PHB_POS           = 30,
+	CAPP_POS          = 37,
+	OBUS_POS          = 41,
+	ABUS_POS          = 41,
+	NVLINK_POS        = 45,
+
+	OBUS_BRICK_0_POS  = 0,
+	OBUS_BRICK_1_POS  = 1,
+	OBUS_BRICK_2_POS  = 2,
+	OBUS_BRICK_9_POS  = 9,
+	OBUS_BRICK_10_POS = 10,
+	OBUS_BRICK_11_POS = 11,
+};
 
 struct ring_data {
 	void *rings_buf;
@@ -1078,6 +1125,436 @@ static void istep_16_1(int this_core)
 	//     p9_stop_save_scom() and others
 }
 
+/* Loads OCC Image from PNOR into HOMER */
+static void load_occ_image_to_homer(struct homer_st *homer)
+{
+	struct mmap_helper_region_device mdev = {0};
+
+	/*
+	 * This will work as long as we don't call mmap(). mmap() calls
+	 * mem_poll_alloc() which doesn't check if mdev->pool is valid or at least
+	 * not NULL.
+	 */
+	mount_part_from_pnor("OCC", &mdev);
+	/*
+	 * Common OCC area is located right after HOMER image. 0x120000 is the
+	 * size of OCC partition in PNOR, last 0x2000 bytes aren't important?
+	 */
+	rdev_readat(&mdev.rdev, &homer->occ_host_area, 0, 1 * MiB);
+}
+
+/* Writes information about the host to be read by OCC */
+static void load_host_data_to_homer(struct homer_st *homer)
+{
+	enum {
+		OCC_HOST_DATA_VERSION = 0x00000090,
+		USE_PSIHB_COMPLEX = 0x00000001,
+	};
+
+	struct occ_host_config *config_data =
+		(void *)&homer->occ_host_area[HOMER_OFFSET_TO_OCC_HOST_DATA];
+
+	config_data->version = OCC_HOST_DATA_VERSION;
+	config_data->nest_freq = powerbus_cfg()->fabric_freq;
+	config_data->interrupt_type = USE_PSIHB_COMPLEX;
+	config_data->is_fir_master = false;
+	config_data->is_smf_mode = false;
+}
+
+static void load_pm_complex(struct homer_st *homer)
+{
+	/*
+	 * Hostboot resets OCC here, but we haven't started it yet, so reset
+	 * shouldn't be necessary.
+	 */
+
+	load_occ_image_to_homer(homer);
+	load_host_data_to_homer(homer);
+}
+
+static void pm_corequad_init(uint64_t cores)
+{
+	enum {
+		EQ_QPPM_QPMMR_CLEAR = 0x100F0104,
+		EQ_QPPM_ERR = 0x100F0121,
+		EQ_QPPM_ERRMSK = 0x100F0122,
+		C_CPPM_CPMMR_CLEAR = 0x200F0107,
+		C_CPPM_ERR = 0x200F0121,
+		C_CPPM_CSAR_CLEAR = 0x200F0139,
+		C_CPPM_ERRMSK = 0x200F0122,
+		DOORBELLS_COUNT = 4,
+	};
+
+	const uint64_t CME_DOORBELL_CLEAR[DOORBELLS_COUNT] = {
+		0x200F0191, 0x200F0195, 0x200F0199, 0x200F019D
+	};
+
+	/*
+	 * This is supposed to be stored by pm_corequad_reset() in ATTR_QUAD_PPM_ERRMASK
+	 * and ATTR_CORE_PPM_ERRMASK.
+	 *
+	 * If there was no reset, maybe no need to set it?
+	 */
+	uint32_t err_mask = 0;
+
+	for (int quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		chiplet_id_t quad_chiplet = EP00_CHIPLET_ID + quad;
+
+		if (!IS_EQ_FUNCTIONAL(quad, cores))
+			continue;
+
+		/*
+		 * Setup the Quad PPM Mode Register
+		 * Clear the following bits:
+		 * 0          : Force FSAFE
+		 * 1  - 11    : FSAFE
+		 * 12         : Enable FSAFE on heartbeat loss
+		 * 13         : Enable DROOP protect upon heartbeat loss
+		 * 14         : Enable PFETs upon iVRMs dropout
+		 * 18 - 19    : PCB interrupt
+		 * 20,22,24,26: InterPPM Ivrm/Aclk/Vdata/Dpll enable
+		 */
+		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_QPMMR_CLEAR,
+				       PPC_BIT(0) |
+				       PPC_BITMASK(1, 11) |
+				       PPC_BIT(12) |
+				       PPC_BIT(13) |
+				       PPC_BIT(14) |
+				       PPC_BITMASK(18, 19) |
+				       PPC_BIT(20) |
+				       PPC_BIT(22) |
+				       PPC_BIT(24) |
+				       PPC_BIT(26));
+
+		/* Clear QUAD PPM ERROR Register */
+		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERR, 0);
+
+		/* Restore Quad PPM Error Mask */
+		err_mask = 0xFFFFFF00; // from Hostboot's log
+		write_scom_for_chiplet(quad_chiplet, EQ_QPPM_ERRMSK,
+				       PPC_SHIFT(err_mask, 31));
+
+		for (int core = quad * 4; core < (quad + 1) * 4; ++core) {
+			chiplet_id_t core_chiplet = EC00_CHIPLET_ID + core;
+
+			/* Clear the Core PPM CME DoorBells */
+			for (int i = 0; i < DOORBELLS_COUNT; ++i)
+				write_scom_for_chiplet(core_chiplet, CME_DOORBELL_CLEAR[i],
+						       PPC_BITMASK(0, 63));
+
+			/*
+			 * Setup Core PPM Mode register
+			 *
+			 * Clear the following bits:
+			 * 1      : PPM Write control override
+			 * 11     : Block interrupts
+			 * 12     : PPM response for CME error
+			 * 14     : enable pece
+			 * 15     : cme spwu done dis
+			 *
+			 * Other bits are Init or Reset by STOP Hcode and, thus, not touched
+			 * here:
+			 * 0      : PPM Write control
+			 * 9      : FUSED_CORE_MODE
+			 * 10     : STOP_EXIT_TYPE_SEL
+			 * 13     : WKUP_NOTIFY_SELECT
+			 */
+			write_scom_for_chiplet(core_chiplet, C_CPPM_CPMMR_CLEAR,
+					       PPC_BIT(1) |
+					       PPC_BIT(11) |
+					       PPC_BIT(12) |
+					       PPC_BIT(14) |
+					       PPC_BIT(15));
+
+			/* Clear Core PPM Errors */
+			write_scom_for_chiplet(core_chiplet, C_CPPM_ERR, 0);
+
+			/*
+			 * Clear Hcode Error Injection and other CSAR settings:
+			 * 27     : FIT_HCODE_ERROR_INJECT
+			 * 28     : ENABLE_PSTATE_REGISTRATION_INTERLOCK
+			 * 29     : DISABLE_CME_NACK_ON_PROLONGED_DROOP
+			 * 30     : PSTATE_HCODE_ERROR_INJECT
+			 * 31     : STOP_HCODE_ERROR_INJECT
+			 *
+			 * DISABLE_CME_NACK_ON_PROLONGED_DROOP is NOT cleared
+			 * as this is a persistent, characterization setting.
+			 */
+			write_scom_for_chiplet(core_chiplet, C_CPPM_CSAR_CLEAR,
+					       PPC_BIT(27) |
+					       PPC_BIT(28) |
+					       PPC_BIT(30) |
+					       PPC_BIT(31));
+
+			/* Restore CORE PPM Error Mask */
+			err_mask = 0xFFF00000; // from Hostboot's log
+			write_scom_for_chiplet(core_chiplet, C_CPPM_ERRMSK,
+					       PPC_SHIFT(err_mask, 31));
+		}
+	}
+}
+
+static void pstate_gpe_init(struct homer_st *homer, uint64_t cores)
+{
+	enum {
+		/* The following constants hold approximate values */
+		PGPE_TIMEOUT_MS  = 500,
+		PGPE_POLLTIME_MS = 20,
+		TIMEOUT_COUNT    = PGPE_TIMEOUT_MS / PGPE_POLLTIME_MS,
+
+		EQ_QPPM_QPMMR = 0x100F0103,
+
+		PU_GPE2_PPE_XIXCR    = 0x00064010,
+		PU_GPE2_PPE_XIDBGPRO = 0x00064015,
+		PU_GPE3_PPE_XIDBGPRO = 0x00066015,
+
+		PU_GPE2_GPEIVPR_SCOM    = 0x00064001,
+		PU_OCB_OCI_OCCS2_SCOM   = 0x0006C088,
+		PU_OCB_OCI_OCCFLG_SCOM2 = 0x0006C08C,
+		PU_GPE2_GPETSEL_SCOM    = 0x00064000,
+
+		/* OCC SCRATCH2 */
+		PGPE_ACTIVE                 = 0,
+		PGPE_PSTATE_PROTOCOL_ACTIVE = 1,
+
+		/* XSR */
+		HALTED_STATE = 0,
+
+		/* XCR */
+		RESUME         = 2,
+		TOGGLE_XSR_TRH = 4,
+		HARD_RESET     = 6,
+	};
+
+	uint64_t occ_scratch;
+	/* ATTR_VDD_AVSBUS_BUSNUM */
+	uint8_t avsbus_number = 0;
+	/* ATTR_VDD_AVSBUS_RAIL */
+	uint8_t avsbus_rail = 0;
+
+	uint64_t ivpr = 0x80000000 + offsetof(struct homer_st, ppmr.l1_bootloader);
+	write_scom(PU_GPE2_GPEIVPR_SCOM, ivpr << 32);
+
+	/* Set up the OCC Scratch 2 register before PGPE boot */
+	occ_scratch = read_scom(PU_OCB_OCI_OCCS2_SCOM);
+	occ_scratch &= ~PPC_BIT(PGPE_ACTIVE);
+	occ_scratch &= ~PPC_BITMASK(27, 32);
+	occ_scratch |= PPC_PLACE(avsbus_number, 27, 1);
+	occ_scratch |= PPC_PLACE(avsbus_rail, 28, 4);
+	write_scom(PU_OCB_OCI_OCCS2_SCOM, occ_scratch);
+
+	write_scom(PU_GPE2_GPETSEL_SCOM, 0x1A00000000000000);
+
+	/* OCCFLG2_PGPE_HCODE_FIT_ERR_INJ | OCCFLG2_PGPE_HCODE_PSTATE_REQ_ERR_INJ */
+	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, 0x1100000000);
+
+	printk(BIOS_ERR, "Attempting PGPE activation...\n");
+
+	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(HARD_RESET, 1, 3));
+	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(TOGGLE_XSR_TRH, 1, 3));
+	write_scom(PU_GPE2_PPE_XIXCR, PPC_PLACE(RESUME, 1, 3));
+
+	wait_ms(PGPE_POLLTIME_MS * TIMEOUT_COUNT,
+		(read_scom(PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE)) ||
+		(read_scom(PU_GPE2_PPE_XIDBGPRO) & PPC_BIT(HALTED_STATE)));
+
+	if (read_scom(PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE))
+		printk(BIOS_ERR, "PGPE was activated successfully\n");
+	else
+		die("Failed to activate PGPE\n");
+
+	OCCPstateParmBlock *oppb = (OCCPstateParmBlock *)homer->ppmr.occ_parm_block;
+	GlobalPstateParmBlock *gppb = (GlobalPstateParmBlock *)
+		&homer->ppmr.pgpe_sram_img[homer->ppmr.header.hcode_len];
+
+	uint32_t safe_mode_freq = oppb->frequency_min_khz / gppb->frequency_step_khz;
+
+	for (int quad = 0; quad < MAX_QUADS_PER_CHIP; ++quad) {
+		if (!IS_EQ_FUNCTIONAL(quad, cores))
+			continue;
+
+		scom_and_or_for_chiplet(EP00_CHIPLET_ID + quad, EQ_QPPM_QPMMR,
+					~PPC_BITMASK(1, 11),
+					PPC_SHIFT(safe_mode_freq, 11));
+	}
+}
+
+static void pm_pba_init(void)
+{
+	enum {
+		PU_PBACFG = 0x0501284B,
+		PU_PBAFIR = 0x05012840,
+
+		PU_PBACFG_CHSW_DIS_GROUP_SCOPE = 38,
+
+		/* These don't have corresponding attributes */
+		PBAX_DATA_TIMEOUT                = 0x0,
+		PBAX_SND_RETRY_COMMIT_OVERCOMMIT = 0x0,
+		PBAX_SND_RETRY_THRESHOLD         = 0x0,
+		PBAX_SND_TIMEOUT                 = 0x0,
+	};
+
+	uint64_t data = 0;
+	/* Assuming all these attributes have zero values */
+	uint8_t attr_pbax_groupid = 0;
+	uint8_t attr_pbax_chipid = 0;
+	uint8_t attr_pbax_broadcast_vector = 0;
+
+	/* Assuming ATTR_CHIP_EC_FEATURE_HW423589_OPTION1 == true */
+	write_scom(PU_PBACFG, PPC_BIT(PU_PBACFG_CHSW_DIS_GROUP_SCOPE));
+
+	write_scom(PU_PBAFIR, 0);
+
+	data |= PPC_PLACE(attr_pbax_groupid, 4, 4);
+	data |= PPC_PLACE(attr_pbax_chipid, 8, 3);
+	data |= PPC_PLACE(attr_pbax_broadcast_vector, 12, 8);
+	data |= PPC_PLACE(PBAX_DATA_TIMEOUT, 20, 5);
+	data |= PPC_PLACE(PBAX_SND_RETRY_COMMIT_OVERCOMMIT, 27, 1);
+	data |= PPC_PLACE(PBAX_SND_RETRY_THRESHOLD, 28, 8);
+	data |= PPC_PLACE(PBAX_SND_TIMEOUT, 36, 5);
+	write_scom(PU_PBAXCFG_SCOM, data);
+}
+
+static void pm_pstate_gpe_init(struct homer_st *homer, uint64_t cores)
+{
+	pstate_gpe_init(homer, cores);
+	pm_pba_init();
+}
+
+/* Generates host configuration vector and updates the value in HOMER */
+static void check_proc_config(struct homer_st *homer)
+{
+	uint64_t vector_value = INIT_CONFIG_VALUE;
+	uint64_t *conf_vector = (void *)((uint8_t *)&homer->qpmr + QPMR_PROC_CONFIG_POS);
+
+	int mcs_i = 0;
+
+	for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
+		chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
+
+		/* MCS_MCFGP and MCS_MCFGPM registers are undocumented, see istep 14.5. */
+		if ((read_scom_for_chiplet(nest, 0x0501080A) & PPC_BIT(0)) ||
+		    (read_scom_for_chiplet(nest, 0x0501080C) & PPC_BIT(0))) {
+			uint8_t pos = MCS_POS + mcs_i;
+			*conf_vector |= PPC_BIT(pos);
+
+			/* MCS and MBA/MCA seem to have equivalent values */
+			pos = MBA_POS + mcs_i;
+			*conf_vector |= PPC_BIT(pos);
+		}
+	}
+
+	/* TODO: set configuration bits for XBUS and PHB when their state is available */
+
+	*conf_vector = vector_value;
+}
+
+static void pm_pss_init(void)
+{
+	enum {
+		PU_SPIPSS_ADC_CTRL_REG0 = 0x00070000,
+		PU_SPIPSS_ADC_WDATA_REG = 0x00070010,
+		PU_SPIPSS_P2S_CTRL_REG0 = 0x00070040,
+		PU_SPIPSS_P2S_WDATA_REG = 0x00070050,
+		PU_SPIPSS_100NS_REG     = 0x00070028,
+	};
+
+	/*
+	 *  0-5   frame size
+	 * 12-17  in delay
+	 */
+	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0,
+		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
+		    PPC_SHIFT(0x20, 5));
+
+	/*
+	 *  0     adc_fsm_enable    = 1
+	 *  1     adc_device        = 0
+	 *  2     adc_cpol          = 0
+	 *  3     adc_cpha          = 0
+	 *  4-13  adc_clock_divider = set to 10Mhz
+	 * 14-17  adc_nr_of_frames  = 0x10 (for auto 2 mode)
+	 *
+	 * Truncating last value to 4 bits gives 0.
+	 */
+	scom_and_or(PU_SPIPSS_ADC_CTRL_REG0 + 1, ~PPC_BITMASK(0, 17),
+		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_SHIFT(0, 17));
+
+	/*
+	 * 0-16  inter frame delay
+	 */
+	scom_and(PU_SPIPSS_ADC_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
+
+	write_scom(PU_SPIPSS_ADC_WDATA_REG, 0);
+
+	/*
+	 *  0-5   frame size
+	 * 12-17  in delay
+	 */
+	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0,
+		    ~PPC_BITMASK(0, 5) & ~PPC_BITMASK(12, 17),
+		    PPC_SHIFT(0x20, 5));
+
+	/*
+	 *  0     p2s_fsm_enable    = 1
+	 *  1     p2s_device        = 0
+	 *  2     p2s_cpol          = 0
+	 *  3     p2s_cpha          = 0
+	 *  4-13  p2s_clock_divider = set to 10Mhz
+	 *  17    p2s_nr_of_frames  = 1 (for auto 2 mode)
+	 */
+	scom_and_or(PU_SPIPSS_P2S_CTRL_REG0 + 1,
+		    ~(PPC_BITMASK(0, 13) | PPC_BIT(17)),
+		    PPC_BIT(0) | PPC_SHIFT(10, 13) | PPC_BIT(17));
+
+	/*
+	 * 0-16  inter frame delay
+	 */
+	scom_and(PU_SPIPSS_P2S_CTRL_REG0 + 2, ~PPC_BITMASK(0, 16));
+
+	write_scom(PU_SPIPSS_P2S_WDATA_REG, 0);
+
+	/*
+	 * 0-31  100ns value
+	 */
+	scom_and_or(PU_SPIPSS_100NS_REG,
+		    PPC_BITMASK(0, 31),
+		    PPC_SHIFT(powerbus_cfg()->fabric_freq / 40, 31));
+}
+
+/* Initializes power-management and starts OCC */
+static void start_pm_complex(struct homer_st *homer, uint64_t cores)
+{
+	enum { STOP_RECOVERY_TRIGGER_ENABLE = 29 };
+
+	pm_corequad_init(cores);
+	pm_pss_init();
+	pm_occ_fir_init();
+	pm_pba_fir_init();
+	stop_gpe_init(homer);
+	pm_pstate_gpe_init(homer, cores);
+
+	check_proc_config(homer);
+	clear_occ_special_wakeups(cores);
+	special_occ_wakeup_disable(cores);
+	occ_start_from_mem();
+
+	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(STOP_RECOVERY_TRIGGER_ENABLE));
+}
+
+static void istep_21_1(struct homer_st *homer, uint64_t cores)
+{
+	load_pm_complex(homer);
+
+	printk(BIOS_ERR, "Starting PM complex...\n");
+	start_pm_complex(homer, cores);
+	printk(BIOS_ERR, "Done starting PM complex\n");
+
+	printk(BIOS_ERR, "Activating OCC...\n");
+	activate_occ(homer);
+	printk(BIOS_ERR, "Done activating OCC\n");
+}
+
 /* Extracts rings for a specific Programmable PowerPC-lite Engine */
 static void get_ppe_scan_rings(struct xip_hw_header *hw, uint8_t dd, enum ppe_type ppe,
 			       struct ring_data *ring_data)
@@ -2048,8 +2525,8 @@ void build_homer_image(void *homer_bar)
 	*/
 	write_scom(PU_OCB_OCI_OCCFLG2_CLEAR, PPC_BIT(30));
 
-	// Boot the STOP GPE
-	stop_gpe_init(homer);
+	/* Boot OCC here and activate SGPE at the same time */
+	istep_21_1(homer, cores);
 
 	istep_16_1(this_core);
 }
