@@ -329,7 +329,10 @@ check_member(homer_st, ppmr, 3 * MiB);
 #define IS_EX_FUNCTIONAL(ex, cores)		(!!((cores) & PPC_BITMASK(2*(ex), 2*(ex) + 1)))
 #define IS_EQ_FUNCTIONAL(eq, cores)		(!!((cores) & PPC_BITMASK(4*(eq), 4*(eq) + 3)))
 
+struct voltage_bucket_data;
+
 void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores);
 void configure_xive(int tgt_core);
+const struct voltage_bucket_data * get_voltage_data(void);
 
 #endif /* __SOC_IBM_POWER9_HOMER_H */

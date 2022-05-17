@@ -1,8 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/power/mvpd.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/occ.h>
+#include <delay.h>
+#include <lib.h>
+#include <string.h>		// memset, memcpy
+#include <timer.h>
+#include <vendorcode/ibm/power9/pstates/p9_pstates_occ.h>
 
 #include "homer.h"
 #include "ops.h"
@@ -28,6 +34,29 @@
 #define PU_OCB_PIB_OCBCSR0_OR 0x0006D013
 #define PU_OCB_PIB_OCBCSR0_CLEAR 0x0006D012
 
+#define OCC_CMD_ADDR 0x000E0000
+#define OCC_RSP_ADDR 0x000E1000
+
+#define OCC_CMD_POLL            0x00
+#define OCC_CMD_CLEAR_ERROR_LOG 0x12
+#define OCC_CMD_SET_STATE       0x20
+#define OCC_CMD_SETUP_CFG_DATA  0x21
+#define OCC_CMD_SET_POWER_CAP   0x22
+
+#define OCC_RC_SUCCESS             0x00
+#define OCC_RC_INIT_FAILURE        0xE5
+#define OCC_RC_OCC_INIT_CHECKPOINT 0xE1
+
+#define OCC_CFGDATA_FREQ_POINT    0x02
+#define OCC_CFGDATA_OCC_ROLE      0x03
+#define OCC_CFGDATA_APSS_CONFIG   0x04
+#define OCC_CFGDATA_MEM_CONFIG    0x05
+#define OCC_CFGDATA_PCAP_CONFIG   0x07
+#define OCC_CFGDATA_SYS_CONFIG    0x0F
+#define OCC_CFGDATA_TCT_CONFIG    0x13
+#define OCC_CFGDATA_AVSBUS_CONFIG 0x14
+#define OCC_CFGDATA_GPU_CONFIG    0x15
+
 /* FIR register offset from base */
 enum fir_offset {
 	BASE_WAND_INCR = 1,
@@ -38,6 +67,31 @@ enum fir_offset {
 	ACTION0_INCR   = 6,
 	ACTION1_INCR   = 7
 };
+
+struct occ_cfg_info {
+	const char *name;
+	void (*func)(struct homer_st *homer, uint8_t *data, uint16_t *size);
+};
+
+struct occ_poll_response {
+	uint8_t  status;
+	uint8_t  ext_status;
+	uint8_t  occs_present;
+	uint8_t  requested_cfg;
+	uint8_t  state;
+	uint8_t  mode;
+	uint8_t  ips_status;
+	uint8_t  error_id;
+	uint32_t error_address;
+	uint16_t error_length;
+	uint8_t  error_source;
+	uint8_t  gpu_cfg;
+	uint8_t  code_level[16];
+	uint8_t  sensor[6];
+	uint8_t  num_blocks;
+	uint8_t  version;
+	uint8_t  sensor_data[];	// 4049 bytes
+} __attribute__((packed));
 
 static void pm_ocb_setup(uint32_t ocb_bar)
 {
@@ -104,13 +158,13 @@ static void write_occ_sram(uint32_t address, uint64_t *buffer, size_t data_lengt
 	put_ocb_indirect(data_length / 8, address, buffer);
 }
 
-void read_occ_sram(uint32_t address, uint64_t *buffer, size_t data_length)
+static void read_occ_sram(uint32_t address, uint64_t *buffer, size_t data_length)
 {
 	pm_ocb_setup(address);
 	get_ocb_indirect(data_length / 8, address, buffer);
 }
 
-void write_occ_command(uint64_t write_data)
+static void write_occ_command(uint64_t write_data)
 {
 	check_ocb_mode(PU_OCB_PIB_OCBCSR1_RO, PU_OCB_OCI_OCBSHCS1_SCOM);
 	write_scom(PU_OCB_PIB_OCBDR1, write_data);
@@ -197,6 +251,907 @@ void occ_start_from_mem(void)
 	write_scom(PU_JTG_PIB_OJCFG_AND, ~PPC_BIT(JTG_PIB_OJCFG_DBG_HALT_BIT));
 	write_scom(PU_OCB_PIB_OCR_OR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
 	write_scom(PU_OCB_PIB_OCR_CLEAR, PPC_BIT(OCB_PIB_OCR_CORE_RESET_BIT));
+}
+
+/* Wait for OCC to reach communications checkpoint */
+static void wait_for_occ_checkpoint(void)
+{
+	enum {
+		/* Wait up to 15 seconds for OCC to be ready (1500 * 10ms = 15s) */
+		US_BETWEEN_READ  = 10000,
+		READ_RETRY_LIMIT = 1500,
+
+		OCC_COMM_INIT_COMPLETE = 0x0EFF,
+		OCC_INIT_FAILURE       = 0xE000,
+
+		OCC_RSP_SRAM_ADDR = 0xFFFBF000,
+	};
+
+	int retry_count = 0;
+
+	while (retry_count++ < READ_RETRY_LIMIT) {
+		uint8_t response[8] = { 0x0 };
+		uint8_t status;
+		uint16_t checkpoint;
+
+		udelay(US_BETWEEN_READ);
+
+		/* Read SRAM response buffer to check for OCC checkpoint */
+		read_occ_sram(OCC_RSP_SRAM_ADDR, (uint64_t *)response, sizeof(response));
+
+		/* Pull status from response (byte 2) */
+		status = response[2];
+
+		/* Pull checkpoint from response (bytes 6-7) */
+		checkpoint = (response[6] << 8) | response[7];
+
+		if (status == OCC_RC_OCC_INIT_CHECKPOINT &&
+		    checkpoint == OCC_COMM_INIT_COMPLETE)
+			/* Success */
+			return;
+
+		if ((checkpoint & OCC_INIT_FAILURE) == OCC_INIT_FAILURE ||
+		    status == OCC_RC_INIT_FAILURE)
+			die("OCC initialization has failed\n");
+	}
+
+	die("Waiting for OCC initialization checkpoint has timed out.\n");
+}
+
+static void build_occ_cmd(struct homer_st *homer, uint8_t occ_cmd, uint8_t seq_num,
+			  const uint8_t *data, uint16_t data_len)
+{
+	uint8_t *cmd_buf = &homer->occ_host_area[OCC_CMD_ADDR];
+	uint16_t cmd_len = 0;
+	uint16_t checksum = 0;
+	uint16_t i = 0;
+
+	cmd_buf[cmd_len++] = seq_num;
+	cmd_buf[cmd_len++] = occ_cmd;
+	cmd_buf[cmd_len++] = (data_len >> 8) & 0xFF;
+	cmd_buf[cmd_len++] = data_len & 0xFF;
+	memcpy(&cmd_buf[cmd_len], data, data_len);
+	cmd_len += data_len;
+
+	for (i = 0; i < cmd_len; ++i)
+		checksum += cmd_buf[i];
+	cmd_buf[cmd_len++] = (checksum >> 8) & 0xFF;
+	cmd_buf[cmd_len++] = checksum & 0xFF;
+
+	/*
+	 * When the P8 processor writes to memory (such as the HOMER) there is
+	 * no certainty that the writes happen in order or that they have
+	 * actually completed by the time the instructions complete. 'sync'
+	 * is a memory barrier to ensure the HOMER data has actually been made
+	 * consistent with respect to memory, so that if the OCC were to read
+	 * it they would see all of the data. Otherwise, there is potential
+	 * for them to get stale or incomplete data.
+	 */
+	asm volatile("sync" ::: "memory");
+}
+
+static void wait_for_occ_response(struct homer_st *homer, uint32_t timeout_sec,
+				  uint8_t seq_num)
+{
+	enum {
+		/*
+		 * With two CPUs OCC polls were failing with this set to 10 or 20 us.
+		 * Apparently, checks performed by the code might not guarantee
+		 * that poll data is available in full (checksum doesn't match).
+		 *
+		 * With one CPU wait_for_occ_status() reports OCC is asking for PCAP
+		 * configuration data if *this* delay (not the one in wait_for_occ_status)
+		 * is small (50 us or smaller), 100 us seems fine.
+		 *
+		 * Something is wrong with synchronization and huge delays in Hostboot
+		 * might be hiding the issue.
+		 */
+		OCC_RSP_SAMPLE_TIME_US = 100,
+		OCC_COMMAND_IN_PROGRESS = 0xFF,
+	};
+
+	const uint8_t *rsp_buf = &homer->occ_host_area[OCC_RSP_ADDR];
+
+	long timeout_us = timeout_sec * USECS_PER_SEC;
+	if (timeout_sec == 0)
+		timeout_us = OCC_RSP_SAMPLE_TIME_US;
+
+	while (timeout_us >= 0) {
+		/*
+		 * 1. When OCC receives the command, it will set the status to
+		 *    COMMAND_IN_PROGRESS.
+		 * 2. When the response is ready OCC will update the full
+		 *    response buffer (except the status)
+		 * 3. The status field is updated last to indicate response ready
+		 *
+		 * Note: Need to check the sequence number to be sure we are
+		 *       processing the expected response
+		 */
+		if (rsp_buf[2] != OCC_COMMAND_IN_PROGRESS && rsp_buf[0] == seq_num) {
+			/*
+			 * Need an 'isync' here to ensure that previous instructions
+			 * have completed before the code continues on. This is a type
+			 * of read-barrier.  Without this the processor can do
+			 * speculative reads of the HOMER data and you can actually
+			 * get stale data as part of the instructions that happen
+			 * afterwards. Another 'weak consistency' issue.
+			 */
+			asm volatile("isync" ::: "memory");
+
+			/* OCC must have processed the command */
+			break;
+		}
+
+		if (timeout_us > 0) {
+			/* Delay before the next check */
+			long sleep_us = OCC_RSP_SAMPLE_TIME_US;
+			if (timeout_us < sleep_us)
+				sleep_us = timeout_us;
+
+			udelay(sleep_us);
+			timeout_us -= sleep_us;
+		} else {
+			/* Time expired */
+			die("Timed out while waiting for OCC response\n");
+		}
+	}
+}
+
+static bool parse_occ_response(struct homer_st *homer, uint8_t occ_cmd,
+			       uint8_t *status, uint8_t *seq_num,
+			       uint8_t *response, uint32_t *response_len)
+{
+	uint16_t index = 0;
+	uint16_t data_len = 0;
+	uint16_t checksum = 0;
+	uint16_t i = 0;
+
+	const uint8_t *rsp_buf = &homer->occ_host_area[OCC_RSP_ADDR];
+
+	*seq_num = rsp_buf[index++];
+	index += 1; /* command */
+	*status = rsp_buf[index++];
+
+	data_len = *(uint16_t *)&rsp_buf[index];
+	index += 2;
+
+	if (data_len > 0) {
+		uint16_t copy_size = data_len;
+		if (copy_size > *response_len)
+			copy_size = *response_len;
+
+		memcpy(response, &rsp_buf[index], copy_size);
+		*response_len = copy_size;
+
+		index += data_len;
+	}
+
+	for (i = 0; i < index; ++i)
+		checksum += rsp_buf[i];
+
+	if (checksum != *(uint16_t *)&rsp_buf[index]) {
+		printk(BIOS_WARNING, "OCC response for 0x%02x has invalid checksum\n",
+		       occ_cmd);
+		return false;
+	}
+
+	if (*status != OCC_RC_SUCCESS) {
+		printk(BIOS_WARNING, "0x%02x OCC command failed with an error code: 0x%02x\n",
+		       occ_cmd, *status);
+		return false;
+	}
+
+	return true;
+}
+
+static bool write_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+			  const uint8_t *data, uint16_t data_len,
+			  uint8_t *response, uint32_t *response_len)
+{
+	static uint8_t cmd_seq_num;
+
+	uint8_t status = 0;
+	uint8_t rsp_seq_num = 0;
+
+	++cmd_seq_num;
+	/* Do not use 0 for sequence number */
+	if (cmd_seq_num == 0)
+		++cmd_seq_num;
+
+	build_occ_cmd(homer, occ_cmd, cmd_seq_num, data, data_len);
+	/* Sender: HTMGT; command: Command Write Attention */
+	write_occ_command(0x1001000000000000);
+
+	/* Wait for OCC to process command and send response (timeout is the
+	   same for all commands) */
+	wait_for_occ_response(homer, 20, cmd_seq_num);
+
+	if (!parse_occ_response(homer, occ_cmd, &status, &rsp_seq_num, response,
+				response_len)) {
+		/* Statuses of 0xE0-EF are reserved for OCC exceptions */
+		if ((status & 0xF0) == 0xE0) {
+			printk(BIOS_WARNING,
+			       "OCC exception occurred while running 0x%02x command\n",
+			       occ_cmd);
+		}
+
+		printk(BIOS_WARNING, "Received OCC response:\n");
+		hexdump(response, *response_len);
+		printk(BIOS_WARNING, "Failed to parse OCC response\n");
+		return false;
+	}
+
+	if (rsp_seq_num != cmd_seq_num) {
+		printk(BIOS_WARNING,
+		       "Received OCC response for a wrong command while running 0x%02x\n",
+		       occ_cmd);
+		return false;
+	}
+
+	return true;
+}
+
+static void send_occ_cmd(struct homer_st *homer, uint8_t occ_cmd,
+			 const uint8_t *data, uint16_t data_len,
+			 uint8_t *response, uint32_t *response_len)
+{
+	enum { MAX_TRIES = 2 };
+
+	uint8_t i = 0;
+
+	for (i = 0; i < MAX_TRIES; ++i) {
+		if (write_occ_cmd(homer, occ_cmd, data, data_len, response, response_len))
+			break;
+
+		if (i < MAX_TRIES - 1)
+			printk(BIOS_WARNING, "Retrying running OCC command 0x%02x\n", occ_cmd);
+	}
+
+	if (i == MAX_TRIES)
+		die("Failed running OCC command 0x%02x %d times\n", occ_cmd, MAX_TRIES);
+}
+
+/* Reports OCC error to the user and clears it on OCC's side */
+static void handle_occ_error(struct homer_st *homer,
+			     const struct occ_poll_response *response)
+{
+	static uint8_t error_log_buf[4096];
+
+	uint16_t error_length = response->error_length;
+
+	const uint8_t clear_log_data[4] = {
+		0x01, // Version
+		response->error_id,
+		response->error_source,
+		0x00  // Reserved
+	};
+	uint32_t response_len = 0;
+
+	if (error_length > sizeof(error_log_buf)) {
+		printk(BIOS_WARNING, "Truncating OCC error log from %d to %ld bytes\n",
+		       error_length, sizeof(error_log_buf));
+		error_length = sizeof(error_log_buf);
+	}
+
+	read_occ_sram(response->error_address, (uint64_t *)error_log_buf, error_length);
+
+	printk(BIOS_WARNING, "OCC error log:\n");
+	hexdump(error_log_buf, error_length);
+
+	/* Confirm to OCC that we've read the log */
+	send_occ_cmd(homer, OCC_CMD_CLEAR_ERROR_LOG,
+		     clear_log_data, sizeof(clear_log_data),
+		     NULL, &response_len);
+}
+
+static void poll_occ(struct homer_st *homer, bool flush_all_errors,
+		     struct occ_poll_response *response)
+{
+	enum { OCC_POLL_DATA_MIN_SIZE = 40 };
+
+	uint8_t max_more_errors = 10;
+	while (true) {
+		const uint8_t poll_data[1] = { 0x20 /*version*/ };
+		uint32_t response_len = sizeof(*response);
+
+		send_occ_cmd(homer, OCC_CMD_POLL, poll_data, sizeof(poll_data),
+			     (uint8_t *)response, &response_len);
+
+		if (response_len < OCC_POLL_DATA_MIN_SIZE)
+			die("Invalid data length");
+
+		if (!flush_all_errors)
+			break;
+
+		if (response->error_id == 0)
+			break;
+
+		handle_occ_error(homer, response);
+
+		--max_more_errors;
+		if (max_more_errors == 0) {
+			printk(BIOS_WARNING, "Last OCC poll response:\n");
+			hexdump(response, response_len);
+			die("Hit too many errors on polling OCC\n");
+		}
+	}
+}
+
+static void get_freq_point_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_FREQ_POINT_VERSION = 0x20 };
+	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+
+	const struct voltage_bucket_data *bucket = get_voltage_data();
+
+	uint16_t index = 0;
+	uint16_t min_freq = 0;
+
+	data[index++] = OCC_CFGDATA_FREQ_POINT;
+	data[index++] = OCC_CFGDATA_FREQ_POINT_VERSION;
+
+	/* Nominal Frequency in MHz */
+	memcpy(&data[index], &bucket->nominal.freq, 2);
+	index += 2;
+
+	/* Turbo Frequency in MHz */
+	memcpy(&data[index], &bucket->turbo.freq, 2);
+	index += 2;
+
+	/* Minimum Frequency in MHz */
+	min_freq = oppb->frequency_min_khz / 1000;
+	memcpy(&data[index], &min_freq, 2);
+	index += 2;
+
+	/* Ultra Turbo Frequency in MHz */
+	memcpy(&data[index], &bucket->ultra_turbo.freq, 2);
+	index += 2;
+
+	/* Reserved (Static Power Save in PowerVM) */
+	memset(&data[index], 0, 2);
+	index += 2;
+
+	/* Reserved (FFO in PowerVM) */
+	memset(&data[index], 0, 2);
+	index += 2;
+
+	*size = index;
+}
+
+static void get_occ_role_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_ROLE_MASTER = 0x01 };
+
+	data[0] = OCC_CFGDATA_OCC_ROLE;
+	data[1] = OCC_ROLE_MASTER;
+
+	*size = 2;
+}
+
+static void get_apss_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_APSS_VERSION = 0x20 };
+
+	/* ATTR_APSS_GPIO_PORT_PINS */
+	uint8_t function[16] = { 0x0 };
+
+	/* ATTR_ADC_CHANNEL_GNDS */
+	uint8_t ground[16] = { 0x0 };
+
+	/* ATTR_ADC_CHANNEL_GAINS */
+	uint32_t gain[16] = { 0x0 };
+
+	/* ATTR_ADC_CHANNEL_OFFSETS */
+	uint32_t offset[16] = { 0x0 };
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_APSS_CONFIG;
+	data[index++] = OCC_CFGDATA_APSS_VERSION;
+	data[index++] = 0;
+	data[index++] = 0;
+
+	for (uint64_t channel = 0; channel < sizeof(function); ++channel) {
+		data[index++] = function[channel];         // ADC Channel assignment
+
+		memset(&data[index], 0, sizeof(uint32_t)); // Sensor ID
+		index += 4;
+
+		data[index++] = ground[channel];           // Ground Select
+
+		memcpy(&data[index], &gain[channel], sizeof(uint32_t));
+		index += 4;
+
+		memcpy(&data[index], &offset[channel], sizeof(uint32_t));
+		index += 4;
+	}
+
+	/* ATTR_APSS_GPIO_PORT_MODES */
+	uint8_t gpio_mode[2] = { 0x0 };
+	/* ATTR_APSS_GPIO_PORT_PINS */
+	uint8_t gpio_pin[16] = { 0x0 };
+
+	uint64_t pins_per_port = sizeof(gpio_pin) / sizeof(gpio_mode);
+	uint64_t pin_idx = 0;
+
+	for (uint64_t port = 0; port < sizeof(gpio_mode); ++port) {
+		data[index++] = gpio_mode[port];
+		data[index++] = 0;
+
+		memcpy(&data[index], gpio_pin + pin_idx, pins_per_port);
+		index += pins_per_port;
+
+		pin_idx += pins_per_port;
+	}
+
+	*size = index;
+}
+
+static void get_mem_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_MEM_CONFIG_VERSION = 0x21 };
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_MEM_CONFIG;
+	data[index++] = OCC_CFGDATA_MEM_CONFIG_VERSION;
+
+	/* If OPAL then no "Power Control Default" support */
+
+	/* Byte 3: Memory Power Control Default */
+	data[index++] = 0xFF;
+	/* Byte 4: Idle Power Memory Power Control */
+	data[index++] = 0xFF;
+
+	/* Byte 5: Number of data sets */
+	data[index++] = 0; // Monitoring is disabled
+
+	*size = index;
+}
+
+static void get_sys_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	/* TODO: fill in sensor IDs here, so OCC can monitor them */
+
+	enum {
+		OCC_CFGDATA_SYS_CONFIG_VERSION = 0x21,
+
+		/* KVM or OPAL mode + single node */
+		OCC_CFGDATA_OPENPOWER_OPALVM = 0x81,
+
+		OCC_CFGDATA_NON_REDUNDANT_PS      = 0x02,
+		OCC_REPORT_THROTTLE_BELOW_NOMINAL = 0x08,
+	};
+
+	uint8_t system_type = OCC_CFGDATA_OPENPOWER_OPALVM;
+	uint16_t index = 0;
+	uint8_t i = 0;
+
+	data[index++] = OCC_CFGDATA_SYS_CONFIG;
+	data[index++] = OCC_CFGDATA_SYS_CONFIG_VERSION;
+
+	/* System Type */
+
+	/* ATTR_REPORT_THROTTLE_BELOW_NOMINAL == 0 */
+
+	/* 0 = OCC report throttling when max frequency lowered below turbo */
+	system_type &= ~OCC_REPORT_THROTTLE_BELOW_NOMINAL;
+	/* Power supply policy is redundant */
+	system_type &= ~OCC_CFGDATA_NON_REDUNDANT_PS;
+	data[index++] = system_type;
+
+	/* Processor Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* Next 12*4 bytes are for core sensors */
+	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
+		/* Core Temp Sensor ID */
+		memset(&data[index], 0, 4);
+		index += 4;
+
+		/* Core Frequency Sensor ID */
+		memset(&data[index], 0, 4);
+		index += 4;
+	}
+
+	/* Backplane Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* APSS Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* Format 21 - VRM VDD Callout Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	/* Format 21 - VRM VDD Temperature Sensor ID */
+	memset(&data[index], 0, 4);
+	index += 4;
+
+	*size = index;
+}
+
+static void get_thermal_ctrl_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum {
+		OCC_CFGDATA_TCT_CONFIG_VERSION = 0x20,
+
+		CFGDATA_FRU_TYPE_PROC       = 0x00,
+		CFGDATA_FRU_TYPE_MEMBUF     = 0x01,
+		CFGDATA_FRU_TYPE_DIMM       = 0x02,
+		CFGDATA_FRU_TYPE_VRM        = 0x03,
+		CFGDATA_FRU_TYPE_GPU_CORE   = 0x04,
+		CFGDATA_FRU_TYPE_GPU_MEMORY = 0x05,
+		CFGDATA_FRU_TYPE_VRM_VDD    = 0x06,
+
+		OCC_NOT_DEFINED = 0xFF,
+	};
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_TCT_CONFIG;
+	data[index++] = OCC_CFGDATA_TCT_CONFIG_VERSION;
+
+	/* Processor Core Weight, ATTR_OPEN_POWER_PROC_WEIGHT, from talos.xml */
+	data[index++] = 9;
+
+	/* Processor Quad Weight, ATTR_OPEN_POWER_QUAD_WEIGHT, from talos.xml */
+	data[index++] = 1;
+
+	/* Data sets following (proc, DIMM, etc.), and each will get a FRU type,
+	   DVS temp, error temp and max read timeout */
+	data[index++] = 5;
+
+	/*
+	 * Note: Bytes 4 and 5 of each data set represent the PowerVM DVFS and ERROR
+	 * Resending the regular DVFS and ERROR for now.
+	 */
+
+	/* Processor */
+	data[index++] = CFGDATA_FRU_TYPE_PROC;
+	data[index++] = 85; // DVFS, ATTR_OPEN_POWER_PROC_DVFS_TEMP_DEG_C, from talos.xml
+	data[index++] = 95; // ERROR, ATTR_OPEN_POWER_PROC_ERROR_TEMP_DEG_C, from talos.xml
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = 5;  // ATTR_OPEN_POWER_PROC_READ_TIMEOUT_SEC, from talos.xml
+
+	/* DIMM */
+	data[index++] = CFGDATA_FRU_TYPE_DIMM;
+	data[index++] = 84; // DVFS, ATTR_OPEN_POWER_DIMM_THROTTLE_TEMP_DEG_C, from talos.xml
+	data[index++] = 84; // ERROR, ATTR_OPEN_POWER_DIMM_ERROR_TEMP_DEG_C, from talos.xml
+	data[index++] = OCC_NOT_DEFINED; // PM_DVFS
+	data[index++] = OCC_NOT_DEFINED; // PM_ERROR
+	data[index++] = 30; // TIMEOUT, ATTR_OPEN_POWER_DIMM_READ_TIMEOUT_SEC, from talos.xml
+
+	/* VRM OT monitoring is disabled, because ATTR_OPEN_POWER_VRM_READ_TIMEOUT_SEC == 0
+	   (default) */
+
+	/* GPU Cores */
+	data[index++] = CFGDATA_FRU_TYPE_GPU_CORE;
+	// DVFS
+	data[index++] = OCC_NOT_DEFINED;
+	// ERROR, ATTR_OPEN_POWER_GPU_ERROR_TEMP_DEG_C, not set
+	data[index++] = OCC_NOT_DEFINED;
+	// PM_DVFS
+	data[index++] = OCC_NOT_DEFINED;
+	// PM_ERROR
+	data[index++] = OCC_NOT_DEFINED;
+	// TIMEOUT, ATTR_OPEN_POWER_GPU_READ_TIMEOUT_SEC, default
+	data[index++] = OCC_NOT_DEFINED;
+
+	/* GPU Memory */
+	data[index++] = CFGDATA_FRU_TYPE_GPU_MEMORY;
+	data[index++] = OCC_NOT_DEFINED; // DVFS
+	// ERROR, ATTR_OPEN_POWER_GPU_MEM_ERROR_TEMP_DEG_C, not set
+	data[index++] = OCC_NOT_DEFINED;
+	// PM_DVFS
+	data[index++] = OCC_NOT_DEFINED;
+	// PM_ERROR
+	data[index++] = OCC_NOT_DEFINED;
+	// TIMEOUT, ATTR_OPEN_POWER_GPU_MEM_READ_TIMEOUT_SEC, not set
+	data[index++] = OCC_NOT_DEFINED;
+
+	/* VRM Vdd */
+	data[index++] = CFGDATA_FRU_TYPE_VRM_VDD;
+	// DVFS, ATTR_OPEN_POWER_VRM_VDD_DVFS_TEMP_DEG_C, default
+	data[index++] = OCC_NOT_DEFINED;
+	// ERROR, ATTR_OPEN_POWER_VRM_VDD_ERROR_TEMP_DEG_C, default
+	data[index++] = OCC_NOT_DEFINED;
+	// PM_DVFS
+	data[index++] = OCC_NOT_DEFINED;
+	// PM_ERROR
+	data[index++] = OCC_NOT_DEFINED;
+	// TIMEOUT, ATTR_OPEN_POWER_VRM_VDD_READ_TIMEOUT_SEC, default
+	data[index++] = OCC_NOT_DEFINED;
+
+	*size = index;
+}
+
+static void get_power_cap_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_PCAP_CONFIG_VERSION = 0x20 };
+
+	uint16_t index = 0;
+
+	/* Values of the following attributes were taken from Hostboot's log */
+
+	/* Minimum HARD Power Cap (ATTR_OPEN_POWER_MIN_POWER_CAP_WATTS) */
+	uint16_t min_pcap = 2000;
+
+	/* Minimum SOFT Power Cap (ATTR_OPEN_POWER_SOFT_MIN_PCAP_WATTS) */
+	uint16_t soft_pcap = 2000;
+
+	/* Quick Power Drop Power Cap (ATTR_OPEN_POWER_N_BULK_POWER_LIMIT_WATTS) */
+	uint16_t qpd_pcap = 2000;
+
+	/* System Maximum Power Cap (ATTR_OPEN_POWER_N_PLUS_ONE_HPC_BULK_POWER_LIMIT_WATTS) */
+	uint16_t max_pcap = 3000;
+
+	data[index++] = OCC_CFGDATA_PCAP_CONFIG;
+	data[index++] = OCC_CFGDATA_PCAP_CONFIG_VERSION;
+
+	memcpy(&data[index], &soft_pcap, 2);
+	index += 2;
+
+	memcpy(&data[index], &min_pcap, 2);
+	index += 2;
+
+	memcpy(&data[index], &max_pcap, 2);
+	index += 2;
+
+	memcpy(&data[index], &qpd_pcap, 2);
+	index += 2;
+
+	*size = index;
+}
+
+static void get_avs_bus_cfg_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum { OCC_CFGDATA_AVSBUS_CONFIG_VERSION = 0x01 };
+
+	/* ATTR_NO_APSS_PROC_POWER_VCS_VIO_WATTS, from talos.xml */
+	const uint16_t power_adder = 19;
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_AVSBUS_CONFIG;
+	data[index++] = OCC_CFGDATA_AVSBUS_CONFIG_VERSION;
+	data[index++] = 0;    // Vdd Bus, ATTR_VDD_AVSBUS_BUSNUM
+	data[index++] = 0;    // Vdd Rail Sel, ATTR_VDD_AVSBUS_RAIL
+	data[index++] = 0xFF; // reserved
+	data[index++] = 0xFF; // reserved
+	data[index++] = 1;    // Vdn Bus, ATTR_VDN_AVSBUS_BUSNUM, from talos.xml
+	data[index++] = 0;    // Vdn Rail sel, ATTR_VDN_AVSBUS_RAIL, from talos.xml
+
+	data[index++] = (power_adder >> 8) & 0xFF;
+	data[index++] = power_adder & 0xFF;
+
+	/* ATTR_VDD_CURRENT_OVERFLOW_WORKAROUND_ENABLE == 0 */
+
+	*size = index;
+}
+
+static void get_power_data(struct homer_st *homer, uint16_t *power_max, uint16_t *power_drop)
+{
+	const struct voltage_bucket_data *bucket = get_voltage_data();
+
+	/* All processor chips (do not have to be functional) */
+	const uint8_t num_procs = 2; // from Hostboot log
+
+	const uint16_t proc_socket_power = 250; // ATTR_PROC_SOCKET_POWER_WATTS, default
+	const uint16_t misc_power = 0; // ATTR_MISC_SYSTEM_COMPONENTS_MAX_POWER_WATTS, default
+
+	const uint16_t mem_power_min_throttles = 36; // from Hostboot log
+	const uint16_t mem_power_max_throttles = 23; // from Hostboot log
+
+	/*
+	 * Calculate Total non-GPU maximum power (Watts):
+	 *   Maximum system power excluding GPUs when CPUs are at maximum frequency
+	 *   (ultra turbo) and memory at maximum power (least throttled) plus
+	 *   everything else (fans...) excluding GPUs.
+	 */
+	*power_max = proc_socket_power * num_procs;
+	*power_max += mem_power_min_throttles + misc_power;
+
+	OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+	uint16_t min_freq_mhz = oppb->frequency_min_khz / 1000;
+	const uint16_t mhz_per_watt = 28; // ATTR_PROC_MHZ_PER_WATT, from talos.xml
+	/* Drop is always calculated from Turbo to Min (not ultra) */
+	uint32_t proc_drop = (bucket->turbo.freq - min_freq_mhz) / mhz_per_watt;
+	proc_drop *= num_procs;
+	const uint16_t memory_drop = mem_power_min_throttles - mem_power_max_throttles;
+
+	*power_drop = proc_drop + memory_drop;
+}
+
+static void get_gpu_msg_data(struct homer_st *homer, uint8_t *data, uint16_t *size)
+{
+	enum {
+		OCC_CFGDATA_GPU_CONFIG_VERSION = 0x01,
+		MAX_GPUS = 3,
+	};
+
+	uint16_t power_max = 0;
+	uint16_t power_drop = 0;
+
+	uint16_t index = 0;
+
+	data[index++] = OCC_CFGDATA_GPU_CONFIG;
+	data[index++] = OCC_CFGDATA_GPU_CONFIG_VERSION;
+
+	get_power_data(homer, &power_max, &power_drop);
+
+	memcpy(&data[index], &power_max, 2);   // Total non-GPU max power (W)
+	index += 2;
+
+	memcpy(&data[index], &power_drop, 2);  // Total proc/mem power drop (W)
+	index += 2;
+	data[index++] = 0; // reserved
+	data[index++] = 0; // reserved
+
+	/* No sensors ID.  Might require OBus or just be absent. */
+	uint32_t gpu_func_sensors[MAX_GPUS] = {0};
+	uint32_t gpu_temp_sensors[MAX_GPUS] = {0};
+	uint32_t gpu_memtemp_sensors[MAX_GPUS] = {0};
+
+	/* GPU0 */
+	memcpy(&data[index], &gpu_temp_sensors[0], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_memtemp_sensors[0], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_func_sensors[0], 4);
+	index += 4;
+
+	/* GPU1 */
+	memcpy(&data[index], &gpu_temp_sensors[1], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_memtemp_sensors[1], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_func_sensors[1], 4);
+	index += 4;
+
+	/* GPU2 */
+	memcpy(&data[index], &gpu_temp_sensors[2], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_memtemp_sensors[2], 4);
+	index += 4;
+	memcpy(&data[index], &gpu_func_sensors[2], 4);
+	index += 4;
+
+	*size = index;
+}
+
+static void send_occ_config_data(struct homer_st *homer)
+{
+	/*
+	 * Order in which these are sent is important!
+	 * Not every order works.
+	 */
+	struct occ_cfg_info cfg_info[] = {
+		{ "System config",    &get_sys_cfg_msg_data      },
+		{ "APSS config",      &get_apss_msg_data         },
+		{ "OCC role",         &get_occ_role_msg_data     },
+		{ "Frequency points", &get_freq_point_msg_data   },
+		{ "Memory config",    &get_mem_cfg_msg_data      },
+		{ "Power cap",        &get_power_cap_msg_data    },
+		{ "Thermal control",  &get_thermal_ctrl_msg_data },
+		{ "AVS",              &get_avs_bus_cfg_msg_data  },
+		{ "GPU",              &get_gpu_msg_data          },
+	};
+
+	uint8_t i;
+
+	for (i = 0; i < ARRAY_SIZE(cfg_info); ++i) {
+		/* All our messages are short */
+		uint8_t data[256];
+		uint16_t data_len = 0;
+		uint32_t response_len = 0;
+
+		/* Poll is sent between configuration packets to flush errors */
+		struct occ_poll_response poll_response;
+
+		cfg_info[i].func(homer, data, &data_len);
+		if (data_len > sizeof(data))
+			die("Buffer for OCC data is too small!\n");
+
+		send_occ_cmd(homer, OCC_CMD_SETUP_CFG_DATA, data, data_len, NULL,
+			     &response_len);
+		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+	}
+}
+
+static void send_occ_user_power_cap(struct homer_st *homer)
+{
+	/* No power limit */
+	const uint8_t data[2] = { 0x00, 0x00 };
+	uint32_t response_len = 0;
+	send_occ_cmd(homer, OCC_CMD_SET_POWER_CAP, data, sizeof(data), NULL, &response_len);
+}
+
+static void wait_for_occ_status(struct homer_st *homer, uint8_t status_bit)
+{
+	enum {
+		MAX_POLLS = 200,
+		DELAY_BETWEEN_POLLS_US = 50000,
+	};
+
+	uint8_t num_polls = 0;
+	struct occ_poll_response poll_response;
+
+	for (num_polls = 0; num_polls < MAX_POLLS; ++num_polls) {
+		poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+		if (poll_response.status & status_bit)
+			break;
+
+		if (poll_response.requested_cfg != 0x00) {
+			die("OCC requests 0x%02x configuration data\n",
+			    poll_response.requested_cfg);
+		}
+
+		if (num_polls < MAX_POLLS)
+			udelay(DELAY_BETWEEN_POLLS_US);
+	}
+
+	if (num_polls == MAX_POLLS)
+		die("Failed to wait until OCC has reached state 0x%02x\n", status_bit);
+}
+
+static void set_occ_state(struct homer_st *homer, uint8_t state)
+{
+	struct occ_poll_response poll_response;
+
+	/* Fields: version, state, reserved */
+	const uint8_t data[3] = { 0x00, state, 0x00 };
+	uint32_t response_len = 0;
+
+	/* Send poll cmd to confirm comm has been established and flush old errors */
+	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+
+	/* Try to switch to a new state */
+	send_occ_cmd(homer, OCC_CMD_SET_STATE, data, sizeof(data), NULL, &response_len);
+
+	/* Send poll to query state of all OCC and flush any errors */
+	poll_occ(homer, /*flush_all_errors=*/true, &poll_response);
+
+	if (poll_response.state != state)
+		die("State of OCC is 0x%02x instead of 0x%02x.\n", poll_response.state, state);
+}
+
+static void set_occ_active_state(struct homer_st *homer)
+{
+	enum {
+		OCC_STATUS_ACTIVE_READY = 0x01,
+		OCC_STATE_ACTIVE = 0x03,
+	};
+
+	wait_for_occ_status(homer, OCC_STATUS_ACTIVE_READY);
+	set_occ_state(homer, OCC_STATE_ACTIVE);
+}
+
+void activate_occ(struct homer_st *homer)
+{
+	struct occ_poll_response poll_response;
+
+	/* Make sure OCCs are ready for communication */
+	wait_for_occ_checkpoint();
+
+	/* Send initial poll to all OCCs to establish communication */
+	poll_occ(homer, /*flush_all_errors=*/false, &poll_response);
+
+	/* Send OCC's config data */
+	send_occ_config_data(homer);
+
+	/* Set the User PCAP */
+	send_occ_user_power_cap(homer);
+
+	/* Switch for OCC to active state */
+	set_occ_active_state(homer);
+
+	/* Hostboot sets active sensors for all OCCs here, so BMC can start
+	   communication with OCCs. */
 }
 
 void pm_occ_fir_init(void)
