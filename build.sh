@@ -38,7 +38,12 @@ git fetch https://review.coreboot.org/coreboot refs/changes/22/64422/2 && \
 
 cp configs/config.msi_ms7d25 .config
 
+if [ "$SERIAL_CONSOLE" != "yes" ]; then
 echo "# CONFIG_CONSOLE_SERIAL is not set" >> .config
+else
+echo "CONFIG_TIANOCORE_SERIAL=y" >> .config
+fi
+
 echo "CONFIG_USE_ADLS_IOT_FSP=y" >> .config
 echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
 echo "CONFIG_TIANOCORE_SECURE_BOOT=y"  >> .config
