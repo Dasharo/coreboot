@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <cpu/power/mvpd.h>
 #include <cpu/power/powerbus.h>
 #include <cpu/power/rom_media.h>
 #include <cpu/power/scom.h>
@@ -1781,6 +1782,28 @@ static void update_headers(struct homer_st *homer, uint64_t cores)
 	sgpe_hdr->magic               = 0x534750455f312e30;	// SGPE_1.0
 	cme_hdr->magic                = 0x434d455f5f312e30;	// CME__1.0
 	pgpe_hdr->magic               = 0x504750455f312e30;	// PGPE_1.0
+}
+
+const struct voltage_bucket_data * get_voltage_data(void)
+{
+	const struct voltage_kwd *voltage = NULL;
+	const struct voltage_bucket_data *bucket = NULL;
+
+	uint8_t i = 0;
+
+	/* Using LRP0 because frequencies are the same in all LRP records */
+	voltage = mvpd_get_voltage_data(0);
+
+	for (i = 0; i < VOLTAGE_BUCKET_COUNT; ++i) {
+		bucket = &voltage->buckets[i];
+		if (bucket->powerbus.freq != 0)
+			break;
+	}
+
+	if (bucket == NULL)
+		die("Failed to find a valid voltage data bucket.\n");
+
+	return bucket;
 }
 
 /*
