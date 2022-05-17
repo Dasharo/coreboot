@@ -5,11 +5,13 @@
 
 #include <stdint.h>
 
-void read_occ_sram(uint32_t address, uint64_t *buffer, size_t data_length);
-void write_occ_command(uint64_t write_data);
+struct homer_st;
+
 void clear_occ_special_wakeups(uint64_t cores);
 void special_occ_wakeup_disable(uint64_t cores);
 void occ_start_from_mem(void);
+/* Moves OCC to active state */
+void activate_occ(struct homer_st *homer);
 
 void pm_occ_fir_init(void);
 void pm_pba_fir_init(void);
