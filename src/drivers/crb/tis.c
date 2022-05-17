@@ -5,6 +5,7 @@
 #include <acpi/acpigen.h>
 #include <device/device.h>
 #include <drivers/intel/ptt/ptt.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <security/tpm/tss.h>
 #include <endian.h>
 #include <smbios.h>
@@ -118,6 +119,9 @@ static void crb_tpm_fill_ssdt(const struct device *dev)
 	acpigen_write_mem32fixed(1, TPM_CRB_BASE_ADDRESS, 0x5000);
 
 	acpigen_write_resourcetemplate_footer();
+
+	if (!CONFIG(CHROMEOS))
+		tpm_ppi_acpi_fill_ssdt(dev);
 
 	acpigen_pop_len(); /* Device */
 }
