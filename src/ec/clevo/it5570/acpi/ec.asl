@@ -30,6 +30,7 @@ Device (EC0)
 	})
 
 	#include "ec_ram.asl"
+	#include "cmos.asl"
 
 	Name (ECOK, Zero)
 	Method (_REG, 2, Serialized)  // _REG: Region Availability
@@ -60,7 +61,7 @@ Device (EC0)
 			// Apply custom fan curve
 			\_SB.PCI0.LPCB.EC0.SFCV ()
 
-			// Set default keyboard mode
+			// Restore keyboard settings
 			KBUP ()
 
 			// EC is now available
