@@ -1,2 +1,8 @@
 boot_option=Fallback
 preserve_smmstore=0
+kbl_brightness=0x3f
+kbl_state=Enable
+kbl_color_r=0xff
+kbl_color_g=0xff
+kbl_color_b=0xff
+kbl_preset=0
