@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-Name (KBEN, 0x01) // Keyboard Backlight Enable
-Name (KBBR, 0xFF) // Keyboard Brightness
-Name (KBCR, 0xFF) // Keyboard Color Red
-Name (KBCG, 0xFF) // Keyboard Color Green
-Name (KBCB, 0xFF) // Keyboard Color Blue
-Name (KBPS, 0x00) // Keyboard Preset
-
 Method (KBTG, 0, NotSerialized) // Keyboard Toggle
 {
 	KBEN ^= 1
