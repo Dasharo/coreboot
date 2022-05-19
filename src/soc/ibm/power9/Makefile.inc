@@ -11,6 +11,7 @@ romstage-y += vpd.c
 romstage-y += powerbus.c
 romstage-y += istep_8_1.c
 romstage-y += istep_8_2.c
+romstage-y += istep_8_3.c
 romstage-y += istep_10_10.c
 romstage-y += istep_10_12.c
 romstage-y += istep_10_13.c
