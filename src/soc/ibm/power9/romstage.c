@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <cpu/power/vpd.h>
+#include <cpu/power/istep_8.h>
 #include <cpu/power/istep_10.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_14.h>
@@ -351,6 +352,8 @@ void main(void)
 	fsi_init();
 	chips = fsi_get_present_chips();
 	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
+
+	istep_8_1(chips);
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_12();
