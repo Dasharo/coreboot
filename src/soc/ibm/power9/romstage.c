@@ -355,6 +355,7 @@ void main(void)
 
 	istep_8_1(chips);
 	istep_8_2(chips);
+	istep_8_3(chips);
 
 	istep_10_10(&phb_active_mask, iovalid_enable);
 	istep_10_12();
