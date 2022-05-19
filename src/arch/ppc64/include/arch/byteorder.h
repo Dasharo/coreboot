@@ -13,6 +13,15 @@
 #include <types.h>
 
 /*
+ * Assigns part of a 64-bit value: lhs[pos:pos + len] = rhs
+ */
+#define PPC_INSERT(lhs, rhs, pos, len) do { \
+		uint64_t __placed = PPC_PLACE(rhs, pos, len); \
+		uint64_t __mask = PPC_BITMASK(pos, (pos) + (len) - 1); \
+		(lhs) = ((lhs) & ~__mask) | __placed; \
+	} while (0)
+
+/*
  * The pos parameter specifies MSB/leftmost bit.  Passing compile-time constants
  * (literals or expressions) for parameters allows for the following
  * compile-time checks (not all are performed, depends on which parameter values
