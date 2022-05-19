@@ -895,25 +895,25 @@ static void print_hex(uint8_t *hex, size_t len)
 	printf("\n");
 }
 
-static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *tcpa_log)
+static void parse_drtm_tcpa_log(const struct tcpa_spec_entry *drtm_tcpa_log)
 {
-	uintptr_t current = (uintptr_t)tcpa_log + sizeof(struct tcpa_spec_entry);
+	uintptr_t current = (uintptr_t)drtm_tcpa_log + sizeof(struct tcpa_spec_entry);
 	static uint8_t zero_block[sizeof(struct tcpa_spec_entry)];
 	struct tcpa_log_entry *log_entry;
 	uint32_t counter = 0;
 	uint32_t len;
 
 	printf("DRTM TCPA log:\n");
-	printf("\tSpecification: %d.%d%d", tcpa_log->spec_version_major,
-					   tcpa_log->spec_version_minor,
-					   tcpa_log->spec_errata);
-	printf("\tPlatform class: %s\n", tcpa_log->platform_class == 0 ? "PC Client" :
-					 tcpa_log->platform_class == 1 ? "Server" :
+	printf("\tSpecification: %d.%d%d", drtm_tcpa_log->spec_version_major,
+					   drtm_tcpa_log->spec_version_minor,
+					   drtm_tcpa_log->spec_errata);
+	printf("\tPlatform class: %s\n", drtm_tcpa_log->platform_class == 0 ? "PC Client" :
+					 drtm_tcpa_log->platform_class == 1 ? "Server" :
 									 "Unknown");
-	len = tcpa_log->vendor_info_size;
+	len = drtm_tcpa_log->vendor_info_size;
 	if (len != 0) {
 		current += len;
-		printf("\tVendor information: %.*s\n", len, tcpa_log->vendor_info);
+		printf("\tVendor information: %.*s\n", len, drtm_tcpa_log->vendor_info);
 	} else {
 		printf("\tNo vendor information provided\n");
 	}
