@@ -169,13 +169,16 @@ void save_ddr4_dimm_info(void)
 		ctrlr_info = &memory_info_hob->Controller[node];
 		for (channel = 0; channel < MAX_CHANNELS_NUM && index < dimm_max; channel++) {
 			channel_info = &ctrlr_info->ChannelInfo[channel];
-			if (channel_info->Status != CHANNEL_PRESENT)
-				continue;
+			if (index >= dimm_max)
+				break;
+
 			for (dimm = 0; dimm < MAX_DIMMS_NUM && index < dimm_max; dimm++) {
+				if (index >= dimm_max)
+					break;
 				src_dimm = &channel_info->DimmInfo[dimm];
 				dest_dimm = &mem_info->dimm[index];
 
-				if (src_dimm->Status != DIMM_PRESENT)
+				if (!src_dimm->DimmCapacity)
 					continue;
 
 				switch (memory_info_hob->MemoryType) {
