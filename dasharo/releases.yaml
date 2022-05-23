@@ -22,3 +22,15 @@ releases:
                   url: https://github.com/Dasharo/dasharo-issues/issues/64
                 - description:  UCM-UCSI ACPI device displays an error in Windows Device Manager
                   url: https://github.com/Dasharo/dasharo-issues/issues/57
+        
+        - version: v1.2.0
+          added:
+                - description: Persistent RGB keyboard settings
+                - description: Fix for CVE-2022-29264
+                - description: Fix BIOS vendor name in SMBIOS
+                - description: Increased power limits
+          known_issues:
+                - description: CPU not running on expected frequency and usage NS50MU
+                  url: https://github.com/Dasharo/dasharo-issues/issues/64
+                - description:  UCM-UCSI ACPI device displays an error in Windows Device Manager
+                  url: https://github.com/Dasharo/dasharo-issues/issues/57
