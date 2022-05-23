@@ -1,16 +1,4 @@
 chip soc/intel/tigerlake
-# CPU (soc/intel/tigerlake/cpu.c)
-	# Power limits
-	# TODO: Check if this is correct
-	register "power_limits_config[POWER_LIMITS_U_4_CORE]" = "{
-		.tdp_pl1_override = 10,
-		.tdp_pl2_override = 20,
-	}"
-	register "power_limits_config[POWER_LIMITS_U_2_CORE]" = "{
-		.tdp_pl1_override = 10,
-		.tdp_pl2_override = 20,
-	}"
-
 # FSP Silicon (soc/intel/tigerlake/fsp_params.c)
 	# Thermal
 	register "tcc_offset" = "2"
@@ -217,7 +205,7 @@ chip soc/intel/tigerlake
 			chip ec/clevo/it5570
 				device pnp 0c09.0 on end
 				register "fan_mode" = "FAN_MODE_CUSTOM"
-				register "fans[0].curve.temperature" = "{ 40, 60, 70, 80 }"
+				register "fans[0].curve.temperature" = "{ 40, 60, 70, 100 }"
 				register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
 			end
 		end
