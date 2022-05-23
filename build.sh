@@ -49,7 +49,7 @@ echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
 echo "CONFIG_TIANOCORE_SECURE_BOOT=y"  >> .config
 echo "CONFIG_TIANOCORE_BOOT_MENU_KEY=0x0015"  >> .config
 echo "CONFIG_TIANOCORE_SETUP_MENU_KEY=0x0008"  >> .config
-sed -i 's/origin\/dasharo/c5f297260043f10802304bfef87767d9eb560761/g' .config
+sed -i 's/origin\/dasharo/0c94299bdad2a85ca0e44bd491e996adc2cc606f/g' .config
 
 echo "CONFIG_VBOOT=y" >> .config
 
