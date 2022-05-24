@@ -77,4 +77,12 @@ config GBB_HWID
 	string
 	default "MSI_MS7D25"
 
+config DRIVERS_GENERIC_CBFS_SERIAL
+	bool
+	default y
+
+config DRIVERS_GENERIC_CBFS_UUID
+	bool
+	default y
+
 endif
