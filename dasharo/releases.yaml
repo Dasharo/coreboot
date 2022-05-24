@@ -1,4 +1,17 @@
 releases:
+    - version: v0.5.0
+      fixed:
+          - description: fTPM is not working
+            url: https://github.com/Dasharo/dasharo-issues/issues/76
+      added:
+          - description: Serial number and UUID in CBFS support
+          - description: TPM Physical Presence Interface support
+      changed:
+          - description: Updated i225 EFI driver to version 0.10.04 to reduce the POST time
+            url: https://github.com/Dasharo/dasharo-issues/issues/65
+      known_issues:
+          - description: USB storage devices disappear after reboot/power failure
+            url: https://github.com/Dasharo/dasharo-issues/issues/70
     - version: v0.4.0
       fixed:
           - description: Some PCIe ports are not working
