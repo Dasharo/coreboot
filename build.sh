@@ -33,9 +33,6 @@ extract_microcode
 git reset --hard HEAD
 git clean -df
 
-git fetch https://review.coreboot.org/coreboot refs/changes/40/64640/1 && \
-        git format-patch -50 --stdout FETCH_HEAD | git apply
-
 cp configs/config.msi_ms7d25 .config
 
 if [ "$SERIAL_CONSOLE" != "yes" ]; then
@@ -43,15 +40,6 @@ echo "# CONFIG_CONSOLE_SERIAL is not set" >> .config
 else
 echo "CONFIG_TIANOCORE_SERIAL=y" >> .config
 fi
-
-echo "CONFIG_USE_ADLS_IOT_FSP=y" >> .config
-echo "CONFIG_TIANOCORE_BOOTSPLASH_FILE=\"bootsplash.bmp\""  >> .config
-echo "CONFIG_TIANOCORE_SECURE_BOOT=y"  >> .config
-echo "CONFIG_TIANOCORE_BOOT_MENU_KEY=0x0015"  >> .config
-echo "CONFIG_TIANOCORE_SETUP_MENU_KEY=0x0008"  >> .config
-sed -i 's/origin\/dasharo/0c94299bdad2a85ca0e44bd491e996adc2cc606f/g' .config
-
-echo "CONFIG_VBOOT=y" >> .config
 
 git submodule update --init --checkout
 
