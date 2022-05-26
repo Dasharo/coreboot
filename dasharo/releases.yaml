@@ -9,6 +9,7 @@ releases:
       changed:
           - description: Updated i225 EFI driver to version 0.10.04 to reduce the POST time
             url: https://github.com/Dasharo/dasharo-issues/issues/65
+          - description: Vboot submodule revision to fix recovery mode loop
       known_issues:
           - description: USB storage devices disappear after reboot/power failure
             url: https://github.com/Dasharo/dasharo-issues/issues/70
