@@ -1,0 +1,40 @@
+# Dasharo project configuration data
+file_version: 1.0.0
+
+dasharo:
+        platform: protectli_vault_glk
+        newsletter:
+                url:  https://newsletter.3mdeb.com/subscription/n2EpSxtqL
+
+client:
+        name: Protectli
+
+framework:
+        name: coreboot
+        version: b77cf229
+        url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
+
+components:
+        - name: edk2
+          version: 7f90b9cd
+          path: payloads/external/tianocore/tianocore/
+          url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
+
+documentation:
+        name: Dasharo Documentation
+        url: https://docs.dasharo.com/
+        building_url: http://docs.dasharo.com/variants/protectli_vp2410/building-manual/
+        flashing_url: http://docs.dasharo.com/variants/protectli_vp2410/installation-manual/
+        overview_url: http://docs.dasharo.com/variants/protectli_vp2410/overview/
+
+platform:
+        vendor: Protectli
+        model: VP2410
+
+tests:
+        specification: https://docs.dasharo.com/unified-test-documentation/overview/
+        hardware_matrix: http://docs.dasharo.com/variants/protectli_vp2410/hardware-matrix/
+        results: https://docs.google.com/spreadsheets/d/1wI0qBSLdaluayYsm_lIa9iJ9LnPnCOZ9eNOyrKSc-j4/edit#gid=975611333
+
+asciinema:
+        signature_verification: https://asciinema.org/a/388861
