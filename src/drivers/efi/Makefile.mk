@@ -2,6 +2,7 @@
 
 bootblock-$(CONFIG_DRIVERS_EFI_VARIABLE_STORE)	+= efivars.c
 romstage-$(CONFIG_DRIVERS_EFI_VARIABLE_STORE)	+= efivars.c
+verstage_x86-$(CONFIG_DRIVERS_EFI_VARIABLE_STORE)	+= efivars.c
 ramstage-$(CONFIG_DRIVERS_EFI_VARIABLE_STORE)	+= efivars.c
 smm-$(CONFIG_DRIVERS_EFI_VARIABLE_STORE)	+= efivars.c
 
