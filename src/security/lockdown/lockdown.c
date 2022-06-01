@@ -3,6 +3,7 @@
 #include <boot_device.h>
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <bootstate.h>
 #include <fmap.h>
 
@@ -14,6 +15,11 @@ void boot_device_security_lockdown(void)
 	const struct region_device *rdev = NULL;
 	struct region_device dev;
 	enum bootdev_prot_type lock_type;
+
+	if (!is_vboot_locking_permitted()) {
+		printk(BIOS_DEBUG, "BM-LOCKDOWN: Skipping enabling boot media protection\n");
+		return;
+	}
 
 	printk(BIOS_DEBUG, "BM-LOCKDOWN: Enabling boot media protection scheme ");
 

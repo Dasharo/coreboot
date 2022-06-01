@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
+#include <dasharo/options.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/lpc_lib.h>
@@ -81,7 +82,7 @@ static void fast_spi_lockdown_cfg(int chipset_lockdown)
 		fast_spi_set_bios_interface_lock_down();
 
 		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
 			fast_spi_set_eiss();
 			fast_spi_enable_wp();
 		}
@@ -102,7 +103,7 @@ static void lpc_lockdown_config(int chipset_lockdown)
 		lpc_set_bios_interface_lock_down();
 
 		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
 			lpc_set_eiss();
 			lpc_enable_wp();
 		}
