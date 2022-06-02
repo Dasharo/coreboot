@@ -44,6 +44,34 @@ void board_BeforeAgesa(struct sysinfo *cb)
 	pm_write8(0xea, 1);
 }
 
+const struct soc_amd_gpio gpio_common[] = {
+	PAD_GPI(GPIO_49, PULL_NONE),
+	PAD_GPI(GPIO_50, PULL_NONE),
+	PAD_GPI(GPIO_71, PULL_NONE),
+	PAD_GPO(GPIO_57, LOW),
+	PAD_GPO(GPIO_58, LOW),
+	PAD_GPO(GPIO_59, LOW),
+	PAD_GPO(GPIO_51, HIGH),
+	PAD_GPO(GPIO_55, HIGH),
+	PAD_GPO(GPIO_64, HIGH),
+	PAD_GPO(GPIO_68, HIGH),
+};
+
+const struct soc_amd_gpio gpio_apu2[] = {
+	PAD_GPI(GPIO_32, PULL_NONE),
+};
+
+const struct soc_amd_gpio gpio_apu347[] = {
+	PAD_GPI(GPIO_32, PULL_NONE),
+	PAD_GPO(GPIO_33, LOW),
+};
+
+const struct soc_amd_gpio gpio_apu5[] = {
+	PAD_GPI(GPIO_22, PULL_NONE),
+	PAD_GPO(GPIO_32, HIGH),
+	PAD_GPO(GPIO_33, HIGH),
+};
+
 static void early_lpc_init(void)
 {
 	u32 setting = 0x0;
@@ -55,10 +83,8 @@ static void early_lpc_init(void)
 		configure_gpio(GPIO_22, Function0, setting);
 	}
 
-	if (CONFIG(BOARD_PCENGINES_APU2) || CONFIG(BOARD_PCENGINES_APU3) ||
-	    CONFIG(BOARD_PCENGINES_APU4) || CONFIG(BOARD_PCENGINES_APU6)) {
-		configure_gpio(GPIO_32, Function0, setting);
-	}
+	if (CONFIG(BOARD_PCENGINES_APU3) || CONFIG(BOARD_PCENGINES_APU4) || CONFIG(BOARD_PCENGINES_APU7))
+		gpio_configure_pads(gpio_apu347, ARRAY_SIZE(gpio_apu347));
 
 	configure_gpio(GPIO_49, Function2, setting);
 	configure_gpio(GPIO_50, Function2, setting);
@@ -149,7 +175,7 @@ void board_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 		if (!(pm_read32(0xc0) & FCH_PMIOxC0_S5ResetStatus_All_Status)) {
 			if (check_console())
 				print_sign_of_life();
-			
+
 			lpc_mcu_msg();
 		}
 
