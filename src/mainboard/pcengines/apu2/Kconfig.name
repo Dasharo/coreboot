@@ -12,3 +12,6 @@ config BOARD_PCENGINES_APU5
 
 config BOARD_PCENGINES_APU6
 	bool "APU6"
+
+config BOARD_PCENGINES_APU7
+	bool "APU7"
