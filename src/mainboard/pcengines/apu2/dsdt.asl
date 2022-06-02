@@ -12,6 +12,8 @@
 #define DEVICE_NAME "apu5
 #elif CONFIG(BOARD_PCENGINES_APU6)
 #define DEVICE_NAME "apu6
+#elif CONFIG(BOARD_PCENGINES_APU7)
+#define DEVICE_NAME "apu7
 #endif
 
 #include <acpi/acpi.h>
