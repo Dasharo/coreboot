@@ -50,6 +50,13 @@ config SEABIOS_PS2_TIMEOUT
 	  after powering on. This specifies how long SeaBIOS will wait for the
 	  keyboard controller to become ready before giving up.
 
+config SEABIOS_NO_OPROMS
+	prompt "Disable Option ROM execution in SeaBIOS"
+	default n
+	bool
+	help
+	  Select this option to disable Option ROM execution in SeaBIOS
+
 config SEABIOS_THREAD_OPTIONROMS
 	prompt "Hardware init during option ROM execution"
 	default n
