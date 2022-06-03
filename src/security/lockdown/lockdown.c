@@ -31,7 +31,7 @@ static bool is_vboot_locking_permitted(void)
 	size = sizeof(var);
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "LockBios", &var, &size);
 	if (ret != CB_SUCCESS)
-		return false;
+		return true;
 
 	return var;
 #else
