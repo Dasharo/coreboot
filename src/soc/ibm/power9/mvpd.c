@@ -63,8 +63,8 @@ struct pt_record {
  * </attribute>
  */
 
-/* Reads from a single EEPROM chip, which is deduced from offset. Returns number
- * of bytes read. */
+/* Reads from a single EEPROM chip, which is deduced from offset. Returns zero
+ * on success. */
 static int read_eeprom_chip(uint8_t cpu, uint32_t offset, void *data, uint16_t len)
 {
 	const unsigned int bus = (cpu == 0 ? 1 : FSI_I2C_BUS);
@@ -95,15 +95,13 @@ static int read_eeprom_chip(uint8_t cpu, uint32_t offset, void *data, uint16_t l
 	seg[1].buf   = data;
 	seg[1].len   = len;
 
-	return i2c_transfer(bus, seg, ARRAY_SIZE(seg)) - sizeof(actual_offset);
+	return i2c_transfer(bus, seg, ARRAY_SIZE(seg));
 }
 
 /* Reads from EEPROM handling accesses across chip boundaries (64 KiB).  Returns
- * number of bytes read. */
+ * zero on success. */
 static int read_eeprom(uint8_t cpu, uint32_t offset, void *data, uint32_t len)
 {
-	int ret_value1 = 0;
-	int ret_value2 = 0;
 	uint16_t len1 = 0;
 	uint16_t len2 = 0;
 
@@ -114,15 +112,12 @@ static int read_eeprom(uint8_t cpu, uint32_t offset, void *data, uint32_t len)
 	len1 = EEPROM_CHIP_SIZE - offset;
 	len2 = len - len1;
 
-	ret_value1 = read_eeprom_chip(cpu, offset, data, len1);
-	if (ret_value1 < 0)
-		return ret_value1;
+	if (read_eeprom_chip(cpu, offset, data, len1))
+		return 1;
+	if (read_eeprom_chip(cpu, EEPROM_CHIP_SIZE, (uint8_t *)data + len1, len2))
+		return 1;
 
-	ret_value2 = read_eeprom_chip(cpu, EEPROM_CHIP_SIZE, (uint8_t *)data + len1, len2);
-	if (ret_value2 < 0)
-		return ret_value2;
-
-	return ret_value1 + ret_value2;
+	return 0;
 }
 
 /* Finds and extracts i-th keyword (`index` specifies which one) from a record
@@ -139,7 +134,7 @@ static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
 	if (strlen(kwd_name) != VPD_KWD_NAME_LEN)
 		die("Keyword name has wrong length: %s!\n", kwd_name);
 
-	if (read_eeprom(cpu, offset, &record_size, sizeof(record_size)) != VPD_RECORD_SIZE_LEN)
+	if (read_eeprom(cpu, offset, &record_size, sizeof(record_size)))
 		die("Failed to read record size from EEPROM\n");
 
 	offset += VPD_RECORD_SIZE_LEN;
@@ -148,7 +143,7 @@ static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
 	/* Skip mandatory "RT" and one byte of keyword size (always 4) */
 	offset += VPD_KWD_NAME_LEN + 1;
 
-	if (read_eeprom(cpu, offset, name, sizeof(name)) != sizeof(name))
+	if (read_eeprom(cpu, offset, name, sizeof(name)))
 		die("Failed to read record name from EEPROM\n");
 
 	if (memcmp(name, record_name, VPD_RECORD_NAME_LEN))
@@ -161,7 +156,7 @@ static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
 		uint8_t name_buf[VPD_KWD_NAME_LEN];
 		uint16_t kwd_size = 0;
 
-		if (read_eeprom(cpu, offset, name_buf, sizeof(name_buf)) != sizeof(name_buf))
+		if (read_eeprom(cpu, offset, name_buf, sizeof(name_buf)))
 			die("Failed to read keyword name from EEPROM\n");
 
 		/* This is always the last keyword */
@@ -172,15 +167,13 @@ static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
 
 		if (name_buf[0] == '#') {
 			/* This is a large (two-byte size) keyword */
-			if (read_eeprom(cpu, offset, &kwd_size,
-					sizeof(kwd_size)) != sizeof(kwd_size))
+			if (read_eeprom(cpu, offset, &kwd_size, sizeof(kwd_size)))
 				die("Failed to read large keyword size from EEPROM\n");
 			kwd_size = le16toh(kwd_size);
 			offset += 2;
 		} else {
 			uint8_t small_size;
-			if (read_eeprom(cpu, offset, &small_size,
-					sizeof(small_size)) != sizeof(small_size))
+			if (read_eeprom(cpu, offset, &small_size, sizeof(small_size)))
 				die("Failed to read small keyword size from EEPROM\n");
 			kwd_size = small_size;
 			offset += 1;
@@ -191,7 +184,7 @@ static bool eeprom_extract_kwd(uint8_t cpu, uint64_t offset, uint8_t index,
 				die("Keyword buffer is too small: %llu instead of %llu\n",
 				    (unsigned long long)*size, (unsigned long long)kwd_size);
 
-			if (read_eeprom(cpu, offset, buf, kwd_size) != kwd_size)
+			if (read_eeprom(cpu, offset, buf, kwd_size))
 				die("Failed to read keyword body from EEPROM\n");
 
 			*size = kwd_size;
@@ -292,7 +285,7 @@ static const uint8_t *mvpd_get(uint8_t cpu)
 			toc->reserved[1] = 0x5A;
 
 			if (read_eeprom(cpu, record_offset, mvpd_buf + mvpd_offset,
-					record_size) != record_size)
+					record_size))
 				die("Failed to read %.4s record from EEPROM\n", record_name);
 
 			++toc;

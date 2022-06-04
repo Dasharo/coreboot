@@ -141,7 +141,6 @@ static uint8_t read_i2c_byte(enum i2c_type type, uint64_t addr)
 int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 			  int seg_count)
 {
-	int bytes_transfered = 0;
 	int i;
 	uint64_t r;
 
@@ -218,7 +217,7 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 			  ADDR_PLACE(segment[i].slave) |
 			  LEN_PLACE(segment[i].len));
 
-		for (len = 0; len < segment[i].len; len++, bytes_transfered++) {
+		for (len = 0; len < segment[i].len; len++) {
 			r = read_i2c(type, status_reg);
 
 			if (read_not_write) {
@@ -260,7 +259,7 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 
 	}
 
-	return bytes_transfered;
+	return 0;
 }
 
 /* Defined in fsi.h */
