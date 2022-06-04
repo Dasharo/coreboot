@@ -41,8 +41,8 @@
 #define MAX_COUNT_LONG 50
 
 /* expected value for DIDVID register */
-#define TPM_TIS_I2C_DID_VID_9635 0x000b15d1L
-#define TPM_TIS_I2C_DID_VID_9645 0x001a15d1L
+#define TPM_TIS_I2C_DID_VID_9635 be32_to_cpu(0xd1150b00L)
+#define TPM_TIS_I2C_DID_VID_9645 be32_to_cpu(0xd1151a00L)
 
 enum i2c_chip_type {
 	SLB9635,
@@ -528,7 +528,7 @@ int tpm_vendor_init(struct tpm_chip *chip, unsigned int bus, uint32_t dev_addr)
 
 	if (vendor == TPM_TIS_I2C_DID_VID_9645) {
 		tpm_dev.chip_type = SLB9645;
-	} else if (be32_to_cpu(vendor) == TPM_TIS_I2C_DID_VID_9635) {
+	} else if (vendor == TPM_TIS_I2C_DID_VID_9635) {
 		tpm_dev.chip_type = SLB9635;
 	} else {
 		printk(BIOS_DEBUG, "Vendor ID 0x%08x not recognized.\n",
