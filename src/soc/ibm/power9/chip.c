@@ -13,6 +13,8 @@
 #include <cpu/power/proc.h>
 #include <cpu/power/spr.h>
 #include <commonlib/stdlib.h>		// xzalloc
+#include <security/tpm/tpm2_log_serialized.h>
+
 
 #include "istep_13_scom.h"
 #include "chip.h"
@@ -489,6 +491,45 @@ static void add_cb_fdt_data(struct device_tree *tree)
 	dt_add_reg_prop(coreboot_node, reg_addrs, reg_sizes, 2, addr_cells, size_cells);
 }
 
+static void add_tpm_node(struct device_tree *tree)
+{
+#if CONFIG(TALOS_2_INFINEON_TPM_1)
+	uint32_t xscom_base = 0xA0000 | (CONFIG_DRIVER_TPM_I2C_BUS << 12);
+	uint8_t port = (CONFIG_DRIVER_TPM_I2C_ADDR & 0x80 ? 1 : 0);
+	uint8_t addr = (CONFIG_DRIVER_TPM_I2C_ADDR & 0x7F);
+
+	struct device_tree_node *tpm;
+	struct device_tree_node *sb;
+	char path[64];
+
+	/* TODO: is the XSCOM address always the same? */
+	snprintf(path, sizeof(path), "/xscom@603fc00000000/i2cm@%x/i2c-bus@%x/tpm@%x",
+		 xscom_base, port, addr);
+
+	tpm = dt_find_node_by_path(tree, path, NULL, NULL, 1);
+
+	dt_add_string_prop(tpm, "compatible", "infineon,slb9645tt");
+	dt_add_u32_prop(tpm, "reg", addr);
+
+#if CONFIG(TPM_MEASURED_BOOT)
+	const struct cbmem_entry *evtlog;
+
+	evtlog = cbmem_entry_find(CBMEM_ID_TPM2_TCG_LOG);
+	if (evtlog == NULL)
+		die("TPM events log is missing from CBMEM!");
+
+	dt_add_u64_prop(tpm, "ibm,sml-base", (uintptr_t)cbmem_entry_start(evtlog));
+	dt_add_u32_prop(tpm, "ibm,sml-size", cbmem_entry_size(evtlog));
+
+	/* Not hard-coding into DTS-file in case will need to store key hash here */
+	sb = dt_find_node_by_path(tree, "/ibm,secureboot", NULL, NULL, 1);
+	dt_add_string_prop(sb, "compatible", "ibm,secureboot-v1-softrom");
+	dt_add_string_prop(sb, "hash-algo", "sha512");
+	dt_add_u32_prop(sb, "trusted-enabled", 1);
+#endif
+#endif
+}
+
 /*
  * Device tree passed to Skiboot has to have phandles set either for all nodes
  * or none at all. Because relative phandles are set for cpu->l2_cache->l3_cache
@@ -503,6 +544,7 @@ static int dt_platform_update(struct device_tree *tree, uint8_t chips)
 	add_memory_nodes(tree);
 	add_dimm_sensor_nodes(tree, chips);
 	add_cb_fdt_data(tree);
+	add_tpm_node(tree);
 
 	/* Find "cpus" node */
 	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 0);

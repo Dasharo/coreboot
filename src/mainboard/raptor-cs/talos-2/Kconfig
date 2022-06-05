@@ -27,6 +27,24 @@ config BOARD_SPECIFIC_OPTIONS
 	select IPMI_BT_ROMSTAGE
 	select FLATTENED_DEVICE_TREE
 
+config TALOS_2_INFINEON_TPM_1
+	bool "I2C TPM1 chip compatible with SLB9635TT"
+	default n
+	select I2C_TPM
+	select MAINBOARD_HAS_TPM1
+	select TPM_MEASURED_BOOT
+	select TPM_LOG_TPM2
+
+config DRIVER_TPM_I2C_BUS
+	hex
+	default 0x02
+	depends on TALOS_2_INFINEON_TPM_1
+
+config DRIVER_TPM_I2C_ADDR
+	hex "I2C TPM chip address"
+	default 0x20
+	depends on TALOS_2_INFINEON_TPM_1
+
 config MEMLAYOUT_LD_FILE
 	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/memlayout.ld"
