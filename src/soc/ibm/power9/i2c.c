@@ -175,6 +175,38 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 
 	uint64_t clear_err = (type != FSI_I2C ? PPC_BIT(0) : 0);
 
+	/*
+	 * Divisor fields in this register are poorly documented:
+	 *
+	 *    Bits     SCOM   Field Mnemonic: Description
+	 *   0:7       RWX    BIT_RATE_DIVISOR_3: Decides the speed on the I2C bus.
+	 *   8:9       RWX    BIT_RATE_DIVISOR_3: Decides the speed on the I2C bus.
+	 *   10:15     RWX    BIT_RATE_DIVISOR_3: Decides the speed on the I2C bus.
+	 *
+	 * After issuing a fast command (SCOM A3000) they change like this:
+	 * -  100 kHz - previous value is not changed
+	 * -   50 kHz - 0x000B
+	 * - 3400 kHz - 0x005E
+	 * -  400 kHz - 0x0177
+	 *
+	 * Use value for 400 kHz as it is the one used by Hostboot.
+	 */
+	uint16_t bit_rate_div = 0x0177;	// 400kHz by default
+	if (bus == 2) {
+		/*
+		 * Skiboot computes the value as:
+		 *
+		 *   (((clock-frequency / bus-frequency) - 1) / 4)
+		 *
+		 * Frequencies are specified in the corresponding device tree entries.
+		 * clock-frequency is from I2C master and bus-frequency is from I2C bus.
+		 *
+		 * At least for TPM default value doesn't work (results in NACK error) for
+		 * bus #2.
+		 */
+		bit_rate_div = 0x0048;
+	}
+
 	write_i2c(type, res_err_reg, clear_err);
 
 	for (i = 0; i < seg_count; i++) {
@@ -192,25 +224,8 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 		read_cont = (!stop && !read_not_write) ? READ_CONT : 0;
 		port = segment[i].slave & 0x80 ? 1 : 0;
 
-		/*
-		 * Divisor fields in this register are poorly documented:
-		 *
-		 *	 Bits     SCOM   Field Mnemonic: Description
-		 *	0:7       RWX    BIT_RATE_DIVISOR_3: Decides the speed on the I2C bus.
-		 *	8:9       RWX    BIT_RATE_DIVISOR_3: Decides the speed on the I2C bus.
-		 *	10:15     RWX    BIT_RATE_DIVISOR_3: Decides the speed on the I2C bus.
-		 *
-		 * After issuing a fast command (SCOM A3000) they change like this:
-		 * -  100 kHz - previous value is not changed
-		 * -   50 kHz - 0x000B
-		 * - 3400 kHz - 0x005E
-		 * -  400 kHz - 0x0177
-		 *
-		 * Use value for 400 kHz as it is the one used by Hostboot.
-		 */
 		write_i2c(type, mode_reg,
-			  0x0177000000000000 | PPC_PLACE(port, 16, 6));	// 400kHz
-
+			  PPC_PLACE(bit_rate_div, 0, 16) | PPC_PLACE(port, 16, 6));
 		write_i2c(type, res_err_reg, clear_err);
 		write_i2c(type, cmd_reg,
 			  START | stop | WITH_ADDR | read_not_write | read_cont |
