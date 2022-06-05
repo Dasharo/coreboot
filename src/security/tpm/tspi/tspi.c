@@ -252,6 +252,10 @@ uint32_t tpm_extend_pcr(int pcr, enum vb2_hash_algorithm digest_algo,
 }
 
 #if CONFIG(VBOOT_LIB)
+#pragma GCC diagnostic push
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wstack-usage="
+#endif
 uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 			    const char *rname)
 {
@@ -293,4 +297,5 @@ uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 	}
 	return tpm_extend_pcr(pcr, TPM_MEASURE_ALGO, digest, digest_len, rname);
 }
+#pragma GCC diagnostic pop
 #endif /* VBOOT_LIB */
