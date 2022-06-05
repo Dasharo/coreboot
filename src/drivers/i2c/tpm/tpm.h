@@ -52,6 +52,7 @@ struct tpm_vendor_specific {
 
 struct tpm_chip {
 	int is_open;
+	const char *name;
 	struct tpm_vendor_specific vendor;
 };
 

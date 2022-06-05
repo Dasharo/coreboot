@@ -536,9 +536,11 @@ int tpm_vendor_init(struct tpm_chip *chip, unsigned int bus, uint32_t dev_addr)
 		goto out_err;
 	}
 
+	chip->name = chip_name[tpm_dev.chip_type];
+
 	printk(BIOS_DEBUG, "I2C TPM %u:%02x (chip type %s device-id 0x%X)\n",
 	       tpm_dev.bus, tpm_dev.addr,
-	       chip_name[tpm_dev.chip_type], vendor >> 16);
+	       chip->name, vendor >> 16);
 
 	/*
 	 * A timeout query to TPM can be placed here.

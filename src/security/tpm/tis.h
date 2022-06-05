@@ -60,6 +60,15 @@ int tis_open(void);
 int tis_close(void);
 
 /*
+ * tis_name()
+ *
+ * Retrieves TPM model name.
+ *
+ * Returns pointer on success, NULL on failure.
+ */
+const char * tis_name(void);
+
+/*
  * tis_sendrecv()
  *
  * Send the requested data to the TPM and then try to get its response

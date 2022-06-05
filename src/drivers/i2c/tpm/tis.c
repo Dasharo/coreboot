@@ -118,6 +118,15 @@ out:
 	return rc;
 }
 
+const char * tis_name(void)
+{
+	if (chip.is_open) {
+		return chip.name;
+	}
+
+	return NULL;
+}
+
 int tis_sendrecv(const uint8_t *sendbuf, size_t sbuf_size,
 		uint8_t *recvbuf, size_t *rbuf_len)
 {
