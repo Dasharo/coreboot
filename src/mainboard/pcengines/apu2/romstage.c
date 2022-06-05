@@ -100,8 +100,8 @@ static void print_sign_of_life(void)
 {
 	char tmp[9];
 	strncpy(tmp,   coreboot_dmi_date+6, 4);
-	strncpy(tmp+4, coreboot_dmi_date+3, 2);
-	strncpy(tmp+6, coreboot_dmi_date,   2);
+	strncpy(tmp+4, coreboot_dmi_date,   2);
+	strncpy(tmp+6, coreboot_dmi_date+3, 2);
 	tmp[8] = '\0';
 	printk(BIOS_ALERT, CONFIG_MAINBOARD_VENDOR " "
 	                   CONFIG_MAINBOARD_PART_NUMBER "\n");
