@@ -26,7 +26,7 @@ usage() {
 # Novacustom Open Source Firmware Release 0.x Signing Key
 GPG_FINGERPRINT="FECB8B01334874A0"
 
-BOARD="novacustom_ns5x"
+BOARD="novacustom_nv4x"
 DEFCONFIG="configs/config.${BOARD}"
 FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 FW_FILE="dasharo_${BOARD}_${FW_VERSION}.rom"
