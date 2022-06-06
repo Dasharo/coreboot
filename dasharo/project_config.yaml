@@ -1,40 +1,44 @@
 # Dasharo project configuration data
-file_version: 0.0.1
+file_version: 1.0.0
 
 dasharo:
-  platform: novacustom_ns5x
-  newsletter:
-    url:  https://newsletter.3mdeb.com/subscription/T61MyO2sP
+        platform: novacustom_nv4x
+        newsletter:
+                url:  https://newsletter.3mdeb.com/subscription/T61MyO2sP
 
 client:
-  name: NovaCustom
+        name: NovaCustom
 
 framework:
-  name: coreboot
-  version: 4.16
-  url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
+        name: coreboot
+        version: ae9a8447
+        url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
 
 components:
-- name: tianocore
-  version: e0334c228ce4ba51f47ff79a118f214031d4650f
-  url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
-  path: payloads/external/tianocore/tianocore
-
+        - name: edk2
+          version: 2020.03.17
+          path: payloads/external/tianocore/tianocore
+          url_template: https://github.com/Dasharo/edk2/tree/COMMIT_HASH
+        - name: Blobs
+          version: v1.0
+          path: 3rdparty/dasharo-blobs
+          url_template: https://gitlab.com/novacustom/blobs/-/tree/COMMIT_HASH
 
 documentation:
-  name: Dasharo Documentation
-  url: https://docs.dasharo.com/
-  building_url: https://docs.dasharo.com/variants/novacustom_ns5x/building/
-  flashing_url: https://docs.dasharo.com/variants/novacustom_ns5x/flashing_internal/
+        name: Dasharo Documentation
+        url: https://docs.dasharo.com/
+        overview_url: https://docs.dasharo.com/variants/novacustom_nv4x/overview/
+        building_url: https://docs.dasharo.com/variants/novacustom_nv4x/building/
+        flashing_url: https://docs.dasharo.com/variants/novacustom_nv4x/flashing_internal/
 
 platform:
-  vendor: NovaCustom
-  model: NS5x
+        vendor: NovaCustom
+        model: NV4x
 
 tests:
-  hardware_matrix: https://docs.dasharo.com/variants/novacustom_ns5x/testing_configuration/
-  results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=1695997523
-  specification: https://docs.dasharo.com/unified-test-documentation/overview/
+        hardware_matrix: https://docs.dasharo.com/variants/novacustom_nv4x/testing_configuration/
+        results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=0
+        specification: https://docs.dasharo.com/unified-test-documentation/overview/
 
 asciinema:
-  signature_verification: https://asciinema.org/a/433461
+        signature_verification: https://asciinema.org/a/433461
