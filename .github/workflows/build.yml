@@ -1,16 +1,16 @@
-name: Build coreboot for the NS5X target
+name: Build coreboot for the NV4x target
 on:
   push:
     branches:
-      - novacustom_ns5x/develop
-      - novacustom_ns5x/release
-      - 'novacustom_ns5x/rel_*'
+      - novacustom_nv4x/develop
+      - novacustom_nv4x/release
+      - 'novacustom_nv4x/rel_*'
     tags:
-      - 'novacustom_ns5x*'
+      - 'novacustom_nv4x*'
   pull_request:
     branches:
-      - novacustom_ns5x/develop
-      - novacustom_ns5x/release
+      - novacustom_nv4x/develop
+      - novacustom_nv4x/release
 
 jobs:
   build:
@@ -55,24 +55,24 @@ jobs:
     - name: Checkout all submodules
       run: git submodule update --init --recursive --checkout
 
-    - name: Build NS5X target
+    - name: Build NV4x target
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         ./build.sh build-CI
         EOF
 
-    - name: Build NS5X target (vboot test binaries)
+    - name: Build NV4x target (vboot test binaries)
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:0ad5fbd48d << EOF
         ./build.sh build-CI -s
         EOF
 
-    - name: Save NS5X artifacts
+    - name: Save NV4x artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: "dasharo-novacustom-ns5x"
+        name: "dasharo-novacustom-nv4x"
         path: |
           artifacts/
         retention-days: 7
