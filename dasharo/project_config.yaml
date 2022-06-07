@@ -11,7 +11,7 @@ client:
 
 framework:
         name: coreboot
-        version: ae9a8447
+        version: e3e965b1
         url_template: https://github.com/Dasharo/coreboot/tree/COMMIT_HASH
 
 components:

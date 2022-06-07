@@ -1,134 +1,19 @@
 releases:
-        - version: v0.1.2
+        - version: v1.1.0
           added:
-                - Clevo NV41MZ platform support
-                - Clevo IT5570 EC support
-                - UEFI boot support
-                - Configurable boot order
-                - Configurable boot options
-                - Integrated graphics initialization for the internal LCD (eDP) and external HDMI port
+                - Add Dasharo Tools Suite network boot integration
+                - Add a persistent bootlogo implementation
           known_issues:
-                - description: The touchpad ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-                - description: The camera ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
-
-        - version: v0.2.0
-          added:
-                - UEFI Secure Boot support
-                - UEFI Shell selectable in boot menu
-                - iPXE selectable in boot menu
-                - NovaCustom boot logo
-                - Customized boot menu keys
-                - Customized setup menu keys
-                - Enabled camera on/off hotkey
-                - Support for backlight hotkey in Windows
-                - Preserve boot order settings after Dasharo update
-          changed:
-                - Replaced CorebootPayloadPkg with Dasharo UEFIPayloadPkg
-                - Changed the behavior of airplane mode to match stock firmware
-                  (now it can be disabled in software)
-          known_issues:
-                - description: Screen brightness is stuck at 0% in the Windows Installer
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/4
-                - description: Sleep mode is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
-                - description: The camera ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
-                - description: The touchpad ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-
-        - version: v0.2.1
-          added:
-                - Integrated graphics backlight configuration for Windows
-          changed:
-                - Updated the Video Bios Table
-          fixed:
-                - Screen brightness is stuck at 0% in the Windows Installer
-          known_issues:
-                - description: Sleep mode is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
-                - description: The camera ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
-                - description: The touchpad ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-
-        - version: v0.3.0
-          added:
-                - Support for discrete TPM
-                - USB Type-C ACPI support (UCSI)
-                - Improved runtime power management for SSD (reduces power usage while in sleep)
-                - Added partial sleep support (system saves power, but fans still spin)
-          changed:
-                - Rebased on coreboot revision ae9a8447
-          known_issues:
-                - description: Sleep mode is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
-                - description: The camera ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
-                - description: The touchpad ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-
-        - version: v0.4.0
-          added:
-                - Added full support for sleep mode (s0ix / Modern Standby)
-                - Added support for NV41MB model
-                - Added support for nvidia discrete graphics (doesn't power off in Windows yet)
-          changed:
-                - Fixed regression with non-funtional airplane mode hotkey on Windows
-                - Disabled legacy 8254 timer for lower power draw
-          fixed:
-                - Sleep mode is not functional
-                - The camera ON/OFF switch Fn key is not functional
-          known_issues:
-                - description: Unable to download the system by using iPXE
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
-                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
-                - description: High Nvidia GPU energy draw at idle in Windows
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/6
-                - description: Performance drop when the power adaptor is disconnected
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/5
-                - description: The touchpad ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-
-        - version: v0.5.0
-          added:
-                - vboot Verified Boot
-                - TPM Measured Boot
-                - Custom fan curve
-                - Microcode for Tiger Lake stepping 0x2
-                - Documentation for EC firmware update
-          changed:
-                - Disabled unused DPTF device
-          fixed:
-                - Performance drop when the power adaptor is disconnected
-                - High Nvidia GPU energy draw at idle in Windows
-          known_issues:
-                - description: Unable to download the system by using iPXE
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
-                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
-                - description: The touchpad ON/OFF switch Fn key is not functional
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
-
-        - version: v1.0.0
-          added:
-                - Documentation for touchpad hotkey enablement on Linux
-          fixed:
-                - The touchpad ON/OFF switch Fn key is not functional
-                - Charging indicator displays wrong state if power adapter was
-                  unplugged while in sleep mode
-                - Bluetooth does not work under Windows
-          removed:
-                - Removed proprietary blobs from built coreboot images
-          known_issues:
-                - description: Unable to download the system by using iPXE
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
-                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+                - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
+                - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/18
                 - description: Windows 10 SD card reader driver needs manual installation on NV41MB
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+                - description: Low level interfering crackling/popping of the speakers while playing no sound
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
 
         - version: v1.0.1
           added:
@@ -146,22 +31,6 @@ releases:
           known_issues:
                 - description: Custom fan curve is not functional after suspend
                   url: https://github.com/Dasharo/dasharo-issues/issues/45
-                - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
-                - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/18
-                - description: Windows 10 SD card reader driver needs manual installation on NV41MB
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
-                - description: Low level interfering crackling/popping of the speakers while playing no sound
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
-                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
-
-        - version: v1.1.0
-          added:
-                - Add Dasharo Tools Suite network boot integration
-                - Add a persistent bootlogo implementation
-          known_issues:
                 - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
                 - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
@@ -194,3 +63,134 @@ releases:
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
                 - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+
+        - version: v1.0.0
+          added:
+                - Documentation for touchpad hotkey enablement on Linux
+          fixed:
+                - The touchpad ON/OFF switch Fn key is not functional
+                - Charging indicator displays wrong state if power adapter was
+                  unplugged while in sleep mode
+                - Bluetooth does not work under Windows
+          removed:
+                - Removed proprietary blobs from built coreboot images
+          known_issues:
+                - description: Unable to download the system by using iPXE
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+                - description: Windows 10 SD card reader driver needs manual installation on NV41MB
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+
+        - version: v0.5.0
+          added:
+                - vboot Verified Boot
+                - TPM Measured Boot
+                - Custom fan curve
+                - Microcode for Tiger Lake stepping 0x2
+                - Documentation for EC firmware update
+          changed:
+                - Disabled unused DPTF device
+          fixed:
+                - Performance drop when the power adaptor is disconnected
+                - High Nvidia GPU energy draw at idle in Windows
+          known_issues:
+                - description: Unable to download the system by using iPXE
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.3.0
+          added:
+                - Support for discrete TPM
+                - USB Type-C ACPI support (UCSI)
+                - Improved runtime power management for SSD (reduces power usage while in sleep)
+                - Added partial sleep support (system saves power, but fans still spin)
+          changed:
+                - Rebased on coreboot revision ae9a8447
+          known_issues:
+                - description: Sleep mode is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.2.1
+          added:
+                - Integrated graphics backlight configuration for Windows
+          changed:
+                - Updated the Video Bios Table
+          fixed:
+                - Screen brightness is stuck at 0% in the Windows Installer
+          known_issues:
+                - description: Sleep mode is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.4.0
+          added:
+                - Added full support for sleep mode (s0ix / Modern Standby)
+                - Added support for NV41MB model
+                - Added support for nvidia discrete graphics (doesn't power off in Windows yet)
+          changed:
+                - Fixed regression with non-funtional airplane mode hotkey on Windows
+                - Disabled legacy 8254 timer for lower power draw
+          fixed:
+                - Sleep mode is not functional
+                - The camera ON/OFF switch Fn key is not functional
+          known_issues:
+                - description: Unable to download the system by using iPXE
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/8
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+                - description: High Nvidia GPU energy draw at idle in Windows
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/6
+                - description: Performance drop when the power adaptor is disconnected
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/5
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.2.0
+          added:
+                - UEFI Secure Boot support
+                - UEFI Shell selectable in boot menu
+                - iPXE selectable in boot menu
+                - NovaCustom boot logo
+                - Customized boot menu keys
+                - Customized setup menu keys
+                - Enabled camera on/off hotkey
+                - Support for backlight hotkey in Windows
+                - Preserve boot order settings after Dasharo update
+          changed:
+                - Replaced CorebootPayloadPkg with Dasharo UEFIPayloadPkg
+                - Changed the behavior of airplane mode to match stock firmware
+                  (now it can be disabled in software)
+          known_issues:
+                - description: Screen brightness is stuck at 0% in the Windows Installer
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/4
+                - description: Sleep mode is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/3
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+
+        - version: v0.1.2
+          added:
+                - Clevo NV41MZ platform support
+                - Clevo IT5570 EC support
+                - UEFI boot support
+                - Configurable boot order
+                - Configurable boot options
+                - Integrated graphics initialization for the internal LCD (eDP) and external HDMI port
+          known_issues:
+                - description: The touchpad ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/1
+                - description: The camera ON/OFF switch Fn key is not functional
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/2
