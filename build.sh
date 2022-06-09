@@ -20,6 +20,7 @@ usage() {
   echo
   echo "   -l path_to_logo.bmp: Build with custom boot logo"
   echo "                    -s: Build with new vboot keys for testing vboot"
+  echo "                    -f: Also build full flash image (requires me.bin and ifd.bin)"
 }
 
 # FIXME
@@ -36,6 +37,7 @@ ARTIFACTS_DIR="artifacts"
 LOGO="3rdparty/dasharo-blobs/novacustom/bootsplash.bmp"
 SDKVER="0ad5fbd48d"
 REPLACE_KEYS=0
+ADD_BLOBS=0
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
 
@@ -68,6 +70,17 @@ replace_keys() {
   echo "Building with test vboot keys"
 }
 
+add_blobs() {
+  # Check if blobs exist
+  if [ ! -f "me.bin" ] || [ ! -f "ifd.bin" ]; then
+	echo "Could not find blobs! Put them in ifd.bin and me.bin."
+	exit 1
+  fi
+  cat ifd.bin me.bin > ifd_me.bin
+  cp "${ARTIFACTS_DIR}/${FW_FILE}" "${ARTIFACTS_DIR}/${FW_FILE}.full"
+  dd if="ifd_me.bin" of="${ARTIFACTS_DIR}/${FW_FILE}.full" conv=notrunc
+}
+
 build() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
@@ -79,13 +92,16 @@ build() {
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
 	  coreboot/coreboot-sdk:$SDKVER make -j "$(nproc)"
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
-    make -C util/cbfstool
+	  coreboot/coreboot-sdk:$SDKVER make -C util/cbfstool
   util/cbfstool/cbfstool build/coreboot.rom add -r BOOTSPLASH -f $LOGO -n logo.bmp -t raw -c lzma
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
-  cd "${ARTIFACTS_DIR}"
-  sha256sum "${FW_FILE}" > "${HASH_FILE}"
-  cd -
+
+  if [[ $ADD_BLOBS = 1 ]]; then
+    add_blobs
+  fi
+
+  sha256sum "${ARTIFACTS_DIR}/${FW_FILE}" > "${ARTIFACTS_DIR}/${HASH_FILE}"
 }
 
 build-CI() {
@@ -102,6 +118,10 @@ build-CI() {
   mkdir -p "${ARTIFACTS_DIR}"
   cp build/coreboot.rom "${ARTIFACTS_DIR}/${FW_FILE}"
   sha256sum "${ARTIFACTS_DIR}/${FW_FILE}" > "${ARTIFACTS_DIR}/${HASH_FILE}"
+
+  if [[ $ADD_BLOBS = 1 ]]; then
+    echo "Building with blobs not currently supported in CI environment"
+  fi
 }
 
 sign() {
@@ -135,7 +155,7 @@ upload() {
 CMD="$1"
 
 OPTIND=2
-while getopts "l:s" options; do
+while getopts "l:sf" options; do
   case "${options}" in
     "l")
       if [ -f $OPTARG ]; then
@@ -147,6 +167,9 @@ while getopts "l:s" options; do
     "s")
       REPLACE_KEYS=1
       FW_FILE="${FW_FILE}.vboot_test"
+      ;;
+    "f")
+      ADD_BLOBS=1
       ;;
   esac
 done
