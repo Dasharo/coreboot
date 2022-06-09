@@ -25,16 +25,16 @@ documentation:
   name: Dasharo Documentation
   url: https://docs.dasharo.com/
   building_url: https://docs.dasharo.com/variants/novacustom_ns5x/building/
-  flashing_url: https://docs.dasharo.com/variants/novacustom_ns5x/flashing_internal/
+  flashing_url: https://docs.dasharo.com/variants/novacustom_ns5x/installation/
 
 platform:
   vendor: NovaCustom
   model: NS5x
 
 tests:
-  hardware_matrix: https://docs.dasharo.com/variants/novacustom_ns5x/testing_configuration/
+  hardware_matrix: https://docs.dasharo.com/variants/novacustom_ns5x/hardware-matrix/
   results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=1695997523
-  specification: https://docs.dasharo.com/unified-test-documentation/overview/
+  specification: https://docs.dasharo.com/variants/novacustom_ns5x/test-matrix/
 
 asciinema:
   signature_verification: https://asciinema.org/a/433461
