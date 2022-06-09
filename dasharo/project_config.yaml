@@ -33,7 +33,7 @@ platform:
 
 tests:
   hardware_matrix: https://docs.dasharo.com/variants/novacustom_ns5x/hardware-matrix/
-  results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=1695997523
+  results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=61205623
   specification: https://docs.dasharo.com/variants/novacustom_ns5x/test-matrix/
 
 asciinema:
