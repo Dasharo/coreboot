@@ -498,6 +498,7 @@ static void add_tpm_node(struct device_tree *tree)
 	uint8_t addr = (CONFIG_DRIVER_TPM_I2C_ADDR & 0x7F);
 
 	struct device_tree_node *tpm;
+	struct device_tree_node *sb;
 	char path[64];
 	char compatible[24];
 
@@ -512,7 +513,6 @@ static void add_tpm_node(struct device_tree *tree)
 	snprintf(compatible, sizeof(compatible), "infineon,%s", tis_name());
 
 	dt_add_string_prop(tpm, "compatible", strdup(compatible));
-	dt_add_string_prop(tpm, "status", "okay");
 	dt_add_u32_prop(tpm, "reg", addr);
 
 	tcpa_table = cbmem_find(CBMEM_ID_TCPA_SPEC_LOG);
@@ -523,6 +523,12 @@ static void add_tpm_node(struct device_tree *tree)
 	dt_add_u32_prop(tpm, "linux,sml-size",
 			sizeof(tcg_efi_spec_id_event) +
 			tcpa_table->max_entries * sizeof(struct tcpa_entry));
+
+	/* Not hard-coding into DTS-file in case will need to store key hash here */
+	sb = dt_find_node_by_path(tree, "/ibm,secureboot", NULL, NULL, 1);
+	dt_add_string_prop(sb, "compatible", "ibm,secureboot-v1-softrom");
+	dt_add_string_prop(sb, "hash-algo", "sha512");
+	dt_add_u32_prop(sb, "trusted-enabled", 1);
 #endif
 }
 

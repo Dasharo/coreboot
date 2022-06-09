@@ -33,6 +33,7 @@ config TALOS_2_INFINEON_TPM_1
 	bool "I2C TPM1 chip compatible with SLB9635TT"
 	default n
 	select TPM_MEASURED_BOOT # needed for TCPA log
+	select TPM_MEASURED_BOOT_SPEC_LOG # don't use coreboot's log format
 
 config DRIVER_TPM_I2C_BUS
 	hex
