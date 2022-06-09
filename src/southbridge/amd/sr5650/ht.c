@@ -152,12 +152,18 @@ static void sr5690_read_resource(struct device *dev)
 {
 	struct resource *res;
 
-	if (CONFIG(MMCONF_SUPPORT)) {
-		printk(BIOS_DEBUG,"%s: %s\n", __func__, dev_path(dev));
-		set_nbmisc_enable_bits(dev, 0x0, 1 << 3, 1 << 3);	/* Hide BAR3 */
-	}
-
 	pci_dev_read_resources(dev);
+
+	/*
+	 * Set by enable_pcie_bar3() in bootblock.c, should be the same as set in
+	 * MSR 0xC0010058 and one of MMIO ranges in SoC device 18.1 (reported as
+	 * 18.0 by resource allocator).
+	 */
+	res = new_resource(dev, 0x1C);
+	res->base  = CONFIG_MMCONF_BASE_ADDRESS;
+	res->size  = CONFIG_MMCONF_BUS_NUMBER * MiB;
+	res->flags = IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_RESERVE |
+	             IORESOURCE_ASSIGNED | IORESOURCE_STORED;
 
 	/* IOAPIC */
 	res = new_resource(dev, 0xFC);

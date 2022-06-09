@@ -543,7 +543,6 @@ static void sr5650_enable(struct device *dev)
 		switch (dev->path.pci.devfn & 0x7) {
 			case 0:
 				printk(BIOS_INFO, "Bus-0, Dev-0, Fun-0.\n");
-				enable_pcie_bar3(nb_dev);	/* PCIEMiscInit */
 
 				config_gpp_core(nb_dev, sb_dev);
 				sr5650_gpp_sb_init(nb_dev, sb_dev, 8);
@@ -571,7 +570,6 @@ static void sr5650_enable(struct device *dev)
 	case 5:
 	case 6:
 	case 7:
-		enable_pcie_bar3(nb_dev);	/* PCIEMiscInit */
 		printk(BIOS_INFO, "Bus-0, Dev-4,5,6,7, Fun-0. enable=%d\n",
 			    dev->enabled);
 		set_nbmisc_enable_bits(nb_dev, 0x0c, 1 << dev_ind,
@@ -585,18 +583,15 @@ static void sr5650_enable(struct device *dev)
 				       (dev->enabled ? 1 : 0) << 6);
 		if (dev->enabled)
 			sr5650_gpp_sb_init(nb_dev, dev, dev_ind);
-		disable_pcie_bar3(nb_dev);
 		break;
 	case 9:		/* bus 0, dev 9,10, GPP3a */
 	case 10:
 		printk(BIOS_INFO, "Bus-0, Dev-9, 10, Fun-0. enable=%d\n",
 			    dev->enabled);
-		enable_pcie_bar3(nb_dev);	/* PCIEMiscInit */
 		set_nbmisc_enable_bits(nb_dev, 0x0c, 1 << (7 + dev_ind),
 				       (dev->enabled ? 0 : 1) << (7 + dev_ind));
 		if (dev->enabled)
 			sr5650_gpp_sb_init(nb_dev, dev, dev_ind);
-		/* Don't call disable_pcie_bar3(nb_dev) here, otherwise the screen will crash. */
 		break;
 	case 11:
 	case 12:	/* bus 0, dev 11,12, GPP2 */

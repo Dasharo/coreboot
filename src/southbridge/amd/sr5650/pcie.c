@@ -242,32 +242,6 @@ static void switching_gpp3a_configurations(struct device *nb_dev, struct device 
 	nbmisc_write_index(nb_dev, 0x8, reg);
 }
 
-/*****************************************************************
-* The sr5650 uses NBCONFIG:0x1c (BAR3) to map the PCIE Extended Configuration
-* Space to a 256MB range within the first 4GB of addressable memory.
-*****************************************************************/
-void enable_pcie_bar3(struct device *nb_dev)
-{
-	printk(BIOS_DEBUG, "%s\n", __func__);
-	set_nbcfg_enable_bits(nb_dev, 0x7C, 1 << 30, 1 << 30);	/* Enables writes to the BAR3 register. */
-	set_nbcfg_enable_bits(nb_dev, 0x84, 7 << 16, 0 << 16);
-
-	pci_write_config32(nb_dev, 0x1C, CONFIG_MMCONF_BASE_ADDRESS);	/* PCIEMiscInit */
-	pci_write_config32(nb_dev, 0x20, 0x00000000);
-	set_htiu_enable_bits(nb_dev, 0x32, 1 << 28, 1 << 28);	/* PCIEMiscInit */
-}
-
-/*****************************************************************
-* We should disable bar3 when we want to exit sr5650_enable, because bar3 will be
-* remapped in set_resource later.
-*****************************************************************/
-void disable_pcie_bar3(struct device *nb_dev)
-{
-	printk(BIOS_DEBUG, "%s\n", __func__);
-	pci_write_config32(nb_dev, 0x1C, 0);	/* clear BAR3 address */
-	set_nbcfg_enable_bits(nb_dev, 0x7C, 1 << 30, 0 << 30);	/* Disable writes to the BAR3. */
-}
-
 /*
  * GEN2 Software Compliance
  */
