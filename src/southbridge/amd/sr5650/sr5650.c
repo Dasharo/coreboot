@@ -16,37 +16,6 @@
 #include "sr5650.h"
 #include "cmn.h"
 
-/* extension registers */
-u32 pci_ext_read_config32(struct device *nb_dev, struct device *dev, u32 reg)
-{
-	/*get BAR3 base address for nbcfg0x1c */
-	u32 addr = pci_read_config32(nb_dev, 0x1c) & ~0xF;
-	printk(BIOS_DEBUG, "addr=%x,bus=%x,devfn=%x\n", addr, dev->bus->secondary,
-		     dev->path.pci.devfn);
-	addr |= dev->bus->secondary << 20 |	/* bus num */
-	    dev->path.pci.devfn << 12 | reg;
-	return *((u32 *) addr);
-}
-
-void pci_ext_write_config32(struct device *nb_dev, struct device *dev, u32 reg_pos, u32 mask, u32 val)
-{
-	u32 reg_old, reg;
-
-	/*get BAR3 base address for nbcfg0x1c */
-	u32 addr = pci_read_config32(nb_dev, 0x1c) & ~0xF;
-	/*printk(BIOS_DEBUG, "write: addr=%x,bus=%x,devfn=%x\n", addr, dev->bus->secondary,
-		     dev->path.pci.devfn);*/
-	addr |= dev->bus->secondary << 20 |	/* bus num */
-	    dev->path.pci.devfn << 12 | reg_pos;
-
-	reg = reg_old = *((u32 *) addr);
-	reg &= ~mask;
-	reg |= val;
-	if (reg != reg_old) {
-		*((u32 *) addr) = reg;
-	}
-}
-
 u32 nbpcie_p_read_index(struct device *dev, u32 index)
 {
 	return nb_read_index((dev), NBPCIE_INDEX, (index));
@@ -193,9 +162,7 @@ u8 PcieTrainPort(struct device *nb_dev, struct device *dev, u32 port)
 			count = 0;
 			break;
 		case 0x10:
-			reg =
-			    pci_ext_read_config32(nb_dev, dev,
-						  PCIE_VC0_RESOURCE_STATUS);
+			reg = pci_read_config32(dev, PCIE_VC0_RESOURCE_STATUS);
 			printk(BIOS_DEBUG, "PcieTrainPort reg=0x%x\n", reg);
 			/* check bit1 */
 			if (reg & VC_NEGOTIATION_PENDING) {	/* bit1=1 means the link needs to be re-trained. */

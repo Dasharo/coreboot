@@ -85,10 +85,6 @@ void nbpcie_p_write_index(struct device *dev, u32 index, u32 data);
 u32 nbpcie_ind_read_index(struct device *nb_dev, u32 index);
 void nbpcie_ind_write_index(struct device *nb_dev, u32 index, u32 data);
 
-u32 pci_ext_read_config32(struct device *nb_dev, struct device *dev, u32 reg);
-void pci_ext_write_config32(struct device *nb_dev, struct device *dev, u32 reg_pos, u32 mask,
-				u32 val);
-
 void enable_pcie_bar3(struct device *nb_dev);
 void disable_pcie_bar3(struct device *nb_dev);
 void init_gen2(struct device *nb_dev, struct device *dev, u8 port);

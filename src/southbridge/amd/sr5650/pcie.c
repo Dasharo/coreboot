@@ -322,7 +322,7 @@ void init_gen2(struct device *nb_dev, struct device *dev, u8 port)
 	/* Enables GEN2 capability of the device */
 	set_pcie_enable_bits(dev, 0xA4, 0x1, 0x1);
 	/* Advertise the link speed to be Gen2 */
-	pci_ext_write_config32(nb_dev, dev, 0x88, 0xF0, 1<<2); /* LINK_CRTL2 */
+	pci_update_config32(dev, 0x88, ~0xF0, 1<<2); /* LINK_CRTL2 */
 	set_nbmisc_enable_bits(nb_dev, reg, val, val);
 }
 
@@ -547,7 +547,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 
 	/* init GPP core */
 	/* 4.4.2.step13.1. Sets RCB completion timeout to be 200ms */
-	pci_ext_write_config32(nb_dev, dev, 0x80, 0xF << 0, 0x6 << 0);
+	pci_update_config32(dev, 0x80, ~0xF, 0x6);
 	/* 4.4.2.step13.2. RCB completion timeout on link down to shorten enumeration time. */
 	set_pcie_enable_bits(dev, 0x70, 1 << 19, 1 << 19);
 	/* 4.4.2.step13.3. Enable slave ordering rules */
@@ -630,7 +630,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 	set_pcie_enable_bits(dev, 0x10, 1 << 3, 1 < 3);
 	/* This bit when set indicates that the PCIe Link associated with this port
 	   is connected to a slot. */
-	pci_ext_write_config32(nb_dev, dev, 0x5a, 1 << 8, 1 << 8);
+	pci_update_config32(dev, 0x5a, ~0, 1 << 8);
 	/* This bit when set indicates that this slot is capable of supporting
 	   Hot-Plug operations. */
 	set_nbcfg_enable_bits(dev, 0x6C, 1 << 6, 1 << 6);
@@ -655,7 +655,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 	 * The additional setup is for the different revisions. */
 
 	/* CIMx CommonPortInit settings that are not set above. */
-	pci_ext_write_config32(nb_dev, dev, 0x88, 0xF0, 1 << 0); /* LINK_CRTL2 */
+	pci_update_config32(dev, 0x88, ~0xF0, 1 << 0); /* LINK_CRTL2 */
 
 	if (port == 8)
 		set_pcie_enable_bits(dev, 0xA0, 0, 1 << 23);
@@ -669,14 +669,14 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 #endif
 
 	/* Hotplug Support - bit5 + bit6  capable and surprise */
-	pci_ext_write_config32(nb_dev, dev, 0x6c, 0x60, 0x60);
+	pci_update_config32(dev, 0x6c, ~0, 0x60);
 
 	/* Set interrupt pin info 0x3d */
-	pci_ext_write_config32(nb_dev, dev, 0x3c, 1 << 8, 1 << 8);
+	pci_update_config32(dev, 0x3c, ~0, 1 << 8);
 
 	/* 5.12.9.3 Hotplug step 1 - NB_PCIE_ROOT_CTRL - enable pm irq
 	The RPR is wrong - this is not a PCIEND_P register */
-	pci_ext_write_config32(nb_dev, dev, 0x74, 1 << 3, 1 << 3);
+	pci_update_config32(dev, 0x74, ~0, 1 << 3);
 
 	/* 5.12.9.3 step 2 - PCIEP_PORT_CNTL - enable hotplug messages */
 	if (port != 8)
@@ -687,7 +687,7 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 	set_pcie_enable_bits(dev, 0x10, 1 << 3, 1 << 3); /* Not set in CIMx */
 
 	/* PME Enable */
-	pci_ext_write_config32(nb_dev, dev, 0x54, 1 << 8, 1 << 8); /* Not in CIMx */
+	pci_update_config32(dev, 0x54, ~0, 1 << 8); /* Not in CIMx */
 
 	/* 4.4.3 Training for GPP devices */
 	/* init GPP */
@@ -780,14 +780,14 @@ void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port)
 	set_pcie_enable_bits(nb_dev, 0x20 | gpp_sb_sel, 1 << 9, 0);
 
 	/* Advertising Hot Plug Capabilities */
-	pci_ext_write_config32(nb_dev, dev, 0x6c, 0x04001B, 0x00001B);
+	pci_update_config32(dev, 0x6c, ~0x04001B, 0x00001B);
 
 	/* PCIE Late Init (CIMx late init - Maybe move somewhere else? Later in the coreboot PCI device enum?) */
 	/* Set Slot Number */
-	pci_ext_write_config32(nb_dev, dev, 0x6c, 0x1FFF << 19, port << 19);
+	pci_update_config32(dev, 0x6c, ~(0x1FFF << 19), port << 19);
 
 	/* Set Slot present 0x5A*/
-	pci_ext_write_config32(nb_dev, dev, 0x58, 1 << 24, 1 << 24);
+	pci_update_config32(dev, 0x58, ~0, 1 << 24);
 
 	//PCIE-GPP1 TXCLK Clock Gating In L1  Late Core setting - Maybe move somewhere else? */
 	set_pcie_enable_bits(nb_dev, 0x11 | gpp_sb_sel, 0xF << 0, 0x0C << 0);
