@@ -106,6 +106,14 @@ config TPM_MEASURED_BOOT
 	help
 	  Enables measured boot (experimental)
 
+config TPM_MEASURED_BOOT_SPEC_LOG
+	bool "Use TCPA log per specification"
+	default n
+	depends on TPM_MEASURED_BOOT
+	help
+	  Enables writing of TPM event log in format defined by TCPA
+	  specification (TPM2).
+
 config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
 	bool
 	depends on TPM_MEASURED_BOOT && !VBOOT

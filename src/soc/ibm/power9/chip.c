@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <cbmem.h>
 #include <commonlib/cbmem_id.h>
-#include <commonlib/tcpa_log_serialized.h>
+#include <security/tpm/tspi.h>
 #include <drivers/ipmi/ipmi_bt.h>
 #include <program_loading.h>
 #include <cbfs.h>
@@ -515,12 +515,13 @@ static void add_tpm_node(struct device_tree *tree)
 	dt_add_string_prop(tpm, "status", "okay");
 	dt_add_u32_prop(tpm, "reg", addr);
 
-	tcpa_table = cbmem_find(CBMEM_ID_TCPA_LOG);
+	tcpa_table = cbmem_find(CBMEM_ID_TCPA_SPEC_LOG);
 	if (tcpa_table == NULL)
 		die("TPM events (TCPA) log is missing from CBMEM!");
 
-	dt_add_u64_prop(tpm, "linux,sml-base", (uintptr_t)tcpa_table + sizeof(*tcpa_table));
+	dt_add_u64_prop(tpm, "linux,sml-base", (uintptr_t)&tcpa_table->header);
 	dt_add_u32_prop(tpm, "linux,sml-size",
+			sizeof(tcg_efi_spec_id_event) +
 			tcpa_table->max_entries * sizeof(struct tcpa_entry));
 #endif
 }
