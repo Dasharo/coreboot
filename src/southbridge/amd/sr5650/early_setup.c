@@ -398,11 +398,11 @@ static void sr5650_por_misc_index_init(pci_devfn_t nb_dev)
 	 *   HIDE_NB_AGP_CAP    ([0], default=1)HIDE
 	 *   HIDE_P2P_AGP_CAP   ([1], default=1)HIDE
 	 *   HIDE_NB_GART_BAR   ([2], default=1)HIDE
-	 *   HIDE_MMCFG_BAR     ([3], default=1)SHOW
+	 *   HIDE_MMCFG_BAR     ([3], default=1)HIDE
 	 *   AGPMODE30          ([4], default=0)DISABLE
 	 *   AGP30ENCHANCED     ([5], default=0)DISABLE
 	 *   HIDE_CLKCFG_HEADER ([8], default=0)SHOW */
-	set_nbmisc_enable_bits(nb_dev, 0x00, 0x0000FFFF, 0 << 0 | 1 << 1 | 1 << 2 | 0 << 3 | 0 << 6 | 0 << 8);
+	set_nbmisc_enable_bits(nb_dev, 0x00, 0x0000FFFF, 0 << 0 | 1 << 1 | 1 << 2 | 1 << 3 | 0 << 6 | 0 << 8);
 
 	/* IOC_LAT_PERF_CNTR_CNTL */
 	set_nbmisc_enable_bits(nb_dev, 0x30, 0xFF, 0x00);

@@ -74,6 +74,7 @@ typedef struct __PCIE_CFG__ {
 * ------------------------------------------------- */
 extern PCIE_CFG AtiPcieCfg;
 
+void enable_pcie_bar3(void);
 void sr5650_disable_pcie_bridge(void);
 void enable_sr5650_dev8(void);
 
@@ -85,8 +86,6 @@ void nbpcie_p_write_index(struct device *dev, u32 index, u32 data);
 u32 nbpcie_ind_read_index(struct device *nb_dev, u32 index);
 void nbpcie_ind_write_index(struct device *nb_dev, u32 index, u32 data);
 
-void enable_pcie_bar3(struct device *nb_dev);
-void disable_pcie_bar3(struct device *nb_dev);
 void init_gen2(struct device *nb_dev, struct device *dev, u8 port);
 void sr5650_gpp_sb_init(struct device *nb_dev, struct device *dev, u32 port);
 void sr56x0_lock_hwinitreg(void);
