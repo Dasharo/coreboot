@@ -868,10 +868,9 @@ static void amdfam10_domain_read_resources(struct device *dev)
 
 	/* Reserve everything between A segment and 1MB:
 	 *
-	 * 0xa0000 - 0xbffff: legacy VGA
+	 * 0xa0000 - 0xbffff: legacy VGA (reserved by Aspeed driver, not here)
 	 * 0xc0000 - 0xfffff: option ROMs and SeaBIOS (if used)
 	 */
-	mmio_resource(dev, idx++, 0xa0000 >> 10, (0xc0000 - 0xa0000) >> 10);
 	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
 
 	reserve_cpu_cc6_storage_area(dev, idx);
