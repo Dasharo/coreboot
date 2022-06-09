@@ -36,9 +36,9 @@ platform:
         model: NV4x
 
 tests:
-        hardware_matrix: https://docs.dasharo.com/variants/novacustom_nv4x/testing_configuration/
-        results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=0
-        specification: https://docs.dasharo.com/unified-test-documentation/overview/
+        hardware_matrix: https://docs.dasharo.com/variants/novacustom_nv4x/hardware-matrix/
+        results: https://docs.google.com/spreadsheets/d/1LOXY9HCu-fMitkYwX08iLsQdSNenzyU0LnMdVbZB5Do/edit#gid=1384069930
+        specification: https://docs.dasharo.com/variants/novacustom_nv4x/test-matrix/
 
 asciinema:
         signature_verification: https://asciinema.org/a/433461
