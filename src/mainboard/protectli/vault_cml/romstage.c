@@ -19,15 +19,6 @@ static const struct cnl_mb_cfg board_memcfg_cfg = {
 	.spd[3] = {
 		.read_type = NOT_EXISTING,
 	},
-	/*
-	 * The dqs_map arrays map the ddr4 pins to the SoC pins
-	 * for both channels.
-	 *
-	 * the index = pin number on ddr4 part
-	 * the value = pin number on SoC
-	 */
-	.dqs_map[DDR_CH0] = {0, 1, 2, 3, 4, 5, 6, 7},
-	.dqs_map[DDR_CH1] = {1, 0, 2, 3, 4, 5, 6, 7},
 
 	/* Baseboard uses 121, 81 and 100 rcomp resistors */
 	.rcomp_resistor = {121, 81, 100},
