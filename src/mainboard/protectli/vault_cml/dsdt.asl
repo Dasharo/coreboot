@@ -15,7 +15,6 @@ DefinitionBlock(
 	#include <soc/intel/common/block/acpi/acpi/globalnvs.asl>
 	#include <cpu/intel/common/acpi/cpu.asl>
 
-	
 	Device (\_SB.PCI0)
 	{
 		#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
