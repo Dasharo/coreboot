@@ -1,16 +1,16 @@
 chip soc/intel/cannonlake
 	# Enable Enhanced Intel SpeedStep
 	register "eist_enable" = "1"
-	
+
 	register "cpu_pl2_4_cfg" = "baseline"
-	
+
 	register "gen1_dec" = "0x00fc0201"
 	register "gen2_dec" = "0x007c0a01"
 	register "gen3_dec" = "0x000c03e1"
 	register "gen4_dec" = "0x001c02e1"
 
 	# GPIO
-	register "PchUnlockGpioPads" = "1"	
+	register "PchUnlockGpioPads" = "1"
 	register "gpe0_dw0" = "0x2"
 	register "gpe0_dw1" = "0x3"
 	register "gpe0_dw2" = "0xd"
@@ -19,7 +19,7 @@ chip soc/intel/cannonlake
 	register "SaGv" = "SaGv_Enabled"
 	register "ScsEmmcHs400Enabled" = "1"
 	register "ScsSdCardWpPinEnabled" = "0"
-	
+
 	# Enable eDP device
 	register "DdiPortEdp" = "1" # Display Port
 
@@ -43,7 +43,7 @@ chip soc/intel/cannonlake
 
 	# Disable DPTF support
 	register "dptf_enable"  = "0"
-	
+
 	# Misc
 	register "AcousticNoiseMitigation" = "1"
 
@@ -53,10 +53,10 @@ chip soc/intel/cannonlake
 	register "PchPmSlpSusMinAssert" = "2"	# 500ms
 	register "PchPmSlpAMinAssert"   = "4"	# 2s
 
-	register "tcc_offset" = "5" # TCC of 95C	
-	
+	register "tcc_offset" = "5" # TCC of 95C
+
 	# Enable SERIRQ continous
-	register "serirq_mode" = "SERIRQ_CONTINUOUS" 
+	register "serirq_mode" = "SERIRQ_CONTINUOUS"
 
 	register "SkipExtGfxScan" = "1"
 	register "TetonGlacierMode" = "0"
@@ -119,7 +119,7 @@ chip soc/intel/cannonlake
 	register "PcieRpLtrEnable[14]" = "1"
 	register "PcieRpLtrEnable[15]" = "1"
 
-	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE"  	
+	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE"
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE"
 	register "PcieClkSrcUsage[2]" = "PCIE_CLK_FREE"
 	register "PcieClkSrcUsage[3]" = "PCIE_CLK_FREE"
@@ -162,7 +162,7 @@ chip soc/intel/cannonlake
 	register "usb3_ports[4]" = "USB3_PORT_EMPTY"
 	register "usb3_ports[5]" = "USB3_PORT_EMPTY"
 
-	
+
 	register "SerialIoDevMode" = "{
 		[PchSerialIoIndexI2C0] = PchSerialIoDisabled,
 		[PchSerialIoIndexI2C1] = PchSerialIoDisabled,
@@ -238,9 +238,6 @@ chip soc/intel/cannonlake
 		device pci 1e.2 off end # GSPI #0
 		device pci 1e.3 off end # GSPI #1
 		device pci 1f.0 on
-			chip drivers/pc80/tpm
-				device pnp 0c31.0 on end
-			end
 			chip superio/ite/it8786e
 				register "TMPIN1.mode"    = "THERMAL_PECI"
 				register "TMPIN1.offset"  = "0x63"
@@ -290,5 +287,8 @@ chip soc/intel/cannonlake
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 off end # PCH SPI
 		device pci 1f.6 off end # GbE
+	end
+	chip drivers/crb
+		device mmio 0xfed40000 on end
 	end
 end

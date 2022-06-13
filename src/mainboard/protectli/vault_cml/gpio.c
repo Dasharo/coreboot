@@ -70,19 +70,19 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_B2, NONE),
 	/* GPP_B3 - GPIO */
 	PAD_NC(GPP_B3, NONE),
-	/* GPP_B4 - GPIO */	
+	/* GPP_B4 - GPIO */
 	PAD_NC(GPP_B4, NONE),
-	/* GPP_B5 - GPIO */	
+	/* GPP_B5 - GPIO */
 	PAD_NC(GPP_B5, NONE),
-	/* GPP_B6 - GPIO */	
+	/* GPP_B6 - GPIO */
 	PAD_NC(GPP_B6, NONE),
-	/* GPP_B7 - GPIO */	
+	/* GPP_B7 - GPIO */
 	PAD_NC(GPP_B7, NONE),
-	/* GPP_B8 - GPIO */	
+	/* GPP_B8 - GPIO */
 	PAD_NC(GPP_B8, NONE),
-	/* GPP_B9 - GPIO */	
+	/* GPP_B9 - GPIO */
 	PAD_NC(GPP_B9, NONE),
-	/* GPP_B10 - GPIO */	
+	/* GPP_B10 - GPIO */
 	PAD_NC(GPP_B10, NONE),
 	/* GPP_B11 - EXT_PWR_GATE# */
 	PAD_NC(GPP_B11, NONE),
