@@ -92,11 +92,8 @@ int tis_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, uint8_t *recvbuf, siz
 
 static void crb_tpm_fill_ssdt(const struct device *dev)
 {
-	const char *path = acpi_device_path(dev);
-	if (!path) {
-		path = "\\_SB_.TPM";
-		printk(BIOS_DEBUG, "Using default TPM2 ACPI path: '%s'\n", path);
-	}
+	/* Windows 11 requires the following path for TPM to be detected */
+	const char *path = "\\_SB_.PCI0.TPM";
 
 	/* Device */
 	acpigen_write_device(path);
