@@ -178,8 +178,8 @@ int tspi_measure_cache_to_pcr(void)
 		if (tce) {
 			printk(BIOS_DEBUG, "TPM: Write digest for"
 			       " %s into PCR %d\n",
-			       tce->name, tce->pcr);
-			int result = tlcl_extend(tce->pcr,
+			       tce->name, le32toh(tce->pcr));
+			int result = tlcl_extend(le32toh(tce->pcr),
 						 tce->digest,
 						 NULL);
 			if (result != TPM_SUCCESS) {
