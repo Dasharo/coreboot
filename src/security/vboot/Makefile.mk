@@ -129,7 +129,9 @@ romstage-$(CONFIG_TPM2) += secdata_tpm2.c
 ramstage-$(CONFIG_TPM2) += secdata_tpm2.c
 endif
 
-verstage-$(CONFIG_TPM) += tpm_common.c
+ifneq ($(CONFIG_VBOOT_NO_TPM),y)
+verstage-y += tpm_common.c
+endif
 
 romstage-y += common.c
 
