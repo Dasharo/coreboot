@@ -84,8 +84,8 @@ enum {
 	LB_TAG_TPM_PPI_HANDOFF		= 0x003a,
 	LB_TAG_BOARD_CONFIG		= 0x0040,
 	LB_TAG_ACPI_CNVS		= 0x0041,
-	LB_TAG_LOGO             = 0x0042,
 	LB_TAG_TYPE_C_INFO		= 0x0043,
+	LB_TAG_LOGO			= 0x00a0,
 	/* The following options are CMOS-related */
 	LB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	LB_TAG_OPTION			= 0x00c9,
