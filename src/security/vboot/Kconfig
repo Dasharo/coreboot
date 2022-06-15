@@ -105,6 +105,16 @@ config VBOOT_STARTS_IN_ROMSTAGE
 	  memory initialization). This implies that the vboot work buffer is
 	  in CBMEM from the start and doesn't need to be reserved in memlayout.
 
+config VBOOT_NO_TPM
+	bool
+	default y if !TPM
+	default n
+	select VBOOT_MOCK_SECDATA
+	help
+	  When this option is enabled, vboot doesn't attempt to access the TPM
+	  even if one is present. Select this option if you expect the TPM to
+	  not always be available (removed, or disabled in the case of fTPM)
+
 config VBOOT_MOCK_SECDATA
 	bool "Mock secdata for firmware verification"
 	default n
