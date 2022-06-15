@@ -99,7 +99,7 @@ static inline int tspi_tpm_is_setup(void)
 	 * need to check tpm_is_setup. Skip that check in all other stages so
 	 * this whole function can be evaluated at compile time.
 	 */
-	if (CONFIG(VBOOT)) {
+	if (CONFIG(VBOOT) && !CONFIG(VBOOT_NO_TPM)) {
 		if (verification_should_run())
 			return tpm_is_setup;
 		return vboot_logic_executed();
