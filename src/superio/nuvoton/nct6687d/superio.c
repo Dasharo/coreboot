@@ -15,6 +15,9 @@
 
 static void nct6687d_init(struct device *dev)
 {
+	uint8_t byte;
+	uint8_t power_status;
+
 	if (!dev->enabled)
 		return;
 
@@ -24,8 +27,6 @@ static void nct6687d_init(struct device *dev)
 		pc_keyboard_init(PROBE_AUX_DEVICE);
 		break;
 	case NCT6687D_ACPI:
-		uint8_t byte;
-		uint8_t power_status;
 		/* Set power state after power fail */
 		power_status = get_uint_option("power_on_after_fail",
 				CONFIG_MAINBOARD_POWER_FAILURE_STATE);
