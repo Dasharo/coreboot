@@ -22,7 +22,6 @@ releases:
           fixed:
                 - description: Wake from suspend doesn't work with certain SSDs
                 - description: CVE-2022-29264 SMM loader vulnerability
-                - description: Fix for CVE-2022-29264
                 - description: Fix BIOS vendor name in SMBIOS
           known_issues:
                 - description:  Custom fan curve after suspend
