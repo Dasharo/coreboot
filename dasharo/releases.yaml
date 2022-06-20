@@ -1,4 +1,43 @@
 releases:
+        - version: v1.2.1
+          fixed:
+                - description: cbfstool logo replacement not working on NV4x v1.2.0
+          known_issues:
+                - description:  Custom fan curve after suspend
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/45
+                - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
+                - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/18
+                - description: Windows 10 SD card reader driver needs manual installation on NV41MB
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+                - description: Low level interfering crackling/popping of the speakers while playing no sound
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+
+        - version: v1.2.0
+          added:
+                - description: Renamed device to NovaCustom NV4x
+          fixed:
+                - description: Wake from suspend doesn't work with certain SSDs
+                - description: CVE-2022-29264 SMM loader vulnerability
+                - description: Fix for CVE-2022-29264
+                - description: Fix BIOS vendor name in SMBIOS
+          known_issues:
+                - description:  Custom fan curve after suspend
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/45
+                - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
+                - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/18
+                - description: Windows 10 SD card reader driver needs manual installation on NV41MB
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
+                - description: Low level interfering crackling/popping of the speakers while playing no sound
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
+                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
+                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
+
         - version: v1.1.0
           added:
                 - Add Dasharo Tools Suite network boot integration
@@ -31,28 +70,6 @@ releases:
           known_issues:
                 - description: Custom fan curve is not functional after suspend
                   url: https://github.com/Dasharo/dasharo-issues/issues/45
-                - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
-                - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/18
-                - description: Windows 10 SD card reader driver needs manual installation on NV41MB
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/16
-                - description: Low level interfering crackling/popping of the speakers while playing no sound
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/13
-                - description: Laptop cannot output video via the Tunderbolt 4 USB Type-C port
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/7
-
-        - version: v1.2.0
-          added:
-                - description: Renamed device to NovaCustom NV4x
-          fixed:
-                - description: Wake from suspend doesn't work with certain SSDs
-                - description: CVE-2022-29264 SMM loader vulnerability
-                - description: Fix for CVE-2022-29264
-                - description: Fix BIOS vendor name in SMBIOS
-          known_issues:
-                - description:  Custom fan curve after suspend
-                  url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/45
                 - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
                 - description: USB4 Root Device Router device displays an error in Windows 11 Device Manager
