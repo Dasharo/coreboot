@@ -3,7 +3,7 @@ releases:
           fixed:
                 - description: cbfstool logo replacement not working on NV4x v1.2.0
           known_issues:
-                - description:  Custom fan curve after suspend
+                - description: Custom fan curve after suspend
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/45
                 - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
@@ -24,7 +24,7 @@ releases:
                 - description: CVE-2022-29264 SMM loader vulnerability
                 - description: Fix BIOS vendor name in SMBIOS
           known_issues:
-                - description:  Custom fan curve after suspend
+                - description: Custom fan curve after suspend
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/45
                 - description: UCM-UCSI ACPI device displays an error in Windows Device Manager
                   url: https://gitlab.com/novacustom/dasharo-compatibility/-/issues/19
