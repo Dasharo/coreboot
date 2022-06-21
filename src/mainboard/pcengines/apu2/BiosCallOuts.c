@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#pragma pack(push)
 #include <AGESA.h>
+#pragma pack(pop)
+
 #include <cbfs.h>
 #include <console/console.h>
 #include <spd_bin.h>
