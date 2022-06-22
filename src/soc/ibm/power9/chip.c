@@ -537,7 +537,11 @@ static void add_tpm_node(struct device_tree *tree)
 	char path[64];
 	char compatible[24];
 
-	struct tcpa_table *tcpa_table;
+	const struct tcpa_log_ref *tcpa_ref;
+
+	tcpa_ref = cbmem_find(CBMEM_ID_TCPA_LOG_REF);
+	if (tcpa_ref == NULL)
+		die("TPM event log (TCPA) is missing from CBMEM!");
 
 	/* TODO: is the XSCOM address always the same? */
 	snprintf(path, sizeof(path), "/xscom@603fc00000000/i2cm@%x/i2c-bus@%x/tpm@%x",
@@ -550,14 +554,8 @@ static void add_tpm_node(struct device_tree *tree)
 	dt_add_string_prop(tpm, "compatible", strdup(compatible));
 	dt_add_u32_prop(tpm, "reg", addr);
 
-	tcpa_table = cbmem_find(CBMEM_ID_TCPA_SPEC_LOG);
-	if (tcpa_table == NULL)
-		die("TPM events (TCPA) log is missing from CBMEM!");
-
-	dt_add_u64_prop(tpm, "linux,sml-base", (uintptr_t)&tcpa_table->header);
-	dt_add_u32_prop(tpm, "linux,sml-size",
-			sizeof(tcg_efi_spec_id_event) +
-			tcpa_table->max_entries * sizeof(struct tcpa_entry));
+	dt_add_u64_prop(tpm, "ibm,sml-base", tcpa_ref->start);
+	dt_add_u32_prop(tpm, "ibm,sml-size", tcpa_ref->size);
 
 	/* Not hard-coding into DTS-file in case will need to store key hash here */
 	sb = dt_find_node_by_path(tree, "/ibm,secureboot", NULL, NULL, 1);
