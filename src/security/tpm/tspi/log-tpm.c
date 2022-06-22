@@ -35,6 +35,8 @@ static struct tcpa_table *tcpa_cbmem_init(void)
 				MAX_TCPA_LOG_ENTRIES * sizeof(struct tcpa_entry);
 			tclt = cbmem_add(CBMEM_ID_TCPA_SPEC_LOG, tcpa_log_len);
 			if (tclt) {
+				struct tcpa_log_ref *tcpa_ref;
+
 				tclt->max_entries = MAX_TCPA_LOG_ENTRIES;
 				tclt->num_entries = 0;
 
@@ -52,6 +54,11 @@ static struct tcpa_table *tcpa_cbmem_init(void)
 				hdr->digest_sizes[0].digest_size = SHA1_DIGEST_SIZE;
 				hdr->digest_sizes[1].alg_id = TPM2_ALG_SHA256;
 				hdr->digest_sizes[1].digest_size = SHA256_DIGEST_SIZE;
+
+				tcpa_ref = cbmem_add(CBMEM_ID_TCPA_LOG_REF, sizeof(*tcpa_ref));
+				tcpa_ref->start = (uintptr_t)&tclt->header;
+				tcpa_ref->size = tcpa_log_len
+					       - offsetof(struct tcpa_table, header);
 			}
 		}
 	}

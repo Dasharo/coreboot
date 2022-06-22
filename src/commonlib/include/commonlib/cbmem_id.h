@@ -57,6 +57,11 @@
 #define CBMEM_ID_STORAGE_DATA	0x53746f72
 #define CBMEM_ID_TCPA_LOG	0x54435041
 #define CBMEM_ID_TCPA_SPEC_LOG	0x54534C47
+/*
+ * This is memory range for TCPA log according to specification without
+ * internal data.  The range lies within CBMEM_ID_TCPA_SPEC_LOG entry.
+ */
+#define CBMEM_ID_TCPA_LOG_REF	0x544C5246
 #define CBMEM_ID_TCPA_TCG_LOG	0x54445041
 #define CBMEM_ID_TIMESTAMP	0x54494d45
 #define CBMEM_ID_TPM2_TCG_LOG	0x54504d32
@@ -127,6 +132,7 @@
 	{ CBMEM_ID_STORAGE_DATA,	"SD/MMC/eMMC" }, \
 	{ CBMEM_ID_TCPA_LOG,		"TCPA LOG   " }, \
 	{ CBMEM_ID_TCPA_SPEC_LOG,	"TCPASPECLOG" }, \
+	{ CBMEM_ID_TCPA_LOG_REF,	"TCPA LOGREF" }, \
 	{ CBMEM_ID_TCPA_TCG_LOG,	"TCPA TCGLOG" }, \
 	{ CBMEM_ID_TIMESTAMP,		"TIME STAMP " }, \
 	{ CBMEM_ID_TPM2_TCG_LOG,	"TPM2 TCGLOG" }, \
