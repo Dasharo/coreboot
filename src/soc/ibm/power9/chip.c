@@ -27,6 +27,11 @@
  */
 #define CHIP_ID(chip) ((chip) << 3)
 
+struct mem_map {
+	struct memranges mem;
+	struct memranges reserved;
+};
+
 /* Copy of data put together by the romstage */
 mcbist_data_t mem_data[MAX_CHIPS];
 
@@ -275,14 +280,15 @@ static void fill_cpu_node(struct device_tree *tree,
 	dt_add_u32_prop(node, "tlb-sets", 4);
 }
 
-static void add_memory_node(struct device_tree *tree, uint8_t chip, uint64_t reg)
+static void add_memory_node(struct device_tree *tree, uint8_t chip, uint64_t start,
+			    uint64_t len)
 {
 	struct device_tree_node *node;
 	/* /memory@0123456789abcdef - 24 characters + null byte */
 	char path[26] = {};
 
-	union {uint32_t u32[2]; uint64_t u64;} addr = { .u64 = base_k(reg) * KiB };
-	union {uint32_t u32[2]; uint64_t u64;} size = { .u64 = size_k(reg) * KiB };
+	union {uint32_t u32[2]; uint64_t u64;} addr = { .u64 = start };
+	union {uint32_t u32[2]; uint64_t u64;} size = { .u64 = len };
 
 	snprintf(path, sizeof(path), "/memory@%llx", addr.u64);
 	node = dt_find_node_by_path(tree, path, NULL, NULL, 1);
@@ -295,54 +301,83 @@ static void add_memory_node(struct device_tree *tree, uint8_t chip, uint64_t reg
 	dt_add_u32_prop(node, "ibm,chip-id", chip << 3);
 }
 
-static bool add_mem_reserve_node(const struct range_entry *r, void *arg)
+static bool build_memory_map(const struct range_entry *r, void *arg)
 {
-	struct device_tree *tree = arg;
+	struct mem_map *map = arg;
 
-	if (range_entry_tag(r) != BM_MEM_RAM) {
-		struct device_tree_reserve_map_entry *entry = xzalloc(sizeof(*entry));
-		entry->start = range_entry_base(r);
-		entry->size = range_entry_size(r);
+	/*
+	 * Kernel likes its available memory areas at least 1MB
+	 * aligned, let's trim the regions such that unaligned padding
+	 * is added to reserved memory.
+	 */
+	if (range_entry_tag(r) == BM_MEM_RAM) {
+		uint64_t new_start = ALIGN_UP(range_entry_base(r), 1 * MiB);
+		uint64_t new_end = ALIGN_DOWN(range_entry_end(r), 1 * MiB);
 
-		list_insert_after(&entry->list_node, &tree->reserve_map);
+		if (new_start != range_entry_base(r))
+			memranges_insert(&map->reserved, range_entry_base(r),
+					 new_start - range_entry_base(r), BM_MEM_RESERVED);
+
+		if (new_start != new_end)
+			memranges_insert(&map->mem, new_start, new_end - new_start, BM_MEM_RAM);
+
+		if (new_end != range_entry_end(r))
+			memranges_insert(&map->reserved, new_end, range_entry_end(r) - new_end,
+					 BM_MEM_RESERVED);
+	} else {
+		memranges_insert(&map->reserved, range_entry_base(r), range_entry_size(r),
+				 BM_MEM_RESERVED);
 	}
 
 	return true;
 }
 
+static void add_reserved_memory_node(struct device_tree *tree, uint64_t start, uint64_t size)
+{
+	struct device_tree_node *node;
+	char path[45];
+
+	snprintf(path, sizeof(path), "/reserved-memory/coreboot@%llx", start);
+	node = dt_find_node_by_path(tree, path, NULL, NULL, 1);
+	/* Use 2 cells each for address and size */
+	dt_add_reg_prop(node, &start, &size, 1, 2, 2);
+}
+
 static void add_memory_nodes(struct device_tree *tree)
 {
-	uint8_t chip;
-	uint8_t chips = fsi_get_present_chips();
+	struct mem_map map;
+	const struct range_entry *r;
 
-	/*
-	 * Not using bootmem_walk_os_mem() to be consistent with Hostboot,
-	 * whose "memory" nodes include reserved regions.
-	 */
-	for (chip = 0; chip < MAX_CHIPS; chip++) {
-		int mcs_i;
+	memranges_init_empty(&map.mem, NULL, 0);
+	memranges_init_empty(&map.reserved, NULL, 0);
 
-		if (!(chips & (1 << chip)))
-			continue;
+	bootmem_walk_os_mem(build_memory_map, &map);
 
-		for (mcs_i = 0; mcs_i < MCS_PER_PROC; mcs_i++) {
-			uint64_t reg;
-			chiplet_id_t nest = mcs_to_nest[mcs_ids[mcs_i]];
+	memranges_each_entry(r, &map.mem) {
+		/*
+		 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+		 * when chip ID is actually a group ID and "chip ID" field is zero.
+		 */
+		uint8_t chip = (range_entry_base(r) >> 45) & 0xF;
 
-			/* These registers are undocumented, see istep 14.5. */
-			/* MCS_MCFGP */
-			reg = read_scom_for_chiplet(chip, nest, 0x0501080A);
-			if (reg & PPC_BIT(0))
-				add_memory_node(tree, chip, reg);
-
-			/* MCS_MCFGPM */
-			reg = read_scom_for_chiplet(chip, nest, 0x0501080C);
-			if (reg & PPC_BIT(0))
-				add_memory_node(tree, chip, reg);
-		}
+		add_memory_node(tree, chip, range_entry_base(r), range_entry_size(r));
 	}
 
-	bootmem_walk_os_mem(add_mem_reserve_node, tree);
+	/* Createe properly initialized /reserved-memory/ node */
+	(void)dt_init_reserved_memory_node(tree);
+
+	memranges_each_entry(r, &map.reserved) {
+		struct device_tree_reserve_map_entry *entry = xzalloc(sizeof(*entry));
+		entry->start = range_entry_base(r);
+		entry->size = range_entry_size(r);
+
+		add_reserved_memory_node(tree, entry->start, entry->size);
+
+		list_insert_after(&entry->list_node, &tree->reserve_map);
+	}
+
+	memranges_teardown(&map.mem);
+	memranges_teardown(&map.reserved);
 }
 
 /* Finds first root complex for a given chip that's present in DT else returns NULL */
