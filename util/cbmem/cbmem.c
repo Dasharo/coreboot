@@ -47,6 +47,10 @@ struct mapping {
 
 #define CBMEM_VERSION "1.1"
 
+#if defined(__arm__) || defined(__aarch64__) || defined(__ppc64__) || defined(__powerpc64__)
+#define USE_PROC_DEVICE_TREE
+#endif
+
 /* verbose output? */
 static int verbose = 0;
 #define debug(x...) if(verbose) printf(x)
@@ -1101,7 +1105,7 @@ static void print_usage(const char *name, int exit_code)
 	exit(exit_code);
 }
 
-#if defined(__arm__) || defined(__aarch64__)
+#ifdef USE_PROC_DEVICE_TREE
 static void dt_update_cells(const char *name, int *addr_cells_ptr,
 			    int *size_cells_ptr)
 {
@@ -1214,7 +1218,7 @@ static char *dt_find_compat(const char *parent, const char *compat,
 	closedir(dir);
 	return ret;
 }
-#endif /* defined(__arm__) || defined(__aarch64__) */
+#endif /* USE_PROC_DEVICE_TREE */
 
 int main(int argc, char** argv)
 {
@@ -1317,7 +1321,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-#if defined(__arm__) || defined(__aarch64__)
+#ifdef USE_PROC_DEVICE_TREE
 	int addr_cells, size_cells;
 	char *coreboot_node = dt_find_compat("/proc/device-tree", "coreboot",
 					     &addr_cells, &size_cells);
