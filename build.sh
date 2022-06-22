@@ -25,7 +25,7 @@ function buildImage {
 	fi
 
 	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
-		wget https://cloud.3mdeb.com/index.php/s/FzF5fjqieEyQX4e/download -O protectli_blobs.zip
+		wget https://cloud.3mdeb.com/index.php/s/BDDPYGnRCyNZsAb/download -O protectli_blobs.zip
 		unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
 		rm protectli_blobs.zip
 	fi
