@@ -1,11 +1,11 @@
 releases:
         - version: v1.0.16
           added:
-                - Vboot Verified + Measured Boot
-                - Vboot recovery notification in TianoCore
+                - Vboot Verified Boot
+                - TPM Measured Boot
+                - Vboot recovery notification in UEFI Payload
                 - UEFI Shell
                 - UEFI Secure Boot
-                - Intel PTT Firmware TPM support
           changed:
                 - FSP changed to CometLake2
           known_issues:
