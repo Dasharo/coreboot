@@ -29,13 +29,13 @@ check_dependencies:
     - cp "configs/config.dell_optiplex_9010_sff" .config
     - make olddefconfig && make
     - build/cbfstool build/coreboot.rom add-int -n etc/boot-menu-wait -i 5000
-    - cp -v /home/coreboot/coreboot/build/coreboot.rom ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.rom
-    - sha256sum ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.SHA256
+    - cp -v /home/coreboot/coreboot/build/coreboot.rom ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.rom
+    - sha256sum ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.SHA256
   artifacts:
     name: ${PLATFORM}
     paths:
-      - ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.rom
-      - ${RELEASE_DIR}/dasharo_kings_gambit_${CI_COMMIT_REF_NAME}.SHA256
+      - ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.rom
+      - ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.SHA256
   only:
     - tags
     - web
@@ -50,8 +50,8 @@ check_dependencies:
     - ls -al ${RELEASE_DIR}
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/"
     - curl -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -X MKCOL "${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/"
-    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
-    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.rom ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
+    - curl --fail -u ${UPLOADER_USERNAME}:${UPLOADER_PASSWORD} -T ${RELEASE_DIR}/${CI_COMMIT_REF_NAME}.SHA256 ${UPLOADER_URL}/releases/${CI_COMMIT_REF_NAME}/
   only:
     - tags
 
