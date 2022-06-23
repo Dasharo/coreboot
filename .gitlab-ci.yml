@@ -28,7 +28,6 @@ check_dependencies:
     - git submodule update --init --checkout
     - cp "configs/config.dell_optiplex_9010_sff" .config
     - make olddefconfig && make
-    - build/cbfstool build/coreboot.rom add -f dasharo-black.bmp -t bootsplash -c lzma -n bootsplash.bmp.lzma
     - build/cbfstool build/coreboot.rom add-int -n etc/boot-menu-wait -i 5000
     - cp -v /home/coreboot/coreboot/build/coreboot.rom ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.rom
     - sha256sum ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.rom > ${RELEASE_DIR}/dell_optiplex_9010_${CI_COMMIT_REF_NAME}.SHA256
