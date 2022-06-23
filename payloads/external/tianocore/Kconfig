@@ -181,6 +181,13 @@ config TIANOCORE_ENABLE_IPXE
 	help
 	  Includes a prebuilt iPXE for EFI to the TianoCore payload.
 
+config TIANOCORE_SERIAL
+	bool "Enable serial port console output in TianoCore payload"
+	default y
+	help
+	  Send TianoCore payload output to a serial port.
+
+
 endif
 
 if TIANOCORE_COREBOOTPAYLOAD
