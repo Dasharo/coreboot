@@ -21,6 +21,7 @@ usage() {
   echo "   -l path_to_logo.bmp: Build with custom boot logo"
   echo "                    -s: Build with new vboot keys for testing vboot"
   echo "                    -f: Also build full flash image (requires me.bin and ifd.bin)"
+  echo "                    -u: Build with UEFI Secure Boot disabled"
 }
 
 # FIXME
@@ -40,6 +41,24 @@ REPLACE_KEYS=0
 ADD_BLOBS=0
 
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
+
+disable_secureboot() {
+  # Remove current keys from config, if present
+  sed -i "/CONFIG_TIANOCORE_SECURE_BOOT/d" .config
+
+  echo "Building with UEFI Secure Boot disabled"
+}
+
+add_blobs() {
+  # Check if blobs exist
+  if [ ! -f "me.bin" ] || [ ! -f "ifd.bin" ]; then
+	echo "Could not find blobs! Put them in ifd.bin and me.bin."
+	exit 1
+  fi
+  cat ifd.bin me.bin > ifd_me.bin
+  cp "${ARTIFACTS_DIR}/${FW_FILE}" "${ARTIFACTS_DIR}/${FW_FILE}.full"
+  dd if="ifd_me.bin" of="${ARTIFACTS_DIR}/${FW_FILE}.full" conv=notrunc
+}
 
 replace_keys() {
   # Build vboot utilities
@@ -70,23 +89,15 @@ replace_keys() {
   echo "Building with test vboot keys"
 }
 
-add_blobs() {
-  # Check if blobs exist
-  if [ ! -f "me.bin" ] || [ ! -f "ifd.bin" ]; then
-	echo "Could not find blobs! Put them in ifd.bin and me.bin."
-	exit 1
-  fi
-  cat ifd.bin me.bin > ifd_me.bin
-  cp "${ARTIFACTS_DIR}/${FW_FILE}" "${ARTIFACTS_DIR}/${FW_FILE}.full"
-  dd if="ifd_me.bin" of="${ARTIFACTS_DIR}/${FW_FILE}.full" conv=notrunc
-}
-
 build() {
   cp "${DEFCONFIG}" .config
   make olddefconfig
   echo "Building with logo $LOGO"
   if [[ $REPLACE_KEYS = 1 ]]; then
     replace_keys
+  fi
+  if [[ $NO_SECURE_BOOT = 1 ]]; then
+    disable_secureboot
   fi
   make clean
   docker run -u $UID --rm -it -v $PWD:/home/coreboot/coreboot -w /home/coreboot/coreboot \
@@ -155,7 +166,7 @@ upload() {
 CMD="$1"
 
 OPTIND=2
-while getopts "l:sf" options; do
+while getopts "l:sfu" options; do
   case "${options}" in
     "l")
       if [ -f $OPTARG ]; then
@@ -170,6 +181,9 @@ while getopts "l:sf" options; do
       ;;
     "f")
       ADD_BLOBS=1
+      ;;
+    "u")
+      NO_SECURE_BOOT=1
       ;;
   esac
 done
