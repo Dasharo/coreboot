@@ -1,0 +1,78 @@
+name: Build coreboot for the Dell OptiPlex 7010/9010 SFF target
+on:
+  push:
+    branches:
+      - dell_optiplex_9010/develop
+      - dell_optiplex_9010/release
+      - 'dell_optiplex_9010/rel_*'
+    tags:
+      - 'dell_optiplex_9010*'
+  pull_request:
+    branches:
+      - dell_optiplex_9010/develop
+      - dell_optiplex_9010/release
+
+jobs:
+  build:
+    runs-on: [self-hosted, builder]
+    steps:
+    - name: Runner information
+      run: |
+        date
+        id -u
+        id -g
+        ls -la
+
+    # go modules are read only
+    # https://github.com/golang/go/issues/35615
+    - name: Allow for removal of go modules
+      run: |
+        (test -d $GITHUB_WORKSPACE/go && chmod u+w -R $GITHUB_WORKSPACE/go) || true
+
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Fetch complete history
+        fetch-depth: 0
+
+    - name: Add review.coreboot.org/coreboot.git as origin
+      run: |
+        git remote add dasharo https://github.com/dasharo/coreboot.git
+        git remote set-url origin https://review.coreboot.org/coreboot.git
+        git fetch origin
+
+    - name: Repository information
+      run: |
+        git --version
+        git rev-parse --verify HEAD
+        git log -n 1
+        git log --graph --decorate --pretty=oneline --abbrev-commit -n 20
+        git remote -v
+
+    - name: Checkout all submodules
+      run: git submodule update --init --recursive --checkout
+
+    - name: Build Dell OptiPlex 7010/9010 SFF target
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
+        ./build.sh build-CI
+        EOF
+
+    - name: Build Dell OptiPlex 7010/9010 SFF target (vboot test binaries)
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
+        ./build.sh build-CI -s
+        EOF
+
+    - name: Save Dell OptiPlex 7010/9010 SFF artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: "dasharo-dell-optiplex-9010"
+        path: |
+          artifacts/
+        retention-days: 7
