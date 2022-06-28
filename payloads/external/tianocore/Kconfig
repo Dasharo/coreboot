@@ -199,6 +199,16 @@ config TIANOCORE_SECURE_BOOT
 	help
 	  Enables UEFI Secure Boot image verification in TianoCore Payload.
 
+if TIANOCORE_SECURE_BOOT
+
+config TIANOCORE_SECURE_BOOT_DEFAULT_ENABLE
+	bool "Enable Secure Boot by default"
+	default y
+	help
+	  Enables UEFI Secure Boot by default.
+
+endif
+
 config TIANOCORE_SATA_PASSWORD
 	bool "Enable TianoCore SATA disk password"
 	default n
