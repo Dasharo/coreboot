@@ -1,17 +1,34 @@
 #!ipxe
+
+# main menu
 :MENU
 menu
-item --gap -- ---------------- iPXE boot menu ----------------
-item shell          ipxe shell
-item boot           autoboot
+item --gap -- ------------------------ Dasharo Network Boot Menu ------------------------
+item boot           Autoboot (DHCP)
+item dasharo        Dasharo Tools Suite
+item netbootxyz     OS installation (netboot.xyz official server)
+item shell          iPXE Shell
 choose --default boot --timeout 3000 target && goto ${target}
 
+# main menu options
 :boot
 autoboot
 goto MENU
 
+:dasharo
+dhcp ||
+chain http://boot.3mdeb.com/dts.ipxe ||
+goto MENU
+
+:netbootxyz
+dhcp ||
+chain https://boot.netboot.xyz/menu.ipxe ||
+goto MENU
+
 :shell
+echo You are now in iPXE shell. Type "exit" to go back to the main menu.
 shell ||
 goto MENU
 
 autoboot
+
