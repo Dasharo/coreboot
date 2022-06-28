@@ -43,21 +43,10 @@ ADD_BLOBS=0
 [ -z "$FW_VERSION" ] && errorExit "Failed to get FW_VERSION - CONFIG_LOCALVERSION is probably not set"
 
 disable_secureboot() {
-  # Remove current keys from config, if present
+  # Remove option from .config, if present
   sed -i "/CONFIG_TIANOCORE_SECURE_BOOT/d" .config
 
   echo "Building with UEFI Secure Boot disabled"
-}
-
-add_blobs() {
-  # Check if blobs exist
-  if [ ! -f "me.bin" ] || [ ! -f "ifd.bin" ]; then
-	echo "Could not find blobs! Put them in ifd.bin and me.bin."
-	exit 1
-  fi
-  cat ifd.bin me.bin > ifd_me.bin
-  cp "${ARTIFACTS_DIR}/${FW_FILE}" "${ARTIFACTS_DIR}/${FW_FILE}.full"
-  dd if="ifd_me.bin" of="${ARTIFACTS_DIR}/${FW_FILE}.full" conv=notrunc
 }
 
 replace_keys() {
@@ -87,6 +76,17 @@ replace_keys() {
   echo "CONFIG_VBOOT_KEYBLOCK=keys/firmware.keyblock" >> .config
 
   echo "Building with test vboot keys"
+}
+
+add_blobs() {
+  # Check if blobs exist
+  if [ ! -f "me.bin" ] || [ ! -f "ifd.bin" ]; then
+	echo "Could not find blobs! Put them in ifd.bin and me.bin."
+	exit 1
+  fi
+  cat ifd.bin me.bin > ifd_me.bin
+  cp "${ARTIFACTS_DIR}/${FW_FILE}" "${ARTIFACTS_DIR}/${FW_FILE}.full"
+  dd if="ifd_me.bin" of="${ARTIFACTS_DIR}/${FW_FILE}.full" conv=notrunc
 }
 
 build() {
