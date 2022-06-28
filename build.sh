@@ -44,7 +44,10 @@ ADD_BLOBS=0
 
 disable_secureboot() {
   # Remove option from .config, if present
-  sed -i "/CONFIG_TIANOCORE_SECURE_BOOT/d" .config
+  sed -i "/CONFIG_TIANOCORE_SECURE_BOOT_DEFAULT_ENABLE/d" .config
+
+  # Unset the variable
+  echo "# CONFIG_TIANOCORE_SECURE_BOOT_DEFAULT_ENABLE is not set" >> .config
 
   echo "Building with UEFI Secure Boot disabled"
 }
