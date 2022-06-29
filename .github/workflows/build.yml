@@ -59,7 +59,7 @@ jobs:
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
         make distclean
-        cp configs/config.dell_optiplex_9010
+        cp configs/config.dell_optiplex_9010 .config
         make olddefconfig
         make -j $(nproc)
         EOF
