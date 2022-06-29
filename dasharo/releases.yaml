@@ -6,6 +6,7 @@ releases:
                 - Vboot recovery notification in UEFI Payload
                 - UEFI Shell
                 - UEFI Secure Boot
+                - Intel ME soft disable
           changed:
                 - FSP changed to CometLake2
           fixed:
