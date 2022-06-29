@@ -1,2 +1,2 @@
-config BOARD_PROTECTLI_VP4620
-	bool "VP4620"
+config BOARD_PROTECTLI_VP46xx
+	bool "VP46xx"
