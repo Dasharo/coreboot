@@ -10,7 +10,7 @@ function usage {
     echo -e "\tfw6d - build Protectli FW6D coreboot image"
     echo -e "\tfw6e - build Protectli FW6E coreboot image"
     echo -e "\tfw4_glk - build Protectli FW4 GLK coreboot image"
-    echo -e "\tvp4620  - build Protectli VP4620 coreboot image"
+    echo -e "\tvp46xx  - build Protectli VP46xx coreboot image"
     exit 1
 }
 
@@ -225,7 +225,7 @@ function buildFW6DImage {
 }
 
 
-function buildVP4620Image {
+function buildVP46xxImage {
 
 	if [ ! -d 3rdparty/blobs/mainboard ]; then
 		git submodule update --init --checkout
@@ -287,8 +287,8 @@ case "$CMD" in
     "fw4_glk")
         buildFW4GLKImage "fw4_glk"
         ;;
-    "vp4620")
-        buildVP4620Image "vp4620"
+    "vp46xx")
+        buildVP46xxImage "vp46xx"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
