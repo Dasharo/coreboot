@@ -8,7 +8,7 @@ releases:
                 - UEFI Secure Boot
           changed:
                 - FSP changed to CometLake2
-          known_issues:
+          fixed:
                 - description: i225 network controller initialization takes too much time
                   url: https://github.com/Dasharo/dasharo-issues/issues/65
 
