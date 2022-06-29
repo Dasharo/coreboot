@@ -4,13 +4,12 @@ on:
     branches:
       - dell_optiplex_9010/develop
       - dell_optiplex_9010/release
-      - 'dell_optiplex_9010/rel_*'
-    tags:
-      - 'dell_optiplex_9010*'
   pull_request:
     branches:
       - dell_optiplex_9010/develop
       - dell_optiplex_9010/release
+    tags:
+      - 'dell_optiplex_9010*'
 
 jobs:
   build:
@@ -59,20 +58,16 @@ jobs:
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
-        ./build.sh build-CI
-        EOF
-
-    - name: Build Dell OptiPlex 7010/9010 SFF target (vboot test binaries)
-      run: |
-        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
-          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
-        ./build.sh build-CI -s
+        make distclean
+        cp configs/config.dell_optiplex_9010
+        make olddefconfig
+        make -j $(nproc)
         EOF
 
     - name: Save Dell OptiPlex 7010/9010 SFF artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: "dasharo-dell-optiplex-9010"
+        name: dasharo-dell-optiplex-9010
         path: |
-          artifacts/
+          build/coreboot.rom
         retention-days: 7
