@@ -21,7 +21,7 @@ usage() {
   echo "   -l path_to_logo.bmp: Build with custom boot logo"
   echo "                    -s: Build with new vboot keys for testing vboot"
   echo "                    -f: Also build full flash image (requires me.bin and ifd.bin)"
-  echo "                    -u: Build with UEFI Secure Boot disabled"
+  echo "                    -u: Build with UEFI Secure Boot default state to disabled"
 }
 
 # FIXME
@@ -99,7 +99,7 @@ build() {
   if [[ $REPLACE_KEYS = 1 ]]; then
     replace_keys
   fi
-  if [[ $NO_SECURE_BOOT = 1 ]]; then
+  if [[ $SECURE_BOOT_DEFAULT_DISABLED = 1 ]]; then
     disable_secureboot
   fi
   make clean
@@ -186,7 +186,7 @@ while getopts "l:sfu" options; do
       ADD_BLOBS=1
       ;;
     "u")
-      NO_SECURE_BOOT=1
+      SECURE_BOOT_DEFAULT_DISABLED=1
       ;;
   esac
 done
