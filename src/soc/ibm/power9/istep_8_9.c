@@ -3,269 +3,272 @@
 #include <cpu/power/istep_8.h>
 
 #include <console/console.h>
+#include <cpu/power/istep_18.h>
 #include <cpu/power/powerbus.h>
 #include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
+#include <stdbool.h>
 
-#include "scratch.h"
 #include "xbus.h"
 
 /*
  * This code omits initialization of OBus which isn't present. It also assumes
  * there is only one XBus (X1). Both of these statements are true for Nimbus
  * Sforza.
+ *
+ * For consistency with Hostboot some read values are unused, written
+ * unmodified or ANDed with 0, this simplifies verification that the code
+ * operates correctly by comparing against Hostboot logs.
  */
 
-static void p9_fbc_no_hp_scom(uint8_t chip)
+static void p9_fbc_no_hp_scom(bool is_xbus_active, uint8_t chip)
 {
 	enum {
+		/* Power Bus PB West Mode Configuration Register */
 		PB_WEST_MODE             = 0x501180A,
+		/* Power Bus PB CENT Mode Register */
 		PB_CENT_MODE             = 0x5011C0A,
+		/* Power Bus PB CENT GP command RATE DP0 Register */
 		PB_CENT_GP_CMD_RATE_DP0  = 0x5011C26,
+		/* Power Bus PB CENT GP command RATE DP1 Register */
 		PB_CENT_GP_CMD_RATE_DP1  = 0x5011C27,
+		/* Power Bus PB CENT RGP command RATE DP0 Register */
 		PB_CENT_RGP_CMD_RATE_DP0 = 0x5011C28,
+		/* Power Bus PB CENT RGP command RATE DP1 Register */
 		PB_CENT_RGP_CMD_RATE_DP1 = 0x5011C29,
+		/* Power Bus PB CENT SP command RATE DP0 Register */
 		PB_CENT_SP_CMD_RATE_DP0  = 0x5011C2A,
+		/* Power Bus PB CENT SP command RATE DP1 Register */
 		PB_CENT_SP_CMD_RATE_DP1  = 0x5011C2B,
+		/* Power Bus PB East Mode Configuration Register */
 		PB_EAST_MODE             = 0x501200A,
+
+		PB_CFG_CHIP_IS_SYSTEM = 4,
+
+		PB_CFG_SP_HW_MARK     = 16,
+		PB_CFG_SP_HW_MARK_LEN = 7,
+
+		PB_CFG_GP_HW_MARK     = 23,
+		PB_CFG_GP_HW_MARK_LEN = 7,
+
+		PB_CFG_LCL_HW_MARK     = 30,
+		PB_CFG_LCL_HW_MARK_LEN = 6,
 	};
-
-	const uint64_t scratch_reg6 = read_scom(0, MBOX_SCRATCH_REG1 + 5);
-	/* ATTR_PROC_FABRIC_PUMP_MODE, it's either node or group pump mode */
-	const bool node_pump_mode = !(scratch_reg6 & PPC_BIT(MBOX_SCRATCH_REG6_GROUP_PUMP_MODE));
-
-	/* Assuming that ATTR_PROC_EPS_TABLE_TYPE = EPS_TYPE_LE in talos.xml is always correct */
-	const bool is_flat_8 = false;
 
 	/*
 	 * ATTR_PROC_FABRIC_X_LINKS_CNFG
-	 * We have one XBus, so I guess this is 1, otherwise need to dig into
-	 * related code in Hostboot where link configuration is generated.
+	 * Number of active XBus links: 1 for two CPUs, 0 for one CPU.
 	 */
-	const int num_x_links_cfg = 1;
+	const int num_x_links_cfg = (is_xbus_active ? 1 : 0);
 
-	/* Power Bus PB West Mode Configuration Register */
-	uint64_t pb_west_mode = read_scom(chip, PB_WEST_MODE);
-	/* Power Bus PB CENT Mode Register */
-	uint64_t pb_cent_mode = read_scom(chip, PB_CENT_MODE);
-	/* Power Bus PB CENT GP command RATE DP0 Register */
-	uint64_t pb_cent_gp_cmd_rate_dp0 = read_scom(chip, PB_CENT_GP_CMD_RATE_DP0);
-	/* Power Bus PB CENT GP command RATE DP1 Register */
-	uint64_t pb_cent_gp_cmd_rate_dp1 = read_scom(chip, PB_CENT_GP_CMD_RATE_DP1);
-	/* Power Bus PB CENT RGP command RATE DP0 Register */
-	uint64_t pb_cent_rgp_cmd_rate_dp0 = read_scom(chip, PB_CENT_RGP_CMD_RATE_DP0);
-	/* Power Bus PB CENT RGP command RATE DP1 Register */
-	uint64_t pb_cent_rgp_cmd_rate_dp1 = read_scom(chip, PB_CENT_RGP_CMD_RATE_DP1);
-	/* Power Bus PB CENT SP command RATE DP0 Register */
-	uint64_t pb_cent_sp_cmd_rate_dp0 = read_scom(chip, PB_CENT_SP_CMD_RATE_DP0);
-	/* Power Bus PB CENT SP command RATE DP1 Register */
-	uint64_t pb_cent_sp_cmd_rate_dp1 = read_scom(chip, PB_CENT_SP_CMD_RATE_DP1);
-	/* Power Bus PB East Mode Configuration Register */
-	uint64_t pb_east_mode = read_scom(chip, PB_EAST_MODE);
+	uint64_t pb_west_mode, pb_cent_mode, pb_east_mode;
+	uint64_t pb_cent_rgp_cmd_rate_dp0, pb_cent_rgp_cmd_rate_dp1;
+	uint64_t pb_cent_sp_cmd_rate_dp0, pb_cent_sp_cmd_rate_dp1;
 
-	if (!node_pump_mode || num_x_links_cfg == 0) {
-		pb_cent_gp_cmd_rate_dp0 = 0;
-		pb_cent_gp_cmd_rate_dp1 = 0;
-	} else if (node_pump_mode && num_x_links_cfg > 0 && num_x_links_cfg < 3) {
-		pb_cent_gp_cmd_rate_dp0 = 0x030406171C243448;
-		pb_cent_gp_cmd_rate_dp1 = 0x040508191F283A50;
-	} else if (node_pump_mode && num_x_links_cfg > 2) {
-		pb_cent_gp_cmd_rate_dp0 = 0x0304062832405C80;
-		pb_cent_gp_cmd_rate_dp1 = 0x0405082F3B4C6D98;
-	}
-
-	if (!node_pump_mode && num_x_links_cfg == 0) {
-		pb_cent_rgp_cmd_rate_dp0 = 0;
-		pb_cent_rgp_cmd_rate_dp1 = 0;
-		pb_cent_sp_cmd_rate_dp0 = 0;
-		pb_cent_sp_cmd_rate_dp1 = 0;
-	} else if (!node_pump_mode && num_x_links_cfg > 0 && num_x_links_cfg < 3) {
-		pb_cent_rgp_cmd_rate_dp0 = 0x030406080A0C1218;
-		pb_cent_rgp_cmd_rate_dp1 = 0x040508080A0C1218;
-		pb_cent_sp_cmd_rate_dp0 = 0x030406080A0C1218;
-		pb_cent_sp_cmd_rate_dp1 = 0x030406080A0C1218;
-	} else if ((!node_pump_mode && num_x_links_cfg == 3) ||
-		   (node_pump_mode && num_x_links_cfg == 0)) {
-		pb_cent_rgp_cmd_rate_dp0 = 0x0304060D10141D28;
-		pb_cent_rgp_cmd_rate_dp1 = 0x0405080D10141D28;
-		pb_cent_sp_cmd_rate_dp0 = 0x05070A0D10141D28;
-		pb_cent_sp_cmd_rate_dp1 = 0x05070A0D10141D28;
-	} else if ((!node_pump_mode && is_flat_8) ||
-		   (node_pump_mode && num_x_links_cfg > 0 && num_x_links_cfg < 3)) {
-		pb_cent_rgp_cmd_rate_dp0 = 0x030406171C243448;
-		pb_cent_rgp_cmd_rate_dp1 = 0x040508191F283A50;
-		pb_cent_sp_cmd_rate_dp0 = 0x080C12171C243448;
-		pb_cent_sp_cmd_rate_dp1 = 0x0A0D14191F283A50;
-	} else if (node_pump_mode && num_x_links_cfg > 2) {
-		pb_cent_rgp_cmd_rate_dp0 = 0x0304062832405C80;
-		pb_cent_rgp_cmd_rate_dp1 = 0x0405082F3B4C6D98;
-		pb_cent_sp_cmd_rate_dp0 = 0x08141F2832405C80;
-		pb_cent_sp_cmd_rate_dp1 = 0x0A18252F3B4C6D98;
-	}
-
-	if (num_x_links_cfg == 0)
-		pb_east_mode |= 0x0300000000000000;
-	else
-		pb_east_mode &= 0xF1FFFFFFFFFFFFFF;
-
-	if (node_pump_mode && is_flat_8) {
-		pb_west_mode &= 0xFFFF0003FFFFFFFF;
-		pb_west_mode |= 0x00003E8000000000;
-
-		pb_cent_mode &= 0xFFFF0003FFFFFFFF;
-		pb_cent_mode |= 0x00003E8000000000;
-
-		pb_east_mode &= 0xFFFF0003FFFFFFFF;
-		pb_east_mode |= 0x00003E8000000000;
-	} else {
-		pb_west_mode &= 0xFFFF0003FFFFFFFF;
-		pb_west_mode |= 0x00007EFC00000000;
-
-		pb_cent_mode &= 0xFFFF0003FFFFFFFF;
-		pb_cent_mode |= 0x00007EFC00000000;
-
-		pb_east_mode &= 0xFFFF0003FFFFFFFF;
-		pb_east_mode |= 0x00007EFC00000000;
-	}
-
-	pb_west_mode &= 0xF7FFFFFFFFFFFFFF;
-
-	pb_west_mode &= 0xFFFFFFFC0FFFFFFF;
-	pb_west_mode |= 0x00000002A0000000;
-
-	pb_cent_mode &= 0xFFFFFFFC0FFFFFFF;
-	pb_cent_mode |= 0x00000002A0000000;
-
-	pb_east_mode &= 0xFFFFFFFC0FFFFFFF;
-	pb_east_mode |= 0x00000002A0000000;
-
+	pb_west_mode = read_scom(chip, PB_WEST_MODE);
+	PPC_INSERT(pb_west_mode, (num_x_links_cfg == 0), PB_CFG_CHIP_IS_SYSTEM, 1);
+	PPC_INSERT(pb_west_mode, 0x3F, PB_CFG_SP_HW_MARK, PB_CFG_SP_HW_MARK_LEN);
+	PPC_INSERT(pb_west_mode, 0x3F, PB_CFG_GP_HW_MARK, PB_CFG_GP_HW_MARK_LEN);
+	PPC_INSERT(pb_west_mode, 0x2A, PB_CFG_LCL_HW_MARK, PB_CFG_LCL_HW_MARK_LEN);
 	write_scom(chip, PB_WEST_MODE, pb_west_mode);
+
+	pb_cent_mode = read_scom(chip, PB_CENT_MODE);
+	PPC_INSERT(pb_cent_mode, (num_x_links_cfg == 0), PB_CFG_CHIP_IS_SYSTEM, 1);
+	PPC_INSERT(pb_cent_mode, 0x3F, PB_CFG_SP_HW_MARK, PB_CFG_SP_HW_MARK_LEN);
+	PPC_INSERT(pb_cent_mode, 0x3F, PB_CFG_GP_HW_MARK, PB_CFG_GP_HW_MARK_LEN);
+	PPC_INSERT(pb_cent_mode, 0x2A, PB_CFG_LCL_HW_MARK, PB_CFG_LCL_HW_MARK_LEN);
 	write_scom(chip, PB_CENT_MODE, pb_cent_mode);
-	write_scom(chip, PB_CENT_GP_CMD_RATE_DP0, pb_cent_gp_cmd_rate_dp0);
-	write_scom(chip, PB_CENT_GP_CMD_RATE_DP1, pb_cent_gp_cmd_rate_dp1);
+
+	scom_and(chip, PB_CENT_GP_CMD_RATE_DP0, 0);
+	scom_and(chip, PB_CENT_GP_CMD_RATE_DP1, 0);
+
+	(void)read_scom(chip, PB_CENT_RGP_CMD_RATE_DP0);
+	pb_cent_rgp_cmd_rate_dp0 = (num_x_links_cfg == 0 ? 0 : 0x030406080A0C1218);
 	write_scom(chip, PB_CENT_RGP_CMD_RATE_DP0, pb_cent_rgp_cmd_rate_dp0);
+
+	(void)read_scom(chip, PB_CENT_RGP_CMD_RATE_DP1);
+	pb_cent_rgp_cmd_rate_dp1 = (num_x_links_cfg == 0 ? 0 : 0x040508080A0C1218);
 	write_scom(chip, PB_CENT_RGP_CMD_RATE_DP1, pb_cent_rgp_cmd_rate_dp1);
+
+	pb_cent_sp_cmd_rate_dp0 = read_scom(chip, PB_CENT_SP_CMD_RATE_DP0);
+	pb_cent_sp_cmd_rate_dp0 = (num_x_links_cfg == 0 ? 0 : 0x030406080A0C1218);
 	write_scom(chip, PB_CENT_SP_CMD_RATE_DP0, pb_cent_sp_cmd_rate_dp0);
+
+	pb_cent_sp_cmd_rate_dp1 = read_scom(chip, PB_CENT_SP_CMD_RATE_DP1);
+	pb_cent_sp_cmd_rate_dp1 = (num_x_links_cfg == 0 ? 0 : 0x030406080A0C1218);
 	write_scom(chip, PB_CENT_SP_CMD_RATE_DP1, pb_cent_sp_cmd_rate_dp1);
+
+	pb_east_mode = read_scom(chip, PB_EAST_MODE);
+	PPC_INSERT(pb_east_mode, (num_x_links_cfg == 0), PB_CFG_CHIP_IS_SYSTEM, 1);
+	PPC_INSERT(pb_east_mode, 0x3F, PB_CFG_SP_HW_MARK, PB_CFG_SP_HW_MARK_LEN);
+	PPC_INSERT(pb_east_mode, 0x3F, PB_CFG_GP_HW_MARK, PB_CFG_GP_HW_MARK_LEN);
+	PPC_INSERT(pb_east_mode, 0x2A, PB_CFG_LCL_HW_MARK, PB_CFG_LCL_HW_MARK_LEN);
 	write_scom(chip, PB_EAST_MODE, pb_east_mode);
 }
 
-static void p9_fbc_ioe_tl_scom(uint8_t chip)
+static void p9_fbc_ioe_tl_scom(bool is_xbus_active, uint8_t chip)
 {
 	enum {
+		/* Processor bus Electrical Framer/Parser 01 configuration register */
 		PB_FP01_CFG              = 0x501340A,
+		/* Power Bus Electrical Framer/Parser 23 Configuration Register */
 		PB_FP23_CFG              = 0x501340B,
+		/* Power Bus Electrical Framer/Parser 45 Configuration Register */
 		PB_FP45_CFG              = 0x501340C,
+		/* Power Bus Electrical Link Data Buffer 01 Configuration Register */
+		PB_ELINK_DATA_01_CFG_REG = 0x5013410,
+		/* Power Bus Electrical Link Data Buffer 23 Configuration Register */
 		PB_ELINK_DATA_23_CFG_REG = 0x5013411,
+		/* Power Bus Electrical Link Data Buffer 45 Configuration Register */
 		PB_ELINK_DATA_45_CFG_REG = 0x5013412,
+		/* Power Bus Electrical Miscellaneous Configuration Register */
 		PB_MISC_CFG              = 0x5013423,
+		/* Power Bus Electrical Link Trace Configuration Register */
 		PB_TRACE_CFG             = 0x5013424,
+
+		FP0_FMR_DISABLE = 20,
+		FP0_PRS_DISABLE = 25,
+		FP1_FMR_DISABLE = 52,
+		FP1_PRS_DISABLE = 57,
+
+		FP2_FMR_DISABLE = 20,
+		FP2_PRS_DISABLE = 25,
+		FP3_FMR_DISABLE = 52,
+		FP3_PRS_DISABLE = 57,
+
+		FP4_FMR_DISABLE = 20,
+		FP4_PRS_DISABLE = 25,
+		FP5_FMR_DISABLE = 52,
+		FP5_PRS_DISABLE = 57,
+
+		IOE01_IS_LOGICAL_PAIR = 0,
+		IOE23_IS_LOGICAL_PAIR = 1,
+		IOE45_IS_LOGICAL_PAIR = 2,
 	};
 
 	/*
-	 * We only support one XBus with
+	 * According to schematics we only support one XBus with
 	 *     ATTR_PROC_FABRIC_X_ATTACHED_CHIP_CNFG = { false, true, false }
-	 * Meaning that X1 is present and X0 and X2 aren't (from logs).
-	 * Should we determine link number dynamically?
+	 * Meaning that X1 is present and X0 and X2 aren't.
 	 */
 
 	const uint64_t pb_freq_mhz = powerbus_cfg(chip)->fabric_freq;
 
+	const uint64_t dd2_lo_limit_d = (FREQ_X_MHZ * 10);
 	const uint64_t dd2_lo_limit_n = pb_freq_mhz * 82;
 
-	/* Processor bus Electrical Framer/Parser 01 configuration register */
-	uint64_t pb_fp01_cfg = read_scom(chip, PB_FP01_CFG);
-	/* Power Bus Electrical Framer/Parser 23 Configuration Register */
-	uint64_t pb_fp23_cfg = read_scom(chip, PB_FP23_CFG);
-	/* Power Bus Electrical Framer/Parser 45 Configuration Register */
-	uint64_t pb_fp45_cfg = read_scom(chip, PB_FP45_CFG);
-	/* Power Bus Electrical Link Data Buffer 23 Configuration Register */
-	uint64_t pb_elink_data_23_cfg_reg = read_scom(chip, PB_ELINK_DATA_23_CFG_REG);
-	/* Power Bus Electrical Link Data Buffer 45 Configuration Register */
-	uint64_t pb_elink_data_45_cfg_reg = read_scom(chip, PB_ELINK_DATA_45_CFG_REG);
-	/* Power Bus Electrical Miscellaneous Configuration Register */
-	uint64_t pb_misc_cfg = read_scom(chip, PB_MISC_CFG);
-	/* Power Bus Electrical Link Trace Configuration Register */
-	uint64_t pb_trace_cfg = read_scom(chip, PB_TRACE_CFG);
+	uint64_t pb_fp01_cfg, pb_fp23_cfg, pb_fp45_cfg;
+	uint64_t pb_elink_data_23_cfg_reg;
+	uint64_t pb_misc_cfg, pb_trace_cfg;
 
-	pb_fp01_cfg |= 0x0000084000000840;
-
-	pb_fp45_cfg |= 0x0000084000000840;
-
-	PPC_INSERT(pb_trace_cfg, 0x4, 16, 4);
-	PPC_INSERT(pb_trace_cfg, 0x4, 24, 4);
-	PPC_INSERT(pb_trace_cfg, 0x1, 20, 4);
-	PPC_INSERT(pb_trace_cfg, 0x1, 28, 4);
-
-	PPC_INSERT(pb_fp23_cfg, 0x15 - (dd2_lo_limit_n / 20000), 4, 8);
-	PPC_INSERT(pb_fp23_cfg, 0x15 - (dd2_lo_limit_n / 20000), 36, 8);
-
-	PPC_INSERT(pb_fp23_cfg, 0x01, 22, 2);
-	PPC_INSERT(pb_fp23_cfg, 0x20, 12, 8);
-	PPC_INSERT(pb_fp23_cfg, 0x00, 20, 1);
-	PPC_INSERT(pb_fp23_cfg, 0x00, 25, 1);
-	PPC_INSERT(pb_fp23_cfg, 0x20, 44, 8);
-	PPC_INSERT(pb_fp23_cfg, 0x00, 52, 1);
-	PPC_INSERT(pb_fp23_cfg, 0x00, 57, 1);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x1F, 24, 5);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x40, 1, 7);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x40, 33, 7);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 9, 7);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 41, 7);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 17, 7);
-	PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 49, 7);
-
-	pb_misc_cfg &= ~PPC_BIT(0);
-	pb_misc_cfg |= PPC_BIT(1);
-	pb_misc_cfg &= ~PPC_BIT(2);
-
+	pb_fp01_cfg = read_scom(chip, PB_FP01_CFG);
+	pb_fp01_cfg |= PPC_BIT(FP0_FMR_DISABLE);
+	pb_fp01_cfg |= PPC_BIT(FP0_PRS_DISABLE);
+	pb_fp01_cfg |= PPC_BIT(FP1_FMR_DISABLE);
+	pb_fp01_cfg |= PPC_BIT(FP1_PRS_DISABLE);
 	write_scom(chip, PB_FP01_CFG, pb_fp01_cfg);
+
+	pb_fp23_cfg = read_scom(chip, PB_FP23_CFG);
+
+	PPC_INSERT(pb_fp23_cfg, !is_xbus_active, FP2_FMR_DISABLE, 1);
+	PPC_INSERT(pb_fp23_cfg, !is_xbus_active, FP2_PRS_DISABLE, 1);
+	PPC_INSERT(pb_fp23_cfg, !is_xbus_active, FP3_FMR_DISABLE, 1);
+	PPC_INSERT(pb_fp23_cfg, !is_xbus_active, FP3_PRS_DISABLE, 1);
+
+	if (is_xbus_active) {
+		PPC_INSERT(pb_fp23_cfg, 0x01, 22, 2);
+		PPC_INSERT(pb_fp23_cfg, 0x20, 12, 8);
+		PPC_INSERT(pb_fp23_cfg, 0x15 - (dd2_lo_limit_n / dd2_lo_limit_d), 4, 8);
+		PPC_INSERT(pb_fp23_cfg, 0x20, 44, 8);
+		PPC_INSERT(pb_fp23_cfg, 0x15 - (dd2_lo_limit_n / dd2_lo_limit_d), 36, 8);
+	}
+
 	write_scom(chip, PB_FP23_CFG, pb_fp23_cfg);
+
+	pb_fp45_cfg = read_scom(chip, PB_FP45_CFG);
+	pb_fp45_cfg |= PPC_BIT(FP4_FMR_DISABLE);
+	pb_fp45_cfg |= PPC_BIT(FP4_PRS_DISABLE);
+	pb_fp45_cfg |= PPC_BIT(FP5_FMR_DISABLE);
+	pb_fp45_cfg |= PPC_BIT(FP5_PRS_DISABLE);
 	write_scom(chip, PB_FP45_CFG, pb_fp45_cfg);
+
+	write_scom(chip, PB_ELINK_DATA_01_CFG_REG, read_scom(chip, PB_ELINK_DATA_01_CFG_REG));
+
+	pb_elink_data_23_cfg_reg = read_scom(chip, PB_ELINK_DATA_23_CFG_REG);
+	if (is_xbus_active) {
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x1F, 24, 5);
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x40, 1, 7);
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x40, 33, 7);
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 9, 7);
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 41, 7);
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 17, 7);
+		PPC_INSERT(pb_elink_data_23_cfg_reg, 0x3C, 49, 7);
+	}
 	write_scom(chip, PB_ELINK_DATA_23_CFG_REG, pb_elink_data_23_cfg_reg);
-	write_scom(chip, PB_ELINK_DATA_45_CFG_REG, pb_elink_data_45_cfg_reg);
+
+	write_scom(chip, PB_ELINK_DATA_45_CFG_REG, read_scom(chip, PB_ELINK_DATA_45_CFG_REG));
+
+	pb_misc_cfg = read_scom(chip, PB_MISC_CFG);
+	PPC_INSERT(pb_misc_cfg, 0x00, IOE01_IS_LOGICAL_PAIR, 1);
+	PPC_INSERT(pb_misc_cfg, is_xbus_active, IOE23_IS_LOGICAL_PAIR, 1);
+	PPC_INSERT(pb_misc_cfg, 0x00, IOE45_IS_LOGICAL_PAIR, 1);
 	write_scom(chip, PB_MISC_CFG, pb_misc_cfg);
+
+	pb_trace_cfg = read_scom(chip, PB_TRACE_CFG);
+	if (is_xbus_active) {
+		PPC_INSERT(pb_trace_cfg, 0x4, 16, 4);
+		PPC_INSERT(pb_trace_cfg, 0x4, 24, 4);
+		PPC_INSERT(pb_trace_cfg, 0x1, 20, 4);
+		PPC_INSERT(pb_trace_cfg, 0x1, 28, 4);
+	}
 	write_scom(chip, PB_TRACE_CFG, pb_trace_cfg);
 }
 
 static void p9_fbc_ioe_dl_scom(uint8_t chip)
 {
 	enum {
-		IOEL_CONFIG = 0x601180A,
+		/* ELL Configuration Register */
+		IOEL_CONFIG           = 0x601180A,
+		/* ELL Replay Threshold Register */
 		IOEL_REPLAY_THRESHOLD = 0x6011818,
+		/* ELL SL ECC Threshold Register */
 		IOEL_SL_ECC_THRESHOLD = 0x6011819,
+
+		LL1_CONFIG_LINK_PAIR     = 0,
+		LL1_CONFIG_CRC_LANE_ID   = 2,
+		LL1_CONFIG_SL_UE_CRC_ERR = 4,
 	};
 
-	/* ELL Configuration Register */
-	uint64_t ioel_config = read_scom(chip, xbus_addr(IOEL_CONFIG));
-	/* ELL Replay Threshold Register */
-	uint64_t ioel_replay_threshold = read_scom(chip, xbus_addr(IOEL_REPLAY_THRESHOLD));
-	/* ELL SL ECC Threshold Register */
-	uint64_t ioel_sl_ecc_threshold = read_scom(chip, xbus_addr(IOEL_SL_ECC_THRESHOLD));
-
 	/* ATTR_LINK_TRAIN == fapi2::ENUM_ATTR_LINK_TRAIN_BOTH (from logs) */
-	ioel_config |= 0x8000000000000000;
-	ioel_config &= 0xFFEFFFFFFFFFFFFF;
-	ioel_config |= 0x280F000F00000000;
 
-	ioel_sl_ecc_threshold |= 0x00E0000000000000;
+	uint64_t ioel_config, ioel_replay_threshold, ioel_sl_ecc_threshold;
 
-	ioel_replay_threshold &= 0x0FFFFFFFFFFFFFFF;
-	ioel_replay_threshold |= 0x6FE0000000000000;
-
-	ioel_sl_ecc_threshold &= 0x7FFFFFFFFFFFFFFF;
-	ioel_sl_ecc_threshold |= 0x7F00000000000000;
-
+	ioel_config = read_scom(chip, xbus_addr(IOEL_CONFIG));
+	ioel_config |= PPC_BIT(LL1_CONFIG_LINK_PAIR);
+	ioel_config |= PPC_BIT(LL1_CONFIG_CRC_LANE_ID);
+	ioel_config |= PPC_BIT(LL1_CONFIG_SL_UE_CRC_ERR);
+	PPC_INSERT(ioel_config, 0xF, 11, 5);
+	PPC_INSERT(ioel_config, 0xF, 28, 4);
 	write_scom(chip, xbus_addr(IOEL_CONFIG), ioel_config);
+
+	ioel_replay_threshold = read_scom(chip, xbus_addr(IOEL_REPLAY_THRESHOLD));
+	PPC_INSERT(ioel_replay_threshold, 0x7, 8, 3);
+	PPC_INSERT(ioel_replay_threshold, 0xF, 4, 4);
+	PPC_INSERT(ioel_replay_threshold, 0x6, 0, 4);
 	write_scom(chip, xbus_addr(IOEL_REPLAY_THRESHOLD), ioel_replay_threshold);
+
+	ioel_sl_ecc_threshold = read_scom(chip, xbus_addr(IOEL_SL_ECC_THRESHOLD));
+	PPC_INSERT(ioel_sl_ecc_threshold, 0x7, 8, 3);
+	PPC_INSERT(ioel_sl_ecc_threshold, 0xF, 4, 4);
+	PPC_INSERT(ioel_sl_ecc_threshold, 0x7, 0, 4);
 	write_scom(chip, xbus_addr(IOEL_SL_ECC_THRESHOLD), ioel_sl_ecc_threshold);
 }
 
-static void chiplet_fabric_scominit(uint8_t chip)
+static void chiplet_fabric_scominit(bool is_xbus_active, uint8_t chip)
 {
 	enum {
-		PU_PB_CENT_SM0_IR_REG = 0x5011C00,
-		PU_PB_CENT_SM0_IR_MASK_REG_SPARE_13 = PPC_BIT(13),
+		PU_PB_CENT_SM0_FIR_REG = 0x05011C00,
+		PU_PB_CENT_SM0_FIR_MASK_REG_SPARE_13 = 13,
 
 		PU_PB_IOE_FIR_ACTION0_REG = 0x05013406,
 		FBC_IOE_TL_FIR_ACTION0 = 0x0000000000000000,
@@ -292,14 +295,14 @@ static void chiplet_fabric_scominit(uint8_t chip)
 	uint64_t fbc_cent_fir;
 
 	/* Apply FBC non-hotplug initfile */
-	p9_fbc_no_hp_scom(chip);
+	p9_fbc_no_hp_scom(is_xbus_active, chip);
 
 	/* Setup IOE (XBUS FBC IO) TL SCOMs */
-	p9_fbc_ioe_tl_scom(chip);
+	p9_fbc_ioe_tl_scom(is_xbus_active, chip);
 
 	/* TL/DL FIRs are configured by us only if not already setup by SBE */
-	fbc_cent_fir = read_scom(chip, PU_PB_CENT_SM0_IR_REG);
-	init_firs = !(fbc_cent_fir & PU_PB_CENT_SM0_IR_MASK_REG_SPARE_13);
+	fbc_cent_fir = read_scom(chip, PU_PB_CENT_SM0_FIR_REG);
+	init_firs = !(fbc_cent_fir & PPC_BIT(PU_PB_CENT_SM0_FIR_MASK_REG_SPARE_13));
 
 	if (init_firs) {
 		uint64_t fir_mask;
@@ -331,12 +334,10 @@ void istep_8_9(uint8_t chips)
 	printk(BIOS_EMERG, "starting istep 8.9\n");
 	report_istep(8,9);
 
-	if (chips != 0x01) {
-		/* Not skipping master chip */
-		for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
-			if (chips & (1 << chip))
-				chiplet_fabric_scominit(chip);
-		}
+	/* Not skipping master chip and initializing it even if we don't have a second chip */
+	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			chiplet_fabric_scominit(/*is_xbus_active=*/chips == 0x03, chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 8.9\n");
