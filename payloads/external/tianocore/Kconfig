@@ -202,10 +202,10 @@ config TIANOCORE_SECURE_BOOT
 if TIANOCORE_SECURE_BOOT
 
 config TIANOCORE_SECURE_BOOT_DEFAULT_ENABLE
-	bool "Enable Secure Boot by default"
+	bool "Set Secure Boot state to enabled by default"
 	default y
 	help
-	  Enables UEFI Secure Boot by default.
+	  Sets the UEFI Secure Boot state to enabled by default.
 
 endif
 
