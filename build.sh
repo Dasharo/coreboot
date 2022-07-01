@@ -49,7 +49,7 @@ disable_secureboot() {
   # Unset the variable
   echo "# CONFIG_TIANOCORE_SECURE_BOOT_DEFAULT_ENABLE is not set" >> .config
 
-  echo "Building with UEFI Secure Boot disabled"
+  echo "Building with UEFI Secure Boot default state to disabled"
 }
 
 replace_keys() {
