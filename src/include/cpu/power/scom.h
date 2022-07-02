@@ -29,8 +29,6 @@
 // F - Sat Offset (6 bits) [58:63]
 // Higher bits specify indirect address
 
-#define XSCOM_ADDR_IND_FLAG		PPC_BIT(0)
-
 #ifndef __ASSEMBLER__
 #include <types.h>
 #include <arch/io.h>
@@ -91,33 +89,11 @@ static const chiplet_id_t mcs_to_nest[] =
 	[MC23_CHIPLET_ID] = N1_CHIPLET_ID,
 };
 
-/* These are implementation functions that do all the work. The interface
- * functions in sections below are calling these. */
-
-uint64_t read_scom_direct(uint8_t chip, uint64_t reg_address);
-void write_scom_direct(uint8_t chip, uint64_t reg_address, uint64_t data);
-
-uint64_t read_scom_indirect(uint8_t chip, uint64_t reg_address);
-void write_scom_indirect(uint8_t chip, uint64_t reg_address, uint64_t data);
-
 /* "rscom" are generic ("r" is for remote) XSCOM functions, other functions are
  * equivalent to rscom calls for chip #0 */
 
-static inline void write_rscom(uint8_t chip, uint64_t addr, uint64_t data)
-{
-	if (addr & XSCOM_ADDR_IND_FLAG)
-		write_scom_indirect(chip, addr, data);
-	else
-		write_scom_direct(chip, addr, data);
-}
-
-static inline uint64_t read_rscom(uint8_t chip, uint64_t addr)
-{
-	if (addr & XSCOM_ADDR_IND_FLAG)
-		return read_scom_indirect(chip, addr);
-	else
-		return read_scom_direct(chip, addr);
-}
+void write_rscom(uint8_t chip, uint64_t addr, uint64_t data);
+uint64_t read_rscom(uint8_t chip, uint64_t addr);
 
 static inline void rscom_and_or(uint8_t chip, uint64_t addr, uint64_t and, uint64_t or)
 {
