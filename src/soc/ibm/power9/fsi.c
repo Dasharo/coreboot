@@ -310,7 +310,7 @@ uint8_t fsi_get_present_chips(void)
 	/* Status of the second CPU (connected to port #1) */
 	chips |= ((present_slaves & 0x40) >> 5);
 
-	return chips;
+	return chips & ((1 << CONFIG_MAX_CPUS) - 1);
 }
 
 /* Polls OPB dying on error or timeout */

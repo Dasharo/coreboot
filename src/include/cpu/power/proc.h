@@ -5,7 +5,11 @@
 
 #include <arch/byteorder.h>	// PPC_BIT(), PPC_BITMASK()
 
+/* Maximum number of chips supported by the code. */
 #define MAX_CHIPS			2
+
+_Static_assert(CONFIG_MAX_CPUS > 0, "At least one CPUs is needed");
+_Static_assert(CONFIG_MAX_CPUS <= MAX_CHIPS, "Too many CPUs requested");
 
 #define MAX_CORES_PER_CHIP		24
 #define MAX_CORES_PER_EX		2
