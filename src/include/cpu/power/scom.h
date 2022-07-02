@@ -115,6 +115,29 @@ void write_scom(uint8_t chip, uint64_t addr, uint64_t data) asm("write_xscom");
 uint64_t read_scom(uint8_t chip, uint64_t addr) asm("read_xscom");
 #endif
 
+#if CONFIG(DEBUG_SCOM) && !defined(SKIP_SCOM_DEBUG)
+#include <console/console.h>
+
+#define write_scom(c, x, y)                                                   \
+({                                                                            \
+	uint8_t __cw = (c);                                                   \
+	uint64_t __xw = (x);                                                  \
+	uint64_t __yw = (y);                                                  \
+	printk(BIOS_SPEW, "SCOM W P%d %016llX %016llX\n", __cw, __xw, __yw);  \
+	write_scom(__cw, __xw, __yw);                                         \
+})
+
+#define read_scom(c, x)                                                       \
+({                                                                            \
+	uint8_t __cr = (c);                                                   \
+	uint64_t __xr = (x);                                                  \
+	uint64_t __yr = read_scom(__cr, __xr);                                \
+	printk(BIOS_SPEW, "SCOM R P%d %016llX %016llX\n", __cr, __xr, __yr);  \
+	__yr;                                                                 \
+})
+
+#endif
+
 static inline void scom_and_or(uint8_t chip, uint64_t addr, uint64_t and, uint64_t or)
 {
 	uint64_t data = read_scom(chip, addr);
@@ -164,29 +187,6 @@ static inline void scom_or_for_chiplet(uint8_t chip, chiplet_id_t chiplet,
 {
 	scom_and_or_for_chiplet(chip, chiplet, addr, ~0, or);
 }
-
-#if CONFIG(DEBUG_SCOM) && !defined(SKIP_SCOM_DEBUG)
-#include <console/console.h>
-
-#define write_scom(c, x, y)                                                   \
-({                                                                            \
-	uint8_t __cw = (c);                                                   \
-	uint64_t __xw = (x);                                                  \
-	uint64_t __yw = (y);                                                  \
-	printk(BIOS_SPEW, "SCOM W P%d %016llX %016llX\n", __cw, __xw, __yw);  \
-	write_scom(__cw, __xw, __yw);                                         \
-})
-
-#define read_scom(c, x)                                                       \
-({                                                                            \
-	uint8_t __cr = (c);                                                   \
-	uint64_t __xr = (x);                                                  \
-	uint64_t __yr = read_scom(__cr, __xr);                                \
-	printk(BIOS_SPEW, "SCOM R P%d %016llX %016llX\n", __cr, __xr, __yr);  \
-	__yr;                                                                 \
-})
-
-#endif
 
 static inline uint8_t get_dd(void)
 {
