@@ -155,8 +155,9 @@ static const uint64_t PB_HPA_MODE_NEXT_SHADOWS[P9_BUILD_SMP_NUM_SHADOWS] = {
 };
 
 /*
- * SCOM registers in this function are not documented. Moreover not all of 1-11
- * bits are zero in them which contradicts documentation.
+ * SCOM registers in this function are not documented. SCOM addresses that start with 0x9
+ * are form 1 indirect addresses (bit 3 is set in this case) despite
+ * documentation ("1.2.2 PCB Address Space" section) not mentioning this form.
  */
 static void p9_fbc_cd_hp1_scom(uint8_t chip)
 {

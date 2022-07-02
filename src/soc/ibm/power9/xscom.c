@@ -8,6 +8,7 @@
 #define MMIO_GROUP_SIZE				0x0000200000000000
 
 #define XSCOM_ADDR_IND_FLAG			PPC_BIT(0)
+#define XSCOM_DATA_IND_FORM1			PPC_BIT(3)
 #define XSCOM_ADDR_IND_ADDR			PPC_BITMASK(11,31)
 #define XSCOM_ADDR_IND_DATA			PPC_BITMASK(48,63)
 
@@ -17,6 +18,10 @@
 #define XSCOM_DATA_IND_DATA			PPC_BITMASK(48,63)
 #define XSCOM_DATA_IND_FORM1_DATA		PPC_BITMASK(12,63)
 #define XSCOM_IND_MAX_RETRIES			10
+
+#define XSCOM_IND_FORM1_ADDR			PPC_BITMASK(32,63)
+#define XSCOM_IND_FORM1_DATA_FROM_ADDR		PPC_BITMASK(0,11)
+#define XSCOM_IND_FORM1_DATA_IN_ADDR		PPC_BITMASK(20,31)
 
 #define XSCOM_RCVED_STAT_REG			0x00090018
 #define XSCOM_LOG_REG				0x00090012
@@ -97,7 +102,7 @@ static void write_xscom_direct(uint8_t chip, uint64_t reg_address, uint64_t data
 		reset_xscom_engine(chip);
 }
 
-static void write_xscom_indirect(uint8_t chip, uint64_t reg_address, uint64_t value)
+static void write_xscom_indirect_form0(uint8_t chip, uint64_t reg_address, uint64_t value)
 {
 	uint64_t addr;
 	uint64_t data;
@@ -120,7 +125,21 @@ static void write_xscom_indirect(uint8_t chip, uint64_t reg_address, uint64_t va
 	}
 }
 
-static uint64_t read_xscom_indirect(uint8_t chip, uint64_t reg_address)
+static void write_xscom_indirect_form1(uint8_t chip, uint64_t reg_address, uint64_t value)
+{
+	uint64_t addr;
+	uint64_t data;
+
+	if (value & XSCOM_IND_FORM1_DATA_FROM_ADDR)
+		die("Value for form 1 indirect SCOM must have bits 0-11 zeroed!");
+
+	data = value | ((reg_address & XSCOM_IND_FORM1_DATA_IN_ADDR) << 20);
+	addr = reg_address & XSCOM_IND_FORM1_ADDR;
+
+	write_xscom_direct(chip, addr, data);
+}
+
+static uint64_t read_xscom_indirect_form0(uint8_t chip, uint64_t reg_address)
 {
 	uint64_t addr;
 	uint64_t data;
@@ -150,16 +169,20 @@ uint64_t read_xscom(uint8_t chip, uint64_t addr);
 
 void write_xscom(uint8_t chip, uint64_t addr, uint64_t data)
 {
-	if (addr & XSCOM_ADDR_IND_FLAG)
-		write_xscom_indirect(chip, addr, data);
-	else
+	if (!(addr & XSCOM_ADDR_IND_FLAG))
 		write_xscom_direct(chip, addr, data);
+	else if (!(addr & XSCOM_DATA_IND_FORM1))
+		write_xscom_indirect_form0(chip, addr, data);
+	else
+		write_xscom_indirect_form1(chip, addr, data);
 }
 
 uint64_t read_xscom(uint8_t chip, uint64_t addr)
 {
-	if (addr & XSCOM_ADDR_IND_FLAG)
-		return read_xscom_indirect(chip, addr);
-	else
+	if (!(addr & XSCOM_ADDR_IND_FLAG))
 		return read_xscom_direct(chip, addr);
+	else if (!(addr & XSCOM_DATA_IND_FORM1))
+		return read_xscom_indirect_form0(chip, addr);
+	else
+		die("Form 1 indirect SCOM does not have a read operation!");
 }
