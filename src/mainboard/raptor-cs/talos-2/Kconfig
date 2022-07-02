@@ -60,8 +60,8 @@ config DIMM_SPD_SIZE
 	default 512
 
 config MAX_CPUS
-	int
-	default 1
+	int "Maximum number of CPUs to use (1-2)"
+	default 2
 
 config MAINBOARD_VENDOR
 	string
