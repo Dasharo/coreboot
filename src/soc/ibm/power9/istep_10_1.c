@@ -3,6 +3,7 @@
 #include <cpu/power/istep_10.h>
 
 #include <console/console.h>
+#include <cpu/power/proc.h>
 #include <cpu/power/powerbus.h>
 #include <cpu/power/scom.h>
 #include <delay.h>
@@ -159,7 +160,7 @@ static const uint64_t PB_HPA_MODE_NEXT_SHADOWS[P9_BUILD_SMP_NUM_SHADOWS] = {
  * are form 1 indirect addresses (bit 3 is set in this case) despite
  * documentation ("1.2.2 PCB Address Space" section) not mentioning this form.
  */
-static void p9_fbc_cd_hp1_scom(uint8_t chip)
+static void p9_fbc_cd_hp1_scom(uint8_t chip, bool is_xbus_active)
 {
 	const struct powerbus_cfg *pb_cfg = powerbus_cfg(chip);
 	const uint32_t pb_freq_mhz = pb_cfg->fabric_freq;
@@ -170,7 +171,7 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 	uint64_t val;
 	uint64_t tmp;
 
-	val = PPC_PLACE(0x08, 54, 5) | PPC_PLACE(0x03, 59, 5);
+	val = PPC_PLACE(is_xbus_active ? 0x08 : 0x06, 54, 5) | PPC_PLACE(0x03, 59, 5);
 	write_scom(chip, 0x90000CB205012011, val);
 
 	tmp = 0;
@@ -185,7 +186,8 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 	val = PPC_PLACE(tmp, 54, 5) | PPC_PLACE(3, 59, 5);
 	write_scom(chip, 0x90000CB305012011, val);
 
-	val = PPC_PLACE(0x10, 51, 5) | PPC_PLACE(2, 58, 2) | PPC_PLACE(0xF, 60, 4);
+	val = PPC_PLACE(0x10, 51, 5) | PPC_PLACE(2, 58, 2)
+	    | PPC_PLACE(is_xbus_active ? 0xF : 0x8, 60, 4);
 	write_scom(chip, 0x90000CDB05011C11, val);
 
 	val = PPC_PLACE(7, 49, 3) | PPC_PLACE(4, 52, 6);
@@ -199,12 +201,12 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 	write_scom(chip, 0x90000D7805011C11, val);
 
 	val = PPC_PLACE(8, 38, 4) | PPC_PLACE(4, 42, 4) | PPC_PLACE(1, 57, 3)
-	    | PPC_PLACE(0xF, 60, 4);
+	    | PPC_PLACE(is_xbus_active ? 0xF : 0x8, 60, 4);
 	write_scom(chip, 0x90000DAA05011C11, val);
 
 	val = PPC_PLACE(4, 36, 3) | PPC_PLACE(0x20, 41, 8) | PPC_BIT(49) | PPC_BIT(51)
 	    | PPC_BIT(52) | PPC_BIT(53) | PPC_BIT(55) | PPC_BIT(56) | PPC_BIT(57)
-	    | PPC_PLACE(0xF, 60, 4);
+	    | PPC_PLACE(is_xbus_active ? 0xF : 0x8, 60, 4);
 	write_scom(chip, 0x90000DCC05011C11, val);
 
 	val = PPC_PLACE(1, 41, 3) | PPC_PLACE(1, 44, 3) | PPC_PLACE(2, 47, 3)
@@ -278,17 +280,18 @@ static void p9_fbc_cd_hp1_scom(uint8_t chip)
 }
 
 /*
- * SCOM registers in this function are not documented. Moreover not all of 1-11
- * bits are zero in them which contradicts documentation.
+ * SCOM registers in this function are not documented. SCOM addresses that start with 0x9
+ * are form 1 indirect addresses (bit 3 is set in this case) despite
+ * documentation ("1.2.2 PCB Address Space" section) not mentioning this form.
  */
-static void p9_fbc_cd_hp23_scom(uint8_t chip, int seq)
+static void p9_fbc_cd_hp23_scom(uint8_t chip, bool is_xbus_active, int seq)
 {
 	const uint64_t tmp = (seq == 2);
 
 	uint64_t val;
 
 	val = PPC_PLACE(8, 38, 4) | PPC_PLACE(4, 42, 4) | PPC_PLACE(tmp, 50, 1)
-	    | PPC_PLACE(1, 57, 3) | PPC_PLACE(0xF, 60, 4);
+	    | PPC_PLACE(1, 57, 3) | PPC_PLACE((seq == 2 && is_xbus_active) ? 0xF : 0x8, 60, 4);
 	write_scom(chip, 0x90000DAA05011C11, val);
 
 	val = PPC_BIT(12) | PPC_PLACE(4, 13, 4) | PPC_PLACE(4, 17, 4) | PPC_PLACE(4, 21, 4)
@@ -539,7 +542,7 @@ static void p9_build_smp_adu_set_switch_action(uint8_t chip, enum build_smp_adu_
 	return p9_putmemproc(chip, flags);
 }
 
-static void p9_build_smp_sequence_adu(enum build_smp_adu_action action)
+static void p9_build_smp_sequence_adu(uint8_t chips, enum build_smp_adu_action action)
 {
 	uint32_t flags = SBE_MEM_ACCESS_FLAGS_TARGET_PROC;
 
@@ -560,23 +563,27 @@ static void p9_build_smp_sequence_adu(enum build_smp_adu_action action)
 	 * quiesced prior to switch AB will need to observe the switch.
 	 */
 	if (action != QUIESCE) {
-		p9_build_smp_adu_set_switch_action(/*chip=*/0, action);
-		p9_build_smp_adu_set_switch_action(/*chip=*/1, action);
+		for (int chip = 0; chip < MAX_CHIPS; chip++) {
+			if (chips & (1 << chip))
+				p9_build_smp_adu_set_switch_action(chip, action);
+		}
 	}
 
 	if (action == SWITCH_CD || action == SWITCH_AB)
 		p9_putmemproc(/*chip=*/0, flags);
-	if (action == SWITCH_CD || action == QUIESCE)
+	if ((action == SWITCH_CD || action == QUIESCE) && (chips & 0x02))
 		p9_putmemproc(/*chip=*/1, flags);
 
 	if (action != QUIESCE) {
 		/* Operation complete, reset switch controls */
-		p9_build_smp_adu_set_switch_action(/*chip=*/0, RESET_SWITCH);
-		p9_build_smp_adu_set_switch_action(/*chip=*/1, RESET_SWITCH);
+		for (int chip = 0; chip < MAX_CHIPS; chip++) {
+			if (chips & (1 << chip))
+				p9_build_smp_adu_set_switch_action(chip, RESET_SWITCH);
+		}
 	}
 }
 
-static void p9_fbc_ab_hp_scom(uint8_t chip)
+static void p9_fbc_ab_hp_scom(uint8_t chip, bool is_xbus_active)
 {
 	const struct powerbus_cfg *pb_cfg = powerbus_cfg(chip);
 	const uint32_t pb_freq_mhz = pb_cfg->fabric_freq;
@@ -587,7 +594,7 @@ static void p9_fbc_ab_hp_scom(uint8_t chip)
 	const bool hw407123 = (get_dd() <= 0x20);
 
 	const bool is_fabric_master = (chip == 0);
-	const uint8_t attached_chip = (chip == 0 ? 1 : 0);
+	const uint8_t attached_chip = (is_xbus_active && chip == 0 ? 1 : 0);
 
 	const uint64_t cmd_rate_4b_r = ((6 * pb_freq_mhz) % xbus_freq_mhz);
 
@@ -622,8 +629,7 @@ static void p9_fbc_ab_hp_scom(uint8_t chip)
 
 		val = read_scom(chip, PB_HPX_MODE_NEXT_SHADOWS[i]);
 
-		val |= PPC_BIT(1); // PB_COM_PB_CFG_LINK_X1_EN_NEXT_ON
-
+		PPC_INSERT(val, is_xbus_active, 1, 1); // PB_COM_PB_CFG_LINK_X1_EN_NEXT
 		PPC_INSERT(val, attached_chip, 19, 3); // PB_COM_PB_CFG_LINK_X1_CHIPID_NEXT_ID
 
 		val |= PPC_BIT(49); // PB_COM_PB_CFG_X_INDIRECT_EN_NEXT_ON
@@ -694,50 +700,62 @@ static void p9_build_smp_copy_hp_ab_curr_next(uint8_t chip)
 	p9_build_smp_set_hp_ab_shadow(chip, PB_HPA_MODE_NEXT_SHADOWS, hpa_mode_data);
 }
 
-static void p9_build_smp_set_fbc_ab(void)
+static void p9_build_smp_set_fbc_ab(uint8_t chips)
 {
+	const bool is_xbus_active = (chips == 0x03);
+
 	/*
 	 * quiesce 'slave' fabrics in preparation for joining
 	 *   PHASE1 -> quiesce all chips except the chip which is the new fabric master
 	 *   PHASE2 -> quiesce all drawers except the drawer containing the new fabric master
 	 */
-	p9_build_smp_sequence_adu(QUIESCE);
+	p9_build_smp_sequence_adu(chips, QUIESCE);
 
 	/* Program NEXT register set for all chips via initfile */
-	p9_fbc_ab_hp_scom(/*chip=*/0);
-	p9_fbc_ab_hp_scom(/*chip=*/1);
+	for (int chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			p9_fbc_ab_hp_scom(chip, is_xbus_active);
+	}
 
 	/* Program CURR register set only for chips which were just quiesced */
-	p9_build_smp_copy_hp_ab_next_curr(/*chip=*/1);
+	if (chips & 0x02)
+		p9_build_smp_copy_hp_ab_next_curr(/*chip=*/1);
 
 	/*
 	 * Issue switch AB reconfiguration from chip designated as new master
 	 * (which is guaranteed to be a master now)
 	 */
-	p9_build_smp_sequence_adu(SWITCH_AB);
+	p9_build_smp_sequence_adu(chips, SWITCH_AB);
 
 	/* Reset NEXT register set (copy CURR->NEXT) for all chips */
-	p9_build_smp_copy_hp_ab_curr_next(/*chip=*/0);
-	p9_build_smp_copy_hp_ab_curr_next(/*chip=*/1);
+	for (int chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			p9_build_smp_copy_hp_ab_curr_next(chip);
+	}
 }
 
-static void p9_build_smp(void)
+static void p9_build_smp(uint8_t chips)
 {
+	const bool is_xbus_active = (chips == 0x03);
+
 	/* Apply three CD hotplug sequences to each chip to initialize SCOM
 	 * chains */
 	for (int seq = 1; seq <= 3; seq++) {
-		for (int chip = 0; chip < 2; chip++) {
+		for (int chip = 0; chip < MAX_CHIPS; chip++) {
+			if (!(chips & (1 << chip)))
+				continue;
+
 			if (seq == 1)
-				p9_fbc_cd_hp1_scom(chip);
+				p9_fbc_cd_hp1_scom(chip, is_xbus_active);
 			else
-				p9_fbc_cd_hp23_scom(chip, seq);
+				p9_fbc_cd_hp23_scom(chip, is_xbus_active, seq);
 		}
 
 		/* Issue switch CD on all chips to force updates to occur */
-		p9_build_smp_sequence_adu(SWITCH_CD);
+		p9_build_smp_sequence_adu(chips, SWITCH_CD);
 	}
 
-	p9_build_smp_set_fbc_ab();
+	p9_build_smp_set_fbc_ab(chips);
 }
 
 void istep_10_1(uint8_t chips)
@@ -745,9 +763,9 @@ void istep_10_1(uint8_t chips)
 	printk(BIOS_EMERG, "starting istep 10.1\n");
 	report_istep(10,1);
 
-	if (chips != 0x01) {
-		p9_build_smp();
+	p9_build_smp(chips);
 
+	if (chips & 0x02) {
 		switch_secondary_scom_to_xscom();
 
 		/* Sanity check that XSCOM works for the second CPU */
