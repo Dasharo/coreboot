@@ -5,6 +5,7 @@
 #include <console/console.h>
 #include <cpu/power/proc.h>
 #include <cpu/power/scom.h>
+#include <cpu/power/proc.h>
 
 #include "xbus.h"
 
