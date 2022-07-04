@@ -4,6 +4,7 @@
 
 #include <console/console.h>
 #include <cpu/power/scom.h>
+#include <cpu/power/proc.h>
 
 #include "xbus.h"
 
@@ -27,12 +28,14 @@ static void xbus_enable_ridi(uint8_t chip)
 
 void istep_8_11(uint8_t chips)
 {
+	uint8_t chip;
+
 	printk(BIOS_EMERG, "starting istep 8.11\n");
 	report_istep(8,11);
 
-	if (chips != 0x01) {
-		xbus_enable_ridi(/*chip=*/0);
-		xbus_enable_ridi(/*chip=*/1);
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			xbus_enable_ridi(chip);
 	}
 
 	printk(BIOS_EMERG, "ending istep 8.11\n");
