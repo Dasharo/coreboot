@@ -29,8 +29,13 @@ static bool read_voltage_data(uint8_t chip, struct powerbus_cfg *cfg)
 	int i = 0;
 	const struct voltage_kwd *voltage = NULL;
 
-	/* ATTR_FREQ_PB_MHZ, equal to the first non-zero PowerBus frequency */
-	uint32_t pb_freq = 0;
+	/*
+	 * ATTR_FREQ_PB_MHZ
+	 *
+	 * It's equal to the first non-zero PowerBus frequency, unless its
+	 * value is fixed for the platform, which is the case for Talos II.
+	 */
+	const uint32_t pb_freq = 1866;
 	/* ATTR_FREQ_CORE_CEILING_MHZ, equal to the minimum of turbo frequencies */
 	uint32_t freq_ceiling = 0;
 	/* ATTR_FREQ_CORE_FLOOR_MHZ, equal to the maximum of powersave frequencies */
@@ -43,9 +48,6 @@ static bool read_voltage_data(uint8_t chip, struct powerbus_cfg *cfg)
 		const struct voltage_bucket_data *bucket = &voltage->buckets[i];
 		if (bucket->id == 0)
 			continue;
-
-		if (pb_freq == 0 && bucket->powerbus.freq != 0)
-			pb_freq = bucket->powerbus.freq;
 
 		if (bucket->powersave.freq != 0 &&
 		    (freq_floor == 0 || bucket->powersave.freq > freq_floor)) {
