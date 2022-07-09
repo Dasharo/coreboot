@@ -549,9 +549,10 @@ static void wof_extract(uint8_t *buf, struct wof_image_entry entry,
 		die("Failed to unmap WOF section!\n");
 }
 
-static void wof_init(uint8_t *buf, uint32_t core_count,
-		     const OCCPstateParmBlock *oppb,
-		     const struct voltage_bucket_data *poundV_bucket)
+/* Returns WOF state */
+static uint8_t wof_init(uint8_t *buf, uint32_t core_count,
+			const OCCPstateParmBlock *oppb,
+			const struct voltage_bucket_data *poundV_bucket)
 {
 	const struct region_device *wof_device = NULL;
 
@@ -581,12 +582,14 @@ static void wof_init(uint8_t *buf, uint32_t core_count,
 
 	entry_idx = wof_find(entries, hdr->entry_count, core_count, poundV_bucket);
 	if (entry_idx == -1)
-		die("Failed to find a matching WOF tables section!\n");
-
-	wof_extract(buf, entries[entry_idx], oppb);
+		printk(BIOS_NOTICE, "Matching WOF tables section not found, disabling WOF\n");
+	else
+		wof_extract(buf, entries[entry_idx], oppb);
 
 	if (rdev_munmap(wof_device, entries))
 		die("Failed to unmap section table of WOF!\n");
+
+	return (entry_idx == -1 ? 0 : 1);
 }
 
 /* Assumption: no bias is applied to operating points */
@@ -632,10 +635,7 @@ void build_parameter_blocks(uint8_t chip, struct homer_st *homer, uint64_t funct
 
 	oppb->magic = OCC_PARMSBLOCK_MAGIC; // "OCCPPB00"
 	oppb->frequency_step_khz = FREQ_STEP_KHZ;
-	oppb->wof.tdp_rdp_factor = 0; 	// ATTR_TDP_RDP_CURRENT_FACTOR 0 from talos.xml
-	oppb->nest_leakage_percent = 60; // ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
 
-	oppb->wof.wof_enabled = 1;		// Assuming wof_init() succeeds
 	oppb->wof.tdp_rdp_factor = 0;		// ATTR_TDP_RDP_CURRENT_FACTOR from talos.xml
 	oppb->nest_leakage_percent = 60;	// ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
 	/*
@@ -1027,10 +1027,10 @@ void build_parameter_blocks(uint8_t chip, struct homer_st *homer, uint64_t funct
 	((GPPBOptionsPadUse *)&gppb->options.pad)->fields.good_cores_in_sort =
 	       oppb->iddq.good_normal_cores_per_sort;
 
-	wof_init(homer->ppmr.wof_tables,
-		 __builtin_popcount((uint32_t)functional_cores) +
-		 __builtin_popcount(functional_cores >> 32),
-		 oppb, &poundV_bucket);
+	oppb->wof.wof_enabled = wof_init(homer->ppmr.wof_tables,
+					 __builtin_popcount((uint32_t)functional_cores) +
+					 __builtin_popcount(functional_cores >> 32),
+					 oppb, &poundV_bucket);
 
 	/* Copy LPPB to functional CMEs */
 	for (int cme = 1; cme < MAX_CMES_PER_CHIP; cme++) {
