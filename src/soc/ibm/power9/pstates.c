@@ -5,6 +5,7 @@
 #include <commonlib/region.h>
 #include <cpu/power/mvpd.h>
 #include <cpu/power/proc.h>
+#include <cpu/power/scom.h>
 #include <assert.h>
 #include <lib.h>
 #include <string.h>		// memcpy
@@ -187,22 +188,30 @@ static void copy_poundW_v2_to_v3(PoundW_data_per_quad *v3, PoundW_data *v2)
 	v3->resistance_data.r_undervolt_allowed = v2->undervolt_tested;
 }
 
-static void check_valid_poundV(struct voltage_bucket_data *bucket)
+static void check_valid_poundV(struct voltage_bucket_data *bucket, int wof_enabled)
 {
+	int num_op_points = NUM_OP_POINTS;	// skip powerbus
+
 	struct voltage_data *data = &bucket->nominal;
 	assert(bucket != NULL);
 
-	for (int i = 0; i < NUM_OP_POINTS; i++) {	// skip powerbus
+	/* Skip UltraTurbo if WOF is disabled */
+	if (!wof_enabled)
+		--num_op_points;
+
+	for (int i = 0; i < num_op_points; i++) {
 		if (data[i].freq == 0 || data[i].vdd_voltage == 0 ||
 		    data[i].idd_current == 0 || data[i].vcs_voltage == 0 ||
 		    data[i].ics_current == 0)
 			die("Bad #V data\n");
 	}
 	// TODO: check if values increase with operating points
+	//       (skipping UltraTurbo if WOF is disabled)
 }
 
 static void check_valid_poundW(PoundW_data_per_quad *poundW_bucket,
-                               uint64_t functional_cores)
+                               uint64_t functional_cores,
+                               int wof_enabled)
 {
 	uint8_t prev_vid_compare_per_quad[MAXIMUM_QUADS] = {};
 	/*
@@ -211,10 +220,12 @@ static void check_valid_poundW(PoundW_data_per_quad *poundW_bucket,
 	 */
 
 	for (int op = 0; op < NUM_OP_POINTS; op++) {
-		/* Assuming WOF is enabled - check that TDP VDD currents are nonzero */
-		if (poundW_bucket->poundw[op].ivdd_tdp_ac_current_10ma == 0 ||
-		    poundW_bucket->poundw[op].ivdd_tdp_dc_current_10ma == 0)
-			die("TDP VDD current equals zero\n");
+		if (wof_enabled) {
+			/* Check that TDP VDD currents are nonzero */
+			if (poundW_bucket->poundw[op].ivdd_tdp_ac_current_10ma == 0 ||
+			    poundW_bucket->poundw[op].ivdd_tdp_dc_current_10ma == 0)
+				die("TDP VDD current equals zero\n");
+		}
 
 		/* Assuming VDM is enabled - validate threshold values */
 		for (int quad = 0; quad < MAXIMUM_QUADS; quad++) {
@@ -534,9 +545,10 @@ static void wof_extract(uint8_t *buf, struct wof_image_entry entry,
 		die("Failed to unmap WOF section!\n");
 }
 
-static void wof_init(uint8_t *buf, uint32_t core_count,
-		     const OCCPstateParmBlock *oppb,
-		     const struct voltage_bucket_data *poundV_bucket)
+/* Returns WOF state */
+static uint8_t wof_init(uint8_t *buf, uint32_t core_count,
+			const OCCPstateParmBlock *oppb,
+			const struct voltage_bucket_data *poundV_bucket)
 {
 	const struct region_device *wof_device = NULL;
 
@@ -566,12 +578,14 @@ static void wof_init(uint8_t *buf, uint32_t core_count,
 
 	entry_idx = wof_find(entries, hdr->entry_count, core_count, poundV_bucket);
 	if (entry_idx == -1)
-		die("Failed to find a matching WOF tables section!\n");
-
-	wof_extract(buf, entries[entry_idx], oppb);
+		printk(BIOS_NOTICE, "Matching WOF tables section not found, disabling WOF\n");
+	else
+		wof_extract(buf, entries[entry_idx], oppb);
 
 	if (rdev_munmap(wof_device, entries))
 		die("Failed to unmap section table of WOF!\n");
+
+	return (entry_idx == -1 ? 0 : 1);
 }
 
 /* Assumption: no bias is applied to operating points */
@@ -614,21 +628,13 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	LocalPstateParmBlock *lppb = (LocalPstateParmBlock *)
 	           &homer->cpmr.cme_sram_region[cme_hdr->pstate_offset * 32];
 
+	/* Start with the assumption that WOF will work if it's supported by the chip */
+	oppb->wof.wof_enabled = get_dd() > 0x20;
+
 	/* OPPB - constant fields */
 
 	oppb->magic = OCC_PARMSBLOCK_MAGIC; // "OCCPPB00"
 	oppb->frequency_step_khz = FREQ_STEP_KHZ;
-	oppb->wof.tdp_rdp_factor = 0; 	// ATTR_TDP_RDP_CURRENT_FACTOR 0 from talos.xml
-	oppb->nest_leakage_percent = 60; // ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
-
-	oppb->wof.wof_enabled = 1;		// Assuming wof_init() succeeds or dies
-	oppb->wof.tdp_rdp_factor = 0;		// ATTR_TDP_RDP_CURRENT_FACTOR from talos.xml
-	oppb->nest_leakage_percent = 60;	// ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml
-	/*
-	 * As the Vdn dimension is not supported in the WOF tables, hardcoding this
-	 * value to the OCC as non-zero to keep it happy.
-	 */
-	oppb->ceff_tdp_vdn = 1;
 
 	/* Default values are from talos.xml */
 	oppb->vdd_sysparm.loadline_uohm = 254;
@@ -736,7 +742,7 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 			}
 		}
 
-		check_valid_poundV(bucket);
+		check_valid_poundV(bucket, oppb->wof.wof_enabled);
 
 		if (poundV_bucket.id == 0) {
 			memcpy(&poundV_bucket, bucket, sizeof(poundV_bucket));
@@ -772,6 +778,29 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	/* Save UltraTurbo frequency as reference */
 	oppb->frequency_max_khz = vd[VPD_PV_ULTRA].freq * 1000;
 	oppb->nest_frequency_mhz = vd[VPD_PV_POWERBUS].freq;
+
+	/* If WOF is supported, try initializing it. Disable WOF if initialization fails. */
+	if (oppb->wof.wof_enabled) {
+		uint32_t core_count = __builtin_popcount((uint32_t)functional_cores)
+				    + __builtin_popcount(functional_cores >> 32);
+		/* wof_init() only needs two fields of oppb, both of which are
+		 * initialized by now. */
+		oppb->wof.wof_enabled = wof_init(homer->ppmr.wof_tables, core_count, oppb,
+						 &poundV_bucket);
+	}
+
+	if (oppb->wof.wof_enabled) {
+		/* ATTR_TDP_RDP_CURRENT_FACTOR from talos.xml */
+		oppb->wof.tdp_rdp_factor = 0;
+		/* ATTR_NEST_LEAKAGE_PERCENT from hb_temp_defaults.xml */
+		oppb->nest_leakage_percent = 60;
+
+		/*
+		 * As the Vdn dimension is not supported in the WOF tables, hardcoding this
+		 * value to the OCC as non-zero to keep it happy.
+		 */
+		oppb->ceff_tdp_vdn = 1;
+	}
 
 	for (int op = 0; op < NUM_OP_POINTS; op++) {
 		/* Assuming no bias */
@@ -923,15 +952,16 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 		poundW_bucket.poundw[NOMINAL] = nom;
 	}
 
-	check_valid_poundW(&poundW_bucket, functional_cores);
-
+	check_valid_poundW(&poundW_bucket, functional_cores, oppb->wof.wof_enabled);
 
 	/* OPPB - #W data */
 
-	oppb->lac_tdp_vdd_turbo_10ma =
-	         poundW_bucket.poundw[TURBO].ivdd_tdp_ac_current_10ma;
-	oppb->lac_tdp_vdd_nominal_10ma =
-	         poundW_bucket.poundw[NOMINAL].ivdd_tdp_ac_current_10ma;
+	if (oppb->wof.wof_enabled) {
+		oppb->lac_tdp_vdd_turbo_10ma =
+			poundW_bucket.poundw[TURBO].ivdd_tdp_ac_current_10ma;
+		oppb->lac_tdp_vdd_nominal_10ma =
+			poundW_bucket.poundw[NOMINAL].ivdd_tdp_ac_current_10ma;
+	}
 
 	/* Calculate safe mode frequency/pstate/voltage */
 	{
@@ -992,20 +1022,20 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	memcpy(lppb->PsVDMJumpSlopes, gppb->PsVDMJumpSlopes,
 	       sizeof(lppb->PsVDMJumpSlopes));
 
+	if (oppb->wof.wof_enabled) {
+		/*
+		 * IDDQ - can't read straight to IddqTable, see comment before spare bytes
+		 * in struct definition.
+		 */
+		size = sizeof(buf);
+		/* TODO: don't hard-code chip if values are not the same among them */
+		if (!mvpd_extract_keyword(/*chip=*/0, "CRP0", "IQ", buf, &size))
+			die("Failed to read %s record from MVPD", "CRP0");
+		assert(size >= sizeof(IddqTable));
+		memcpy(&oppb->iddq, buf, sizeof(IddqTable));
 
-	/*
-	 * IDDQ - can't read straight to IddqTable, see comment before spare bytes
-	 * in struct definition.
-	 */
-	size = sizeof(buf);
-	/* TODO: don't hard-code chip if values are not the same among them */
-	if (!mvpd_extract_keyword(/*chip=*/0, "CRP0", "IQ", buf, &size)) {
-		die("Failed to read %s record from MVPD", "CRP0");
+		check_valid_iddq(&oppb->iddq);
 	}
-	assert(size >= sizeof(IddqTable));
-	memcpy(&oppb->iddq, buf, sizeof(IddqTable));
-
-	check_valid_iddq(&oppb->iddq);
 
 	/*
 	 * Pad was re-purposed, Hostboot developers created additional union. The
@@ -1015,11 +1045,6 @@ void build_parameter_blocks(struct homer_st *homer, uint64_t functional_cores)
 	 */
 	((GPPBOptionsPadUse *)&gppb->options.pad)->fields.good_cores_in_sort =
 	       oppb->iddq.good_normal_cores_per_sort;
-
-	wof_init(homer->ppmr.wof_tables,
-		 __builtin_popcount((uint32_t)functional_cores) +
-		 __builtin_popcount(functional_cores >> 32),
-		 oppb, &poundV_bucket);
 
 	/* Copy LPPB to functional CMEs */
 	for (int cme = 1; cme < MAX_CMES_PER_CHIP; cme++) {
