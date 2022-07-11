@@ -3301,6 +3301,15 @@ static void set_fabric_ids(uint8_t chip, struct homer_st *homer)
 static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, struct xip_hw_header *hw,
 				uint8_t dd, uint64_t cores)
 {
+	enum {
+		CME_QM_FLAG_SYS_WOF_ENABLE = 0x1000,
+		PGPE_FLAG_WOF_ENABLE = 0x1000,
+	};
+
+	const OCCPstateParmBlock *oppb = (void *)homer->ppmr.occ_parm_block;
+	uint16_t qm_mode_flags;
+	uint16_t pgpe_flags;
+
 	layout_rings(chip, homer, hw, dd, cores);
 	build_parameter_blocks(chip, homer, cores);
 	update_headers(chip, homer, cores);
@@ -3313,9 +3322,18 @@ static void fill_homer_for_chip(uint8_t chip, struct homer_st *homer, struct xip
 	populate_ncu_rng_bar_scom_reg(chip, homer);
 
 	/* Update flag fields in image headers */
+
+	qm_mode_flags = 0xE100;
+	pgpe_flags = 0xE032;
+
+	if (oppb->wof.wof_enabled) {
+		qm_mode_flags |= CME_QM_FLAG_SYS_WOF_ENABLE;
+		pgpe_flags |= PGPE_FLAG_WOF_ENABLE;
+	}
+
 	((struct sgpe_img_header *)&homer->qpmr.sgpe.sram_image[INT_VECTOR_SIZE])->reserve_flags = 0x04000000;
-	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = 0xf100;
-	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = 0xf032;
+	((struct cme_img_header *)&homer->cpmr.cme_sram_region[INT_VECTOR_SIZE])->qm_mode_flags = qm_mode_flags;
+	((struct pgpe_img_header *)&homer->ppmr.pgpe_sram_img[INT_VECTOR_SIZE])->flags = pgpe_flags;
 
 	set_fabric_ids(chip, homer);
 }
