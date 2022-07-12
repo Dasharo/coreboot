@@ -586,7 +586,6 @@ static void thermal_throttle_scominit(uint8_t chip, int mcs_i, int mca_i)
 	                     MBASTR0Q_CFG_ENTER_STR_TIME_LEN));
 
 	/* Set N/M throttling control register */
-	/* TODO: these attributes are calculated in 7.4, implement this */
 	/* MC01.PORT0.SRQ.MBA_FARB3Q =
 	    [0-14]  MBA_FARB3Q_CFG_NM_N_PER_SLOT = ATTR_MSS_RUNTIME_MEM_THROTTLED_N_COMMANDS_PER_SLOT[mss::index(MCA)]
 	    [15-30] MBA_FARB3Q_CFG_NM_N_PER_PORT = ATTR_MSS_RUNTIME_MEM_THROTTLED_N_COMMANDS_PER_PORT[mss::index(MCA)]
@@ -596,29 +595,35 @@ static void thermal_throttle_scominit(uint8_t chip, int mcs_i, int mca_i)
 	    // Set to disable permanently due to hardware design bug (HW403028) that won't be changed
 	    [53]    MBA_FARB3Q_CFG_NM_CHANGE_AFTER_SYNC = 0
 	*/
-	printk(BIOS_EMERG, "Please FIXME: ATTR_MSS_RUNTIME_MEM_THROTTLED_N_COMMANDS_PER_SLOT\n");
-	/* Values dumped after Hostboot's calculations, may be different for other DIMMs */
+	/*
+	 * Values of m_dram_clocks and nm_throttled_n_per_port come from talos.xml
+	 * nm_n_per_slot and nm_n_per_port are derived from values in talos.xml
+	 *
+	 * All of them may be different for other platforms
+	 */
 	uint64_t nm_n_per_slot = 0x80;
 	uint64_t nm_n_per_port = 0x80;
+	uint64_t m_dram_clocks = 0x200;
 	mca_and_or(chip, id, mca_i, MBA_FARB3Q, ~(PPC_BITMASK(0, 50) | PPC_BIT(53)),
 	           PPC_PLACE(nm_n_per_slot, MBA_FARB3Q_CFG_NM_N_PER_SLOT,
 	                     MBA_FARB3Q_CFG_NM_N_PER_SLOT_LEN) |
 	           PPC_PLACE(nm_n_per_port, MBA_FARB3Q_CFG_NM_N_PER_PORT,
 	                     MBA_FARB3Q_CFG_NM_N_PER_PORT_LEN) |
-	           PPC_PLACE(0x200, MBA_FARB3Q_CFG_NM_M,
+	           PPC_PLACE(m_dram_clocks, MBA_FARB3Q_CFG_NM_M,
 	                     MBA_FARB3Q_CFG_NM_M_LEN) |
 	           PPC_PLACE(1, MBA_FARB3Q_CFG_NM_CAS_WEIGHT,
 	                     MBA_FARB3Q_CFG_NM_CAS_WEIGHT_LEN));
 
 	/* Set safemode throttles */
 	/* MC01.PORT0.SRQ.MBA_FARB4Q =
-	    [27-41] MBA_FARB4Q_EMERGENCY_N = ATTR_MSS_MRW_SAFEMODE_MEM_THROTTLED_N_COMMANDS_PER_PORT[mss::index(MCA)]  // BUG? var name says per_slot...
+	    [27-41] MBA_FARB4Q_EMERGENCY_N = ATTR_MSS_MRW_SAFEMODE_MEM_THROTTLED_N_COMMANDS_PER_PORT[mss::index(MCA)]
 	    [42-55] MBA_FARB4Q_EMERGENCY_M = ATTR_MSS_MRW_MEM_M_DRAM_CLOCKS
 	*/
+	uint64_t nm_throttled_n_per_port = 0x20;
 	mca_and_or(chip, id, mca_i, MBA_FARB4Q, ~PPC_BITMASK(27, 55),
-	           PPC_PLACE(0x20, MBA_FARB4Q_EMERGENCY_N,
+	           PPC_PLACE(nm_throttled_n_per_port, MBA_FARB4Q_EMERGENCY_N,
 	                     MBA_FARB4Q_EMERGENCY_N_LEN) |
-	           PPC_PLACE(0x200, MBA_FARB4Q_EMERGENCY_M,
+	           PPC_PLACE(m_dram_clocks, MBA_FARB4Q_EMERGENCY_M,
 	                     MBA_FARB4Q_EMERGENCY_M_LEN));
 }
 
