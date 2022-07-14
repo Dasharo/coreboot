@@ -38,7 +38,7 @@ static inline uint32_t read_fsi(uint8_t chip, uint32_t addr)
 {
 	uint32_t data = fsi_op(chip, addr, /*data=*/0, /*is_read=*/true, /*size=*/4);
 #ifdef DEBUG_FSI
-	printk(BIOS_EMERG, "read_fsi(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+	printk(BIOS_DEBUG, "read_fsi(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
 #endif
 	return data;
 }
@@ -46,7 +46,7 @@ static inline uint32_t read_fsi(uint8_t chip, uint32_t addr)
 static inline void write_fsi(uint8_t chip, uint32_t addr, uint32_t data)
 {
 #ifdef DEBUG_FSI
-	printk(BIOS_EMERG, "write_fsi(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+	printk(BIOS_DEBUG, "write_fsi(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
 #endif
 	(void)fsi_op(chip, addr, data, /*is_read=*/false, /*size=*/4);
 }
@@ -75,7 +75,7 @@ static inline uint32_t read_cfam(uint8_t chip, uint32_t addr)
 {
 	uint32_t data = read_fsi(chip, cfam_addr_to_fsi(addr));
 #ifdef DEBUG_FSI
-	printk(BIOS_EMERG, "read_cfam(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
+	printk(BIOS_DEBUG, "read_cfam(%d, 0x%08x) = 0x%08x\n", chip, addr, data);
 #endif
 	return data;
 }
