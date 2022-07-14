@@ -364,7 +364,7 @@ static void build_mvpds(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "Building MVPDs...\n");
+	printk(BIOS_NOTICE, "Building MVPDs...\n");
 
 	/* Calling mvpd_get_available_cores() triggers building and caching of MVPD */
 	for (chip = 0; chip < MAX_CHIPS; ++chip) {
@@ -394,10 +394,10 @@ void main(void)
 	 */
 	(void)ipmi_init_and_start_bmc_wdt(CONFIG_BMC_BT_BASE, 120, TIMEOUT_HARD_RESET);
 
-	printk(BIOS_EMERG, "Initializing FSI...\n");
+	printk(BIOS_DEBUG, "Initializing FSI...\n");
 	fsi_init();
 	chips = fsi_get_present_chips();
-	printk(BIOS_EMERG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
+	printk(BIOS_DEBUG, "Initialized FSI (chips mask: 0x%02X)\n", chips);
 
 	build_mvpds(chips);
 
