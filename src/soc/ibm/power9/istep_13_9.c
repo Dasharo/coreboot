@@ -805,13 +805,10 @@ void istep_13_9(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 13.9\n");
 	report_istep(13,9);
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			mss_ddr_phy_reset(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 13.9\n");
 }

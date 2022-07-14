@@ -119,7 +119,6 @@ static void start_cbs(uint8_t chip)
 
 void istep_8_3(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 8.3\n");
 	report_istep(8,3);
 
 	/* Skipping master chip */
@@ -134,6 +133,4 @@ void istep_8_3(uint8_t chips)
 			start_cbs(chip);
 		}
 	}
-
-	printk(BIOS_EMERG, "ending istep 8.3\n");
 }

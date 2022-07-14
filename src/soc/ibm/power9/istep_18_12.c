@@ -84,8 +84,6 @@ static void init_tod_node(uint8_t chips, uint8_t mdmt)
 
 void istep_18_12(uint8_t chips, uint8_t mdmt)
 {
-	printk(BIOS_EMERG, "starting istep 18.12\n");
 	report_istep(18,12);
 	init_tod_node(chips, mdmt);
-	printk(BIOS_EMERG, "ending istep 18.12\n");
 }

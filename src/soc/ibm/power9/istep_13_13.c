@@ -722,13 +722,10 @@ void istep_13_13(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 13.13\n");
 	report_istep(13,13);
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			mss_draminit_mc(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 13.13\n");
 }

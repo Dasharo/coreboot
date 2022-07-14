@@ -2400,13 +2400,10 @@ void istep_13_8(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 13.8\n");
 	report_istep(13,8);
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			mss_scominit(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 13.8\n");
 }
