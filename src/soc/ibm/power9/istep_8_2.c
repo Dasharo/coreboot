@@ -36,7 +36,6 @@ static void set_fsi_gp_shadow(uint8_t chip)
 
 void istep_8_2(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 8.2\n");
 	report_istep(8, 2);
 
 	/* Skipping master chip */
@@ -44,6 +43,4 @@ void istep_8_2(uint8_t chips)
 		if (chips & (1 << chip))
 			set_fsi_gp_shadow(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 8.2\n");
 }

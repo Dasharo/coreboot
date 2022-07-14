@@ -338,7 +338,6 @@ void istep_14_5(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 14.5\n");
 	report_istep(14, 5);
 
 	/* Start MCS reset */
@@ -348,6 +347,4 @@ void istep_14_5(uint8_t chips)
 		if (chips & (1 << chip))
 			proc_setup_bars(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 14.5\n");
 }

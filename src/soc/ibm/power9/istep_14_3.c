@@ -503,7 +503,6 @@ static void init_phbs(uint8_t chip, uint8_t phb_active_mask, const uint8_t *iova
 
 void istep_14_3(uint8_t chips, const struct pci_info *pci_info)
 {
-	printk(BIOS_EMERG, "starting istep 14.3\n");
 	report_istep(14, 3);
 
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
@@ -513,6 +512,4 @@ void istep_14_3(uint8_t chips, const struct pci_info *pci_info)
 		init_pecs(chip, pci_info[chip].iovalid_enable);
 		init_phbs(chip, pci_info[chip].phb_active_mask, pci_info[chip].iovalid_enable);
 	}
-
-	printk(BIOS_EMERG, "ending istep 14.3\n");
 }

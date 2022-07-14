@@ -302,7 +302,6 @@ static void config_bus_mode(void)
 
 void istep_9_2(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 9.2\n");
 	report_istep(9,2);
 
 	if (chips != 0x01) {
@@ -311,6 +310,4 @@ void istep_9_2(uint8_t chips)
 
 		config_bus_mode();
 	}
-
-	printk(BIOS_EMERG, "ending istep 9.2\n");
 }

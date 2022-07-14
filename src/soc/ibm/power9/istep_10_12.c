@@ -35,13 +35,10 @@ static void enable_ridi(uint8_t chip)
 
 void istep_10_12(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 10.12\n");
 	report_istep(10, 12);
 
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			enable_ridi(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 10.12\n");
 }

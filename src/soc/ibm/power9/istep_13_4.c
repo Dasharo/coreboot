@@ -121,7 +121,6 @@ void istep_13_4(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 13.4\n");
 	report_istep(13, 4);
 
 	/* Assuming MC doesn't run in sync mode with Fabric, otherwise this is no-op */
@@ -130,6 +129,4 @@ void istep_13_4(uint8_t chips)
 		if (chips & (1 << chip))
 			mem_pll_setup(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 13.4\n");
 }
