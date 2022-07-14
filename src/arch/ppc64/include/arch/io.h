@@ -4,6 +4,7 @@
 #define _ASM_IO_H
 
 #include <stdint.h>
+#include <console/console.h>
 
 /* Set MSB to 1 to ignore HRMOR */
 #define MMIO_GROUP0_CHIP0_LPC_BASE_ADDR 0x8006030000000000
@@ -64,6 +65,7 @@ static inline uint32_t inl(uint16_t port)
 
 static inline void report_istep(uint8_t step, uint8_t substep)
 {
+	printk(BIOS_INFO, "starting istep %d.%d\n", step, substep);
 	outb(step, 0x81);
 	outb(substep, 0x82);
 }

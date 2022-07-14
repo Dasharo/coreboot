@@ -760,7 +760,6 @@ static void p9_build_smp(uint8_t chips)
 
 void istep_10_1(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 10.1\n");
 	report_istep(10,1);
 
 	p9_build_smp(chips);
@@ -774,6 +773,4 @@ void istep_10_1(uint8_t chips)
 
 		fsi_reset_pib2opb(/*chip=*/1);
 	}
-
-	printk(BIOS_EMERG, "ending istep 10.1\n");
 }

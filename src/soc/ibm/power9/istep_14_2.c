@@ -56,7 +56,6 @@ void istep_14_2(uint8_t chips)
 	uint8_t chip;
 
 	report_istep(14, 2);
-	printk(BIOS_EMERG, "starting istep 14.2\n");
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip)) {
@@ -64,6 +63,4 @@ void istep_14_2(uint8_t chips)
 			throttle_sync(chip);
 		}
 	}
-
-	printk(BIOS_EMERG, "ending istep 14.2\n");
 }

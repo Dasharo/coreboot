@@ -303,7 +303,6 @@ void istep_8_1(uint8_t chips)
 {
 	int boot_seeprom_side;
 
-	printk(BIOS_EMERG, "starting istep 8.1\n");
 	report_istep(8, 1);
 
 	boot_seeprom_side = get_master_sbe_boot_seeprom();
@@ -315,6 +314,4 @@ void istep_8_1(uint8_t chips)
 			set_sbe_boot_seeprom(chip, boot_seeprom_side);
 		}
 	}
-
-	printk(BIOS_EMERG, "ending istep 8.1\n");
 }

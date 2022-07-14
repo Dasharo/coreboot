@@ -104,13 +104,10 @@ static void xbus_linktrain(uint8_t master_chip, uint8_t slave_chip, int group)
 
 void istep_9_4(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 9.4\n");
 	report_istep(9,4);
 
 	if (chips != 0x01) {
 		xbus_linktrain(/*master_chip=*/0, /*slave_chip=*/1, /*group=*/0);
 		xbus_linktrain(/*master_chip=*/0, /*slave_chip=*/1, /*group=*/1);
 	}
-
-	printk(BIOS_EMERG, "ending istep 9.4\n");
 }

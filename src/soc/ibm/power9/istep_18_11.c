@@ -439,7 +439,6 @@ void istep_18_11(uint8_t chips, uint8_t *mdmt)
 	uint8_t sec_mdmt;
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 18.11\n");
 	report_istep(18, 11);
 
 	if (chips != 0x01 && chips != 0x03)
@@ -462,6 +461,4 @@ void istep_18_11(uint8_t chips, uint8_t *mdmt)
 		if (chips & (1 << chip))
 			configure_tod(chip, chips, pri_mdmt, sec_mdmt);
 	}
-
-	printk(BIOS_EMERG, "ending istep 18.11\n");
 }
