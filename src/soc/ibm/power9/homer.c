@@ -926,7 +926,7 @@ static void psu_command(uint8_t flags, long time)
 		die("MBOX to SBE busy, this should not happen\n");
 
 	if (read_scom(0, 0x000D0063) & PPC_BIT(0)) {
-		printk(BIOS_ERR, "SBE to Host doorbell already active, clearing it\n");
+		printk(BIOS_WARNING, "SBE to Host doorbell already active, clearing it\n");
 		write_scom(0, 0x000D0064, ~PPC_BIT(0));
 	}
 
@@ -1076,7 +1076,7 @@ static void istep_16_1(int this_core)
 	 * This will request SBE to wake us up after we enter STOP 15. Hopefully
 	 * we will come back to the place where we were before.
 	 */
-	printk(BIOS_ERR, "XIVE configured, entering dead man loop\n");
+	printk(BIOS_DEBUG, "XIVE configured, entering dead man loop\n");
 	psu_command(DEADMAN_LOOP_START, time);
 
 	block_wakeup_int(this_core, 1);
@@ -1328,7 +1328,7 @@ static void pstate_gpe_init(uint8_t chip, struct homer_st *homer, uint64_t cores
 	/* OCCFLG2_PGPE_HCODE_FIT_ERR_INJ | OCCFLG2_PGPE_HCODE_PSTATE_REQ_ERR_INJ */
 	write_scom(chip, PU_OCB_OCI_OCCFLG2_CLEAR, 0x1100000000);
 
-	printk(BIOS_ERR, "Attempting PGPE activation...\n");
+	printk(BIOS_DEBUG, "Attempting PGPE activation...\n");
 
 	write_scom(chip, PU_GPE2_PPE_XIXCR, PPC_PLACE(HARD_RESET, 1, 3));
 	write_scom(chip, PU_GPE2_PPE_XIXCR, PPC_PLACE(TOGGLE_XSR_TRH, 1, 3));
@@ -1339,7 +1339,7 @@ static void pstate_gpe_init(uint8_t chip, struct homer_st *homer, uint64_t cores
 		(read_scom(chip, PU_GPE2_PPE_XIDBGPRO) & PPC_BIT(HALTED_STATE)));
 
 	if (read_scom(chip, PU_OCB_OCI_OCCS2_SCOM) & PPC_BIT(PGPE_ACTIVE))
-		printk(BIOS_ERR, "PGPE was activated successfully\n");
+		printk(BIOS_DEBUG, "PGPE was activated successfully\n");
 	else
 		die("Failed to activate PGPE\n");
 
@@ -1529,16 +1529,16 @@ static void istep_21_1(uint8_t chips, struct homer_st *homers, const uint64_t *c
 			load_pm_complex(chip, &homers[chip]);
 	}
 
-	printk(BIOS_ERR, "Starting PM complex...\n");
+	printk(BIOS_DEBUG, "Starting PM complex...\n");
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			start_pm_complex(chip, &homers[chip], cores[chip]);
 	}
-	printk(BIOS_ERR, "Done starting PM complex\n");
+	printk(BIOS_DEBUG, "Done starting PM complex\n");
 
-	printk(BIOS_ERR, "Activating OCC...\n");
+	printk(BIOS_DEBUG, "Activating OCC...\n");
 	activate_occ(chips, homers);
-	printk(BIOS_ERR, "Done activating OCC\n");
+	printk(BIOS_DEBUG, "Done activating OCC\n");
 }
 
 /* Extracts rings for a specific Programmable PowerPC-lite Engine */
@@ -2571,7 +2571,7 @@ void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_
 	if (this_core == -1)
 		die("Couldn't found active core\n");
 
-	printk(BIOS_ERR, "DD%2.2x, boot core: %d\n", dd, this_core);
+	printk(BIOS_DEBUG, "DD%2.2x, boot core: %d\n", dd, this_core);
 
 	/* HOMER must be aligned to 4M because CME HRMOR has bit for 2M set */
 	if (!IS_ALIGNED((uint64_t) homer_bar, 4 * MiB))
