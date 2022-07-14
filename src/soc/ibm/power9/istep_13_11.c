@@ -144,7 +144,7 @@ static void dump_cal_errors(uint8_t chip, int mcs_i, int mca_i)
 		printk(BIOS_ERR, "DP %d\n", dp);
 		printk(BIOS_ERR, "\t%#16.16llx - RD_VREF_CAL_ERROR\n",
 		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - DQ_BIT_DISABLE_RP0\n",
+		printk(RAM_DEBUG, "\t%#16.16llx - DQ_BIT_DISABLE_RP0\n",
 		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0));
 		printk(BIOS_ERR, "\t%#16.16llx - DQS_BIT_DISABLE_RP0\n",
 		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0));
