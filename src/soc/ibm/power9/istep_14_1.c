@@ -539,10 +539,6 @@ static void mss_memdiag(uint8_t chips)
 
 void istep_14_1(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 14.1\n");
 	report_istep(14, 1);
-
 	mss_memdiag(chips);
-
-	printk(BIOS_EMERG, "ending istep 14.1\n");
 }
