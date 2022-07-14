@@ -89,7 +89,6 @@ static bool sbe_run_extract_msg_reg(uint8_t chip)
 
 void istep_8_4(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 8.4\n");
 	report_istep(8,4);
 
 	/* Skipping master chip */
@@ -99,6 +98,4 @@ void istep_8_4(uint8_t chips)
 				die("SBE for chip #%d did not boot properly.\n", chip);
 		}
 	}
-
-	printk(BIOS_EMERG, "ending istep 8.4\n");
 }

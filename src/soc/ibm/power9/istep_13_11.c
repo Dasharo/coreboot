@@ -1365,13 +1365,10 @@ void istep_13_11(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 13.11\n");
 	report_istep(13,11);
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			mss_draminit_training(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 13.11\n");
 }

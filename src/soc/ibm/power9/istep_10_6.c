@@ -410,7 +410,6 @@ void istep_10_6(uint8_t chips)
 {
 	uint8_t dd = get_dd(); // XXX: this should probably be chip-specific
 
-	printk(BIOS_EMERG, "starting istep 10.6\n");
 	report_istep(10,6);
 
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
@@ -419,6 +418,4 @@ void istep_10_6(uint8_t chips)
 			psi_scom(chip);
 		}
 	}
-
-	printk(BIOS_EMERG, "ending istep 10.6\n");
 }

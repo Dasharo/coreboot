@@ -603,7 +603,6 @@ static void phase1(uint8_t chip, const struct lane_config_row **pec_cfgs,
 
 void istep_10_10(uint8_t chips, struct pci_info *pci_info)
 {
-	printk(BIOS_EMERG, "starting istep 10.10\n");
 	report_istep(10,10);
 
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
@@ -620,6 +619,4 @@ void istep_10_10(uint8_t chips, struct pci_info *pci_info)
 
 		phase1(chip, pec_cfgs, pci_info[chip].iovalid_enable);
 	}
-
-	printk(BIOS_EMERG, "ending istep 10.10\n");
 }
