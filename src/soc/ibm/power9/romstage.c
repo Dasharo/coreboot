@@ -448,7 +448,7 @@ void main(void)
 	timestamp_add_now(TS_AFTER_INITRAM);
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
-	printk(BIOS_DEBUG, "0xF000F = %llx\n", read_scom(0, 0xF000F));
+	printk(BIOS_WARNING, "0xF000F = %llx\n", read_scom(0, 0xF000F));
 
 	/*
 	 * Halt to give a chance to inspect FIRs, otherwise checkstops from
