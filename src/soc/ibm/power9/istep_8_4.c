@@ -57,7 +57,7 @@ static bool sbe_run_extract_msg_reg(uint8_t chip)
 			break;
 
 		if ((i * SBE_WAIT_SLEEP_MS) % 1000 == 0)
-			printk(BIOS_EMERG, "SBE for chip #%d is booting...\n", chip);
+			printk(BIOS_NOTICE, "SBE for chip #%d is booting...\n", chip);
 
 		/* Hostboot resets watchdog before sleeping, we might want to
 		 * do it too or just increase timer after experimenting. */

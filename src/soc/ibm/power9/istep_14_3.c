@@ -51,7 +51,7 @@ static void init_pecs(uint8_t chip, const uint8_t *iovalid_enable)
 	for (pec = 0; pec < MAX_PEC_PER_PROC; ++pec) {
 		uint64_t val = 0;
 
-		printk(BIOS_EMERG, "Initializing PEC%d...\n", pec);
+		printk(BIOS_INFO, "Initializing PEC%d...\n", pec);
 
 		/*
 		 * ATTR_FABRIC_ADDR_EXTENSION_GROUP_ID = 0
@@ -305,7 +305,7 @@ static void init_phbs(uint8_t chip, uint8_t phb_active_mask, const uint8_t *iova
 		if (!(phb_active_mask & (PHB0_MASK >> phb)))
 			continue;
 
-		printk(BIOS_EMERG, "Initializing PHB%d...\n", phb);
+		printk(BIOS_INFO, "Initializing PHB%d...\n", phb);
 
 		/*
 		 * Phase2 init step 12_a (yes, out of order)
