@@ -26,13 +26,10 @@ static void smp_link_layer(uint8_t chip)
 
 void istep_9_6(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 9.6\n");
 	report_istep(9,6);
 
 	if (chips != 0x01) {
 		smp_link_layer(/*chip=*/0);
 		smp_link_layer(/*chip=*/1);
 	}
-
-	printk(BIOS_EMERG, "ending istep 9.6\n");
 }

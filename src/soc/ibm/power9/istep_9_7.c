@@ -78,7 +78,6 @@ static void p9_fab_iovalid(uint8_t chip)
 
 void istep_9_7(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 9.7\n");
 	report_istep(9,7);
 
 	if (chips != 0x01) {
@@ -94,6 +93,4 @@ void istep_9_7(uint8_t chips)
 		p9_fab_iovalid(/*chip=*/0);
 		p9_fab_iovalid(/*chip=*/1);
 	}
-
-	printk(BIOS_EMERG, "ending istep 9.7\n");
 }
