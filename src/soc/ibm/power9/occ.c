@@ -485,9 +485,11 @@ static bool write_occ_cmd(uint8_t chip, struct homer_st *homer, uint8_t occ_cmd,
 			       occ_cmd);
 		}
 
-		printk(BIOS_WARNING, "Received OCC response:\n");
-		hexdump(response, *response_len);
-		printk(BIOS_WARNING, "Failed to parse OCC response\n");
+		if (console_log_level(BIOS_WARNING)) {
+			printk(BIOS_WARNING, "Received OCC response:\n");
+			hexdump(response, *response_len);
+			printk(BIOS_WARNING, "Failed to parse OCC response\n");
+		}
 		return false;
 	}
 
@@ -514,7 +516,7 @@ static void send_occ_cmd(uint8_t chip, struct homer_st *homer, uint8_t occ_cmd,
 			break;
 
 		if (i < MAX_TRIES - 1)
-			printk(BIOS_WARNING, "Retrying running OCC command 0x%02x\n", occ_cmd);
+			printk(BIOS_DEBUG, "Retrying running OCC command 0x%02x\n", occ_cmd);
 	}
 
 	if (i == MAX_TRIES)
@@ -545,8 +547,10 @@ static void handle_occ_error(uint8_t chip, struct homer_st *homer,
 
 	read_occ_sram(chip, response->error_address, (uint64_t *)error_log_buf, error_length);
 
-	printk(BIOS_WARNING, "OCC error log:\n");
-	hexdump(error_log_buf, error_length);
+	if (console_log_level(BIOS_WARNING)) {
+		printk(BIOS_WARNING, "OCC error log:\n");
+		hexdump(error_log_buf, error_length);
+	}
 
 	/* Confirm to OCC that we've read the log */
 	send_occ_cmd(chip, homer, OCC_CMD_CLEAR_ERROR_LOG,
@@ -580,8 +584,10 @@ static void poll_occ(uint8_t chip, struct homer_st *homer, bool flush_all_errors
 
 		--max_more_errors;
 		if (max_more_errors == 0) {
-			printk(BIOS_WARNING, "Last OCC poll response:\n");
-			hexdump(response, response_len);
+			if (console_log_level(BIOS_WARNING)) {
+				printk(BIOS_WARNING, "Last OCC poll response:\n");
+				hexdump(response, response_len);
+			}
 			die("Hit too many errors on polling OCC\n");
 		}
 	}
@@ -1159,7 +1165,8 @@ static void set_occ_state(uint8_t chip, struct homer_st *homer, uint8_t state)
 	poll_occ(chip, homer, /*flush_all_errors=*/true, &poll_response);
 
 	if (poll_response.state != state)
-		die("State of OCC is 0x%02x instead of 0x%02x.\n", poll_response.state, state);
+		die("State of OCC is 0x%02x instead of 0x%02x.\n",
+		    poll_response.state, state);
 }
 
 static void set_occ_active_state(uint8_t chip, struct homer_st *homer)
