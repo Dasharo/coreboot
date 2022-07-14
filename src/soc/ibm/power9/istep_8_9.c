@@ -331,7 +331,6 @@ static void chiplet_fabric_scominit(bool is_xbus_active, uint8_t chip)
 
 void istep_8_9(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 8.9\n");
 	report_istep(8,9);
 
 	/* Not skipping master chip and initializing it even if we don't have a second chip */
@@ -339,6 +338,4 @@ void istep_8_9(uint8_t chips)
 		if (chips & (1 << chip))
 			chiplet_fabric_scominit(/*is_xbus_active=*/chips == 0x03, chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 8.9\n");
 }

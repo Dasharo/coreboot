@@ -367,13 +367,10 @@ static void xbus_scominit(int group)
 
 void istep_8_10(uint8_t chips)
 {
-	printk(BIOS_EMERG, "starting istep 8.10\n");
 	report_istep(8,10);
 
 	if (chips != 0x01) {
 		xbus_scominit(/*group=*/0);
 		xbus_scominit(/*group=*/1);
 	}
-
-	printk(BIOS_EMERG, "ending istep 8.10\n");
 }
