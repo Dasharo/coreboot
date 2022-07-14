@@ -115,7 +115,7 @@ static void mem_pll_initf(uint8_t chip)
 
 		/* This may depend on the requested frequency, but for current setup in our
 		 * lab this is ~3ms both for coreboot and Hostboot. */
-		printk(BIOS_EMERG, "putRing took %ld ms\n", time);
+		printk(RAM_DEBUG, "putRing took %ld ms\n", time);
 
 		// Clear SBE->host doorbell
 		// TP.TPCHIP.PIB.PSU.PSU_HOST_DOORBELL_REG_AND
