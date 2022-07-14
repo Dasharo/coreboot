@@ -88,14 +88,10 @@ void istep_10_13(uint8_t chips)
 {
 	uint8_t chip;
 
-	printk(BIOS_EMERG, "starting istep 10.13\n");
-
 	report_istep(10, 13);
 
 	for (chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			host_rng_bist(chip);
 	}
-
-	printk(BIOS_EMERG, "ending istep 10.13\n");
 }
