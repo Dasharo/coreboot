@@ -536,6 +536,8 @@ static void amdfam10_create_vga_resource(struct device *dev, unsigned int nodeid
 
 	printk(BIOS_DEBUG, "VGA: %s (aka node %d) link %d has VGA device\n", dev_path(dev), nodeid, link->link_num);
 	set_vga_enable_reg(nodeid, link->link_num);
+
+	reserved_ram_resource(dev, 6, 0xa0000 >> 10, 0x20000 >> 10);
 }
 
 static void amdfam10_read_resources(struct device *dev)
@@ -868,7 +870,7 @@ static void amdfam10_domain_read_resources(struct device *dev)
 
 	/* Reserve everything between A segment and 1MB:
 	 *
-	 * 0xa0000 - 0xbffff: legacy VGA (reserved by Aspeed driver, not here)
+	 * 0xa0000 - 0xbffff: legacy VGA (handled by amdfam10_create_vga_resource())
 	 * 0xc0000 - 0xfffff: option ROMs and SeaBIOS (if used)
 	 */
 	reserved_ram_resource(dev, idx++, 0xc0000 >> 10, (0x100000 - 0xc0000) >> 10);
