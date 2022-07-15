@@ -244,6 +244,7 @@ void bootblock_early_southbridge_init(void)
 
 #if CONFIG(SOUTHBRIDGE_AMD_SR5650)
 	sr5650_disable_pcie_bridge();
+	enable_pcie_bar3();
 	enable_sr5650_dev8();
 #endif
 }
