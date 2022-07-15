@@ -47,7 +47,6 @@ void sr5650_disable_pcie_bridge(void)
 	mask |= (1 << 20); /*GPP3b*/
 	reg = mask;
 	set_nbmisc_enable_bits(nb_dev, 0x0c, mask, reg);
-	enable_pcie_bar3();
 }
 
 /* enable CFG access to Dev8, which is the SB P2P Bridge */
