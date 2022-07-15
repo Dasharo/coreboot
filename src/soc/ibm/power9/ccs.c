@@ -104,55 +104,54 @@ static void dump_cal_errors(uint8_t chip, chiplet_id_t id, int mca_i)
 	/* Stop CCS so it won't mess up with the values */
 	write_scom_for_chiplet(chip, id, CCS_CNTLQ, PPC_BIT(CCS_CNTLQ_CCS_STOP));
 
-#if CONFIG(DEBUG_RAM_SETUP)
 	int dp;
 
 	for (dp = 0; dp < 5; dp++) {
-		printk(BIOS_ERR, "DP %d\n", dp);
-		printk(BIOS_ERR, "\t%#16.16llx - RD_VREF_CAL_ERROR\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - DQ_BIT_DISABLE_RP0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - DQS_BIT_DISABLE_RP0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - WR_ERROR0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - RD_STATUS0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_STATUS0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - RD_LVL_STATUS2\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS2_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - RD_LVL_STATUS0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - WR_VREF_ERROR0\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0));
-		printk(BIOS_ERR, "\t%#16.16llx - WR_VREF_ERROR1\n",
-		       dp_mca_read(id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0));
+		printk(RAM_SPEW, "DP %d\n", dp);
+		printk(RAM_SPEW, "\t%#16.16llx - RD_VREF_CAL_ERROR\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_VREF_CAL_ERROR_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - DQ_BIT_DISABLE_RP0\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQ_BIT_DISABLE_RP0_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - DQS_BIT_DISABLE_RP0\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_DQS_BIT_DISABLE_RP0_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - WR_ERROR0\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_ERROR0_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - RD_STATUS0\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_STATUS0_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - RD_LVL_STATUS2\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS2_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - RD_LVL_STATUS0\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_RD_LVL_STATUS0_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - WR_VREF_ERROR0\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR0_P0_0));
+		printk(RAM_SPEW, "\t%#16.16llx - WR_VREF_ERROR1\n",
+		       dp_mca_read(chip, id, dp, mca_i, DDRPHY_DP16_WR_VREF_ERROR1_P0_0));
 	}
 
-	printk(BIOS_ERR, "%#16.16llx - APB_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_APB_ERROR_STATUS0_P0));
+	printk(RAM_SPEW, "%#16.16llx - APB_ERROR_STATUS0\n",
+	       mca_read(chip, id, mca_i, DDRPHY_APB_ERROR_STATUS0_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - RC_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_RC_ERROR_STATUS0_P0));
+	printk(RAM_SPEW, "%#16.16llx - RC_ERROR_STATUS0\n",
+	       mca_read(chip, id, mca_i, DDRPHY_RC_ERROR_STATUS0_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - SEQ_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_SEQ_ERROR_STATUS0_P0));
+	printk(RAM_SPEW, "%#16.16llx - SEQ_ERROR_STATUS0\n",
+	       mca_read(chip, id, mca_i, DDRPHY_SEQ_ERROR_STATUS0_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - WC_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_WC_ERROR_STATUS0_P0));
+	printk(RAM_SPEW, "%#16.16llx - WC_ERROR_STATUS0\n",
+	       mca_read(chip, id, mca_i, DDRPHY_WC_ERROR_STATUS0_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - PC_ERROR_STATUS0\n",
-	       mca_read(id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0));
+	printk(RAM_SPEW, "%#16.16llx - PC_ERROR_STATUS0\n",
+	       mca_read(chip, id, mca_i, DDRPHY_PC_ERROR_STATUS0_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - PC_INIT_CAL_ERROR\n",
-	       mca_read(id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0));
+	printk(RAM_SPEW, "%#16.16llx - PC_INIT_CAL_ERROR\n",
+	       mca_read(chip, id, mca_i, DDRPHY_PC_INIT_CAL_ERROR_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - PC_INIT_CAL_STATUS\n",
-	       mca_read(id, mca_i, DDRPHY_PC_INIT_CAL_STATUS_P0));
+	printk(RAM_SPEW, "%#16.16llx - PC_INIT_CAL_STATUS\n",
+	       mca_read(chip, id, mca_i, DDRPHY_PC_INIT_CAL_STATUS_P0));
 
-	printk(BIOS_ERR, "%#16.16llx - IOM_PHY0_DDRPHY_FIR_REG\n",
-	       mca_read(id, mca_i, IOM_PHY0_DDRPHY_FIR_REG));
-#endif
+	printk(RAM_SPEW, "%#16.16llx - IOM_PHY0_DDRPHY_FIR_REG\n",
+	       mca_read(chip, id, mca_i, IOM_PHY0_DDRPHY_FIR_REG));
+
 	die("CCS execution timeout\n");
 }
 
