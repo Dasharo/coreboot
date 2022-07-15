@@ -498,7 +498,7 @@ static void sb700_sm_set_resources(struct device *dev)
 	 * as soon as possible.
 	 */
 	byte = pci_read_config8(dev, SB_MMIO_CFG_REG);
-	byte |= 3;
+	byte |= 1;
 	pci_write_config8(dev, SB_MMIO_CFG_REG, byte);
 
 	/* Program HPET BAR Address */
