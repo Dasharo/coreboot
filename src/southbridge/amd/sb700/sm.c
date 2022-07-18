@@ -310,13 +310,6 @@ static void sm_init(struct device *dev)
 
 		byte |= 1 << 3;
 		pci_write_config8(dev, 0x43, byte);
-
-		/* Enable southbridge MMIO decode */
-		dword = pci_read_config32(dev, SB_MMIO_CFG_REG);
-		dword &= ~(0xffffff << 8);
-		dword |= SB_MMIO_BASE_ADDRESS;
-		dword |= 0x1;
-		pci_write_config32(dev, SB_MMIO_CFG_REG, dword);
 	}
 
 	/* 4.11:Programming Cycle Delay for AB and BIF Clock Gating */
@@ -499,16 +492,6 @@ static void sb700_sm_set_resources(struct device *dev)
 	u8 byte;
 
 	pci_dev_set_resources(dev);
-
-	/*
-	 * Enable SB MMIO
-	 *
-	 * Keep this close to pci_dev_set_resources() to re-enable serial console
-	 * as soon as possible.
-	 */
-	byte = pci_read_config8(dev, SB_MMIO_CFG_REG);
-	byte |= 1;
-	pci_write_config8(dev, SB_MMIO_CFG_REG, byte);
 
 	/* Program HPET BAR Address */
 	res = find_resource(dev, HPET_RESOURCE_NUMBER);

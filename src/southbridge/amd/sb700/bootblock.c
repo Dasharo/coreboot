@@ -15,6 +15,9 @@
 
 #define SPI_CONTROL_1			0xc
 
+#define SB_MMIO_CFG_REG 0x9c
+#define SB_MMIO_BASE_ADDRESS 0xfed80000
+
 static void sb7xx_51xx_pci_port80(void)
 {
 	u8 byte;
@@ -105,6 +108,13 @@ static void sb7xx_51xx_lpc_init(void)
 	/* Enable SB I/O decodes*/
 	pci_write_config8(dev, 0x78, 0xFF);
 	//pci_write_config8(dev, 0x79, 0x45);
+
+	/* Enable southbridge MMIO decode */
+	reg32 = pci_read_config32(dev, SB_MMIO_CFG_REG);
+	reg32 &= ~(0xffffff << 8);
+	reg32 |= SB_MMIO_BASE_ADDRESS;
+	reg32 |= 0x1;
+	pci_write_config32(dev, SB_MMIO_CFG_REG, reg32);
 
 	if (CONFIG(SOUTHBRIDGE_AMD_SB700_DISABLE_ISA_DMA)) {
 		/* Disable LPC ISA DMA Capability */
