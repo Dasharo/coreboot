@@ -6,4 +6,5 @@
 
 Scope (\_SB) {
 	#include "sleep.asl"
+	#include "touchpad.asl"
 }
