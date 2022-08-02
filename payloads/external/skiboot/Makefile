@@ -2,7 +2,6 @@
 
 build_dir=$(CURDIR)/build
 skiboot_dir=$(CURDIR)/talos-skiboot
-skiboot_git_repo=https://git.raptorcs.com/git/talos-skiboot
 skiboot_elf=$(build_dir)/skiboot.elf
 skiboot_cross=$(or $(CROSS),powerpc64-linux-gnu-)
 
@@ -19,7 +18,7 @@ $(skiboot_elf): | $(skiboot_dir) $(build_dir)
 	$(skiboot_cross)strip $@
 
 $(skiboot_dir):
-	git clone $(skiboot_git_repo) $(skiboot_dir)
+	git clone $(CONFIG_SKIBOOT_REPOSITORY) $(skiboot_dir)
 	cd $(skiboot_dir) && git checkout $(CONFIG_SKIBOOT_REVISION)
 
 $(build_dir):

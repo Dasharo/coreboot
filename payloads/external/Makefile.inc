@@ -329,4 +329,5 @@ payloads/external/BOOTBOOT/bootboot/dist/bootbootcb.elf:
 
 payloads/external/skiboot/build/skiboot.elf:
 	$(MAKE) -C payloads/external/skiboot all \
+		CONFIG_SKIBOOT_REPOSITORY=$(CONFIG_SKIBOOT_REPOSITORY) \
 		CONFIG_SKIBOOT_REVISION=$(CONFIG_SKIBOOT_REVISION)
