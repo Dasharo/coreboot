@@ -53,7 +53,7 @@ chip soc/intel/cannonlake
 	register "PchPmSlpSusMinAssert" = "2"	# 500ms
 	register "PchPmSlpAMinAssert"   = "4"	# 2s
 
-	register "tcc_offset" = "5" # TCC of 95C
+	register "tcc_offset" = "20" # TCC of 80C
 
 	# Enable SERIRQ continous
 	register "serirq_mode" = "SERIRQ_CONTINUOUS"
