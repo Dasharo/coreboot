@@ -5,9 +5,15 @@ if PAYLOAD_SKIBOOT
 config PAYLOAD_FILE
 	default "payloads/external/skiboot/build/skiboot.elf"
 
+config SKIBOOT_REPOSITORY
+	string "Repository of skiboot payload"
+	default "https://github.com/Dasharo/skiboot.git" if BOARD_RAPTOR_CS_TALOS_2
+	help
+	  URL used to clone skiboot repository.
+
 config SKIBOOT_REVISION
 	string "Revision of skiboot payload"
-	default "9858186353f2203fe477f316964e03609d12fd1d" if BOARD_RAPTOR_CS_TALOS_2
+	default "fa060c2c98b6eefde06a8bd78d1d8096c2bede37" if BOARD_RAPTOR_CS_TALOS_2
 	help
 	  Revision, that skiboot repository will be checked out to, before building
 	  an image.

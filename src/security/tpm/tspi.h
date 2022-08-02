@@ -16,6 +16,11 @@
 #define TPM_PCR_MAX_LEN 64
 #define HASH_DATA_CHUNK_SIZE 1024
 
+struct tcpa_log_ref {
+	uint64_t start;
+	uint32_t size;
+};
+
 /**
  * Get the pointer to the single instance of global
  * tcpa log data, and initialize it when necessary
