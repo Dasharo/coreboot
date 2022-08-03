@@ -84,6 +84,9 @@ BUILD_STR += $(CONFIG_TIANOCORE_CUSTOM_BUILD_PARAMS)
 endif
 endif
 
+# Disable secure boot by default
+BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
+
 export EDK_TOOLS_PATH=$(project_dir)/BaseTools
 all: clean build
 
