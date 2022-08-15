@@ -48,6 +48,14 @@ config SMM_TSEG_SIZE
 	default 0x100000 if HAVE_SMI_HANDLER
 	default 0x0
 
+config LAUNCH_DRTM_PAYLOAD
+	bool "Launch DRTM payload before the real one"
+	default n
+	depends on MEMORY_MAPPED_TPM
+	help
+	  Launch DRTM payload before the real one. This makes it possible to
+	  put root of trust in hardware for platforms that don't support SRTM.
+
 endif # CPU_AMD_PI
 
 source "src/cpu/amd/pi/00730F01/Kconfig"

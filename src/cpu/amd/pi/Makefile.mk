@@ -7,4 +7,6 @@ postcar-y += ../../../soc/amd/common/block/cpu/smm/smm_helper.c
 ramstage-y += ../../../soc/amd/common/block/cpu/smm/smm_helper.c
 ramstage-y += ../../../soc/amd/common/block/cpu/smm/smm_relocate.c
 
+ramstage-$(CONFIG_LAUNCH_DRTM_PAYLOAD) += skinit.c
+
 CPPFLAGS_common += -I$(src)/cpu/amd/pi/include
