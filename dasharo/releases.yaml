@@ -1,4 +1,14 @@
 releases:
+        - version: v1.0.17
+          added:
+                - Tools for resigning Vboot images with one RW partition
+          changed:
+                - TCC temperature set to 80 degrees
+                - Disabled UEFI Secure Boot by default
+          fixed:
+                - Platform rebooting every 56 minutes
+                - Incorrect menu labels displayed in network boot menu
+
         - version: v1.0.16
           added:
                 - Vboot Verified Boot
