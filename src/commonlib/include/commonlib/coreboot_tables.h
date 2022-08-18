@@ -90,6 +90,7 @@ enum {
 	LB_TAG_EFI_FW_INFO		= 0x0045,
 	LB_TAG_CAPSULE			= 0x0046,
 	LB_TAG_CFR_ROOT			= 0x0047,
+	LB_TAG_LOGO			= 0x00a0,
 	/* The following options are CMOS-related */
 	LB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	LB_TAG_OPTION			= 0x00c9,
@@ -605,5 +606,13 @@ struct lb_cfr {
 	uint32_t checksum;	/* Checksum of the variable payload. */
 	/* struct lb_cfr_option_form		forms[] */
 };
+
+/*
+ * Bootlogo header for TianoCore boot logo
+ * * size   Contains the size of the BMP file
+ */
+struct bootlogo_header {
+	uint64_t size;
+} __packed;
 
 #endif
