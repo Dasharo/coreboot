@@ -251,16 +251,12 @@ chip soc/intel/tigerlake
 			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther" "M.2/E 2230 (J_WLAN1)" "SlotDataBusWidth1X"
 		end
 		device ref pch_espi on
+			register "gen1_dec" = "0x000c0081"
+			register "gen2_dec" = "0x00040069"
+			register "gen3_dec" = "0x00fc0e01"
+			register "gen4_dec" = "0x00fc0f01"
 			chip drivers/pc80/tpm
 				device pnp 0c31.0 on end
-			end
-			chip ec/clevo/it5570
-				device pnp 0c09.0 on end
-				register "fan_mode" = "FAN_MODE_CUSTOM"
-				register "fans[0].curve.temperature" = "{ 40, 60, 70, 80 }"
-				register "fans[0].curve.speed" = "{ 16, 25, 50, 100 }"
-				register "fans[1].curve.temperature" = "{ 40, 60, 70, 80 }"
-				register "fans[1].curve.speed" = "{ 16, 25, 50, 100 }"
 			end
 		end
 		device ref p2sb on end
