@@ -70,6 +70,25 @@ config TPM_PIRQ
 	default 0x1C if BOARD_CLEVO_NV40MZ # GPP_C14_IRQ
 	default 0x1C if BOARD_CLEVO_NS50MU # GPP_C14_IRQ
 
+config VBOOT
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+
+config VBOOT_SLOTS_RW_A
+	default y if VBOOT
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x56
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+
 config POST_DEVICE
 	default n
 
