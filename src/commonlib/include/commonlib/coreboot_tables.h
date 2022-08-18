@@ -87,6 +87,7 @@ enum {
 	LB_TAG_TYPE_C_INFO		= 0x0042,
 	LB_TAG_ACPI_RSDP		= 0x0043,
 	LB_TAG_PCIE			= 0x0044,
+	LB_TAG_LOGO			= 0x00a0,
 	/* The following options are CMOS-related */
 	LB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	LB_TAG_OPTION			= 0x00c9,
@@ -577,5 +578,13 @@ struct lb_acpi_rsdp {
 	uint32_t size;
 	lb_uint64_t rsdp_pointer; /* Address of the ACPI RSDP */
 };
+
+/*
+ * Bootlogo header for TianoCore boot logo
+ * * size   Contains the size of the BMP file
+ */
+struct bootlogo_header {
+	uint64_t size;
+} __packed;
 
 #endif
