@@ -273,6 +273,7 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_FMAP, LB_TAG_FMAP},
 		{CBMEM_ID_VBOOT_WORKBUF, LB_TAG_VBOOT_WORKBUF},
 		{CBMEM_ID_TYPE_C_INFO, LB_TAG_TYPE_C_INFO},
+		{CBMEM_ID_TIANOCORE_LOGO, LB_TAG_LOGO},
 	};
 	int i;
 
@@ -408,6 +409,37 @@ void __weak lb_board(struct lb_header *header) { /* NOOP */ }
  * not known.
  */
 void __weak lb_spi_flash(struct lb_header *header) { /* NOOP */ }
+
+
+/*
+ * Allocator for bootlogo that prepends a header to the logo CBMEM entry
+ */
+static void *logo_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
+{
+	struct bootlogo_header header;
+	void *logo_loc;
+
+	header.size = size;
+	logo_loc = cbmem_entry_start(cbmem_entry_add((uintptr_t)arg, size + sizeof(header)));
+	memcpy(logo_loc, &header, sizeof(header));
+	return logo_loc + sizeof(header);
+}
+
+/*
+ * Loads the logo bitmap file from the BOOTSPLASH fmap region into CBMEM
+ */
+static void tianocore_logo_load(int ignored)
+{
+	size_t logo_size;
+
+	cbfs_unverified_area_alloc("BOOTSPLASH",
+				"logo.bmp",
+				logo_cbmem_allocator,
+				(void *)CBMEM_ID_TIANOCORE_LOGO,
+				&logo_size);
+}
+
+CBMEM_READY_HOOK(tianocore_logo_load);
 
 static struct lb_forward *lb_forward(struct lb_header *header,
 	struct lb_header *next_header)
