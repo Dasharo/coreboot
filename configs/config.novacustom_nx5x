@@ -1,3 +1,4 @@
+CONFIG_LOCALVERSION="v1.3.0"
 CONFIG_VENDOR_CLEVO=y
 CONFIG_FMDFILE="src/mainboard/clevo/tgl-u/vboot-rwa.fmd"
 CONFIG_MAINBOARD_VENDOR="Notebook"
