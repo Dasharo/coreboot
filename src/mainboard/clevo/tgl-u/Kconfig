@@ -51,6 +51,10 @@ config MAINBOARD_VERSION
 	default "2.2A" if BOARD_CLEVO_NV40MZ
 	default "2.2A" if BOARD_CLEVO_NS50MU
 
+config MAINBOARD_FAMILY
+	string
+	default "Not Applicable" # Match stock firmware
+
 config DEVICETREE
 	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
 

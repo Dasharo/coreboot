@@ -4,6 +4,17 @@
 #include <soc/ramstage.h>
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
+#include <smbios.h>
+
+const char *smbios_system_sku(void)
+{
+	return "Not Applicable";
+}
+
+smbios_enclosure_type smbios_mainboard_enclosure_type(void)
+{
+	return SMBIOS_ENCLOSURE_NOTEBOOK;
+}
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
