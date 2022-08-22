@@ -15,7 +15,7 @@ static void pci_init(struct device *dev)
 	/*
 	 * RPR 5.1 Enables the PCI-bridge subtractive decode
 	 * This setting is strongly recommended since it supports some legacy
-	 * PCI add-on cards,such as BIOS debug cards
+	 * PCI add-on cards, such as BIOS debug cards
 	 */
 	byte = pci_read_config8(dev, 0x4B);
 	byte |= 1 << 7;
