@@ -63,5 +63,9 @@
 	branch = stmpe
 [submodule "util/goswid"]
 	path = util/goswid
-	url = ../goswid
+	url = https://review.coreboot.org/goswid.git
 	branch = trunk
+[submodule "3rdparty/dasharo-blobs"]
+	path = 3rdparty/dasharo-blobs
+	url = https://github.com/Dasharo/dasharo-blobs.git
+
