@@ -213,6 +213,12 @@ config EDK2_OPAL_PASSWORD
 	help
 	  Enables TCG OPAL disk password in the TianoCore Payload.
 
+config EDK2_DASHARO_SYSTEM_FEATURES
+	bool "Enable Dasharo System Features menu in EDK2"
+	default n
+	help
+	  Enables Dasharo System Features submenu in the EDK2 setup menu.
+
 config EDK2_BOOT_MENU_KEY
 	hex "TianoCore boot menu key"
 	default 0x0016
