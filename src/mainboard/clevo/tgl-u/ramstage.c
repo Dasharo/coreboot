@@ -5,6 +5,7 @@
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
 #include <smbios.h>
+#include <pc80/keyboard.h>
 
 const char *smbios_system_sku(void)
 {
@@ -24,6 +25,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 static void init_mainboard(void *chip_info)
 {
 	variant_configure_gpios();
+
+	pc_keyboard_init(NO_AUX_DEVICE);
 }
 
 struct chip_operations mainboard_ops = {
