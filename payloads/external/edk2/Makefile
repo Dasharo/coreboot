@@ -145,15 +145,15 @@ checktools:
 	echo -n "EDK2: Checking nasm:"
 	type nasm > /dev/null 2>&1 && echo "        Found!" || \
 		( echo "        Not found!"; echo "ERROR: Please install nasm."; exit 1 )
-	echo -n "EDK2: Checking imagemagick:"
-	-convert -size 1x1 xc: test.png &> /dev/null;
-	if [ -f test.png ]; then \
-		rm test.png && echo " Found!"; \
-	else \
-		echo " Not found!"; \
-		echo "ERROR: Please install imagemagick"; \
-		exit 1; \
-	fi
+# echo -n "EDK2: Checking imagemagick:"
+# -convert -size 1x1 xc: test.png &> /dev/null;
+# if [ -f test.png ]; then \
+# 	rm test.png && echo " Found!"; \
+# else \
+# 	echo " Not found!"; \
+# 	echo "ERROR: Please install imagemagick"; \
+# 	exit 1; \
+# fi
 
 print:
 	echo "   ##### $(project_name) Build Summary #####"

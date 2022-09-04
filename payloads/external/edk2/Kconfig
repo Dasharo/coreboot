@@ -43,7 +43,7 @@ config EDK2_REPOSITORY
 
 config EDK2_TAG_OR_REV
 	string "Insert a commit's SHA-1 or a branch name"
-	default "origin/uefipayload_202207" if EDK2_UEFIPAYLOAD
+	default "origin/upp_202111" if EDK2_UEFIPAYLOAD
 	default "origin/master" if EDK2_UPSTREAM
 	help
 	  The commit's SHA-1 or branch name of the revision to use. This must exist in
