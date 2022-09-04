@@ -186,7 +186,7 @@ config EDK2_GOP_DRIVER
 
 config EDK2_GOP_FILE
 	string "GOP driver file"
-	depends on TIANOCORE_GOP_DRIVER
+	depends on EDK2_GOP_DRIVER
 	default "3rdparty/blobs/soc/intel/bdw/IntelGopDriver.efi" if NORTHBRIDGE_INTEL_HASWELL || SOC_INTEL_BROADWELL
 	default "3rdparty/blobs/soc/intel/byt/IntelGopDriver.efi" if SOC_INTEL_BAYTRAIL
 	default "3rdparty/blobs/soc/intel/bsw/IntelGopDriver.efi" if SOC_INTEL_BRASWELL
