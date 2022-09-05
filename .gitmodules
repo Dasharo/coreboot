@@ -68,3 +68,6 @@
 [submodule "3rdparty/purism-blobs"]
 	path = 3rdparty/purism-blobs
 	url = https://source.puri.sm/coreboot/purism-blobs.git
+[submodule "3rdparty/dasharo-blobs"]
+	path = 3rdparty/dasharo-blobs
+	url = git@github.com:Dasharo/dasharo-blobs.git
