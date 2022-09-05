@@ -59,7 +59,7 @@
 	url = https://review.coreboot.org/9esec-security-tooling.git
 [submodule "3rdparty/stm"]
 	path = 3rdparty/stm
-	url = https://review.coreboot.org/STM
+	url = https://review.coreboot.org/STM.git
 	branch = stmpe
 [submodule "3rdparty/purism-blobs"]
 	path = 3rdparty/purism-blobs

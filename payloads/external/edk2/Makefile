@@ -32,19 +32,19 @@ endif
 ifeq ($(CONFIG_EDK2_RELEASE),y)
 BUILD_STR += -b RELEASE
 endif
-# DISABLE_SERIAL_TERMINAL	= FALSE
-ifneq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
-BUILD_STR += -D DISABLE_SERIAL_TERMINAL=TRUE
+# SERIAL_TERMINAL	= TRUE
+ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
+BUILD_STR += -D SERIAL_TERMINAL=TRUE
 endif
 # FOLLOW_BGRT_SPEC		= FALSE
 ifeq ($(CONFIG_EDK2_FOLLOW_BGRT_SPEC),y)
 BUILD_STR += -D FOLLOW_BGRT_SPEC=TRUE
 endif
-# PCIE_BASE_ADDRESS		= 0
+# PCIE_BASE_ADDRESS            = 0
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress=$(CONFIG_ECAM_MMCONF_BASE_ADDRESS)
 endif
-# PCIE_BASE_LENGTH		= 0
+# PCIE_BASE_LENGTH             = 0
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseSize=$(CONFIG_ECAM_MMCONF_LENGTH)
 endif
@@ -80,6 +80,33 @@ endif
 ifeq ($(CONFIG_EDK2_GOP_DRIVER), y)
 BUILD_STR += -D USE_PLATFORM_GOP=TRUE
 endif
+# NETWORK_IPXE                  = FALSE
+ifeq ($(CONFIG_EDK2_IPXE),y)
+BUILD_STR += -D NETWORK_IPXE=TRUE
+endif
+# SECURE_BOOT_ENABLE            = TRUE
+ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
+BUILD_STR += -D SECURE_BOOT_ENABLE=TRUE
+endif
+# SECURE_BOOT_DEFAULT_ENABLE	= TRUE
+ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
+endif
+# SATA_PASSWORD_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_SATA_PASSWORD),y)
+BUILD_STR += -D SATA_PASSWORD_ENABLE=TRUE
+endif
+# OPAL_PASSWORD_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_OPAL_PASSWORD),y)
+BUILD_STR += -D OPAL_PASSWORD_ENABLE=TRUE
+endif
+# TPM_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_TPM_ENABLE),y)
+BUILD_STR += -D TPM_ENABLE=TRUE
+endif
+
+BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
+BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:
@@ -128,10 +155,10 @@ update: $(project_dir)
 logo: $(project_dir)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
-		/*) convert -background None $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
-		*) convert -background None $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
+				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
+				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
 checktools:
