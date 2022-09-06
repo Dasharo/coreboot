@@ -63,5 +63,5 @@
 	branch = stmpe
 [submodule "util/goswid"]
 	path = util/goswid
-	url = ../goswid
+	url = https://review.coreboot.org/goswid.git
 	branch = trunk
