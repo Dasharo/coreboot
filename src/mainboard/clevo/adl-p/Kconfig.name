@@ -1,2 +1,2 @@
-config BOARD_SYSTEM76_NS70PU
+config BOARD_CLEVO_NS70PU
 	bool "ns70pu"
