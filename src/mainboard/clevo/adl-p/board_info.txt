@@ -1,4 +1,4 @@
-Vendor name: System76
+Vendor name: Clevo
 Category: laptop
 ROM package: WSON-8
 ROM protocol: SPI
