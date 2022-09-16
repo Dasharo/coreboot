@@ -30,7 +30,7 @@ void udelay(unsigned int us)
 	}
 }
 
-#if CONFIG(TSC_MONOTONIC_TIMER)
+#if CONFIG(TSC_MONOTONIC_TIMER) || (CONFIG(LAPIC_MONOTONIC_TIMER) && ENV_SMM)
 #include <timer.h>
 
 static struct monotonic_counter {
