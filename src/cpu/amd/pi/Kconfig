@@ -10,7 +10,11 @@ config CPU_AMD_PI
 	select UDELAY_LAPIC
 	select LAPIC_MONOTONIC_TIMER
 	select SPI_FLASH if HAVE_ACPI_RESUME
-	select NO_SMM
+	select SMM_TSEG
+	select PARALLEL_MP_AP_WORK
+	select SOC_AMD_COMMON_BLOCK_SMM
+	select SOC_AMD_COMMON_BLOCK_SMI
+	select SOC_AMD_COMMON_BLOCK_ACPI
 	select SSE2
 
 if CPU_AMD_PI
@@ -34,6 +38,13 @@ config DCACHE_RAM_SIZE
 config DCACHE_BSP_STACK_SIZE
 	hex
 	default 0x4000
+
+config SMM_MODULE_STACK_SIZE
+	default 0x800
+
+config SMM_TSEG_SIZE
+	default 0x100000 if HAVE_SMI_HANDLER
+	default 0x0
 
 endif # CPU_AMD_PI
 
