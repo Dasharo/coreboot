@@ -33,9 +33,9 @@ void platform_AfterInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
 	 * UMA may or may not be cacheable, so Sub4GCacheTop could be
 	 * higher than UmaBase. With UMA_NONE we see UmaBase==0. */
 	if (Post->MemConfig.UmaBase)
-		backup_top_of_low_cacheable(Post->MemConfig.UmaBase << 16);
+		backup_top_of_low_cacheable((Post->MemConfig.UmaBase << 16) - CONFIG_SMM_TSEG_SIZE);
 	else
-		backup_top_of_low_cacheable(Post->MemConfig.Sub4GCacheTop);
+		backup_top_of_low_cacheable(Post->MemConfig.Sub4GCacheTop - CONFIG_SMM_TSEG_SIZE);
 }
 
 void platform_BeforeInitEnv(struct sysinfo *cb, AMD_ENV_PARAMS *Env)

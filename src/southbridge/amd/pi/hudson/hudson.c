@@ -16,13 +16,6 @@
 #include "smi.h"
 #include "fchec.h"
 
-int acpi_get_sleep_type(void)
-{
-	u16 tmp = inw(ACPI_PM1_CNT_BLK);
-	tmp = ((tmp & (7 << 10)) >> 10);
-	return (int)tmp;
-}
-
 void hudson_enable(struct device *dev)
 {
 	printk(BIOS_DEBUG, "%s()\n", __func__);
