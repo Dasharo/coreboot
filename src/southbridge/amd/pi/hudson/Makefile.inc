@@ -35,6 +35,7 @@ all-y += reset.c
 
 smm-y += smihandler.c
 smm-y += smi_util.c
+smm-y += lpc_simpledev.c
 
 # ROMSIG At ROMBASE + 0x20000:
 # +-----------+---------------+----------------+------------+

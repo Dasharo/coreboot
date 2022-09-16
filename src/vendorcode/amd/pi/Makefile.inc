@@ -101,6 +101,7 @@ CC_bootblock := $(CC_bootblock) $(AGESA_INC) $(AGESA_CFLAGS)
 CC_romstage := $(CC_romstage) $(AGESA_INC) $(AGESA_CFLAGS)
 CC_postcar:= $(CC_postcar) -I$(src)/southbridge/amd/pi/hudson -I$(AGESA_ROOT)/binaryPI
 CC_ramstage := $(CC_ramstage) $(AGESA_INC) $(AGESA_CFLAGS)
+CC_smm := $(CC_smm) $(AGESA_INC) $(AGESA_CFLAGS)
 
 CC_x86_32 := $(CC_x86_32) $(AGESA_INC) $(AGESA_CFLAGS)
 CC_x86_64 := $(CC_x86_64) $(AGESA_INC) $(AGESA_CFLAGS)
