@@ -660,9 +660,9 @@ struct device_operations amd_fam16_mod30_pci_domain_ops = {
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
-	extern const struct mp_ops amd_mp_ops_no_smm;
+	extern const struct mp_ops amd_mp_ops_with_smm;
 	/* TODO: Handle mp_init_with_smm failure? */
-	mp_init_with_smm(cpu_bus, &amd_mp_ops_no_smm);
+	mp_init_with_smm(cpu_bus, &amd_mp_ops_with_smm);
 
 	/* The flash is now no longer cacheable. Reset to WP for performance. */
 	mtrr_use_temp_range(OPTIMAL_CACHE_ROM_BASE, OPTIMAL_CACHE_ROM_SIZE,
