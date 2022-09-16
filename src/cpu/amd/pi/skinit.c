@@ -5,6 +5,7 @@
 #include <program_loading.h>
 #include <stdlib.h>
 #include <security/tpm/tis.h>
+#include <cpu/amd/msr.h>
 
 #include <lib.h>
 
@@ -13,12 +14,9 @@ static uintptr_t payload_start, payload_size;
 /* For SELF, prog->start and prog->size are not set so obtain it differently. */
 void platform_segment_loaded(uintptr_t start, size_t size, int flags)
 {
-	if (payload_start != 0 || payload_size != 0 || flags != SEG_FINAL)
+	/* FIXME: need to differentiate between payload and other loaded segments */
+	if (/*payload_start != 0 || payload_size != 0 || */flags != SEG_FINAL)
 		die("ELF payload must have only one loadable segment for DRTM!\n");
-
-	/* SIPI vector loading also goes through this function, skip it. */
-	if (size <= 4*KiB)
-		return;
 
 	payload_start = start;
 	payload_size = size;
@@ -120,12 +118,26 @@ void platform_prog_run(struct prog *prog)
 	sp->arg = (uint32_t)prog->arg;
 	tags->size += sp->hdr.len;
 
-	/* TODO: DRTM TPM event log */
+	/* TODO: DRTM TPM event log and SKL hash(es) */
 
 	end = next_tag(sp);
 	end->type = SKL_TAG_END;
 	end->len = sizeof(struct skl_tag_hdr);
 	tags->size += end->len;
+
+	msr_t msr;
+
+	msr = rdmsr(SMM_BASE_MSR);
+	printk(BIOS_DEBUG, "SMM_BASE_MSR = %#8.8x%8.8x\n", msr.hi, msr.lo);
+
+	msr = rdmsr(SMM_ADDR_MSR);
+	printk(BIOS_DEBUG, "SMM_ADDR_MSR = %#8.8x%8.8x\n", msr.hi, msr.lo);
+
+	msr = rdmsr(SMM_MASK_MSR);
+	printk(BIOS_DEBUG, "SMM_MASK_MSR = %#8.8x%8.8x\n", msr.hi, msr.lo);
+
+	msr = rdmsr(HWCR_MSR);
+	printk(BIOS_DEBUG, "HWCR_MSR     = %#8.8x%8.8x\n", msr.hi, msr.lo);
 
 	asm volatile ("skinit" :: "a"(skl));
 }
