@@ -21,6 +21,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select PCIEXP_CLK_PM
 	select PCIEXP_COMMON_CLOCK
 	select PCIEXP_L1_SUB_STATE
+	select HAVE_SMI_HANDLER
 
 config MAINBOARD_DIR
 	default "pcengines/apu2"
@@ -102,5 +103,9 @@ config AGESA_USE_1_0_0_4_HEADER
 	  workarounds the problem, however some headers changes between blob
 	  revisions. This option removes the changes in headers introduced
 	  with AGESA 1.0.0.A to fit the 1.0.0.4 revision.
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 endif # BOARD_PCENGINES_APU2
