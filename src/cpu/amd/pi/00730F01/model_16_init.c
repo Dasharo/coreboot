@@ -43,8 +43,9 @@ static void model_16_init(struct device *dev)
 	msr.hi &= ~(1 << (46 - 32));
 	wrmsr(NB_CFG_MSR, msr);
 
-	/* Write protect SMM space with SMMLOCK. */
-	lock_smm();
+	/* Write protect SMM space with SMMLOCK, or let SMI handler do it if any. */
+	if (!CONFIG(HAVE_SMI_HANDLER))
+		lock_smm();
 
 	amd_update_microcode_from_cbfs();
 
