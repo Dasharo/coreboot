@@ -4,125 +4,44 @@
  * SMI handler for Hudson southbridges
  */
 
-#include <amdblocks/acpimmio.h>
+#include <amdblocks/acpi.h>
+#include <amdblocks/smm.h>
+#include <amdblocks/smi.h>
+#include <soc/smi.h>
 #include <arch/io.h>
 #include <cpu/x86/smm.h>
 
-#include "hudson.h"
-#include "smi.h"
-
-#define SMI_0x88_ACPI_COMMAND		(1 << 11)
-
-enum smi_source {
-	SMI_SOURCE_SCI = (1 << 0),
-	SMI_SOURCE_GPE = (1 << 1),
-	SMI_SOURCE_0x84 = (1 << 2),
-	SMI_SOURCE_0x88 = (1 << 3),
-	SMI_SOURCE_IRQ_TRAP = (1 << 4),
-	SMI_SOURCE_0x90 = (1 << 5)
-};
-
-static void hudson_apmc_smi_handler(void)
+static void fch_apmc_smi_handler_no_psp(void)
 {
-	u32 reg32;
-	const uint8_t cmd = apm_get_apmc();
+	const uint8_t cmd = inb(pm_acpi_smi_cmd_port());
 
 	switch (cmd) {
 	case APM_CNT_ACPI_ENABLE:
-		reg32 = inl(ACPI_PM1_CNT_BLK);
-		reg32 |= (1 << 0);	/* SCI_EN */
-		outl(reg32, ACPI_PM1_CNT_BLK);
+		acpi_clear_pm_gpe_status();
+		acpi_enable_sci();
 		break;
 	case APM_CNT_ACPI_DISABLE:
-		reg32 = inl(ACPI_PM1_CNT_BLK);
-		reg32 &= ~(1 << 0);	/* clear SCI_EN */
-		outl(ACPI_PM1_CNT_BLK, reg32);
+		acpi_disable_sci();
+		break;
+	case APM_CNT_SMMSTORE:
+		if (CONFIG(SMMSTORE))
+			handle_smi_store();
 		break;
 	}
 
 	mainboard_smi_apmc(cmd);
 }
 
-static void process_smi_sci(void)
+static const struct smi_sources_t smi_sources[] = {
+	{ .type = SMITYPE_SMI_CMD_PORT, .handler = fch_apmc_smi_handler_no_psp },
+};
+
+void *get_smi_source_handler(int source)
 {
-	const uint32_t status = smi_read32(0x10);
+	size_t i;
 
-	/* Clear events to prevent re-entering SMI if event isn't handled */
-	smi_write32(0x10, status);
-}
-
-static void process_gpe_smi(void)
-{
-	const uint32_t status = smi_read32(0x80);
-	const uint32_t gevent_mask = (1 << 24) - 1;
-
-	/* Only Bits [23:0] indicate GEVENT SMIs. */
-	if (status & gevent_mask) {
-		/* A GEVENT SMI occurred */
-		mainboard_smi_gpi(status & gevent_mask);
-	}
-
-	/* Clear events to prevent re-entering SMI if event isn't handled */
-	smi_write32(0x80, status);
-}
-
-static void process_smi_0x84(void)
-{
-	const uint32_t status = smi_read32(0x84);
-
-	/* Clear events to prevent re-entering SMI if event isn't handled */
-	smi_write32(0x84, status);
-}
-
-static void process_smi_0x88(void)
-{
-	const uint32_t status = smi_read32(0x88);
-
-	if (status & SMI_0x88_ACPI_COMMAND) {
-		/* Command received via ACPI SMI command port */
-		hudson_apmc_smi_handler();
-	}
-	/* Clear events to prevent re-entering SMI if event isn't handled */
-	smi_write32(0x88, status);
-}
-
-static void process_smi_0x8c(void)
-{
-	const uint32_t status = smi_read32(0x8c);
-
-	/* Clear events to prevent re-entering SMI if event isn't handled */
-	smi_write32(0x8c, status);
-}
-
-static void process_smi_0x90(void)
-{
-	const uint32_t status = smi_read32(0x90);
-
-	/* Clear events to prevent re-entering SMI if event isn't handled */
-	smi_write32(0x90, status);
-}
-
-void southbridge_smi_handler(void)
-{
-	const uint16_t smi_src = smi_read16(0x94);
-
-	if (smi_src & SMI_SOURCE_SCI)
-		process_smi_sci();
-	if (smi_src & SMI_SOURCE_GPE)
-		process_gpe_smi();
-	if (smi_src & SMI_SOURCE_0x84)
-		process_smi_0x84();
-	if (smi_src & SMI_SOURCE_0x88)
-		process_smi_0x88();
-	if (smi_src & SMI_SOURCE_IRQ_TRAP)
-		process_smi_0x8c();
-	if (smi_src & SMI_SOURCE_0x90)
-		process_smi_0x90();
-}
-
-void southbridge_smi_set_eos(void)
-{
-	uint32_t reg = smi_read32(SMI_REG_SMITRIG0);
-	reg |= SMITRG0_EOS;
-	smi_write32(SMI_REG_SMITRIG0, reg);
+	for (i = 0 ; i < ARRAY_SIZE(smi_sources) ; i++)
+		if (smi_sources[i].type == source)
+			return smi_sources[i].handler;
+	return NULL;
 }
