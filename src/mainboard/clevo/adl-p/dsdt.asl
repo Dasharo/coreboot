@@ -30,4 +30,5 @@ DefinitionBlock(
 	}
 
 	#include "acpi/mainboard.asl"
+	#include "acpi/touchpad.asl"
 }
