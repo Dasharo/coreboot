@@ -75,9 +75,12 @@ config VBOOT
 config VBOOT_SLOTS_RW_A
 	default y if VBOOT
 
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x56
+
 config FMDFILE
 	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
-
 
 endif
