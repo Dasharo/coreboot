@@ -10,5 +10,3 @@ Method (TPTG, 0, Serialized)
 	}
 	Notify (\_SB.PCI0.I2C0.H038, One)
 }
-
-
