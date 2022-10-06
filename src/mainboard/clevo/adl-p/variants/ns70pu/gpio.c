@@ -1221,10 +1221,10 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: (1 << 1) - IGNORED */
 	PAD_CFG_GPI_TRIG_OWN(GPP_E11, NONE, DEEP, OFF, ACPI),
 
-	/* GPP_E12 - GPIO */
+	/* GPP_E12 - GPIO INT */
 	/* DW0: 0x40100102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
-	PAD_CFG_GPI_APIC(GPP_E12, NONE, DEEP, LEVEL, NONE),
+	PAD_CFG_GPI_INT(GPP_E12, NONE, PLTRST, LEVEL),
 
 	/* GPP_E13 - GPIO */
 	/* DW0: 0x44000102, DW1: 0x00000000 */
