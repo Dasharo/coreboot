@@ -1,4 +1,4 @@
-comment "Alder Lake P (2021)"
+comment "Alder Lake P (2022)"
 
 config BOARD_NOVACUSTOM_NS5X_ADLP
 	bool "NS5x"
