@@ -23,6 +23,35 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->SataPortDevSlpPinMux[1] = 0x5967400d; // GPP_H13
 
 	params->SataPortsSolidStateDrive[1] = 1;
+
+	params->PcieRpEnableCpm[4] = 1;
+	params->PcieRpEnableCpm[5] = 1;
+	params->PcieRpEnableCpm[7] = 1;
+	params->PcieRpEnableCpm[8] = 1;
+
+	params->PcieRpAcsEnabled[4] = 1;
+	params->PcieRpAcsEnabled[5] = 1;
+	params->PcieRpAcsEnabled[7] = 1;
+	params->PcieRpAcsEnabled[8] = 1;
+
+	params->PcieRpMaxPayload[4] = 1;
+	params->PcieRpMaxPayload[5] = 1;
+	params->PcieRpMaxPayload[7] = 1;
+	params->PcieRpMaxPayload[8] = 1;
+
+	params->PcieRpPmSci[4] = 1;
+	params->PcieRpPmSci[5] = 1;
+	params->PcieRpPmSci[7] = 1;
+	params->PcieRpPmSci[8] = 1;
+
+	params->CpuPcieRpPmSci[0] = 1;
+	params->CpuPcieRpEnableCpm[0] = 1;
+	params->CpuPcieClockGating[0] = 1;
+	params->CpuPciePowerGating[0] = 1;
+	params->CpuPcieRpMultiVcEnabled[0] = 1;
+	params->CpuPcieRpPeerToPeerMode[0] = 1;
+	params->CpuPcieRpMaxPayload[0] = 2; // 512B
+	params->CpuPcieRpAcsEnabled[0] = 1;
 }
 
 static void mainboard_init(void *chip_info)
