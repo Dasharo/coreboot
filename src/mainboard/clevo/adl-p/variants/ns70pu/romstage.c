@@ -19,8 +19,13 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	const bool half_populated = false;
 
 	mupd->FspmConfig.PchHdaAudioLinkHdaEnable = 1;
+	mupd->FspmConfig.PchHdaSdiEnable[0] = 1;
 	mupd->FspmConfig.DmiMaxLinkSpeed = 4;
+	mupd->FspmConfig.DmiAspm = 2; // ASPM L1
+	mupd->FspmConfig.DmiAspmCtrl = 2; // ASPM L1
 	mupd->FspmConfig.GpioOverride = 0;
+
+	mupd->FspmConfig.CpuPcieRpClockReqMsgEnable[0] = 1;
 
 	memcfg_init(mupd, &board_cfg, &spd_info, half_populated);
 }
