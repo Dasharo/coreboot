@@ -12,6 +12,11 @@ chip soc/intel/alderlake
 	register "pmc_gpe0_dw1" = "PMC_GPP_R"
 	register "pmc_gpe0_dw2" = "PMC_GPD"
 
+	# SATA configuration
+	register "sata_salp_support" = "1"
+	register "sata_ports_enable[1]" = "1"
+	register "sata_ports_dev_slp[1]" = "1"
+
 	device domain 0 on
 		subsystemid 0x1558 0x7716 inherit
 
@@ -124,11 +129,9 @@ chip soc/intel/alderlake
 				.clk_req = 2,
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_E3)" # WLAN_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_B17)" # WLAN_RST#_R
-				register "srcclk_pin" = "2" # WLAN_CLKREQ#
-				device generic 0 on end
+			chip drivers/wifi/generic
+				register "wake" = "GPE0_DW2_02" # GPD2 shared with LAN
+				device pci 00.0 on end
 			end
 		end
 		device ref pcie_rp6 on
@@ -138,6 +141,16 @@ chip soc/intel/alderlake
 				.clk_req = 5,
 				.flags = PCIE_RP_HOTPLUG | PCIE_RP_LTR | PCIE_RP_AER,
 			}"
+			chip drivers/generic/bayhub_lv2
+				register "enable_power_saving" = "1"
+				device pci 00.0 on end
+			end
+			chip soc/intel/common/block/pcie/rtd3
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F17)" # GPIO_SDCARD_EN
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D2)" # GPP_D2_SDCARD_RST#
+				register "srcclk_pin" = "5" # CARD_CLKREQ5#
+				device generic 0 on end
+			end
 		end
 		device ref pcie_rp8 on
 			# PCIe RP#8 x1, Clock 6 (GLAN)
@@ -146,6 +159,12 @@ chip soc/intel/alderlake
 				.clk_req = 6,
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
+			chip soc/intel/common/block/pcie/rtd3
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D4)" # GPIO_LAN_EN
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D3)" # LAN_PLT_RST#
+				register "srcclk_pin" = "6" # GLAN_CLKREQ6#
+				device generic 0 on end
+			end
 		end
 		device ref pcie_rp9 on
 			# PCIe RP#9 x4, Clock 4 (SSD1)

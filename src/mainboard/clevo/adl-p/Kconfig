@@ -24,6 +24,7 @@ config BOARD_CLEVO_NS70PU_BASE
 	bool
 	select BOARD_CLEVO_ADLP_COMMON
 	select EC_CLEVO_EC_COLOR_KEYBOARD
+	select DRIVERS_GENERIC_BAYHUB_LV2
 
 config BOARD_CLEVO_NS70PU
 	select BOARD_CLEVO_NS70PU_BASE
@@ -85,11 +86,12 @@ config VBOOT_SLOTS_RW_A
 	default y if VBOOT
 
 config VBOOT_VBNV_OFFSET
-	hex
 	default 0x56
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+
+config TPM_PIRQ
+	default 0x27 if BOARD_CLEVO_NS70PU_BASE # GPP_E1
 
 endif
