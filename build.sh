@@ -29,6 +29,7 @@ function dockerShellCmd {
 	local _cmd="$*"
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+		-e "GIT_SSL_NO_VERIFY=true" \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:$COREBOOT_SDK_VERSION \
 		/bin/bash -c "$_cmd"
