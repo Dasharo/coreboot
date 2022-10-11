@@ -3,5 +3,5 @@ comment "Alder Lake P"
 config BOARD_CLEVO_NS70PU
 	bool "ns70pu"
 
-config BOARD_CLEVO_NS4X
+config BOARD_CLEVO_NV40PZ
 	bool "nv4x"
