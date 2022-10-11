@@ -1,2 +1,2 @@
-Board name: nv4x
+Board name: nv40pz
 Release year: 2022
