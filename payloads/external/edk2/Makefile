@@ -156,9 +156,9 @@ logo: $(project_dir)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
 checktools:
