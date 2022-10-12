@@ -4,6 +4,16 @@
 #include <soc/ramstage.h>
 #include <smbios.h>
 
+const char *smbios_system_sku(void)
+{
+	return "Not Applicable";
+}
+
+smbios_enclosure_type smbios_mainboard_enclosure_type(void)
+{
+	return SMBIOS_ENCLOSURE_NOTEBOOK;
+}
+
 smbios_wakeup_type smbios_system_wakeup_type(void)
 {
 	return SMBIOS_WAKEUP_TYPE_POWER_SWITCH;

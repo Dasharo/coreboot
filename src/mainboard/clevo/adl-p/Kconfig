@@ -57,7 +57,7 @@ config MAINBOARD_PART_NUMBER
 
 config MAINBOARD_SMBIOS_PRODUCT_NAME
 	default "NS5x_NS7xPU" if BOARD_CLEVO_NS70PU_BASE
-	default "NV41PZ" if BOARD_CLEVO_NV40PZ_BASE # FIXME TODO
+	default "NV4xPZ" if BOARD_CLEVO_NV40PZ_BASE
 
 config MAINBOARD_SMBIOS_MANUFACTURER
 	default "Notebook"
@@ -65,6 +65,10 @@ config MAINBOARD_SMBIOS_MANUFACTURER
 config MAINBOARD_VERSION
 	default "ns70pu" if BOARD_CLEVO_NS70PU_BASE
 	default "nv40pz" if BOARD_CLEVO_NV40PZ_BASE
+
+config MAINBOARD_FAMILY
+	string
+	default "Not Applicable" # Match stock firmware
 
 config CBFS_SIZE
 	default 0xA00000
