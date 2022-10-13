@@ -2,15 +2,11 @@
 
 Scope (\_SB.GPNC)
 {
-	Method (_AEI, 0, Serialized)  // _AEI: ACPI Event Interrupts
+	Name (_AEI, ResourceTemplate ()
 	{
-		Name (RBUF, ResourceTemplate ()
-		{
-			GpioInt (Edge, ActiveLow, ExclusiveAndWake, PullNone,,
-				"\\_SB.GPNC") { BOARD_SCI_GPIO_INDEX }
-		})
-		Return (RBUF)
-	}
+		GpioInt (Edge, ActiveLow, ExclusiveAndWake, PullNone,,
+			"\\_SB.GPNC") { BOARD_SCI_GPIO_INDEX }
+	})
 
 	Method (_E0F, 0, NotSerialized)  // _Exx: Edge-Triggered GPE
 	{
