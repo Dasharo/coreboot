@@ -12,11 +12,6 @@ chip soc/intel/alderlake
 	register "pmc_gpe0_dw1" = "PMC_GPP_R"
 	register "pmc_gpe0_dw2" = "PMC_GPD"
 
-	# SATA configuration
-	register "sata_salp_support" = "1"
-	register "sata_ports_enable[1]" = "1"
-	register "sata_ports_dev_slp[1]" = "1"
-
 	device domain 0 on
 		subsystemid 0x1558 0x7716 inherit
 
@@ -179,6 +174,11 @@ chip soc/intel/alderlake
 				register "srcclk_pin" = "4" # SSD1_CLKREQ#
 				device generic 0 on end
 			end
+		end
+		device ref sata on
+			register "sata_salp_support" = "1"
+			register "sata_ports_enable[1]" = "1" # SSD1
+			register "sata_ports_dev_slp[1]" = "1" # GPP_H12 (SATA1_DEVSLP1)
 		end
 		device ref pmc hidden
 			chip drivers/intel/pmc_mux
