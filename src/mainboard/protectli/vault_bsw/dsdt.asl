@@ -27,6 +27,17 @@ DefinitionBlock(
 			Name (_ADR, 0x001C0002)  // _ADR: Address
 			OperationRegion(RPXX, PCI_Config, 0x00, 0x10)
 		}
+
+		Device (GFX0)
+		{
+			Name (_ADR, 0x00020000)  // _ADR: Address
+			OperationRegion (IGDP, PCI_Config, Zero, 0xE4)
+			Field (IGDP, AnyAcc, NoLock, Preserve)
+			{
+				Offset (0xE0),
+				GSSE,   1,
+			}
+		}
 	}
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
