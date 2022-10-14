@@ -1008,13 +1008,13 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000500, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_DISABLE) - IGNORED */
 	PAD_CFG_NF(GPP_F0, NONE, DEEP, NF1),
-	
+
 
 	/* GPP_F1 - CNV_BRI_RSP */
 	/* DW0: 0x44000502, DW1: 0x00003000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_DISABLE) | (1 << 1) - IGNORED */
 	PAD_CFG_NF(GPP_F1, UP_20K, DEEP, NF1),
-	
+
 
 	/* GPP_F2 - CNV_RGI_DT */
 	/* DW0: 0x44000500, DW1: 0x00000000 */
@@ -1252,11 +1252,11 @@ static const struct pad_config gpio_table[] = {
 
 	/* GPP_E18 - TBT_LSX0_TXD */
 	/* DW0: 0x44000300, DW1: 0x00003c00 */
-	PAD_CFG_NF(GPP_E18, NONE, DEEP, NF4),
+	//PAD_CFG_NF(GPP_E18, NONE, DEEP, NF4),
 
 	/* GPP_E19 - TBT_LSX0_RXD */
 	/* DW0: 0x44000300, DW1: 0x00003c00 */
-	PAD_CFG_NF(GPP_E19, NONE, DEEP, NF4),
+	//PAD_CFG_NF(GPP_E19, NONE, DEEP, NF4),
 
 	/* GPP_E20 - GPIO */
 	/* DW0: 0x44000102, DW1: 0x00003c00 */
