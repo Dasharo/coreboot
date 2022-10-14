@@ -29,8 +29,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PchSerialIoI2cSdaPinMux[1] = 0x1947c606; // GPP_H6
 	params->PchSerialIoI2cSclPinMux[1] = 0x1947a607; // GPP_H7
 
-	params->SataPortDevSlpPinMux[0] = 0x59673e0c; // GPP_H12
-	params->SataPortDevSlpPinMux[1] = 0x5967400d; // GPP_H13
+	params->SataPortDevSlpPinMux[1] = 0x59673e0c; // GPP_H12
 
 	params->SataPortsSolidStateDrive[1] = 1;
 
