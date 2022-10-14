@@ -54,7 +54,7 @@ jobs:
     - name: Checkout all submodules
       run: git submodule update --init --recursive --checkout
 
-    - name: Build Dell OptiPlex 7010/9010 SFF target
+    - name: Build Dasharo (coreboot+SeaBIOS) compatilbe with Dell OptiPlex 9010 target
       run: |
         docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
           --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
@@ -64,10 +64,64 @@ jobs:
         make -j $(nproc)
         EOF
 
-    - name: Save Dell OptiPlex 7010/9010 SFF artifacts
+    - name: Save Dasharo (coreboot+SeaBIOS) compatilbe with Dell OptiPlex 9010 artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: dasharo-dell-optiplex-9010
+        name: dasharo-dell-optiplex-9010-seabios
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
+    - name: Build Dasharo (coreboot+SeaBIOS) debug version compatilbe with Dell OptiPlex 9010 target
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
+        make distclean
+        cp configs/config.dell_optiplex_9010.debug .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Save Dasharo (coreboot+SeaBIOS) debug compatilbe with Dell OptiPlex 9010 artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dasharo-dell-optiplex-9010-seabios-debug
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
+    - name: Build Dasharo (coreboot+UEFI) compatilbe with Dell OptiPlex 9010 target
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
+        make distclean
+        cp configs/config.dell_optiplex_9010.uefi .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Save Dasharo (coreboot+UEFI) compatilbe with Dell OptiPlex 9010 artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dasharo-dell-optiplex-9010-uefi
+        path: |
+          build/coreboot.rom
+        retention-days: 7
+
+    - name: Build Dasharo (coreboot+UEFI) debug version compatilbe with Dell OptiPlex 9010 target
+      run: |
+        docker run -v $GITHUB_WORKSPACE:/home/coreboot:rw -i --rm \
+          --workdir=/home/coreboot -u$(id -u):$(id -g) coreboot/coreboot-sdk:2022-04-04_9a8d0a03db << EOF
+        make distclean
+        cp configs/config.dell_optiplex_9010.uefi.debug .config
+        make olddefconfig
+        make -j $(nproc)
+        EOF
+
+    - name: Save Dasharo (coreboot+UEFI) debug compatilbe with Dell OptiPlex 9010 artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dasharo-dell-optiplex-9010-uefi-debug
         path: |
           build/coreboot.rom
         retention-days: 7
