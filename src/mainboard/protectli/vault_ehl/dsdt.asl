@@ -10,7 +10,7 @@ DefinitionBlock(
 {
 	#include <acpi/dsdt_top.asl>
 	/* global NVS and variables */
-	#include <soc/intel/apollolake/acpi/globalnvs.asl>
+	#include <soc/intel/elkhartlake/acpi/globalnvs.asl>
 
 	/* CPU */
 	#include <cpu/intel/common/acpi/cpu.asl>
@@ -18,9 +18,9 @@ DefinitionBlock(
 	Scope (\_SB) {
 		Device (PCI0)
 		{
-			#include <soc/intel/apollolake/acpi/northbridge.asl>
-			#include <soc/intel/apollolake/acpi/southbridge.asl>
-			#include <soc/intel/apollolake/acpi/pch_hda.asl>
+			#include <soc/intel/elkhartlake/acpi/northbridge.asl>
+			#include <soc/intel/elkhartlake/acpi/southbridge.asl>
+			#include <soc/intel/elkhartlake/acpi/pch_hda.asl>
 		}
 	}
 
