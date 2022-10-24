@@ -18,5 +18,5 @@ void bootblock_mainboard_early_init(void)
 
 void bootblock_mainboard_init(void)
 {
-	//gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
+	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 }
