@@ -35,13 +35,13 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B7, 0, DEEP),
 
 	/* GPP_B8 - GPIO */
-	PAD_CFG_GPO(GPP_B8, 0, DEEP),
+	PAD_NC(GPP_B8, NONE),
 
 	/* GPP_B9 - GPIO */
 	PAD_CFG_GPO(GPP_B9, 0, DEEP),
 
 	/* GPP_B10 - GPIO */
-	PAD_CFG_GPO(GPP_B10, 0, DEEP),
+	PAD_NC(GPP_B10, NONE),
 
 	/* GPP_B11 - PMCALERT# */
 	PAD_CFG_NF(GPP_B11, NONE, RSMRST, NF1),
@@ -62,7 +62,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B16, 0, DEEP),
 
 	/* GPP_B17 - GPIO */
-	PAD_CFG_GPO(GPP_B17, 0, DEEP),
+	PAD_NC(GPP_B17, NONE),
 
 	/* GPP_B18 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_B18, NONE, DEEP, OFF, ACPI),
@@ -77,7 +77,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B21, 0, DEEP),
 
 	/* GPP_B22 - GPIO */
-	PAD_CFG_GPO(GPP_B22, 0, DEEP),
+	PAD_NC(GPP_B22, NONE),
 
 	/* GPP_B23 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_B23, NONE, DEEP, OFF, ACPI),
@@ -100,7 +100,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_T2, 0, DEEP),
 
 	/* GPP_T3 - GPIO */
-	PAD_CFG_GPO(GPP_T3, 0, DEEP),
+	PAD_NC(GPP_T3, NONE),
 
 	/* GPP_T4 - GPIO */
 	PAD_NC(GPP_T4, NONE),
@@ -165,7 +165,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_A7, 0, DEEP),
 
 	/* GPP_A8 - GPIO */
-	PAD_CFG_GPO(GPP_A8, 0, DEEP),
+	PAD_NC(GPP_A8, NONE),
 
 	/* GPP_A9 - ESPI_CLK */
 	PAD_CFG_NF(GPP_A9, DN_20K, DEEP, NF1),
@@ -174,7 +174,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_A10, NONE, DEEP, NF1),
 
 	/* GPP_A11 - GPIO */
-	PAD_CFG_GPO(GPP_A11, 0, DEEP),
+	PAD_NC(GPP_A11, NONE),
 
 	/* GPP_A12 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_A12, NONE, DEEP, OFF, ACPI),
@@ -201,16 +201,16 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_A19, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_A20 - GPIO */
-	PAD_CFG_GPO(GPP_A20, 0, DEEP),
+	PAD_NC(GPP_A20, NONE),
 
 	/* GPP_A21 - GPIO */
-	PAD_CFG_GPO(GPP_A21, 0, DEEP),
+	PAD_NC(GPP_A21, NONE),
 
 	/* GPP_A22 - GPIO */
 	PAD_CFG_GPO(GPP_A22, 1, PLTRST),
 
 	/* GPP_A23 - GPIO */
-	PAD_CFG_GPO(GPP_A23, 0, DEEP),
+	PAD_NC(GPP_A23, NONE),
 
 	/* GPP_ESPI_CLK_LOOPBK - GPP_ESPI_CLK_LOOPBK */
 	PAD_CFG_NF(GPP_ESPI_CLK_LOOPBK, NONE, DEEP, NF1),
@@ -241,7 +241,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_S6, 0, DEEP),
 
 	/* GPP_S7 - GPIO */
-	PAD_CFG_GPO(GPP_S7, 0, DEEP),
+	PAD_NC(GPP_S7, NONE),
 
 	/* ------- GPIO Group GPP_H ------- */
 
@@ -285,16 +285,16 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_H12, 0, DEEP),
 
 	/* GPP_H13 - GPIO */
-	PAD_CFG_GPO(GPP_H13, 0, DEEP),
+	PAD_NC(GPP_H13, NONE),
 
 	/* GPP_H14 - GPIO */
-	PAD_CFG_GPO(GPP_H14, 0, DEEP),
+	PAD_NC(GPP_H14, NONE),
 
 	/* GPP_H15 - DDPB_CTRLCLK */
 	PAD_CFG_NF(GPP_H15, NONE, DEEP, NF1),
 
 	/* GPP_H16 - GPIO */
-	PAD_CFG_GPO(GPP_H16, 0, DEEP),
+	PAD_NC(GPP_H16, NONE),
 
 	/* GPP_H17 - DDPB_CTRLDATA */
 	PAD_CFG_NF(GPP_H17, NONE, DEEP, NF1),
@@ -303,7 +303,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_H18, NONE, DEEP, NF1),
 
 	/* GPP_H19 - GPIO */
-	PAD_CFG_GPO(GPP_H19, 0, DEEP),
+	PAD_NC(GPP_H19, NONE),
 
 	/* GPP_H20 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_H20, NONE, DEEP, OFF, ACPI),
@@ -312,7 +312,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_H21, 0, DEEP),
 
 	/* GPP_H22 - GPIO */
-	PAD_CFG_GPO(GPP_H22, 0, DEEP),
+	PAD_NC(GPP_H22, NONE),
 
 	/* GPP_H23 - SRCCLKREQ5# */
 	PAD_CFG_NF(GPP_H23, NONE, DEEP, NF2),
@@ -332,28 +332,28 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_D3, 0, DEEP),
 
 	/* GPP_D4 - GPIO */
-	PAD_CFG_GPO(GPP_D4, 0, DEEP),
+	PAD_NC(GPP_D4, NONE),
 
 	/* GPP_D5 - SRCCLKREQ0# */
 	PAD_CFG_NF(GPP_D5, NONE, DEEP, NF1),
 
 	/* GPP_D6 - GPIO */
-	PAD_CFG_GPO(GPP_D6, 0, DEEP),
+	PAD_NC(GPP_D6, NONE),
 
 	/* GPP_D7 - SRCCLKREQ2# */
 	PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1),
 
-	/* GPP_D8 - GPIO */
-	PAD_CFG_GPO(GPP_D8, 0, DEEP),
+	/* GPP_D8 - SRCCLKREQ3# */
+	PAD_CFG_NF(GPP_D8, NONE, DEEP, NF1),
 
 	/* GPP_D9 - GPIO */
-	PAD_CFG_GPO(GPP_D9, 0, DEEP),
+	PAD_NC(GPP_D9, NONE),
 
 	/* GPP_D10 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_D10, NATIVE, DEEP, OFF, ACPI),
 
 	/* GPP_D11 - GPIO */
-	PAD_CFG_GPO(GPP_D11, 0, DEEP),
+	PAD_NC(GPP_D11, NONE),
 
 	/* GPP_D12 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_D12, NATIVE, DEEP, OFF, ACPI),
@@ -368,16 +368,16 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_D15, 0, DEEP),
 
 	/* GPP_D16 - GPIO */
-	PAD_CFG_GPO(GPP_D16, 0, DEEP),
+	PAD_NC(GPP_D16, NONE),
 
 	/* GPP_D17 - GPIO */
 	PAD_CFG_GPO(GPP_D17, 0, DEEP),
 
 	/* GPP_D18 - GPIO */
-	PAD_CFG_GPO(GPP_D18, 0, DEEP),
+	PAD_NC(GPP_D18, NONE),
 
 	/* GPP_D19 - GPIO */
-	PAD_CFG_GPO(GPP_D19, 0, DEEP),
+	PAD_NC(GPP_D19, NONE),
 
 	/* GPP_GSPI2_CLK_LOOPBK - GPP_GSPI2_CLK_LOOPBK */
 	PAD_CFG_NF(GPP_GSPI2_CLK_LOOPBK, NONE, DEEP, NF1),
@@ -699,10 +699,10 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_F7, 1, DEEP),
 
 	/* GPP_F8 - GPIO */
-	PAD_CFG_GPO(GPP_F8, 0, DEEP),
+	PAD_NC(GPP_F8, NONE),
 
 	/* GPP_F9 - GPIO */
-	PAD_CFG_GPO(GPP_F9, 0, DEEP),
+	PAD_NC(GPP_F9, NONE),
 
 	/* GPP_F10 - GPIO */
 	PAD_CFG_GPO(GPP_F10, 1, DEEP),
@@ -711,7 +711,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_F11, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_F12 - GPIO */
-	PAD_CFG_GPI_TRIG_OWN(GPP_F12, NONE, PLTRST, OFF, ACPI),
+	PAD_CFG_GPO(GPP_F12, 1, DEEP),
 
 	/* GPP_F13 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_F13, NONE, PLTRST, OFF, ACPI),
@@ -723,7 +723,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_F15, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_F16 - GPIO */
-	PAD_CFG_GPO(GPP_F16, 1, DEEP),
+	PAD_CFG_GPI_TRIG_OWN(GPP_F16, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_F17 - GPIO */
 	PAD_CFG_GPO(GPP_F17, 0, DEEP),
@@ -744,7 +744,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_F22, 0, DEEP),
 
 	/* GPP_F23 - GPIO */
-	PAD_CFG_GPO(GPP_F23, 0, DEEP),
+	PAD_NC(GPP_F23, NONE),
 
 	/* GPP_F_CLK_LOOPBK - GPIO */
 	PAD_NC(GPP_F_CLK_LOOPBK, NONE),
@@ -778,7 +778,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_APIC(GPP_E1, UP_20K, DEEP, LEVEL, NONE),
 
 	/* GPP_E2 - GPIO */
-	PAD_CFG_GPO(GPP_E2, 0, DEEP),
+	PAD_NC(GPP_E2, NONE),
 
 	/* GPP_E3 - GPIO */
 	PAD_CFG_GPO(GPP_E3, 1, DEEP),
@@ -808,7 +808,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_E11, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_E12 - GPIO */
-	PAD_CFG_GPO(GPP_E12, 0, DEEP),
+	PAD_NC(GPP_E12, NONE),
 
 	/* GPP_E13 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_E13, NONE, DEEP, OFF, ACPI),
@@ -820,19 +820,19 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_E15, 0, DEEP),
 
 	/* GPP_E16 - GPIO */
-	PAD_CFG_GPO(GPP_E16, 0, DEEP),
+	PAD_NC(GPP_E16, NONE),
 
 	/* GPP_E17 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_E17, NONE, DEEP, OFF, ACPI),
 
-	/* GPP_E18 - GPIO */
+	/* GPP_E18 - TBT_LSX0_TXD */
 	//PAD_NC(GPP_E18, NATIVE),
 
-	/* GPP_E19 - GPIO */
+	/* GPP_E19 - TBT_LSX0_RXD */
 	//PAD_NC(GPP_E19, NATIVE),
 
 	/* GPP_E20 - GPIO */
-	PAD_CFG_GPO(GPP_E20, 0, DEEP),
+	PAD_NC(GPP_E20, NONE),
 
 	/* GPP_E21 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_E21, NATIVE, DEEP, OFF, ACPI),
@@ -841,7 +841,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_E22, 0, DEEP),
 
 	/* GPP_E23 - GPIO */
-	PAD_CFG_GPO(GPP_E23, 0, DEEP),
+	PAD_NC(GPP_E23, NONE),
 
 	/* GPP_E_CLK_LOOPBK - GPIO */
 	PAD_NC(GPP_E_CLK_LOOPBK, NONE),
