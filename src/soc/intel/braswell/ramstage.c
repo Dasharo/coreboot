@@ -168,12 +168,13 @@ void soc_init_pre_device(struct soc_intel_braswell_config *config)
 	/* Indicate S3 resume to rest of ramstage. */
 	s3_resume_prepare();
 
+	/* Get GPIO initial states from mainboard */
+	gpio_config = mainboard_get_gpios();
+	setup_soc_gpios(gpio_config, config->enable_xdp_tap);
+
 	/* Perform silicon specific init. */
 	intel_silicon_init();
 	set_max_freq();
 
 	set_board_id();
-	/* Get GPIO initial states from mainboard */
-	gpio_config = mainboard_get_gpios();
-	setup_soc_gpios(gpio_config, config->enable_xdp_tap);
 }

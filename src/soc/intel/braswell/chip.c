@@ -1,10 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/x86/msr.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
 #include <fsp/util.h>
+#include <soc/iosf.h>
+#include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 
@@ -71,6 +74,7 @@ void soc_silicon_init_params(SILICON_INIT_UPD *params)
 			dev_path(dev));
 		return;
 	}
+
 
 	config = config_of(dev);
 
