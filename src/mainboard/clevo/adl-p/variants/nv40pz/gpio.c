@@ -189,7 +189,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_A15, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_A16 - USB_OC3# */
-	PAD_CFG_NF(GPP_A16, NONE, DEEP, NF1),
+	PAD_NC(GPP_A16, NONE),
 
 	/* GPP_A17 - GPIO */
 	PAD_CFG_GPI_INT(GPP_A17, NONE, PLTRST, LEVEL),
@@ -799,7 +799,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_E8, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_E9 - USB_OC0# */
-	PAD_CFG_NF(GPP_E9, NONE, DEEP, NF1),
+	PAD_NC(GPP_E9, NONE),
 
 	/* GPP_E10 - GPIO */
 	PAD_CFG_GPI_TRIG_OWN(GPP_E10, NONE, DEEP, OFF, ACPI),
