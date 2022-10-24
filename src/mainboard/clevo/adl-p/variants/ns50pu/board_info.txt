@@ -1,2 +1,2 @@
-Board name: ns70pu
+Board name: ns50pu
 Release year: 2022
