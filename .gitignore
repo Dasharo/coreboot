@@ -17,6 +17,7 @@ site-local
 *.bin
 *.debug
 !Kconfig.debug
+!configs/config.*.debug
 *.elf
 *.fd
 *.o
