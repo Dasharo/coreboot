@@ -199,6 +199,9 @@ prep: $(EDK2_PATH) clean checktools logo
 $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd: \
 	prep print
 	cd $(WORKSPACE); \
+		echo -n "Building iPXE... "; \
+		cd $(PACKAGES_PATH)/UefiPayloadPkg/NetworkDrivers; \
+		./build-ipxe.sh; \
 		source $(EDK2_PATH)/edksetup.sh; \
 		echo -n "EDK2: Building... "; \
 		build -a IA32 -a X64 -b $(RELEASE_STR) $(BUILD_STR) \
