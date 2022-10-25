@@ -4,7 +4,7 @@ config BOARD_CLEVO_L140MU
 	bool "L140MU / L141MU / L142MU"
 
 config BOARD_CLEVO_NV40MZ
-	bool "NV4xMB/ME/MZ"
+	bool "NV4xMB / NV4xME / NV4xMZ"
 
 config BOARD_CLEVO_NS50MU
-	bool "NS50MU / NS51MU"
+	bool "NS5xMU / NS7xMU"
