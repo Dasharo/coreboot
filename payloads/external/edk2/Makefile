@@ -23,6 +23,22 @@ else
 export PACKAGES_PATH := $(EDK2_PATH)
 endif
 
+ifeq ($(CONFIG_EDK2_USE_EDK2_PLATFORMS),y)
+export EDK2_PLATFORMS_PATH := $(WORKSPACE)/edk2-platforms
+export PACKAGES_PATH := $(EDK2_PATH):\
+			$(EDK2_PLATFORMS_PATH)/Platform/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Silicon/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Debugging:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Network:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/OutOfBandManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/PowerManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/SystemInformation:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface
+else
+export PACKAGES_PATH := $(EDK2_PATH)
+endif
+
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
 BUILD_STR = -p UefiPayloadPkg/UefiPayloadPkg.dsc
 endif
@@ -183,7 +199,7 @@ $(EDK2_PLATFORMS_PATH): $(WORKSPACE)
 		fi; \
 		git submodule update --init --checkout
 
-$(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
+$(EDK2_PATH): $(WORKSPACE)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
@@ -259,7 +275,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) clean checktools logo lan_rom ipxe_rom
+prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo
 	cd $(WORKSPACE); \
 		if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
 			echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
