@@ -236,6 +236,7 @@ config EDK2_SD_MMC_TIMEOUT
 
 config EDK2_SERIAL_SUPPORT
 	bool "Support serial output"
+	depends on !EDK2_CBMEM_LOGGING
 	default y if EDK2_DEBUG
 	default n
 	help
