@@ -106,8 +106,8 @@ static void vtd_set_pmr_low(uintptr_t vtd_base)
 	uint32_t pmr_lo_align;
 	uint32_t pmr_lo_limit;
 	/*
-	 * Typical PMR alignment is 1MB so we should be good according to the
-	 * comment on the beginning of the function, but check just in case.
+	 * Typical PMR alignment is 1MB so we should be good but check just in
+	 * case.
 	 */
 	pmr_lo_align = vtd_get_pmr_alignment_lo(vtd_base);
 	pmr_lo_limit = pmr_hob->protected_low_limit;
@@ -120,7 +120,7 @@ static void vtd_set_pmr_low(uintptr_t vtd_base)
 
 	printk(BIOS_INFO, "Setting DMA protection [0x0 - 0x%08x]\n", pmr_lo_limit);
 	vtd_write32(vtd_base, PLMBASE_REG, 0);
-	vtd_write32(vtd_base, PLMLIMIT_REG, pmr_lo_limit);
+	vtd_write32(vtd_base, PLMLIMIT_REG, pmr_lo_limit - 1);
 }
 
 static void vtd_set_pmr_high(uintptr_t vtd_base)
@@ -147,7 +147,7 @@ static void vtd_set_pmr_high(uintptr_t vtd_base)
 
 	printk(BIOS_INFO, "Setting DMA protection [0x100000000 - 0x%016llx]\n", pmr_hi_limit);
 	vtd_write64(vtd_base, PHMBASE_REG, 4ULL * GiB);
-	vtd_write64(vtd_base, PHMLIMIT_REG, pmr_hi_limit);
+	vtd_write64(vtd_base, PHMLIMIT_REG, pmr_hi_limit - 1ULL);
 }
 
 static bool disable_pmr_protection(uintptr_t vtd_base)
