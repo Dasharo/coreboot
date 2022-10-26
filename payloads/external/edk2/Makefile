@@ -4,7 +4,24 @@
 export SHELL := env bash
 
 project_name = edk2
-project_dir = $(CURDIR)/$(word 3,$(subst /, ,$(CONFIG_EDK2_REPOSITORY)))
+export WORKSPACE := $(CURDIR)/workspace
+export EDK2_PATH := $(WORKSPACE)/$(word 3,$(subst /, ,$(CONFIG_EDK2_REPOSITORY)))
+
+ifeq ($(CONFIG_EDK2_USE_EDK2_PLATFORMS),y)
+export EDK2_PLATFORMS_PATH := $(WORKSPACE)/edk2-platforms
+export PACKAGES_PATH := $(EDK2_PATH):\
+			$(EDK2_PLATFORMS_PATH)/Platform/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Silicon/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Debugging:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Network:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/OutOfBandManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/PowerManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/SystemInformation:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface
+else
+export PACKAGES_PATH := $(EDK2_PATH)
+endif
 
 BUILD_STR = -a IA32 -a X64 -t COREBOOT
 BUILD_STR += -p UefiPayloadPkg/UefiPayloadPkg.dsc
@@ -130,18 +147,33 @@ ifneq ($(CONFIG_EDK2_CUSTOM_BUILD_PARAMS),)
 BUILD_STR += $(CONFIG_EDK2_CUSTOM_BUILD_PARAMS)
 endif
 
-all: clean build
+all: build
 
-$(project_dir):
-	echo "    Cloning $(project_name) from $(CONFIG_EDK2_REPOSITORY)"
-	git clone $(CONFIG_EDK2_REPOSITORY) $(project_dir); \
-		cd $(project_dir);
+$(WORKSPACE):
+	mkdir $(WORKSPACE)
 
-update: $(project_dir)
-	if [ ! -d "$(project_dir)" ]; then \
-		git clone $(CONFIG_EDK2_REPOSITORY) $(project_dir); \
+$(EDK2_PLATFORMS_PATH): $(WORKSPACE)
+	if [ ! -d "$(EDK2_PLATFORMS_PATH)" ]; then \
+		git clone --recurse-submodules $(CONFIG_EDK2_PLATFORMS_REPOSITORY) $(EDK2_PLATFORMS_PATH) -j5; \
 	fi
-	cd  $(project_dir); \
+	cd $(EDK2_PLATFORMS_PATH); \
+		if ! git rev-parse --verify -q $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) >/dev/null; then \
+			echo "    $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) is not a valid git reference"; \
+			exit 1; \
+		fi; \
+		if git status --ignore-submodules=dirty | grep -q clean; then \
+			echo "    Checking out edk2-platforms revision $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV)"; \
+			git checkout --detach $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) -f; \
+		else \
+			echo "    Working directory not clean; will not overwrite"; \
+		fi; \
+		git submodule update --init --checkout
+
+$(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
+	if [ ! -d "$(EDK2_PATH)" ]; then \
+		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
+	fi
+	cd  $(EDK2_PATH); \
 		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
 		git clean -df > /dev/null 2>&1 || true; \
 		echo "    Fetching new commits from $(CONFIG_EDK2_REPOSITORY)"; \
@@ -158,29 +190,29 @@ update: $(project_dir)
 		fi; \
 		git submodule update --init --checkout
 
-logo: $(project_dir)
+logo: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
-lan_rom: $(project_dir)
+lan_rom: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
-				$(project_dir)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 		*) cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
-				$(project_dir)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
-ipxe_rom: $(project_dir)
+ipxe_rom: $(EDK2_PATH)
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
 		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
-			$(project_dir)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
 	fi \
 
 checktools:
@@ -199,6 +231,7 @@ print:
 	echo "   ##### $(project_name) Build Summary #####"
 	echo "   Repository:     $(CONFIG_EDK2_REPOSITORY)"
 	echo "   Branch:         $(CONFIG_EDK2_TAG_OR_REV)"
+	echo "   Packages path:  $(PACKAGES_PATH)"
 	echo " $(BUILD_STR)" | \
 		sed -e 's/--/-/g' -e 's/-/\n   /g' | sort | sed \
 		-e 's/a /Architecture:   /g' \
@@ -210,24 +243,35 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-build: update print logo checktools lan_rom ipxe_rom
-	unset CC; $(MAKE) -C $(project_dir)/BaseTools 2>&1
-	cd $(project_dir); \
-		export EDK_TOOLS_PATH=$(project_dir)/BaseTools; \
-		export WORKSPACE=$(project_dir); \
-		. ./edksetup.sh BaseTools; \
-		grep -q "COREBOOT" $(project_dir)/Conf/tools_def.txt; \
+prep: $(EDK2_PATH) clean checktools logo lan_rom ipxe_rom
+	cd $(WORKSPACE); \
+		source $(EDK2_PATH)/edksetup.sh; \
+		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
+		grep -q "COREBOOT" $(EDK2_PATH)/Conf/tools_def.txt; \
 		if [ $$? -ne 0 ]; then \
-			cat ../tools_def.txt >> $(project_dir)/Conf/tools_def.txt; \
+			cat ../tools_def.txt >> $(EDK2_PATH)/Conf/tools_def.txt; \
 		fi; \
-		build $(BUILD_STR); \
-		mkdir -p $(project_dir)/../output; \
-		mv $(project_dir)/Build/$(bootloader)*/*/FV/UEFIPAYLOAD.fd $(project_dir)/../output/UEFIPAYLOAD.fd; \
+
+$(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd: prep print
+	cd $(WORKSPACE); \
+		source $(EDK2_PATH)/edksetup.sh; \
+		echo -n "EDK2: Building... "; \
+		build -a IA32 -a X64 -b $(RELEASE_STR) $(BUILD_STR) \
+			-y $(WORKSPACE)/Build/UefiPayloadPkgX64/UEFIPAYLOAD.txt; \
+		if [ ! -f $@ ]; then \
+			echo "Failed!"; \
+			exit 1; \
+		fi
+		echo "Success!"; \
+
+all: $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd
+	mv $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd \
+		../../../build/UEFIPAYLOAD.fd
 
 clean:
-	test -d $(project_dir) && (cd $(project_dir); rm -rf Build; rm -f Conf/tools_def.txt) || exit 0
+	test -d $(WORKSPACE) && (cd $(WORKSPACE); rm -rf Build; rm -f Conf/tools_def.txt) || exit 0
 
 distclean:
-	rm -rf */
+	rm -rf $(WORKSPACE)
 
 .PHONY: all update checktools config build clean distclean logo
