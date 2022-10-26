@@ -1447,7 +1447,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_E0 - SATA_LED_N */
 	/* DW0: 0x84000700, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) - IGNORED */
-	PAD_NC(GPP_E0, NONE),
+	PAD_CFG_NF(GPP_E0, NONE, PLTRST, NF1),
 
 	/* GPP_E1 - GPIO */
 	/* DW0: 0x44000300, DW1: 0x00000000 */
@@ -1457,7 +1457,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_E2 - GPIO */
 	/* DW0: 0x44000300, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) - IGNORED */
-	PAD_CFG_GPIO_HI_Z(GPP_E2, NONE, DEEP, TxLASTRxE, SAME),
+	PAD_NC(GPP_E2, NONE),
 
 	/* GPP_E3 - DDI1_HPD */
 	/* DW0: 0x44000700, DW1: 0x00000000 */
