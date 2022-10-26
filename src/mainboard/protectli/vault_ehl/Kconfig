@@ -14,32 +14,18 @@ config BOARD_SPECIFIC_OPTIONS
 	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
 
 config MAINBOARD_DIR
-	string
 	default "protectli/vault_ehl"
 
-config DEVICETREE
-	string
-	default "devicetree.cb"
-
 config MAINBOARD_PART_NUMBER
-	string
 	default "VP2420"
 
+config MAINBOARD_FAMILY
+	default "Vault Pro"
+
 config MAX_CPUS
-	int
 	default 4
 
 config FMDFILE
-	string
 	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
-
-config VGA_BIOS_ID
-	string
-	default "8086,3185"
-
-config PXE_ROM_ID
-	string
-	default "8086,157b"
-
 
 endif # BOARD_PROTECTLI_VP2420
