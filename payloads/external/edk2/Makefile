@@ -178,7 +178,7 @@ $(EDK2_PLATFORMS_PATH): $(WORKSPACE)
 		fi; \
 		git submodule update --init --checkout
 
-$(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
+$(EDK2_PATH): $(WORKSPACE)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
@@ -201,7 +201,7 @@ $(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
 		fi; \
 		git submodule update --init --checkout
 
-logo: $(EDK2_PATH)
+logo: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
