@@ -205,8 +205,7 @@ void load_and_init_hsphy(void)
 		printk(BIOS_ERR, "%s: CSME not enabled or not visible, but required\n",
 		       __func__);
 		printk(BIOS_ERR, "Aborting HSPHY firmware loading, PCIe Gen5 won't work.\n");
-		free(hsphy_buf);
-		return;
+		goto hsphy_exit;
 	}
 
 	/* Ensure BAR, BME and memory space are enabled */
@@ -222,17 +221,17 @@ void load_and_init_hsphy(void)
 
 	if (heci_get_hsphy_payload(hsphy_buf, &buf_size, hsphy_hash, &hash_type, &status)) {
 		printk(BIOS_ERR, "Aborting HSPHY firmware loading, PCIe Gen5 won't work.\n");
-		free(hsphy_buf);
-		return;
+		goto hsphy_exit;
 	}
 
 	if (verify_hsphy_hash(hsphy_buf, buf_size, hsphy_hash, hash_type)) {
 		printk(BIOS_ERR, "Aborting HSPHY firmware loading, PCIe Gen5 won't work.\n");
-		free(hsphy_buf);
-		return;
+		goto hsphy_exit;
 	}
 
 	upload_hsphy_to_cpu_pcie(hsphy_buf, buf_size);
 
-	free(hsphy_buf);
+hsphy_exit:
+	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		free(hsphy_buf);
 }
