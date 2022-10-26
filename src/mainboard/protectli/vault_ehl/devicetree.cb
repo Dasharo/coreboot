@@ -33,6 +33,8 @@ chip soc/intel/elkhartlake
 	register "usb2_ports[5]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[6]" = "USB2_PORT_EMPTY"
 	register "usb2_ports[7]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[8]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[9]" = "USB2_PORT_EMPTY"
 
 	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3.0 Type A
 	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3.0 Type A

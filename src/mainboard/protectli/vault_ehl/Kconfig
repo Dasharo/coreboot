@@ -29,10 +29,6 @@ config MAX_CPUS
 	int
 	default 4
 
-config SOC_INTEL_COMMON_BLOCK_SGX_ENABLE
-	bool
-	default y
-
 config FMDFILE
 	string
 	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
