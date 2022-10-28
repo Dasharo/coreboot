@@ -5,6 +5,18 @@
 
 #include <stdint.h>
 
+/* Flash Master 1 : HOST/BIOS */
+#define FLMSTR1			0x80
+/* Flash signature Offset */
+#define FLASH_SIGN_OFFSET	0x10
+#define FLMSTR_WR_SHIFT_V2	20
+#define FLASH_VAL_SIGN		0xFF0A55A
+#define SI_DESC_SIZE		0x1000
+#define SI_DESC_REGION		"SI_DESC"
+/* HAP bit */
+#define HAP_OFFSET			0x1DE
+#define HAP_MASK			0x01
+
 /* ME Host Firmware Status register 1 */
 union me_hfsts1 {
 	u32 data;
@@ -42,4 +54,5 @@ union me_hfsts3 {
 		u32 reserved_30: 2;
 	} __packed fields;
 };
+
 #endif /* _ALDERLAKE_ME_H_ */
