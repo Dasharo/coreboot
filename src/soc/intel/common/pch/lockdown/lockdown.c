@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
+#include <smmstore.h>
+#include <drivers/efi/efivars.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/lpc_lib.h>
@@ -11,6 +13,12 @@
 #include <soc/pci_devs.h>
 #include <soc/pcr_ids.h>
 #include <soc/soc_chip.h>
+
+#include <Uefi/UefiBaseType.h>
+
+static const EFI_GUID dasharo_system_features_guid = {
+	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+};
 
 /*
  * This function will get lockdown config specific to soc.
@@ -25,6 +33,32 @@ int get_lockdown_config(void)
 	common_config = chip_get_common_soc_structure();
 
 	return common_config->chipset_lockdown;
+}
+
+/*
+ * Checks whether SMM BIOS write protection was enabled in BIOS.
+ */
+bool is_smm_bwp_permitted(void)
+{
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint8_t var;
+	uint32_t size;
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = sizeof(var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "SmmBwp", &var, &size);
+	if (ret != CB_SUCCESS)
+		return false;
+
+	return var;
+#else
+	/* In absence of EFI variables, follow compilation options */
+	return true;
+#endif
 }
 
 static void gpmr_lockdown_cfg(void)
@@ -81,7 +115,7 @@ static void fast_spi_lockdown_cfg(int chipset_lockdown)
 		fast_spi_set_bios_interface_lock_down();
 
 		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
 			fast_spi_set_eiss();
 			fast_spi_enable_wp();
 		}
@@ -102,7 +136,7 @@ static void lpc_lockdown_config(int chipset_lockdown)
 		lpc_set_bios_interface_lock_down();
 
 		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
 			lpc_set_eiss();
 			lpc_enable_wp();
 		}

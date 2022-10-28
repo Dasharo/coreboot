@@ -22,4 +22,9 @@ int get_lockdown_config(void);
  */
 void soc_lockdown_config(int chipset_lockdown);
 
+/*
+ * Checks whether SMM_BWP was enabled in BIOS.
+ */
+bool is_smm_bwp_permitted(void);
+
 #endif /* SOC_INTEL_COMMON_PCH_LOCKDOWN_H */
