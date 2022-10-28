@@ -16,6 +16,7 @@
 #include <device/pci_ops.h>
 #include <elog.h>
 #include <intelblocks/fast_spi.h>
+#include <intelblocks/oc_wdt.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/smihandler.h>
 #include <intelblocks/tco.h>
@@ -481,6 +482,9 @@ void smihandler_southbridge_periodic(
 	if ((reg32 & PERIODIC_EN) == 0)
 		return;
 	printk(BIOS_DEBUG, "Periodic SMI.\n");
+
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI))
+		oc_wdt_reload();
 }
 
 void smihandler_southbridge_gpi(
