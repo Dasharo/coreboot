@@ -2,6 +2,7 @@
 
 #include <bootblock_common.h>
 #include <intelblocks/fast_spi.h>
+#include <intelblocks/oc_wdt.h>
 #include <intelblocks/systemagent.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/uart.h>
@@ -30,4 +31,15 @@ void bootblock_soc_init(void)
 
 	/* Programming TCO_BASE_ADDRESS and TCO Timer Halt */
 	tco_configure();
+
+	is_wdt_failure();
+	wdt_reset_check();
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
+		wdt_reload_and_start(CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT);
+		is_wdt_enabled();
+		/* Workaround for FSP that will also program OC WDT */
+		wdt_allow_known_reset();
+	} else {
+		wdt_disable();
+	}
 }
