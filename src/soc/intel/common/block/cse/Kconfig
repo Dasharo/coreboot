@@ -54,6 +54,13 @@ config SOC_INTEL_CSE_SEND_EOP_EARLY
 	  In later stages, CSE might be busy and might require more time to process EOP command.
 	  SoC can use this Kconfig to send EOP earlier by itself.
 
+config SOC_INTEL_CSE_HAVE_HAP
+	bool
+	default n
+	help
+	  Use this config to allow common CSE block to disable CSE using the High
+	  Assurance Platform bit in the flash descriptor.
+
 config SOC_INTEL_CSE_LITE_SKU
 	bool
 	default n

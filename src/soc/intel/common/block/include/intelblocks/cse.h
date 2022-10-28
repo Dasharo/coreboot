@@ -312,6 +312,12 @@ enum cse_boot_perf_data {
 	PERF_DATA_CSME_GET_PERF_RESPONSE = 63,
 };
 
+enum cse_disable_mode {
+	ME_MODE_ENABLE = 0,
+	ME_MODE_DISABLE_HECI = 1,
+	ME_MODE_DISABLE_HAP = 2,
+};
+
 /* CSE boot performance data */
 struct cse_boot_perf_rsp {
 	struct mkhi_hdr hdr;
@@ -554,5 +560,14 @@ void soc_disable_heci1_using_pcr(void);
  * insert them into the CBMEM timestamp table.
  */
 void cse_get_telemetry_data(void);
+
+#if CONFIG(SOC_INTEL_CSE_HAVE_HAP)
+/*
+ * Disable CSE using the High Assurance Platform bit.
+ */
+void cse_set_hap_bit(bool state);
+#endif
+
+uint8_t cse_get_me_disable_mode(void);
 
 #endif // SOC_INTEL_COMMON_CSE_H

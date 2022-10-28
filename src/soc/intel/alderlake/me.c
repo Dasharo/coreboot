@@ -186,5 +186,12 @@ static void dump_me_status(void *unused)
 		log_me_ro_write_protection_info(!!hfsts1.fields.mfg_mode);
 }
 
+static void set_hap_bit(void *unused)
+{
+	bool state = cse_get_me_disable_mode() == ME_MODE_DISABLE_HAP;
+	cse_set_hap_bit(state);
+}
+
 BOOT_STATE_INIT_ENTRY(BS_DEV_ENABLE, BS_ON_EXIT, print_me_fw_version, NULL);
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME_CHECK, BS_ON_EXIT, dump_me_status, NULL);
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, set_hap_bit, NULL);
