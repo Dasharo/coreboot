@@ -1075,7 +1075,7 @@ void cse_control_global_reset_lock(void)
 }
 
 /*
- * Checks whether protecting vboot partition was enabled in BIOS.
+ * Get the method of disabling the ME from EFI variables.
  */
 uint8_t cse_get_me_disable_mode(void)
 {
