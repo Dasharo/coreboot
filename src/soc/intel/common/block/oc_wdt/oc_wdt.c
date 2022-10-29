@@ -10,7 +10,7 @@
 #include <soc/iomap.h>
 #include <soc/pm.h>
 
-#if CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT < 60
+#if CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE) && CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT < 60
 #error "Watchdog timeout too low. Set at least 60 seconds timeout"
 #endif
 
@@ -102,10 +102,12 @@ void wdt_allow_known_reset(void)
 	outl(readback, PCH_OC_WDT_CTL);
 }
 
+#if CONFIG(HAVE_CF9_RESET_PREPARE)
 void cf9_reset_prepare(void)
 {
 	wdt_allow_known_reset();
 }
+#endif
 
 /*
  * Returns information if WDT coverage for the duration of BIOS execution
