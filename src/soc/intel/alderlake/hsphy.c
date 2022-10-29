@@ -8,6 +8,7 @@
 #include <device/mmio.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
+#include <fmap.h>
 #include <intelblocks/cse.h>
 #include <intelblocks/systemagent.h>
 #include <intelblocks/vtd.h>
@@ -28,6 +29,13 @@
 #define HSPHY_PAYLOAD_SIZE	(32*KiB)
 
 #define CPU_PID_PCIE_PHYX16_BROADCAST	0x55
+
+struct hsphy_cache {
+	uint32_t hsphy_size;
+	uint8_t hash_algo;
+	uint8_t digest[MAX_HASH_SIZE];
+	uint8_t hsphy_fw[0];
+} __packed;
 
 struct ip_push_model {
 	uint16_t count;
@@ -156,6 +164,131 @@ static void upload_hsphy_to_cpu_pcie(void *buf, uint32_t buf_size)
 	}
 }
 
+static bool hsphy_cache_valid(struct hsphy_cache *hsphy_fw_cache)
+{
+	if (!hsphy_fw_cache)
+		return false;
+
+	if (hsphy_fw_cache->hsphy_size == 0 ||
+	    hsphy_fw_cache->hsphy_size > HSPHY_PAYLOAD_SIZE ||
+	    hsphy_fw_cache->hash_algo <= HASHALG_SHA1 ||
+	    hsphy_fw_cache->hash_algo > HASHALG_SHA512)
+		return false;
+
+	if (verify_hsphy_hash(hsphy_fw_cache->hsphy_fw, hsphy_fw_cache->hsphy_size,
+			      hsphy_fw_cache->digest, hsphy_fw_cache->hash_algo))
+		return false;
+
+	return true;
+}
+
+static bool load_hsphy_from_cache(void)
+{
+	struct region_device rdev;
+	struct hsphy_cache *hsphy_fw_cache;
+
+	if (fmap_locate_area_as_rdev("HSPHY_FW", &rdev) < 0) {
+		printk(BIOS_ERR, "HSPHY: Cannot find HSPHY_FW region\n");
+		printk(BIOS_ERR, "HSPHY: Falling back to HECI HSPHY firmware load\n");
+		return false;
+	}
+
+	hsphy_fw_cache = (struct hsphy_cache *)rdev_mmap_full(&rdev);
+
+	if (!hsphy_cache_valid(hsphy_fw_cache)) {
+		printk(BIOS_ERR, "HSPHY: HSPHY cache invalid\n");
+		printk(BIOS_ERR, "HSPHY: Falling back to HECI HSPHY firmware load\n");
+		return false;
+	}
+
+	printk(BIOS_INFO, "Loading HSPHY firmware from cache\n");
+	upload_hsphy_to_cpu_pcie(hsphy_fw_cache->hsphy_fw, hsphy_fw_cache->hsphy_size);
+
+	return true;
+}
+
+static void cache_hsphy_fw_in_flash(void *buf, uint32_t buf_size, uint8_t *hash_buf,
+				   uint8_t hash_alg)
+{
+	struct region_device rdev;
+	struct hsphy_cache *hsphy_fw_cache;
+	size_t ret;
+
+	if (!buf || buf_size == 0 || buf_size > (HSPHY_PAYLOAD_SIZE - sizeof(*hsphy_fw_cache))
+	    || !hash_buf || hash_alg <= HASHALG_SHA1 || hash_alg > HASHALG_SHA512) {
+		printk(BIOS_ERR, "Invalid parameters, HSPHY will not be cached in flash.\n");
+	}
+
+	if (fmap_locate_area_as_rdev_rw("HSPHY_FW", &rdev) < 0) {
+		printk(BIOS_ERR, "HSPHY: Could not find HSPHY_FW region\n");
+		printk(BIOS_ERR, "HSPHY will not be cached in flash\n");
+		return;
+	}
+
+	hsphy_fw_cache = (struct hsphy_cache *)rdev_mmap_full(&rdev);
+
+	if (hsphy_cache_valid(hsphy_fw_cache)) {
+		printk(BIOS_INFO, "HSPHY: HSPHY cache valid, skipping update\n");
+		return;
+	}
+
+	if (region_device_sz(&rdev) < (buf_size + sizeof(*hsphy_fw_cache))) {
+		printk(BIOS_ERR, "HSPHY: HSPHY_FW region too small\n");
+		printk(BIOS_ERR, "HSPHY will not be cached in flash\n");
+		return;
+	}
+
+	hsphy_fw_cache = malloc(sizeof(*hsphy_fw_cache));
+
+	if (!hsphy_fw_cache) {
+		printk(BIOS_ERR, "HSPHY: Could not allocate memory for HSPHY cache buffer\n");
+		printk(BIOS_ERR, "HSPHY will not be cached in flash\n");
+		return;
+	}
+
+	hsphy_fw_cache->hsphy_size = buf_size;
+	hsphy_fw_cache->hash_algo = hash_alg;
+
+	switch (hash_alg) {
+	case HASHALG_SHA256:
+		hash_alg = VB2_HASH_SHA256;
+		break;
+	case HASHALG_SHA384:
+		hash_alg = VB2_HASH_SHA384;
+		break;
+	case HASHALG_SHA512:
+		hash_alg = VB2_HASH_SHA512;
+		break;
+	}
+
+	memset(hsphy_fw_cache->digest, 0, sizeof(hsphy_fw_cache->digest));
+	memcpy(hsphy_fw_cache->digest, hash_buf, vb2_digest_size(hash_alg));
+
+	if (rdev_eraseat(&rdev, 0, region_device_sz(&rdev)) < 0) {
+		printk(BIOS_ERR, "Failed to erase HSPHY cache region\n");
+		free(hsphy_fw_cache);
+		return;
+	}
+
+	ret = rdev_writeat(&rdev, hsphy_fw_cache, 0, sizeof(*hsphy_fw_cache));
+	if (ret != sizeof(*hsphy_fw_cache)) {
+		printk(BIOS_ERR, "Failed to write HSPHY cache metadata\n");
+		free(hsphy_fw_cache);
+		return;
+	}
+
+	ret = rdev_writeat(&rdev, buf, sizeof(*hsphy_fw_cache), buf_size);
+	if (ret != buf_size) {
+		printk(BIOS_ERR, "Failed to write HSPHY firmware to cache\n");
+		free(hsphy_fw_cache);
+		return;
+	}
+
+	printk(BIOS_INFO, "HSPHY cached to flash successfully\n");
+
+	free(hsphy_fw_cache);
+}
+
 void load_and_init_hsphy(void)
 {
 	void *hsphy_buf;
@@ -173,6 +306,9 @@ void load_and_init_hsphy(void)
 		return;
 	}
 
+	if (CONFIG(INCLUDE_HSPHY_IN_FMAP) && load_hsphy_from_cache())
+		return;
+
 	if (CONFIG(ENABLE_EARLY_DMA_PROTECTION)) {
 		hsphy_buf = vtd_get_dma_buffer(&dma_buf_size);
 		if (!hsphy_buf || dma_buf_size < HSPHY_PAYLOAD_SIZE) {
@@ -182,7 +318,6 @@ void load_and_init_hsphy(void)
 					 "PCIe Gen5 won't work.\n");
 			return;
 		}
-
 		/* Rather impossible scenario, but check alignment anyways */
 		if (!IS_ALIGNED((uintptr_t)hsphy_buf, 4 * KiB) &&
 		    (HSPHY_PAYLOAD_SIZE + 4 * KiB) <= dma_buf_size)
@@ -230,6 +365,9 @@ void load_and_init_hsphy(void)
 	}
 
 	upload_hsphy_to_cpu_pcie(hsphy_buf, buf_size);
+
+	if (CONFIG(INCLUDE_HSPHY_IN_FMAP))
+		cache_hsphy_fw_in_flash(hsphy_buf, buf_size, hsphy_hash, hash_type);
 
 hsphy_exit:
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
