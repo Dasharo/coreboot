@@ -469,8 +469,7 @@ int tpm_vendor_init(struct tpm_chip *chip, unsigned int bus, uint32_t dev_addr)
                 cr50_set_board_cfg();
 	}
 
-	chip->is_open = 1;
-	return 0;
+	return TPM_SUCCESS;
 }
 
 enum cb_err tis_vendor_write(unsigned int addr, const void *buffer, size_t bytes)
