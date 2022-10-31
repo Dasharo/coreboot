@@ -89,12 +89,6 @@
  /* 1 second is plenty for anything TPM does.*/
 #define MAX_DELAY_US	USECS_PER_SEC
 
-enum tpm_family {
-	TPM_UNKNOWN = 0,
-	TPM_1 = 1,
-	TPM_2 = 2,
-};
-
 /*
  * Structures defined below allow creating descriptions of TPM vendor/device
  * ID information for run time discovery.
@@ -393,7 +387,7 @@ static int tis_command_ready(u8 locality)
  * Returns 0 on success (the device is found or was found during an earlier
  * invocation) or TPM_DRIVER_ERR if the device is not found.
  */
-static tpm_result_t pc80_tis_probe(void)
+static tpm_result_t pc80_tis_probe(enum tpm_family *family)
 {
 	const char *device_name = NULL;
 	const char *vendor_name = NULL;
@@ -402,7 +396,6 @@ static tpm_result_t pc80_tis_probe(void)
 	u16 vid, did;
 	u8 locality = 0, intf_type;
 	int i;
-	enum tpm_family family;
 	const char *family_str;
 
 	if (vendor_dev_id)
@@ -422,10 +415,10 @@ static tpm_result_t pc80_tis_probe(void)
 		switch (intf_version) {
 		case 0:
 		case 2:
-			family = TPM_1;
+			*family = TPM_1;
 			break;
 		case 3:
-			family = TPM_2;
+			*family = TPM_2;
 			break;
 		default:
 			printf("%s: Unexpected TPM interface version: %d\n", __func__,
@@ -433,7 +426,7 @@ static tpm_result_t pc80_tis_probe(void)
 			return TPM_CB_PROBE_FAILURE;
 		}
 	} else if (intf_type == 0) {
-		family = TPM_2;
+		*family = TPM_2;
 	} else {
 		printf("%s: Unexpected TPM interface type: %d\n", __func__, intf_type);
 		return TPM_CB_PROBE_FAILURE;
@@ -452,7 +445,7 @@ static tpm_result_t pc80_tis_probe(void)
 		}
 		dev = &vendor_names[i].dev_names[j];
 		while (dev->dev_id != 0xffff) {
-			if (dev->dev_id == did && dev->family == family) {
+			if (dev->dev_id == did && dev->family == *family) {
 				device_name = dev->dev_name;
 				break;
 			}
@@ -462,7 +455,7 @@ static tpm_result_t pc80_tis_probe(void)
 		break;
 	}
 
-	family_str = (family == TPM_1 ? "TPM 1.2" : "TPM 2.0");
+	family_str = (*family == TPM_1 ? "TPM 1.2" : "TPM 2.0");
 	if (vendor_name == NULL) {
 		printk(BIOS_INFO, "Found %s 0x%04x by 0x%04x\n", family_str, did, vid);
 	} else if (device_name == NULL) {
@@ -737,12 +730,15 @@ static tpm_result_t pc80_tpm_sendrecv(const uint8_t *sendbuf, size_t send_size,
 /*
  * tis_probe()
  *
- * Probe for the TPM device and set it up for use within locality 0. Returns
- * pointer to send-receive function on success or NULL on failure.
+ * Probe for the TPM device and set it up for use within locality 0.
+ *
+ * @tpm_family - pointer to int which is set to TPM family of the device (1 or 2)
+ *
+ * Returns pointer to send-receive function on success or NULL on failure.
  */
-tis_sendrecv_fn tis_probe(void)
+tis_sendrecv_fn tis_probe(enum tpm_family *family)
 {
-	if (pc80_tis_probe())
+	if (pc80_tis_probe(family))
 		return NULL;
 
 	if (pc80_tis_open())

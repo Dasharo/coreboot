@@ -396,9 +396,11 @@ static void cr50_vendor_init(struct tpm_chip *chip)
 	chip->cancel = &cr50_i2c_tis_ready;
 }
 
-int tpm_vendor_probe(unsigned int bus, uint32_t addr)
+tpm_result_t tpm_vendor_probe(unsigned int bus, uint32_t addr, enum tpm_family *family)
 {
-	return 0;
+	/* cr50 is TPM2 */
+	*family = TPM_2;
+	return TPM_SUCCESS;
 }
 
 static int cr50_i2c_probe(uint32_t *did_vid)

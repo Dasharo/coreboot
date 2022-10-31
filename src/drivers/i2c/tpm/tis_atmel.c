@@ -103,7 +103,11 @@ static tpm_result_t i2c_tis_sendrecv(const uint8_t *sendbuf, size_t sbuf_size,
 	return 0;
 }
 
-tis_sendrecv_fn tis_probe(void)
+tis_sendrecv_fn tis_probe(enum tpm_family *family)
 {
+	/* Can't query version or really anything as interface of the device doesn't support
+	 * much through this interface (can't specify address on accesses) */
+	*family = TPM_1;
+
 	return &i2c_tis_sendrecv;
 }

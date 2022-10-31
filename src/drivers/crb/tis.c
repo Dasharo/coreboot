@@ -46,13 +46,16 @@ static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, u
 	return 0;
 }
 
-tis_sendrecv_fn tis_probe(void)
+tis_sendrecv_fn tis_probe(enum tpm_family *family)
 {
 	struct tpm2_info info;
 
 	/* Wake TPM up (if necessary) */
 	if (tpm2_init())
 		return NULL;
+
+	/* CRB interface exists only in TPM2 */
+	*family = TPM_2;
 
 	tpm2_get_info(&info);
 
