@@ -1,0 +1,31 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_PROTECTLI_VP2420
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select SOC_INTEL_ELKHARTLAKE
+	select BOARD_ROMSIZE_KB_16384
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select SUPERIO_ITE_IT8613E
+	select SPI_FLASH_MACRONIX
+	select INTEL_GMA_HAVE_VBT
+	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
+
+config MAINBOARD_DIR
+	default "protectli/vault_ehl"
+
+config MAINBOARD_PART_NUMBER
+	default "VP2420"
+
+config MAINBOARD_FAMILY
+	default "Vault Pro"
+
+config MAX_CPUS
+	default 4
+
+config CBFS_SIZE
+	default 0x900000
+
+endif # BOARD_PROTECTLI_VP2420
