@@ -24,7 +24,9 @@
 #include <device/pnp.h>
 #include <drivers/tpm/tpm_ppi.h>
 #include <timer.h>
+
 #include "chip.h"
+#include "tpm.h"
 
 #define PREFIX "lpc_tpm: "
 
@@ -728,7 +730,7 @@ static tpm_result_t pc80_tpm_sendrecv(const uint8_t *sendbuf, size_t send_size,
  *
  * Returns pointer to send-receive function on success or NULL on failure.
  */
-static tis_sendrecv_fn pc80_tis_probe(enum tpm_family *family)
+tis_sendrecv_fn pc80_tis_probe(enum tpm_family *family)
 {
 	if (pc80_tpm_probe(family))
 		return NULL;
@@ -738,8 +740,6 @@ static tis_sendrecv_fn pc80_tis_probe(enum tpm_family *family)
 
 	return &pc80_tpm_sendrecv;
 }
-
-static const __tis_driver tis_probe_fn pc80_tis_driver = pc80_tis_probe;
 
 /*
  * tis_setup_interrupt()

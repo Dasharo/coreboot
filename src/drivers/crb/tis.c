@@ -46,7 +46,7 @@ static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, u
 	return TPM_SUCCESS;
 }
 
-static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
+tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 {
 	struct crb_tpm_info info;
 
@@ -72,8 +72,6 @@ static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 
 	return &crb_tpm_sendrecv;
 }
-
-static const __tis_driver tis_probe_fn crb_tis_driver = crb_tis_probe;
 
 static void crb_tpm_fill_ssdt(const struct device *dev)
 {
