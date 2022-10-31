@@ -16,15 +16,12 @@ static const struct mb_cfg ddr4_mem_config = {
 
 static const struct spd_info module_spd_info = {
 	.read_type = READ_SMBUS,
+	.spd_spec.spd_smbus_address = {0x50, 0x0, 0x0, 0x0},
 };
 
 void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
 	FSP_M_CONFIG *mem_cfg = &memupd->FspmConfig;
-
-	mem_cfg->SkipExtGfxScan = 0x0;
-	mem_cfg->PchHdaAudioLinkHdaEnable = 0x1;
-	mem_cfg->PchHdaSdiEnable[0] = 0x1;
 
 	memcfg_init(mem_cfg, &ddr4_mem_config, &module_spd_info, false);
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
