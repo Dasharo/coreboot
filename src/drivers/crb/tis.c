@@ -119,7 +119,7 @@ static int tpm_get_cap(uint32_t property, uint32_t *value)
 	if (!value)
 		return -1;
 
-	status = tlcl_get_capability(TPM_CAP_TPM_PROPERTIES, property, 1, &cap_data);
+	rc = tlcl2_get_capability(TPM_CAP_TPM_PROPERTIES, property, 1, &cap_data);
 
 	if (status)
 		return -1;

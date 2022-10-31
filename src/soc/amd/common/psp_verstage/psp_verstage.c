@@ -223,9 +223,9 @@ static void psp_verstage_s0i3_resume(void)
 		reboot_into_recovery(vboot_get_context(), POSTCODE_INIT_TPM_FAILED);
 	}
 
-	rv = tlcl_disable_platform_hierarchy();
-	if (rv != TPM_SUCCESS) {
-		printk(BIOS_ERR, "tlcl_disable_platform_hierarchy failed rv:%d\n", rv);
+	rc = tlcl2_disable_platform_hierarchy();
+	if (rc != TPM_SUCCESS) {
+		printk(BIOS_ERR, "tlcl2_disable_platform_hierarchy failed rc:%d\n", rc);
 		reboot_into_recovery(vboot_get_context(), POSTCODE_INIT_TPM_FAILED);
 	}
 }

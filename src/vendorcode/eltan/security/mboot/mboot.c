@@ -67,7 +67,7 @@ EFI_TCG2_EVENT_ALGORITHM_BITMAP tpm2_get_active_pcrs(void)
  *
  * Return the TPM PCR information.
  *
- * This function parses the data got from tlcl_get_capability and returns the
+ * This function parses the data got from tlcl2_get_capability and returns the
  * PcrSelection.
  *
  * @param[out] Pcrs		The Pcr Selection
@@ -81,8 +81,8 @@ int tpm2_get_capability_pcrs(TPML_PCR_SELECTION *Pcrs)
 	int status;
 	int index;
 
-	status = tlcl_get_capability(TPM_CAP_PCRS, 0, 1, &TpmCap);
-	if (status == TPM_SUCCESS) {
+	rc = tlcl2_get_capability(TPM_CAP_PCRS, 0, 1, &TpmCap);
+	if (rc == TPM_SUCCESS) {
 		Pcrs->count = TpmCap.data.assignedPCR.count;
 		printk(BIOS_DEBUG, "Pcrs->count = %d\n", Pcrs->count);
 		for (index = 0; index < Pcrs->count; index++) {

@@ -41,8 +41,7 @@ uint32_t antirollback_read_space_kernel(struct vb2_context *ctx)
 		 */
 		uint32_t perms;
 
-		RETURN_ON_FAILURE(tlcl_get_permissions(KERNEL_NV_INDEX,
-						       &perms));
+		RETURN_ON_FAILURE(tlcl1_get_permissions(KERNEL_NV_INDEX, &perms));
 		if (perms != TPM_NV_PER_PPWRITE) {
 			printk(BIOS_ERR,
 			       "TPM: invalid secdata_kernel permissions\n");
@@ -208,9 +207,8 @@ static uint32_t define_space(const char *name, uint32_t index, uint32_t length,
 {
 	uint32_t rv;
 
-	rv = tlcl_define_space(index, length, nv_attributes, nv_policy,
-			       nv_policy_size);
-	if (rv == TPM_E_NV_DEFINED) {
+	rc = tlcl2_define_space(index, length, nv_attributes, nv_policy, nv_policy_size);
+	if (rc == TPM_CB_NV_DEFINED) {
 		/*
 		 * Continue with writing: it may be defined, but not written
 		 * to. In that case a subsequent tlcl_read() would still return
@@ -334,12 +332,11 @@ static uint32_t setup_zte_spaces(void)
 	 * Since the RMA counter has the BITS attribute, we need to call
 	 * TPM2_NV_SetBits() in order to initialize it.
 	 */
-	rv = tlcl_set_bits(ZTE_RMA_BYTES_COUNTER_INDEX,
-			   rma_bytes_counter_default);
-	if (rv != TPM_SUCCESS) {
-		VBDEBUG("%s: Failed to init RMA Bytes counter space\n",
-			__func__);
-		return rv;
+	rc = tlcl2_set_bits(ZTE_RMA_BYTES_COUNTER_INDEX, rma_bytes_counter_default);
+	if (rc != TPM_SUCCESS) {
+		VBDEBUG("%s: Failed to init RMA Bytes counter space wit error %#x\n",
+			__func__, rc);
+		return rc;
 	}
 
 	return rv;
@@ -426,7 +423,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 
 uint32_t antirollback_lock_space_firmware(void)
 {
-	return tlcl_lock_nv_write(FIRMWARE_NV_INDEX);
+	return tlcl2_lock_nv_write(FIRMWARE_NV_INDEX);
 }
 
 uint32_t antirollback_read_space_mrc_hash(uint32_t index, uint8_t *data, uint32_t size)
@@ -470,7 +467,7 @@ uint32_t antirollback_write_space_mrc_hash(uint32_t index, const uint8_t *data, 
 
 uint32_t antirollback_lock_space_mrc_hash(uint32_t index)
 {
-	return tlcl_lock_nv_write(index);
+	return tlcl2_lock_nv_write(index);
 }
 
 static uint32_t read_space_vbios_hash(uint8_t *data)
@@ -547,10 +544,10 @@ static uint32_t safe_write(uint32_t index, const void *data, uint32_t length)
  */
 static uint32_t safe_define_space(uint32_t index, uint32_t perm, uint32_t size)
 {
-	uint32_t result = tlcl_define_space(index, perm, size);
-	if (result == TPM_E_MAXNVWRITES) {
+	tpm_result_t rc = tlcl1_define_space(index, perm, size);
+	if (rc == TPM_MAXNVWRITES) {
 		RETURN_ON_FAILURE(tpm_clear_and_reenable());
-		return tlcl_define_space(index, perm, size);
+		return tlcl1_define_space(index, perm, size);
 	} else {
 		return result;
 	}
@@ -564,9 +561,9 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	vb2api_secdata_firmware_create(ctx);
 	vb2api_secdata_kernel_create_v0(ctx);
 
-	result = tlcl_get_permanent_flags(&pflags);
-	if (result != TPM_SUCCESS)
-		return result;
+	rc = tlcl1_get_permanent_flags(&pflags);
+	if (rc != TPM_SUCCESS)
+		return rc;
 
 	/*
 	 * TPM may come from the factory without physical presence finalized.
@@ -587,7 +584,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	VBDEBUG("TPM: nvLocked=%d\n", pflags.nvLocked);
 	if (!pflags.nvLocked) {
 		VBDEBUG("TPM: Enabling NV locking\n");
-		RETURN_ON_FAILURE(tlcl_set_nv_locked());
+		RETURN_ON_FAILURE(tlcl1_set_nv_locked());
 	}
 
 	/* Clear TPM owner, in case the TPM is already owned for some reason. */
@@ -616,7 +613,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 
 uint32_t antirollback_lock_space_firmware(void)
 {
-	return tlcl_set_global_lock();
+	return tlcl1_set_global_lock();
 }
 
 #endif
