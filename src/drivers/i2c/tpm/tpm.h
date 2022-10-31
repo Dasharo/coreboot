@@ -14,6 +14,7 @@
 
 #include <security/tpm/tss_errors.h>
 #include <stdint.h>
+#include <security/tpm/tis.h>
 
 enum tpm_timeout {
 	TPM_TIMEOUT = 1,	/* msecs */
@@ -51,7 +52,7 @@ struct tpm_chip {
 
 /* ---------- Interface for TPM vendor ------------ */
 
-tpm_result_t tpm_vendor_probe(unsigned int bus, uint32_t addr);
+tpm_result_t tpm_vendor_probe(unsigned int bus, uint32_t addr, enum tpm_family *family);
 
 tpm_result_t tpm_vendor_init(struct tpm_chip *chip, unsigned int bus, uint32_t dev_addr);
 
