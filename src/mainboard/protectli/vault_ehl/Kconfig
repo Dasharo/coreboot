@@ -25,10 +25,6 @@ config MAINBOARD_FAMILY
 config MAX_CPUS
 	default 4
 
-config FMDFILE
-	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
-
-
 config CBFS_SIZE
 	default 0x900000
 
