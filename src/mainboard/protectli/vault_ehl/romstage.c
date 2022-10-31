@@ -1,60 +1,31 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <string.h>
-#include <types.h>
-#include <soc/meminit.h>
+#include <assert.h>
+#include <console/console.h>
+#include <fsp/api.h>
 #include <soc/romstage.h>
-#include <spd_bin.h>
+#include <soc/meminit.h>
+#include "gpio.h"
 
-static void mainboard_fill_dq_map_data(void *dq_map_ch0, void *dq_map_ch1)
-{
-	const uint8_t dq_map[2][12] = {
-		{ 0x0F, 0xF0, 0x00, 0xF0, 0x0F, 0xF0,
-		  0x0F, 0x00, 0xFF, 0x00, 0xFF, 0x00 },
-		{ 0x33, 0xCC, 0x00, 0xCC, 0x33, 0xCC,
-		  0x33, 0x00, 0xFF, 0x00, 0xFF, 0x00 } };
-	memcpy(dq_map_ch0, dq_map[0], sizeof(dq_map[0]));
-	memcpy(dq_map_ch1, dq_map[1], sizeof(dq_map[1]));
-}
+static const struct mb_cfg ddr4_mem_config = {
+	.UserBd = BOARD_TYPE_DESKTOP, /* FIXME */
+	.dq_pins_interleaved = 0x1,
+	.vref_ca_config = 0x0,
+	.ect = 0x0,
+};
 
-
-static void mainboard_fill_dqs_map_data(void *dqs_map_ch0, void *dqs_map_ch1)
-{
-	const uint8_t dqs_map[2][8] = {
-		{ 0, 1, 2, 3, 4, 5, 6, 7 },
-		{ 0, 1, 2, 3, 4, 5, 6, 7 } };
-	memcpy(dqs_map_ch0, dqs_map[0], sizeof(dqs_map[0]));
-	memcpy(dqs_map_ch1, dqs_map[1], sizeof(dqs_map[1]));
-}
-
-
-static void fill_ddr4_params(FSP_M_CONFIG *cfg)
-{
-
-	struct spd_block blk = {
-		.addr_map = { 0x50, 0x52, },
-	};
-
-	cfg->DqPinsInterleaved = 0x01;
-	cfg->CaVrefConfig = 0x02;
-
-	get_spd_smbus(&blk);
-	dump_spd_info(&blk);
-
-	cfg->MemorySpdDataLen = blk.len;
-	cfg->MemorySpdPtr00 = (uintptr_t)blk.spd_array[0];
-	cfg->MemorySpdPtr10 = (uintptr_t)blk.spd_array[1];
-
-
-	mainboard_fill_dq_map_data(&cfg->DqByteMapCh0,
-					&cfg->DqByteMapCh1);
-	mainboard_fill_dqs_map_data(&cfg->DqsMapCpu2DramCh0,
-					&cfg->DqsMapCpu2DramCh1);
-
-}
+static const struct spd_info module_spd_info = {
+	.read_type = READ_SMBUS,
+};
 
 void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
-	FSP_M_CONFIG *cfg = &memupd->FspmConfig;
-	fill_ddr4_params(cfg);
+	FSP_M_CONFIG *mem_cfg = &memupd->FspmConfig;
+
+	mem_cfg->SkipExtGfxScan = 0x0;
+	mem_cfg->PchHdaAudioLinkHdaEnable = 0x1;
+	mem_cfg->PchHdaSdiEnable[0] = 0x1;
+
+	memcfg_init(mem_cfg, &ddr4_mem_config, &module_spd_info, false);
+	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 }
