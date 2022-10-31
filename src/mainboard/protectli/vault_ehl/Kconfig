@@ -28,4 +28,8 @@ config MAX_CPUS
 config FMDFILE
 	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
 
+
+config CBFS_SIZE
+	default 0x900000
+
 endif # BOARD_PROTECTLI_VP2420
