@@ -2,14 +2,25 @@
 
 ifeq ($(CONFIG_TPM)$(CONFIG_I2C_TPM),yy)
 
-all-$(CONFIG_DRIVER_TIS_DEFAULT) += tis.c
+romstage-$(CONFIG_DRIVER_TIS_DEFAULT) += tis.c
+ramstage-$(CONFIG_DRIVER_TIS_DEFAULT) += tis.c
+verstage-$(CONFIG_DRIVER_TIS_DEFAULT) += tis.c
 
-ifeq ($(CONFIG_TPM_ATMEL),y)
-all-y += tis_atmel.c
-else ifeq ($(CONFIG_TPM_GOOGLE),y)
-all-y += cr50.c
+romstage-$(CONFIG_TPM_ATMEL) += tis_atmel.c
+ramstage-$(CONFIG_TPM_ATMEL) += tis_atmel.c
+verstage-$(CONFIG_TPM_ATMEL) += tis_atmel.c
+
+ifeq ($(CONFIG_TPM_GOOGLE),y)
+
+romstage-y += cr50.c
+ramstage-y += cr50.c
+verstage-y += cr50.c
 else
-all-y += tpm.c
+
+romstage-y += tpm.c
+ramstage-y += tpm.c
+verstage-y += tpm.c
+
 endif
 
 endif
