@@ -39,6 +39,12 @@
 	_ersbe_init_begin = .;
 	RECORD_SIZE(rsbe_init_begin)
 
+	. = ALIGN(ARCH_POINTER_ALIGN_SIZE);
+	_tis_drivers = .;
+	KEEP(*(.rodata.tis_driver));
+	_etis_drivers = .;
+	RECORD_SIZE(tis_drivers)
+
 #if ENV_RAMSTAGE
 	. = ALIGN(ARCH_POINTER_ALIGN_SIZE);
 	_pci_drivers = .;

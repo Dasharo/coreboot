@@ -54,8 +54,6 @@ typedef tpm_result_t (*tis_sendrecv_fn)(const u8 *sendbuf, size_t send_size, u8 
 					size_t *recv_len);
 
 /*
- * tis_probe()
- *
  * Probe for the TPM device and set it up for use within locality 0.
  *
  * @family - pointer which is set to TPM family of the device
@@ -65,7 +63,7 @@ typedef tpm_result_t (*tis_sendrecv_fn)(const u8 *sendbuf, size_t send_size, u8 
  * Do not call this explicitly, it's meant to be used exclusively by TSS
  * implementation (tlcl_lib_init() function to be specific).
  */
-tis_sendrecv_fn tis_probe(enum tpm_family *family);
+typedef tis_sendrecv_fn (*tis_probe_fn)(enum tpm_family *family);
 
 /*
  * tis_vendor_write()
@@ -97,5 +95,20 @@ static inline bool tpm_first_access_this_boot(void)
 {
 	return ENV_SEPARATE_VERSTAGE || ENV_BOOTBLOCK || !CONFIG(VBOOT);
 }
+
+#if (CONFIG(VBOOT_STARTS_IN_BOOTBLOCK) && ENV_BOOTBLOCK) ||            \
+	(CONFIG(VBOOT_SEPARATE_VERSTAGE) && ENV_SEPARATE_VERSTAGE) ||  \
+	(CONFIG(VBOOT_STARTS_IN_ROMSTAGE) && ENV_RAMINIT) ||           \
+	(CONFIG(TPM_MEASURED_BOOT_INIT_BOOTBLOCK) && ENV_BOOTBLOCK) || \
+	(CONFIG(TPM_MEASURED_BOOT) && (ENV_RAMINIT || ENV_RAMSTAGE))
+#define __tis_driver __attribute__((used, section(".rodata.tis_driver")))
+#else
+#define __tis_driver __always_unused
+#endif
+
+/** start of compile time generated tis driver array */
+extern tis_probe_fn _tis_drivers[];
+/** end of compile time generated tis driver array */
+extern tis_probe_fn _etis_drivers[];
 
 #endif /* TIS_H_ */

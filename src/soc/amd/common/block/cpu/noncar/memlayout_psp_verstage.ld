@@ -15,7 +15,15 @@ SECTIONS
 		.text : { *(.text._psp_vs_start) }
 		.text : { *(.text.Main) }
 		.text : { *(.text*) }
-		.rodata : { *(.rodata*) }
+		.rodata : {
+			*(.rodata*);
+
+			. = ALIGN(ARCH_POINTER_ALIGN_SIZE);
+			_tis_drivers = .;
+			KEEP(*(.rodata.tis_driver));
+			_etis_drivers = .;
+			RECORD_SIZE(tis_drivers)
+		}
 
 		.data : {
 			*(.data*);

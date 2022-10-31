@@ -374,7 +374,7 @@ static tpm_result_t tis_command_ready(u8 locality)
  * Returns TPM_SUCCESS on success (the device is found or was found during
  * an earlier invocation) or TPM_CB_FAIL if the device is not found.
  */
-static tpm_result_t pc80_tis_probe(enum tpm_family *family)
+static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 {
 	const char *device_name = NULL;
 	const char *vendor_name = NULL;
@@ -711,7 +711,7 @@ static tpm_result_t pc80_tpm_sendrecv(const uint8_t *sendbuf, size_t send_size,
 }
 
 /*
- * tis_probe()
+ * pc80_tis_probe()
  *
  * Probe for the TPM device and set it up for use within locality 0.
  *
@@ -719,9 +719,9 @@ static tpm_result_t pc80_tpm_sendrecv(const uint8_t *sendbuf, size_t send_size,
  *
  * Returns pointer to send-receive function on success or NULL on failure.
  */
-tis_sendrecv_fn tis_probe(enum tpm_family *family)
+static tis_sendrecv_fn pc80_tis_probe(enum tpm_family *family)
 {
-	if (pc80_tis_probe(family))
+	if (pc80_tpm_probe(family))
 		return NULL;
 
 	if (pc80_tis_open())
@@ -729,6 +729,8 @@ tis_sendrecv_fn tis_probe(enum tpm_family *family)
 
 	return &pc80_tpm_sendrecv;
 }
+
+static const __tis_driver tis_probe_fn pc80_tis_driver = pc80_tis_probe;
 
 /*
  * tis_setup_interrupt()

@@ -24,7 +24,13 @@ tpm_result_t tlcl_lib_init(void)
 	/* Set right away to make recursion impossible. */
 	init_done = true;
 
-	tlcl_tis_sendrecv = tis_probe(&tlcl_tpm_family);
+	tis_probe_fn *tis_probe;
+	tlcl_tis_sendrecv = NULL;
+	for (tis_probe = _tis_drivers; tis_probe != _etis_drivers; tis_probe++) {
+		tlcl_tis_sendrecv = (*tis_probe)(&tlcl_tpm_family);
+		if (tlcl_tis_sendrecv != NULL)
+			break;
+	}
 
 	if (tlcl_tis_sendrecv == NULL) {
 		printk(BIOS_ERR, "%s: tis_probe failed\n", __func__);
