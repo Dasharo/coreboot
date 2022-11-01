@@ -17,6 +17,9 @@ static uint32_t tpm1_invoke_state_machine(void)
 	uint8_t deactivated;
 	uint32_t result = TPM_SUCCESS;
 
+	if (tlcl_get_family() != TPM_1)
+		return rc;
+
 	/* Check that the TPM is enabled and activated. */
 	rc = tlcl1_get_flags(&disabled, &deactivated, NULL);
 	if (rc != TPM_SUCCESS) {
@@ -201,19 +204,19 @@ uint32_t tpm_clear_and_reenable(void)
 		return result;
 	}
 
-#if CONFIG(TPM1)
-	rc = tlcl1_set_enable();
-	if (rc != TPM_SUCCESS) {
-		printk(BIOS_ERR, "TPM Error (%#x): Can't set enabled state.\n", rc);
-		return rc;
-	}
+	if (CONFIG(TPM1) && tlcl_get_family() == TPM_1) {
+		rc = tlcl1_set_enable();
+		if (rc != TPM_SUCCESS) {
+			printk(BIOS_ERR, "TPM Error (%#x): Can't set enabled state.\n", rc);
+			return rc;
+		}
 
-	rc = tlcl1_set_deactivated(0);
-	if (rc != TPM_SUCCESS) {
-		printk(BIOS_ERR, "TPM Error (%#x): Can't set deactivated state.\n", rc);
-		return rc;
+		rc = tlcl1_set_deactivated(0);
+		if (rc != TPM_SUCCESS) {
+			printk(BIOS_ERR, "TPM Error (%#x): Can't set deactivated state.\n", rc);
+			return rc;
+		}
 	}
-#endif
 
 	return TPM_SUCCESS;
 }

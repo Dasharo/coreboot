@@ -28,14 +28,29 @@
  * Other operations are defined in tss1.h and tss2.h.
  */
 
+extern enum tpm_family tlcl_tpm_family;
+
 /**
  * Call this first.  Returns 0 if success, nonzero if error.
  */
 uint32_t tlcl_lib_init(void);
 
-/* Commands */
+/**
+ * Query active TPM family.  Returns TPM_UNKNOWN if uninitialized and TPM_1 or TPM_2 otherwise.
+ */
+static inline enum tpm_family tlcl_get_family(void)
+{
+	if (CONFIG(TPM1) && CONFIG(TPM2)) {
+		return tlcl_tpm_family;
+	} else if (CONFIG(TPM1)) {
+		return TPM_1;
+	} else if (CONFIG(TPM2)) {
+		return TPM_2;
+	}
+	return TPM_UNKNOWN;
+}
 
-extern enum tpm_family tlcl_tpm_family;
+/* Commands */
 
 #define TLCL_CALL(name, ...) do {                             \
 		if (CONFIG(TPM1) && tlcl_tpm_family == TPM_1) \

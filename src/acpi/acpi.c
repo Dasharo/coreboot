@@ -23,6 +23,8 @@
 #include <cpu/cpu.h>
 #include <device/mmio.h>
 #include <device/pci.h>
+#include <drivers/uart/pl011.h>
+#include <security/tpm/tss.h>
 #include <string.h>
 #include <types.h>
 #include <version.h>
@@ -198,7 +200,7 @@ static void *get_tcpa_log(u32 *size)
 
 static void acpi_create_tcpa(acpi_header_t *header, void *unused)
 {
-	if (!CONFIG(TPM1))
+	if (tlcl_get_family() != TPM_1)
 		return;
 
 	acpi_tcpa_t *tcpa = (acpi_tcpa_t *)header;
@@ -244,7 +246,7 @@ static void *get_tpm2_log(u32 *size)
 
 static void acpi_create_tpm2(acpi_header_t *header, void *unused)
 {
-	if (!CONFIG(TPM2))
+	if (tlcl_get_family() != TPM_2)
 		return;
 
 	acpi_tpm2_t *tpm2 = (acpi_tpm2_t *)header;

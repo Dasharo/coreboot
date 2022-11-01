@@ -16,6 +16,11 @@ void cse_board_reset(void)
 	int ret;
 	struct cr50_firmware_version version;
 
+	/*
+	 * Assuming that if particular TPM implementation is enabled at compile
+	 * time, it's the one being used.  This isn't generic code, so can
+	 * probably get away with it.
+	 */
 	if (CONFIG(TPM2) && CONFIG(TPM_GOOGLE_CR50)) {
 		/* Initialize TPM and get the cr50 firmware version. */
 		ret = tlcl_lib_init();

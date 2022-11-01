@@ -30,7 +30,7 @@ static uint32_t safe_write(uint32_t index, const void *data, uint32_t length);
 
 uint32_t antirollback_read_space_kernel(struct vb2_context *ctx)
 {
-	if (!CONFIG(TPM2)) {
+	if (CONFIG(TPM1) && tlcl_get_family() == TPM_1) {
 		/*
 		 * Before reading the kernel space, verify its permissions. If
 		 * the kernel space has the wrong permission, we give up. This
@@ -224,15 +224,9 @@ static uint32_t define_space(const char *name, uint32_t index, uint32_t length,
 	return rv;
 }
 
-/* Nothing special in the TPM2 path yet. */
-static uint32_t safe_write(uint32_t index, const void *data, uint32_t length)
-{
-	return tlcl_write(index, data, length);
-}
-
-static uint32_t setup_space(const char *name, uint32_t index, const void *data,
-			    uint32_t length, const TPMA_NV nv_attributes,
-			    const uint8_t *nv_policy, size_t nv_policy_size)
+static tpm_result_t setup_space(const char *name, uint32_t index, const void *data,
+				uint32_t length, const TPMA_NV nv_attributes,
+				const uint8_t *nv_policy, size_t nv_policy_size)
 {
 	uint32_t rv;
 
@@ -371,7 +365,7 @@ static uint32_t setup_widevine_counter_spaces(void)
 	return TPM_SUCCESS;
 }
 
-static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
+static tpm_result_t _factory_initialize_tpm2(struct vb2_context *ctx)
 {
 	RETURN_ON_FAILURE(tlcl_force_clear());
 
@@ -421,12 +415,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	return TPM_SUCCESS;
 }
 
-uint32_t antirollback_lock_space_firmware(void)
-{
-	return tlcl2_lock_nv_write(FIRMWARE_NV_INDEX);
-}
-
-uint32_t antirollback_read_space_mrc_hash(uint32_t index, uint8_t *data, uint32_t size)
+tpm_result_t antirollback_read_space_mrc_hash(uint32_t index, uint8_t *data, uint32_t size)
 {
 	if (size != HASH_NV_SIZE) {
 		VBDEBUG("TPM: Incorrect buffer size for hash idx 0x%x. "
@@ -516,25 +505,9 @@ uint32_t antirollback_write_space_vbios_hash(const uint8_t *data, uint32_t size)
 	return safe_write(VBIOS_CACHE_NV_INDEX, data, size);
 }
 
-#else
+#endif /* CONFIG(TPM2) */
 
-/**
- * Like tlcl_write(), but checks for write errors due to hitting the 64-write
- * limit and clears the TPM when that happens.  This can only happen when the
- * TPM is unowned, so it is OK to clear it (and we really have no choice).
- * This is not expected to happen frequently, but it could happen.
- */
-
-static uint32_t safe_write(uint32_t index, const void *data, uint32_t length)
-{
-	uint32_t result = tlcl_write(index, data, length);
-	if (result == TPM_E_MAXNVWRITES) {
-		RETURN_ON_FAILURE(tpm_clear_and_reenable());
-		return tlcl_write(index, data, length);
-	} else {
-		return result;
-	}
-}
+#if CONFIG(TPM1)
 
 /**
  * Similarly to safe_write(), this ensures we don't fail a DefineSpace because
@@ -553,7 +526,7 @@ static uint32_t safe_define_space(uint32_t index, uint32_t perm, uint32_t size)
 	}
 }
 
-static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
+static tpm_result_t _factory_initialize_tpm1(struct vb2_context *ctx)
 {
 	TPM_PERMANENT_FLAGS pflags;
 	uint32_t result;
@@ -569,11 +542,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	 * TPM may come from the factory without physical presence finalized.
 	 * Fix if necessary.
 	 */
-	VBDEBUG("TPM: physicalPresenceLifetimeLock=%d\n",
-		 pflags.physicalPresenceLifetimeLock);
-	if (!pflags.physicalPresenceLifetimeLock) {
 		VBDEBUG("TPM: Finalizing physical presence\n");
-		RETURN_ON_FAILURE(tlcl_finalize_physical_presence());
 	}
 
 	/*
@@ -611,12 +580,56 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	return TPM_SUCCESS;
 }
 
-uint32_t antirollback_lock_space_firmware(void)
+#endif /* CONFIG(TPM1) */
+
+static tpm_result_t safe_write(uint32_t index, const void *data, uint32_t length)
 {
-	return tlcl1_set_global_lock();
+	tpm_result_t rc;
+
+	if (tlcl_get_family() == TPM_2)
+		/* Nothing special in the TPM2 path yet. */
+		return tlcl_write(index, data, length);
+
+	/**
+	 * Like tlcl_write(), but checks for write errors due to hitting the 64-write
+	 * limit and clears the TPM when that happens.  This can only happen when the
+	 * TPM is unowned, so it is OK to clear it (and we really have no choice).
+	 * This is not expected to happen frequently, but it could happen.
+	 */
+	rc = tlcl_write(index, data, length);
+	if (rc == TPM_MAXNVWRITES) {
+		RETURN_ON_FAILURE(tpm_clear_and_reenable());
+		return tlcl_write(index, data, length);
+	} else {
+		return rc;
+	}
 }
 
+static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
+{
+#if CONFIG(TPM1)
+	if (tlcl_get_family() == TPM_1)
+		return _factory_initialize_tpm1(ctx);
 #endif
+#if CONFIG(TPM2)
+	if (tlcl_get_family() == TPM_2)
+		return _factory_initialize_tpm2(ctx);
+#endif
+	return TPM_CB_CORRUPTED_STATE;
+}
+
+uint32_t antirollback_lock_space_firmware(void)
+{
+#if CONFIG(TPM1)
+	if (tlcl_get_family() == TPM_1)
+		return tlcl1_set_global_lock();
+#endif
+#if CONFIG(TPM2)
+	if (tlcl_get_family() == TPM_2)
+		return tlcl2_lock_nv_write(FIRMWARE_NV_INDEX);
+#endif
+	return TPM_CB_CORRUPTED_STATE;
+}
 
 /**
  * Perform one-time initializations.
