@@ -2,6 +2,7 @@
 
 #include <soc/romstage.h>
 #include <soc/meminit.h>
+#include "gpio.h"
 
 static const struct mb_cfg ddr4_mem_config = {
 	.UserBd = BOARD_TYPE_DESKTOP,
@@ -18,6 +19,6 @@ static const struct spd_info module_spd_info = {
 void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
 	FSP_M_CONFIG *mem_cfg = &memupd->FspmConfig;
-
+	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 	memcfg_init(mem_cfg, &ddr4_mem_config, &module_spd_info, false);
 }
