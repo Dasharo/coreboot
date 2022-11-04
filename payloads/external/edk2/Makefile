@@ -143,6 +143,10 @@ endif
 ifeq ($(CONFIG_EDK2_TPM_ENABLE),y)
 BUILD_STR += -D TPM_ENABLE=TRUE
 endif
+ifneq ($(CONFIG_EDK2_LAN_ROM_DRIVER),)
+BUILD_STR += -D NETWORK_LAN_ROM=TRUE
+endif
+
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
 BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
@@ -229,6 +233,15 @@ gop_driver:
 		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/UefiPayloadPkg/vbt.bin; \
 	fi; \
 
+lan_rom: $(EDK2_PATH)
+	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
+		"") ;; \
+		/*) cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+		*) cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+	esac \
+
 checktools:
 	echo -n "EDK2: Checking uuid-dev:"
 	echo "#include <uuid/uuid.h>" > libtest.c
@@ -257,7 +270,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver
+prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_rom
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
