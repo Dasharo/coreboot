@@ -52,7 +52,7 @@ function buildVP46xxImage {
 		fi
 	fi
 
-	version=$(git describe --abbrev=1 --tags --always)
+	version=$(git describe --abbrev=1 --tags --always --dirty)
 	version=${version//protectli_vault_cml_/}
 
 	docker run --rm -it -u $UID -v $PWD:/home/coreboot/coreboot \
@@ -75,10 +75,10 @@ function buildVP46xxImage {
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-	cp build/coreboot.rom protectli_vault_cml_$version_$1.rom
+	cp build/coreboot.rom protectli_vault_cml_${version}_$1.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_vault_cml_$version_$1.rom" 
-		sha256sum protectli_vault_cml_$version_$1.rom > protectli_vault_cml_$version_$1.rom.sha256
+		echo "Result binary placed in $PWD/protectli_vault_cml_${version}_$1.rom" 
+		sha256sum protectli_vault_cml_${version}_$1.rom > protectli_vault_cml_${version}_$1.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
