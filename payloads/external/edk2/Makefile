@@ -96,13 +96,17 @@ endif
 ifeq ($(CONFIG_EDK2_OPAL_PASSWORD),y)
 BUILD_STR += -D OPAL_PASSWORD_ENABLE=TRUE
 endif
-# TPM_ENABLE		= TRUE
+# TPM_ENABLE			= TRUE
 ifeq ($(CONFIG_EDK2_TPM_ENABLE),y)
 BUILD_STR += -D TPM_ENABLE=TRUE
 endif
-# DASHARO_SYSTEM_FEATURES		= FALSE
+# DASHARO_SYSTEM_FEATURES	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SYSTEM_FEATURES),y)
 BUILD_STR += -D DASHARO_SYSTEM_FEATURES_ENABLE=TRUE
+endif
+# NETWORK_LAN_ROM		= FALSE
+ifneq ($(CONFIG_EDK2_LAN_ROM_DRIVER),)
+BUILD_STR += -D NETWORK_LAN_ROM=TRUE
 endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
@@ -156,9 +160,18 @@ logo: $(project_dir)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
 		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
+	esac \
+
+lan_rom: $(project_dir)
+	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
+		"") ;; \
+		/*) cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(project_dir)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+		*) cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(project_dir)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
 checktools:
@@ -188,7 +201,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-build: update print logo checktools
+build: update print logo checktools lan_rom
 	unset CC; $(MAKE) -C $(project_dir)/BaseTools 2>&1
 	cd $(project_dir); \
 		export EDK_TOOLS_PATH=$(project_dir)/BaseTools; \

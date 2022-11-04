@@ -295,4 +295,10 @@ config EDK2_CUSTOM_BUILD_PARAMS
 
 	  This option can support both macros `-D` and Pcds `--pcd`.
 
+config EDK2_LAN_ROM_DRIVER
+	string "Optional LAN ROM driver file"
+	help
+	  Integrates LAN ROM driver in TianoCore Payload. Takes an EFI driver
+	  as input.
+
 endif
