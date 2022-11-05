@@ -14,6 +14,7 @@
 
 /* Default power limit value in secs */
 #define MOBILE_SKU_PL1_TIME_SEC		28
+#define POWER_LIMIT1_TIME_56_SEC	56
 
 #define MILLIWATTS_TO_WATTS		1000
 
