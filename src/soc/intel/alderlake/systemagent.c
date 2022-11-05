@@ -183,7 +183,7 @@ void soc_systemagent_init(struct device *dev)
 		if (sa_pci_id == cpuid_to_adl[i].cpu_id &&
 				tdp == cpuid_to_adl[i].cpu_tdp) {
 			soc_config = &config->power_limits_config[cpuid_to_adl[i].limits];
-			set_power_limits(MOBILE_SKU_PL1_TIME_SEC, soc_config);
+			set_power_limits(cpuid_to_adl[i].pl1_time, soc_config);
 			break;
 		}
 	}
