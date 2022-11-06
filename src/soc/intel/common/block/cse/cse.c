@@ -1079,7 +1079,7 @@ void cse_control_global_reset_lock(void)
 /*
  * Get the method of disabling the ME from EFI variables.
  */
-uint8_t cse_get_me_disable_mode(void)
+unsigned int cse_get_me_disable_mode(void)
 {
 #if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
 	struct region_device rdev;

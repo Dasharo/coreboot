@@ -568,6 +568,6 @@ void cse_get_telemetry_data(void);
 void cse_set_hap_bit(bool state);
 #endif
 
-uint8_t cse_get_me_disable_mode(void);
+unsigned int cse_get_me_disable_mode(void);
 
 #endif // SOC_INTEL_COMMON_CSE_H
