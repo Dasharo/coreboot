@@ -10,10 +10,6 @@
 
 #include <Uefi/UefiBaseType.h>
 
-static const EFI_GUID dasharo_system_features_guid = {
-	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
-};
-
 /*
  * Checks whether protecting vboot partition was enabled in BIOS.
  */
@@ -24,6 +20,9 @@ static bool is_vboot_locking_permitted(void)
 	enum cb_err ret;
 	uint8_t var;
 	uint32_t size;
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
 
 	if (smmstore_lookup_region(&rdev))
 		return false;
