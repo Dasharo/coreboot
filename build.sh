@@ -37,7 +37,6 @@ function buildVP46xxImage {
 		/bin/bash -c "make distclean"
 
 	cp configs/config.protectli_cml_$1 .config
-	echo "CONFIG_EDK2_LAN_ROM_DRIVER=\"3rdparty/blobs/mainboard/protectli/vault_cml/E0104X7.EFI\"" >> .config
 
 	echo "Building Dasharo for Protectli $2 (version $version)"
 
