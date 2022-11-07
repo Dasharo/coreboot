@@ -303,6 +303,12 @@ struct soc_intel_elkhartlake_config {
 		DEBUG_INTERFACE_TRACEHUB = (1 << 5),
 	} debug_interface_flag;
 
+	/* ISA Serial Base selection. */
+	enum {
+		ISA_SERIAL_BASE_ADDR_3F8,
+		ISA_SERIAL_BASE_ADDR_2F8,
+	} isa_serial_uart_base;
+
 	/* GPIO SD card detect pin */
 	unsigned int sdcard_cd_gpio;
 
