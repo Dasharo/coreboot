@@ -23,9 +23,11 @@ PXE_MAKE_OPTS := BUILD_ID_CMD="echo 0x$(CONFIG_PXE_CUSTOM_BUILD_ID)"
 endif
 
 ifeq ($(CONFIG_IPXE_BUILD_EFI),y)
-IPXE_BUILD_TARGET := bin/$(PXE_ROM_PCI_ID).rom
+IPXE_BUILD_TARGET := bin-x86_64-efi-sb/ipxe.efi
+# Workaround problems with unrecognized ipxe/util/elf2efi relocations
+PXE_MAKE_OPTS += EXTRA_CFLAGS="$(CFLAGS_x86_64) -fno-pic"
 else
-IPXE_BUILD_TARGET := bin-x86_64-efi/ipxe.efi
+IPXE_BUILD_TARGET := bin/$(PXE_ROM_PCI_ID).rom
 endif
 
 all: build
