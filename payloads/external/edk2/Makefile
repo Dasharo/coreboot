@@ -79,6 +79,7 @@ endif
 # NETWORK_IPXE                  = FALSE
 ifeq ($(CONFIG_EDK2_IPXE),y)
 BUILD_STR += -D NETWORK_IPXE=TRUE
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
 endif
 # SECURE_BOOT_ENABLE            = TRUE
 ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
@@ -142,6 +143,7 @@ update: $(project_dir)
 	fi
 	cd  $(project_dir); \
 		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git clean -df > /dev/null 2>&1 || true; \
 		echo "    Fetching new commits from $(CONFIG_EDK2_REPOSITORY)"; \
 		git fetch origin 2>/dev/null; \
 		if ! git rev-parse --verify -q $(CONFIG_EDK2_TAG_OR_REV) >/dev/null; then \
@@ -174,6 +176,12 @@ lan_rom: $(project_dir)
 				$(project_dir)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
+ipxe_rom: $(project_dir)
+	if [ "$(CONFIG_EDK2_IPXE)" -eq "y" ]; then \
+		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
+			$(project_dir)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+	fi \
+
 checktools:
 	echo -n "EDK2: Checking uuid-dev:"
 	echo "#include <uuid/uuid.h>" > libtest.c
@@ -201,7 +209,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-build: update print logo checktools lan_rom
+build: update print logo checktools lan_rom ipxe_rom
 	unset CC; $(MAKE) -C $(project_dir)/BaseTools 2>&1
 	cd $(project_dir); \
 		export EDK_TOOLS_PATH=$(project_dir)/BaseTools; \

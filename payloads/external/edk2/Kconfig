@@ -191,8 +191,19 @@ config EDK2_SERIAL_SUPPORT
 config EDK2_ENABLE_IPXE
 	bool "Include iPXE in edk2 payload"
 	default n
+	select PXE
 	help
-	  Includes a prebuilt iPXE for EFI to the EDK2 payload.
+	  Instructs coreboot build system to build iPXE EFI target and include
+	  it in the EDK2 payload.
+
+config EDK2_IPXE_OPTION_NAME
+	string "iPXE option name"
+	depends on EDK2_ENABLE_IPXE
+	default "iPXE"
+	help
+	  Configures how the iPXE boot option should be displayed in boot menu
+	  of EDK2 Payload. This name will be passed as PCD to the EDK2 build
+	  system.
 
 config EDK2_SECURE_BOOT
 	bool "Enable UEFI Secure Boot"
