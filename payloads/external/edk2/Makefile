@@ -84,6 +84,7 @@ endif
 # NETWORK_IPXE                  = FALSE
 ifeq ($(CONFIG_EDK2_IPXE),y)
 BUILD_STR += -D NETWORK_IPXE=TRUE
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
 endif
 # SECURE_BOOT_ENABLE            = TRUE
 ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
@@ -173,6 +174,12 @@ lan_rom: $(EDK2_PATH)
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
+ipxe_rom: $(EDK2_PATH)
+	if [ "$(CONFIG_EDK2_IPXE)" -eq "y" ]; then \
+		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
+			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+	fi \
+
 checktools:
 	echo -n "EDK2: Checking uuid-dev:"
 	echo "#include <uuid/uuid.h>" > libtest.c
@@ -200,7 +207,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) clean checktools logo lan_rom
+prep: $(EDK2_PATH) clean checktools logo lan_rom ipxe_rom
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
