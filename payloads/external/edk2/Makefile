@@ -175,7 +175,8 @@ lan_rom: $(EDK2_PATH)
 	esac \
 
 ipxe_rom: $(EDK2_PATH)
-	if [ "$(CONFIG_EDK2_IPXE)" -eq "y" ]; then \
+	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
+		echo "    Including externally built iPXE"; \
 		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
 			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
 	fi \
