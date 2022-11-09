@@ -320,6 +320,7 @@ $(objgenerated)/ramstage.o: $$(ramstage-objs) $(COMPILER_RT_ramstage) $$(ramstag
 
 endif # CONFIG_ARCH_RAMSTAGE_X86_32 / CONFIG_ARCH_RAMSTAGE_X86_64
 
+smm-$(CONFIG_HAVE_CF9_RESET) += cf9_reset.c
 smm-$(CONFIG_DEBUG_HW_BREAKPOINTS_IN_ALL_STAGES) += breakpoint.c
 smm-$(CONFIG_IDT_IN_EVERY_STAGE) += exception.c
 smm-$(CONFIG_IDT_IN_EVERY_STAGE) += idt.S

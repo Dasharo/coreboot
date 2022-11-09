@@ -3,6 +3,7 @@
 #include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <acpi/acpigen.h>
+#include <cpu/x86/smm.h>
 #include <device/mmio.h>
 #include <arch/smp/mpspec.h>
 #include <console/console.h>
@@ -175,6 +176,20 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm_tmr_blk.access_size = ACPI_ACCESS_SIZE_DWORD_ACCESS;
 	fadt->x_pm_tmr_blk.addrl = fadt->pm_tmr_blk;
 	fadt->x_pm_tmr_blk.addrh = 0x0;
+
+	/* Use SMI to reboot platform so that it will set allowed reset for WDT */
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
+		fadt->reset_reg.space_id = ACPI_ADDRESS_SPACE_IO;
+		fadt->reset_reg.bit_width = 8;
+		fadt->reset_reg.bit_offset = 0;
+		fadt->reset_reg.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS;
+		fadt->reset_reg.addrl = APM_CNT;
+		fadt->reset_reg.addrh = 0;
+
+		fadt->reset_value = APM_CNT_REBOOT;
+
+		fadt->flags |= ACPI_FADT_RESET_REGISTER;
+	}
 
 	if (config->s0ix_enable)
 		fadt->flags |= ACPI_FADT_LOW_PWR_IDLE_S0;

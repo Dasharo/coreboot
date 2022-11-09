@@ -2,6 +2,7 @@
 
 #include <arch/hlt.h>
 #include <arch/io.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/msr.h>
@@ -386,6 +387,9 @@ void smihandler_southbridge_apmc(
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
 			southbridge_smi_store(save_state_ops);
+		break;
+	case APM_CNT_REBOOT:
+		system_reset();
 		break;
 	case APM_CNT_FINALIZE:
 		finalize();
