@@ -216,6 +216,9 @@ void smihandler_southbridge_sleep(
 		 */
 		pmc_clear_pm1_status();
 
+		if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE))
+			wdt_allow_known_reset();
+
 		break;
 	default:
 		printk(BIOS_DEBUG, "SMI#: ERROR: SLP_TYP reserved\n");
