@@ -199,7 +199,7 @@ void wdt_reset_check(void)
 		if ((readback & PCH_OC_WDT_CTL_UNXP_RESET_STS) && !is_wake_from_s3_s4()) {
 			printk(BIOS_ERR, "Watchdog: unexpected reset detected\n");
 			printk(BIOS_ERR, "Watchdog: enforcing WDT expiration\n");
-			wdt_reload_and_start(1);
+			wdt_reload_and_start(5);
 			/* wait for reboot caused by WDT expiration */
 			halt();
 		} else {
