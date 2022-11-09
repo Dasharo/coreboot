@@ -47,7 +47,7 @@ config USE_PM_ACPI_TIMER
 
 config USE_LEGACY_8254_TIMER
 	bool
-	default n
+	default y
 
 config CBFS_SIZE
 	hex
