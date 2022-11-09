@@ -198,11 +198,15 @@ static bool load_hsphy_from_cache(void)
 	if (!hsphy_cache_valid(hsphy_fw_cache)) {
 		printk(BIOS_ERR, "HSPHY: HSPHY cache invalid\n");
 		printk(BIOS_ERR, "HSPHY: Falling back to HECI HSPHY firmware load\n");
+		if (hsphy_fw_cache)
+			rdev_munmap(&rdev, hsphy_fw_cache);
 		return false;
 	}
 
 	printk(BIOS_INFO, "Loading HSPHY firmware from cache\n");
 	upload_hsphy_to_cpu_pcie(hsphy_fw_cache->hsphy_fw, hsphy_fw_cache->hsphy_size);
+
+	rdev_munmap(&rdev, hsphy_fw_cache);
 
 	return true;
 }
@@ -229,12 +233,14 @@ static void cache_hsphy_fw_in_flash(void *buf, uint32_t buf_size, uint8_t *hash_
 
 	if (hsphy_cache_valid(hsphy_fw_cache)) {
 		printk(BIOS_INFO, "HSPHY: HSPHY cache valid, skipping update\n");
+		rdev_munmap(&rdev, hsphy_fw_cache);
 		return;
 	}
 
 	if (region_device_sz(&rdev) < (buf_size + sizeof(*hsphy_fw_cache))) {
 		printk(BIOS_ERR, "HSPHY: HSPHY_FW region too small\n");
 		printk(BIOS_ERR, "HSPHY will not be cached in flash\n");
+		rdev_munmap(&rdev, hsphy_fw_cache);
 		return;
 	}
 
