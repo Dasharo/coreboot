@@ -87,13 +87,13 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpPmSci[20]   = 1; // M2_4
 	params->PcieRpPmSci[24]   = 1; // M2_2
 
-	params->PcieRpMaxPayload[0]    = 1; // PCI_E2
-	params->PcieRpMaxPayload[1]    = 1; // PCI_E4
-	params->PcieRpMaxPayload[2]    = 1; // Ethernet
-	params->PcieRpMaxPayload[4]    = 1; // PCI_E3
-	params->PcieRpMaxPayload[8]    = 1; // M2_3
-	params->PcieRpMaxPayload[20]   = 1; // M2_4
-	params->PcieRpMaxPayload[24]   = 1; // M2_2
+	params->PcieRpMaxPayload[0]  = 1; // PCI_E2
+	params->PcieRpMaxPayload[1]  = 1; // PCI_E4
+	params->PcieRpMaxPayload[2]  = 1; // Ethernet
+	params->PcieRpMaxPayload[4]  = 1; // PCI_E3
+	params->PcieRpMaxPayload[8]  = 1; // M2_3
+	params->PcieRpMaxPayload[20] = 1; // M2_4
+	params->PcieRpMaxPayload[24] = 1; // M2_2
 
 	params->CpuPcieRpTransmitterHalfSwing[0] = 1; // M2_1
 	params->CpuPcieRpTransmitterHalfSwing[1] = 1; // PCI_E1
@@ -105,12 +105,26 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpTransmitterHalfSwing[20]   = 1; // M2_4
 	params->PcieRpTransmitterHalfSwing[24]   = 1; // M2_2
 
-	params->PcieRpEnableCpm[0]  = 1; // PCI_E2
-	params->PcieRpEnableCpm[1]  = 1; // PCI_E4
-	params->PcieRpEnableCpm[4]  = 1; // PCI_E3
-	params->PcieRpEnableCpm[8]  = 1; // M2_3
-	params->PcieRpEnableCpm[20] = 1; // M2_4
-	params->PcieRpEnableCpm[24] = 1; // M2_2
+	params->PcieRpEnableCpm[0]  = CONFIG(PCIEXP_CLK_PM); // PCI_E2
+	params->PcieRpEnableCpm[1]  = CONFIG(PCIEXP_CLK_PM); // PCI_E4
+	params->PcieRpEnableCpm[4]  = CONFIG(PCIEXP_CLK_PM); // PCI_E3
+	params->PcieRpEnableCpm[8]  = CONFIG(PCIEXP_CLK_PM); // M2_3
+	params->PcieRpEnableCpm[20] = CONFIG(PCIEXP_CLK_PM); // M2_4
+	params->PcieRpEnableCpm[24] = CONFIG(PCIEXP_CLK_PM); // M2_2
+
+	params->PcieRpL1Substates[0]  = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->PcieRpL1Substates[1]  = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->PcieRpL1Substates[4]  = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->PcieRpL1Substates[8]  = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->PcieRpL1Substates[20] = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->PcieRpL1Substates[24] = !CONFIG(PCIEXP_L1_SUB_STATE);
+
+	params->PcieRpAspm[0]  = !CONFIG(PCIEXP_ASPM);
+	params->PcieRpAspm[1]  = !CONFIG(PCIEXP_ASPM);
+	params->PcieRpAspm[4]  = !CONFIG(PCIEXP_ASPM);
+	params->PcieRpAspm[8]  = !CONFIG(PCIEXP_ASPM);
+	params->PcieRpAspm[20] = !CONFIG(PCIEXP_ASPM);
+	params->PcieRpAspm[24] = !CONFIG(PCIEXP_ASPM);
 
 	params->PcieRpAcsEnabled[0]  = 1; // PCI_E2
 	params->PcieRpAcsEnabled[1]  = 1; // PCI_E4
@@ -120,20 +134,24 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpAcsEnabled[20] = 1; // M2_4
 	params->PcieRpAcsEnabled[24] = 1; // M2_2
 
-	params->CpuPcieRpEnableCpm[0] = 1; // M2_1
-	params->CpuPcieClockGating[0] = 1;
-	params->CpuPciePowerGating[0] = 1;
+	params->CpuPcieRpEnableCpm[0] = CONFIG(PCIEXP_CLK_PM); // M2_1
+	params->CpuPcieClockGating[0] = CONFIG(PCIEXP_CLK_PM);
+	params->CpuPciePowerGating[0] = CONFIG(PCIEXP_CLK_PM);
 	params->CpuPcieRpMultiVcEnabled[0] = 1;
 	params->CpuPcieRpPeerToPeerMode[0] = 1;
 	params->CpuPcieRpMaxPayload[0] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[0] = 1;
+	params->CpuPcieRpL1Substates[0] = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->CpuPcieRpAspm[0] = !CONFIG(PCIEXP_ASPM);
 
-	params->CpuPcieRpEnableCpm[1] = 1; // PCI_E1
-	params->CpuPcieClockGating[1] = 1;
-	params->CpuPciePowerGating[1] = 1;
+	params->CpuPcieRpEnableCpm[1] = CONFIG(PCIEXP_CLK_PM); // PCI_E1
+	params->CpuPcieClockGating[1] = CONFIG(PCIEXP_CLK_PM);
+	params->CpuPciePowerGating[1] = CONFIG(PCIEXP_CLK_PM);
 	params->CpuPcieRpPeerToPeerMode[1] = 1;
 	params->CpuPcieRpMaxPayload[1] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[1] = 1;
+	params->CpuPcieRpL1Substates[1] = !CONFIG(PCIEXP_L1_SUB_STATE);
+	params->CpuPcieRpAspm[1] = !CONFIG(PCIEXP_ASPM);
 
 	params->SataPortsSolidStateDrive[6] = 1; // M2_3
 	params->SataPortsSolidStateDrive[7] = 1; // M2_4
