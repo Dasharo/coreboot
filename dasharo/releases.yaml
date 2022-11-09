@@ -1,0 +1,11 @@
+releases:
+        - version: v1.0.15
+          fixed:
+                - description: SMBIOS memory information showing 0 MB DRAM in setup
+          changed:
+                - description: Customized Network boot menu and strings
+          known_issues:
+                - description: USB 2.0 sticks not detected on VP2410
+                  url: https://github.com/Dasharo/dasharo-issues/issues/99
+                - description: S3 resume does not work in Geminilake FSP
+                  url: https://github.com/Dasharo/dasharo-issues/issues/27
