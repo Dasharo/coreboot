@@ -223,7 +223,7 @@ config EDK2_ENABLE_IPXE
 config EDK2_IPXE_OPTION_NAME
 	string "iPXE option name"
 	depends on EDK2_ENABLE_IPXE
-	default "iPXE"
+	default "iPXE Network Boot"
 	help
 	  Configures how the iPXE boot option should be displayed in boot menu
 	  of EDK2 Payload. This name will be passed as PCD to the EDK2 build
