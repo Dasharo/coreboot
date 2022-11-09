@@ -24,7 +24,7 @@ function extract_lan_rom()
 			UEFIExtract 7D25v13/E7D25IMS.130 DEB917C0-C56A-4860-A05B-BF2F22EBB717 \
 				-o ./lanrom -m body > /dev/null && \
 			cp lanrom/body_1.bin LanRom.efi && \
-			rm -rf lanrom 7D25v13 && \
+			rm -rf lanrom 7D25v13 7D25v13.zip && \
 			echo "LAN ROM extracted successfully" && \
 			return 0
 		fi
