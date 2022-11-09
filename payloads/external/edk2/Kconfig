@@ -333,6 +333,13 @@ config EDK2_SETUP_MENU_KEY
 	  F12        0x0016
 	  ESC        0x0017
 
+
+config EDK2_DISABLE_MTRR_PROGRAMMING
+	bool "Disable MTRR programming in EDK2 Payload"
+	default y
+	help
+	  Disables MTRRs programming in the TianoCore Payload.
+
 if EDK2_SECURE_BOOT
 
 config EDK2_SECURE_BOOT_DEFAULT_ENABLE
