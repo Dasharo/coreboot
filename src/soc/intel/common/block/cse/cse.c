@@ -1122,33 +1122,52 @@ static bool is_descriptor_writeable(uint8_t *desc)
 
 void cse_set_hap_bit(bool state)
 {
-	uint8_t si_desc_buf[SI_DESC_SIZE];
+	uint8_t *si_desc_buf;
 	struct region_device desc_rdev;
+
+	si_desc_buf = (uint8_t *)malloc(SI_DESC_SIZE);
+
+	if (!si_desc_buf) {
+		printk(BIOS_ERR, "Failed to allocate buffer for %s\n", SI_DESC_REGION);
+		return;
+	}
+
 	if (fmap_locate_area_as_rdev_rw("SI_DESC", &desc_rdev) < 0) {
 		printk(BIOS_ERR, "Failed to locate %s in the FMAP\n", SI_DESC_REGION);
+		free(si_desc_buf);
 		return;
 	}
 	if (rdev_readat(&desc_rdev, si_desc_buf, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
 		printk(BIOS_ERR, "Failed to read Descriptor Region from SPI Flash\n");
+		free(si_desc_buf);
 		return;
 	}
-	if (!is_descriptor_writeable(si_desc_buf))
+	if (!is_descriptor_writeable(si_desc_buf)) {
+		free(si_desc_buf);
 		return;
+	}
 
 	if (!!(si_desc_buf[HAP_OFFSET] & HAP_MASK) == state) {
 		printk(BIOS_DEBUG, "Update of Descriptor is not required!\n");
+		free(si_desc_buf);
 		return;
 	}
+
 	si_desc_buf[HAP_OFFSET] ^= HAP_MASK;
 	if (rdev_eraseat(&desc_rdev, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
 		printk(BIOS_ERR, "Failed to erase Descriptor Region area\n");
+		free(si_desc_buf);
 		return;
 	}
+
 	if (rdev_writeat(&desc_rdev, si_desc_buf, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
 		printk(BIOS_ERR, "Failed to update Descriptor Region\n");
+		free(si_desc_buf);
 		return;
 	}
+
 	printk(BIOS_DEBUG, "Update of Descriptor successful\n");
+	free(si_desc_buf);
 	do_global_reset();
 }
 #endif
