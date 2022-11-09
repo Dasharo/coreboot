@@ -58,18 +58,16 @@ chip soc/intel/alderlake
 		[7] = 1,
 	}"
 
-	#FIXME: FSP has bugged definitions for DEVSLP pins 6 and 7.
-	#Enable the pins back when it is fixed or GpioOverride can be enabled.
-	#register "sata_ports_dev_slp" = "{
-	#	[0] = 0,
-	#	[1] = 0,
-	#	[2] = 0,
-	#	[3] = 0,
-	#	[4] = 0,
-	#	[5] = 0,
-	#	[6] = 1,
-	#	[7] = 1,
-	#}"
+	register "sata_ports_dev_slp" = "{
+		[0] = 0,
+		[1] = 0,
+		[2] = 0,
+		[3] = 0,
+		[4] = 0,
+		[5] = 0,
+		[6] = 1,
+		[7] = 1,
+	}"
 
 	# HDMI on port B
 	register "ddi_portB_config" = "1"
@@ -111,7 +109,7 @@ chip soc/intel/alderlake
 			register "cpu_pcie_rp[CPU_RP(1)]" = "{
 				.clk_src = 9,
 				.clk_req = 9,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
@@ -141,7 +139,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(1)]" = "{
 				.clk_src = 10,
 				.clk_req = 10,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_HOTPLUG | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_HOTPLUG,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
@@ -152,7 +150,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(2)]" = "{
 				.clk_src = 17,
 				.clk_req = 17,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_HOTPLUG | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_HOTPLUG,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
@@ -174,7 +172,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(5)]" = "{
 				.clk_src = 15,
 				.clk_req = 15,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_HOTPLUG | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_HOTPLUG,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
@@ -186,7 +184,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(9)]" = "{
 				.clk_src = 13,
 				.clk_req = 13,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
@@ -210,7 +208,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(21)]" = "{
 				.clk_src = 14,
 				.clk_req = 14,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
@@ -222,7 +220,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(25)]" = "{
 				.clk_src = 8,
 				.clk_req = 8,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.PcieRpL1Substates = L1_SS_L1_2,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 			}"
