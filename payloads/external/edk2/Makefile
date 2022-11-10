@@ -192,7 +192,8 @@ $(EDK2_PATH): $(WORKSPACE)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
-		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git reset --hard HEAD > /dev/null 2>&1 || true; \
+		git clean -df > /dev/null 2>&1 || true; \
 		if [ -e UefiPayloadPkg/ShimLayer/UniversalPayload.o ]; then \
 			rm UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
 		fi; \
