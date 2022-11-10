@@ -2,10 +2,16 @@
 
 #include <acpi/acpi.h>
 #include <device/device.h>
+#include <drivers/efi/efivars.h>
+#include <fmap.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
+#include <smmstore.h>
 #include <string.h>
+#include <superio/nuvoton/nct6687d/nct6687d.h>
+
+#include <Uefi/UefiBaseType.h>
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
 {
@@ -13,9 +19,43 @@ void mainboard_fill_fadt(acpi_fadt_t *fadt)
 	fadt->iapc_boot_arch |= ACPI_FADT_LEGACY_DEVICES | ACPI_FADT_8042;
 }
 
+static unsigned int get_ps2_option(void)
+{
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint8_t var;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		return 0;
+
+	size = sizeof(var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid,
+				"Ps2Controller", &var, &size);
+	if (ret != CB_SUCCESS)
+		return 0;
+
+	return var;
+#else
+	return UINT_MAX;
+#endif
+}
+
+
 static void mainboard_init(void *chip_info)
 {
+	struct device *ps2_dev = dev_find_slot_pnp(0x4e, NCT6687D_KBC);
+	unsigned int ps2_en = get_ps2_option();
 
+	if (ps2_en != UINT_MAX) {
+		ps2_dev->enabled = ps2_en & 1;
+		printk(BIOS_DEBUG, "PS2 Controller state: %d\n", ps2_en);
+	}
 }
 
 u8 smbios_mainboard_feature_flags(void)
