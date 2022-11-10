@@ -223,15 +223,18 @@ logo: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH)
 lan_rom: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
 		"") ;; \
-		/*) cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
+		/*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers; \
+		    cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
-		*) cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
+		*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers; \
+		   cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
 ipxe_rom: $(EDK2_PATH)
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
+		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers; \
 		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
 			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
 	fi \
