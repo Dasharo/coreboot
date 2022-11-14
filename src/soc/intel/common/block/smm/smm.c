@@ -4,6 +4,7 @@
 #include <cpu/x86/smm.h>
 #include <cpu/intel/smm_reloc.h>
 #include <device/mmio.h>
+#include <intelblocks/oc_wdt.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/systemagent.h>
 #include <soc/pm.h>
@@ -29,9 +30,6 @@ static void configure_periodic_smi_interval(void)
 {
 	uint32_t gen_pmcon_a;
 
-	if (!CONFIG(SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI))
-		return;
-
 	gen_pmcon_a = read32p(soc_read_pmc_base() + GEN_PMCON_A);
 	gen_pmcon_a &= ~PER_SMI_SEL_MASK;
 
@@ -40,7 +38,7 @@ static void configure_periodic_smi_interval(void)
 	 * Also we do not allow timeouts lower than 60s, so we need to handle only
 	 * two cases.
 	 */
-	if (CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT > 70)
+	if (wdt_get_current_timeout() > 70)
 		write32p(soc_read_pmc_base() + GEN_PMCON_A, gen_pmcon_a | SMI_RATE_64S);
 	else
 		write32p(soc_read_pmc_base() + GEN_PMCON_A, gen_pmcon_a | SMI_RATE_32S);
