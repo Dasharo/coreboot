@@ -169,9 +169,12 @@ void cf9_reset_prepare(void)
  */
 bool is_wdt_required(void)
 {
+	if (!wdt_config_initted)
+		get_watchdog_config();
+
 	if (inl(PCH_OC_WDT_CTL) & PCH_OC_WDT_CTL_AFTER_POST) {
 		printk(BIOS_DEBUG, "Watchdog: OS requested WDT coverage");
-		if (!CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
+		if (!wdt_config->wdt_enable) {
 			printk(BIOS_DEBUG, "but WDT not enabled\n");
 			return false;
 		} else {
@@ -195,6 +198,10 @@ bool is_wdt_enabled(void)
 	}
 }
 
+uint16_t wdt_get_current_timeout(void)
+{
+	return (inl(PCH_OC_WDT_CTL) & PCH_OC_WDT_CTL_TOV_MASK) + 1;
+}
 
 static bool is_wake_from_s3_s4(void)
 {

@@ -9,3 +9,4 @@ void wdt_allow_known_reset(void);
 bool is_wdt_required(void);
 bool is_wdt_enabled(void);
 void wdt_reset_check(void);
+uint16_t wdt_get_current_timeout(void);
