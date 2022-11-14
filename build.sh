@@ -56,6 +56,8 @@ function build_image {
 		echo "CONFIG_EDK2_LAN_ROM_DRIVER=\"LanRom.efi\"" >> .config
 	fi
 
+	git submodule update --init --checkout
+
 	echo "Building Dasharo compatible with MSI PRO Z690-A (WIFI) $2(version $version)"
 
 	docker run --rm -it -u $UID -v $PWD:/home/coreboot/coreboot \
