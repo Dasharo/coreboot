@@ -177,7 +177,8 @@ $(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
-		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git reset --hard HEAD > /dev/null 2>&1 || true; \
+		git clean -df > /dev/null 2>&1 || true; \
 		echo "    Fetching new commits from $(CONFIG_EDK2_REPOSITORY)"; \
 		git fetch origin 2>/dev/null; \
 		if ! git rev-parse --verify -q $(CONFIG_EDK2_TAG_OR_REV) >/dev/null; then \
