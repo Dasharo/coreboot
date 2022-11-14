@@ -81,7 +81,7 @@ static void smm_southbridge_enable(uint16_t pm1_events)
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_TCO_ENABLE))
 		smi_params |= TCO_SMI_EN;
 
-	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI)) {
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI) && is_wdt_enabled()) {
 		smi_params |= PERIODIC_EN;
 		configure_periodic_smi_interval();
 	}

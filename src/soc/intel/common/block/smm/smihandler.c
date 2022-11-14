@@ -216,7 +216,7 @@ void smihandler_southbridge_sleep(
 		 */
 		pmc_clear_pm1_status();
 
-		if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE))
+		if (is_wdt_enabled())
 			wdt_allow_known_reset();
 
 		break;
@@ -490,7 +490,7 @@ void smihandler_southbridge_periodic(
 		return;
 	printk(BIOS_DEBUG, "Periodic SMI.\n");
 
-	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI))
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI) && is_wdt_enabled())
 		wdt_reload_and_start(CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT);
 }
 

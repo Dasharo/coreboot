@@ -34,8 +34,9 @@ void bootblock_soc_init(void)
 
 	is_wdt_failure();
 	wdt_reset_check();
+
 	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
-		wdt_reload_and_start(CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT);
+		wdt_reload_and_start();
 		is_wdt_enabled();
 		/* Workaround for FSP that will also program OC WDT */
 		wdt_allow_known_reset();

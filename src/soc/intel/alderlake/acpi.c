@@ -11,6 +11,7 @@
 #include <device/pci_ops.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/oc_wdt.h>
 #include <intelblocks/acpi.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
@@ -178,7 +179,7 @@ void soc_fill_fadt(acpi_fadt_t *fadt)
 	fadt->x_pm_tmr_blk.addrh = 0x0;
 
 	/* Use SMI to reboot platform so that it will set allowed reset for WDT */
-	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
+	if (is_wdt_enabled()) {
 		fadt->reset_reg.space_id = ACPI_ADDRESS_SPACE_IO;
 		fadt->reset_reg.bit_width = 8;
 		fadt->reset_reg.bit_offset = 0;
