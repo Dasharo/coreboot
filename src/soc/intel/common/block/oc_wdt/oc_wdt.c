@@ -4,9 +4,11 @@
 #include <arch/io.h>
 #include <cf9_reset.h>
 #include <console/console.h>
+#include <drivers/efi/efivars.h>
 #include <halt.h>
 #include <intelblocks/oc_wdt.h>
 #include <intelblocks/pmclib.h>
+#include <smmstore.h>
 #include <soc/iomap.h>
 #include <soc/pm.h>
 
@@ -30,7 +32,7 @@ struct watchdog_config {
 	uint16_t wdt_timeout;
 } __packed;
 
-static struct watchdog_config *wdt_config;
+static struct watchdog_config wdt_config;
 static int wdt_config_initted = 0;
 
 /*
@@ -41,7 +43,6 @@ static void get_watchdog_config(void)
 #if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
 	struct region_device rdev;
 	enum cb_err ret;
-	uint8_t var;
 	uint32_t size;
 
 	const EFI_GUID dasharo_system_features_guid = {
@@ -49,19 +50,24 @@ static void get_watchdog_config(void)
 	};
 
 
-	if (smmstore_lookup_region(&rdev))
-		return false;
+	if (smmstore_lookup_region(&rdev)) {
+		wdt_config.wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
+		wdt_config.wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT;
+		wdt_config_initted = 1;
+		return;
+	}
 
-	size = sizeof(*wdt_config);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig", &wdt_config, &size);
+	size = sizeof(wdt_config);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
+				&wdt_config, &size);
 	if (ret == CB_SUCCESS) {
 		wdt_config_initted = 1;
 		return;
 	}
 
 #endif
-	wdt_config->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
-	wdt_config->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT;
+	wdt_config.wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
+	wdt_config.wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT;
 	wdt_config_initted = 1;
 }
 
@@ -95,10 +101,10 @@ void wdt_reload_and_start(void)
 	if (!wdt_config_initted)
 		get_watchdog_config();
 
-	if (!wdt_config->wdt_enable)
+	if (!wdt_config.wdt_enable)
 		return;
 
-	wdt_reload(wdt_config->wdt_timeout);
+	wdt_reload(wdt_config.wdt_timeout);
 }
 
 void wdt_disable(void)
@@ -116,12 +122,6 @@ void wdt_disable(void)
 bool is_wdt_failure(void)
 {
 	uint32_t readback;
-
-	if (!wdt_config_initted)
-		get_watchdog_config();
-
-	if (!wdt_config->wdt_enable)
-		return;
 
 	readback = inl(PCH_OC_WDT_CTL);
 
@@ -147,7 +147,7 @@ void wdt_allow_known_reset(void)
 	if (!wdt_config_initted)
 		get_watchdog_config();
 
-	if (!wdt_config->wdt_enable)
+	if (!wdt_config.wdt_enable)
 		return;
 
 	readback = inl(PCH_OC_WDT_CTL);
@@ -174,7 +174,7 @@ bool is_wdt_required(void)
 
 	if (inl(PCH_OC_WDT_CTL) & PCH_OC_WDT_CTL_AFTER_POST) {
 		printk(BIOS_DEBUG, "Watchdog: OS requested WDT coverage");
-		if (!wdt_config->wdt_enable) {
+		if (!wdt_config.wdt_enable) {
 			printk(BIOS_DEBUG, "but WDT not enabled\n");
 			return false;
 		} else {
@@ -244,7 +244,7 @@ void wdt_reset_check(void)
 
 	wdt_clear_allow_known_reset();
 
-	if (!wdt_config->wdt_enable) {
+	if (!wdt_config.wdt_enable) {
 		wdt_disable();
 		return;
 	}
