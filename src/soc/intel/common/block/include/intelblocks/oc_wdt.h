@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-void wdt_reload_and_start(uint16_t timeout);
+void wdt_reload_and_start(void);
 void wdt_disable(void);
 bool is_wdt_failure(void);
 void wdt_allow_known_reset(void);

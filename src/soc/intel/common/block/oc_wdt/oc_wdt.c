@@ -10,10 +10,6 @@
 #include <soc/iomap.h>
 #include <soc/pm.h>
 
-#if CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE) && CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT < 60
-#error "Watchdog timeout too low. Set at least 60 seconds timeout"
-#endif
-
 /* OC WDT configuration */
 #define PCH_OC_WDT_CTL				(ACPI_BASE_ADDRESS + 0x54)
 #define   PCH_OC_WDT_CTL_RLD			BIT(31)
@@ -29,16 +25,54 @@
 #define   PCH_OC_WDT_CTL_ALLOW_UNXP_RESET_STS	BIT(21)
 #define   PCH_OC_WDT_CTL_AFTER_POST		0x1F0000
 
-void wdt_reload_and_start(uint16_t timeout)
+struct watchdog_config {
+	bool wdt_enable;
+	uint16_t wdt_timeout;
+} __packed;
+
+static struct watchdog_config *wdt_config;
+static int wdt_config_initted = 0;
+
+/*
+ * Checks whether SMM BIOS write protection was enabled in BIOS.
+ */
+static void get_watchdog_config(void)
+{
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint8_t var;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = sizeof(*wdt_config);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig", &wdt_config, &size);
+	if (ret == CB_SUCCESS) {
+		wdt_config_initted = 1;
+		return;
+	}
+
+#endif
+	wdt_config->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
+	wdt_config->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT;
+	wdt_config_initted = 1;
+}
+
+
+static void wdt_reload(uint16_t timeout)
 {
 	uint32_t readback;
 
-	if (!CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE))
-		return;
-
 	printk(BIOS_SPEW, "Watchdog: reload and start timer (timeout %ds)\n", timeout);
 
-	if (timeout > PCH_OC_WDT_CTL_TOV_MASK || timeout == 0) {
+	if ((timeout - 1) > PCH_OC_WDT_CTL_TOV_MASK || timeout == 0) {
 		printk(BIOS_ERR, "Watchdog: invalid timeout value\n");
 		return;
 	}
@@ -56,6 +90,17 @@ void wdt_reload_and_start(uint16_t timeout)
 	outl(readback, PCH_OC_WDT_CTL);
 }
 
+void wdt_reload_and_start(void)
+{
+	if (!wdt_config_initted)
+		get_watchdog_config();
+
+	if (!wdt_config->wdt_enable)
+		return;
+
+	wdt_reload(wdt_config->wdt_timeout);
+}
+
 void wdt_disable(void)
 {
 	uint32_t readback;
@@ -71,6 +116,12 @@ void wdt_disable(void)
 bool is_wdt_failure(void)
 {
 	uint32_t readback;
+
+	if (!wdt_config_initted)
+		get_watchdog_config();
+
+	if (!wdt_config->wdt_enable)
+		return;
 
 	readback = inl(PCH_OC_WDT_CTL);
 
@@ -93,7 +144,10 @@ void wdt_allow_known_reset(void)
 {
 	uint32_t readback;
 
-	if (!CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE))
+	if (!wdt_config_initted)
+		get_watchdog_config();
+
+	if (!wdt_config->wdt_enable)
 		return;
 
 	readback = inl(PCH_OC_WDT_CTL);
@@ -177,7 +231,17 @@ void wdt_reset_check(void)
 {
 	uint32_t readback;
 
+	if (!wdt_config_initted)
+		get_watchdog_config();
+
+
 	wdt_clear_allow_known_reset();
+
+	if (!wdt_config->wdt_enable) {
+		wdt_disable();
+		return;
+	}
+
 	readback = inl(PCH_OC_WDT_CTL);
 
 	printk(BIOS_DEBUG, "Watchdog: OC WDT reset check\n");
@@ -199,7 +263,7 @@ void wdt_reset_check(void)
 		if ((readback & PCH_OC_WDT_CTL_UNXP_RESET_STS) && !is_wake_from_s3_s4()) {
 			printk(BIOS_ERR, "Watchdog: unexpected reset detected\n");
 			printk(BIOS_ERR, "Watchdog: enforcing WDT expiration\n");
-			wdt_reload_and_start(5);
+			wdt_reload(5);
 			/* wait for reboot caused by WDT expiration */
 			halt();
 		} else {

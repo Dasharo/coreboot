@@ -19,6 +19,7 @@ config SOC_INTEL_COMMON_OC_WDT_TIMEOUT
 	int "Watchdog timeout in seconds"
 	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
 	default 90
+	range 60 1024
 	help
 	  Intel chipset Overclocking Watchdog timeout value in seconds.
 	  coreboot will reload the watchdog with timeout value specified
@@ -30,6 +31,7 @@ config SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI
 	bool "Feed the watchdog using periodic SMI"
 	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
 	depends on SOC_INTEL_COMMON_BLOCK_SMM
+	default y
 	help
 	  Enables Intel chipset Overclocking Watchdog reloading in the periodic
 	  SMI handler. Allows to reload the watchdog without support of the
