@@ -48,7 +48,7 @@ function build_image {
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
 
-	cp configs/config.msi_ms7d25$1 .config
+	cp configs/config.msi_ms7d25_$1 .config
 
 	extract_lan_rom
 
@@ -65,10 +65,10 @@ function build_image {
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-	cp build/coreboot.rom msi_ms7d25_${version}$1.rom
+	cp build/coreboot.rom msi_ms7d25_${version}_$1.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/msi_ms7d25_${version}$1.rom" 
-		sha256sum msi_ms7d25_${version}$1.rom > msi_ms7d25_${version}$1.rom.sha256
+		echo "Result binary placed in $PWD/msi_ms7d25_${version}_$1.rom" 
+		sha256sum msi_ms7d25_${version}_$1.rom > msi_ms7d25_${version}_$1.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
@@ -79,10 +79,10 @@ CMD="$1"
 
 case "$CMD" in
     "ddr4")
-        build_image "_ddr4" "DDR4 "
+        build_image $CMD "DDR4 "
         ;;
     "ddr5")
-        build_image "" ""
+        build_image $CMD "DDR5 "
         ;;
     *)
         echo "Invalid command: \"$CMD\""
