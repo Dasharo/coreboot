@@ -76,16 +76,17 @@ chip soc/intel/elkhartlake
 
 		device pci 14.0 on	end # USB3.1 xHCI
 		device pci 14.1 off	end # USB3.1 xDCI (OTG)
+		device pci 14.2 on	end # USB Type-C UCSI?
 
-		device pci 15.0 on	end # I2C0
-		device pci 15.1 on	end # I2C1
-		device pci 15.2 on	end # I2C2
-		device pci 15.3 on	end # I2C3
+		device pci 15.0 off	end # I2C0
+		device pci 15.1 off	end # I2C1
+		device pci 15.2 off	end # I2C2
+		device pci 15.3 off	end # I2C3
 
 		device pci 16.0 on	end # Management Engine Interface 1
-		device pci 16.1 on	end # Management Engine Interface 2
-		device pci 16.4 on	end # Management Engine Interface 3
-		device pci 16.5 on	end # Management Engine Interface 4
+		device pci 16.1 off	end # Management Engine Interface 2
+		device pci 16.4 off	end # Management Engine Interface 3
+		device pci 16.5 off	end # Management Engine Interface 4
 
 		device pci 17.0 on	end # SATA
 
@@ -98,7 +99,7 @@ chip soc/intel/elkhartlake
 		device pci 18.6 off	end # Intel PSE QEP3
 
 		device pci 19.0 on	end # I2C4
-		device pci 19.1 on	end # I2C5
+		device pci 19.1 off	end # I2C5
 		device pci 19.2 on	end # UART2
 
 		device pci 1a.0 on	end # eMMC
@@ -116,14 +117,14 @@ chip soc/intel/elkhartlake
 		device pci 1c.0 on	end # RP1 (pcie0 single VC)
 		device pci 1c.1 on	end # RP2 (pcie0 single VC)
 		device pci 1c.2 on	end # RP3 (pcie0 single VC)
-		device pci 1c.3 on	end # RP4 (pcie0 single VC)
+		device pci 1c.3 off	end # RP4 (pcie0 single VC)
 		device pci 1c.4 on	end # RP5 (pcie1 multi VC)
-		device pci 1c.5 on	end # RP6 (pcie2 multi VC)
-		device pci 1c.6 on	end # RP7 (pcie3 multi VC)
+		device pci 1c.5 off	end # RP6 (pcie2 multi VC)
+		device pci 1c.6 off	end # RP7 (pcie3 multi VC)
 
 		device pci 1d.0 off	end # Intel PSE IPC (local host to PSE)
-		device pci 1d.1 on	end # Intel PSE Time-Sensitive Networking GbE 0
-		device pci 1d.2 on	end # Intel PSE Time-Sensitive Networking GbE 1
+		device pci 1d.1 off	end # Intel PSE Time-Sensitive Networking GbE 0
+		device pci 1d.2 off	end # Intel PSE Time-Sensitive Networking GbE 1
 		device pci 1d.3 off	end # Intel PSE DMA0
 		device pci 1d.4 off	end # Intel PSE DMA1
 		device pci 1d.5 off	end # Intel PSE DMA2
@@ -157,7 +158,7 @@ chip soc/intel/elkhartlake
 		end
 		device pci 1f.1 on	end # P2SB
 		device pci 1f.2 hidden	end # Power Management Controller
-		device pci 1f.3 off	end # Intel cAVS/HDA
+		device pci 1f.3 on	end # Intel cAVS/HDA
 		device pci 1f.4 on  end	# - SMBUS
 		device pci 1f.5 on	end # PCH SPI (flash & TPM)
 		device pci 1f.7 off	end # PCH Intel Trace Hub
