@@ -44,6 +44,7 @@ static void get_watchdog_config(void)
 	struct region_device rdev;
 	enum cb_err ret;
 	uint32_t size;
+	bool wdt_available;
 
 	const EFI_GUID dasharo_system_features_guid = {
 		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
@@ -57,6 +58,23 @@ static void get_watchdog_config(void)
 		return;
 	}
 
+	size = sizeof(wdt_available);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogAvailable",
+				&wdt_available, &size);
+	/*
+	 * Update the watchdog state to indicate whether we want to expose 
+	 * its configuration in the setup menu. Needed to handle the case when
+	 * variable storage would be corrupted.
+	 */
+	if (ret == CB_SUCCESS) {
+		if (wdt_available != CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
+			wdt_available = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
+			efi_fv_set_option(&rdev, &dasharo_system_features_guid,
+					  "WatchdogAvailable", &wdt_available, size);
+
+		}
+	}
+
 	size = sizeof(wdt_config);
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
 				&wdt_config, &size);
@@ -64,7 +82,6 @@ static void get_watchdog_config(void)
 		wdt_config_initted = 1;
 		return;
 	}
-
 #endif
 	wdt_config.wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
 	wdt_config.wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT;
