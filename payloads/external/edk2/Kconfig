@@ -61,6 +61,30 @@ config EDK2_TAG_OR_REV
 	  EDK2_REPOSITORY, and in the case of a branch name, prefixed with origin i.e.
 	  "origin/uefipayload_202202"
 
+config EDK2_USE_EDK2_PLATFORMS
+	bool "Use edk2-platforms repository"
+	default n
+	help
+	  Clone edk2-platforms repository to the edk2 workspace for additional modules.
+
+if EDK2_USE_EDK2_PLATFORMS
+
+config EDK2_PLATFORMS_REPOSITORY
+	string "URL to git repository for edk2-platforms"
+	default "https://github.com/tianocore/edk2-platforms"
+	help
+	  URL to the edk2-platfors repository to clone.
+
+config EDK2_PLATFORMS_TAG_OR_REV
+	string "Insert a commit's SHA-1 or a branch name"
+	default "origin/master"
+	help
+	  The commit's SHA-1 or branch name of the revision to use. This must exist in
+	  EDK2_PLATFORMS_REPOSITORY, and in the case of a branch name, prefixed with
+	  origin i.e. "origin/master"
+
+endif
+
 choice
 	prompt "edk2 build"
 	default EDK2_RELEASE
@@ -224,8 +248,19 @@ config EDK2_GOP_FILE
 config EDK2_ENABLE_IPXE
 	bool "Include iPXE in edk2 payload"
 	default n
+	select PXE
 	help
-	  Includes a prebuilt iPXE for EFI to the EDK2 payload.
+	  Instructs coreboot build system to build iPXE EFI target and include
+	  it in the EDK2 payload.
+
+config EDK2_IPXE_OPTION_NAME
+	string "iPXE option name"
+	depends on EDK2_ENABLE_IPXE
+	default "iPXE Network Boot"
+	help
+	  Configures how the iPXE boot option should be displayed in boot menu
+	  of EDK2 Payload. This name will be passed as PCD to the EDK2 build
+	  system.
 
 config EDK2_SECURE_BOOT
 	bool "Enable UEFI Secure Boot"
@@ -300,6 +335,12 @@ config EDK2_SETUP_MENU_KEY
 	  F12        0x0016
 	  ESC        0x0017
 
+config EDK2_DISABLE_MTRR_PROGRAMMING
+	bool "Disable MTRR programming in EDK2 Payload"
+	default y
+	help
+	  Disables MTRRs programming in the TianoCore Payload.
+
 if EDK2_SECURE_BOOT
 
 config EDK2_SECURE_BOOT_DEFAULT_ENABLE
@@ -321,5 +362,11 @@ config EDK2_CUSTOM_BUILD_PARAMS
 	  additional build options that should have been upstreamed but have not.
 
 	  This option can support both macros `-D` and Pcds `--pcd`.
+
+config EDK2_LAN_ROM_DRIVER
+	string "Optional LAN ROM driver file"
+	help
+	  Integrates LAN ROM driver in TianoCore Payload. Takes an EFI driver
+	  as input.
 
 endif

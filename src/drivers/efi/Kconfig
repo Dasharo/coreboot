@@ -1,0 +1,5 @@
+config DRIVERS_EFI_VARIABLE_STORE
+	bool "Include EFI variable store driver"
+	help
+	  Adds a driver that is able to read and write an EFI formatted
+	  VariableStore as used by tianocore.
