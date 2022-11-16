@@ -22,20 +22,20 @@ chip soc/intel/elkhartlake
 
 	register "tcc_offset" = "5" # TCC of 95C
 
-	register "usb2_ports[0]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB3.0 Type A
-	register "usb2_ports[1]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB3.0 Type A
-	register "usb2_ports[2]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB3.0 Type C
-	register "usb2_ports[3]" = "USB2_PORT_SHORT(OC_SKIP)"	# M.2 WiFi
-	register "usb2_ports[4]" = "USB2_PORT_SHORT(OC_SKIP)"	# mPCIe LTE
+	register "usb2_ports[0]" = "USB2_PORT_SHORT(OC_SKIP)"	# Header FUSB1
+	register "usb2_ports[1]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[2]" = "USB2_PORT_SHORT(OC_SKIP)"	# Header FUSB1
+	register "usb2_ports[3]" = "USB2_PORT_SHORT(OC_SKIP)"	# M.2 WLAN
+	register "usb2_ports[4]" = "USB2_PORT_SHORT(OC_SKIP)"	# M.2 WWAN
 	register "usb2_ports[5]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[6]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[7]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[8]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[6]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB Type-A Upper
+	register "usb2_ports[7]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB Type-C
+	register "usb2_ports[8]" = "USB2_PORT_SHORT(OC_SKIP)"	# USB Type-A Lower
 	register "usb2_ports[9]" = "USB2_PORT_EMPTY"
 
-	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3.0 Type A
-	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3.0 Type A
-	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB3.0 Type C
+	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB Type-A Upper
+	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB Type-A Lower
+	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB Type-C Muxed
 	register "usb3_ports[3]" = "USB3_PORT_EMPTY"
 
 	device cpu_cluster 0 on
