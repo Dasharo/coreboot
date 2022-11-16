@@ -170,7 +170,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(10)]" = "{
 				.clk_src = 6,
 				.clk_req = 6,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_LTR,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F7)" # LAN_PLT_RST#
