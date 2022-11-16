@@ -210,11 +210,6 @@ logo: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-<<<<<<< HEAD
-				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
-		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-				$(project_dir)/MdeModulePkg/Logo/Logo.bmp;; \
-=======
 				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
 				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
@@ -227,7 +222,6 @@ lan_rom: $(EDK2_PATH)
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 		*) cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
->>>>>>> dasharo/common-base-rebased
 	esac \
 
 ipxe_rom: $(EDK2_PATH)

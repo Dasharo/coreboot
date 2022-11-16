@@ -351,8 +351,6 @@ config EDK2_SECURE_BOOT_DEFAULT_ENABLE
 
 endif
 
-endif
-
 config EDK2_CUSTOM_BUILD_PARAMS
 	string "edk2 additional custom build parameters"
 	default "-D VARIABLE_SUPPORT=SMMSTORE" if EDK2_REPO_MRCHROMEBOX && SMMSTORE_V2 && !SOC_AMD_PICASSO
