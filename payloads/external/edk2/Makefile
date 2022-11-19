@@ -6,7 +6,38 @@ export SHELL := env bash
 project_name = edk2
 export WORKSPACE := $(CURDIR)/workspace
 export EDK2_PATH := $(WORKSPACE)/$(word 3,$(subst /, ,$(CONFIG_EDK2_REPOSITORY)))
+
+ifeq ($(CONFIG_EDK2_USE_EDK2_PLATFORMS),y)
+export EDK2_PLATFORMS_PATH := $(WORKSPACE)/edk2-platforms
+export PACKAGES_PATH := $(EDK2_PATH):\
+			$(EDK2_PLATFORMS_PATH)/Platform/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Silicon/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Debugging:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Network:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/OutOfBandManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/PowerManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/SystemInformation:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface
+else
 export PACKAGES_PATH := $(EDK2_PATH)
+endif
+
+ifeq ($(CONFIG_EDK2_USE_EDK2_PLATFORMS),y)
+export EDK2_PLATFORMS_PATH := $(WORKSPACE)/edk2-platforms
+export PACKAGES_PATH := $(EDK2_PATH):\
+			$(EDK2_PLATFORMS_PATH)/Platform/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Silicon/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Debugging:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Network:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/OutOfBandManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/PowerManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/SystemInformation:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface
+else
+export PACKAGES_PATH := $(EDK2_PATH)
+endif
 
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
 BUILD_STR = -p UefiPayloadPkg/UefiPayloadPkg.dsc
@@ -44,19 +75,19 @@ RELEASE_STR = DEBUG
 else
 RELEASE_STR = RELEASE
 endif
-# DISABLE_SERIAL_TERMINAL	= FALSE
-ifneq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
-BUILD_STR += -D DISABLE_SERIAL_TERMINAL=TRUE
+# SERIAL_TERMINAL	= TRUE
+ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
+BUILD_STR += -D SERIAL_TERMINAL=TRUE
 endif
 # FOLLOW_BGRT_SPEC		= FALSE
 ifeq ($(CONFIG_EDK2_FOLLOW_BGRT_SPEC),y)
 BUILD_STR += -D FOLLOW_BGRT_SPEC=TRUE
 endif
-# PCIE_BASE_ADDRESS		= 0
+# PCIE_BASE_ADDRESS            = 0
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress=$(CONFIG_ECAM_MMCONF_BASE_ADDRESS)
 endif
-# PCIE_BASE_LENGTH		= 0
+# PCIE_BASE_LENGTH             = 0
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseSize=$(CONFIG_ECAM_MMCONF_LENGTH)
 endif
@@ -92,6 +123,42 @@ endif
 ifeq ($(CONFIG_EDK2_GOP_DRIVER), y)
 BUILD_STR += -D USE_PLATFORM_GOP=TRUE
 endif
+# NETWORK_IPXE                  = FALSE
+ifeq ($(CONFIG_EDK2_IPXE),y)
+BUILD_STR += -D NETWORK_IPXE=TRUE
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
+endif
+# SECURE_BOOT_ENABLE            = TRUE
+ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
+BUILD_STR += -D SECURE_BOOT_ENABLE=TRUE
+endif
+# SECURE_BOOT_DEFAULT_ENABLE	= TRUE
+ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
+endif
+# SATA_PASSWORD_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_SATA_PASSWORD),y)
+BUILD_STR += -D SATA_PASSWORD_ENABLE=TRUE
+endif
+# OPAL_PASSWORD_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_OPAL_PASSWORD),y)
+BUILD_STR += -D OPAL_PASSWORD_ENABLE=TRUE
+endif
+# TPM_ENABLE		= TRUE
+ifeq ($(CONFIG_EDK2_TPM_ENABLE),y)
+BUILD_STR += -D TPM_ENABLE=TRUE
+endif
+# NETWORK_LAN_ROM		= FALSE
+ifneq ($(CONFIG_EDK2_LAN_ROM_DRIVER),)
+BUILD_STR += -D NETWORK_LAN_ROM=TRUE
+endif
+# DISABLE_MTRR_PROGRAMMING	= TRUE
+ifneq ($(CONFIG_EDK2_DISABLE_MTRR_PROGRAMMING),y)
+BUILD_STR += -D DISABLE_MTRR_PROGRAMMING=FALSE
+endif
+
+BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
+BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:
@@ -114,6 +181,23 @@ all: UefiPayloadPkg
 
 $(WORKSPACE):
 	mkdir $(WORKSPACE)
+
+$(EDK2_PLATFORMS_PATH): $(WORKSPACE)
+	if [ ! -d "$(EDK2_PLATFORMS_PATH)" ]; then \
+		git clone --recurse-submodules $(CONFIG_EDK2_PLATFORMS_REPOSITORY) $(EDK2_PLATFORMS_PATH) -j5; \
+	fi
+	cd $(EDK2_PLATFORMS_PATH); \
+		if ! git rev-parse --verify -q $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) >/dev/null; then \
+			echo "    $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) is not a valid git reference"; \
+			exit 1; \
+		fi; \
+		if git status --ignore-submodules=dirty | grep -q clean; then \
+			echo "    Checking out edk2-platforms revision $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV)"; \
+			git checkout --detach $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) -f; \
+		else \
+			echo "    Working directory not clean; will not overwrite"; \
+		fi; \
+		git submodule update --init --checkout
 
 $(EDK2_PATH): $(WORKSPACE)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
@@ -141,11 +225,27 @@ $(EDK2_PATH): $(WORKSPACE)
 logo: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
-		/*) convert -background None $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
-		*) convert -background None $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
+				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
+				$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
+
+lan_rom: $(EDK2_PATH)
+	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
+		"") ;; \
+		/*) cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+		*) cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+	esac \
+
+ipxe_rom: $(EDK2_PATH)
+	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
+		echo "    Including externally built iPXE"; \
+		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
+			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+	fi \
 
 checktools:
 	echo -n "EDK2: Checking uuid-dev:"
@@ -158,20 +258,12 @@ checktools:
 	echo -n "EDK2: Checking nasm:"
 	type nasm > /dev/null 2>&1 && echo "        Found!" || \
 		( echo "        Not found!"; echo "ERROR: Please install nasm."; exit 1 )
-	echo -n "EDK2: Checking imagemagick:"
-	-convert -size 1x1 xc: test.png &> /dev/null;
-	if [ -f test.png ]; then \
-		rm test.png && echo " Found!"; \
-	else \
-		echo " Not found!"; \
-		echo "ERROR: Please install imagemagick"; \
-		exit 1; \
-	fi
 
 print:
 	echo "   ##### $(project_name) Build Summary #####"
 	echo "   Repository:     $(CONFIG_EDK2_REPOSITORY)"
 	echo "   Branch:         $(CONFIG_EDK2_TAG_OR_REV)"
+	echo "   Packages path:  $(PACKAGES_PATH)"
 	echo " $(BUILD_STR)" | \
 		sed -e 's/--/-/g' -e 's/-/\n   /g' | sort | sed \
 		-e 's/a /Architecture:   /g' \
@@ -183,7 +275,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) clean checktools logo
+prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo
 	cd $(WORKSPACE); \
 		if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
 			echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
