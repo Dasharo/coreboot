@@ -155,7 +155,7 @@ config ALDERLAKE_CAR_ENHANCED_NEM
 
 config MAX_CPUS
 	int
-	default 24
+	default 32
 
 config DCACHE_RAM_BASE
 	default 0xfef00000
