@@ -8,6 +8,9 @@ chip soc/intel/elkhartlake
 		.tdp_pl2_override = 15,
 	}"
 
+	register "SaGv" = "SaGv_Enabled"
+	register "eist_enable" = "1"
+
 	# Enable lpss s0ix
 	register "s0ix_enable" = "1"
 
@@ -68,6 +71,11 @@ chip soc/intel/elkhartlake
 	register "SataPortsDevSlp[0]" = "0"
 	register "SataPortsDevSlp[1]" = "1"
 
+	register "PchHdaAudioLinkHdaEnable" = "1"
+	register "PchHdaSdiEnable[0]" = "1"
+	register "ScsEmmcHs400Enabled" = "1"
+	register "SkipCpuReplacementCheck" = "1"
+
 	device cpu_cluster 0 on
 		device lapic 0 on end
 	end
@@ -106,7 +114,7 @@ chip soc/intel/elkhartlake
 
 		device pci 14.0 on	end # USB3.1 xHCI
 		device pci 14.1 off	end # USB3.1 xDCI (OTG)
-		device pci 14.2 on	end # USB Type-C UCSI?
+		device pci 14.2 on	end # Shared RAM
 
 		device pci 15.0 off	end # I2C0
 		device pci 15.1 off	end # I2C1
@@ -161,13 +169,13 @@ chip soc/intel/elkhartlake
 		device pci 1d.6 off	end # Intel PSE PWM
 		device pci 1d.7 off	end # Intel PSE ADC
 
-		device pci 1e.0 on	end # UART0
-		device pci 1e.1 on	end # UART1
-		device pci 1e.2 on	end # GSPI0
-		device pci 1e.3 on	end # GSPI1
-		device pci 1e.4 on	end # PCH Time-Sensitive Networking GbE
-		device pci 1e.6 on	end # HPET
-		device pci 1e.7 on	end # IOAPIC
+		device pci 1e.0 off	end # UART0
+		device pci 1e.1 off	end # UART1
+		device pci 1e.2 off	end # GSPI0
+		device pci 1e.3 off	end # GSPI1
+		device pci 1e.4 off	end # PCH Time-Sensitive Networking GbE
+		device pci 1e.6 off	end # HPET
+		device pci 1e.7 off	end # IOAPIC
 
 		device pci 1f.0 on	# eSPI interface
 			chip superio/ite/it8613e
@@ -189,7 +197,7 @@ chip soc/intel/elkhartlake
 		device pci 1f.1 on	end # P2SB
 		device pci 1f.2 hidden	end # Power Management Controller
 		device pci 1f.3 on	end # Intel cAVS/HDA
-		device pci 1f.4 on  end	# - SMBUS
+		device pci 1f.4 on	end	# SMBUS
 		device pci 1f.5 on	end # PCH SPI (flash & TPM)
 		device pci 1f.7 off	end # PCH Intel Trace Hub
 	end
