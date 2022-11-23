@@ -242,7 +242,7 @@ chip soc/intel/alderlake
 				device pnp 4e.f off end		# Function register
 			end
 		end
-		device ref p2sb on end
+		device ref p2sb hidden end
 		device ref hda on
 			subsystemid 0x1462 0x9d25
 			register "pch_hda_dsp_enable" = "0"
