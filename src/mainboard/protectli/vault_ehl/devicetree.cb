@@ -43,6 +43,14 @@ chip soc/intel/elkhartlake
 	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# USB Type-C Muxed
 	register "usb3_ports[3]" = "USB3_PORT_EMPTY"
 
+	# Bitmap for Wake Enable on USB attach/detach
+	register "usb2_wake_enable_bitmap" = "USB_PORT_WAKE_ENABLE(6) | \
+										  USB_PORT_WAKE_ENABLE(7) | \
+										  USB_PORT_WAKE_ENABLE(8)"
+	register "usb3_wake_enable_bitmap" = "USB_PORT_WAKE_ENABLE(0) | \
+										  USB_PORT_WAKE_ENABLE(1) | \
+										  USB_PORT_WAKE_ENABLE(2)"
+
 	# PCIe root ports related UPDs
 	register "PcieRpEnable[1]" = "1"
 	register "PcieRpEnable[2]" = "1"
@@ -75,6 +83,14 @@ chip soc/intel/elkhartlake
 	register "PchHdaSdiEnable[0]" = "1"
 	register "ScsEmmcHs400Enabled" = "1"
 	register "SkipCpuReplacementCheck" = "1"
+
+	# DDI Port B is not wired up in soc/intel/elkhartlake. TODO?
+	# Enable HPD for DDI ports A/C
+	register "DdiPortAHpd" = "1"
+	register "DdiPortCHpd" = "1"
+	# Enable DDC for DDI port A/C
+	register "DdiPortADdc" = "1"
+	register "DdiPortCDdc" = "1"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end
