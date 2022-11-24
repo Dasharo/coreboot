@@ -131,15 +131,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PchLegacyIoLowLatency = 1;
 	params->PchDmiAspmCtrl = 0;
 
-	params->CpuPcieRpPmSci[0] = 1; // M2_1
-	params->CpuPcieRpPmSci[1] = 1; // PCI_E1
-	params->PcieRpPmSci[0]    = 1; // PCI_E2
-	params->PcieRpPmSci[1]    = 1; // PCI_E4
-	params->PcieRpPmSci[2]    = 1; // Ethernet
-	params->PcieRpPmSci[4]    = 1; // PCI_E3
-	params->PcieRpPmSci[8]    = 1; // M2_3
-	params->PcieRpPmSci[20]   = 1; // M2_4
-	params->PcieRpPmSci[24]   = 1; // M2_2
+	params->CpuPcieRpPmSci[0] = 0; // M2_1
+	params->CpuPcieRpPmSci[1] = 0; // PCI_E1
+	params->PcieRpPmSci[0]    = 0; // PCI_E2
+	params->PcieRpPmSci[1]    = 0; // PCI_E4
+	params->PcieRpPmSci[2]    = 0; // Ethernet
+	params->PcieRpPmSci[4]    = 0; // PCI_E3
+	params->PcieRpPmSci[8]    = 0; // M2_3
+	params->PcieRpPmSci[20]   = 0; // M2_4
+	params->PcieRpPmSci[24]   = 0; // M2_2
 
 	params->PcieRpMaxPayload[0]  = 1; // PCI_E2
 	params->PcieRpMaxPayload[1]  = 1; // PCI_E4
