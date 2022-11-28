@@ -1,5 +1,5 @@
 FLASH 16M {
-	SI_ALL 6M {
+	SI_ALL 7M {
 		SI_DESC 4K
 		SI_ME
 	}
