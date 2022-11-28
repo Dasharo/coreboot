@@ -210,7 +210,7 @@ chip soc/intel/elkhartlake
 		device pci 1f.1 on	end # P2SB
 		device pci 1f.2 hidden	end # Power Management Controller
 		device pci 1f.3 on	end # Intel cAVS/HDA
-		device pci 1f.4 on	end	# SMBUS
+		device pci 1f.4 on	end # SMBUS
 		device pci 1f.5 on	end # PCH SPI (flash & TPM)
 		device pci 1f.7 off	end # PCH Intel Trace Hub
 	end
