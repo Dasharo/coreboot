@@ -76,12 +76,17 @@ chip soc/intel/elkhartlake
 	register "ScsEmmcHs400Enabled" = "1"
 	register "SkipCpuReplacementCheck" = "1"
 
-	# DDI Port B is not wired up in soc/intel/elkhartlake. TODO?
-	# Enable HPD for DDI ports A/C
+	# Enable DDI ports A/B/C
+	register "DdiPortAConfig" = "1"
+	register "DdiPortBConfig" = "1"
+	register "DdiPortCConfig" = "1"
+	# Enable HPD for DDI ports
 	register "DdiPortAHpd" = "1"
+	register "DdiPortBHpd" = "1"
 	register "DdiPortCHpd" = "1"
-	# Enable DDC for DDI port A/C
+	# Enable DDC for DDI port
 	register "DdiPortADdc" = "1"
+	register "DdiPortBDdc" = "1"
 	register "DdiPortCDdc" = "1"
 
 	device cpu_cluster 0 on
