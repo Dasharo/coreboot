@@ -81,15 +81,13 @@ chip soc/intel/elkhartlake
 	register "DdiPortBConfig" = "1"
 	register "DdiPortCConfig" = "1"
 
-	# Enable HPD for DDI ports
+	# Enable HPD for DDI ports A/B
 	register "DdiPortAHpd" = "1"
 	register "DdiPortBHpd" = "1"
-	register "DdiPortCHpd" = "1"
 
-	# Enable DDC for DDI ports
+	# Enable DDC for DDI ports A/B
 	register "DdiPortADdc" = "1"
 	register "DdiPortBDdc" = "1"
-	register "DdiPortCDdc" = "1"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end
