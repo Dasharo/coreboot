@@ -69,13 +69,13 @@
 } while (0)
 
 /* Standard units. */
-#define KiB (1<<10)
-#define MiB (1<<20)
-#define GiB (1<<30)
+#define KiB (1U<<10)
+#define MiB (1U<<20)
+#define GiB (1U<<30)
 
-#define KHz (1000)
-#define MHz (1000 * KHz)
-#define GHz (1000 * MHz)
+#define KHz (1000U)
+#define MHz (1000U * KHz)
+#define GHz (1000U * MHz)
 
 #ifndef offsetof
 #define offsetof(TYPE, MEMBER) __builtin_offsetof(TYPE, MEMBER)
