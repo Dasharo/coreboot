@@ -134,4 +134,26 @@ Device (LPCB)
 			IRQNoFlags () {0}
 		})
 	}
+
+	/* OC Watchdog */
+	Device(CWDT)
+	{
+		Name(_HID,"INTC1099")
+		Name(_CID,EISAID("PNP0C02"))
+
+		Name (RBUF, ResourceTemplate () {
+			IO(Decode16, 0, 0, 0x4, 0x4, OCWD)
+		})
+
+		Method (_CRS, 0x0, NotSerialized)
+		{
+			CreateWordField(^RBUF, ^OCWD._MIN, OMIN)
+			CreateWordField(^RBUF, ^OCWD._MAX, OMAX)
+
+			OMIN = ACPI_BASE_ADDRESS + 0x54
+			OMAX = ACPI_BASE_ADDRESS + 0x54
+
+			Return (RBUF)
+		}
+	}
 }
