@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <cpu/x86/msr.h>
 #include <device/device.h>
 #include <drivers/efi/efivars.h>
 #include <fmap.h>
@@ -12,6 +13,12 @@
 #include <superio/nuvoton/nct6687d/nct6687d.h>
 
 #include <Uefi/UefiBaseType.h>
+
+#define MSR_ATOM_TURBO_RATIO_LIMIT		0x650
+#define MSR_ATOM_TURBO_RATIO_LIMIT_CORES	0x651
+#define MSR_BIGCORE_TURBO_RATIO_LIMIT		0x1ad
+#define MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES	0x1ae
+
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
 {
@@ -101,6 +108,27 @@ const char *smbios_system_serial_number(void)
 const char *smbios_system_sku(void)
 {
 	return "Default string";
+}
+
+static void fill_turbo_ratio_limits(FSP_S_CONFIG *params)
+{
+	msr_t msr;
+
+	msr = rdmsr(MSR_BIGCORE_TURBO_RATIO_LIMIT);
+	memcpy(&params->TurboRatioLimitRatio[0], &msr.lo, 4);
+	memcpy(&params->TurboRatioLimitRatio[4], &msr.hi, 4);
+
+	msr = rdmsr(MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES);
+	memcpy(&params->TurboRatioLimitNumCore[0], &msr.lo, 4);
+	memcpy(&params->TurboRatioLimitNumCore[4], &msr.hi, 4);
+
+	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT);
+	memcpy(&params->AtomTurboRatioLimitRatio[0], &msr.lo, 4);
+	memcpy(&params->AtomTurboRatioLimitRatio[4], &msr.hi, 4);
+
+	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT_CORES);
+	memcpy(&params->AtomTurboRatioLimitNumCore[0], &msr.lo, 4);
+	memcpy(&params->AtomTurboRatioLimitNumCore[4], &msr.hi, 4);
 }
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
@@ -210,6 +238,12 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->SataPortsSolidStateDrive[6] = 1; // M2_3
 	params->SataPortsSolidStateDrive[7] = 1; // M2_4
 	params->SataLedEnable = 1;
+
+	/*
+	 * If OcLock is not set in FSP-M UPD, FSP-S UPD will take and program
+	 * zeroed turbo ratio limits. Avoid this by populating defautl values here.
+	 */
+	fill_turbo_ratio_limits(params);
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
