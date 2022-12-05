@@ -279,6 +279,46 @@ config EDK2_OPAL_PASSWORD
 	help
 	  Enables TCG OPAL disk password in the TianoCore Payload.
 
+# DasharoModulePkg specific options
+
+config EDK2_DASHARO_SECURITY_OPTIONS
+	bool "Enable EDK2 Dasharo Security Options Menu"
+	default n
+	help
+	  Enables the security configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_INTEL_ME_OPTIONS
+	bool "Enable EDK2 Dasharo ME Configuration Menu"
+	default n
+	help
+	  Enables the Intel ME configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_USB_CONFIG
+	bool "Enable EDK2 Dasharo USB Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 USB stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_NETWORK_CONFIG
+	bool "Enable EDK2 Dasharo Network Stack Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 network stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_CHIPSET_CONFIG
+	bool "Enable EDK2 Dasharo Chipset Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 chipset configuration submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
+	bool "Enable EDK2 network boot option by default"
+	default n
+	help
+	  Enables the network boot option in EDK2 by default.
+
+# End of DasharoModulePkg specific options
+
 config EDK2_BOOT_MENU_KEY
 	hex "TianoCore boot menu key"
 	default 0x0016
