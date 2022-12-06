@@ -10,5 +10,8 @@ ramstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_HDA_VERB) += hda_verb.c
 ramstage-y += gpio.c
 ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-mainboard.ads
 
-all-y += die.c
+
+bootblock-y += die.c
+romstage-y += die.c
+ramstage-y += die.c
 smm-y += die.c
