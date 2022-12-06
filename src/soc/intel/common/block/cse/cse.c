@@ -1178,10 +1178,7 @@ static void cse_set_state(struct device *dev)
 	 * Check if the CMOS value "me_state" exists, if it doesn't, then
 	 * don't do anything.
 	 */
-	const unsigned int cmos_me_state = get_uint_option("me_state", UINT_MAX);
-
-	if (cmos_me_state == UINT_MAX)
-		return;
+	const unsigned int cmos_me_state = get_uint_option("me_state", 1);
 
 	printk(BIOS_DEBUG, "CMOS: me_state = %u\n", cmos_me_state);
 
