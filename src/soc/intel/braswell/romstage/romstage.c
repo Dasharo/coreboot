@@ -94,8 +94,6 @@ void soc_after_ram_init(struct romstage_params *params)
 	value = iosf_bunit_read(BUNIT_BMISC);
 	value |= 3;
 	iosf_bunit_write(BUNIT_BMISC, value);
-
-	printk(BIOS_DEBUG, "BIOS_RESET_CPL: %08x\n", iosf_punit_read(5));
 }
 
 /* Initialize the UPD parameters for MemoryInit */
@@ -127,8 +125,6 @@ void soc_memory_init_params(struct romstage_params *params, MEMORY_INIT_UPD *upd
 	upd->PcdLegacySegDecode   = config->PcdLegacySegDecode;
 	upd->PcdDvfsEnable        = config->PcdDvfsEnable;
 	upd->PcdCaMirrorEn        = config->PcdCaMirrorEn;
-
-	printk(BIOS_DEBUG, "BIOS_RESET_CPL: %08x\n", iosf_punit_read(5));
 }
 
 void soc_display_memory_init_params(const MEMORY_INIT_UPD *old,
