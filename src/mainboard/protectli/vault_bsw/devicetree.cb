@@ -69,7 +69,7 @@ chip soc/intel/braswell
 	register "PcdPchSsicEnable" = "1"
 	register "PcdRtcLock" = "0"	# Disable RTC access locking to NVRAM
 	register "PMIC_I2CBus" = "0"
-	register "ISPEnable" = "0"		# Disable IUNIT
+	register "ISPEnable" = "0"              # Disable IUNIT
 	register "ISPPciDevConfig" = "3"
 	register "PcdSdDetectChk" = "0" # Disable SD card detect
 	register "DptfDisable" = "1"

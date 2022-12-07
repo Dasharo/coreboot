@@ -3,3 +3,6 @@ config BOARD_PROTECTLI_FW2B
 
 config BOARD_PROTECTLI_FW4B
 	bool "FW4B"
+
+config BOARD_PROTECTLI_FW4C
+	bool "FW4C"

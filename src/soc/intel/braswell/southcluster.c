@@ -252,6 +252,18 @@ static void sc_read_resources(struct device *dev)
 	sc_add_io_resources(dev);
 }
 
+static void pch_misc_init(void)
+{
+	uint8_t reg8;
+
+	/* Setup NMI on errors, disable SERR */
+	reg8 = (inb(0x61)) & 0xf0;
+	outb((reg8 | (1 << 2)), 0x61);
+
+	/* Disable NMI sources */
+	outb((1 << 7), 0x70);
+};
+
 static void sc_init(struct device *dev)
 {
 	int i;
@@ -311,6 +323,10 @@ static void sc_init(struct device *dev)
 
 	sc_set_serial_irqs_mode(dev, config->serirq_mode);
 
+	/* Interrupt configuration */
+	setup_ioapic((void *)IO_APIC_ADDR, 1);
+
+	pch_misc_init();
 }
 
 /*

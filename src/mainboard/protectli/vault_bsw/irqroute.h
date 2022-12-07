@@ -5,7 +5,7 @@
 #include <soc/pm.h>
 
 #define PCI_DEV_PIRQ_ROUTES \
-	PCI_DEV_PIRQ_ROUTE(GFX_DEV,    A, A, A, A), \
+	PCI_DEV_PIRQ_ROUTE(GFX_DEV,    A, B, C, D), \
 	PCI_DEV_PIRQ_ROUTE(SATA_DEV,   D, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(XHCI_DEV,   E, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(SIO1_DEV,   B, A, D, C), \
@@ -17,10 +17,10 @@
 
 #define PIRQ_PIC_ROUTES \
 	PIRQ_PIC(A, 11), \
-	PIRQ_PIC(B, 5), \
-	PIRQ_PIC(C, 5), \
+	PIRQ_PIC(B, 10), \
+	PIRQ_PIC(C, 10), \
 	PIRQ_PIC(D, 11), \
 	PIRQ_PIC(E, 11), \
-	PIRQ_PIC(F, 5), \
+	PIRQ_PIC(F, 10), \
 	PIRQ_PIC(G, 11), \
 	PIRQ_PIC(H, 11)

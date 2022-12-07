@@ -2,6 +2,7 @@
 
 #include <cpu/x86/lapic.h>
 #include <console/console.h>
+#include <smp/node.h>
 
 void do_lapic_init(void)
 {
@@ -28,24 +29,21 @@ void do_lapic_init(void)
 	lapic_write_around(LAPIC_SPIV,
 		(lapic_read_around(LAPIC_SPIV) & ~(LAPIC_VECTOR_MASK))
 		| LAPIC_SPIV_ENABLE);
-	lapic_write_around(LAPIC_LVT0,
-		(lapic_read_around(LAPIC_LVT0) &
-			~(LAPIC_LVT_MASKED | LAPIC_LVT_LEVEL_TRIGGER |
-				LAPIC_LVT_REMOTE_IRR | LAPIC_INPUT_POLARITY |
-				LAPIC_SEND_PENDING | LAPIC_LVT_RESERVED_1 |
-				LAPIC_DELIVERY_MODE_MASK))
-		| (LAPIC_LVT_REMOTE_IRR | LAPIC_SEND_PENDING |
-			LAPIC_DELIVERY_MODE_EXTINT)
-		);
+
+	uint32_t mask = LAPIC_LVT_MASKED | LAPIC_LVT_LEVEL_TRIGGER |
+			LAPIC_LVT_REMOTE_IRR | LAPIC_INPUT_POLARITY |
+			LAPIC_SEND_PENDING | LAPIC_LVT_RESERVED_1 |
+			LAPIC_DELIVERY_MODE_MASK;
+
+	if (boot_cpu())
+		lapic_write_around(LAPIC_LVT0, (lapic_read_around(LAPIC_LVT0) & ~mask) |
+					LAPIC_DELIVERY_MODE_EXTINT);
+	else
+		lapic_write_around(LAPIC_LVT0, (lapic_read_around(LAPIC_LVT0) & ~mask) |
+					(LAPIC_DELIVERY_MODE_EXTINT | LAPIC_LVT_MASKED));
+
 	lapic_write_around(LAPIC_LVT1,
-		(lapic_read_around(LAPIC_LVT1) &
-			~(LAPIC_LVT_MASKED | LAPIC_LVT_LEVEL_TRIGGER |
-				LAPIC_LVT_REMOTE_IRR | LAPIC_INPUT_POLARITY |
-				LAPIC_SEND_PENDING | LAPIC_LVT_RESERVED_1 |
-				LAPIC_DELIVERY_MODE_MASK))
-		| (LAPIC_LVT_REMOTE_IRR | LAPIC_SEND_PENDING |
-			LAPIC_DELIVERY_MODE_NMI)
-		);
+		(lapic_read_around(LAPIC_LVT1) & ~mask) | LAPIC_DELIVERY_MODE_NMI);
 
 	printk(BIOS_DEBUG, " apic_id: 0x%02lx ", lapicid());
 	printk(BIOS_INFO, "done.\n");

@@ -3,6 +3,8 @@
 #ifndef _SOC_MSR_H_
 #define _SOC_MSR_H_
 
+#define MSR_EBL_CR_POWERON		0x2a
+#define MSR_PIC_MSG_CONTROL		0x2e
 #define MSR_BSEL_CR_OVERCLOCK_CONTROL	0xcd
 #define MSR_PLATFORM_INFO		0xce
 #define MSR_PKG_CST_CONFIG_CONTROL	0xe2
@@ -10,6 +12,11 @@
 #define MSR_POWER_MISC			0x120
 #define		ENABLE_ULFM_AUTOCM_MASK		(1 << 2)
 #define		ENABLE_INDP_AUTOCM_MASK		(1 << 3)
+#define IA32_MCG_CAP			0x179
+#define  IA32_MCG_CAP_COUNT_MASK	0xff
+#define  IA32_MCG_CAP_CTL_P_BIT		8
+#define  IA32_MCG_CAP_CTL_P_MASK	(1 << IA32_MCG_CAP_CTL_P_BIT)
+#define IA32_MCG_CTL			0x17b
 #define MSR_POWER_CTL			0x1fc
 #define MSR_PKG_POWER_SKU_UNIT		0x606
 #define MSR_PKG_POWER_LIMIT		0x610

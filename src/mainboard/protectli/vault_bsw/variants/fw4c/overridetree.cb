@@ -1,0 +1,18 @@
+chip soc/intel/braswell
+
+	register "PcdEnableDma0" = "1"
+	register "PcdEnableI2C1" = "1"
+
+	register "PunitPwrConfigDisable" = "0"	# Enable SVID
+	register "ChvSvidConfig" = "SVID_PMIC_CONFIG"
+	register "PMIC_I2CBus" = "1"
+	register "I2C1Frequency" = "2"
+
+	register "lpss_acpi_mode" = "1"
+
+	device domain 0 on
+		device pci 18.0 on end # 8086 22c0 - SIO - DMA
+		device pci 18.2 on end # 8086 22c2 -   I2C Port 2
+		device pci 1c.2 on end # 8086 22cc - PCIe Root Port 3
+	end
+end

@@ -7,6 +7,7 @@
 #include <cpu/intel/microcode.h>
 #include <cpu/intel/smm_reloc.h>
 #include <cpu/intel/turbo.h>
+#include <cpu/x86/cr.h>
 #include <cpu/x86/lapic.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
@@ -30,14 +31,64 @@ static const struct reg_script core_msr_script[] = {
 	REG_SCRIPT_END
 };
 
+static void configure_misc(void)
+{
+	msr_t msr;
+
+	msr = rdmsr(IA32_MISC_ENABLE);
+	msr.lo |= (1 << 0);	/* Fast String enable */
+	msr.lo |= (1 << 3);	/* TM1/TM2/EMTTM enable */
+	wrmsr(IA32_MISC_ENABLE, msr);
+
+	/* Disable Thermal interrupts */
+	msr.lo = 0;
+	msr.hi = 0;
+	wrmsr(IA32_THERM_INTERRUPT, msr);
+}
+
+static void mca_configure(void)
+{
+	msr_t msr;
+	int i;
+	int num_banks;
+
+	printk(BIOS_DEBUG, "Clearing out pending MCEs\n");
+
+	msr = rdmsr(IA32_MCG_CAP);
+	num_banks = msr.lo & 0xff;
+
+	write_cr4(read_cr4() & ~CR4_MCE);
+
+	for (i = 0; i < num_banks; i++) {
+		/* Initialize machine checks */
+		wrmsr(IA32_MC0_CTL + i * 4,
+			(msr_t) {.lo = 0xffffffff, .hi = 0xffffffff});
+	}
+
+	msr.lo = msr.hi = 0;
+	for (i = 0; i < num_banks; i++) {
+		/* Clear the machine check status */
+		wrmsr(IA32_MC0_STATUS + (i * 4), msr);
+	}
+}
+
 static void soc_core_init(struct device *cpu)
 {
 	printk(BIOS_SPEW, "%s/%s (%s)\n",
 			__FILE__, __func__, dev_name(cpu));
 	printk(BIOS_DEBUG, "Init Braswell core.\n");
 
-	/* Enable the local cpu apics */
+	/* Clear out pending MCEs */
+	/* TODO(adurbin): This should only be done on a cold boot. Also, some
+	 * of these banks are core vs package scope. For now every CPU clears
+	 * every bank. */
+	mca_configure();
+
+	/* Enable the local CPU apics */
 	setup_lapic();
+
+	/* Configure Thermal Sensors */
+	configure_misc();
 
 	/*
 	 * The turbo disable bit is actually scoped at building block level -- not package.

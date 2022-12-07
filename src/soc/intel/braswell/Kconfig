@@ -18,8 +18,6 @@ config CPU_SPECIFIC_OPTIONS
 	select CPU_INTEL_TURBO_NOT_PACKAGE_SCOPED
 	select HAVE_SMI_HANDLER
 	select PARALLEL_MP
-	select PCIEXP_ASPM
-	select PCIEXP_CLK_PM
 	select PCIEXP_COMMON_CLOCK
 	select PLATFORM_USES_FSP1_1
 	select REG_SCRIPT
@@ -46,6 +44,7 @@ config CPU_SPECIFIC_OPTIONS
 	select CPU_INTEL_COMMON
 	select SOUTHBRIDGE_INTEL_COMMON_SMBUS
 	select SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
+	select IOAPIC
 
 config DCACHE_BSP_STACK_SIZE
 	hex
@@ -126,7 +125,7 @@ config USE_GOOGLE_FSP
 	 variants require this; all other boards should use the public release.
 
 config FSP_HEADER_PATH
-	string
+	string "Location of FSP headers"
 	default "$(src)/vendorcode/intel/fsp/fsp1_1/braswell" if USE_GOOGLE_FSP
 	default "3rdparty/fsp/BraswellFspBinPkg/Include/"
 	help

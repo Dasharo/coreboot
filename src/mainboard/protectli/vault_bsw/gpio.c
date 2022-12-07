@@ -50,8 +50,7 @@ static const struct soc_gpio_map gpse_gpio_map[] = {
 	GPIO_NC,			/* 69 MMC1_RCLK */
 	Native_M1,			/* 75 USB_OC1_B */
 	Native_M1,			/* 76 PMU_RESETBUTTON_B */
-	GPI(trig_edge_both, L0, NA, non_maskable, en_edge_detect, NA, NA),
-	/* 77 GPIO_ALERT   */
+	GPIO_NC,			/* 77 GPIO_ALERT   */
 	GPIO_NC,			/* 78 SDMMC3_PWR_EN_B */
 	NATIVE_PU20K(1),		/* 79 ILB_SERIRQ */
 	NATIVE_PU20K(1),		/* 80 USB_OC0_B */
@@ -85,10 +84,10 @@ static const struct soc_gpio_map  gpsw_gpio_map[] = {
 	NATIVE_PD20K(2),		/* 31 GPIO_SW31/MF_HDA_RSTB */
 	NATIVE_PD20K(2),		/* 32 GPIO_SW32/MF_HDA_SDI0 */
 	NATIVE_PD20K(2),		/* 33 MF_HDA_SDO */
-	GPO_FUNC(P_20K_L, 1),		/* 34 MF_HDA_DOCKRSTB */
+	GPIO_NC,			/* 34 MF_HDA_DOCKRSTB */
 	NATIVE_PD20K(2),		/* 35 MF_HDA_SYNC */
-	NATIVE_PD20K(2),		/* 36 GPIO_SW36/MF_HDA_SDI1 */
-	GPIO_INPUT_PD_20K,		/* 37 MF_HDA_DOCKENB */
+	GPIO_NC,			/* 36 GPIO_SW36/MF_HDA_SDI1 */
+	GPIO_NC,			/* 37 MF_HDA_DOCKENB */
 	GPIO_NC,			/* 45 I2C5_SDA */
 	GPIO_NC,			/* 46 I2C4_SDA */
 	GPIO_NC,			/* 47 I2C6_SDA */
@@ -97,10 +96,10 @@ static const struct soc_gpio_map  gpsw_gpio_map[] = {
 	GPIO_NC,			/* 50 I2C4_SCL */
 	GPIO_NC,			/* 51 I2C6_SCL */
 	GPIO_NC,			/* 52 I2C_NFC_SCL */
-	GPIO_NC,			/* 60 I2C1_SDA */
+	NATIVE_PU1K_CSEN_INVTX(1),	/* 60 I2C1_SDA */
 	GPIO_NC,			/* 61 I2C0_SDA */
 	GPIO_NC,			/* 62 I2C2_SDA */
-	GPIO_NC,			/* 63 I2C1_SCL */
+	NATIVE_PU1K_CSEN_INVTX(1),	/* 63 I2C1_SCL */
 	GPIO_NC,			/* 64 I2C3_SDA */
 	GPIO_NC,			/* 65 I2C0_SCL */
 	GPIO_NC,			/* 66 I2C2_SCL */
@@ -135,36 +134,31 @@ static const struct soc_gpio_map  gpn_gpio_map[] = {
 	GPIO_NC,			/* 06 GPIO_DFX8 */
 	GPIO_NC,			/* 07 GPIO_DFX2 */
 	GPIO_NC,			/* 08 GPIO_DFX6 */
-	GPI(trig_edge_low, L8, P_20K_L, non_maskable, en_edge_rx_data,
-	    UNMASK_WAKE, SCI),		/* 15 GPIO_SUS0 */
-	GPO_FUNC(P_20K_L, 1),		/* 16 SEC_GPIO_SUS10 */
-	NATIVE_PD20K(1),		/* 17 GPIO_SUS3 */
-	GPI(trig_edge_low, L15, P_20K_H, non_maskable, en_edge_rx_data, NA,
-	    SMI),			/* 18 GPIO_SUS7 */
-	NATIVE_PD20K(1),		/* 19 GPIO_SUS1 */
-	GPIO_INPUT_PU_20K,		/* 20 GPIO_SUS5 */
-	GPI(trig_edge_high, L2, P_20K_L, non_maskable, en_edge_rx_data, NA,
-	    NA),			/* 21 SEC_GPIO_SUS11 */
-	NATIVE_PU20K(1),		/* 22 GPIO_SUS4 */
-	GPI(trig_level_high, L3, P_20K_H, non_maskable, en_rx_data, NA, NA),
-					/* 23 SEC_GPIO_SUS8 */
-	NATIVE_PU20K(1),		/* 24 GPIO_SUS2 */
-	GPI(trig_edge_low, L14, P_20K_H, non_maskable, en_edge_rx_data, NA,
-	    SCI),			/* 25 GPIO_SUS6 */
-	Native_M1,			/* 26 CX_PREQ_B */
-	GPIO_INPUT_PD_20K,		/* 27 SEC_GPIO_SUS9 */
-	Native_M1,			/* 30 TRST_B */
-	Native_M1,			/* 31 TCK */
+	GPIO_NC,			/* 15 GPIO_SUS0 */
+	GPIO_NC,			/* 16 SEC_GPIO_SUS10 */
+	GPIO_NC,			/* 17 GPIO_SUS3 */
+	GPIO_NC,			/* 18 GPIO_SUS7 */
+	GPIO_NC,			/* 19 GPIO_SUS1 */
+	GPIO_NC,			/* 20 GPIO_SUS5 */
+	GPIO_NC,			/* 21 SEC_GPIO_SUS11 */
+	GPIO_NC,			/* 22 GPIO_SUS4 */
+	GPIO_NC,			/* 23 SEC_GPIO_SUS8 */
+	GPIO_NC,			/* 24 GPIO_SUS2 */
+	GPIO_NC,			/* 25 GPIO_SUS6 */
+	GPIO_SKIP,			/* 26 CX_PREQ_B */
+	GPIO_NC,			/* 27 SEC_GPIO_SUS9 */
+	GPIO_SKIP,			/* 30 TRST_B */
+	GPIO_SKIP,			/* 31 TCK */
 	GPIO_SKIP,			/* 32 PROCHOT_B */
 	GPIO_SKIP,			/* 33 SVID0_DATA */
-	Native_M1,			/* 34 TMS */
-	GPIO_NC,			/* 35 CX_PRDY_B_2 */
-	GPIO_NC,			/* 36 TDO_2 */
-	Native_M1,			/* 37 CX_PRDY_B */
+	GPIO_SKIP,			/* 34 TMS */
+	GPIO_SKIP,			/* 35 CX_PRDY_B_2 */
+	GPIO_SKIP,			/* 36 TDO_2 */
+	GPIO_SKIP,			/* 37 CX_PRDY_B */
 	GPIO_SKIP,			/* 38 SVID0_ALERT_B */
-	Native_M1,			/* 39 TDO */
+	GPIO_SKIP,			/* 39 TDO */
 	GPIO_SKIP,			/* 40 SVID0_CLK */
-	Native_M1,			/* 41 TDI */
+	GPIO_SKIP,			/* 41 TDI */
 	GPIO_NC,			/* 45 GP_CAMERASB05 */
 	GPIO_NC,			/* 46 GP_CAMERASB02 */
 	GPIO_NC,			/* 47 GP_CAMERASB08 */
