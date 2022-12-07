@@ -25,15 +25,17 @@ chip soc/intel/braswell
 	register "PcdEnableAzalia" = "1"
 	register "PcdEnableXhci" = "1"
 	register "PcdEnableLpe" = "0"
-	register "PcdEnableDma0" = "1"
+	register "PcdEnableDma0" = "0"
 	register "PcdEnableDma1" = "0"
 	register "PcdEnableI2C0" = "0"
-	register "PcdEnableI2C1" = "1"
+	register "PcdEnableI2C1" = "0"
 	register "PcdEnableI2C2" = "0"
 	register "PcdEnableI2C3" = "0"
 	register "PcdEnableI2C4" = "0"
 	register "PcdEnableI2C5" = "0"
 	register "PcdEnableI2C6" = "0"
+	register "PunitPwrConfigDisable" = "1"	# Disable SVID
+	register "ChvSvidConfig" = "SVID_PMIC_CONFIG"
 	register "PcdEmmcMode" = "PCH_DISABLED"
 	register "PcdUsb3ClkSsc" = "1"
 	register "PcdDispClkSsc" = "1"
@@ -66,19 +68,14 @@ chip soc/intel/braswell
 	register "PcdSataInterfaceSpeed" = "3"
 	register "PcdPchSsicEnable" = "1"
 	register "PcdRtcLock" = "0"	# Disable RTC access locking to NVRAM
-
-	#FIXME: to get past FSP silicon init set this to 1
-	register "PunitPwrConfigDisable" = "0"	# Enable SVID
-	register "ChvSvidConfig" = "SVID_PMIC_CONFIG"
-	register "PMIC_I2CBus" = "1"
-	register "ISPEnable" = "0" # Disable IUNIT
-	register "ISPPciDevConfig" = "2"
+	register "PMIC_I2CBus" = "0"
+	register "ISPEnable" = "0"              # Disable IUNIT
+	register "ISPPciDevConfig" = "3"
 	register "PcdSdDetectChk" = "0" # Disable SD card detect
 	register "DptfDisable" = "1"
-	register "I2C1Frequency" = "2"
 
 	# Enable devices in PCI mode
-	register "lpss_acpi_mode" = "1"
+	register "lpss_acpi_mode" = "0"
 	register "emmc_acpi_mode" = "0"
 	register "sd_acpi_mode" = "0"
 	register "lpe_acpi_mode" = "0"
@@ -104,9 +101,9 @@ chip soc/intel/braswell
 		device pci 12.0 off end	# 8086 2296 - SD Port
 		device pci 13.0 on  end	# 8086 22a3 - Sata controller
 		device pci 14.0 on  end	# 8086 22b5 - USB XHCI
-		device pci 18.0 on  end	# 8086 22c0 - SIO - DMA
+		device pci 18.0 off end	# 8086 22c0 - SIO - DMA
 		device pci 18.1 off end	# 8086 22c1 -   I2C Port 1
-		device pci 18.2 on  end	# 8086 22c2 -   I2C Port 2
+		device pci 18.2 off end	# 8086 22c2 -   I2C Port 2
 		device pci 18.3 off end	# 8086 22c3 -   I2C Port 3
 		device pci 18.4 off end	# 8086 22c4 -   I2C Port 4
 		device pci 18.5 off end	# 8086 22c5 -   I2C Port 5
