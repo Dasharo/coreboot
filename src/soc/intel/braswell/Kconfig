@@ -125,7 +125,7 @@ config USE_GOOGLE_FSP
 	 variants require this; all other boards should use the public release.
 
 config FSP_HEADER_PATH
-	string
+	string "Location of FSP headers"
 	default "$(src)/vendorcode/intel/fsp/fsp1_1/braswell" if USE_GOOGLE_FSP
 	default "3rdparty/fsp/BraswellFspBinPkg/Include/"
 	help
