@@ -6,6 +6,7 @@ function usage {
     echo -e "Available CMDs:"
     echo -e "\tfw2b - build Protectli FW2B coreboot image"
     echo -e "\tfw4b - build Protectli FW4B coreboot image"
+    echo -e "\tfw4c - build Protectli FW4C coreboot image"
     echo -e "\tfw6  - build Protectli FW6  coreboot image"
     echo -e "\tcode - build .zip package with source code"
     exit 1
@@ -43,7 +44,7 @@ function buildImage {
 	# coreboot directory first
 		cd coreboot
         else
-	# we are probably in the coreboot repistory already
+	# we are probably in the coreboot repository already
 		if [ ! -d 3rdparty/blobs/mainboard ]; then
 			git submodule update --init --checkout
 		fi
@@ -137,7 +138,7 @@ function buildCodeZip {
 CMD="$1"
 
 case "$CMD" in
-    "fw2b"|"fw4b"|"fw6")
+    "fw2b"|"fw4b"|"fw4c"|"fw6")
         buildImage "$CMD"
 	;;
     "code")
