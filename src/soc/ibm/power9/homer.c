@@ -1559,10 +1559,6 @@ static void istep_21_1(uint8_t chips, struct homer_st *homers, const uint64_t *c
 			start_pm_complex(chip, &homers[chip], cores[chip]);
 	}
 	printk(BIOS_DEBUG, "Done starting PM complex\n");
-
-	printk(BIOS_DEBUG, "Activating OCC...\n");
-	activate_occ(chips, homers);
-	printk(BIOS_DEBUG, "Done activating OCC\n");
 }
 
 /* Extracts rings for a specific Programmable PowerPC-lite Engine */
