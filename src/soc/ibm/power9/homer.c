@@ -1028,6 +1028,22 @@ static void block_wakeup_int(int core, int state)
 	write_scom_for_chiplet(0, EC00_CHIPLET_ID + core, 0x200F0107, PPC_BIT(1));
 }
 
+struct prog *__payload;
+
+static void secondary_entry(void)
+{
+	while (__payload == NULL)
+		asm volatile("stop" ::: "memory");
+
+	/*
+	 * arch_prog_run(__payload);
+	 *
+	 * Doing it asm way to avoid using stack and overwriting %lr.
+	 */
+	register void *r3 asm ("r3") = __payload;
+	asm volatile("b arch_prog_run" : "+r"(r3));
+}
+
 /*
  * Some time will be lost between entering and exiting STOP 15, but we don't
  * have a way of calculating it. In theory we could read tick count from one of
@@ -1041,6 +1057,8 @@ struct save_state {
 	uint64_t nia;
 	uint64_t tb;
 	uint64_t lr;
+	uint64_t bsp_pir;
+	void *sec_entry;
 } sstate;
 
 static void cpu_winkle(void)
@@ -1059,6 +1077,13 @@ static void cpu_winkle(void)
 	write_spr(SPR_LPCR, lpcr);
 	write_spr(SPR_PSSCR, 0x00000000003F00FF);
 	sstate.msr = read_msr();
+	sstate.bsp_pir = read_spr(SPR_PIR);
+
+	/*
+	 * Not used by current thread, but will be used later by secondary
+	 * threads, may as well set this now. Note that this is OPD address.
+	 */
+	sstate.sec_entry = secondary_entry;
 
 	/*
 	 * Cannot clobber:
