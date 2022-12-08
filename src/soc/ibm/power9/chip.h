@@ -8,4 +8,6 @@ struct soc_ibm_power9_config {
 
 void build_homer_image(void *homer_bar, void *common_occ_area, uint64_t nominal_freq[]);
 
+void activate_occ(uint8_t chips, void *homer_bar);
+
 #endif /* __SOC_CAVIUM_CN81XX_CHIP_H */
