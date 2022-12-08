@@ -683,7 +683,6 @@ static void pba_slave_setup_runtime_phase(uint8_t chip)
 	data |= PPC_PLACE(PBA_READ_TTYPE_CL_RD_NC, 15, 1);           // read_ttype
 	data |= PPC_PLACE(PBA_READ_PREFETCH_NONE, 16, 2);            // read_prefetch_ctl
 	data |= PPC_PLACE(PBA_WRITE_TTYPE_DMA_PR_WR, 8, 3);          // write_ttype
-	data |= PPC_PLACE(PBA_WRITE_GATHER_TIMEOUT_2_PULSES, 25, 3); // wr_gather_timeout
 	data |= PPC_BIT(20);                                         // buf_alloc_a
 	data |= PPC_BIT(21);                                         // buf_alloc_b
 	data |= PPC_BIT(22);                                         // buf_alloc_c
@@ -1318,7 +1317,7 @@ static void pstate_gpe_init(uint8_t chip, struct homer_st *homer, uint64_t cores
 	/* Set up the OCC Scratch 2 register before PGPE boot */
 	occ_scratch = read_scom(chip, PU_OCB_OCI_OCCS2_SCOM);
 	occ_scratch &= ~PPC_BIT(PGPE_ACTIVE);
-	occ_scratch &= ~PPC_BITMASK(27, 32);
+	occ_scratch &= ~PPC_BITMASK(27, 31);
 	occ_scratch |= PPC_PLACE(avsbus_number, 27, 1);
 	occ_scratch |= PPC_PLACE(avsbus_rail, 28, 4);
 	write_scom(chip, PU_OCB_OCI_OCCS2_SCOM, occ_scratch);
