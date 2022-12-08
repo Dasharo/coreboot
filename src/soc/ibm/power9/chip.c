@@ -814,6 +814,8 @@ static void *load_fdt(const char *dtb_file, uint8_t chips)
 	return fdt;
 }
 
+extern struct prog *__payload;
+
 void platform_prog_run(struct prog *prog)
 {
 	uint8_t chips = fsi_get_present_chips();
@@ -845,12 +847,11 @@ void platform_prog_run(struct prog *prog)
 
 	/*
 	 * Now that the payload and its interrupt vectors are already loaded
-	 * perform 16.2.
-	 *
-	 * This MUST be done as late as possible so that none of the newly
-	 * activated threads start execution before current thread jumps into
-	 * the payload.
+	 * let secondary threads jump into payload. The order of jumping into
+	 * Skiboot doesn't matter, as long as the thread that lands as first
+	 * has FDT in %r3.
 	 */
+	__payload = prog;
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
 			activate_slave_cores(chip);
