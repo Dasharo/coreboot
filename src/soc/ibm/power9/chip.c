@@ -681,6 +681,59 @@ static void rng_init(uint8_t chips)
 	}
 }
 
+static void activate_secondary_threads(uint8_t chip)
+{
+	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
+
+	uint8_t i;
+
+	/* Read OCC CCSR written by the code earlier */
+	const uint64_t functional_cores = read_scom(chip, 0x0006C090);
+
+	/*
+	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 */
+	const uint64_t chip_msg = DOORBELL_MSG_TYPE | PPC_PLACE(chip, 49, 4);
+
+	/* Find and process the first core in a separate loop to slightly
+	 * simplify processing of all the other cores by removing a conditional */
+	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
+		uint8_t thread;
+		uint64_t core_msg;
+
+		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+			continue;
+
+		/* Message value for thread 0 of the current core */
+		core_msg = chip_msg | (i << 2);
+
+		/* Skip sending doorbell to the current thread of the current core */
+		for (thread = (chip == 0 ? 1 : 0); thread < 4; ++thread) {
+			register uint64_t msg = core_msg | thread;
+			asm volatile("msgsnd %0" :: "r" (msg));
+		}
+
+		break;
+	}
+
+	for (++i; i < MAX_CORES_PER_CHIP; ++i) {
+		uint8_t thread;
+		uint64_t core_msg;
+
+		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+			continue;
+
+		/* Message value for thread 0 of the i-th core */
+		core_msg = chip_msg | (i << 2);
+
+		for (thread = 0; thread < 4; ++thread) {
+			register uint64_t msg = core_msg | thread;
+			asm volatile("msgsnd %0" :: "r" (msg));
+		}
+	}
+}
+
 static void enable_soc_dev(struct device *dev)
 {
 	int chip, idx = 0;
@@ -739,59 +792,53 @@ static void enable_soc_dev(struct device *dev)
 	rng_init(chips);
 	istep_18_11(chips, &tod_mdmt);
 	istep_18_12(chips, tod_mdmt);
-}
-
-static void activate_slave_cores(uint8_t chip)
-{
-	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
-
-	uint8_t i;
-
-	/* Read OCC CCSR written by the code earlier */
-	const uint64_t functional_cores = read_scom(chip, 0x0006C090);
 
 	/*
-	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
-	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 * We have to disable FSP special wakeups on all cores, but to do so
+	 * the core has to be powered up. It would be enough to start just one
+	 * thread on each core, but this makes hand-off to payload much more
+	 * complicated. To keep things simple, start each thread now. They will
+	 * stay in STOP 1 until platform_prog_run() tells them to start the
+	 * payload.
 	 */
-	const uint64_t chip_msg = DOORBELL_MSG_TYPE | PPC_PLACE(chip, 49, 4);
-
-	/* Find and process the first core in a separate loop to slightly
-	 * simplify processing of all the other cores by removing a conditional */
-	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
-		uint8_t thread;
-		uint64_t core_msg;
-
-		if (!IS_EC_FUNCTIONAL(i, functional_cores))
-			continue;
-
-		/* Message value for thread 0 of the current core */
-		core_msg = chip_msg | (i << 2);
-
-		/* Skip sending doorbell to the current thread of the current core */
-		for (thread = (chip == 0 ? 1 : 0); thread < 4; ++thread) {
-			register uint64_t msg = core_msg | thread;
-			asm volatile("msgsnd %0" :: "r" (msg));
-		}
-
-		break;
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			activate_secondary_threads(chip);
 	}
 
-	for (++i; i < MAX_CORES_PER_CHIP; ++i) {
-		uint8_t thread;
-		uint64_t core_msg;
+	/*
+	 * Give some time for cores to actually wake up. 3800 us is "estimated
+	 * target and subject to change" latency for wake-up from STOP 11
+	 * according to POWER9 Processor User's Manual, but this proven to be
+	 * not enough in tests. 5 ms worked each time, using twice as much to
+	 * be safe.
+	 */
+	mdelay(10);
 
-		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (!(chips & (1 << chip)))
 			continue;
 
-		/* Message value for thread 0 of the i-th core */
-		core_msg = chip_msg | (i << 2);
+		const uint64_t cores = read_scom(chip, 0x0006C090);
 
-		for (thread = 0; thread < 4; ++thread) {
-			register uint64_t msg = core_msg | thread;
-			asm volatile("msgsnd %0" :: "r" (msg));
+		for (uint8_t core = 0; core < MAX_CORES_PER_CHIP; ++core) {
+			if (!IS_EC_FUNCTIONAL(core, cores))
+				continue;
+
+			/* Enable auto special wakeup for functional cores. */
+			write_scom_for_chiplet(chip, EP00_CHIPLET_ID + core/4,
+					       0x1001203B + 0x400 * ((core/2) % 2),
+					       PPC_BIT(12 + (core % 2)));
+
+			/* De-assert FSP special wakeup before activate_occ(). */
+			scom_and_for_chiplet(chip, EC00_CHIPLET_ID + core, 0x200F010B,
+					     ~PPC_BIT(0));
 		}
 	}
+
+	printk(BIOS_DEBUG, "Activating OCC...\n");
+	activate_occ(chips, (void *)(top * 1024));
+	printk(BIOS_DEBUG, "Done activating OCC\n");
 }
 
 static void * load_fdt(const char *dtb_file, uint8_t chips)
@@ -856,7 +903,7 @@ void platform_prog_run(struct prog *prog)
 	__payload = prog;
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
-			activate_slave_cores(chip);
+			activate_secondary_threads(chip);
 	}
 }
 

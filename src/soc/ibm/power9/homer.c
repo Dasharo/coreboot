@@ -2526,8 +2526,10 @@ static void set_occ_active_state(uint8_t chip, struct homer_st *homer)
 }
 
 /* Moves OCC to active state */
-static void activate_occ(uint8_t chips, struct homer_st *homers)
+void activate_occ(uint8_t chips, void *homer_bar)
 {
+	struct homer_st *homers = homer_bar;
+
 	/* Make sure OCCs are ready for communication */
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
@@ -2572,10 +2574,6 @@ static void istep_21_1(uint8_t chips, struct homer_st *homers, const uint64_t *c
 			start_pm_complex(chip, &homers[chip], cores[chip]);
 	}
 	printk(BIOS_DEBUG, "Done starting PM complex\n");
-
-	printk(BIOS_DEBUG, "Activating OCC...\n");
-	activate_occ(chips, homers);
-	printk(BIOS_DEBUG, "Done activating OCC\n");
 }
 
 static void get_ppe_scan_rings(uint8_t chip, struct xip_hw_header *hw, uint8_t dd,
