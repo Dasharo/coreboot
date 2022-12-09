@@ -7,4 +7,7 @@
 * [Writing Documentation](writing_documentation.md)
 * [Setting up GPIOs](gpio.md)
 * [Adding devices to a device tree](devicetree.md)
-* [OpenSecurityTraining](OST2.md)
+
+## coreboot and firmware-related training
+
+* [Open Security Training 2 courses](OST2.md)
