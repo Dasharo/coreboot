@@ -5,7 +5,7 @@ function usage {
     echo -e "Usage:"
     echo -e "$0 CMD"
     echo -e "Available CMDs:"
-    echo -e "\tvp2420 - build Protectli VP2410 coreboot image"
+    echo -e "\tvp2420 - build Protectli VP2420 coreboot image"
     exit 1
 }
 
@@ -25,8 +25,6 @@ function buildVP2420Image {
 		rm protectli_blobs.zip
 	fi
 
-	version=$(cat .coreboot-version)
-
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
@@ -41,10 +39,10 @@ function buildVP2420Image {
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make"
 
-	cp build/coreboot.rom protectli_vp2420_v$version.rom
+	cp build/coreboot.rom protectli_vp2420.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_vp2420_v$version.rom" 
-		sha256sum protectli_vp2420_v$version.rom > protectli_vp2420_v$version.rom.sha256
+		echo "Result binary placed in $PWD/protectli_vp2420.rom" 
+		sha256sum protectli_vp2420.rom > protectli_vp2420.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
