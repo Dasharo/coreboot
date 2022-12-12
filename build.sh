@@ -85,7 +85,7 @@ function buildVP2420Image {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
 
 	cp configs/config.protectli_$1 .config
@@ -94,13 +94,13 @@ function buildVP2420Image {
 
 	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make"
 
-	cp build/coreboot.rom protectli_vault_glk_v$version.rom
+	cp build/coreboot.rom protectli_vp2420_v$version.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_vault_glk_v$version.rom" 
-		sha256sum protectli_vault_ehl_v$version.rom > protectli_vault_ehl_v$version.rom.sha256
+		echo "Result binary placed in $PWD/protectli_vp2420_v$version.rom" 
+		sha256sum protectli_vp2420_v$version.rom > protectli_vp2420_v$version.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
