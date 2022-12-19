@@ -30,7 +30,7 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	get_spd_smbus(&blk);
 	dump_spd_info(&blk);
 
-	if (blk.len == 0)
+	if (blk.spd_array[0] == NULL)
 		die("No memory detected. Insert DIMM module");
 
 	module_spd_info.spd_spec.spd_data_ptr_info.spd_data_ptr = (uintptr_t)blk.spd_array[0];
