@@ -112,4 +112,7 @@ config FMDFILE
 config TPM_PIRQ
 	default 0x27 if BOARD_CLEVO_NS50PU_BASE # GPP_E1
 
+config SOC_INTEL_CSE_SEND_EOP_EARLY
+	default n
+
 endif
