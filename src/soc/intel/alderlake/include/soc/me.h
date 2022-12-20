@@ -13,8 +13,15 @@
 #define FLASH_VAL_SIGN		0xFF0A55A
 #define SI_DESC_SIZE		0x1000
 #define SI_DESC_REGION		"SI_DESC"
+
 /* HAP bit */
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 #define HAP_OFFSET			0x1DE
+#endif
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_P)
+#define HAP_OFFSET			0x17E
+#endif
+
 #define HAP_MASK			0x01
 
 /* ME Host Firmware Status register 1 */
