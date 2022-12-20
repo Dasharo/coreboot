@@ -23,9 +23,10 @@ else
 export PACKAGES_PATH := $(EDK2_PATH)
 endif
 
-BUILD_STR = -a IA32 -a X64 -t COREBOOT
-BUILD_STR += -p UefiPayloadPkg/UefiPayloadPkg.dsc
-BUILD_STR += -D BOOTLOADER=COREBOOT -q
+BUILD_STR = -p UefiPayloadPkg/UefiPayloadPkg.dsc
+BUILD_STR += -t COREBOOT
+BUILD_STR += -D BOOTLOADER=COREBOOT
+BUILD_STR += -q -s
 
 #
 # EDK II has the following build options relevant to coreboot:
@@ -46,8 +47,10 @@ ifeq ($(CONFIG_EDK2_BOOT_MANAGER_ESCAPE),y)
 BUILD_STR += -D BOOT_MANAGER_ESCAPE=TRUE
 endif
 # BUILD_TARGETS			= DEBUG
-ifeq ($(CONFIG_EDK2_RELEASE),y)
-BUILD_STR += -b RELEASE
+ifeq ($(CONFIG_EDK2_DEBUG),y)
+RELEASE_STR = DEBUG
+else
+RELEASE_STR = RELEASE
 endif
 # SERIAL_TERMINAL	= TRUE
 ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
@@ -168,8 +171,6 @@ BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdConOutColumn=0
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutRow=0
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSetupConOutColumn=0
 endif
-
-bootloader = $(word 8,$(subst /, ,$(BUILD_STR)))
 
 ifneq ($(CONFIG_EDK2_CUSTOM_BUILD_PARAMS),)
 BUILD_STR += $(CONFIG_EDK2_CUSTOM_BUILD_PARAMS)
@@ -305,4 +306,4 @@ clean:
 distclean:
 	rm -rf $(WORKSPACE)
 
-.PHONY: all update checktools config build clean distclean logo
+.PHONY: all $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) prep checktools config build clean distclean logo lan_rom ipxe_rom
