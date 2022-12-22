@@ -1275,21 +1275,26 @@ static void cse_set_state(struct device *dev)
 
 	int send;
 	int result;
+	int enable_timeout = 0;
 
 	const unsigned int efi_me_state = cse_get_me_disable_mode();
 	const unsigned int cmos_me_state = get_uint_option("me_state", UINT_MAX);
 	unsigned int me_state;
 
 	/* EFI setting takes priority */
-	if (efi_me_state == UINT_MAX) {
-		if (cmos_me_state == UINT_MAX)
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+		if (efi_me_state == UINT_MAX)
+			me_state = ME_MODE_ENABLE;
+		else if (efi_me_state < ME_MODE_DISABLE_HAP)
+			me_state = efi_me_state;
+		else
 			return;
-		me_state = cmos_me_state;
+	} else {
+		if (cmos_me_state == UINT_MAX)
+			me_state = ME_MODE_ENABLE;
+		else
+			me_state = cmos_me_state;
 	}
-	else if (efi_me_state != ME_MODE_DISABLE_HAP)
-		me_state = efi_me_state;
-	else
-		return;
 
 	printk(BIOS_DEBUG, "me_state = %u\n", me_state);
 
@@ -1311,6 +1316,19 @@ static void cse_set_state(struct device *dev)
 		send = heci_send_receive(&me_enable, sizeof(me_enable),
 			&enable_reply, &enable_reply_size, HECI_MKHI_ADDR);
 		result = enable_reply.hdr.result;
+
+		while (1) {
+			if (cse_is_hfs1_cws_normal())
+				break;
+
+			delay(1);
+			enable_timeout++;
+			if (enable_timeout > 5) {
+				printk(BIOS_ERR, "Timeout occurred, ME HFSTS1: %08x\n",
+						 me_read_config32(PCI_ME_HFSTS1));
+				break;
+			}
+		}
 	} else {
 		printk(BIOS_DEBUG, "ME is %s.\n", me_state ? "disabled" : "enabled");
 		unsigned int cmos_me_state_counter = get_uint_option("me_state_counter",
@@ -1324,7 +1342,7 @@ static void cse_set_state(struct device *dev)
 	printk(BIOS_DEBUG, "HECI: ME state change send %s!\n",
 							!send ? "success" : "failure");
 	printk(BIOS_DEBUG, "HECI: ME state change result %s!\n",
-							result ? "success" : "failure");
+							!result ? "success" : "failure");
 
 	/*
 	 * Reset if the result was successful, or if the send failed as some older
