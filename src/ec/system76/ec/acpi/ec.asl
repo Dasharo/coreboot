@@ -242,4 +242,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 	#if CONFIG(EC_SYSTEM76_EC_BAT_THRESHOLDS)
 	#include "battery_thresholds.asl"
 	#endif
+
+	#include "thermal.asl"
 }
