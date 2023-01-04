@@ -61,6 +61,30 @@ config EDK2_TAG_OR_REV
 	  EDK2_REPOSITORY, and in the case of a branch name, prefixed with origin i.e.
 	  "origin/uefipayload_202202"
 
+config EDK2_USE_EDK2_PLATFORMS
+	bool "Use edk2-platforms repository"
+	default n
+	help
+	  Clone edk2-platforms repository to the edk2 workspace for additional modules.
+
+if EDK2_USE_EDK2_PLATFORMS
+
+config EDK2_PLATFORMS_REPOSITORY
+	string "URL to git repository for edk2-platforms"
+	default "https://github.com/tianocore/edk2-platforms"
+	help
+	  URL to the edk2-platfors repository to clone.
+
+config EDK2_PLATFORMS_TAG_OR_REV
+	string "Insert a commit's SHA-1 or a branch name"
+	default "origin/master"
+	help
+	  The commit's SHA-1 or branch name of the revision to use. This must exist in
+	  EDK2_PLATFORMS_REPOSITORY, and in the case of a branch name, prefixed with
+	  origin i.e. "origin/master"
+
+endif
+
 choice
 	prompt "edk2 build"
 	default EDK2_RELEASE
@@ -218,6 +242,154 @@ config EDK2_SERIAL_SUPPORT
 	  Enable serial port output in edk2. Serial output limits the performance of edk2's
 	  FrontPage.
 
+config EDK2_ENABLE_IPXE
+	bool "Include iPXE in edk2 payload"
+	default n
+	select PXE
+	help
+	  Instructs coreboot build system to build iPXE EFI target and include
+	  it in the EDK2 payload.
+
+config EDK2_IPXE_OPTION_NAME
+	string "iPXE option name"
+	depends on EDK2_ENABLE_IPXE
+	default "iPXE Network Boot"
+	help
+	  Configures how the iPXE boot option should be displayed in boot menu
+	  of EDK2 Payload. This name will be passed as PCD to the EDK2 build
+	  system.
+
+config EDK2_SECURE_BOOT
+	bool "Enable UEFI Secure Boot"
+	depends on SMMSTORE_V2
+	default n
+	help
+	  Enables UEFI Secure Boot image verification in EDK2 Payload.
+
+config EDK2_SATA_PASSWORD
+	bool "Enable TianoCore SATA disk password"
+	default n
+	help
+	  Enable SATA disk password suupport in the TianoCore payload.
+
+config EDK2_OPAL_PASSWORD
+	bool "Enable TianoCore TCG OPAL password"
+	default n
+	help
+	  Enables TCG OPAL disk password in the TianoCore Payload.
+
+# DasharoModulePkg specific options
+
+config EDK2_DASHARO_SECURITY_OPTIONS
+	bool "Enable EDK2 Dasharo Security Options Menu"
+	default n
+	help
+	  Enables the security configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_INTEL_ME_OPTIONS
+	bool "Enable EDK2 Dasharo ME Configuration Menu"
+	default n
+	help
+	  Enables the Intel ME configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_USB_CONFIG
+	bool "Enable EDK2 Dasharo USB Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 USB stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_NETWORK_CONFIG
+	bool "Enable EDK2 Dasharo Network Stack Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 network stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_CHIPSET_CONFIG
+	bool "Enable EDK2 Dasharo Chipset Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 chipset configuration submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
+	bool "Enable EDK2 network boot option by default"
+	default n
+	help
+	  Enables the network boot option in EDK2 by default.
+
+# End of DasharoModulePkg specific options
+
+config EDK2_BOOT_MENU_KEY
+	hex "TianoCore boot menu key"
+	default 0x0016
+	help
+	  Select the TianoCore payload boot menu key:
+	  UP         0x0001
+	  DOWN       0x0002
+	  RIGHT      0x0003
+	  LEFT       0x0004
+	  HOME       0x0005
+	  END        0x0006
+	  INSERT     0x0007
+	  DELETE     0x0008
+	  F1         0x000B
+	  F2         0x000C
+	  F3         0x000D
+	  F4         0x000E
+	  F5         0x000F
+	  F6         0x0010
+	  F7         0x0011
+	  F8         0x0012
+	  F9         0x0013
+	  F10        0x0014
+	  F11        0x0015
+	  F12        0x0016
+	  ESC        0x0017
+
+config EDK2_SETUP_MENU_KEY
+	hex "TianoCore setup menu key"
+	default 0x0017
+	help
+	  Select the TianoCore payload setup menu key:
+	  UP         0x0001
+	  DOWN       0x0002
+	  RIGHT      0x0003
+	  LEFT       0x0004
+	  HOME       0x0005
+	  END        0x0006
+	  INSERT     0x0007
+	  DELETE     0x0008
+	  F1         0x000B
+	  F2         0x000C
+	  F3         0x000D
+	  F4         0x000E
+	  F5         0x000F
+	  F6         0x0010
+	  F7         0x0011
+	  F8         0x0012
+	  F9         0x0013
+	  F10        0x0014
+	  F11        0x0015
+	  F12        0x0016
+	  ESC        0x0017
+
+config EDK2_DISABLE_MTRR_PROGRAMMING
+	bool "Disable MTRR programming in EDK2 Payload"
+	default y
+	help
+	  Disables MTRRs programming in the TianoCore Payload.
+
+if EDK2_SECURE_BOOT
+
+config EDK2_SECURE_BOOT_DEFAULT_ENABLE
+	bool "Set Secure Boot state to enabled by default"
+	default y
+	help
+	  Sets the UEFI Secure Boot state to enabled by default.
+
+endif
+
+endif
+
 config EDK2_CUSTOM_BUILD_PARAMS
 	string "edk2 additional custom build parameters"
 	default "-D VARIABLE_SUPPORT=SMMSTORE" if EDK2_REPO_MRCHROMEBOX && SMMSTORE_V2
@@ -227,5 +399,11 @@ config EDK2_CUSTOM_BUILD_PARAMS
 	  additional build options that should have been upstreamed but have not.
 
 	  This option can support both macros `-D` and Pcds `--pcd`.
+
+config EDK2_LAN_ROM_DRIVER
+	string "Optional LAN ROM driver file"
+	help
+	  Integrates LAN ROM driver in TianoCore Payload. Takes an EFI driver
+	  as input.
 
 endif

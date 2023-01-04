@@ -10,6 +10,7 @@ menu "PXE Options"
 
 choice
 	prompt "PXE ROM to use"
+	default BUILD_IPXE if EDK2_ENABLE_IPXE
 	default PXE_ROM
 
 config PXE_ROM
@@ -69,7 +70,9 @@ config PXE_ROM_ID
 
 config PXE_SERIAL_CONSOLE
 	bool "Enable iPXE serial console"
-	def_bool y
+	default n if SEABIOS_SERCON_PORT
+	default n if EDK2_ENABLE_IPXE
+	default y
 	help
 	  Enable/disable iPXE serial console. Since SeaBIOS supports serial
 	  console this option might be helpful to avoid duplicated output.
@@ -109,6 +112,13 @@ config PXE_HAS_HTTPS
 	help
 	  Enable HTTPS protocol, which allows you to encrypt all communication
 	  with a web server and to verify the server's identity
+
+config PXE_CUSTOM_BUILD_ID
+	string "iPXE custom build_id variable"
+	default ""
+	help
+	  This option allows user to customize build_id for reproducible builds.
+	  It is 32-bit hexadecimal number without "0x" prefix.
 
 endmenu
 endif

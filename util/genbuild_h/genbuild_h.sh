@@ -23,8 +23,8 @@ fi
 
 # $1: format string
 get_git_head_data() {
-	LANG="" git log --no-show-signature -1 --format="format:$1" 2>/dev/null || \
-	LANG="" git log -1 --format="format:$1"
+	LANG= git log --no-show-signature -1 --abbrev=10 --format="format:$1" 2>/dev/null || \
+	LANG= git log -1 --abbrev=10 --format="format:$1"
 }
 
 if [ "${BUILD_TIMELESS}" = "1" ]; then
@@ -79,9 +79,15 @@ printf "#define __BUILD_H\n\n"
 printf "#define COREBOOT_VERSION %s\n" "\"${KERNELVERSION}\""
 
 #See if the build is running in a git repo and the git command is available
-printf "/* timesource: %s */\n" "${TIMESOURCE}"
-printf "#define COREBOOT_VERSION_TIMESTAMP %s\n" "${DATE}"
-printf "#define COREBOOT_ORIGIN_GIT_REVISION \"%s\"\n" "${GITREV}"
+printf "/* timesource: $TIMESOURCE */\n"
+
+printf "#define DASHARO_VERSION \"%s\"\n" "$DASHARO_VERSION"
+printf "#define DASHARO_MAJOR_VERSION %d\\n" "$DASHARO_MAJOR_VERSION"
+printf "#define DASHARO_MINOR_VERSION %d\\n" "$DASHARO_MINOR_VERSION"
+printf "#define DASHARO_PATCH_VERSION %d\\n" "$DASHARO_PATCH_VERSION"
+
+printf "#define COREBOOT_VERSION_TIMESTAMP $DATE\n"
+printf "#define COREBOOT_ORIGIN_GIT_REVISION \"$GITREV\"\n"
 
 printf "#define COREBOOT_EXTRA_VERSION \"%s\"\n" "${COREBOOT_EXTRA_VERSION}"
 printf "#define COREBOOT_MAJOR_VERSION %s\n" "${MAJOR_VER}"
