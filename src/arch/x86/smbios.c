@@ -298,7 +298,7 @@ static int create_smbios_type17_for_empty_slot(struct dimm_info *dimm,
 }
 
 #define VERSION_VPD "firmware_version"
-static const char *vpd_get_bios_version(void)
+
 static const char *get_bios_framework_string(void)
 {
 	if (CONFIG(PAYLOAD_SEABIOS))
@@ -309,7 +309,6 @@ static const char *get_bios_framework_string(void)
 
 	return "coreboot";
 }
-
 static int smbios_write_type0(unsigned long *current, int handle)
 {
 	struct smbios_type0 *t = smbios_carve_table(*current, SMBIOS_BIOS_INFORMATION,
