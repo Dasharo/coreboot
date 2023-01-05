@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootstate.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
@@ -294,3 +295,26 @@ void vtd_enable_dma_protection(void)
 	 * vtd_engine_enable_dma_protection(IPUVT_BASE_ADDRESS);
 	 */
 }
+
+#if ENV_RAMSTAGE
+static void vtd_disable_pmr_on_resume(void *unused)
+{
+	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		return;
+
+	/* At minimum PMR Low must be supported */
+	if (!(vtd_read32(VTVC0_BASE_ADDRESS, CAP_REG) & CAP_PMR_LO))
+		return;
+
+	if (disable_pmr_protection(VTVC0_BASE_ADDRESS)) {
+		vtd_write32(VTVC0_BASE_ADDRESS, PLMBASE_REG, 0);
+		vtd_write32(VTVC0_BASE_ADDRESS, PLMLIMIT_REG, 0);
+		if (vtd_read32(VTVC0_BASE_ADDRESS, CAP_REG) & CAP_PMR_HI) {
+			vtd_write64(VTVC0_BASE_ADDRESS, PHMBASE_REG, 0);
+			vtd_write64(VTVC0_BASE_ADDRESS, PHMLIMIT_REG, 0);
+		}
+	}
+}
+
+BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, vtd_disable_pmr_on_resume, NULL);
+#endif
