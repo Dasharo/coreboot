@@ -20,12 +20,12 @@ chip soc/intel/alderlake
 				.clk_req = 0,
 				.flags = PCIE_RP_LTR,
 			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD1_PWR_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F20)" # M2_SSD1_RST#
-				register "srcclk_pin" = "0" # SSD1_CLKREQ#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD1_PWR_EN
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F20)" # M2_SSD1_RST#
+		#		register "srcclk_pin" = "0" # SSD1_CLKREQ#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref tcss_xhci on
 			register "tcss_ports[0]" = "TCSS_PORT_DEFAULT(OC_SKIP)"
@@ -158,12 +158,12 @@ chip soc/intel/alderlake
 				register "enable_power_saving" = "1"
 				device pci 00.0 on end
 			end
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F17)" # GPIO_CARD_PWR
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F10)" # GPP_D2_SDCARD_RST#
-				register "srcclk_pin" = "5" # CARD_CLKREQ5#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F17)" # GPIO_CARD_PWR
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F10)" # GPP_D2_SDCARD_RST#
+		#		register "srcclk_pin" = "5" # CARD_CLKREQ5#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref pcie_rp10 on
 			# PCIe RP#10 x1, Clock 6 (GLAN)
@@ -172,11 +172,11 @@ chip soc/intel/alderlake
 				.clk_req = 6,
 				.flags = PCIE_RP_LTR,
 			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F7)" # LAN_PLT_RST#
-				register "srcclk_pin" = "6" # LAN_CLKREQ#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F7)" # LAN_PLT_RST#
+		#		register "srcclk_pin" = "6" # LAN_CLKREQ#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref pmc hidden
 			chip drivers/intel/pmc_mux

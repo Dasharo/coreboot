@@ -22,12 +22,12 @@ chip soc/intel/alderlake
 				.clk_req = 0,
 				.flags = PCIE_RP_LTR,
 			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD2_PWR_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F20)" # M2_CPU_SSD2_RST#
-				register "srcclk_pin" = "0" # SSD2_CLKREQ#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD2_PWR_EN
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_F20)" # M2_CPU_SSD2_RST#
+		#		register "srcclk_pin" = "0" # SSD2_CLKREQ#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref tcss_xhci on
 			register "tcss_ports[0]" = "TCSS_PORT_DEFAULT(OC_SKIP)"
@@ -140,12 +140,12 @@ chip soc/intel/alderlake
 				register "enable_power_saving" = "1"
 				device pci 00.0 on end
 			end
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F17)" # GPIO_SDCARD_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D2)" # GPP_D2_SDCARD_RST#
-				register "srcclk_pin" = "5" # CARD_CLKREQ5#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F17)" # GPIO_SDCARD_EN
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D2)" # GPP_D2_SDCARD_RST#
+		#		register "srcclk_pin" = "5" # CARD_CLKREQ5#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref pcie_rp8 on
 			# PCIe RP#8 x1, Clock 6 (GLAN)
@@ -154,12 +154,12 @@ chip soc/intel/alderlake
 				.clk_req = 6,
 				.flags = PCIE_RP_LTR,
 			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D4)" # GPIO_LAN_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D3)" # LAN_PLT_RST#
-				register "srcclk_pin" = "6" # GLAN_CLKREQ6#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D4)" # GPIO_LAN_EN
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_D3)" # LAN_PLT_RST#
+		#		register "srcclk_pin" = "6" # GLAN_CLKREQ6#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref pcie_rp9 on
 			# PCIe RP#9 x4, Clock 4 (SSD1)
@@ -168,12 +168,12 @@ chip soc/intel/alderlake
 				.clk_req = 4,
 				.flags = PCIE_RP_LTR,
 			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D16)" # SSD1_PWR_EN
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_B16)" # M2_SSD1_RST#
-				register "srcclk_pin" = "4" # SSD1_CLKREQ#
-				device generic 0 on end
-			end
+		#	chip soc/intel/common/block/pcie/rtd3
+		#		register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D16)" # SSD1_PWR_EN
+		#		register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_B16)" # M2_SSD1_RST#
+		#		register "srcclk_pin" = "4" # SSD1_CLKREQ#
+		#		device generic 0 on end
+		#	end
 		end
 		device ref sata on
 			register "sata_salp_support" = "1"
