@@ -87,9 +87,6 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.MmioSize = 0xb00; /* 2.75GB in MB */
 
 	memupd->FspmConfig.OcLock = 0;
-	memupd->FspmConfig.OcSupport = 1;
-	memupd->FspmConfig.SaOcSupport = 1;
-	memupd->FspmConfig.RingDownBin = 0;
 
 	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4))
 		memcfg_init(memupd, &ddr4_mem_config, &dimm_module_spd_info, false);
