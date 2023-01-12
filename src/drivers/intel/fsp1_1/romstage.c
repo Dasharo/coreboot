@@ -256,5 +256,6 @@ __weak void mainboard_save_dimm_info(
 		}
 	}
 	mem_info->dimm_cnt = index;
+	mem_info->ecc_type = memory_info_hob->ErrorCorrectionType;
 	printk(BIOS_DEBUG, "%d DIMMs found\n", mem_info->dimm_cnt);
 }
