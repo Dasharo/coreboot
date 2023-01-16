@@ -68,17 +68,6 @@ Device (S76D) {
 	}
 
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-	// Set KB LED Brightness
-	Method (SKBL, 1, Serialized) {
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 6
-			^^PCI0.LPCB.EC0.FBUF = Arg0
-			^^PCI0.LPCB.EC0.FBF1 = 0
-			^^PCI0.LPCB.EC0.FBF2 = Arg0
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-		}
-	}
-
 	// Set Keyboard Color
 	Method (SKBC, 1, Serialized) {
 		If (^^PCI0.LPCB.EC0.ECOK) {
@@ -92,7 +81,23 @@ Device (S76D) {
 			Return (0)
 		}
 	}
-#else // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
+
+	// Get Keyboard Color
+	Method (GKBC, 0, Serialized) {
+		If (^^PCI0.LPCB.EC0.ECOK) {
+			^^PCI0.LPCB.EC0.FDAT = 0x4
+			^^PCI0.LPCB.EC0.FCMD = 0xCA
+			Local0 = ^^PCI0.LPCB.EC0.FBUF |
+					 ^^PCI0.LPCB.EC0.FBF1 << 16 |
+					 ^^PCI0.LPCB.EC0.FBF2 << 8
+
+			Return (Local0)
+		} Else {
+			Return (0)
+		}
+	}
+#endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
+
 	// Get KB LED
 	Method (GKBL, 0, Serialized) {
 		Local0 = 0
@@ -113,7 +118,6 @@ Device (S76D) {
 			^^PCI0.LPCB.EC0.FCMD = 0xCA
 		}
 	}
-#endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
 
 	// Fan names
 	Method (NFAN, 0, Serialized) {
