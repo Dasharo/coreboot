@@ -16,10 +16,10 @@ Device (S76D) {
 	Method (RSET, 0, Serialized) {
 		Debug = "S76D: RSET"
 		SAPL(0)
-		SKBL(0)
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-			SKBC(0xFFFFFF)
+		SKBC(^^PCI0.LPCB.EC0.KBDC)
 #endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
+		SKBL(^^PCI0.LPCB.EC0.KBDL)
 	}
 
 	Method (INIT, 0, Serialized) {

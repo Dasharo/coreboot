@@ -1,3 +1,5 @@
 boot_option=Fallback
 debug_level=Debug
 power_on_after_fail=Disable
+kbl_brightness=0xff
+kbl_color=0x00ffffff
