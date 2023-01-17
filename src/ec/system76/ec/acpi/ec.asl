@@ -240,7 +240,9 @@ Device (\_SB.PCI0.LPCB.EC0)
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
 			//Notify (^^^^S76D, 0x84)
+#if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
 			KBDC = ^^^^S76D.GKBC
+#endif
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
 		}
