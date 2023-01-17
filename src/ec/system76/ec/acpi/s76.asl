@@ -17,7 +17,7 @@ Device (S76D) {
 		Debug = "S76D: RSET"
 		SAPL(0)
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-		SKBC(^^PCI0.LPCB.EC0.KBDC)
+		KBSC(^^PCI0.LPCB.EC0.KBDC)
 #endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
 		SKBL(^^PCI0.LPCB.EC0.KBDL)
 	}
@@ -68,8 +68,19 @@ Device (S76D) {
 	}
 
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-	// Set Keyboard Color
 	Method (SKBC, 1, Serialized) {
+		/*
+		 * HACK: Dummy method to tell the OS driver that there is RGB backlight
+		 * available. Without this the keyboard is identified as a white backlit
+		 * keyboard, and the backlight levels don't match. We handle RGB
+		 * backlight entirely in firmware and don't want the OS driver to
+		 * interfere.
+		 */
+		 Return (0)
+	}
+
+	// Set Keyboard Color
+	Method (KBSC, 1, Serialized) {
 		If (^^PCI0.LPCB.EC0.ECOK) {
 			^^PCI0.LPCB.EC0.FDAT = 0x3
 			^^PCI0.LPCB.EC0.FBUF = (Arg0 & 0xFF)
