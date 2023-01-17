@@ -1099,7 +1099,7 @@ uint8_t cse_get_me_disable_mode(void)
 
 	return var;
 #else
-	return UINT_MAX;
+	return UINT8_MAX;
 #endif
 }
 
