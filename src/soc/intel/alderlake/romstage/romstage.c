@@ -130,14 +130,9 @@ void mainboard_romstage_entry(void)
 	bool s3wake;
 	struct chipset_power_state *ps = pmc_get_power_state();
 
-	is_wdt_failure();
-	wdt_reset_check();
-
 	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
 		wdt_reload_and_start();
 		is_wdt_enabled();
-		/* Workaround for FSP that will also program OC WDT */
-		wdt_allow_known_reset();
 	} else {
 		wdt_disable();
 	}

@@ -217,7 +217,7 @@ void smihandler_southbridge_sleep(
 		pmc_clear_pm1_status();
 
 		if (is_wdt_enabled())
-			wdt_allow_known_reset();
+			wdt_disable();
 
 		break;
 	default:
