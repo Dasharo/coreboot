@@ -3,6 +3,7 @@
 #include <arch/io.h>
 #include <console/system76_ec.h>
 #include <timer.h>
+#include "commands.h"
 
 // This is the command region for System76 EC firmware. It must be
 // enabled for LPC in the mainboard.
@@ -14,12 +15,6 @@
 
 // When command register is 0, command is complete
 #define CMD_FINISHED 0
-
-// Print command. Registers are unique for each command
-#define CMD_PRINT 4
-#define CMD_PRINT_REG_FLAGS 2
-#define CMD_PRINT_REG_LEN 3
-#define CMD_PRINT_REG_DATA 4
 
 static inline uint8_t system76_ec_read(uint8_t addr)
 {
@@ -58,4 +53,29 @@ void system76_ec_print(uint8_t byte)
 	// If we hit the end of the buffer, or were given a newline, flush
 	if (byte == '\n' || len >= (SYSTEM76_EC_SIZE - CMD_PRINT_REG_DATA))
 		system76_ec_flush();
+}
+
+uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
+{
+	int i;
+
+	if (len > SYSTEM76_EC_SIZE - 2)
+		return -1;
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	// Write data first
+	for (i = 0; i < len; ++i)
+		system76_ec_write(REG_CMD + 2 + i, data[i]);
+
+	// Write command register, which starts command
+	system76_ec_write(REG_CMD, cmd);
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	return (system76_ec_read(REG_RESULT));
 }
