@@ -99,7 +99,7 @@ endif
 # NETWORK_IPXE                  = FALSE
 ifeq ($(CONFIG_EDK2_IPXE),y)
 BUILD_STR += -D NETWORK_IPXE=TRUE
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
+# BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
 endif
 # SECURE_BOOT_ENABLE            = TRUE
 ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
@@ -131,27 +131,27 @@ BUILD_STR += -D DISABLE_MTRR_PROGRAMMING=FALSE
 endif
 # DASHARO_SECURITY_OPTIONS	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SECURITY_OPTIONS),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSecurityMenu=TRUE
+# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSecurityMenu=TRUE
 endif
 # DASHARO_INTEL_ME_OPTIONS	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_INTEL_ME_OPTIONS),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowIntelMeMenu=TRUE
+# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowIntelMeMenu=TRUE
 endif
 # DASHARO_NETWORK_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_CONFIG),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowNetworkMenu=TRUE
+# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowNetworkMenu=TRUE
 endif
 # DASHARO_USB_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
+# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
 endif
 # DASHARO_CHIPSET_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
+# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
 endif
 # DASHARO_NETWORK_BOOT_DEFAULT_ENABLE	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
+# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
