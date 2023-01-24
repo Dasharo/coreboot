@@ -96,6 +96,13 @@ config FSP_TEMP_RAM_SIZE
 	  Refer to Platform FSP integration guide document to know
 	  the exact FSP requirement for Heap setup.
 
+config SERIRQ_CONTINUOUS_MODE
+	bool
+	default y
+	help
+	  If you set this option to y, the serial IRQ machine will be
+	  operated in continuous mode.
+
 config IFD_CHIPSET
 	string
 	default "ehl"
