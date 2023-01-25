@@ -22,3 +22,7 @@ config EC_SYSTEM76_EC_OLED
 	depends on EC_SYSTEM76_EC
 	bool
 	default n
+
+config EC_SYSTEM76_EC_ACPI_DEVICE_HID
+	string
+	default "17761776"
