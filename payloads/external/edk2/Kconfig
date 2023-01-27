@@ -286,6 +286,13 @@ config EDK2_DASHARO_CHIPSET_CONFIG
 	help
 	  Enables the EDK2 chipset configuration submenu in Dasharo System Features menu.
 
+config EDK2_DASHARO_POWER_CONFIG
+	bool "Enable EDK2 Dasharo Power Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 power management configuration submenu in Dasharo System
+	  Features menu.
+
 config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
 	bool "Enable EDK2 network boot option by default"
 	default n

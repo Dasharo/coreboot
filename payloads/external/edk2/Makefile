@@ -153,6 +153,10 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
 endif
+# DASHARO_POWER_CONFIG		= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
+endif
 # DASHARO_NETWORK_BOOT_DEFAULT_ENABLE	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
