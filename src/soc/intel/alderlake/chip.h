@@ -423,6 +423,7 @@ struct soc_intel_alderlake_config {
 	bool sata_salp_support;
 	bool sata_ports_enable[8];
 	bool sata_ports_dev_slp[8];
+	bool sata_ports_hotplug[8];
 	enum sata_speed_limit sata_speed;
 
 	/*
