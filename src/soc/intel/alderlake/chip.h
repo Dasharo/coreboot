@@ -395,6 +395,7 @@ struct soc_intel_alderlake_config {
 	bool sata_salp_support;
 	bool sata_ports_enable[8];
 	bool sata_ports_dev_slp[8];
+	bool sata_ports_hotplug[8];
 
 	/*
 	 * Enable(0)/Disable(1) SATA Power Optimizer on PCH side.

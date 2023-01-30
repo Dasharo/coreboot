@@ -775,6 +775,8 @@ static void fill_fsps_sata_params(FSP_S_CONFIG *s_cfg,
 			sizeof(s_cfg->SataPortsEnable));
 		memcpy(s_cfg->SataPortsDevSlp, config->sata_ports_dev_slp,
 			sizeof(s_cfg->SataPortsDevSlp));
+		memcpy(s_cfg->SataPortsHotPlug, config->sata_ports_hotplug,
+			sizeof(s_cfg->SataPortsHotPlug));
 	}
 
 	/*
