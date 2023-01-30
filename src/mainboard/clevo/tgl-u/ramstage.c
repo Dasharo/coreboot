@@ -31,12 +31,29 @@ struct smfi_cmd_set_fan_curve {
 	struct fan_curve curve;
 };
 
-#define FAN_CURVE_DEFAULT {     \
+#define FAN_CURVE_SILENT {      \
   { .temp = 0,   .duty = 25  }, \
   { .temp = 65,  .duty = 30  }, \
   { .temp = 75,  .duty = 35  }, \
   { .temp = 100, .duty = 100 }  \
 }
+
+#define FAN_CURVE_PERFORMANCE { \
+  { .temp = 0,   .duty = 25 },  \
+  { .temp = 55,  .duty = 35 },  \
+  { .temp = 75,  .duty = 60 },  \
+  { .temp = 100, .duty = 100}   \
+}
+
+#define FAN_CURVE_OPTION_SILENT 0
+#define FAN_CURVE_OPTION_PERFORMANCE 1
+
+#define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
+
+static struct fan_curve fan_curves[] = {
+  [FAN_CURVE_OPTION_SILENT]      = FAN_CURVE_SILENT,
+  [FAN_CURVE_OPTION_PERFORMANCE] = FAN_CURVE_PERFORMANCE
+};
 
 const char *smbios_system_sku(void)
 {
@@ -55,17 +72,14 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 static void set_fan_curve(void)
 {
-	struct smfi_cmd_set_fan_curve cmd = {
-		.curve = FAN_CURVE_DEFAULT
-	};
-
 	int i;
+	uint8_t selection = FAN_CURVE_OPTION_DEFAULT;
+	struct smfi_cmd_set_fan_curve cmd;
 
 #if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
 	struct region_device rdev;
 	enum cb_err ret;
 	uint32_t size;
-	struct fan_curve curve;
 
 	const EFI_GUID dasharo_system_features_guid = {
 		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
@@ -74,16 +88,14 @@ static void set_fan_curve(void)
 	if (smmstore_lookup_region(&rdev))
 		goto efi_err;
 
-	size = sizeof(curve);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FanCurve", &curve, &size);
-	if (ret != CB_SUCCESS) {
-		printk(BIOS_DEBUG, "fan: failed to read curve from EFI vars, using board default\n");
-		goto efi_err;
-	}
-
-	cmd.curve = curve;
+	size = sizeof(selection);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FanCurveOption", &selection, &size);
+	if (ret != CB_SUCCESS)
+		printk(BIOS_DEBUG, "fan: failed to read curve selection from EFI vars, using board default\n");
 efi_err:
 #endif
+
+	cmd.curve = fan_curves[selection];
 
 	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
 		cmd.fan = i;
