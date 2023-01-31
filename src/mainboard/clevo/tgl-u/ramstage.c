@@ -15,15 +15,15 @@
 #include <lib.h>
 
 struct fan_point {
-  uint8_t temp;
-  uint8_t duty;
+	uint8_t temp;
+	uint8_t duty;
 };
 
 struct fan_curve {
-  struct fan_point point1;
-  struct fan_point point2;
-  struct fan_point point3;
-  struct fan_point point4;
+	struct fan_point point1;
+	struct fan_point point2;
+	struct fan_point point3;
+	struct fan_point point4;
 };
 
 struct smfi_cmd_set_fan_curve {
@@ -32,17 +32,17 @@ struct smfi_cmd_set_fan_curve {
 };
 
 #define FAN_CURVE_SILENT {      \
-  { .temp = 0,   .duty = 25  }, \
-  { .temp = 65,  .duty = 30  }, \
-  { .temp = 75,  .duty = 35  }, \
-  { .temp = 100, .duty = 100 }  \
+	{ .temp = 0,   .duty = 25  }, \
+	{ .temp = 65,  .duty = 30  }, \
+	{ .temp = 75,  .duty = 35  }, \
+	{ .temp = 100, .duty = 100 }  \
 }
 
 #define FAN_CURVE_PERFORMANCE { \
-  { .temp = 0,   .duty = 25 },  \
-  { .temp = 55,  .duty = 35 },  \
-  { .temp = 75,  .duty = 60 },  \
-  { .temp = 100, .duty = 100}   \
+	{ .temp = 0,   .duty = 25 },  \
+	{ .temp = 55,  .duty = 35 },  \
+	{ .temp = 75,  .duty = 60 },  \
+	{ .temp = 100, .duty = 100}   \
 }
 
 #define FAN_CURVE_OPTION_SILENT 0
@@ -51,8 +51,8 @@ struct smfi_cmd_set_fan_curve {
 #define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
 
 static struct fan_curve fan_curves[] = {
-  [FAN_CURVE_OPTION_SILENT]      = FAN_CURVE_SILENT,
-  [FAN_CURVE_OPTION_PERFORMANCE] = FAN_CURVE_PERFORMANCE
+	[FAN_CURVE_OPTION_SILENT]      = FAN_CURVE_SILENT,
+	[FAN_CURVE_OPTION_PERFORMANCE] = FAN_CURVE_PERFORMANCE
 };
 
 const char *smbios_system_sku(void)
