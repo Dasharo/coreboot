@@ -256,6 +256,8 @@ config EDK2_DASHARO_SYSTEM_FEATURES
 	help
 	  Enables Dasharo System Features submenu in the EDK2 setup menu.
 
+if EDK2_DASHARO_SYSTEM_FEATURES
+
 config EDK2_DASHARO_SECURITY_OPTIONS
 	bool "Enable EDK2 Dasharo Security Options Menu"
 	default n
@@ -293,11 +295,24 @@ config EDK2_DASHARO_POWER_CONFIG
 	  Enables the EDK2 power management configuration submenu in Dasharo System
 	  Features menu.
 
+if EDK2_DASHARO_POWER_CONFIG
+
+config EDK2_DASHARO_POWER_CONFIG_FAN_CURVE
+	bool "Enable EDK2 Fan Curve options in Dasharo Power Configuration Menu"
+	default n
+	help
+	  Enables fan curve options in the EDK2 power management configuration
+	  submenu.
+
+endif
+
 config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
 	bool "Enable EDK2 network boot option by default"
 	default n
 	help
 	  Enables the network boot option in EDK2 by default.
+
+endif
 
 # End of DasharoModulePkg specific options
 
