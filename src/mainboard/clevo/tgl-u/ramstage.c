@@ -1,49 +1,48 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/device.h>
+#include <drivers/efi/efivars.h>
+#include <ec/system76/ec/commands.h>
+#include <fmap.h>
+#include <lib.h>
+#include <smbios.h>
+#include <smmstore.h>
 #include <soc/ramstage.h>
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
-#include <smbios.h>
-#include <ec/system76/ec/commands.h>
-#include <drivers/efi/efivars.h>
-#include <fmap.h>
-#include <smmstore.h>
 
 #include <Uefi/UefiBaseType.h>
-
-#include <lib.h>
 
 struct fan_point {
 	uint8_t temp;
 	uint8_t duty;
-};
+} __packed;
 
 struct fan_curve {
 	struct fan_point point1;
 	struct fan_point point2;
 	struct fan_point point3;
 	struct fan_point point4;
-};
+} __packed;
 
 struct smfi_cmd_set_fan_curve {
 	uint8_t fan;
 	struct fan_curve curve;
+} __packed;
+
+struct fan_curve fan_curve_silent = {
+	{ .temp = 0,   .duty = 25  },
+	{ .temp = 65,  .duty = 30  },
+	{ .temp = 75,  .duty = 35  },
+	{ .temp = 100, .duty = 100 }
 };
 
-#define FAN_CURVE_SILENT {      \
-	{ .temp = 0,   .duty = 25  }, \
-	{ .temp = 65,  .duty = 30  }, \
-	{ .temp = 75,  .duty = 35  }, \
-	{ .temp = 100, .duty = 100 }  \
-}
-
-#define FAN_CURVE_PERFORMANCE { \
-	{ .temp = 0,   .duty = 25 },  \
-	{ .temp = 55,  .duty = 35 },  \
-	{ .temp = 75,  .duty = 60 },  \
-	{ .temp = 100, .duty = 100}   \
-}
+struct fan_curve fan_curve_performance = {
+	{ .temp = 0,   .duty = 25 },
+	{ .temp = 55,  .duty = 35 },
+	{ .temp = 75,  .duty = 60 },
+	{ .temp = 100, .duty = 100}
+};
 
 #define FAN_CURVE_OPTION_SILENT 0
 #define FAN_CURVE_OPTION_PERFORMANCE 1
@@ -95,7 +94,17 @@ static void set_fan_curve(void)
 efi_err:
 #endif
 
-	cmd.curve = fan_curves[selection];
+	switch (selection) {
+	case FAN_CURVE_OPTION_SILENT:
+		cmd.curve = fan_curve_silent;
+		break;
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		cmd.curve = fan_curve_performance;
+		break;
+	default:
+		cmd.curve = fan_curve_silent;
+		break;
+	}
 
 	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
 		cmd.fan = i;
