@@ -157,6 +157,7 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
 endif
+# DASHARO_POWER_CONFIG_FAN_CURVE		= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG_FAN_CURVE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve=TRUE
 endif
