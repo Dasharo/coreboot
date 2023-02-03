@@ -475,7 +475,10 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_write_device(acpi_device_name(dev));
 		acpigen_write_ADR(0);
 		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
-		acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
+		if (CONFIG(SOC_INTEL_ALDERLAKE_S3) || CONFIG(SOC_INTEL_TIGERLAKE_S3))
+			acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_HOT);
+		else
+			acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
 
 		dsd = acpi_dp_new_table("_DSD");
 		pkg = acpi_dp_new_table(PCIE_RTD3_STORAGE_UUID);
