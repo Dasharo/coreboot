@@ -11,6 +11,8 @@
 #include <lib.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
+#include <smmstore.h>
+#include <drivers/efi/efivars.h>
 
 /* VT-d specification: https://cdrdv2.intel.com/v1/dl/getContent/671081 */
 #define VER_REG		0x0
@@ -281,9 +283,37 @@ no_dma_buffer:
 	return NULL;
 }
 
+/*
+ * Get DMA protection status from EFI variables.
+ */
+static uint8_t get_dma_mode(void)
+{
+	struct region_device rdev;
+	enum cb_err ret;
+	uint8_t var;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		return 0;
+
+	size = sizeof(var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "DmaProtection", &var, &size);
+	if (ret != CB_SUCCESS)
+		return 0;
+
+	return var;
+}
+
 void vtd_enable_dma_protection(void)
 {
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		return;
+
+	if (!get_dma_mode())
 		return;
 
 	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
