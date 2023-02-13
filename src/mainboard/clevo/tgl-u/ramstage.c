@@ -49,11 +49,6 @@ struct fan_curve fan_curve_performance = {
 
 #define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
 
-static struct fan_curve fan_curves[] = {
-	[FAN_CURVE_OPTION_SILENT]      = FAN_CURVE_SILENT,
-	[FAN_CURVE_OPTION_PERFORMANCE] = FAN_CURVE_PERFORMANCE
-};
-
 const char *smbios_system_sku(void)
 {
 	return "Not Applicable";
