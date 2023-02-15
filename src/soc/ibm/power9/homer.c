@@ -2142,12 +2142,31 @@ static void get_mem_cfg_msg_data(const struct occ_cfg_inputs *inputs,
 	*size = index;
 }
 
+static void add_sensor_id(uint8_t *data, uint16_t *index, uint32_t sensor_id)
+{
+	data[*index + 0] = sensor_id >> 24 & 0xff;
+	data[*index + 1] = sensor_id >> 16 & 0xff;
+	data[*index + 2] = sensor_id >>  8 & 0xff;
+	data[*index + 3] = sensor_id >>  0 & 0xff;
+	*index += 4;
+}
+
+/*
+ * Sensors IDs listed here are valid for Talos II. Values come from talos.xml
+ * and may or may not be different for other boards.
+ */
+#define PROC_CALLOUT_ID			0x08
+#define CORE0_TEMP_ID			0x5b
+#define CORE0_FREQ_ID			0xa0
+#define BACKPLANE_CALLOUT_ID	0x8c
+#define APSS_CALLOUT_ID			0x93
+/* Same as Backplane Callout ID */
+#define VRM_VDD_CALLOUT_ID		0x8c
+#define VRM_VDD_TEMP_ID			0xff
+
 static void get_sys_cfg_msg_data(const struct occ_cfg_inputs *inputs,
 				 uint8_t *data, uint16_t *size)
 {
-	/* TODO: all sensor IDs are zero, because we don't have IPMI messaging,
-	 *       which seems to be required to get them */
-
 	enum {
 		OCC_CFGDATA_SYS_CONFIG_VERSION = 0x21,
 
@@ -2160,7 +2179,7 @@ static void get_sys_cfg_msg_data(const struct occ_cfg_inputs *inputs,
 
 	uint8_t system_type = OCC_CFGDATA_OPENPOWER_OPALVM;
 	uint16_t index = 0;
-	uint8_t i = 0;
+	int i = 0;
 
 	data[index++] = OCC_CFGDATA_SYS_CONFIG;
 	data[index++] = OCC_CFGDATA_SYS_CONFIG_VERSION;
@@ -2176,35 +2195,28 @@ static void get_sys_cfg_msg_data(const struct occ_cfg_inputs *inputs,
 	data[index++] = system_type;
 
 	/* Processor Callout Sensor ID */
-	memset(&data[index], 0, 4);
-	index += 4;
+	add_sensor_id(data, &index, PROC_CALLOUT_ID);
 
-	/* Next 12*4 bytes are for core sensors */
+	/* Next 24*2 IDs are for core sensors */
 	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
 		/* Core Temp Sensor ID */
-		memset(&data[index], 0, 4);
-		index += 4;
+		add_sensor_id(data, &index, CORE0_TEMP_ID + i);
 
 		/* Core Frequency Sensor ID */
-		memset(&data[index], 0, 4);
-		index += 4;
+		add_sensor_id(data, &index, CORE0_FREQ_ID + i);
 	}
 
 	/* Backplane Callout Sensor ID */
-	memset(&data[index], 0, 4);
-	index += 4;
+	add_sensor_id(data, &index, BACKPLANE_CALLOUT_ID);
 
 	/* APSS Callout Sensor ID */
-	memset(&data[index], 0, 4);
-	index += 4;
+	add_sensor_id(data, &index, APSS_CALLOUT_ID);
 
 	/* Format 21 - VRM VDD Callout Sensor ID */
-	memset(&data[index], 0, 4);
-	index += 4;
+	add_sensor_id(data, &index, VRM_VDD_CALLOUT_ID);
 
 	/* Format 21 - VRM VDD Temperature Sensor ID */
-	memset(&data[index], 0, 4);
-	index += 4;
+	add_sensor_id(data, &index, VRM_VDD_TEMP_ID);
 
 	*size = index;
 }
