@@ -90,4 +90,10 @@ config FSP1_1_LOGO_FILE_NAME
 	depends on BMP_LOGO
 	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/logo.bmp"
 
+config FSP_T_RESERVED_SIZE
+	hex
+	default 0x0
+	help
+	  FSP reserved CAR memory size
+
 endif #PLATFORM_USES_FSP1_1

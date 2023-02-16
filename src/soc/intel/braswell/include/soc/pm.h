@@ -59,6 +59,8 @@
 #define  IGNORE_HPET	(1 << 21)
 #define  CF9GR		(1 << 20)
 #define  CWORWRE		(1 << 18)
+#define PMC_CRID		0x30
+#define  PMC_CRID_RID_SEL	(3 << 0)
 #define FUNC_DIS	0x34
 #define  SIO_DMA2_DIS	(1 <<  0)
 #define  PWM1_DIS		(1 <<  1)

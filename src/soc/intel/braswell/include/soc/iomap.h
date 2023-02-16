@@ -43,6 +43,12 @@
 #define RCBA_BASE_ADDRESS		0xfed1c000
 #define RCBA_BASE_SIZE			0x400
 
+/* High Performance Event Timer */
+#define HPET_BASE_ADDRESS		0xfed00000
+#define HPET_BASE_SIZE			0x400
+
+#define SMBUS_MEMBASE_ADDRESS		0xfed04000
+
 /* Temporary Base Address */
 #define TEMP_BASE_ADDRESS		0xfd000000
 

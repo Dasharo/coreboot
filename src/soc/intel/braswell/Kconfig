@@ -29,7 +29,6 @@ config SOC_INTEL_BRASWELL
 	select TSC_MONOTONIC_TIMER
 	select TSC_SYNC_MFENCE
 	select UDELAY_TSC
-	select USE_GENERIC_FSP_CAR_INC
 	select INTEL_DESCRIPTOR_MODE_CAPABLE
 	select HAVE_EM100PRO_SPI_CONSOLE_SUPPORT
 	select HAVE_FSP_GOP
@@ -41,6 +40,7 @@ config SOC_INTEL_BRASWELL
 	select SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
 	select NO_CBFS_MCACHE
 	select TCO_SPACE_NOT_YET_SPLIT
+	select IOAPIC
 	help
 	  Braswell M/D part support.
 
@@ -89,12 +89,17 @@ config SMM_RESERVED_SIZE
 # +-------------+ DCACHE_RAM_BASE
 #
 
+config USE_GENERIC_FSP_CAR_INC
+	bool
+	default y
+
 config DCACHE_RAM_BASE
 	hex
 	default 0xfef00000
 
 config DCACHE_RAM_SIZE
 	hex
+	default 0x20000 if !USE_GENERIC_FSP_CAR_INC
 	default 0x8000
 	help
 	  The size of the cache-as-ram region required during bootblock
@@ -103,6 +108,10 @@ config DCACHE_RAM_SIZE
 
 config PRERAM_CBFS_CACHE_SIZE
 	default 0x0
+
+config FSP_T_RESERVED_SIZE
+	hex
+	default 0x1c000 if !USE_GENERIC_FSP_CAR_INC
 
 config ENABLE_BUILTIN_COM1
 	bool "Enable builtin COM1 Serial Port"
