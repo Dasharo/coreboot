@@ -400,8 +400,6 @@ config EDK2_SECURE_BOOT_DEFAULT_ENABLE
 
 endif
 
-endif
-
 config EDK2_GOP_DRIVER
 	bool "Add a GOP driver to the Tianocore build"
 	depends on INTEL_GMA_ADD_VBT && NO_GFX_INIT && (EDK2_REPO_MRCHROMEBOX || EDK2_REPO_CUSTOM)
