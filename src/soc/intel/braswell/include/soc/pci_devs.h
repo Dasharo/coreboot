@@ -115,6 +115,8 @@
 # define SMBUS_FUNC 3
 
 #define PCH_DEV_SLOT_LPC	0x1f
+#define  PCH_DEVFN_LPC		_PCH_DEVFN(LPC, 0)
+#define  PCH_DEV_LPC		_PCH_DEV(LPC, 0)
 #define  PCH_DEVFN_SMBUS	_PCH_DEVFN(LPC, 3)
 #define  PCH_DEV_SMBUS		_PCH_DEV(LPC, 3)
 
