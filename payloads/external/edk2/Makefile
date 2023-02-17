@@ -216,7 +216,8 @@ $(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
-		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git reset --hard HEAD > /dev/null 2>&1 || true; \
+		git clean -df > /dev/null 2>&1 || true; \
 		if [ -e UefiPayloadPkg/ShimLayer/UniversalPayload.o ]; then \
 			rm UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
 		fi; \
@@ -244,6 +245,7 @@ logo: $(EDK2_PATH)
 	esac \
 
 lan_rom: $(EDK2_PATH)
+	mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers; \
 	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
 		"") ;; \
 		/*) cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
@@ -255,6 +257,7 @@ lan_rom: $(EDK2_PATH)
 ipxe_rom: $(EDK2_PATH)
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
+		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers; \
 		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
 			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
 	fi \
