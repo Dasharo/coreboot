@@ -301,7 +301,7 @@ static uint8_t get_dma_mode(void)
 		return 0;
 
 	size = sizeof(var);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "DmaProtection", &var, &size);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig", &var, &size);
 	if (ret != CB_SUCCESS)
 		return 0;
 
