@@ -72,8 +72,8 @@ enum coreboot_acpi_ids {
 
 enum acpi_tables {
 	/* Tables defined by ACPI and used by coreboot */
-	BERT, DBG2, DMAR, DSDT, EINJ, FACS, FADT, HEST, HMAT, HPET, IVRS, MADT,
-	MCFG, RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
+	BERT, DBG2, DBGP, DMAR, DSDT, EINJ, FACS, FADT, HEST, HMAT, HPET, IVRS,
+	MADT, MCFG, RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
 	/* Additional proprietary tables used by coreboot */
 	VFCT, NHLT, SPMI, CRAT
 };
@@ -712,6 +712,17 @@ typedef struct acpi_dbg2_device {
 	uint16_t address_size_offset;
 } __attribute__((packed)) acpi_dbg2_device_t;
 
+#define  ACPI_DBGP_PORT_SERIAL_16550		0x00
+#define  ACPI_DBGP_PORT_SERIAL_16550_DBGP	0x01
+
+/* DBGP: Microsoft Debug Port Table */
+typedef struct acpi_dbgp {
+	acpi_header_t header;
+	uint8_t interface_type;
+	uint8_t reserved[3];
+	acpi_addr_t base_address;
+} __attribute__((packed)) acpi_dbgp_t;
+
 /* FADT (Fixed ACPI Description Table) */
 typedef struct acpi_fadt {
 	acpi_header_t header;
@@ -1341,6 +1352,9 @@ void acpi_create_dbg2(acpi_dbg2_header_t *dbg2_header,
 
 unsigned long acpi_write_dbg2_pci_uart(acpi_rsdp_t *rsdp, unsigned long current,
 				const struct device *dev, uint8_t access_size);
+
+void acpi_create_dbgp(acpi_dbgp_t *dbgp, uint8_t interface_type, acpi_addr_t *address);
+
 void acpi_create_dmar(acpi_dmar_t *dmar, enum dmar_flags flags,
 		      unsigned long (*acpi_fill_dmar)(unsigned long));
 unsigned long acpi_create_dmar_drhd(unsigned long current, u8 flags,

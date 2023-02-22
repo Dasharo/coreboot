@@ -1274,6 +1274,33 @@ unsigned long acpi_write_dbg2_pci_uart(acpi_rsdp_t *rsdp, unsigned long current,
 	return current;
 }
 
+void acpi_create_dbgp(acpi_dbgp_t *dbgp, uint8_t interface_type, acpi_addr_t *address)
+{
+	uintptr_t current;
+	acpi_header_t *header;
+
+	/* Fill out header fields. */
+	current = (uintptr_t)dbgp;
+	memset(dbgp, 0, sizeof(acpi_dbgp_t));
+	header = &(dbgp->header);
+
+	if (!header)
+		return;
+
+	header->revision = get_acpi_table_revision(DBGP);
+	memcpy(header->signature, "DBGP", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+	header->asl_compiler_revision = asl_revision;
+
+	memcpy((void *)&dbgp->base_address, address, sizeof(acpi_addr_t));
+	dbgp->interface_type = interface_type;
+
+	header->length = sizeof(acpi_dbgp_t);
+	header->checksum = acpi_checksum((uint8_t *)dbgp, header->length);
+}
+
 void acpi_create_facs(acpi_facs_t *facs)
 {
 	memset((void *)facs, 0, sizeof(acpi_facs_t));
@@ -1980,6 +2007,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return IVRS_FORMAT_MIXED;
 	case DBG2:
 		return 0;
+	case DBGP:
+		return 1;
 	case FACS: /* ACPI 2.0/3.0: 1, ACPI 4.0 up to 6.3: 2 */
 		return 1;
 	case RSDT: /* ACPI 1.0 up to 6.3: 1 */
