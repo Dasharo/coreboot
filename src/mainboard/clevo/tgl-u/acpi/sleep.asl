@@ -16,6 +16,7 @@ Method (PGPM, 1, Serialized)
  */
 Method (MPTS, 1, Serialized)
 {
+	\_SB.S76D.EKBL (0)
 	\_SB.PCI0.LPCB.EC0.PTS (Arg0)
 	PGPM (MISCCFG_GPIO_PM_CONFIG_BITS)
 }
@@ -38,9 +39,11 @@ Method (MS0X, 1, Serialized)
 {
 	If (Arg0 == 1) {
 		/* S0ix Entry */
+		\_SB.S76D.EKBL (0)
 		PGPM (MISCCFG_GPIO_PM_CONFIG_BITS)
 	} Else {
 		/* S0ix Exit */
 		PGPM (0)
+		\_SB.S76D.EKBL (1)
 	}
 }

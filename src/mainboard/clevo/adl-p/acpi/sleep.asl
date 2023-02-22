@@ -44,5 +44,6 @@ Method (MS0X, 1, Serialized)
 	} Else {
 		/* S0ix Exit */
 		PGPM (0)
+		\_SB.S76D.EKBL (1)
 	}
 }
