@@ -130,6 +130,17 @@ Device (S76D) {
 		}
 	}
 
+	// Enable KB Led
+	Method (EKBL, 1, Serialized) {
+
+		If (^^PCI0.LPCB.EC0.ECOK &&
+			^^PCI0.LPCB.EC0.LSTE) {
+				^^PCI0.LPCB.EC0.FDAT = 0x2
+				^^PCI0.LPCB.EC0.FBUF = Arg0
+				^^PCI0.LPCB.EC0.FCMD = 0xCA
+		}
+	}
+
 	// Fan names
 	Method (NFAN, 0, Serialized) {
 		Return (Package() {
