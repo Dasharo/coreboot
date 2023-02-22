@@ -143,6 +143,11 @@ const struct region_device *boot_device_ro(void)
 	return &real_dev.rdev;
 }
 
+void boot_device_init(void)
+{
+	bios_mmap_init();
+}
+
 void fast_spi_get_ext_bios_window(uintptr_t *base, size_t *size)
 {
 	const struct region_device *rd = &shadow_devs[EXT_BIOS_DECODE_WINDOW].rdev;

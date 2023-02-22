@@ -7,6 +7,7 @@
 #include <intelblocks/cfg.h>
 #include <intelblocks/cse.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/oc_wdt.h>
 #include <intelblocks/smbus.h>
 #include <intelblocks/thermal.h>
 #include <intelblocks/vtd.h>
@@ -128,6 +129,13 @@ void mainboard_romstage_entry(void)
 {
 	bool s3wake;
 	struct chipset_power_state *ps = pmc_get_power_state();
+
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
+		wdt_reload_and_start();
+		is_wdt_enabled();
+	} else {
+		wdt_disable();
+	}
 
 	/* Program MCHBAR, DMIBAR, GDXBAR and EDRAMBAR */
 	systemagent_early_init();

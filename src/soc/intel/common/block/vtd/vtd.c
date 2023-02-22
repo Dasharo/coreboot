@@ -1,14 +1,17 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootstate.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
+#include <drivers/efi/efivars.h>
 #include <fsp/util.h>
 #include <intelblocks/systemagent.h>
 #include <intelblocks/vtd.h>
 #include <lib.h>
+#include <smmstore.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 
@@ -281,9 +284,41 @@ no_dma_buffer:
 	return NULL;
 }
 
+/*
+ * Get DMA protection status from EFI variables.
+ */
+static bool dma_protection_enabled(void)
+{
+	struct region_device rdev;
+	enum cb_err ret;
+	struct iommu_config {
+		bool iommu_enable;
+		bool iommu_handoff;
+	} __packed iommu_var;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = sizeof(iommu_var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
+				&iommu_var, &size);
+	if (ret != CB_SUCCESS)
+		return false;
+
+	return iommu_var.iommu_enable;
+}
+
 void vtd_enable_dma_protection(void)
 {
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		return;
+
+	if (!dma_protection_enabled())
 		return;
 
 	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
@@ -294,3 +329,26 @@ void vtd_enable_dma_protection(void)
 	 * vtd_engine_enable_dma_protection(IPUVT_BASE_ADDRESS);
 	 */
 }
+
+#if ENV_RAMSTAGE
+static void vtd_disable_pmr_on_resume(void *unused)
+{
+	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		return;
+
+	/* At minimum PMR Low must be supported */
+	if (!(vtd_read32(VTVC0_BASE_ADDRESS, CAP_REG) & CAP_PMR_LO))
+		return;
+
+	if (disable_pmr_protection(VTVC0_BASE_ADDRESS)) {
+		vtd_write32(VTVC0_BASE_ADDRESS, PLMBASE_REG, 0);
+		vtd_write32(VTVC0_BASE_ADDRESS, PLMLIMIT_REG, 0);
+		if (vtd_read32(VTVC0_BASE_ADDRESS, CAP_REG) & CAP_PMR_HI) {
+			vtd_write64(VTVC0_BASE_ADDRESS, PHMBASE_REG, 0);
+			vtd_write64(VTVC0_BASE_ADDRESS, PHMLIMIT_REG, 0);
+		}
+	}
+}
+
+BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, vtd_disable_pmr_on_resume, NULL);
+#endif

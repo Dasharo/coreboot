@@ -7,7 +7,6 @@ config SOC_INTEL_COMMON_BLOCK_OC_WDT
 config SOC_INTEL_COMMON_OC_WDT_ENABLE
 	bool "Enable chipset watchdog during boot"
 	depends on SOC_INTEL_COMMON_BLOCK_OC_WDT
-	select HAVE_CF9_RESET_PREPARE
 	help
 	  Enables Intel chipset Overclocking Watchdog to count during system
 	  boot. The platform will reset during lockups if watchdog is not
@@ -18,8 +17,8 @@ config SOC_INTEL_COMMON_OC_WDT_ENABLE
 config SOC_INTEL_COMMON_OC_WDT_TIMEOUT
 	int "Watchdog timeout in seconds"
 	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
-	default 90
 	range 60 1024
+	default 90
 	help
 	  Intel chipset Overclocking Watchdog timeout value in seconds.
 	  coreboot will reload the watchdog with timeout value specified
