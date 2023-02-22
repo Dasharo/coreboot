@@ -6,10 +6,12 @@
 #include <cpu/cpu.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
+#include <drivers/efi/efivars.h>
 #include <fsp/util.h>
 #include <intelblocks/systemagent.h>
 #include <intelblocks/vtd.h>
 #include <lib.h>
+#include <smmstore.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
 
@@ -282,9 +284,41 @@ no_dma_buffer:
 	return NULL;
 }
 
+/*
+ * Get DMA protection status from EFI variables.
+ */
+static bool dma_protection_enabled(void)
+{
+	struct region_device rdev;
+	enum cb_err ret;
+	struct iommu_config {
+		bool iommu_enable;
+		bool iommu_handoff;
+	} __packed iommu_var;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = sizeof(iommu_var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
+				&iommu_var, &size);
+	if (ret != CB_SUCCESS)
+		return false;
+
+	return iommu_var.iommu_enable;
+}
+
 void vtd_enable_dma_protection(void)
 {
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		return;
+
+	if (!dma_protection_enabled())
 		return;
 
 	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
