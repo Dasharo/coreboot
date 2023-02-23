@@ -182,6 +182,8 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 			m_cfg->VtdBaseAddress[6] = TBT3_BASE_ADDRESS;
 	}
 
+	m_cfg->PreBootDmaMask = CONFIG(ENABLE_EARLY_DMA_PROTECTION);
+
 	/* Change VmxEnable UPD value according to ENABLE_VMX Kconfig */
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
 
