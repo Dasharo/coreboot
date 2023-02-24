@@ -20,6 +20,7 @@ Device (S76D) {
 		KBSC(^^PCI0.LPCB.EC0.KBDC)
 #endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
 		SKBL(^^PCI0.LPCB.EC0.KBDL)
+		EKBL(1)
 	}
 
 	Method (INIT, 0, Serialized) {
