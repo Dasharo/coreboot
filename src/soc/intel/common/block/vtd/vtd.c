@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootstate.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
@@ -286,11 +287,14 @@ no_dma_buffer:
 /*
  * Get DMA protection status from EFI variables.
  */
-static uint8_t get_dma_mode(void)
+static bool dma_protection_enabled(void)
 {
 	struct region_device rdev;
 	enum cb_err ret;
-	uint8_t var;
+	struct iommu_config {
+		bool iommu_enable;
+		bool iommu_handoff;
+	} __packed iommu_var;
 	uint32_t size;
 
 	const EFI_GUID dasharo_system_features_guid = {
@@ -298,14 +302,15 @@ static uint8_t get_dma_mode(void)
 	};
 
 	if (smmstore_lookup_region(&rdev))
-		return 0;
+		return false;
 
-	size = sizeof(var);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig", &var, &size);
+	size = sizeof(iommu_var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
+				&iommu_var, &size);
 	if (ret != CB_SUCCESS)
-		return 0;
+		return false;
 
-	return var;
+	return iommu_var.iommu_enable;
 }
 
 void vtd_enable_dma_protection(void)
@@ -313,7 +318,7 @@ void vtd_enable_dma_protection(void)
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
 		return;
 
-	if (!get_dma_mode())
+	if (!dma_protection_enabled())
 		return;
 
 	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
