@@ -99,7 +99,7 @@ endif
 # NETWORK_IPXE                  = FALSE
 ifeq ($(CONFIG_EDK2_IPXE),y)
 BUILD_STR += -D NETWORK_IPXE=TRUE
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
+# BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
 endif
 # SECURE_BOOT_ENABLE            = TRUE
 ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
