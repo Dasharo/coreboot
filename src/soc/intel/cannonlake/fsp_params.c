@@ -356,6 +356,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Unlock upper 8 bytes of RTC RAM */
 	params->PchLockDownRtcMemoryLock = 0;
 
+	params->GnaEnable = is_devfn_enabled(SA_DEVFN_GNA);
+
 	/* SATA */
 	params->SataEnable = is_devfn_enabled(PCH_DEVFN_SATA);
 	if (params->SataEnable) {
