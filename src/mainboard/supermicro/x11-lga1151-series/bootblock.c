@@ -8,8 +8,8 @@
 
 static void early_config_superio(void)
 {
-	const pnp_devfn_t serial_dev = PNP_DEV(0x2e, AST2400_SUART1);
-	aspeed_enable_serial(serial_dev, CONFIG_TTYS0_BASE);
+	aspeed_enable_serial(PNP_DEV(0x2e, AST2400_SUART1), 0x3f8);
+	aspeed_enable_serial(PNP_DEV(0x2e, AST2400_SUART2), 0x2f8);
 }
 
 void bootblock_mainboard_early_init(void)
