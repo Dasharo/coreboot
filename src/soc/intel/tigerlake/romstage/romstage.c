@@ -8,6 +8,7 @@
 #include <intelblocks/cse.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/smbus.h>
+#include <intelblocks/vtd.h>
 #include <memory_info.h>
 #include <soc/intel/common/smbios.h>
 #include <soc/iomap.h>
@@ -148,5 +149,8 @@ void mainboard_romstage_entry(void)
 
 		save_dimm_info();
 	}
+
+	if (CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		vtd_enable_dma_protection();
 
 }
