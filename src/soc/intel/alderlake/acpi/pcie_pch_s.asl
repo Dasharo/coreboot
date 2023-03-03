@@ -275,67 +275,35 @@ Device (RP28)
 Device (PEG0)
 {
 	Name (_ADR, 0x00060000)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
 	Method (_PRT)
 	{
-		Return (IRQM (RPPN))
+		Return (IRQM (1))
 	}
 }
 
 Device (PEG1)
 {
 	Name (_ADR, 0x00010000)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
 	Method (_PRT)
 	{
-		Return (IRQM (RPPN))
+		Return (IRQM (1))
 	}
 }
 
 Device (PEG2)
 {
 	Name (_ADR, 0x00010001)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
 	Method (_PRT)
 	{
-		Return (IRQM (RPPN))
+		Return (IRQM (2))
 	}
 }
 
 Device (PEG3)
 {
 	Name (_ADR, 0x00010002)
-
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
 	Method (_PRT)
 	{
-		Return (IRQM (RPPN))
+		Return (IRQM (3))
 	}
 }
