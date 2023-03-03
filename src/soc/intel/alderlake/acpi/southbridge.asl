@@ -20,6 +20,9 @@
 /* PCH HDA */
 #include "pch_hda.asl"
 
+/* PCH FSPI */
+#include "pch_fspi.asl"
+
 /* PCIE Ports */
 #include "pcie.asl"
 
