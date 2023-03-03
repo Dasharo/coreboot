@@ -255,6 +255,7 @@ static const struct slot_irq_constraints irq_constraints_pch_s[] = {
 		.fns = {
 			FIXED_INT_PIRQ(SA_DEVFN_CPU_PCIE1_0, PCI_INT_A, PIRQ_A),
 			FIXED_INT_PIRQ(SA_DEVFN_CPU_PCIE1_1, PCI_INT_B, PIRQ_B),
+			FIXED_INT_PIRQ(SA_DEVFN_CPU_PCIE1_2, PCI_INT_C, PIRQ_C),
 		},
 	},
 	{

@@ -63,7 +63,7 @@ static const struct pcie_rp_group cpu_n_rp_groups[] = {
 
 static const struct pcie_rp_group cpu_s_rp_groups[] = {
 	{ .slot = SA_DEV_SLOT_CPU_6, .start = 0, .count = 1, .lcap_port_base = 1 },
-	{ .slot = SA_DEV_SLOT_CPU_1, .start = 0, .count = 2, .lcap_port_base = 1 },
+	{ .slot = SA_DEV_SLOT_CPU_1, .start = 0, .count = 3, .lcap_port_base = 1 },
 	{ 0 }
 };
 

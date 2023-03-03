@@ -78,6 +78,7 @@ const char *soc_acpi_name(const struct device *dev)
 #if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	case SA_DEVFN_CPU_PCIE1_0:	return "PEG1";
 	case SA_DEVFN_CPU_PCIE1_1:	return "PEG2";
+	case SA_DEVFN_CPU_PCIE1_2:	return "PEG3";
 	case SA_DEVFN_CPU_PCIE6_0:	return "PEG0";
 #else
 	case SA_DEVFN_CPU_PCIE1_0:	return "PEG2";
