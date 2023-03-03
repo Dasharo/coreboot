@@ -74,7 +74,12 @@ const char *soc_acpi_name(const struct device *dev)
 		return NULL;
 
 	switch (dev->path.pci.devfn) {
-	case SA_DEVFN_ROOT:		return "MCHC";
+	case SA_DEVFN_ROOT:
+		/* MCHC only for bus 0 */
+		if (dev->bus && dev->bus->secondary == 0)
+			return "MCHC";
+		else
+			return NULL;
 #if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	case SA_DEVFN_CPU_PCIE1_0:	return "PEG1";
 	case SA_DEVFN_CPU_PCIE1_1:	return "PEG2";
