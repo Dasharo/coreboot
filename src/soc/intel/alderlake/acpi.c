@@ -300,6 +300,9 @@ void soc_lpi_get_constraints(void *unused)
 		if (min_sleep_state == NONE)
 			continue;
 
+		if (is_pci(dev) && !is_enabled_pci(dev))
+			continue;
+
 		acpigen_write_package(3);
 		{
 			char path[32] = { 0 };
