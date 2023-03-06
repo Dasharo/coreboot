@@ -149,6 +149,10 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
+# SETUP_PASSWORD_ENABLE	= FALSE
+ifeq ($(CONFIG_EDK2_SETUP_PASSWORD),y)
+BUILD_STR += -D SETUP_PASSWORD_ENABLE=TRUE
+endif
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
 endif

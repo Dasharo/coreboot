@@ -288,6 +288,12 @@ config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
 	help
 	  Enables the network boot option in EDK2 by default.
 
+config EDK2_SETUP_PASSWORD
+	bool "Enable EDK2 setup password"
+	default n
+	help
+	  Enables the admin password in EDK2 setup application.
+
 config EDK2_DASHARO_CHIPSET_CONFIG
 	bool "Enable EDK2 Dasharo Chipset Configuration Menu"
 	default n
