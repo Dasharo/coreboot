@@ -141,8 +141,13 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_INTEL_ME_OPTIONS),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowIntelMeMenu=TRUE
 endif
+# DASHARO_NETWORK_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowNetworkMenu=TRUE
+endif
+# DASHARO_NETWORK_BOOT_DEFAULT_ENABLE	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE

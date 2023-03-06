@@ -282,6 +282,12 @@ config EDK2_DASHARO_NETWORK_CONFIG
 	help
 	  Enables the EDK2 network stack configuration submenu in Dasharo System Features.
 
+config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
+	bool "Enable EDK2 network boot option by default"
+	default n
+	help
+	  Enables the network boot option in EDK2 by default.
+
 config EDK2_DASHARO_CHIPSET_CONFIG
 	bool "Enable EDK2 Dasharo Chipset Configuration Menu"
 	default n
