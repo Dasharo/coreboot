@@ -6,8 +6,7 @@ on:
       - clevo/release
   pull_request:
     branches:
-      - clevo/develop
-      - clevo/release
+      - 'clevo/**'
 
 jobs:
   build:
