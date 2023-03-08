@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi_gnvs.h>
 #include <drivers/efi/efivars.h>
 #include <ec/system76/ec/commands.h>
 #include <fmap.h>
@@ -7,6 +8,7 @@
 #include <mainboard/gpio.h>
 #include <smbios.h>
 #include <smmstore.h>
+#include <soc/nvs.h>
 #include <soc/ramstage.h>
 
 #include <Uefi/UefiBaseType.h>
@@ -46,6 +48,11 @@ struct fan_curve fan_curve_performance = {
 #define FAN_CURVE_OPTION_PERFORMANCE 1
 
 #define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
+
+#define SLEEP_TYPE_OPTION_S0IX	0
+#define SLEEP_TYPE_OPTION_S3	1
+
+#define SLEEP_TYPE_OPTION_DEFAULT SLEEP_TYPE_OPTION_S0IX
 
 const char *smbios_system_sku(void)
 {
@@ -151,11 +158,62 @@ efi_err:
 	}
 }
 
+static uint8_t get_sleep_type_option(void)
+{
+	uint8_t sleep_type = SLEEP_TYPE_OPTION_DEFAULT;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	size = sizeof(sleep_type);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "SleepType",
+				&sleep_type, &size);
+	if (ret != CB_SUCCESS)
+		printk(BIOS_DEBUG, "Failed to read sleep type from EFI vars, using S0ix\n");
+efi_err:
+#endif
+	return sleep_type;
+}
+
+void mainboard_fill_gnvs(struct global_nvs *gnvs)
+{
+	uint8_t sleep_type = get_sleep_type_option();
+
+	if (sleep_type == SLEEP_TYPE_OPTION_S0IX)
+		gnvs->s0ix = 1;
+	else if (sleep_type == SLEEP_TYPE_OPTION_S3)
+		gnvs->s0ix = 0;
+}
+
+static void set_sleep_type_ec(void)
+{
+	uint8_t sleep_type = get_sleep_type_option();
+	config_t *config = config_of_soc();
+
+	if (sleep_type != SLEEP_TYPE_OPTION_S0IX &&
+	    sleep_type != SLEEP_TYPE_OPTION_S3)
+		sleep_type = config->s0ix_enable ? SLEEP_TYPE_OPTION_S0IX :
+						   SLEEP_TYPE_OPTION_S3;
+
+	system76_ec_smfi_cmd(CMD_SLEEP_TYPE_SET, sizeof(sleep_type), &sleep_type);
+}
+
 static void mainboard_init(void *chip_info)
 {
 	mainboard_configure_gpios();
 
 	set_fan_curve();
+
+	set_sleep_type_ec();
 }
 
 struct chip_operations mainboard_ops = {

@@ -46,6 +46,8 @@
 #define CMD_SET_NO_INPUT 19
 // Set fan curve
 #define CMD_FAN_CURVE_SET 20
+// Set fan curve
+#define CMD_SLEEP_TYPE_SET 21
 
 // Print command. Registers are unique for each command
 #define CMD_PRINT_REG_FLAGS 2
