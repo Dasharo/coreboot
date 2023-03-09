@@ -524,6 +524,12 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_pop_len(); /* Device */
 
 		printk(BIOS_INFO, "%s: Added StorageD3Enable property\n", scope);
+	} else {
+		/* Write the device to make PEP happy */
+		acpigen_write_device(acpi_device_name(dev));
+		acpigen_write_ADR(0);
+		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
+		acpigen_pop_len(); /* Device */
 	}
 
 	acpigen_pop_len(); /* Scope */

@@ -77,7 +77,8 @@ const char *soc_acpi_name(const struct device *dev)
 		if (dev->bus && dev->bus->secondary == 0)
 			return "MCHC";
 		else
-			return NULL;
+		/* FIXME: handle RTD3 generic dev path in PEP to return correct acpi_name */
+			return "PXSX";
 #if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	case SA_DEVFN_CPU_PCIE1_0:	return "PEG1";
 	case SA_DEVFN_CPU_PCIE1_1:	return "PEG2";
