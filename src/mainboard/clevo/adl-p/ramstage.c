@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <drivers/efi/efivars.h>
 #include <ec/system76/ec/commands.h>
@@ -221,4 +222,10 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CpuPcieRpAcsEnabled[0] = 1;
 
 	params->D3ColdEnable = get_sleep_type_option() == SLEEP_TYPE_OPTION_S3 ? 0 : 1;
+}
+
+void mainboard_fill_fadt(acpi_fadt_t *fadt)
+{
+	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
+		fadt->flags &= ~ACPI_FADT_LOW_PWR_IDLE_S0;
 }
