@@ -1,7 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <acpi/acpi.h>
-#include <acpi/acpi_gnvs.h>
 #include <drivers/efi/efivars.h>
 #include <ec/system76/ec/commands.h>
 #include <fmap.h>
@@ -9,7 +7,6 @@
 #include <mainboard/gpio.h>
 #include <smbios.h>
 #include <smmstore.h>
-#include <soc/nvs.h>
 #include <soc/ramstage.h>
 
 #include <Uefi/UefiBaseType.h>
@@ -139,25 +136,9 @@ efi_err:
 	return sleep_type;
 }
 
-void mainboard_fill_gnvs(struct global_nvs *gnvs)
-{
-	uint8_t sleep_type = get_sleep_type_option();
-
-	if (sleep_type == SLEEP_TYPE_OPTION_S0IX)
-		gnvs->s0ix = 1;
-	else if (sleep_type == SLEEP_TYPE_OPTION_S3)
-		gnvs->s0ix = 0;
-}
-
 static void set_sleep_type_ec(void)
 {
 	uint8_t sleep_type = get_sleep_type_option();
-	config_t *config = config_of_soc();
-
-	if (sleep_type != SLEEP_TYPE_OPTION_S0IX &&
-	    sleep_type != SLEEP_TYPE_OPTION_S3)
-		sleep_type = config->s0ix_enable ? SLEEP_TYPE_OPTION_S0IX :
-						   SLEEP_TYPE_OPTION_S3;
 
 	system76_ec_smfi_cmd(CMD_SLEEP_TYPE_SET, sizeof(sleep_type), &sleep_type);
 }
@@ -220,12 +201,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CpuPcieRpPeerToPeerMode[0] = 1;
 	params->CpuPcieRpMaxPayload[0] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[0] = 1;
-
-	params->D3ColdEnable = get_sleep_type_option() == SLEEP_TYPE_OPTION_S3 ? 0 : 1;
 }
 
-void mainboard_fill_fadt(acpi_fadt_t *fadt)
+void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
 {
-	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
-		fadt->flags &= ~ACPI_FADT_LOW_PWR_IDLE_S0;
+	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3) {
+		config->s0ix_enable = 0;
+		config->tcss_d3_cold_disable = 1;
+	} else {
+		config->s0ix_enable = 1;
+		config->tcss_d3_cold_disable = 0;
+	}
 }
