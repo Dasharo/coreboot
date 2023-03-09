@@ -1,0 +1,47 @@
+name: MSI PRO Z-690A
+on:
+  push:
+    branches:
+      - msi_ms7d25/develop
+      - msi_ms7d25/release
+  pull_request:
+    branches:
+      - 'msi_ms7d25/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        include:
+          - vendor: msi
+            model: ms7d25
+            type: ddr4
+          - vendor: msi
+            model: ms7d25
+            type: ddr5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+
+      - name: Build Dasharo
+        run: |
+          ./build.sh ${{ matrix.type }}
+
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: "dasharo_${{ matrix.vendor }}_${{ matrix.model }}_${{ matrix.type }}"
+          path: |
+            build/coreboot.rom
+          retention-days: 30
