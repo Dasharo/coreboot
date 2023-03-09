@@ -43,7 +43,7 @@ function build_image {
 	version=$(git describe --abbrev=1 --tags --always --dirty)
 	version=${version//msi_ms7d25_/}
 
-	docker run --rm -it -u $UID -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
@@ -60,7 +60,7 @@ function build_image {
 
 	echo "Building Dasharo compatible with MSI PRO Z690-A (WIFI) $2(version $version)"
 
-	docker run --rm -it -u $UID -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
