@@ -117,7 +117,10 @@ static bool pcie_rp_update_dev(
 			printk(BIOS_NOTICE, "%s: Couldn't find PCIe Root Port #%u "
 			       "(originally %s) which was enabled in devicetree, removing and disabling.\n",
 			       __func__, rp_idx + 1, dev_path(dev));
+			/* Disable the dev and its children if not present */
 			dev->enabled = 0;
+			if (dev->downstream)
+				disable_children(dev->downstream);
 		}
 		return true;
 	} else if (PCI_FUNC(dev->path.pci.devfn) != new_fn) {
