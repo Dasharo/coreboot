@@ -136,20 +136,11 @@ efi_err:
 	return sleep_type;
 }
 
-static void set_sleep_type_ec(void)
-{
-	uint8_t sleep_type = get_sleep_type_option();
-
-	system76_ec_smfi_cmd(CMD_SLEEP_TYPE_SET, sizeof(sleep_type), &sleep_type);
-}
-
 static void mainboard_init(void *chip_info)
 {
 	mainboard_configure_gpios();
 
 	set_fan_curve();
-
-	set_sleep_type_ec();
 }
 
 struct chip_operations mainboard_ops = {
