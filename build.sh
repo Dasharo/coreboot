@@ -27,7 +27,7 @@ function buildVP2420Image {
 	version=$(git describe --abbrev=1 --tags --always --dirty)
 	version=${version//protectli_vault_ehl_/}
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
@@ -36,7 +36,7 @@ function buildVP2420Image {
 
 	echo "Building coreboot for Protectli $1"
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make"
