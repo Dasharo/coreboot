@@ -23,6 +23,7 @@
 #include "gpio_names/alderlake_h.h"
 #include "gpio_names/alderlake_p.h"
 #include "gpio_names/elkhartlake.h"
+#include "gpio_names/jasperlake.h"
 
 #define SBBAR_SIZE	(16 * MiB)
 #define PCR_PORT_SIZE	(64 * KiB)
