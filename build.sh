@@ -31,7 +31,7 @@ function buildVP46xxImage {
 	version=$(git describe --abbrev=1 --tags --always --dirty)
 	version=${version//protectli_vault_cml_/}
 
-	docker run --rm -it -u $UID -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
@@ -40,7 +40,7 @@ function buildVP46xxImage {
 
 	echo "Building Dasharo for Protectli $2 (version $version)"
 
-	docker run --rm -it -u $UID -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
