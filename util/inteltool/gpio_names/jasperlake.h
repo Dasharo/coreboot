@@ -1,11 +1,11 @@
-#ifndef GPIO_NAMES_ELKHARTLAKE
-#define GPIO_NAMES_ELKHARTLAKE
+#ifndef GPIO_NAMES_JASPERLAKE
+#define GPIO_NAMES_JASPERLAKE
 
 #include "gpio_groups.h"
 
 /* ----------------------------- Elkhart Lake ----------------------------- */
 
-const char *const elkhartlake_pch_group_a_names[] = {
+const char *const jasperlake_pch_group_a_names[] = {
 "GPP_A00",  "ESPI_IO_0",    "n/a",
 "GPP_A01",  "ESPI_IO_1",    "n/a",
 "GPP_A02",  "ESPI_IO_2",    "n/a",
@@ -28,14 +28,14 @@ const char *const elkhartlake_pch_group_a_names[] = {
 "GPP_A19",  "PCHHOT_N",     "n/a",
 };
 
-const struct gpio_group elkhartlake_pch_group_a = {
+const struct gpio_group jasperlake_pch_group_a = {
 	.display	= "------- GPIO Group GPP_A -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_a_names) / 3,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_a_names) / 3,
 	.func_count	= 3,
-	.pad_names	= elkhartlake_pch_group_a_names,
+	.pad_names	= jasperlake_pch_group_a_names,
 };
 
-const char *const elkhartlake_pch_group_b_names[] = {
+const char *const jasperlake_pch_group_b_names[] = {
 "GPP_B00", "PMC_CORE_VID0",  "n/a",         "n/a",
 "GPP_B01", "PMC_CORE_VID1",  "n/a",         "n/a",
 "GPP_B02", "PMC_VRALERT_N",  "n/a",         "n/a",
@@ -63,14 +63,14 @@ const char *const elkhartlake_pch_group_b_names[] = {
 
 };
 
-const struct gpio_group elkhartlake_pch_group_b = {
+const struct gpio_group jasperlake_pch_group_b = {
 	.display	= "------- GPIO Group GPP_B -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_b_names) / 4,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_b_names) / 4,
 	.func_count	= 4,
-	.pad_names	= elkhartlake_pch_group_b_names,
+	.pad_names	= jasperlake_pch_group_b_names,
 };
 
-const char *const elkhartlake_pch_group_c_names[] = {
+const char *const jasperlake_pch_group_c_names[] = {
 "GPP_C00", "n/a",         "n/a",                           "n/a",
 "GPP_C01", "n/a",         "n/a",                           "n/a",
 "GPP_C02", "n/a",         "n/a",                           "n/a",
@@ -97,14 +97,14 @@ const char *const elkhartlake_pch_group_c_names[] = {
 "GPP_C23", "UART2_CTS_N", "n/a",                           "CNV_MFUART0_CTS_N",
 };
 
-const struct gpio_group elkhartlake_pch_group_c = {
+const struct gpio_group jasperlake_pch_group_c = {
 	.display	= "------- GPIO Group GPP_C -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_c_names) / 4,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_c_names) / 4,
 	.func_count	= 4,
-	.pad_names	= elkhartlake_pch_group_c_names,
+	.pad_names	= jasperlake_pch_group_c_names,
 };
 
-const char *const elkhartlake_pch_group_d_names[] = {
+const char *const jasperlake_pch_group_d_names[] = {
 "GPP_D00", "n/a",             "BK_0",             "SBK_0",        "n/a",
 "GPP_D01", "n/a",             "BK_1",             "SBK_1",        "n/a",
 "GPP_D02", "n/a",             "BK_2",             "SBK_2",        "n/a",
@@ -131,14 +131,14 @@ const char *const elkhartlake_pch_group_d_names[] = {
 "GPP_D23", "I2C5_SCL",        "n/a",              "n/a",          "n/a",
 };
 
-const struct gpio_group elkhartlake_pch_group_d = {
+const struct gpio_group jasperlake_pch_group_d = {
 	.display	= "------- GPIO Group GPP_D -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_d_names) / 5,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_d_names) / 5,
 	.func_count	= 5,
-	.pad_names	= elkhartlake_pch_group_d_names,
+	.pad_names	= jasperlake_pch_group_d_names,
 };
 
-const char *const elkhartlake_pch_group_e_names[] = {
+const char *const jasperlake_pch_group_e_names[] = {
 "GPP_E00", "n/a",          "IMGCLKOUT_0",   "n/a", "n/a",           "n/a",         "n/a",
 "GPP_E01", "n/a",          "n/a",           "n/a", "n/a",           "n/a",         "n/a",
 "GPP_E02", "IMGCLKOUT_1",  "n/a",           "n/a", "n/a",           "n/a",         "n/a",
@@ -165,14 +165,14 @@ const char *const elkhartlake_pch_group_e_names[] = {
 "GPP_E23", "CNV_RGI_RSP",  "n/a",           "n/a", "n/a",           "n/a",         "n/a",
 };
 
-const struct gpio_group elkhartlake_pch_group_e = {
+const struct gpio_group jasperlake_pch_group_e = {
 	.display	= "------- GPIO Group GPP_E -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_e_names) / 7,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_e_names) / 7,
 	.func_count	= 7,
-	.pad_names	= elkhartlake_pch_group_e_names,
+	.pad_names	= jasperlake_pch_group_e_names,
 };
 
-const char *const elkhartlake_pch_group_f_names[] = {
+const char *const jasperlake_pch_group_f_names[] = {
 "GPP_F04", "CNV_RF_RESET_N",
 "GPP_F07", "EMMC_CMD",
 "GPP_F08", "EMMC_DATA0",
@@ -188,274 +188,131 @@ const char *const elkhartlake_pch_group_f_names[] = {
 "GPP_F18", "EMMC_RESET_N",
 };
 
-const struct gpio_group elkhartlake_pch_group_f = {
+const struct gpio_group jasperlake_pch_group_f = {
 	.display	= "------- GPIO Group GPP_F -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_f_names) / 2,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_f_names) / 2,
 	.func_count	= 2,
-	.pad_names	= elkhartlake_pch_group_f_names,
+	.pad_names	= jasperlake_pch_group_f_names,
 };
 
-// KZM: here finished, temporary work above, todo below
-
-const char *const elkhartlake_pch_group_g_names[] = {
-	"GPP_G00",	"SD_SDIO_CMD",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G01",	"SD_SDIO_D0",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G02",	"SD_SDIO_D1",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G03",	"SD_SDIO_D2",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G04",	"SD_SDIO_D3",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G05",	"SD_SDIO_CD_N",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G06",	"SD_SDIO_CLK",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G07",	"AVS_I2S2_SCLK",	"n/a",		"n/a",		"DMIC_CLK_A0",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G08",	"AVS_I2S2_SFRM",	"RSVD",		"n/a",		"DMIC_DATA0",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G09",	"AVS_I2S2_TXD",		"RSVD",		"RSVD",		"DMIC_CLK_A1",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G10",	"AVS_I2S2_RXD",		"n/a",		"n/a",		"DMIC_DATA1",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G11",	"AVS_I2S3_SCLK",	"n/a",		"n/a",		"DMIC_DATA0",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO07",
-	"GPP_G12",	"AVS_I2S3_SFRM",	"SATA_1_GP",	"SATAXPCIE_1",	"DMIC_DATA1",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO31",
-	"GPP_G13",	"AVS_I2S3_TXD",		"n/a",		"n/a",		"DMIC_CLK_B0",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO08",
-	"GPP_G14",	"AVS_I2S3_RXD",		"n/a",		"n/a",		"DMIC_CLK_B1",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO09",
-	"GPP_G15",	"ESPI_IO0",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G16",	"ESPI_IO1",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G17",	"ESPI_IO2",		"Reserved",	"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G18",	"ESPI_IO3",		"Reserved",	"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G19",	"AVS_I2S1_SCLK",	"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G20",	"ESPI_CS0_N",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G21",	"ESPI_CLK",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G22",	"ESPI_RST0_N",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_G23",	"SD_SDIO_WP",		"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPIO_RSVD_2",	"n/a",			"n/a",		"n/a",		"n/a",		"n/a",	"n/a",	"n/a",	"n/a",
+const char *const jasperlake_pch_group_g_names[] = {
+"GPP_G00", "SD_SDIO_CMD",
+"GPP_G01", "SD_SDIO_D0",
+"GPP_G02", "SD_SDIO_D1",
+"GPP_G03", "SD_SDIO_D2",
+"GPP_G04", "SD_SDIO_D3",
+"GPP_G05", "SD_SDIO_CD_N",
+"GPP_G06", "SD_SDIO_CLK",
+"GPP_G07", "SD_SDIO_WP",
 };
 
-const struct gpio_group elkhartlake_pch_group_g = {
+const struct gpio_group jasperlake_pch_group_g = {
 	.display	= "------- GPIO Group GPP_G -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_g_names) / 9,
-	.func_count	= 9,
-	.pad_names	= elkhartlake_pch_group_g_names,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_g_names) / 2,
+	.func_count	= 2,
+	.pad_names	= jasperlake_pch_group_g_names,
 };
 
-const char *const elkhartlake_pch_group_h_names[] = {
-	"GPP_H00",	"PSE_GBE1_INT",		"n/a",			"n/a",	"PSE_UART5_RXD",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H01",	"PSE_GBE1_RST_N",	"n/a",			"n/a",	"PSE_UART5_TXD",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H02",	"PSE_GBE1_AUXTS",	"n/a",			"n/a",	"PSE_UART5_RTS_N",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H03",	"PSE_GBE1_PPS",		"n/a",			"n/a",	"PSE_UART5_CTS_N",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO21",
-	"GPP_H04",	"SIO_I2C2_SDA",		"n/a",			"n/a",	"PSE_PWM08",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO10",
-	"GPP_H05",	"SIO_I2C2_SCL",		"n/a",			"n/a",	"PSE_PWM09",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO11",
-	"GPP_H06",	"SIO_I2C3_SDA",		"PSE_I2C5_SDA",		"n/a",	"PSE_PWM10",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H07",	"SIO_I2C3_SCL",		"PSE_I2C5_SCL",		"n/a",	"PSE_PWM11",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H08",	"SIO_I2C4_SDA",		"RSVD",			"n/a",	"PSE_PWM12",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H09",	"SIO_I2C4_SCL",		"RSVD",			"n/a",	"PSE_PWM13",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H10",	"PCIE_CLKREQ4_N",	"n/a",			"n/a",	"PSE_PWM14",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H11",	"PCIE_CLKREQ5_N",	"n/a",			"n/a",	"PSE_PWM15",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H12",	"PSE_UART1_RXD",	"n/a",			"n/a",	"M2_SKT2_CFG0",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO51",
-	"GPP_H13",	"PSE_UART1_TXD",	"n/a",			"n/a",	"M2_SKT2_CFG1",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO52",
-	"GPP_H14",	"n/a",			"n/a",			"n/a",	"M2_SKT2_CFG2",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO53",
-	"GPP_H15",	"PSE_UART1_CTS_N",	"n/a",			"n/a",	"M2_SKT2_CFG3",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO54",
-	"GPP_H16",	"PCIE_LNK_DOWN",	"DDI2_DDC_SCL",		"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H17",	"SD_SDIO_PWR_EN_N",	"n/a",			"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H18",	"PMC_CPU_C10_GATE_N",	"n/a",			"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_H19",	"n/a",			"DDI2_DDC_SDA",		"n/a",	"PMC_TGPIO0",		"n/a",	"n/a",	"n/a",	"PSE_TGPIO20",
-	"GPP_H20",	"PSE_PWM07",		"DDI2_HPD",		"n/a",	"RSVD",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO55",
-	"GPP_H21",	"PSE_HSUART1_DE",	"PSE_UART1_RTS_N",	"n/a",	"RSVD",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO56",
-	"GPP_H22",	"PSE_HSUART1_RE",	"n/a",			"n/a",	"RSVD",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO57",
-	"GPP_H23",	"PSE_HSUART1_EN",	"n/a",			"n/a",	"RSVD",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO58",
+const char *const jasperlake_pch_group_h_names[] = {
+"GP_H00", "n/a",               "n/a",            "n/a",
+"GP_H01", "SD_SDIO_PWR_EN_N",  "n/a",            "CNV_RF_RESET_N",
+"GP_H02", "n/a",               "n/a",            "MODEM_CLKREQ",
+"GP_H03", "SX_EXIT_HOLDOFF_N", "n/a",            "n/a",
+"GP_H04", "I2C2_SDA",          "n/a",            "n/a",
+"GP_H05", "I2C2_SCL",          "n/a",            "n/a",
+"GP_H06", "I2C3_SDA",          "n/a",            "n/a",
+"GP_H07", "I2C3_SCL",          "n/a",            "n/a",
+"GP_H08", "I2C4_SDA",          "n/a",            "n/a",
+"GP_H09", "I2C4_SCL",          "n/a",            "n/a",
+"GP_H10", "CPU_C10_GATE_N",    "n/a",            "n/a",
+"GP_H11", "AVS_I2S2_SCLK",     "n/a",            "n/a",
+"GP_H12", "AVS_I2S2_SFRM",     "CNV_RF_RESET_N", "n/a",
+"GP_H13", "AVS_I2S2_TXD",      "MODEM_CLKREQ",   "n/a",
+"GP_H14", "AVS_I2S2_RXD",      "n/a",            "n/a",
+"GPP_H15","AVS_I2S1_SCLK",     "n/a",            "n/a",
+"GP_H16", "n/a",               "n/a",            "n/a",
+"GP_H17", "n/a",               "n/a",            "n/a",
+"GP_H18", "n/a",               "n/a",            "n/a",
+"GP_H19", "n/a",               "n/a",            "n/a",
+
 };
 
-const struct gpio_group elkhartlake_pch_group_h = {
+const struct gpio_group jasperlake_pch_group_h = {
 	.display	= "------- GPIO Group GPP_H -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_h_names) / 9,
-	.func_count	= 9,
-	.pad_names	= elkhartlake_pch_group_h_names,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_h_names) / 4,
+	.func_count	= 4,
+	.pad_names	= jasperlake_pch_group_h_names,
 };
 
-const char *const elkhartlake_pch_group_r_names[] = {
-	"GPP_R00",	"HDA_BCLK",	"AVS_I2S0_SCLK",	"PSE_I2S0_SCLK",	"RSVD",	"n/a",
-	"GPP_R01",	"HDA_SYNC",	"AVS_I2S0_SFRM",	"PSE_I2S0_SFRM",	"n/a",	"n/a",
-	"GPP_R02",	"HDA_SDO",	"AVS_I2S0_TXD",		"PSE_I2S0_TXD",		"RSVD",	"DMIC_CLK_B0",
-	"GPP_R03",	"HDA_SDI0",	"AVS_I2S0_RXD",		"PSE_I2S0_RXD",		"RSVD",	"DMIC_CLK_B1",
-	"GPP_R04",	"HDA_RST_N",	"n/a",			"n/a",			"n/a",	"DMIC_CLK_A1",
-	"GPP_R05",	"HDA_SDI1",	"AVS_I2S1_RXD",		"n/a",			"n/a",	"DMIC_DATA1",
-	"GPP_R06",	"n/a",		"AVS_I2S1_TXD",		"n/a",			"n/a",	"DMIC_CLK_A0",
-	"GPP_R07",	"n/a",		"AVS_I2S1_SFRM",	"n/a",			"n/a",	"DMIC_DATA0",
+const char *const jasperlake_pch_group_r_names[] = {
+"GPP_R00", "HDA_BCLK",      "AVS_I2S0_SCLK",
+"GPP_R01", "HDA_SYNC",      "AVS_I2S0_SFRM",
+"GPP_R02", "HDA_SDO",       "AVS_I2S0_TXD",
+"GPP_R03", "HDA_SDI0",      "AVS_I2S0_RXD",
+"GPP_R04", "HDA_RST_N",     "n/a",
+"GPP_R05", "HDA_SDI1",      "AVS_I2S1_RXD",
+"GPP_R06", "AVS_I2S1_SFRM", "n/a",
+"GPP_R07", "AVS_I2S1_TXD",  "n/a",
 };
 
-const struct gpio_group elkhartlake_pch_group_r = {
+const struct gpio_group jasperlake_pch_group_r = {
 	.display	= "------- GPIO Group GPP_R -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_r_names) / 6,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_r_names) / 6,
 	.func_count	= 6,
-	.pad_names	= elkhartlake_pch_group_r_names,
+	.pad_names	= jasperlake_pch_group_r_names,
 };
 
-const char *const elkhartlake_pch_group_s_names[] = {
-	"GPIO_RSVD_13",	"n/a",
-	"GPIO_RSVD_14",	"n/a",
-	"GPIO_RSVD_15",	"n/a",
-	"GPIO_RSVD_16",	"n/a",
-	"GPIO_RSVD_17",	"n/a",
-	"GPIO_RSVD_18",	"n/a",
-	"GPIO_RSVD_19",	"n/a",
-	"GPIO_RSVD_20",	"n/a",
-	"GPIO_RSVD_21",	"n/a",
-	"GPIO_RSVD_22",	"n/a",
-	"GPIO_RSVD_23",	"n/a",
-	"GPIO_RSVD_24",	"n/a",
-	"GPIO_RSVD_25",	"n/a",
-	"GPIO_RSVD_26",	"n/a",
-	"GPIO_RSVD_27",	"n/a",
-	"GPIO_RSVD_28",	"n/a",
-	"GPIO_RSVD_29",	"n/a",
-	"GPP_S00",	"n/a",
-	"GPP_S01",	"n/a",
+const char *const jasperlake_pch_group_s_names[] = {
+"GPP_S00", "n/a",        "n/a",
+"GPP_S01", "n/a",        "n/a",
+"GPP_S02", "n/a",        "DMIC_CLK_1",
+"GPP_S03", "n/a",        "DMIC_DATA_1",
+"GPP_S04", "SNDW1_CLK",  "n/a",
+"GPP_S05", "SNDW1_DATA", "n/a",
+"GPP_S06", "n/a",        "DMIC_CLK_0",
+"GPP_S07", "n/a",        "DMIC_DATA_0",
 };
 
-const struct gpio_group elkhartlake_pch_group_s = {
+const struct gpio_group jasperlake_pch_group_s = {
 	.display	= "------- GPIO Group GPP_S -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_s_names) / 2,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_s_names) / 2,
 	.func_count	= 2,
-	.pad_names	= elkhartlake_pch_group_s_names,
+	.pad_names	= jasperlake_pch_group_s_names,
 };
 
-const char *const elkhartlake_pch_group_t_names[] = {
-	"GPP_T00",	"PSE_QEPA2",		"n/a",			"SIO_I2C6_SDA",		"n/a",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO08",
-	"GPP_T01",	"PSE_QEPB2",		"n/a",			"SIO_I2C6_SCL",		"n/a",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO09",
-	"GPP_T02",	"PSE_QEPI2",		"n/a",			"SIO_I2C7_SDA",		"n/a",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO07",
-	"GPP_T03",	"n/a",			"n/a",			"SIO_I2C7_SCL",		"n/a",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO06",
-	"GPP_T04",	"PSE_GBE0_INT",		"n/a",			"n/a",			"RSVD",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T05",	"PSE_GBE0_RST_N",	"n/a",			"n/a",			"RSVD",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T06",	"PSE_GBE0_AUXTS",	"USB2_OC1_N",		"n/a",			"RSVD",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T07",	"PSE_GBE0_PPS",		"n/a",			"n/a",			"RSVD",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO59",
-	"GPP_T08",	"USB2_OC2_N",		"RSVD",			"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO22",
-	"GPP_T09",	"PSE_HSUART2_EN",	"RSVD",			"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T10",	"PSE_HSUART2_RE",	"RSVD",			"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T11",	"USB2_OC3_N",		"RSVD",			"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO06",
-	"GPP_T12",	"PSE_UART2_RXD",	"SIO_UART0_RXD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T13",	"PSE_UART2_TXD",	"SIO_UART0_TXD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T14",	"PSE_UART2_RTS_N",	"SIO_UART0_RTS_N",	"PSE_HSUART2_DE",	"n/a",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_T15",	"PSE_UART2_CTS_N",	"SIO_UART0_CTS_N",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",	"n/a",
+// Deep Sleep Well group
+const char *const jasperlake_pch_group_dsw_names[] = {
+"GPP_DSW00", "PMC_BATLOW_N",
+"GPP_DSW01", "PMC_ACPRESENT",
+"GPP_DSW02", "LAN_WAKE_N",
+"GPP_DSW03", "PMC_PWRBTN_N",
+"GPP_DSW04", "PMC_SLP_S3_N",
+"GPP_DSW05", "PMC_SLP_S4_N",
+"GPP_DSW06", "PMC_SLP_A_N",
+"GPP_DSW07", "n/a",
+"GPP_DSW08", "PMC_SUSCLK",
+"GPP_DSW09", "PMC_SLP_WLAN_N",
+"GPP_DSW10", "PMC_SLP_S5_N",
 };
 
-const struct gpio_group elkhartlake_pch_group_t = {
-	.display	= "------- GPIO Group GPP_T -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_t_names) / 9,
-	.func_count	= 9,
-	.pad_names	= elkhartlake_pch_group_t_names,
-};
-
-const char *const elkhartlake_pch_group_u_names[] = {
-	"GPP_U00",	"GBE_INT",		"PSE_I2C6_SCL",	"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U01",	"GBE_RST_N",		"PSE_I2C6_SDA",	"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U02",	"GBE_PPS",		"PSE_I2C7_SCL",	"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U03",	"GBE_AUXTS",		"PSE_I2C7_SDA",	"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U04",	"ISI_SPIM_CS",		"n/a",		"RSVD",	"PSE_SPI1_CS0_N",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U05",	"ISI_SPIM_SCLK",	"n/a",		"RSVD",	"PSE_SPI1_CLK",		"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U06",	"ISI_SPIM_MISO",	"n/a",		"RSVD",	"PSE_SPI1_MISO",	"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U07",	"PSE_QEPA3",		"n/a",		"RSVD",	"PSE_SPI1_MOSI",	"n/a",	"n/a",	"n/a",	"PSE_TGPIO10",
-	"GPP_U08",	"ISI_SPIS_CS",		"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO10",
-	"GPP_U09",	"ISI_SPIS_SCLK",	"ISI_I2CS_SCL",	"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO11",
-	"GPP_U10",	"ISI_SPIS_MISO",	"ISI_I2CS_SDA",	"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO12",
-	"GPP_U11",	"PSE_QEPB3",		"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO11",
-	"GPP_U12",	"ISI_CHX_OKNOK_0",	"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U13",	"ISI_CHX_OKNOK_1",	"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U14",	"ISI_CHX_RLY_SWTCH",	"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U15",	"ISI_CHX_PMIC_EN",	"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO13",
-	"GPP_U16",	"ISI_OKNOK_0",		"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U17",	"ISI_OKNOK_1",		"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U18",	"ISI_ALERT_N",		"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPP_U19",	"PSE_QEPI3",		"n/a",		"RSVD",	"n/a",			"n/a",	"n/a",	"n/a",	"PSE_TGPIO12",
-	"GPIO_RSVD_4",	"n/a",			"n/a",		"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPIO_RSVD_5",	"n/a",			"n/a",		"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPIO_RSVD_6",	"n/a",			"n/a",		"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-	"GPIO_RSVD_7",	"n/a",			"n/a",		"n/a",	"n/a",			"n/a",	"n/a",	"n/a",	"n/a",
-};
-
-const struct gpio_group elkhartlake_pch_group_u = {
-	.display	= "------- GPIO Group GPP_U -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_u_names) / 9,
-	.func_count	= 9,
-	.pad_names	= elkhartlake_pch_group_u_names,
-};
-
-const char *const elkhartlake_pch_group_v_names[] = {
-	"GPP_V00",	"EMMC_CMD",
-	"GPP_V01",	"EMMC_DATA0",
-	"GPP_V02",	"EMMC_DATA1",
-	"GPP_V03",	"EMMC_DATA2",
-	"GPP_V04",	"EMMC_DATA3",
-	"GPP_V05",	"EMMC_DATA4",
-	"GPP_V06",	"EMMC_DATA5",
-	"GPP_V07",	"EMMC_DATA6",
-	"GPP_V08",	"EMMC_DATA7",
-	"GPP_V09",	"EMMC_RCLK",
-	"GPP_V10",	"EMMC_CLK",
-	"GPP_V11",	"EMMC_RST_N",
-	"GPP_V12",	"PSE_TGPIO00",
-	"GPP_V13",	"PSE_TGPIO01",
-	"GPP_V14",	"PSE_TGPIO02",
-	"GPP_V15",	"PSE_TGPIO03",
-};
-
-const struct gpio_group elkhartlake_pch_group_v = {
-	.display	= "------- GPIO Group GPP_V -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_v_names) / 2,
+const struct gpio_group jasperlake_pch_group_dsw = {
+	.display	= "------- GPIO Group GPP_S -------",
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_dsw_names) / 2,
 	.func_count	= 2,
-	.pad_names	= elkhartlake_pch_group_v_names,
+	.pad_names	= jasperlake_pch_group_s_names,
 };
 
-const char *const elkhartlake_pch_group_vgpio_names[] = {
-	"VGPIO_0",	"VGPIO_0",
-	"VGPIO_4",	"VGPIO_4",
-	"VGPIO_5",	"VGPIO_5",
-	"VGPIO_6",	"VGPIO_6",
-	"VGPIO_7",	"VGPIO_7",
-	"VGPIO_8",	"VGPIO_8",
-	"VGPIO_9",	"VGPIO_9",
-	"VGPIO_10",	"VGPIO_10",
-	"VGPIO_11",	"VGPIO_11",
-	"VGPIO_12",	"VGPIO_12",
-	"VGPIO_13",	"VGPIO_13",
-	"VGPIO_18",	"VGPIO_18",
-	"VGPIO_19",	"VGPIO_19",
-	"VGPIO_20",	"VGPIO_20",
-	"VGPIO_21",	"VGPIO_21",
-	"VGPIO_22",	"VGPIO_22",
-	"VGPIO_23",	"VGPIO_23",
-	"VGPIO_24",	"VGPIO_24",
-	"VGPIO_25",	"VGPIO_25",
-	"VGPIO_30",	"VGPIO_30",
-	"VGPIO_31",	"VGPIO_31",
-	"VGPIO_32",	"VGPIO_32",
-	"VGPIO_33",	"VGPIO_33",
-	"VGPIO_34",	"VGPIO_34",
-	"VGPIO_35",	"VGPIO_35",
-	"VGPIO_36",	"VGPIO_36",
-	"VGPIO_37",	"VGPIO_37",
-	"VGPIO_39",	"VGPIO_39",
-};
-
-const struct gpio_group elkhartlake_pch_group_vgpio = {
+const struct gpio_group jasperlake_pch_group_vgpio = {
 	.display	= "------- GPIO Group GPP_VGPIO -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_vgpio_names) / 2,
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_vgpio_names) / 2,
 	.func_count	= 2,
-	.pad_names	= elkhartlake_pch_group_vgpio_names,
-};
-
-
-const char *const elkhartlake_pch_group_vgpio_usb_names[] = {
-	"VGPIO_USB_0",	"VGPIO_USB_0",
-	"VGPIO_USB_1",	"VGPIO_USB_1",
-	"VGPIO_USB_2",	"VGPIO_USB_2",
-	"VGPIO_USB_3",	"VGPIO_USB_3",
-};
-
-const struct gpio_group elkhartlake_pch_group_vgpio_usb = {
-	.display	= "------- GPIO Group GPP_VGPIO_USB -------",
-	.pad_count	= ARRAY_SIZE(elkhartlake_pch_group_vgpio_usb_names) / 2,
-	.func_count	= 2,
-	.pad_names	= elkhartlake_pch_group_vgpio_usb_names,
+	.pad_names	= jasperlake_pch_group_vgpio_names,
 };
 
 const struct gpio_group *const elkhartlake_community_0_groups[] = {
-	&elkhartlake_pch_group_b,
-	&elkhartlake_pch_group_t,
-	&elkhartlake_pch_group_g,
+	&jasperlake_pch_group_b,
+	&jasperlake_pch_group_t,
+	&jasperlake_pch_group_g,
 };
 
 const struct gpio_community elkhartlake_community_0 = {
@@ -466,11 +323,11 @@ const struct gpio_community elkhartlake_community_0 = {
 };
 
 const struct gpio_group *const elkhartlake_community_1_groups[] = {
-	&elkhartlake_pch_group_v,
-	&elkhartlake_pch_group_h,
-	&elkhartlake_pch_group_d,
-	&elkhartlake_pch_group_u,
-	&elkhartlake_pch_group_vgpio,
+	&jasperlake_pch_group_v,
+	&jasperlake_pch_group_h,
+	&jasperlake_pch_group_d,
+	&jasperlake_pch_group_u,
+	&jasperlake_pch_group_vgpio,
 };
 
 const struct gpio_community elkhartlake_community_1 = {
@@ -481,7 +338,7 @@ const struct gpio_community elkhartlake_community_1 = {
 };
 
 const struct gpio_group *const elkhartlake_community_2_groups[] = {
-	&elkhartlake_pch_group_gpd,
+	&jasperlake_pch_group_gpd,
 };
 
 const struct gpio_community elkhartlake_community_2 = {
@@ -492,9 +349,9 @@ const struct gpio_community elkhartlake_community_2 = {
 };
 
 const struct gpio_group *const elkhartlake_community_3_groups[] = {
-	&elkhartlake_pch_group_s,
-	&elkhartlake_pch_group_a,
-	&elkhartlake_pch_group_vgpio_usb,
+	&jasperlake_pch_group_s,
+	&jasperlake_pch_group_a,
+	&jasperlake_pch_group_vgpio_usb,
 };
 
 const struct gpio_community elkhartlake_community_3 = {
@@ -505,9 +362,9 @@ const struct gpio_community elkhartlake_community_3 = {
 };
 
 const struct gpio_group *const elkhartlake_community_4_groups[] = {
-	&elkhartlake_pch_group_c,
-	&elkhartlake_pch_group_f,
-	&elkhartlake_pch_group_e,
+	&jasperlake_pch_group_c,
+	&jasperlake_pch_group_f,
+	&jasperlake_pch_group_e,
 };
 
 const struct gpio_community elkhartlake_community_4 = {
@@ -518,7 +375,7 @@ const struct gpio_community elkhartlake_community_4 = {
 };
 
 const struct gpio_group *const elkhartlake_community_5_groups[] = {
-	&elkhartlake_pch_group_r,
+	&jasperlake_pch_group_r,
 };
 
 const struct gpio_community elkhartlake_community_5 = {
