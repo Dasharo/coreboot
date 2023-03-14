@@ -302,96 +302,83 @@ const struct gpio_group jasperlake_pch_group_dsw = {
 	.pad_names	= jasperlake_pch_group_s_names,
 };
 
-const struct gpio_group jasperlake_pch_group_vgpio = {
-	.display	= "------- GPIO Group GPP_VGPIO -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_vgpio_names) / 2,
-	.func_count	= 2,
-	.pad_names	= jasperlake_pch_group_vgpio_names,
-};
-
-const struct gpio_group *const elkhartlake_community_0_groups[] = {
+const struct gpio_group *const jasperlake_community_0_groups[] = {
 	&jasperlake_pch_group_b,
-	&jasperlake_pch_group_t,
 	&jasperlake_pch_group_g,
 };
 
-const struct gpio_community elkhartlake_community_0 = {
+const struct gpio_community jasperlake_community_0 = {
 	.name		= "------- GPIO Community 0 -------",
 	.pcr_port_id	= 0x6e,
-	.group_count	= ARRAY_SIZE(elkhartlake_community_0_groups),
-	.groups		= elkhartlake_community_0_groups,
+	.group_count	= ARRAY_SIZE(jasperlake_community_0_groups),
+	.groups		= jasperlake_community_0_groups,
 };
 
-const struct gpio_group *const elkhartlake_community_1_groups[] = {
-	&jasperlake_pch_group_v,
+const struct gpio_group *const jasperlake_community_1_groups[] = {
 	&jasperlake_pch_group_h,
 	&jasperlake_pch_group_d,
-	&jasperlake_pch_group_u,
-	&jasperlake_pch_group_vgpio,
 };
 
-const struct gpio_community elkhartlake_community_1 = {
+const struct gpio_community jasperlake_community_1 = {
 	.name		= "------- GPIO Community 1 -------",
 	.pcr_port_id	= 0x6d,
-	.group_count	= ARRAY_SIZE(elkhartlake_community_1_groups),
-	.groups		= elkhartlake_community_1_groups,
+	.group_count	= ARRAY_SIZE(jasperlake_community_1_groups),
+	.groups		= jasperlake_community_1_groups,
 };
 
-const struct gpio_group *const elkhartlake_community_2_groups[] = {
-	&jasperlake_pch_group_gpd,
+const struct gpio_group *const jasperlake_community_2_groups[] = {
 };
 
-const struct gpio_community elkhartlake_community_2 = {
+const struct gpio_community jasperlake_community_2 = {
 	.name		= "------- GPIO Community 2 -------",
 	.pcr_port_id	= 0x6c,
-	.group_count	= ARRAY_SIZE(elkhartlake_community_2_groups),
-	.groups		= elkhartlake_community_2_groups,
+	.group_count	= ARRAY_SIZE(jasperlake_community_2_groups),
+	.groups		= jasperlake_community_2_groups,
 };
 
-const struct gpio_group *const elkhartlake_community_3_groups[] = {
+const struct gpio_group *const jasperlake_community_3_groups[] = {
 	&jasperlake_pch_group_s,
 	&jasperlake_pch_group_a,
-	&jasperlake_pch_group_vgpio_usb,
 };
 
-const struct gpio_community elkhartlake_community_3 = {
+const struct gpio_community jasperlake_community_3 = {
 	.name		= "------- GPIO Community 3 -------",
 	.pcr_port_id	= 0x6b,
-	.group_count	= ARRAY_SIZE(elkhartlake_community_3_groups),
-	.groups		= elkhartlake_community_3_groups,
+	.group_count	= ARRAY_SIZE(jasperlake_community_3_groups),
+	.groups		= jasperlake_community_3_groups,
 };
 
-const struct gpio_group *const elkhartlake_community_4_groups[] = {
+const struct gpio_group *const jasperlake_community_4_groups[] = {
 	&jasperlake_pch_group_c,
 	&jasperlake_pch_group_f,
 	&jasperlake_pch_group_e,
 };
 
-const struct gpio_community elkhartlake_community_4 = {
+const struct gpio_community jasperlake_community_4 = {
 	.name		= "------- GPIO Community 4 -------",
 	.pcr_port_id	= 0x6a,
-	.group_count	= ARRAY_SIZE(elkhartlake_community_4_groups),
-	.groups		= elkhartlake_community_4_groups,
+	.group_count	= ARRAY_SIZE(jasperlake_community_4_groups),
+	.groups		= jasperlake_community_4_groups,
 };
 
-const struct gpio_group *const elkhartlake_community_5_groups[] = {
+const struct gpio_group *const jasperlake_community_5_groups[] = {
 	&jasperlake_pch_group_r,
 };
 
-const struct gpio_community elkhartlake_community_5 = {
+const struct gpio_community jasperlake_community_5 = {
 	.name		= "------- GPIO Community 5 -------",
 	.pcr_port_id	= 0x69,
-	.group_count	= ARRAY_SIZE(elkhartlake_community_5_groups),
-	.groups		= elkhartlake_community_5_groups,
+	.group_count	= ARRAY_SIZE(jasperlake_community_5_groups),
+	.groups		= jasperlake_community_5_groups,
 };
 
-const struct gpio_community *const elkhartlake_pch_communities[] = {
-	&elkhartlake_community_0,
-	&elkhartlake_community_1,
-	&elkhartlake_community_2,
-	&elkhartlake_community_3,
-	&elkhartlake_community_4,
-	&elkhartlake_community_5,
+const struct gpio_community *const jasperlake_pch_communities[] = {
+	&jasperlake_community_0,
+	&jasperlake_community_1,
+	&jasperlake_community_2,
+	&jasperlake_community_3,
+	&jasperlake_community_4,
+	&jasperlake_community_5,
 };
 
 #endif
