@@ -303,8 +303,12 @@ const struct gpio_group jasperlake_pch_group_dsw = {
 };
 
 const struct gpio_group *const jasperlake_community_0_groups[] = {
-	&jasperlake_pch_group_b,
-	&jasperlake_pch_group_g,
+	/* GPP_F */
+	/* GPP_SPI0 */
+	/* GPP_B */
+	/* GPP_A */
+	/* GPP_S */
+	/* GPP_R */
 };
 
 const struct gpio_community jasperlake_community_0 = {
@@ -315,8 +319,10 @@ const struct gpio_community jasperlake_community_0 = {
 };
 
 const struct gpio_group *const jasperlake_community_1_groups[] = {
-	&jasperlake_pch_group_h,
-	&jasperlake_pch_group_d,
+    /* GPP_H */
+	/* GPP_D */
+	/* VGPIO */
+	/* GPP_C */
 };
 
 const struct gpio_community jasperlake_community_1 = {
@@ -327,6 +333,7 @@ const struct gpio_community jasperlake_community_1 = {
 };
 
 const struct gpio_group *const jasperlake_community_2_groups[] = {
+	/* GPD */
 };
 
 const struct gpio_community jasperlake_community_2 = {
@@ -336,22 +343,8 @@ const struct gpio_community jasperlake_community_2 = {
 	.groups		= jasperlake_community_2_groups,
 };
 
-const struct gpio_group *const jasperlake_community_3_groups[] = {
-	&jasperlake_pch_group_s,
-	&jasperlake_pch_group_a,
-};
-
-const struct gpio_community jasperlake_community_3 = {
-	.name		= "------- GPIO Community 3 -------",
-	.pcr_port_id	= 0x6b,
-	.group_count	= ARRAY_SIZE(jasperlake_community_3_groups),
-	.groups		= jasperlake_community_3_groups,
-};
-
 const struct gpio_group *const jasperlake_community_4_groups[] = {
-	&jasperlake_pch_group_c,
-	&jasperlake_pch_group_f,
-	&jasperlake_pch_group_e,
+    /* GPP_ */
 };
 
 const struct gpio_community jasperlake_community_4 = {
@@ -362,7 +355,7 @@ const struct gpio_community jasperlake_community_4 = {
 };
 
 const struct gpio_group *const jasperlake_community_5_groups[] = {
-	&jasperlake_pch_group_r,
+	/* GPP_G */
 };
 
 const struct gpio_community jasperlake_community_5 = {
