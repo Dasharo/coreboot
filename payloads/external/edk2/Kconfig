@@ -248,6 +248,12 @@ config EDK2_OPAL_PASSWORD
 	help
 	  Enables TCG OPAL disk password in the TianoCore Payload.
 
+config EDK2_SETUP_PASSWORD
+	bool "Enable TianoCore setup menu password"
+	default n
+	help
+	  Enables setup menu password in the TianoCore Payload.
+
 # DasharoModulePkg specific options
 
 config EDK2_DASHARO_SYSTEM_FEATURES
