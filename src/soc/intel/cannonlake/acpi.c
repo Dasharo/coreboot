@@ -106,8 +106,10 @@ static int cstate_set_non_s0ix[] = {
 
 static int cstate_set_s0ix[] = {
 	C_STATE_C1E,
+#if !CONFIG(BOARD_PROTECTLI_VP4670)
 	C_STATE_C7S_LONG_LAT,
 	C_STATE_C10
+#endif
 };
 
 const acpi_cstate_t *soc_get_cstate_map(size_t *entries)
