@@ -143,7 +143,7 @@ ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_CONFIG),y)
 endif
 # DASHARO_USB_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
-# BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
 endif
 # DASHARO_CHIPSET_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
