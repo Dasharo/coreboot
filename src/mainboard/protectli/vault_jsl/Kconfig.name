@@ -1,0 +1,6 @@
+config BOARD_PROTECTLI_PT201
+    bool "PT201"
+config BOARD_PROTECTLI_PT401
+    bool "PT401"
+config BOARD_PROTECTLI_PT601
+    bool "PT601"
