@@ -60,7 +60,6 @@ const char *const jasperlake_pch_group_b_names[] = {
 "GPP_B21", "GSPI1_MISO",     "NFC_CLKREQ",  "n/a",
 "GPP_B22", "GSPI1_MOSI",     "n/a",         "n/a",
 "GPP_B23", "DDI2_HPD",       "TIME_SYNC_0", "GSPI1_CS1_N",
-
 };
 
 const struct gpio_group jasperlake_pch_group_b = {
@@ -138,6 +137,22 @@ const struct gpio_group jasperlake_pch_group_d = {
 	.pad_names	= jasperlake_pch_group_d_names,
 };
 
+const char *const jasperlake_pch_community1_sys_names[] = {
+    "L_BLKTEN", 
+    "L_BLKTCTL", 
+    "LVDDEN",
+    "SYS_PWROK",
+    "SYS_RESETB",
+    "MLK_RSTB",
+};
+
+const struct gpio_group jasperlake_pch_community1_sys = {
+.display	= "------- GPIO Group GPP_SYS_COMM_1 -------",
+	.pad_count	= ARRAY_SIZE(jasperlake_pch_community1_sys_names) / 1,
+	.func_count	= 1,
+	.pad_names	= jasperlake_pch_community1_sys_names,
+	};
+
 const char *const jasperlake_pch_group_e_names[] = {
 "GPP_E00", "n/a",          "IMGCLKOUT_0",   "n/a", "n/a",           "n/a",         "n/a",
 "GPP_E01", "n/a",          "n/a",           "n/a", "n/a",           "n/a",         "n/a",
@@ -172,6 +187,25 @@ const struct gpio_group jasperlake_pch_group_e = {
 	.pad_names	= jasperlake_pch_group_e_names,
 };
 
+const char *const jasperlake_pch_community1_jtag_names[] = {
+    "JTAG_TD0", 
+    "JTAGX", 
+    "PRDYB",
+    "PREQB",
+    "CPU_TRSTB",
+    "JTAG_TDI",
+    "JTAG_TMS",
+    "JTAG_TCK",
+    "ITP_PMODE"
+};
+
+const struct gpio_group jasperlake_pch_community1_jtag = {
+    .display	= "------- GPIO Group GPP_SYS_COMM_1 -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_community1_jtag_names) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_community1_jtag_names,
+};
+
 const char *const jasperlake_pch_group_f_names[] = {
 "GPP_F04", "CNV_RF_RESET_N",
 "GPP_F07", "EMMC_CMD",
@@ -189,10 +223,10 @@ const char *const jasperlake_pch_group_f_names[] = {
 };
 
 const struct gpio_group jasperlake_pch_group_f = {
-	.display	= "------- GPIO Group GPP_F -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_f_names) / 2,
-	.func_count	= 2,
-	.pad_names	= jasperlake_pch_group_f_names,
+    .display	= "------- GPIO Group GPP_F -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_f_names) / 2,
+    .func_count	= 2,
+    .pad_names	= jasperlake_pch_group_f_names,
 };
 
 const char *const jasperlake_pch_group_g_names[] = {
@@ -207,10 +241,10 @@ const char *const jasperlake_pch_group_g_names[] = {
 };
 
 const struct gpio_group jasperlake_pch_group_g = {
-	.display	= "------- GPIO Group GPP_G -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_g_names) / 2,
-	.func_count	= 2,
-	.pad_names	= jasperlake_pch_group_g_names,
+    .display	= "------- GPIO Group GPP_G -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_g_names) / 2,
+    .func_count	= 2,
+    .pad_names	= jasperlake_pch_group_g_names,
 };
 
 const char *const jasperlake_pch_group_h_names[] = {
@@ -238,28 +272,77 @@ const char *const jasperlake_pch_group_h_names[] = {
 };
 
 const struct gpio_group jasperlake_pch_group_h = {
-	.display	= "------- GPIO Group GPP_H -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_h_names) / 4,
-	.func_count	= 4,
-	.pad_names	= jasperlake_pch_group_h_names,
+    .display	= "------- GPIO Group GPP_H -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_h_names) / 4,
+    .func_count	= 4,
+    .pad_names	= jasperlake_pch_group_h_names,
 };
 
+const struct gpio_group jasperlake_pch_group_gspi_names = {
+    "GSPI2_CLK_LOOPBK",
+    "SPI1_CLK_LOOPBK",
+};
+
+const struct gpio_group jasperlake_pch_group_gspi = {
+    .display	= "------- GPIO Group GPP_H -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_gspi_names) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_group_gspi_names,
+};
+
+
+const struct gpio_group jasperlake_pch_group_spi0_names = {
+    "SPI0_IO_2",
+    "SPI0_IO_3",
+    "SPI0_MOSI_IO_0",
+    "SPI0_MISO_IO_0",
+    "SPI0_TPM_CSB",
+    "SPI0_FLASH_0_CSB",
+    "SPI0_FLASH_1_CSB",
+    "SPI0_CLK",
+    "SPI0_CLK_LOOPBK",
+};
+
+const struct gpio_group jasperlake_pch_group_spi0 = {
+    .display	= "------- GPIO Group GPP_H -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_spi0_names) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_group_spi0_names,
+};
+
+
+/**/
+const struct gpio_group jasperlake_pch_group_gspi_clk_names = {
+    "GSPI0_CLK_LOOPBK",
+    "GSPI1_CLK_LOOPBK",
+};
+
+const struct gpio_group jasperlake_pch_group_gspi_clk = {
+    .display	= "------- GPIO Group SPI0,1 CLK_LOOPBK -------",
+    .pad_count	= ARRAY_SIZE( jasperlake_pch_group_gspi_clk_names ) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_group_gspi_clk_names,
+};
+
+/**/
+
+
 const char *const jasperlake_pch_group_r_names[] = {
-"GPP_R00", "HDA_BCLK",      "AVS_I2S0_SCLK",
-"GPP_R01", "HDA_SYNC",      "AVS_I2S0_SFRM",
-"GPP_R02", "HDA_SDO",       "AVS_I2S0_TXD",
-"GPP_R03", "HDA_SDI0",      "AVS_I2S0_RXD",
-"GPP_R04", "HDA_RST_N",     "n/a",
-"GPP_R05", "HDA_SDI1",      "AVS_I2S1_RXD",
-"GPP_R06", "AVS_I2S1_SFRM", "n/a",
-"GPP_R07", "AVS_I2S1_TXD",  "n/a",
+    "GPP_R00", "HDA_BCLK",      "AVS_I2S0_SCLK",
+    "GPP_R01", "HDA_SYNC",      "AVS_I2S0_SFRM",
+    "GPP_R02", "HDA_SDO",       "AVS_I2S0_TXD",
+    "GPP_R03", "HDA_SDI0",      "AVS_I2S0_RXD",
+    "GPP_R04", "HDA_RST_N",     "n/a",
+    "GPP_R05", "HDA_SDI1",      "AVS_I2S1_RXD",
+    "GPP_R06", "AVS_I2S1_SFRM", "n/a",
+    "GPP_R07", "AVS_I2S1_TXD",  "n/a",
 };
 
 const struct gpio_group jasperlake_pch_group_r = {
-	.display	= "------- GPIO Group GPP_R -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_r_names) / 6,
-	.func_count	= 6,
-	.pad_names	= jasperlake_pch_group_r_names,
+    .display	= "------- GPIO Group GPP_R -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_r_names) / 6,
+    .func_count	= 6,
+    .pad_names	= jasperlake_pch_group_r_names,
 };
 
 const char *const jasperlake_pch_group_s_names[] = {
@@ -274,10 +357,148 @@ const char *const jasperlake_pch_group_s_names[] = {
 };
 
 const struct gpio_group jasperlake_pch_group_s = {
-	.display	= "------- GPIO Group GPP_S -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_s_names) / 2,
-	.func_count	= 2,
-	.pad_names	= jasperlake_pch_group_s_names,
+    .display	= "------- GPIO Group GPP_S -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_s_names) / 2,
+    .func_count	= 2,
+    .pad_names	= jasperlake_pch_group_s_names,
+};
+
+// For community 2
+const char *const jasperlake_pch_group_sys_comm2_names[] = {
+    "HDACPU_SDI",
+    "HDACPU_SDO",
+    "HDACPU_SCLK",
+    "PM_SYNC",
+    "PECI",
+    "CPUPWRGD",
+    "THRMTRIPB",
+    "PLTRST_CPUB",
+    "PM_DOWN",
+    "TRIGGER_IN",
+    "TRIGGER_OUT",
+    "UFS_RESETB",
+    "CLKOUT_CPURTC",
+    "VCCST_PWRGD",
+    "C10_WAKE",
+};
+
+const struct gpio_group jasperlake_pch_group_sys_comm2 = {
+    .display	= "------- GPIO Group GPP_SYS_COMM2 -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_sys_comm2_names) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_group_sys_comm2_names,
+};
+
+const char *const jasperlake_pch_group_sys_pcie_names[] = {
+    "VGPIO_PCIE0",
+    "VGPIO_PCIE0",
+    "VGPIO_PCIE1",
+    "VGPIO_PCIE2",
+    "VGPIO_PCIE3",
+    "VGPIO_PCIE4",
+    "VGPIO_PCIE5",
+    "VGPIO_PCIE6",
+    "VGPIO_PCIE7",
+    "VGPIO_PCIE8",
+    "VGPIO_PCIE9",
+    "VGPIO_PCIE10",
+    "VGPIO_PCIE11",
+    "VGPIO_PCIE12",
+    "VGPIO_PCIE13",
+    "VGPIO_PCIE14",
+    "VGPIO_PCIE15",
+    "VGPIO_PCIE16",
+    "VGPIO_PCIE17",
+    "VGPIO_PCIE18",
+    "VGPIO_PCIE19",
+    "VGPIO_PCIE20",
+    "VGPIO_PCIE21",
+    "VGPIO_PCIE22",
+    "VGPIO_PCIE23",
+    "VGPIO_PCIE24",
+    "VGPIO_PCIE25",
+    "VGPIO_PCIE26",
+    "VGPIO_PCIE27",
+    "VGPIO_PCIE28",
+    "VGPIO_PCIE29",
+    "VGPIO_PCIE30",
+    "VGPIO_PCIE31",
+    "VGPIO_PCIE32",
+    "VGPIO_PCIE33",
+    "VGPIO_PCIE34",
+    "VGPIO_PCIE35",
+    "VGPIO_PCIE36",
+    "VGPIO_PCIE37",
+    "VGPIO_PCIE38",
+    "VGPIO_PCIE39",
+    "VGPIO_PCIE40",
+    "VGPIO_PCIE41",
+    "VGPIO_PCIE42",
+    "VGPIO_PCIE43",
+    "VGPIO_PCIE44",
+    "VGPIO_PCIE45",
+    "VGPIO_PCIE46",
+    "VGPIO_PCIE47",
+    "VGPIO_PCIE48",
+    "VGPIO_PCIE49",
+    "VGPIO_PCIE50",
+    "VGPIO_PCIE51",
+    "VGPIO_PCIE52",
+    "VGPIO_PCIE53",
+    "VGPIO_PCIE54",
+    "VGPIO_PCIE55",
+    "VGPIO_PCIE56",
+    "VGPIO_PCIE57",
+    "VGPIO_PCIE58",
+    "VGPIO_PCIE59",
+    "VGPIO_PCIE60",
+    "VGPIO_PCIE61",
+    "VGPIO_PCIE62",
+    "VGPIO_PCIE63",
+    "VGPIO_PCIE64",
+    "VGPIO_PCIE65",
+    "VGPIO_PCIE66",
+    "VGPIO_PCIE67",
+    "VGPIO_PCIE68",
+    "VGPIO_PCIE69",
+    "VGPIO_PCIE70",
+    "VGPIO_PCIE71",
+    "VGPIO_PCIE72",
+    "VGPIO_PCIE73",
+    "VGPIO_PCIE74",
+    "VGPIO_PCIE75",
+    "VGPIO_PCIE76",
+    "VGPIO_PCIE77",
+    "VGPIO_PCIE78",
+    "VGPIO_PCIE79",
+};
+const struct gpio_group jasperlake_pch_group_sys_pcie = {
+    .display	= "------- GPIO Group GPP_SYS_PCIE -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_sys_pcie_names) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_group_sys_pcie_names,
+};
+
+const char *const jasperlake_pch_group_sys_vusb_names[] = {
+    "VGPIO_USB0",
+    "VGPIO_USB1",
+    "VGPIO_USB2",
+    "VGPIO_USB3",
+    "VGPIO_USB4",
+    "VGPIO_USB5",
+    "VGPIO_USB6",
+    "VGPIO_USB7",
+    "VGPIO_USB8",
+    "VGPIO_USB9",
+    "VGPIO_USB10",
+    "VGPIO_USB11",
+};
+
+const struct gpio_group jasperlake_pch_group_sys_vusb = {
+    .display	= "------- GPIO Group GPP_SYS_PCIE -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_sys_vusb_names) / 1,
+    .func_count	= 1,
+    .pad_names	= jasperlake_pch_group_sys_vusb_names,
 };
 
 // Deep Sleep Well group
@@ -296,10 +517,22 @@ const char *const jasperlake_pch_group_dsw_names[] = {
 };
 
 const struct gpio_group jasperlake_pch_group_dsw = {
-	.display	= "------- GPIO Group GPP_S -------",
-	.pad_count	= ARRAY_SIZE(jasperlake_pch_group_dsw_names) / 2,
-	.func_count	= 2,
-	.pad_names	= jasperlake_pch_group_s_names,
+    .display	= "------- GPIO Group GPP_S -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_dsw_names) / 2,
+    .func_count	= 2,
+    .pad_names	= jasperlake_pch_group_s_names,
+};
+
+const struct gpio_group jasperlake_pch_group_vgpio_pcie_names[] = {
+    /* Reference: pages 3537, 46.122 Pad Configuration DW0  from datasheet vol 2/2,*/
+	/* to PCIE_79*/
+}
+
+const struct gpio_group jasperlake_pch_group_vgpio_pcie = {
+    .display	= "------- GPIO Group GPP_S -------",
+    .pad_count	= ARRAY_SIZE(jasperlake_pch_group_dsw_names) / 2,
+    .func_count	= 2,
+    .pad_names	= jasperlake_pch_group_s_names,
 };
 
 /* 
@@ -315,53 +548,45 @@ Group R: GPIO Group 6: MMIO Offset FD6E0B40h
 Group S: GPIO Group 6: MMIO Offset FD6E0AC0h
 */
 const struct gpio_group *const jasperlake_community_0_groups[] = {
-	// INTEL_GPP_BASE(GPP_F0, GPP_F0, GPP_F19, 320),		/* GPP_F */
-	// INTEL_GPP(GPP_F0, GPIO_SPI0_IO_2, GPIO_SPI0_CLK_LOOPBK),/* SPI0 */
-	// INTEL_GPP_BASE(GPP_F0, GPP_B0, GPIO_GSPI1_CLK_LOOPBK, 32),/* GPP_B */
-	// INTEL_GPP_BASE(GPP_F0, GPP_A0, GPIO_ESPI_CLK_LOOPBK, 64),/* GPP_A */
-	// INTEL_GPP_BASE(GPP_F0, GPP_S0, GPP_S7, 96),		/* GPP_S */
-	// INTEL_GPP_BASE(GPP_F0, GPP_R0, GPP_R7, 128),		/* GPP_R */
+    &jasperlake_pch_group_g_names,
 };
 
 const struct gpio_community jasperlake_community_0 = {
-	.name		= "------- GPIO Community 0 -------",
-	.pcr_port_id	= 0x69,
-	.group_count	= ARRAY_SIZE(jasperlake_community_0_groups),
-	.groups		= jasperlake_community_0_groups,
+    .name		= "------- GPIO Community 0 -------",
+    .pcr_port_id	= 0x69,
+    .group_count	= ARRAY_SIZE(jasperlake_community_0_groups),
+    .groups		= jasperlake_community_0_groups,
 };
 
 const struct gpio_group *const jasperlake_community_1_groups[] = {
-    // INTEL_GPP_BASE(GPP_H0, GPP_H0, GPP_H23, 160),		/* GPP_H */
-	// INTEL_GPP_BASE(GPP_H0, GPP_D0, GPIO_SPI1_CLK_LOOPBK, 192),/* GPP_D */
-	// INTEL_GPP_BASE(GPP_H0, VGPIO_0, VGPIO_39, 224),		/* VGPIO */
-	// INTEL_GPP_BASE(GPP_H0, GPP_C0, GPP_C23, 256),		/* GPP_C */
+    &jasperlake_pch_community1_sys_names,
+    &jasperlake_pch_group_e_names,
+    &jasperlake_pch_community1_jtag_names,
 };
 
 const struct gpio_community jasperlake_community_1 = {
-	.name		= "------- GPIO Community 1 -------",
-	.pcr_port_id	= 0x6d,
-	.group_count	= ARRAY_SIZE(jasperlake_community_1_groups),
-	.groups		= jasperlake_community_1_groups,
+    .name		= "------- GPIO Community 1 -------",
+    .pcr_port_id	= 0x6a,
+    .group_count	= ARRAY_SIZE(jasperlake_community_1_groups),
+    .groups		= jasperlake_community_1_groups,
 };
 
 const struct gpio_group *const jasperlake_community_2_groups[] = {
-	// 	INTEL_GPP(GPD0, GPD0, GPIO_DRAM_RESETB),		/* GPD */
+    &jasperlake_pch_group_sys_comm2,
+    &jasperlake_pch_group_sys_pcie,
+    &jasperlake_pch_group_sys_vusb,
 };
 
 const struct gpio_community jasperlake_community_2 = {
 	.name		= "------- GPIO Community 2 -------",
-	.pcr_port_id	= 0x6c,
+	.pcr_port_id	= 0x6b,
 	.group_count	= ARRAY_SIZE(jasperlake_community_2_groups),
 	.groups		= jasperlake_community_2_groups,
 };
 
 
 const struct gpio_group *const jasperlake_community_3_groups[] = {
-	// INTEL_GPP(GPIO_RSVD_13, GPIO_RSVD_13, GPIO_RSVD_29),
-	// INTEL_GPP_BASE(GPIO_RSVD_13, GPP_S0, GPP_S1, 288),	/* GPP_S */
-	// INTEL_GPP_BASE(GPIO_RSVD_13, GPP_A0, GPP_A23, 320),	/* GPP_A */
-	// INTEL_GPP(GPIO_RSVD_13, VGPIO_USB_0, VGPIO_USB_3),
-};
+    };
 
 const struct gpio_community jasperlake_community_3 = {
 	.name		= "------- GPIO Community 2 -------",
@@ -371,23 +596,30 @@ const struct gpio_community jasperlake_community_3 = {
 };
 
 const struct gpio_group *const jasperlake_community_4_groups[] = {
-    /* GPP_ */
+    &jasperlake_pch_group_h,
+    &jasperlake_pch_group_d,
+    &jasperlake_pch_group_gspi,
 };
 
 const struct gpio_community jasperlake_community_4 = {
 	.name		= "------- GPIO Community 4 -------",
-	.pcr_port_id	= 0x6a,
+	.pcr_port_id	= 0x6d,
 	.group_count	= ARRAY_SIZE(jasperlake_community_4_groups),
 	.groups		= jasperlake_community_4_groups,
 };
 
 const struct gpio_group *const jasperlake_community_5_groups[] = {
-	/* GPP_G */
+    &jasperlake_pch_group_f,
+    &jasperlake_pch_group_spi0,
+    &jasperlake_pch_group_b,
+    &jasperlake_pch_group_gspi_clk,
+    &jasperlake_pch_group_s,
+    &jasperlake_pch_group_r,
 };
 
 const struct gpio_community jasperlake_community_5 = {
 	.name		= "------- GPIO Community 5 -------",
-	.pcr_port_id	= 0x69,
+	.pcr_port_id	= 0x6e,
 	.group_count	= ARRAY_SIZE(jasperlake_community_5_groups),
 	.groups		= jasperlake_community_5_groups,
 };
