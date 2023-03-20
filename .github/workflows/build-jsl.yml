@@ -1,0 +1,46 @@
+name: Protectli JSL
+on:
+  push:
+    branches:
+      - protectli_vault_jsl/develop
+      - protectli_vault_jsl/release
+  pull_request:
+    branches:
+      - protectli_vault_jsl/develop
+      - protectli_vault_jsl/release
+
+jobs:
+  build:
+    environment: Protectli
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - vendor: protectli
+            model: pt201
+          - vendor: protectli
+            model: pt401
+          - vendor: protectli
+            model: pt601
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+      - name: Build Dasharo
+        run: |
+          ./build.sh ${{ matrix.model }}
+#      - name: Save artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+#          path: |
+#            build/coreboot.rom
+#          retention-days: 30
