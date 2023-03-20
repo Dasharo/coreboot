@@ -15,10 +15,5 @@ DefinitionBlock(
 	#include <soc/intel/common/block/acpi/acpi/globalnvs.asl>
 	#include <cpu/intel/common/acpi/cpu.asl>
 
-	Device (\_SB.PCI0)
-	{
-		#include <soc/intel/jasperlake/acpi/pch_hda.asl>
-	}
-
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }
