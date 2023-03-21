@@ -524,7 +524,7 @@ const struct gpio_group jasperlake_pch_group_vgpio_pcie = {
 };
 
 const struct gpio_group *const jasperlake_community_0_groups[] = {
-	&jasperlake_pch_group_g_names,
+	&jasperlake_pch_group_g,
 };
 
 const struct gpio_community jasperlake_community_0 = {
@@ -535,9 +535,9 @@ const struct gpio_community jasperlake_community_0 = {
 };
 
 const struct gpio_group *const jasperlake_community_1_groups[] = {
-	&jasperlake_pch_community1_sys_names,
-	&jasperlake_pch_group_e_names,
-	&jasperlake_pch_community1_jtag_names,
+	&jasperlake_pch_community1_sys,
+	&jasperlake_pch_group_e,
+	&jasperlake_pch_community1_jtag,
 };
 
 const struct gpio_community jasperlake_community_1 = {
