@@ -277,7 +277,7 @@ const struct gpio_group jasperlake_pch_group_h = {
 	.pad_names	= jasperlake_pch_group_h_names,
 };
 
-const struct gpio_group jasperlake_pch_group_gspi_names = {
+const char *const jasperlake_pch_group_gspi_names = {
 	"GSPI2_CLK_LOOPBK",
 	"SPI1_CLK_LOOPBK",
 };
@@ -289,7 +289,7 @@ const struct gpio_group jasperlake_pch_group_gspi = {
 	.pad_names	= jasperlake_pch_group_gspi_names,
 };
 
-const struct gpio_group jasperlake_pch_group_spi0_names = {
+const char *const jasperlake_pch_group_spi0_names = {
 	"SPI0_IO_2",
 	"SPI0_IO_3",
 	"SPI0_MOSI_IO_0",
@@ -308,7 +308,7 @@ const struct gpio_group jasperlake_pch_group_spi0 = {
 	.pad_names	= jasperlake_pch_group_spi0_names,
 };
 
-const struct gpio_group jasperlake_pch_group_gspi_clk_names = {
+const char *const jasperlake_pch_group_gspi_clk_names = {
 	"GSPI0_CLK_LOOPBK",
 	"GSPI1_CLK_LOOPBK",
 };
@@ -515,11 +515,6 @@ const struct gpio_group jasperlake_pch_group_dsw = {
 	.func_count	= 2,
 	.pad_names	= jasperlake_pch_group_s_names,
 };
-
-const struct gpio_group jasperlake_pch_group_vgpio_pcie_names[] = {
-	/* Reference: pages 3537, 46.122 Pad Configuration DW0  from datasheet vol 2/2,*/
-	/* to PCIE_79*/
-}
 
 const struct gpio_group jasperlake_pch_group_vgpio_pcie = {
 	.display	= "------- GPIO Group GPP_S -------",
