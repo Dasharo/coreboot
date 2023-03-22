@@ -4,6 +4,7 @@
 #include <console/console.h>
 #include <console/uart.h>
 #include <cbmem.h>
+#include <endian.h>
 #include <symbols.h>
 #include <types.h>
 
@@ -57,9 +58,9 @@ static u8 static_console[STATIC_CONSOLE_SIZE];
 
 static int buffer_valid(struct cbmem_console *cbm_cons_p, u32 total_space)
 {
-	return (cbm_cons_p->cursor & CURSOR_MASK) < cbm_cons_p->size &&
-	       cbm_cons_p->size <= MAX_SIZE &&
-	       cbm_cons_p->size == total_space - sizeof(struct cbmem_console);
+	return (le32toh(cbm_cons_p->cursor) & CURSOR_MASK) < le32toh(cbm_cons_p->size) &&
+	       le32toh(cbm_cons_p->size) <= MAX_SIZE &&
+	       le32toh(cbm_cons_p->size) == total_space - sizeof(struct cbmem_console);
 }
 
 static void init_console_ptr(void *storage, u32 total_space)
@@ -72,7 +73,7 @@ static void init_console_ptr(void *storage, u32 total_space)
 	}
 
 	if (!buffer_valid(cbm_cons_p, total_space)) {
-		cbm_cons_p->size = total_space - sizeof(struct cbmem_console);
+		cbm_cons_p->size = htole32(total_space - sizeof(struct cbmem_console));
 		cbm_cons_p->cursor = 0;
 	}
 
@@ -102,16 +103,16 @@ void cbmemc_tx_byte(unsigned char data)
 	if (!current_console || !current_console->size || console_paused)
 		return;
 
-	u32 flags = current_console->cursor & ~CURSOR_MASK;
-	u32 cursor = current_console->cursor & CURSOR_MASK;
+	u32 flags = le32toh(current_console->cursor) & ~CURSOR_MASK;
+	u32 cursor = le32toh(current_console->cursor) & CURSOR_MASK;
 
 	current_console->body[cursor++] = data;
-	if (cursor >= current_console->size) {
+	if (cursor >= le32toh(current_console->size)) {
 		cursor = 0;
 		flags |= OVERFLOW;
 	}
 
-	current_console->cursor = flags | cursor;
+	current_console->cursor = htole32(flags | cursor);
 }
 
 /*
@@ -128,17 +129,17 @@ static void copy_console_buffer(struct cbmem_console *src_cons_p)
 	if (!src_cons_p)
 		return;
 
-	if (src_cons_p->cursor & OVERFLOW) {
+	if (le32toh(src_cons_p->cursor) & OVERFLOW) {
 		const char overflow_warning[] = "\n*** Pre-CBMEM " ENV_STRING
 			" console overflowed, log truncated! ***\n";
 		for (c = 0; c < sizeof(overflow_warning) - 1; c++)
 			cbmemc_tx_byte(overflow_warning[c]);
-		for (c = src_cons_p->cursor & CURSOR_MASK;
-		     c < src_cons_p->size; c++)
+		for (c = le32toh(src_cons_p->cursor) & CURSOR_MASK;
+		     c < le32toh(src_cons_p->size); c++)
 			cbmemc_tx_byte(src_cons_p->body[c]);
 	}
 
-	for (c = 0; c < (src_cons_p->cursor & CURSOR_MASK); c++)
+	for (c = 0; c < (le32toh(src_cons_p->cursor) & CURSOR_MASK); c++)
 		cbmemc_tx_byte(src_cons_p->body[c]);
 
 	/* Invalidate the source console, so it will be reinitialized on the
@@ -184,9 +185,9 @@ void cbmem_dump_console_to_uart(void)
 	console_index = get_uart_for_console();
 
 	uart_init(console_index);
-	if (current_console->cursor & OVERFLOW) {
-		for (cursor = current_console->cursor & CURSOR_MASK;
-		     cursor < current_console->size; cursor++) {
+	if (le32toh(current_console->cursor) & OVERFLOW) {
+		for (cursor = le32toh(current_console->cursor) & CURSOR_MASK;
+		     cursor < le32toh(current_console->size); cursor++) {
 			if (BIOS_LOG_IS_MARKER(current_console->body[cursor]))
 				continue;
 			if (current_console->body[cursor] == '\n')
@@ -194,7 +195,8 @@ void cbmem_dump_console_to_uart(void)
 			uart_tx_byte(console_index, current_console->body[cursor]);
 		}
 	}
-	for (cursor = 0; cursor < (current_console->cursor & CURSOR_MASK); cursor++) {
+	for (cursor = 0; cursor < (le32toh(current_console->cursor) & CURSOR_MASK);
+	     cursor++) {
 		if (BIOS_LOG_IS_MARKER(current_console->body[cursor]))
 			continue;
 		if (current_console->body[cursor] == '\n')
@@ -212,12 +214,13 @@ void cbmem_dump_console(void)
 
 	console_paused = true;
 
-	if (current_console->cursor & OVERFLOW)
-		for (cursor = current_console->cursor & CURSOR_MASK;
-		     cursor < current_console->size; cursor++)
+	if (le32toh(current_console->cursor) & OVERFLOW)
+		for (cursor = le32toh(current_console->cursor) & CURSOR_MASK;
+		     cursor < le32toh(current_console->size); cursor++)
 			if (!BIOS_LOG_IS_MARKER(current_console->body[cursor]))
 				do_putchar(current_console->body[cursor]);
-	for (cursor = 0; cursor < (current_console->cursor & CURSOR_MASK); cursor++)
+	for (cursor = 0; cursor < (le32toh(current_console->cursor) & CURSOR_MASK);
+	     cursor++)
 		if (!BIOS_LOG_IS_MARKER(current_console->body[cursor]))
 			do_putchar(current_console->body[cursor]);
 

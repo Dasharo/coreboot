@@ -5,6 +5,7 @@
 #include <bootmem.h>
 #include <console/console.h>
 #include <cbmem.h>
+#include <endian.h>
 #include <imd.h>
 #include <lib.h>
 #include <types.h>
@@ -242,10 +243,10 @@ void cbmem_add_records_to_cbtable(struct lb_header *header)
 			continue;
 
 		lbe = (struct lb_cbmem_entry *)lb_new_record(header);
-		lbe->tag = LB_TAG_CBMEM_ENTRY;
-		lbe->size = sizeof(*lbe);
-		lbe->address = (uintptr_t)imd_entry_at(&imd, e);
-		lbe->entry_size = imd_entry_size(e);
-		lbe->id = id;
+		lbe->tag = htole32(LB_TAG_CBMEM_ENTRY);
+		lbe->size = htole32(sizeof(*lbe));
+		lbe->address = htole64((uintptr_t)imd_entry_at(&imd, e));
+		lbe->entry_size = htole32(imd_entry_size(e));
+		lbe->id = htole32(id);
 	}
 }

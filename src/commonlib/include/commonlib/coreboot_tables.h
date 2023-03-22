@@ -109,9 +109,11 @@ typedef __aligned(4) uint64_t lb_uint64_t;
 struct lb_header {
 	uint8_t  signature[4]; /* LBIO */
 	uint32_t header_bytes;
-	uint32_t header_checksum;
+	uint16_t header_checksum;
+	uint16_t pad0;
 	uint32_t table_bytes;
-	uint32_t table_checksum;
+	uint16_t table_checksum;
+	uint16_t pad1;
 	uint32_t table_entries;
 };
 
