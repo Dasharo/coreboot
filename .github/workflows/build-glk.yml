@@ -1,0 +1,59 @@
+
+name: Protectli GLK
+on:
+  push:
+    branches:
+      - protectli_vault_glk/develop
+      - protectli_vault_glk/release
+  pull_request:
+    branches:
+      - protectli_vault_glk/develop
+      - protectli_vault_glk/release
+
+jobs:
+  build:
+    environment: Protectli
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - vendor: protectli
+            model: fw2b
+          - vendor: protectli
+            model: fw4b
+          - vendor: protectli
+            model: vp2410
+    steps:
+      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+      - name: Obtain Blobs
+        shell: bash
+        env:
+          SSH_KEY: ${{secrets.PROTECTLI_BLOBS_KEY}}
+          BLOB_REPO: ${{secrets.PROTECTLI_BLOBS_REPO}}
+        run: |
+          eval `ssh-agent -s`
+          echo "${SSH_KEY}" | ssh-add -
+          git clone $BLOB_REPO
+          cp -r protectli-blobs/protectli/ 3rdparty/blobs/mainboard/
+          cp -r 3rdparty/blobs/mainboard/protectli/vault_glk/GeminilakeFspBinPkg \
+                3rdparty/fsp
+      - name: Build Dasharo
+        run: |
+          ./build.sh ${{ matrix.model }}
+#      - name: Save artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+#          path: |
+#            build/coreboot.rom
+#          retention-days: 30
