@@ -49,7 +49,7 @@ static struct lb_header *lb_table_init(unsigned long addr)
 	header->signature[1] = 'B';
 	header->signature[2] = 'I';
 	header->signature[3] = 'O';
-	header->header_bytes = sizeof(*header);
+	header->header_bytes = htole32(sizeof(*header));
 	header->header_checksum = 0;
 	header->table_bytes = 0;
 	header->table_checksum = 0;
@@ -68,7 +68,7 @@ static struct lb_record *lb_last_record(struct lb_header *header)
 {
 	struct lb_record *rec;
 	rec = (void *)(((char *)header) + sizeof(*header)
-		+ header->table_bytes);
+		+ le32toh(header->table_bytes));
 	return rec;
 }
 
@@ -77,11 +77,12 @@ struct lb_record *lb_new_record(struct lb_header *header)
 	struct lb_record *rec;
 	rec = lb_last_record(header);
 	if (header->table_entries)
-		header->table_bytes += rec->size;
+		header->table_bytes = htole32(le32toh(header->table_bytes) +
+					      le32toh(rec->size));
 	rec = lb_last_record(header);
-	header->table_entries++;
-	rec->tag = LB_TAG_UNUSED;
-	rec->size = sizeof(*rec);
+	header->table_entries = htole32(le32toh(header->table_entries) + 1);
+	rec->tag = htole32(LB_TAG_UNUSED);
+	rec->size = htole32(sizeof(*rec));
 	return rec;
 }
 
@@ -91,8 +92,8 @@ static struct lb_memory *lb_memory(struct lb_header *header)
 	struct lb_memory *mem;
 	rec = lb_new_record(header);
 	mem = (struct lb_memory *)rec;
-	mem->tag = LB_TAG_MEMORY;
-	mem->size = sizeof(*mem);
+	mem->tag = htole32(LB_TAG_MEMORY);
+	mem->size = htole32(sizeof(*mem));
 	return mem;
 }
 
@@ -102,14 +103,14 @@ void lb_add_serial(struct lb_serial *new_serial, void *data)
 	struct lb_serial *serial;
 
 	serial = (struct lb_serial *)lb_new_record(header);
-	serial->tag = LB_TAG_SERIAL;
-	serial->size = sizeof(*serial);
-	serial->type = new_serial->type;
-	serial->baseaddr = new_serial->baseaddr;
-	serial->baud = new_serial->baud;
-	serial->regwidth = new_serial->regwidth;
-	serial->input_hertz = new_serial->input_hertz;
-	serial->uart_pci_addr = new_serial->uart_pci_addr;
+	serial->tag = htole32(LB_TAG_SERIAL);
+	serial->size = htole32(sizeof(*serial));
+	serial->type = htole32(new_serial->type);
+	serial->baseaddr = htole32(new_serial->baseaddr);
+	serial->baud = htole32(new_serial->baud);
+	serial->regwidth = htole32(new_serial->regwidth);
+	serial->input_hertz = htole32(new_serial->input_hertz);
+	serial->uart_pci_addr = htole32(new_serial->uart_pci_addr);
 }
 
 void lb_add_console(uint16_t consoletype, void *data)
@@ -118,14 +119,16 @@ void lb_add_console(uint16_t consoletype, void *data)
 	struct lb_console *console;
 
 	console = (struct lb_console *)lb_new_record(header);
-	console->tag = LB_TAG_CONSOLE;
-	console->size = sizeof(*console);
-	console->type = consoletype;
+	console->tag = htole32(LB_TAG_CONSOLE);
+	console->size = htole32(sizeof(*console));
+	console->type = htole16(consoletype);
 }
 
 static void lb_pcie(struct lb_header *header)
 {
-	struct lb_pcie pcie = { .tag = LB_TAG_PCIE, .size = sizeof(pcie) };
+	struct lb_pcie pcie = { .tag = htole32(LB_TAG_PCIE),
+				.size = htole32(sizeof(pcie)),
+	};
 
 	if (lb_fill_pcie(&pcie) != CB_SUCCESS)
 		return;
@@ -143,8 +146,8 @@ static void lb_framebuffer(struct lb_header *header)
 
 	framebuffer = (struct lb_framebuffer *)lb_new_record(header);
 	memcpy(framebuffer, &fb, sizeof(*framebuffer));
-	framebuffer->tag = LB_TAG_FRAMEBUFFER;
-	framebuffer->size = sizeof(*framebuffer);
+	framebuffer->tag = htole32(LB_TAG_FRAMEBUFFER);
+	framebuffer->size = htole32(sizeof(*framebuffer));
 
 	if (CONFIG(BOOTSPLASH)) {
 		uint8_t *fb_ptr = (uint8_t *)(uintptr_t)framebuffer->physical_address;
@@ -160,9 +163,9 @@ void lb_add_gpios(struct lb_gpios *gpios, const struct lb_gpio *gpio_table,
 {
 	size_t table_size = count * sizeof(struct lb_gpio);
 
-	memcpy(&gpios->gpios[gpios->count], gpio_table, table_size);
-	gpios->count += count;
-	gpios->size += table_size;
+	memcpy(&gpios->gpios[le32toh(gpios->count)], gpio_table, table_size);
+	gpios->count = htole32(le32toh(gpios->count) + count);
+	gpios->size = htole32(le32toh(gpios->size) + table_size);
 }
 
 static void lb_gpios(struct lb_header *header)
@@ -171,25 +174,25 @@ static void lb_gpios(struct lb_header *header)
 	struct lb_gpio *g;
 
 	gpios = (struct lb_gpios *)lb_new_record(header);
-	gpios->tag = LB_TAG_GPIO;
-	gpios->size = sizeof(*gpios);
+	gpios->tag = htole32(LB_TAG_GPIO);
+	gpios->size = htole32(sizeof(*gpios));
 	gpios->count = 0;
 	fill_lb_gpios(gpios);
 
 	printk(BIOS_INFO, "Passing %u GPIOs to payload:\n"
 		"            NAME |       PORT | POLARITY |     VALUE\n",
-		gpios->count);
-	for (g = &gpios->gpios[0]; g < &gpios->gpios[gpios->count]; g++) {
+		le32toh(gpios->count));
+	for (g = &gpios->gpios[0]; g < &gpios->gpios[le32toh(gpios->count)]; g++) {
 		printk(BIOS_INFO, "%16.16s | ", g->name);
 		if (g->port == -1)
 			printk(BIOS_INFO, " undefined | ");
 		else
-			printk(BIOS_INFO, "%#.8x | ", g->port);
-		if (g->polarity == ACTIVE_HIGH)
+			printk(BIOS_INFO, "%#.8x | ", le32toh(g->port));
+		if (g->polarity == htole32(ACTIVE_HIGH))
 			printk(BIOS_INFO, "    high | ");
 		else
 			printk(BIOS_INFO, "     low | ");
-		switch (g->value) {
+		switch (htole32(g->value)) {
 		case 0:
 			printk(BIOS_INFO, "      low\n");
 			break;
@@ -221,14 +224,14 @@ static void lb_boot_media_params(struct lb_header *header)
 		return;
 
 	bmp = (struct lb_boot_media_params *)lb_new_record(header);
-	bmp->tag = LB_TAG_BOOT_MEDIA_PARAMS;
-	bmp->size = sizeof(*bmp);
+	bmp->tag = htole32(LB_TAG_BOOT_MEDIA_PARAMS);
+	bmp->size = htole32(sizeof(*bmp));
 
-	bmp->cbfs_offset = region_device_offset(&cbd->rdev);
-	bmp->cbfs_size = region_device_sz(&cbd->rdev);
-	bmp->boot_media_size = region_device_sz(boot_dev);
+	bmp->cbfs_offset = htole64(region_device_offset(&cbd->rdev));
+	bmp->cbfs_size = htole64(region_device_sz(&cbd->rdev));
+	bmp->boot_media_size = htole64(region_device_sz(boot_dev));
 
-	bmp->fmap_offset = get_fmap_flash_offset();
+	bmp->fmap_offset = htole64(get_fmap_flash_offset());
 }
 
 static void lb_mmc_info(struct lb_header *header)
@@ -242,9 +245,9 @@ static void lb_mmc_info(struct lb_header *header)
 
 	rec = (struct lb_mmc_info *)lb_new_record(header);
 
-	rec->tag = LB_TAG_MMC_INFO;
-	rec->size = sizeof(*rec);
-	rec->early_cmd1_status = *ms_cbmem;
+	rec->tag = htole32(LB_TAG_MMC_INFO);
+	rec->size = htole32(sizeof(*rec));
+	rec->early_cmd1_status = htole32(*ms_cbmem);
 }
 
 static void add_cbmem_pointers(struct lb_header *header)
@@ -283,9 +286,9 @@ static void add_cbmem_pointers(struct lb_header *header)
 			printk(BIOS_ERR, "No more room in coreboot table!\n");
 			break;
 		}
-		cbmem_ref->tag = sid->table_tag;
-		cbmem_ref->size = sizeof(*cbmem_ref);
-		cbmem_ref->cbmem_addr = (unsigned long)cbmem_addr;
+		cbmem_ref->tag = htole32(sid->table_tag);
+		cbmem_ref->size = htole32(sizeof(*cbmem_ref));
+		cbmem_ref->cbmem_addr = htole64((uintptr_t)cbmem_addr);
 	}
 }
 
@@ -295,11 +298,11 @@ static struct lb_mainboard *lb_mainboard(struct lb_header *header)
 	struct lb_mainboard *mainboard;
 	rec = lb_new_record(header);
 	mainboard = (struct lb_mainboard *)rec;
-	mainboard->tag = LB_TAG_MAINBOARD;
+	mainboard->tag = htole32(LB_TAG_MAINBOARD);
 
-	mainboard->size = ALIGN_UP(sizeof(*mainboard) +
-		strlen(mainboard_vendor) + 1 +
-		strlen(mainboard_part_number) + 1, 8);
+	mainboard->size = htole32(ALIGN_UP(sizeof(*mainboard) +
+				  strlen(mainboard_vendor) + 1 +
+				  strlen(mainboard_part_number) + 1, 8));
 
 	mainboard->vendor_idx = 0;
 	mainboard->part_number_idx = strlen(mainboard_vendor) + 1;
@@ -319,23 +322,23 @@ static struct lb_board_config *lb_board_config(struct lb_header *header)
 	rec = lb_new_record(header);
 	config = (struct lb_board_config *)rec;
 
-	config->tag = LB_TAG_BOARD_CONFIG;
-	config->size = sizeof(*config);
+	config->tag = htole32(LB_TAG_BOARD_CONFIG);
+	config->size = htole32(sizeof(*config));
 
 	const uint64_t fw_config = fw_config_get();
-	config->board_id = board_id();
-	config->ram_code = ram_code();
-	config->sku_id = sku_id();
-	config->fw_config = fw_config;
+	config->board_id = htole32(board_id());
+	config->ram_code = htole32(ram_code());
+	config->sku_id = htole32(sku_id());
+	config->fw_config = htole64(fw_config);
 
-	if (config->board_id != UNDEFINED_STRAPPING_ID)
-		printk(BIOS_INFO, "Board ID: %d\n", config->board_id);
-	if (config->ram_code != UNDEFINED_STRAPPING_ID)
-		printk(BIOS_INFO, "RAM code: %d\n", config->ram_code);
-	if (config->sku_id != UNDEFINED_STRAPPING_ID)
-		printk(BIOS_INFO, "SKU ID: %d\n", config->sku_id);
-	if (fw_config != UNDEFINED_FW_CONFIG)
-		printk(BIOS_INFO, "FW config: %#" PRIx64 "\n", fw_config);
+	if (config->board_id != htole32(UNDEFINED_STRAPPING_ID))
+		printk(BIOS_INFO, "Board ID: %d\n", htole32(config->board_id));
+	if (config->ram_code != htole32(UNDEFINED_STRAPPING_ID))
+		printk(BIOS_INFO, "RAM code: %d\n", htole32(config->ram_code));
+	if (config->sku_id != htole32(UNDEFINED_STRAPPING_ID))
+		printk(BIOS_INFO, "SKU ID: %d\n", htole32(config->sku_id));
+	if (fw_config != htole64(UNDEFINED_FW_CONFIG))
+		printk(BIOS_INFO, "FW config: %#" PRIx64 "\n", htole64(fw_config));
 
 	return config;
 }
@@ -347,14 +350,14 @@ static struct cmos_checksum *lb_cmos_checksum(struct lb_header *header)
 	struct cmos_checksum *cmos_checksum;
 	rec = lb_new_record(header);
 	cmos_checksum = (struct cmos_checksum *)rec;
-	cmos_checksum->tag = LB_TAG_OPTION_CHECKSUM;
+	cmos_checksum->tag = htole32(LB_TAG_OPTION_CHECKSUM);
 
-	cmos_checksum->size = (sizeof(*cmos_checksum));
+	cmos_checksum->size = htole32(sizeof(*cmos_checksum));
 
-	cmos_checksum->range_start = LB_CKS_RANGE_START * 8;
-	cmos_checksum->range_end = (LB_CKS_RANGE_END * 8) + 7;
-	cmos_checksum->location = LB_CKS_LOC * 8;
-	cmos_checksum->type = CHECKSUM_PCBIOS;
+	cmos_checksum->range_start = htole32(LB_CKS_RANGE_START * 8);
+	cmos_checksum->range_end = htole32((LB_CKS_RANGE_END * 8) + 7);
+	cmos_checksum->location = htole32(LB_CKS_LOC * 8);
+	cmos_checksum->type = htole32(CHECKSUM_PCBIOS);
 
 	return cmos_checksum;
 }
@@ -377,8 +380,8 @@ static void lb_strings(struct lb_header *header)
 		size_t len;
 		rec = (struct lb_string *)lb_new_record(header);
 		len = strlen(strings[i].string);
-		rec->tag = strings[i].tag;
-		rec->size = ALIGN_UP(sizeof(*rec) + len + 1, 8);
+		rec->tag = htole32(strings[i].tag);
+		rec->size = htole32(ALIGN_UP(sizeof(*rec) + len + 1, 8));
 		memcpy(rec->string, strings[i].string, len+1);
 	}
 
@@ -388,9 +391,9 @@ static void lb_record_version_timestamp(struct lb_header *header)
 {
 	struct lb_timestamp *rec;
 	rec = (struct lb_timestamp *)lb_new_record(header);
-	rec->tag = LB_TAG_VERSION_TIMESTAMP;
-	rec->size = sizeof(*rec);
-	rec->timestamp = coreboot_version_timestamp;
+	rec->tag = htole32(LB_TAG_VERSION_TIMESTAMP);
+	rec->size = htole32(sizeof(*rec));
+	rec->timestamp = htole32(coreboot_version_timestamp);
 }
 
 void __weak lb_board(struct lb_header *header) { /* NOOP */ }
@@ -410,9 +413,9 @@ static struct lb_forward *lb_forward(struct lb_header *header,
 	struct lb_forward *forward;
 	rec = lb_new_record(header);
 	forward = (struct lb_forward *)rec;
-	forward->tag = LB_TAG_FORWARD;
-	forward->size = sizeof(*forward);
-	forward->forward = (uint64_t)(unsigned long)next_header;
+	forward->tag = htole32(LB_TAG_FORWARD);
+	forward->size = htole32(sizeof(*forward));
+	forward->forward = htole64((uint64_t)(unsigned long)next_header);
 	return forward;
 }
 
@@ -421,17 +424,19 @@ static unsigned long lb_table_fini(struct lb_header *head)
 	struct lb_record *rec, *first_rec;
 	rec = lb_last_record(head);
 	if (head->table_entries)
-		head->table_bytes += rec->size;
+		head->table_bytes = htole32(le32toh(head->table_bytes) +
+					    le32toh(rec->size));
 
 	first_rec = lb_first_record(head);
+	/* compute_ip_checksum() returns checksum in correct endianness */
 	head->table_checksum = compute_ip_checksum(first_rec,
-		head->table_bytes);
+						   le32toh(head->table_bytes));
 	head->header_checksum = 0;
 	head->header_checksum = compute_ip_checksum(head, sizeof(*head));
 	printk(BIOS_DEBUG,
 	       "Wrote coreboot table at: %p, 0x%x bytes, checksum %x\n",
-	       head, head->table_bytes, head->table_checksum);
-	return (unsigned long)rec + rec->size;
+	       head, le32toh(head->table_bytes), le32toh(head->table_checksum));
+	return (unsigned long)rec + le32toh(rec->size);
 }
 
 static void lb_add_acpi_rsdp(struct lb_header *head)
@@ -439,9 +444,9 @@ static void lb_add_acpi_rsdp(struct lb_header *head)
 	struct lb_acpi_rsdp *acpi_rsdp;
 	struct lb_record *rec = lb_new_record(head);
 	acpi_rsdp = (struct lb_acpi_rsdp *)rec;
-	acpi_rsdp->tag = LB_TAG_ACPI_RSDP;
-	acpi_rsdp->size = sizeof(*acpi_rsdp);
-	acpi_rsdp->rsdp_pointer = get_coreboot_rsdp();
+	acpi_rsdp->tag = htole32(LB_TAG_ACPI_RSDP);
+	acpi_rsdp->size = htole32(sizeof(*acpi_rsdp));
+	acpi_rsdp->rsdp_pointer = htole64(get_coreboot_rsdp());
 }
 
 size_t write_coreboot_forwarding_table(uintptr_t entry, uintptr_t target)
@@ -475,7 +480,7 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 			/* Copy the option config table, it's already a
 			 * lb_record...
 			 */
-			memcpy(rec_dest,  option_table, option_table->size);
+			memcpy(rec_dest, option_table, le32toh(option_table->size));
 			/* Create CMOS checksum entry in coreboot table */
 			lb_cmos_checksum(head);
 		} else {

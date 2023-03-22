@@ -4,6 +4,7 @@
 #include <bootmem.h>
 #include <cbmem.h>
 #include <device/resource.h>
+#include <endian.h>
 #include <symbols.h>
 #include <assert.h>
 #include <types.h>
@@ -103,6 +104,7 @@ void bootmem_write_memory_table(struct lb_memory *mem)
 {
 	const struct range_entry *r;
 	struct lb_memory_range *lb_r;
+	uint32_t entry_size = le32toh(mem->size);
 
 	lb_r = &mem->map[0];
 
@@ -110,13 +112,15 @@ void bootmem_write_memory_table(struct lb_memory *mem)
 	bootmem_dump_ranges();
 
 	memranges_each_entry(r, &bootmem_os) {
-		lb_r->start = range_entry_base(r);
-		lb_r->size = range_entry_size(r);
-		lb_r->type = bootmem_to_lb_tag(range_entry_tag(r));
+		lb_r->start = htole64(range_entry_base(r));
+		lb_r->size = htole64(range_entry_size(r));
+		lb_r->type = htole32(bootmem_to_lb_tag(range_entry_tag(r)));
 
 		lb_r++;
-		mem->size += sizeof(struct lb_memory_range);
+		entry_size += sizeof(struct lb_memory_range);
 	}
+
+	mem->size = htole32(entry_size);
 
 	table_written = 1;
 }
