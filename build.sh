@@ -29,7 +29,7 @@ function buildImage {
 		rm protectli_blobs.zip
 	fi
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
@@ -38,7 +38,7 @@ function buildImage {
 
 	echo "Building coreboot for Protectli $1"
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
@@ -74,7 +74,7 @@ function buildFW6Image {
 		rm protectli_blobs.zip
 	fi
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
@@ -83,7 +83,7 @@ function buildFW6Image {
 
 	echo "Building coreboot for Protectli $1"
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
@@ -133,7 +133,7 @@ function buildVP2410Image {
 
 	version=$(cat .coreboot-version)
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
@@ -142,7 +142,7 @@ function buildVP2410Image {
 
 	echo "Building coreboot for Protectli $1"
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make"
@@ -171,7 +171,7 @@ function buildFW6DImage {
 
 	version=$(cat .coreboot-version)
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
@@ -180,7 +180,7 @@ function buildFW6DImage {
 
 	echo "Building coreboot for Protectli $1"
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
@@ -226,7 +226,7 @@ function buildFW6CMLImage {
 
 	version=$(cat .coreboot-version)
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make distclean"
@@ -235,7 +235,7 @@ function buildFW6CMLImage {
 
 	echo "Building coreboot for Protectli $1"
 
-	docker run --rm -it -v $PWD:/home/coreboot/coreboot \
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
 		/bin/bash -c "make olddefconfig && make && \
