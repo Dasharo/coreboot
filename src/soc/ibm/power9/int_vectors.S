@@ -23,21 +23,35 @@
 /*
  * System reset vector (0x100)
  *
+ * Main thread:
  * - reload r1 and r2 from saved state
  * - add saved TB value to the current value (self-restore took some time)
  *   - TB can't be written with one mtspr
  *   - have to use 3 writes to deal with possible overflow of lower half
- * - move nia and msr to HSRR0/1
+ * - move NIA and MSR to HSRR0/1
  * - return from hypervisor interrupt
  * - due to clobbers in inline assembly in cpu_winkle all other registers are
  *   reloaded by compiler
  *   - contents of vector and floating point registers are lost
+ *
+ * Secondary threads:
+ * - copy MSR from main thread
+ * - return into stack-less secondary_entry()
+ *   - can't loop in this handler, it will be overwritten by the payload
+ *   - must also load TOC pointer to access global data
  */
 .globl sys_reset_int
 sys_reset_int:
 	li      %r0, 0
 	/* WARNING: this assumes that ramstage is not relocatable */
 	LOAD_IMM64(%r3, sstate)
+
+	/* PIR of main thread */
+	ld      %r4, 48(%r3)
+	mfspr   %r5, 1023
+	cmpd    %r4, %r5
+        bne     .secondary
+
 	/* Time Base */
 	ld      %r2, 32(%r3)
 	mftb    %r4
@@ -46,6 +60,7 @@ sys_reset_int:
 	mttbl   %r0
 	mttbu   %r5
 	mttbl   %r4
+
 	/* Stack */
 	ld      %r1, 0(%r3)
 	/* TOC */
@@ -59,6 +74,24 @@ sys_reset_int:
 	/* Link register */
 	ld      %r4, 40(%r3)
 	mtlr    %r4
+	hrfid
+
+.secondary:
+	/* MSR -> HSRR1 */
+	ld      %r4, 16(%r3)
+	mtspr   315, %r4
+	/* NIA -> HSRR0 and TOC pointer */
+	ld      %r2, 56(%r3)
+	ld      %r4, 0(%r2)
+	mtspr   314, %r4
+	ld	%r2, 8(%r2)
+	/* Link register */
+	li      %r4, 0x100
+	mtlr    %r4
+	/* Set PSSCR for STOP 1 */
+	lis     %r0, 0x004f
+	ori     %r0, %r0, 0x0311
+	mtspr   855, %r0
 	hrfid
 .globl sys_reset_int_end
 sys_reset_int_end:

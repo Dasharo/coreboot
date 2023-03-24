@@ -10,9 +10,11 @@
 #include <cbfs.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_18.h>
+#include <cpu/power/occ.h>
 #include <cpu/power/proc.h>
 #include <cpu/power/spr.h>
 #include <commonlib/stdlib.h>		// xzalloc
+#include <security/tpm/tis.h>
 
 #include "istep_13_scom.h"
 #include "chip.h"
@@ -489,6 +491,48 @@ static void add_cb_fdt_data(struct device_tree *tree)
 	dt_add_reg_prop(coreboot_node, reg_addrs, reg_sizes, 2, addr_cells, size_cells);
 }
 
+static void add_tpm_node(struct device_tree *tree)
+{
+#if CONFIG(TALOS_2_INFINEON_TPM_1)
+	uint32_t xscom_base = 0xA0000 | (CONFIG_DRIVER_TPM_I2C_BUS << 12);
+	uint8_t port = (CONFIG_DRIVER_TPM_I2C_ADDR & 0x80 ? 1 : 0);
+	uint8_t addr = (CONFIG_DRIVER_TPM_I2C_ADDR & 0x7F);
+
+	struct device_tree_node *tpm;
+	struct device_tree_node *sb;
+	char path[64];
+	char compatible[24];
+
+	struct tcpa_table *tcpa_table;
+
+	/* TODO: is the XSCOM address always the same? */
+	snprintf(path, sizeof(path), "/xscom@603fc00000000/i2cm@%x/i2c-bus@%x/tpm@%x",
+		 xscom_base, port, addr);
+
+	tpm = dt_find_node_by_path(tree, path, NULL, NULL, 1);
+
+	snprintf(compatible, sizeof(compatible), "infineon,%s", tis_name());
+
+	dt_add_string_prop(tpm, "compatible", strdup(compatible));
+	dt_add_u32_prop(tpm, "reg", addr);
+
+	tcpa_table = cbmem_find(CBMEM_ID_TCPA_SPEC_LOG);
+	if (tcpa_table == NULL)
+		die("TPM events (TCPA) log is missing from CBMEM!");
+
+	dt_add_u64_prop(tpm, "linux,sml-base", (uintptr_t)&tcpa_table->header);
+	dt_add_u32_prop(tpm, "linux,sml-size",
+			sizeof(tcg_efi_spec_id_event) +
+			tcpa_table->max_entries * sizeof(struct tcpa_entry));
+
+	/* Not hard-coding into DTS-file in case will need to store key hash here */
+	sb = dt_find_node_by_path(tree, "/ibm,secureboot", NULL, NULL, 1);
+	dt_add_string_prop(sb, "compatible", "ibm,secureboot-v1-softrom");
+	dt_add_string_prop(sb, "hash-algo", "sha512");
+	dt_add_u32_prop(sb, "trusted-enabled", 1);
+#endif
+}
+
 /*
  * Device tree passed to Skiboot has to have phandles set either for all nodes
  * or none at all. Because relative phandles are set for cpu->l2_cache->l3_cache
@@ -503,6 +547,7 @@ static int dt_platform_update(struct device_tree *tree, uint8_t chips)
 	add_memory_nodes(tree);
 	add_dimm_sensor_nodes(tree, chips);
 	add_cb_fdt_data(tree);
+	add_tpm_node(tree);
 
 	/* Find "cpus" node */
 	cpus = dt_find_node_by_path(tree, "/cpus", NULL, NULL, 0);
@@ -637,6 +682,59 @@ static void rng_init(uint8_t chips)
 	}
 }
 
+static void activate_secondary_threads(uint8_t chip)
+{
+	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
+
+	uint8_t i;
+
+	/* Read OCC CCSR written by the code earlier */
+	const uint64_t functional_cores = read_scom(chip, 0x0006C090);
+
+	/*
+	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
+	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 */
+	const uint64_t chip_msg = DOORBELL_MSG_TYPE | PPC_PLACE(chip, 49, 4);
+
+	/* Find and process the first core in a separate loop to slightly
+	 * simplify processing of all the other cores by removing a conditional */
+	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
+		uint8_t thread;
+		uint64_t core_msg;
+
+		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+			continue;
+
+		/* Message value for thread 0 of the current core */
+		core_msg = chip_msg | (i << 2);
+
+		/* Skip sending doorbell to the current thread of the current core */
+		for (thread = (chip == 0 ? 1 : 0); thread < 4; ++thread) {
+			register uint64_t msg = core_msg | thread;
+			asm volatile("msgsnd %0" :: "r" (msg));
+		}
+
+		break;
+	}
+
+	for (++i; i < MAX_CORES_PER_CHIP; ++i) {
+		uint8_t thread;
+		uint64_t core_msg;
+
+		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+			continue;
+
+		/* Message value for thread 0 of the i-th core */
+		core_msg = chip_msg | (i << 2);
+
+		for (thread = 0; thread < 4; ++thread) {
+			register uint64_t msg = core_msg | thread;
+			asm volatile("msgsnd %0" :: "r" (msg));
+		}
+	}
+}
+
 static void enable_soc_dev(struct device *dev)
 {
 	int chip, idx = 0;
@@ -695,59 +793,53 @@ static void enable_soc_dev(struct device *dev)
 	rng_init(chips);
 	istep_18_11(chips, &tod_mdmt);
 	istep_18_12(chips, tod_mdmt);
-}
-
-static void activate_slave_cores(uint8_t chip)
-{
-	enum { DOORBELL_MSG_TYPE = 0x0000000028000000 };
-
-	uint8_t i;
-
-	/* Read OCC CCSR written by the code earlier */
-	const uint64_t functional_cores = read_scom(chip, 0x0006C090);
 
 	/*
-	 * This is for ATTR_PROC_FABRIC_PUMP_MODE == PUMP_MODE_CHIP_IS_GROUP,
-	 * when chip ID is actually a group ID and "chip ID" field is zero.
+	 * We have to disable FSP special wakeups on all cores, but to do so
+	 * the core has to be powered up. It would be enough to start just one
+	 * thread on each core, but this makes hand-off to payload much more
+	 * complicated. To keep things simple, start each thread now. They will
+	 * stay in STOP 1 until platform_prog_run() tells them to start the
+	 * payload.
 	 */
-	const uint64_t chip_msg = DOORBELL_MSG_TYPE | PPC_PLACE(chip, 49, 4);
-
-	/* Find and process the first core in a separate loop to slightly
-	 * simplify processing of all the other cores by removing a conditional */
-	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
-		uint8_t thread;
-		uint64_t core_msg;
-
-		if (!IS_EC_FUNCTIONAL(i, functional_cores))
-			continue;
-
-		/* Message value for thread 0 of the current core */
-		core_msg = chip_msg | (i << 2);
-
-		/* Skip sending doorbell to the current thread of the current core */
-		for (thread = (chip == 0 ? 1 : 0); thread < 4; ++thread) {
-			register uint64_t msg = core_msg | thread;
-			asm volatile("msgsnd %0" :: "r" (msg));
-		}
-
-		break;
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (chips & (1 << chip))
+			activate_secondary_threads(chip);
 	}
 
-	for (++i; i < MAX_CORES_PER_CHIP; ++i) {
-		uint8_t thread;
-		uint64_t core_msg;
+	/*
+	 * Give some time for cores to actually wake up. 3800 us is "estimated
+	 * target and subject to change" latency for wake-up from STOP 11
+	 * according to POWER9 Processor User's Manual, but this proven to be
+	 * not enough in tests. 5 ms worked each time, using twice as much to
+	 * be safe.
+	 */
+	mdelay(10);
 
-		if (!IS_EC_FUNCTIONAL(i, functional_cores))
+	for (chip = 0; chip < MAX_CHIPS; chip++) {
+		if (!(chips & (1 << chip)))
 			continue;
 
-		/* Message value for thread 0 of the i-th core */
-		core_msg = chip_msg | (i << 2);
+		const uint64_t cores = read_scom(chip, 0x0006C090);
 
-		for (thread = 0; thread < 4; ++thread) {
-			register uint64_t msg = core_msg | thread;
-			asm volatile("msgsnd %0" :: "r" (msg));
+		for (uint8_t core = 0; core < MAX_CORES_PER_CHIP; ++core) {
+			if (!IS_EC_FUNCTIONAL(core, cores))
+				continue;
+
+			/* Enable auto special wakeup for functional cores. */
+			write_scom_for_chiplet(chip, EP00_CHIPLET_ID + core/4,
+					       0x1001203B + 0x400 * ((core/2) % 2),
+					       PPC_BIT(12 + (core % 2)));
+
+			/* De-assert FSP special wakeup before activate_occ(). */
+			scom_and_for_chiplet(chip, EC00_CHIPLET_ID + core, 0x200F010B,
+					     ~PPC_BIT(0));
 		}
 	}
+
+	printk(BIOS_DEBUG, "Activating OCC...\n");
+	activate_occ(chips, (void *)(top * 1024));
+	printk(BIOS_DEBUG, "Done activating OCC\n");
 }
 
 static void *load_fdt(const char *dtb_file, uint8_t chips)
@@ -771,6 +863,8 @@ static void *load_fdt(const char *dtb_file, uint8_t chips)
 	dt_flatten(tree, fdt);
 	return fdt;
 }
+
+extern struct prog *__payload;
 
 void platform_prog_run(struct prog *prog)
 {
@@ -803,15 +897,14 @@ void platform_prog_run(struct prog *prog)
 
 	/*
 	 * Now that the payload and its interrupt vectors are already loaded
-	 * perform 16.2.
-	 *
-	 * This MUST be done as late as possible so that none of the newly
-	 * activated threads start execution before current thread jumps into
-	 * the payload.
+	 * let secondary threads jump into payload. The order of jumping into
+	 * Skiboot doesn't matter, as long as the thread that lands as first
+	 * has FDT in %r3.
 	 */
+	__payload = prog;
 	for (uint8_t chip = 0; chip < MAX_CHIPS; chip++) {
 		if (chips & (1 << chip))
-			activate_slave_cores(chip);
+			activate_secondary_threads(chip);
 	}
 }
 

@@ -226,7 +226,6 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segment,
 
 		write_i2c(type, mode_reg,
 			  PPC_PLACE(bit_rate_div, 0, 16) | PPC_PLACE(port, 16, 6));
-
 		write_i2c(type, res_err_reg, clear_err);
 		write_i2c(type, cmd_reg,
 			  START | stop | WITH_ADDR | read_not_write | read_cont |

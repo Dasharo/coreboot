@@ -55,10 +55,22 @@ romstage-y += tspi/crtm.c
 ramstage-y += tspi/crtm.c
 postcar-y += tspi/crtm.c
 
+ifeq ($(CONFIG_TPM_MEASURED_BOOT_SPEC_LOG),y)
+
+ramstage-y += tspi/log-tpm.c
+romstage-y += tspi/log-tpm.c
+verstage-y += tspi/log-tpm.c
+postcar-y += tspi/log-tpm.c
+bootblock-y += tspi/log-tpm.c
+
+else
+
 ramstage-y += tspi/log.c
 romstage-y += tspi/log.c
 verstage-y += tspi/log.c
 postcar-y += tspi/log.c
 bootblock-y += tspi/log.c
+
+endif # CONFIG_TPM_MEASURED_BOOT_SPEC_LOG
 
 endif # CONFIG_TPM_MEASURED_BOOT
