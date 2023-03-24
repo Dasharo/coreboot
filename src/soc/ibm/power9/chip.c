@@ -10,6 +10,7 @@
 #include <cbfs.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_18.h>
+#include <cpu/power/occ.h>
 #include <cpu/power/proc.h>
 #include <cpu/power/spr.h>
 #include <commonlib/stdlib.h>		// xzalloc
