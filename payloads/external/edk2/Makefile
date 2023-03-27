@@ -109,7 +109,6 @@ endif
 ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
 endif
-# DASHARO_USB_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
 endif
