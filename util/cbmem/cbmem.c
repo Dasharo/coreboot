@@ -58,11 +58,19 @@ static int verbose = 0;
 #define debug(x...) if(verbose) printf(x)
 
 /* File handle used to access /dev/mem */
-static int mem_fd;
+static int mem_fd = -1;
 static struct mapping lbtable_mapping;
+
+/* File handle used to parse CBMEM from file instead of RAM */
+static int file_fd = -1;
 
 /* TSC frequency from the LB_TAG_TSC_INFO record. 0 if not present. */
 static uint32_t tsc_freq_khz = 0;
+
+static struct lb_cbmem_ref timestamps;
+static struct lb_cbmem_ref console;
+static struct lb_cbmem_ref tcpa_log;
+static struct lb_memory_range cbmem;
 
 static void die(const char *msg)
 {
@@ -101,40 +109,74 @@ static void *mapping_virt(const struct mapping *mapping)
 static void *map_memory_with_prot(struct mapping *mapping,
 				  unsigned long long phys, size_t sz, int prot)
 {
-	void *v;
-	unsigned long long page_size;
+	if (file_fd < 0) {
+		void *v;
+		unsigned long long page_size;
 
-	page_size = system_page_size();
+		page_size = system_page_size();
 
-	mapping->virt = NULL;
-	mapping->offset = phys % page_size;
-	mapping->virt_size = sz + mapping->offset;
-	mapping->size = sz;
-	mapping->phys = phys;
+		mapping->virt = NULL;
+		mapping->offset = phys % page_size;
+		mapping->virt_size = sz + mapping->offset;
+		mapping->size = sz;
+		mapping->phys = phys;
 
-	if (size_to_mib(mapping->virt_size) == 0) {
-		debug("Mapping %zuB of physical memory at 0x%llx (requested 0x%llx).\n",
-			mapping->virt_size, phys - mapping->offset, phys);
+		if (size_to_mib(mapping->virt_size) == 0) {
+			debug("Mapping %zuB of physical memory at 0x%llx (requested 0x%llx).\n",
+				mapping->virt_size, phys - mapping->offset, phys);
+		} else {
+			debug("Mapping %zuMB of physical memory at 0x%llx (requested 0x%llx).\n",
+				size_to_mib(mapping->virt_size), phys - mapping->offset,
+				phys);
+		}
+
+		v = mmap(NULL, mapping->virt_size, prot, MAP_SHARED, mem_fd,
+				phys - mapping->offset);
+
+		if (v == MAP_FAILED) {
+			debug("Mapping failed %zuB of physical memory at 0x%llx.\n",
+				mapping->virt_size, phys - mapping->offset);
+			return NULL;
+		}
+
+		mapping->virt = v;
+
+		if (mapping->offset != 0)
+			debug("  ... padding virtual address with 0x%zx bytes.\n",
+				mapping->offset);
 	} else {
-		debug("Mapping %zuMB of physical memory at 0x%llx (requested 0x%llx).\n",
-			size_to_mib(mapping->virt_size), phys - mapping->offset,
-			phys);
+		ssize_t ret;
+		mapping->virt = malloc(sz);
+		mapping->offset = 0;
+		mapping->virt_size = sz;
+		mapping->size = sz;
+		mapping->phys = phys;
+
+		debug("map_memory phys = %llx, size = %zuB, cbmem.start = %lx\n", phys, sz, cbmem.start);
+
+		if (mapping->virt == NULL) {
+			debug("Couldn't allocate %zuB of memory.\n", sz);
+			return NULL;
+		}
+
+		if (lseek(file_fd, mapping->phys - cbmem.start, SEEK_SET) < 0) {
+			debug("Couldn't read file from offset %llx.\n",
+				mapping->phys - cbmem.start);
+			free(mapping->virt);
+			return NULL;
+		}
+
+		ret = read(file_fd, mapping->virt, sz);
+		if (ret < 0) {
+			debug("Error reading file: %s\n", strerror(errno));
+			free(mapping->virt);
+			return NULL;
+		}
+		if ((size_t)ret != sz) {
+			debug("Truncated read from offset %llx, requested %zuB, got %zuB.\n",
+				mapping->phys - cbmem.start, sz, ret);
+		}
 	}
-
-	v = mmap(NULL, mapping->virt_size, prot, MAP_SHARED, mem_fd,
-			phys - mapping->offset);
-
-	if (v == MAP_FAILED) {
-		debug("Mapping failed %zuB of physical memory at 0x%llx.\n",
-			mapping->virt_size, phys - mapping->offset);
-		return NULL;
-	}
-
-	mapping->virt = v;
-
-	if (mapping->offset != 0)
-		debug("  ... padding virtual address with 0x%zx bytes.\n",
-			mapping->offset);
 
 	return mapping_virt(mapping);
 }
@@ -153,7 +195,11 @@ static int unmap_memory(struct mapping *mapping)
 	if (mapping->virt == NULL)
 		return -1;
 
-	munmap(mapping->virt, mapping->virt_size);
+	if (file_fd < 0)
+		munmap(mapping->virt, mapping->virt_size);
+	else
+		free(mapping->virt);
+
 	mapping->virt = NULL;
 	mapping->offset = 0;
 	mapping->virt_size = 0;
@@ -264,11 +310,6 @@ static int find_cbmem_entry(uint32_t id, uint64_t *addr, size_t *size)
  * Returns pointer to a memory buffer containing the timestamp table or zero if
  * none found.
  */
-
-static struct lb_cbmem_ref timestamps;
-static struct lb_cbmem_ref console;
-static struct lb_cbmem_ref tcpa_log;
-static struct lb_memory_range cbmem;
 
 /* This is a work-around for a nasty problem introduced by initially having
  * pointer sized entries in the lb_cbmem_ref structures. This caused problems
@@ -1340,6 +1381,7 @@ static void print_usage(const char *name, int exit_code)
 	     "   -S | --stacked-timestamps:        print stacked timestamps (e.g. for flame graph tools)\n"
 	     "   -a | --add-timestamp ID:          append timestamp with ID\n"
 	     "   -L | --tcpa-log                   print TCPA log\n"
+	     "   -f | --file FILE:                 read CBMEM from FILE instead of memory\n"
 	     "   -V | --verbose:                   verbose (debugging) output\n"
 	     "   -v | --version:                   print the version\n"
 	     "   -h | --help:                      print this help\n"
@@ -1493,12 +1535,13 @@ int main(int argc, char** argv)
 		{"add-timestamp", required_argument, 0, 'a'},
 		{"hexdump", 0, 0, 'x'},
 		{"rawdump", required_argument, 0, 'r'},
+		{"file", required_argument, 0, 'f'},
 		{"verbose", 0, 0, 'V'},
 		{"version", 0, 0, 'v'},
 		{"help", 0, 0, 'h'},
 		{0, 0, 0, 0}
 	};
-	while ((opt = getopt_long(argc, argv, "c12B:CltTSa:LxVvh?r:",
+	while ((opt = getopt_long(argc, argv, "c12B:CltTSa:LxVvh?r:f:",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'c':
@@ -1538,6 +1581,14 @@ int main(int argc, char** argv)
 			print_rawdump = 1;
 			print_defaults = 0;
 			rawdump_id = strtoul(optarg, NULL, 16);
+			break;
+		case 'f':
+			file_fd = open(optarg, O_RDONLY, 0);
+			if (file_fd < 0) {
+				fprintf(stderr, "Failed to open file '%s': %s\n",
+					optarg, strerror(errno));
+				return 1;
+			}
 			break;
 		case 't':
 			timestamp_type = TIMESTAMPS_PRINT_NORMAL;
@@ -1580,11 +1631,13 @@ int main(int argc, char** argv)
 		print_usage(argv[0], 1);
 	}
 
-	mem_fd = open("/dev/mem", timestamp_id ? O_RDWR : O_RDONLY, 0);
-	if (mem_fd < 0) {
-		fprintf(stderr, "Failed to gain memory access: %s\n",
-			strerror(errno));
-		return 1;
+	if (file_fd < 0) {
+		mem_fd = open("/dev/mem", timestamp_id ? O_RDWR : O_RDONLY, 0);
+		if (mem_fd < 0) {
+			fprintf(stderr, "Failed to gain memory access: %s\n",
+				strerror(errno));
+			return 1;
+		}
 	}
 
 #if defined(__arm__) || defined(__aarch64__)
@@ -1681,6 +1734,10 @@ int main(int argc, char** argv)
 
 	unmap_memory(&lbtable_mapping);
 
-	close(mem_fd);
+	if (file_fd >= 0)
+		close(file_fd);
+	if (mem_fd >= 0)
+		close(mem_fd);
+
 	return 0;
 }
