@@ -2,9 +2,14 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <arch/cpu.h>
+#include <chip.h>
 #include <device/device.h>
+#include <device/pci_def.h>
+#include <device/pci_ids.h>
+#include <device/pci_ops.h>
 #include <pc80/i8254.h>
 #include <soc/gpio.h>
+#include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
 #include <stdlib.h>
@@ -50,6 +55,33 @@ static void mainboard_final(void *unused)
 		beep(1500, 100);
 }
 
+static void mainboard_enable(struct device *dev)
+{
+	struct soc_power_limits_config *soc_conf;
+	config_t *conf = config_of_soc();
+	uint16_t sa_devid = pci_read_config16(pcidev_on_root(0, 0), PCI_DEVICE_ID);
+
+	soc_conf = &conf->power_limits_config;
+
+	if (sa_devid == PCI_DID_INTEL_CML_ULT_2_2) {
+		soc_conf->tdp_pl2_override = 35;
+		soc_conf->tdp_pl4 = 51;
+	} else if (sa_devid == PCI_DID_INTEL_CML_ULT ||
+		   sa_devid == PCI_DID_INTEL_CML_ULT_6_2) {
+		soc_conf->tdp_pl2_override = 64;
+		soc_conf->tdp_pl4 = 90;
+	}
+}
+
 struct chip_operations mainboard_ops = {
+	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
 };
+
+void mainboard_silicon_init_params(FSPS_UPD *supd)
+{
+	supd->FspsTestConfig.C1StateAutoDemotion = 0;
+	supd->FspsTestConfig.C1StateUnDemotion = 0;
+	supd->FspsTestConfig.C3StateAutoDemotion = 0;
+	supd->FspsTestConfig.C3StateUnDemotion = 0;
+}
