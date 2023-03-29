@@ -8,6 +8,8 @@ For details on how to connect device drivers to a mainboard, see [Driver Devicet
 
 Some of the drivers currently available include:
 
+* [CFR](cfr.md)
+* [CFR use within coreboot](cfr_internal.md)
 * [Intel DPTF](dptf.md)
 * [IPMI KCS](ipmi_kcs.md)
 * [SMMSTORE](smmstore.md)
