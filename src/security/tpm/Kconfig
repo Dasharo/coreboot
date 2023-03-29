@@ -112,7 +112,7 @@ config TPM_LOG_TPM1
 	  See "TCG PC Client Specific Implementation Specification for Conventional BIOS".
 config TPM_LOG_TPM2
 	bool "TPM 2.0 format"
-	depends on TPM2
+	depends on TPM2 || TPM1
 	help
 	  Log per TPM 2.0 specification.
 	  See "TCG PC Client Platform Firmware Profile Specification".
