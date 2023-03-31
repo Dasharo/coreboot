@@ -21,6 +21,22 @@ logo_pkg=CorebootPayloadPkg
 TAG=origin/$(project_git_branch)
 endif
 
+ifeq ($(CONFIG_EDK2_USE_EDK2_PLATFORMS),y)
+export EDK2_PLATFORMS_PATH := $(project_dir)/edk2-platforms
+export PACKAGES_PATH := $(EDK2_PATH):\
+			$(EDK2_PLATFORMS_PATH)/Platform/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Silicon/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Debugging:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/Network:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/OutOfBandManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/PowerManagement:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/SystemInformation:\
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface
+else
+export PACKAGES_PATH := $(EDK2_PATH)
+endif
+
 ifneq ($(CONFIG_TIANOCORE_REVISION_ID),)
 TAG=$(CONFIG_TIANOCORE_REVISION_ID)
 endif
@@ -75,13 +91,31 @@ BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(MENU_KEY
 
 all: clean build
 
+$(EDK2_PLATFORMS_PATH): $(project_dir)
+	echo "    Cloning $(CONFIG_EDK2_PLATFORMS_REPOSITORY) from Git"
+	if [ ! -d "$(EDK2_PLATFORMS_PATH)" ]; then \
+		git clone --recurse-submodules $(CONFIG_EDK2_PLATFORMS_REPOSITORY) $(EDK2_PLATFORMS_PATH) -j5; \
+	fi
+	cd $(EDK2_PLATFORMS_PATH); \
+		if ! git rev-parse --verify -q $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) >/dev/null; then \
+			echo "    $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) is not a valid git reference"; \
+			exit 1; \
+		fi; \
+		if git status --ignore-submodules=dirty | grep -q clean; then \
+			echo "    Checking out edk2-platforms revision $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV)"; \
+			git checkout --detach $(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) -f; \
+		else \
+			echo "    Working directory not clean; will not overwrite"; \
+		fi; \
+		git submodule update --init --checkout
+
 $(project_dir):
 	echo "    Cloning $(project_name) from Git"
 	git clone --branch $(project_git_branch) $(project_git_repo) $(project_dir); \
 		cd $(project_dir); \
 		git remote add upstream $(upstream_git_repo)
 
-update: $(project_dir)
+update: $(project_dir) $(EDK2_PLATFORMS_PATH)
 	cd  $(project_dir); \
 		echo "    Fetching new commits from the $(project_name) repo"; \
 		git fetch --multiple origin upstream 2>/dev/null; \
@@ -108,7 +142,7 @@ checktools:
 	type nasm > /dev/null 2>&1 && echo " found nasm." || \
 		( echo " Not found."; echo "Error: Please install nasm."; exit 1 )
 
-build: update checktools
+build: update checktools ipxe_rom
 	unset CC; $(MAKE) -C $(project_dir)/BaseTools
 	echo " build $(project_name) $(TAG)"
 	if [ -n "$(CONFIG_TIANOCORE_BOOTSPLASH_FILE)" ]; then \
@@ -131,6 +165,14 @@ build: update checktools
 		build $(BUILD_STR); \
 		mv $(project_dir)/Build/$(bootloader)*/*/FV/UEFIPAYLOAD.fd $(project_dir)/Build/UEFIPAYLOAD.fd; \
 		git checkout $(logo_pkg)/Logo/Logo.bmp > /dev/null 2>&1 || true
+
+ipxe_rom: $(project_dir)
+	mkdir -p $(project_dir)/UefiPayloadPkg/NetworkDrivers
+	if [ "$(CONFIG_TIANOCORE_ENABLE_IPXE)" == "y" ]; then \
+		echo "    Including externally built iPXE"; \
+		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
+			$(project_dir)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+	fi \
 
 clean:
 	test -d $(project_dir) && (cd $(project_dir); rm -rf Build; rm -f Conf/tools_def.txt) || exit 0

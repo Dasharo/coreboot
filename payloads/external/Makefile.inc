@@ -137,7 +137,11 @@ payloads/external/depthcharge/depthcharge/build/depthcharge.elf depthcharge: $(D
 
 # Tianocore
 
-payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd tianocore: $(DOTCONFIG)
+ifeq ($(CONFIG_TIANOCORE_ENABLE_IPXE),y)
+IPXE_EFI := payloads/external/iPXE/ipxe/ipxe.rom
+endif
+
+payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd tianocore: $(DOTCONFIG) $(IPXE_EFI)
 	$(MAKE) -C payloads/external/tianocore all \
 		HOSTCC="$(HOSTCC)" \
 		CC="$(HOSTCC)" \
@@ -158,6 +162,9 @@ payloads/external/tianocore/tianocore/Build/UEFIPAYLOAD.fd tianocore: $(DOTCONFI
 		CONFIG_TIANOCORE_TPM_ENABLE=$(CONFIG_TPM1)$(CONFIG_TPM2) \
 		CONFIG_TIANOCORE_BOOT_MENU_KEY=$(CONFIG_TIANOCORE_BOOT_MENU_KEY) \
 		CONFIG_TIANOCORE_SETUP_MENU_KEY=$(CONFIG_TIANOCORE_SETUP_MENU_KEY) \
+		CONFIG_EDK2_USE_EDK2_PLATFORMS=$(CONFIG_EDK2_USE_EDK2_PLATFORMS) \
+		CONFIG_EDK2_PLATFORMS_REPOSITORY=$(CONFIG_EDK2_PLATFORMS_REPOSITORY) \
+		CONFIG_EDK2_PLATFORMS_TAG_OR_REV=$(CONFIG_EDK2_PLATFORMS_TAG_OR_REV) \
 		GCC_CC_x86_32=$(GCC_CC_x86_32) \
 		GCC_CC_x86_64=$(GCC_CC_x86_64) \
 		GCC_CC_arm=$(GCC_CC_arm) \
