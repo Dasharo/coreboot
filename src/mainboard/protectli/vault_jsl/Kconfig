@@ -5,6 +5,7 @@ config BOARD_SPECIFIC_OPTIONS
     select BOARD_ROMSIZE_KB_16384
     select HAVE_ACPI_TABLES
     select SOC_INTEL_JASPERLAKE
+    select INTEL_GMA_HAVE_VBT
 
 config MAX_CPUS
     int
