@@ -157,6 +157,22 @@ config TIANOCORE_OPAL_PASSWORD
 	help
 	  Enables TCG OPAL disk password in the TianoCore Payload.
 
+config EDK2_DASHARO_USB_CONFIG
+	bool "Enable EDK2 Dasharo USB Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 USB stack configuration submenu in Dasharo System Features.
+
+config EDK2_CUSTOM_BUILD_PARAMS
+	string "edk2 additional custom build parameters"
+	default "-D VARIABLE_SUPPORT=SMMSTORE" if EDK2_UEFIPAYLOAD && SMMSTORE_V2
+	help
+	  edk2 has build options that are not modified by coreboot, and these can be
+	  found in `UefiPayloadPkg/UefiPayloadPkg.dsc`. Forks may also support
+	  additional build options that should have been upstreamed but have not.
+
+	  This option can support both macros `-D` and Pcds `--pcd`.
+
 config TIANOCORE_BOOT_MENU_KEY
 	hex "TianoCore boot menu key"
 	default 0x0016

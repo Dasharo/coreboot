@@ -87,7 +87,15 @@ else
 ARCH=-a IA32 -a X64 -p $(bootloader)/$(bootloader)Ia32X64.dsc
 endif
 
+ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
+endif
+
 BUILD_STR=-q $(ARCH) -t COREBOOT -b $(BUILD_TYPE) $(TIMER) $(TIMEOUT) $(MENU_KEY) $(SETUP_KEY) $(build_flavor)
+
+ifneq ($(CONFIG_EDK2_CUSTOM_BUILD_PARAMS),)
+BUILD_STR += $(CONFIG_EDK2_CUSTOM_BUILD_PARAMS)
+endif
 
 all: clean build
 
