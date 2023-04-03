@@ -66,8 +66,11 @@ static void mainboard_enable(struct device *dev)
 	if (sa_devid == PCI_DID_INTEL_CML_ULT_2_2) {
 		soc_conf->tdp_pl2_override = 35;
 		soc_conf->tdp_pl4 = 51;
-	} else if (sa_devid == PCI_DID_INTEL_CML_ULT ||
-		   sa_devid == PCI_DID_INTEL_CML_ULT_6_2) {
+	} else if (sa_devid == PCI_DID_INTEL_CML_ULT) {
+		soc_conf->tdp_pl2_override = 64;
+		soc_conf->tdp_pl4 = 90;
+	}  else if (sa_devid == PCI_DID_INTEL_CML_ULT_6_2) {
+		soc_conf->tdp_pl1_override = 25;
 		soc_conf->tdp_pl2_override = 64;
 		soc_conf->tdp_pl4 = 90;
 	}
