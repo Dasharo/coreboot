@@ -47,6 +47,11 @@ struct fan_curve fan_curve_performance = {
 
 #define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
 
+#define SLEEP_TYPE_OPTION_S0IX	0
+#define SLEEP_TYPE_OPTION_S3	1
+
+#define SLEEP_TYPE_OPTION_DEFAULT SLEEP_TYPE_OPTION_S0IX
+
 const char *smbios_system_sku(void)
 {
 	return "Not Applicable";
@@ -61,6 +66,87 @@ smbios_wakeup_type smbios_system_wakeup_type(void)
 {
 	return SMBIOS_WAKEUP_TYPE_POWER_SWITCH;
 }
+
+static void set_fan_curve(void)
+{
+	int i;
+	uint8_t selection = FAN_CURVE_OPTION_DEFAULT;
+	struct smfi_cmd_set_fan_curve cmd;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	size = sizeof(selection);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FanCurveOption", &selection, &size);
+	if (ret != CB_SUCCESS)
+		printk(BIOS_DEBUG, "fan: failed to read curve selection from EFI vars, using board default\n");
+efi_err:
+#endif
+
+	switch (selection) {
+	case FAN_CURVE_OPTION_SILENT:
+		cmd.curve = fan_curve_silent;
+		break;
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		cmd.curve = fan_curve_performance;
+		break;
+	default:
+		cmd.curve = fan_curve_silent;
+		break;
+	}
+
+	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
+		cmd.fan = i;
+		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+	}
+}
+
+static uint8_t get_sleep_type_option(void)
+{
+	uint8_t sleep_type = SLEEP_TYPE_OPTION_DEFAULT;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	size = sizeof(sleep_type);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "SleepType",
+				&sleep_type, &size);
+	if (ret != CB_SUCCESS)
+		printk(BIOS_DEBUG, "Failed to read sleep type from EFI vars, using S0ix\n");
+efi_err:
+#endif
+	return sleep_type;
+}
+
+static void mainboard_init(void *chip_info)
+{
+	mainboard_configure_gpios();
+
+	set_fan_curve();
+}
+
+struct chip_operations mainboard_ops = {
+	.init = mainboard_init,
+};
+
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
@@ -108,56 +194,13 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CpuPcieRpAcsEnabled[0] = 1;
 }
 
-static void set_fan_curve(void)
+void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
 {
-	int i;
-	uint8_t selection = FAN_CURVE_OPTION_DEFAULT;
-	struct smfi_cmd_set_fan_curve cmd;
-
-#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
-	struct region_device rdev;
-	enum cb_err ret;
-	uint32_t size;
-
-	const EFI_GUID dasharo_system_features_guid = {
-		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
-	};
-
-	if (smmstore_lookup_region(&rdev))
-		goto efi_err;
-
-	size = sizeof(selection);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FanCurveOption", &selection, &size);
-	if (ret != CB_SUCCESS)
-		printk(BIOS_DEBUG, "fan: failed to read curve selection from EFI vars, using board default\n");
-efi_err:
-#endif
-
-	switch (selection) {
-	case FAN_CURVE_OPTION_SILENT:
-		cmd.curve = fan_curve_silent;
-		break;
-	case FAN_CURVE_OPTION_PERFORMANCE:
-		cmd.curve = fan_curve_performance;
-		break;
-	default:
-		cmd.curve = fan_curve_silent;
-		break;
-	}
-
-	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
-		cmd.fan = i;
-		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3) {
+		config->s0ix_enable = 0;
+		config->tcss_d3_cold_disable = 1;
+	} else {
+		config->s0ix_enable = 1;
+		config->tcss_d3_cold_disable = 0;
 	}
 }
-
-static void mainboard_init(void *chip_info)
-{
-	mainboard_configure_gpios();
-
-	set_fan_curve();
-}
-
-struct chip_operations mainboard_ops = {
-	.init = mainboard_init,
-};

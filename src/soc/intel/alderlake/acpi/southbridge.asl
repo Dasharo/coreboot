@@ -20,6 +20,9 @@
 /* PCH HDA */
 #include "pch_hda.asl"
 
+/* PCH FSPI */
+#include "pch_fspi.asl"
+
 /* PCIE Ports */
 #include "pcie.asl"
 
@@ -45,3 +48,6 @@
 
 /* GbE 0:1f.6 */
 #include <soc/intel/common/block/acpi/acpi/pch_glan.asl>
+
+/* PCH SATA */
+#include "sata.asl"
