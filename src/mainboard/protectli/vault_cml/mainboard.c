@@ -83,6 +83,9 @@ struct chip_operations mainboard_ops = {
 
 void mainboard_silicon_init_params(FSPS_UPD *supd)
 {
+	supd->FspsTestConfig.PkgCStateLimit = 0;
+	supd->FspsTestConfig.PkgCStateDemotion = 0;
+	supd->FspsTestConfig.PkgCStateUnDemotion = 0;
 	supd->FspsTestConfig.C1StateAutoDemotion = 0;
 	supd->FspsTestConfig.C1StateUnDemotion = 0;
 	supd->FspsTestConfig.C3StateAutoDemotion = 0;
