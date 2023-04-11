@@ -265,6 +265,17 @@ config CBFS_MCACHE_RW_PERCENTAGE
 	  will automatically be 0 (meaning the whole MCACHE is used for RO).
 	  Do NOT change this value for vboot RW updates!
 
+config VBOOT_CLEAR_RECOVERY_EACH_BOOT
+	bool "Clear the recovery request on each boot"
+	default n
+	help
+	  Some platforms may not have an OS integration of flashing the trusted
+	  image back and clearing the recovery reason. If this option is
+	  enabled, coreboot will clear the recovery reason on each boot on entry
+	  to POST_DEVICE boot state, which is already after vboot has executed
+	  its logic. The recovery reason is still available in vboot workbuf in
+	  case a paylaod would need it.
+
 config VBOOT_ENABLE_CBFS_FALLBACK
 	bool
 	default n

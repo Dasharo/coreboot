@@ -52,6 +52,23 @@ static void do_clear_recovery_mode_switch(void *unused)
 BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY,
 		      do_clear_recovery_mode_switch, NULL);
 
+
+static void vboot_clear_recovery_request(void *unused)
+{
+	struct vb2_context *ctx;
+
+	if (!CONFIG(VBOOT_CLEAR_RECOVERY_EACH_BOOT))
+		return;
+
+	ctx = vboot_get_context();
+	vb2api_clear_recovery(ctx);
+	save_vbnv(ctx->nvdata);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY,
+		      vboot_clear_recovery_request, NULL);
+
+
 int __weak get_recovery_mode_retrain_switch(void)
 {
 	return 0;
