@@ -7,6 +7,7 @@
 #include <fmap.h>
 #include <lib.h>
 #include <mainboard/gpio.h>
+#include <security/vboot/vboot_common.h>
 #include <smbios.h>
 #include <smmstore.h>
 #include <soc/ramstage.h>
@@ -219,9 +220,16 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
+static void mainboard_final(void *chip_info)
+{
+	if (CONFIG(VBOOT))
+		vboot_clear_recovery_request();
+}
+
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.init = mainboard_init,
+	.final = mainboard_final,
 };
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
