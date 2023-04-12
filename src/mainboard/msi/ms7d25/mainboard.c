@@ -5,6 +5,7 @@
 #include <device/device.h>
 #include <drivers/efi/efivars.h>
 #include <fmap.h>
+#include <security/vboot/vboot_common.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
@@ -601,7 +602,14 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
+static void mainboard_final(void *chip_info)
+{
+	if (CONFIG(VBOOT))
+		vboot_clear_recovery_request();
+}
+
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
 	.enable_dev = mainboard_enable,
+	.final = mainboard_final,
 };
