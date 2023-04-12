@@ -6,6 +6,7 @@
 #include <ec/system76/ec/commands.h>
 #include <fmap.h>
 #include <lib.h>
+#include <security/vboot/vboot_common.h>
 #include <smbios.h>
 #include <smmstore.h>
 #include <soc/ramstage.h>
@@ -186,7 +187,14 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
+static void mainboard_final(void *chip_info)
+{
+	if (CONFIG(VBOOT))
+		vboot_clear_recovery_request();
+}
+
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.init = init_mainboard,
+	.final = mainboard_final,
 };
