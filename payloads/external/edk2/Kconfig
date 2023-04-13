@@ -2,32 +2,41 @@ if PAYLOAD_EDK2
 
 config PAYLOAD_FILE
 	string "edk2 binary"
-	default "$(obj)/UEFIPAYLOAD.fd"
+	default "$(obj)/UEFIPAYLOAD.fd" if EDK2_UEFIPAYLOAD
 	help
 	  The result of a UefiPayloadPkg build
 
+config EDK2_UEFIPAYLOAD
+	bool "Build UefiPayloadPkg"
+	default y
+	help
+	  Build the standard UefiPayloadPkg
+
 choice
 	prompt "Tianocore's EDK II payload"
-	default EDK2_UEFIPAYLOAD
+	default EDK2_REPO_MRCHROMEBOX
 	help
 	  Select which type of payload edk2 will build (default is UefiPayload)
 	  UefiPayload: MrChromebox's customized fork of edk2 which works on most
 	  x86_64 devices
 	  Upstream: Use upstream edk2 payload from https://github.com/tianocore/edk2
 
-config EDK2_UEFIPAYLOAD
-	bool "UEFIPayload"
+config EDK2_REPO_MRCHROMEBOX
+	bool "MrChromebox' edk2 fork"
 	help
 	  Select this option to build using MrChromebox's custom edk2 fork,
 	  which incorporates fixes/improvements from System 76's and 9elements' trees.
 
-config EDK2_UPSTREAM
-	bool "Upstream"
+config EDK2_REPO_OFFICIAL
+	bool "Official edk2 repository"
 	help
-	  Select this option if you want to use upstream edk2 to build edk2.
+	  Select this option if you want to use the official edk2 repository to build
+	  edk2.
 
-config EDK2_CUSTOM
-	bool "Custom"
+	  Please note, this option will not work on any SOC without modification.
+
+config EDK2_REPO_CUSTOM
+	bool "Specify your own repository"
 	help
 	  Specify your own edk2 repository and branch to use.
 
@@ -35,16 +44,18 @@ endchoice
 
 config EDK2_REPOSITORY
 	string "URL to git repository for edk2"
-	default "https://github.com/tianocore/edk2" if EDK2_UPSTREAM
-	default "https://github.com/mrchromebox/edk2" if EDK2_UEFIPAYLOAD
+	default "https://github.com/mrchromebox/edk2" if EDK2_REPO_MRCHROMEBOX
+	default "https://github.com/tianocore/edk2" if EDK2_REPO_OFFICIAL
+	default "" if EDK2_REPO_CUSTOM
 	help
 	  coreboot supports an array of build options which can be found below. These options
 	  will only have an effect if the relevant options exist in the target repository.
 
 config EDK2_TAG_OR_REV
 	string "Insert a commit's SHA-1 or a branch name"
-	default "origin/uefipayload_202207" if EDK2_UEFIPAYLOAD
-	default "origin/master" if EDK2_UPSTREAM
+	default "origin/uefipayload_202207" if EDK2_REPO_MRCHROMEBOX
+	default "origin/master" if EDK2_REPO_OFFICIAL
+	default "" if EDK2_REPO_CUSTOM
 	help
 	  The commit's SHA-1 or branch name of the revision to use. This must exist in
 	  EDK2_REPOSITORY, and in the case of a branch name, prefixed with origin i.e.
@@ -93,7 +104,12 @@ config EDK2_RELEASE
 
 endchoice
 
-if EDK2_UEFIPAYLOAD || EDK2_CUSTOM || EDK2_UPSTREAM
+config EDK2_VERBOSE_BUILD
+	bool "Output verbose build log for troubleshooting build failures"
+	help
+	  Switch off the `-q` (quiet) and `-s` (silent) build arguments which makes the
+	  build log extremely verbose. This can be used to troubleshoot failed builds
+	  which are usually down to missing tools or toolchain.
 
 config EDK2_ABOVE_4G_MEMORY
 	bool "Enable above 4G memory"
@@ -206,6 +222,7 @@ config EDK2_SD_MMC_TIMEOUT
 
 config EDK2_SERIAL_SUPPORT
 	bool "Support serial output"
+	depends on !EDK2_CBMEM_LOGGING
 	default y if EDK2_DEBUG
 	default n
 	help
@@ -248,11 +265,55 @@ config EDK2_OPAL_PASSWORD
 	help
 	  Enables TCG OPAL disk password in the TianoCore Payload.
 
+# DasharoModulePkg specific options
+
+config EDK2_DASHARO_SYSTEM_FEATURES
+	bool "Enable Dasharo System Features menu in EDK2"
+	default n
+	help
+	  Enables Dasharo System Features submenu in the EDK2 setup menu.
+
+if EDK2_DASHARO_SYSTEM_FEATURES
+
+config EDK2_DASHARO_SECURITY_OPTIONS
+	bool "Enable EDK2 Dasharo Security Options Menu"
+	default n
+	help
+	  Enables the security configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_INTEL_ME_OPTIONS
+	bool "Enable EDK2 Dasharo ME Configuration Menu"
+	default n
+	help
+	  Enables the Intel ME configuration submenu in Dasharo System Features.
+
 config EDK2_DASHARO_USB_CONFIG
 	bool "Enable EDK2 Dasharo USB Configuration Menu"
 	default n
 	help
 	  Enables the EDK2 USB stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_NETWORK_CONFIG
+	bool "Enable EDK2 Dasharo Network Stack Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 network stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_CHIPSET_CONFIG
+	bool "Enable EDK2 Dasharo Chipset Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 chipset configuration submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
+	bool "Enable EDK2 network boot option by default"
+	default n
+	help
+	  Enables the network boot option in EDK2 by default.
+
+endif
+
+# End of DasharoModulePkg specific options
 
 config EDK2_BOOT_MENU_KEY
 	hex "TianoCore boot menu key"
@@ -325,11 +386,9 @@ config EDK2_SECURE_BOOT_DEFAULT_ENABLE
 
 endif
 
-endif
-
 config EDK2_CUSTOM_BUILD_PARAMS
 	string "edk2 additional custom build parameters"
-	default "-D VARIABLE_SUPPORT=SMMSTORE" if EDK2_UEFIPAYLOAD && SMMSTORE_V2
+	default "-D VARIABLE_SUPPORT=SMMSTORE" if EDK2_REPO_MRCHROMEBOX && SMMSTORE_V2
 	help
 	  edk2 has build options that are not modified by coreboot, and these can be
 	  found in `UefiPayloadPkg/UefiPayloadPkg.dsc`. Forks may also support
