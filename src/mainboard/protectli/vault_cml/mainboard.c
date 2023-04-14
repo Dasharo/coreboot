@@ -12,6 +12,7 @@
 #include <soc/gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
+#include <soc/vr_config.h>
 #include <smbios.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,8 +59,11 @@ static void mainboard_final(void *unused)
 	if (CONFIG(BEEP_ON_BOOT))
 		beep(1500, 100);
 }
+struct chip_operations mainboard_ops = {
+	.final = mainboard_final,
+};
 
-static void mainboard_enable(struct device *dev)
+void mainboard_silicon_init_params(FSPS_UPD *supd)
 {
 	struct soc_power_limits_config *soc_conf;
 	config_t *conf = config_of_soc();
@@ -67,26 +71,21 @@ static void mainboard_enable(struct device *dev)
 
 	soc_conf = &conf->power_limits_config;
 
-	if (sa_devid == PCI_DID_INTEL_CML_ULT_2_2) {
+	if (sa_devid == PCI_DID_INTEL_CML_ULT_2_2) { /* VP4630 */
 		soc_conf->tdp_pl2_override = 35;
 		soc_conf->tdp_pl4 = 51;
-	} else if (sa_devid == PCI_DID_INTEL_CML_ULT) {
+		soc_conf->psys_pmax = 60;
+	} else if (sa_devid == PCI_DID_INTEL_CML_ULT) { /* VP4650 */
 		soc_conf->tdp_pl2_override = 64;
 		soc_conf->tdp_pl4 = 90;
-	}  else if (sa_devid == PCI_DID_INTEL_CML_ULT_6_2) {
+		soc_conf->psys_pmax = 100;
+	} else if (sa_devid == PCI_DID_INTEL_CML_ULT_6_2) { /* VP4670 */
 		soc_conf->tdp_pl1_override = 25;
-		soc_conf->tdp_pl2_override = 64;
+		soc_conf->tdp_pl2_override = 85;
 		soc_conf->tdp_pl4 = 90;
+		soc_conf->psys_pmax = 100;
 	}
-}
 
-struct chip_operations mainboard_ops = {
-	.enable_dev = mainboard_enable,
-	.final = mainboard_final,
-};
-
-void mainboard_silicon_init_params(FSPS_UPD *supd)
-{
 	supd->FspsTestConfig.PkgCStateLimit = 0;
 	supd->FspsTestConfig.PkgCStateDemotion = 0;
 	supd->FspsTestConfig.PkgCStateUnDemotion = 0;
@@ -94,4 +93,8 @@ void mainboard_silicon_init_params(FSPS_UPD *supd)
 	supd->FspsTestConfig.C1StateUnDemotion = 0;
 	supd->FspsTestConfig.C3StateAutoDemotion = 0;
 	supd->FspsTestConfig.C3StateUnDemotion = 0;
+	supd->FspsTestConfig.PowerLimit3Lock = 0;
+	supd->FspsTestConfig.PowerLimit3 = 0;
+	supd->FspsTestConfig.PowerLimit3Time = 0;
+	supd->FspsTestConfig.PowerLimit3DutyCycle = 0;
 }
