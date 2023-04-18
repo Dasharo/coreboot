@@ -422,7 +422,7 @@ void tcss_configure(const struct typec_aux_bias_pads aux_bias_pads[MAX_TYPE_C_PO
 	if (port_map == NULL)
 		return;
 
-	if (!platform_is_resuming()) {
+	if (CONFIG(ENABLE_TCSS_MUX_DISCONNECT) && !platform_is_resuming()) {
 		for (i = 0; i < num_ports; i++)
 			tcss_init_mux(i, &port_map[i]);
 	}
