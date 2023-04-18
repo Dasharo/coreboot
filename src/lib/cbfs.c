@@ -481,6 +481,7 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 	struct region_device rdev;
 	bool preload_successful = false;
 	union cbfs_mdata mdata;
+	bool skip_verification = false;
 
 	DEBUG("%s(name='%s', alloc=%p(%p), force_ro=%s, type=%d)\n", __func__, name, allocator,
 	      arg, force_ro ? "true" : "false", type ? *type : -1);
@@ -503,7 +504,14 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 	if (!force_ro && get_preload_rdev(&rdev, name) == CB_SUCCESS)
 		preload_successful = true;
 
-	void *ret = do_alloc(&mdata, &rdev, allocator, arg, size_out, false);
+	/*
+	 * Bootblock will never have its hash due to how CBFS_VERIFICATION works.
+	 * Skip its verification to let CRTM initialization pass.
+	 */
+	if (type && *type == CBFS_TYPE_BOOTBLOCK)
+		skip_verification = true;
+
+	void *ret = do_alloc(&mdata, &rdev, allocator, arg, size_out, skip_verification);
 
 	/* When using cbfs_preload we need to free the preload buffer after populating the
 	 * destination buffer. We know we must have a mem_rdev here, so extra mmap is fine. */
