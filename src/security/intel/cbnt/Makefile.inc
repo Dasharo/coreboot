@@ -27,7 +27,7 @@ $(obj)/bpm_pub.pem: $(call strip_quotes, $(CONFIG_INTEL_CBNT_BPM_PUB_KEY_FILE))
 	cp $< $@
 endif
 
-CBNT_PROV:=$(obj)/cbnt-prov
+CBNT_PROV:=$(obj)/bg-prov
 CBNT_CFG:=$(obj)/cbnt.json
 
 ifneq ($(CONFIG_INTEL_CBNT_PROV_EXTERNAL_BIN),y)
@@ -36,24 +36,29 @@ $(CBNT_PROV):
 	cd 3rdparty/intel-sec-tools; \
 	GO111MODULE=on go mod download; \
 	GO111MODULE=on go mod verify; \
-	GO111MODULE=on go build -o $(abspath $@) cmd/cbnt-prov/*.go
+	GO111MODULE=on go build -o $(abspath $@) cmd/bg-prov/*.go
 else
 $(CBNT_PROV): $(call strip_quotes, $(CONFIG_INTEL_CBNT_PROV_EXTERNAL_BIN_PATH))
 	cp $< $@
 endif
 
+ifeq ($(CONFIG_INTEL_CBNT_CBNT_PROV_BPM_USE_CFG_FILE),y)
 $(CBNT_CFG): $(call strip_quotes, $(CONFIG_INTEL_CBNT_CBNT_PROV_CFG_FILE))
 	cp $(CONFIG_INTEL_CBNT_CBNT_PROV_CFG_FILE) $@
+else
+$(CBNT_CFG):
+	touch $@
+endif
 
 ifeq ($(CONFIG_INTEL_CBNT_GENERATE_BPM),y)
 ifeq ($(CONFIG_INTEL_CBNT_CBNT_PROV_BPM_USE_CFG_FILE),y)
 $(obj)/bpm_unsigned.bin: $(obj)/coreboot.pre $(CBNT_PROV) $(CBNT_CFG)
 	printf "    CBNT_PROV    creating unsigned BPM using config file\n"
-	$(CBNT_PROV) bpm-gen $@ $< --config=$(CBNT_CFG) --cut
+	$(CBNT_PROV) bpm-gen-v-2 $@ $< --config=$(CBNT_CFG) --cut
 else
 $(obj)/bpm_unsigned.bin: $(obj)/coreboot.pre $(CBNT_PROV) set_fit_ptr
 	printf "    CBNT_PROV    creating unsigned BPM\n"
-	$(CBNT_PROV) bpm-gen $@ $< --revision=$(CONFIG_INTEL_CBNT_BPM_REVISION) \
+	$(CBNT_PROV) bpm-gen-v-2 $@ $< --revision=$(CONFIG_INTEL_CBNT_BPM_REVISION) \
 				 --svn=$(CONFIG_INTEL_CBNT_BPM_SVN) \
 				 --acmsvn=$(CONFIG_INTEL_CBNT_ACM_SVN) \
 				 --nems=$(CONFIG_INTEL_CBNT_NUM_NEM_PAGES) \
@@ -103,7 +108,7 @@ ifneq ($(CONFIG_INTEL_CBNT_BOOT_POLICY_MANIFEST_BINARY),"")
 cbfs-files-y += boot_policy_manifest.bin
 boot_policy_manifest.bin-file := $(CONFIG_INTEL_CBNT_BOOT_POLICY_MANIFEST_BINARY)
 boot_policy_manifest.bin-type := raw
-boot_policy_manifest.bin-align := 0x10
+boot_policy_manifest.bin-align := 0x40
 
 $(call add_intermediate, add_bpm_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r COREBOOT -a -n boot_policy_manifest.bin -t 12 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
@@ -114,14 +119,14 @@ ifeq ($(CONFIG_INTEL_CBNT_GENERATE_KM),y)
 ifeq ($(CONFIG_INTEL_CBNT_CBNT_PROV_KM_USE_CFG_FILE),y)
 $(obj)/km_unsigned.bin: $(obj)/km_pub.pem $(CBNT_PROV) $(CBNT_CFG)
 	printf "    CBNT_PROV    creating unsigned KM using config file\n"
-	$(CBNT_PROV) km-gen $@ $< --config=$(CBNT_CFG)
+	$(CBNT_PROV) km-gen-v-2 $@ $< --config=$(CBNT_CFG)
 else
 $(obj)/km_unsigned.bin: $(obj)/km_pub.pem $(obj)/bpm_pub.pem $(CBNT_PROV)
 	printf "    CBNT_PROV    creating unsigned KM\n"
-	$(CBNT_PROV) km-gen $@ $< --revision=$(CONFIG_INTEL_CBNT_KM_REVISION) \
+	$(CBNT_PROV) km-gen-v-2 $@ $< --revision=$(CONFIG_INTEL_CBNT_KM_REVISION) \
 				--svn=$(CONFIG_INTEL_CBNT_KM_SVN) \
 				--id=$(CONFIG_INTEL_CBNT_KM_ID) \
-				--pkhashalg=$(PK_HASH_ALG_SHA256) \
+				--pkhashalg=$(PK_HASH_ALG_SHA384) \
 				--bpmpubkey=$(obj)/bpm_pub.pem \
 				--bpmhashalgo=$(PK_HASH_ALG_SHA256) \
 				--out=$(obj)/km_cfg.json
@@ -153,7 +158,7 @@ else
 cbfs-files-y += key_manifest.bin
 key_manifest.bin-file := $(KM_FILE)
 key_manifest.bin-type := raw
-key_manifest.bin-align := 0x10
+key_manifest.bin-align := 0x40
 
 $(call add_intermediate, add_km_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r COREBOOT -a -n key_manifest.bin -t 11 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<

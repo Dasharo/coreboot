@@ -9,7 +9,7 @@ bootblock-y += fit.c
 cbfs-files-y += intel_fit
 intel_fit-file := fit_table.c:struct
 intel_fit-type := intel_fit
-intel_fit-align := 16
+intel_fit-align := 64
 
 $(call add_intermediate, set_fit_ptr, $(IFITTOOL))
 	@printf "    UPDATE-FIT set FIT pointer to table\n"
