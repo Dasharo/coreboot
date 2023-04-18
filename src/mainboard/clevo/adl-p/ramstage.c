@@ -3,6 +3,7 @@
 #include <drivers/efi/efivars.h>
 #include <ec/system76/ec/commands.h>
 #include <ec/acpi/ec.h>
+#include <ec/system76/ec/acpi.h>
 #include <fmap.h>
 #include <lib.h>
 #include <mainboard/gpio.h>
@@ -267,6 +268,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CpuPcieRpPeerToPeerMode[0] = 1;
 	params->CpuPcieRpMaxPayload[0] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[0] = 1;
+
+	params->LidStatus = system76_ec_get_lid_state();
 }
 
 void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
