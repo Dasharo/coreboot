@@ -2,10 +2,16 @@ config SOC_INTEL_COMMON_BLOCK_TCSS
 	def_bool n
 	select FSPS_USE_MULTI_PHASE_INIT
 	help
-	  Sets up USB2/3 port mapping in TCSS MUX and sets MUX to disconnect state
+	  Sets up USB2/3 port mapping in TCSS MUX.
+
+config ENABLE_TCSS_MUX_DISCONNECT
+	def_bool n
+	help
+	  Set TCSS MUX to disconnect state during boot.
 
 config ENABLE_TCSS_DISPLAY_DETECTION
 	bool "Enable detection of displays over USB Type-C ports with TCSS"
+	select ENABLE_TCSS_MUX_DISCONNECT
 	depends on SOC_INTEL_COMMON_BLOCK_TCSS && RUN_FSP_GOP
 	help
 	  Enable displays to be detected over Type-C ports during boot.
