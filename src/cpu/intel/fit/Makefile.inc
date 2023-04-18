@@ -42,7 +42,7 @@ endif # FIT_ENTRY
 cbfs-files-y += intel_fit_ts
 intel_fit_ts-file := fit_table.c:struct
 intel_fit_ts-type := intel_fit
-intel_fit_ts-align := 16
+intel_fit_ts-align := 64
 
 endif # CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK
 
