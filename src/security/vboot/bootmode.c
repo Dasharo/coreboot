@@ -49,6 +49,22 @@ int __weak clear_recovery_mode_switch(void)
 	return 0;
 }
 
+void vboot_clear_recovery_request(void)
+{
+	struct vb2_context *ctx;
+
+	if (!vboot_recovery_mode_enabled())
+		return;
+
+	ctx = vboot_get_context();
+	vb2api_clear_recovery(ctx);
+	save_vbnv(ctx->nvdata);
+
+	if (CONFIG(VBOOT_VBNV_CMOS_BACKUP_TO_FLASH))
+		save_vbnv_flash(ctx->nvdata);
+}
+
+
 static void do_clear_recovery_mode_switch(void *unused)
 {
 	if (vboot_get_context()->flags & VB2_CONTEXT_FORCE_RECOVERY_MODE)
