@@ -284,6 +284,15 @@ static const struct slot_irq_constraints irq_constraints_pch_s[] = {
 		},
 	},
 	{
+		.slot = PCH_DEV_SLOT_SIO0,
+		.fns = {
+			DIRECT_IRQ(PCH_DEVFN_I2C6),
+			DIRECT_IRQ(PCH_DEVFN_I2C7),
+			ANY_PIRQ(PCH_DEVFN_THC0),
+			ANY_PIRQ(PCH_DEVFN_THC1),
+		},
+	},
+	{
 		.slot = PCH_DEV_SLOT_SIO6,
 		.fns = {
 			DIRECT_IRQ(PCH_DEVFN_UART3),
