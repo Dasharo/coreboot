@@ -5,6 +5,7 @@
 #include <intelblocks/systemagent.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/uart.h>
+#include <security/intel/cbnt/cbnt.h>
 #include <soc/bootblock.h>
 
 asmlinkage void bootblock_c_entry(uint64_t base_timestamp)
@@ -30,4 +31,7 @@ void bootblock_soc_init(void)
 
 	/* Programming TCO_BASE_ADDRESS and TCO Timer Halt */
 	tco_configure();
+
+	if (CONFIG(INTEL_CBNT_LOGGING))
+		intel_cbnt_log_registers();
 }
