@@ -190,6 +190,8 @@ regions-for-file = $(subst $(spc),$(comma),$(sort \
 		intel_fit \
 		intel_fit_ts \
 		fspt.bin \
+		boot_policy_manifest.bin \
+		key_manifest.bin \
 		$(call strip_quotes,$(CONFIG_RO_REGION_ONLY)) \
 		,$(1)),COREBOOT,\
 		$(if $(filter \
