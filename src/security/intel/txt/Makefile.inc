@@ -32,6 +32,11 @@ $(call add_intermediate, add_acm_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r COREBOOT -a -n $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM) -t 2 \
 		-s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
 
+$(call add_intermediate, add_txt_policy_fit, $(IFITTOOL) set_fit_ptr)
+	$(CBFSTOOL) $< add-int -i 0 -n txt_policy_fit -r COREBOOT
+	$(IFITTOOL) -r COREBOOT -a -n txt_policy_fit -t 10 \
+		-s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
+
 # CBnT does not use FIT for IBB
 ifneq ($(CONFIG_INTEL_CBNT_SUPPORT),y)
 # Initial BootBlock files
