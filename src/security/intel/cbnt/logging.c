@@ -41,12 +41,20 @@ static const char *const tpm_type[] = {
 
 union cbnt_bootstatus {
 	struct {
-		uint64_t : 59;
+		uint64_t : 30;
+		uint64_t txt_startup_success : 1;
+		uint64_t btg_startup_success : 1;
+		uint64_t block_boot : 1;
+		uint64_t pfr_startup_success : 1;
+		uint64_t : 13;
+		uint64_t memory_pd_executed : 1;
+		uint64_t btg_failed : 1;
+		uint64_t : 10;
 		uint64_t bios_trusted : 1;
 		uint64_t txt_dis_pol : 1;
 		uint64_t btg_startup_err : 1;
 		uint64_t txt_err : 1;
-		uint64_t type7 : 1;
+		uint64_t sacm_success : 1;
 	};
 	uint64_t raw;
 };
@@ -121,25 +129,31 @@ void intel_cbnt_log_registers(void)
 {
 	const union sacm_info acm_info = { .msr = rdmsr(MSR_BOOT_GUARD_SACM_INFO) };
 	LOG("SACM INFO MSR (0x13A) raw: 0x%016llx\n", acm_info.raw);
-	LOG("  NEM status:              %u\n", acm_info.nem_enabled);
-	LOG("  TPM type:                %s\n", tpm_type[acm_info.tpm_type]);
-	LOG("  TPM success:             %u\n", acm_info.tpm_success);
-	LOG("  FACB:                    %u\n", acm_info.facb);
-	LOG("  measured boot:           %u\n", acm_info.measured_boot);
-	LOG("  verified boot:           %u\n", acm_info.verified_boot);
-	LOG("  revoked:                 %u\n", acm_info.revoked);
-	LOG("  BtG capable:             %u\n", acm_info.btg_cap);
-	LOG("  TXT capable:             %u\n", acm_info.txt_cap);
+	LOG("  NEM status:                 %u\n", acm_info.nem_enabled);
+	LOG("  TPM type:                   %s\n", tpm_type[acm_info.tpm_type]);
+	LOG("  TPM success:                %u\n", acm_info.tpm_success);
+	LOG("  FACB:                       %u\n", acm_info.facb);
+	LOG("  measured boot:              %u\n", acm_info.measured_boot);
+	LOG("  verified boot:              %u\n", acm_info.verified_boot);
+	LOG("  revoked:                    %u\n", acm_info.revoked);
+	LOG("  BtG capable:                %u\n", acm_info.btg_cap);
+	LOG("  Server TXT capable:         %u\n", acm_info.txt_cap);
 
 	const union cbnt_bootstatus btsts = {
 		.raw = read64p(CBNT_BOOTSTATUS),
 	};
 	LOG("BOOTSTATUS (0xA0) raw: 0x%016llx\n", btsts.raw);
-	LOG("  Bios trusted:            %u\n", btsts.bios_trusted);
-	LOG("  TXT disabled by policy:  %u\n", btsts.txt_dis_pol);
-	LOG("  Bootguard startup error: %u\n", btsts.btg_startup_err);
-	LOG("  TXT ucode or ACM error:  %u\n", btsts.txt_err);
-	LOG("  TXT measurement type 7:  %u\n", btsts.type7);
+	LOG("  TXT startup success:        %u\n", btsts.txt_startup_success);
+	LOG("  BtG startup success:        %u\n", btsts.btg_startup_success);
+	LOG("  Block boot enabled:         %u\n", btsts.block_boot);
+	LOG("  PFR startup success:        %u\n", btsts.pfr_startup_success);
+	LOG("  Memory power down executed: %u\n", btsts.memory_pd_executed);
+	LOG("  BtG thread sync failed:     %u\n", btsts.btg_failed);
+	LOG("  Bios trusted:               %u\n", btsts.bios_trusted);
+	LOG("  TXT disabled by policy:     %u\n", btsts.txt_dis_pol);
+	LOG("  Bootguard startup error:    %u\n", btsts.btg_startup_err);
+	LOG("  TXT ucode or ACM error:     %u\n", btsts.txt_err);
+	LOG("  S-ACM success:              %u\n", btsts.sacm_success);
 
 	const union cbnt_errorcode err = {
 		.raw = read32p(CBNT_ERRORCODE),
