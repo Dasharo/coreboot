@@ -92,6 +92,10 @@ endif
 ifeq ($(CONFIG_EDK2_CBMEM_LOGGING),y)
 BUILD_STR += -D USE_CBMEM_FOR_CONSOLE=TRUE
 endif
+# SYSTEM76_EC_LOGGING		= FALSE
+ifeq ($(CONFIG_EDK2_SYSTEM76_EC_LOGGING),y)
+BUILD_STR += -D SYSTEM76_EC_LOGGING=TRUE
+endif
 # SD_MMC_TIMEOUT		= 1000000
 ifneq ($(CONFIG_EDK2_SD_MMC_TIMEOUT),)
 BUILD_STR += -D SD_MMC_TIMEOUT=$(shell echo $$(( $(CONFIG_EDK2_SD_MMC_TIMEOUT) * 1000)) )
@@ -209,7 +213,7 @@ $(EDK2_PATH): $(WORKSPACE) $(EDK2_PLATFORMS_PATH)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd  $(EDK2_PATH); \
-		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git reset --hard HEAD > /dev/null 2>&1 || true; \
 		git clean -df > /dev/null 2>&1 || true; \
 		echo "    Fetching new commits from $(CONFIG_EDK2_REPOSITORY)"; \
 		git fetch origin 2>/dev/null; \

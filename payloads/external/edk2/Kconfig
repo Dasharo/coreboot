@@ -163,6 +163,11 @@ config EDK2_CBMEM_LOGGING
 	  this option, especially if using a debug (vs release) build.
 	  Selecting this option will increase the payload size in CBFS by 0x10000.
 
+config EDK2_SYSTEM76_EC_LOGGING
+	bool "Enable edk2 logging to System76 EC"
+	help
+	  Select this option if you want to enable edk2 logging to S76 EC.
+
 config EDK2_FOLLOW_BGRT_SPEC
 	bool "Center logo 38.2% from the top of screen"
 	default n

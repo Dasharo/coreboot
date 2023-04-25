@@ -12,6 +12,7 @@
 
 #define REG_CMD 0
 #define REG_RESULT 1
+#define REG_DATA 2
 
 // When command register is 0, command is complete
 #define CMD_FINISHED 0
@@ -78,4 +79,38 @@ uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
 
 	return (system76_ec_read(REG_RESULT));
+}
+
+uint8_t system76_ec_read_version(uint8_t *data)
+{
+	int i;
+	uint8_t result;
+
+	if (!data)
+		return -1;
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	// Write command register, which starts command
+	system76_ec_write(REG_CMD, CMD_VERSION);
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	result = system76_ec_read(REG_RESULT);
+
+	if (result != 0)
+		return result;
+
+	// Read data bytes, index should be valid due to length test above
+	for (i = 0; i < (SYSTEM76_EC_SIZE - REG_DATA); i++) {
+		data[i] = system76_ec_read(REG_DATA + i);
+		if (data[i] == '\0')
+			break;
+	}
+
+	return result;
 }

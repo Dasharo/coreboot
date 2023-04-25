@@ -284,6 +284,9 @@ void soc_lpi_get_constraints(void *unused)
 		if (min_sleep_state == NONE)
 			continue;
 
+		if (dev->path.type == DEVICE_PATH_PCI && !dev->enabled)
+			continue;
+
 		acpigen_write_package(3);
 		{
 			char path[32] = { 0 };
@@ -445,6 +448,8 @@ void soc_fill_gnvs(struct global_nvs *gnvs)
 	/* Set USB2/USB3 wake enable bitmaps. */
 	gnvs->u2we = config->usb2_wake_enable_bitmap;
 	gnvs->u3we = config->usb3_wake_enable_bitmap;
+
+	gnvs->s0ix = config->s0ix_enable;
 }
 
 int soc_madt_sci_irq_polarity(int sci)

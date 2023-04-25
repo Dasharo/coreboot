@@ -53,3 +53,4 @@
 #define CMD_PRINT_REG_DATA 4
 
 uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data);
+uint8_t system76_ec_read_version(uint8_t *data);

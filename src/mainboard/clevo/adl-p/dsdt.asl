@@ -22,8 +22,6 @@ DefinitionBlock(
 		#include <soc/intel/alderlake/acpi/tcss.asl>
 	}
 
-	#include <southbridge/intel/common/acpi/sleepstates.asl>
-
 	Scope (\_SB.PCI0.LPCB)
 	{
 		#include <drivers/pc80/pc/ps2_controller.asl>

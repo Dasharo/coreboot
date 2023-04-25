@@ -7,9 +7,11 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/pci.h>
+#include <drivers/efi/efivars.h>
 #include <intelblocks/pmc.h>
 #include <intelblocks/pmc_ipc.h>
 #include <intelblocks/pcie_rp.h>
+#include <smmstore.h>
 #include <soc/iomap.h>
 #include "chip.h"
 
@@ -46,6 +48,12 @@
 
 /* ACPI path to the mutex that protects accesses to PMC ModPhy power gating registers */
 #define RTD3_MUTEX_PATH "\\_SB.PCI0.R3MX"
+
+#define SLEEP_TYPE_OPTION_S0IX	0
+#define SLEEP_TYPE_OPTION_S3	1
+
+#define SLEEP_TYPE_OPTION_DEFAULT SLEEP_TYPE_OPTION_S0IX
+
 
 enum modphy_pg_state {
 	PG_DISABLE = 0,
@@ -325,6 +333,32 @@ static int get_pcie_rp_pmc_idx(enum pcie_rp_type rp_type, const struct device *d
 	return idx;
 }
 
+static uint8_t get_sleep_type_option(void)
+{
+	uint8_t sleep_type = SLEEP_TYPE_OPTION_DEFAULT;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	size = sizeof(sleep_type);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "SleepType",
+				&sleep_type, &size);
+	if (ret != CB_SUCCESS)
+		printk(BIOS_DEBUG, "Failed to read sleep type from EFI vars, using S0ix\n");
+efi_err:
+#endif
+	return sleep_type;
+}
+
 static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 {
 	static bool mutex_created = false;
@@ -475,7 +509,11 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_write_device(acpi_device_name(dev));
 		acpigen_write_ADR(0);
 		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
-		acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
+
+		if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
+			acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_HOT);
+		else
+			acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
 
 		dsd = acpi_dp_new_table("_DSD");
 		pkg = acpi_dp_new_table(PCIE_RTD3_STORAGE_UUID);
@@ -486,6 +524,12 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_pop_len(); /* Device */
 
 		printk(BIOS_INFO, "%s: Added StorageD3Enable property\n", scope);
+	} else {
+		/* Write the device to make PEP happy */
+		acpigen_write_device(acpi_device_name(dev));
+		acpigen_write_ADR(0);
+		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
+		acpigen_pop_len(); /* Device */
 	}
 
 	acpigen_pop_len(); /* Scope */
