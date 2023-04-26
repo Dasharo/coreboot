@@ -12,6 +12,7 @@
 #include <intelblocks/vtd.h>
 #include <intelbasecode/debug_feature.h>
 #include <memory_info.h>
+#include <security/intel/cbnt/cbnt.h>
 #include <soc/intel/common/smbios.h>
 #include <soc/iomap.h>
 #include <soc/pm.h>
@@ -128,6 +129,9 @@ void mainboard_romstage_entry(void)
 {
 	bool s3wake;
 	struct chipset_power_state *ps = pmc_get_power_state();
+
+	if (CONFIG(INTEL_CBNT_LOGGING))
+		intel_cbnt_log_registers();
 
 	/* Program MCHBAR, DMIBAR, GDXBAR and EDRAMBAR */
 	systemagent_early_init();
