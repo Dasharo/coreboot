@@ -51,7 +51,6 @@ int vboot_save_hash(void *digest, size_t digest_size);
  */
 int vboot_retrieve_hash(void *digest, size_t digest_size);
 
-
 /* ============================= VERSTAGE ================================== */
 /*
  * Main logic for verified boot. verstage_main() is just the core vboot logic.

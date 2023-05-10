@@ -187,7 +187,8 @@ static bool cbfs_file_hash_mismatch(const void *buffer, size_t size,
 				hash = &calculated_hash;
 		}
 
-		if (tspi_cbfs_measurement(mdata->h.filename, be32toh(mdata->h.type), hash))
+		if (!hash ||
+		    tspi_cbfs_measurement(mdata->h.filename, be32toh(mdata->h.type), hash))
 			ERROR("failed to measure '%s' into TCPA log\n", mdata->h.filename);
 			/* We intentionally continue to boot on measurement errors. */
 	}
@@ -491,7 +492,7 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 	 * Bootblock will never have its hash due to how CBFS_VERIFICATION works.
 	 * Skip its verification to let CRTM initialization pass.
 	 */
-	if (*type == CBFS_TYPE_BOOTBLOCK)
+	if (type && (*type == CBFS_TYPE_BOOTBLOCK))
 		skip_verification = true;
 
 	void *ret = do_alloc(&mdata, &rdev, allocator, arg, size_out, skip_verification);

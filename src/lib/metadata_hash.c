@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <metadata_hash.h>
+#include <security/vboot/misc.h>
 #include <symbols.h>
 
 #if !CONFIG(COMPRESS_BOOTBLOCK) || ENV_DECOMPRESSOR

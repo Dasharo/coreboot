@@ -7,6 +7,7 @@
 #include <vb2_api.h>
 #include <security/tpm/tss.h>
 #include <security/vboot/mrc_cache_hash_tpm.h>
+#include <security/vboot/misc.h>
 #include <console/console.h>
 #include <string.h>
 

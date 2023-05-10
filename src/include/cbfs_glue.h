@@ -5,6 +5,7 @@
 
 #include <commonlib/region.h>
 #include <console/console.h>
+#include <security/vboot/misc.h>
 #include <rules.h>
 #include <security/vboot/misc.h>
 
