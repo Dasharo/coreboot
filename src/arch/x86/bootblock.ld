@@ -49,6 +49,11 @@ SECTIONS {
 
 	PROGRAM_SZ = SIZEOF(.text) + SIZEOF(.data) + CONFIG_X86_BOOTBLOCK_EXTRA_PROGRAM_SZ;
 
+	. = _etext;
+	.msi_id (.): {
+		KEEP(*(.msi_id));
+	}
+
 	. = EARLY_INIT_BASE;
 	.init (.) : {
 		*(.init._start);
