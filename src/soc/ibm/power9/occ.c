@@ -745,9 +745,9 @@ static void add_sensor_id(uint8_t *data, uint16_t *index, uint32_t sensor_id)
  * Sensors IDs listed here are valid for Talos II. Values come from talos.xml
  * and may or may not be different for other boards.
  */
-#define PROC_CALLOUT_ID			0x08
-#define CORE0_TEMP_ID			0x5B
-#define CORE0_FREQ_ID			0xA0
+#define PROC0_CALLOUT_ID		0x08
+#define PROC0_CORE0_TEMP_ID		0x5B
+#define PROC0_CORE0_FREQ_ID		0xA0
 #define BACKPLANE_CALLOUT_ID		0x8C
 #define APSS_CALLOUT_ID			0x93
 /* Same as Backplane Callout ID */
@@ -785,15 +785,17 @@ static void get_sys_cfg_msg_data(const struct occ_cfg_inputs *inputs,
 	data[index++] = system_type;
 
 	/* Processor Callout Sensor ID */
-	add_sensor_id(data, &index, PROC_CALLOUT_ID);
+	add_sensor_id(data, &index, PROC0_CALLOUT_ID + inputs->chip);
 
 	/* Next 24*2 IDs are for core sensors */
 	for (i = 0; i < MAX_CORES_PER_CHIP; ++i) {
 		/* Core Temp Sensor ID */
-		add_sensor_id(data, &index, CORE0_TEMP_ID + i);
+		add_sensor_id(data, &index,
+			      PROC0_CORE0_TEMP_ID + inputs->chip * MAX_CORES_PER_CHIP + i);
 
 		/* Core Frequency Sensor ID */
-		add_sensor_id(data, &index, CORE0_FREQ_ID + i);
+		add_sensor_id(data, &index,
+			      PROC0_CORE0_FREQ_ID + inputs->chip * MAX_CORES_PER_CHIP + i);
 	}
 
 	/* Backplane Callout Sensor ID */
