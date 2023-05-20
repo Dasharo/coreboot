@@ -15,7 +15,7 @@ config SKIBOOT_GIT_REPO
 config SKIBOOT_REVISION
 	string "Revision of skiboot payload"
 	default "d93ddbd39b4eeac0bc11dacbdadea76df2996c13" if BOARD_EMULATION_QEMU_POWER9
-	default "fa060c2c98b6eefde06a8bd78d1d8096c2bede37" if BOARD_RAPTOR_CS_TALOS_2
+	default "1b14dd0b695b6113805186faad9b2def1d1bfeca" if BOARD_RAPTOR_CS_TALOS_2
 	help
 	  Revision, that skiboot repository will be checked out to, before building
 	  an image.
