@@ -1223,8 +1223,13 @@ void activate_occ(uint8_t chips, struct homer_st *homers)
 	/* Switch for OCC to active state (sent only to master OCC) */
 	set_occ_active_state(/*chip=*/0, &homers[0]);
 
-	/* TODO: Hostboot sets active sensors for all OCCs here, so BMC can start
-	   communication with OCCs. */
+	/*
+	 * Hostboot sets active sensors for all OCCs via IPMI here, so BMC can
+	 * start communication with them.  However, in practice that seems to
+	 * make no difference and Hostboot seems to have a bug in that it uses
+	 * wrong operation code when it tries to change sensor's state likely
+	 * turning the interaction into a no-op.
+	 */
 }
 
 void pm_occ_fir_init(uint8_t chip)
