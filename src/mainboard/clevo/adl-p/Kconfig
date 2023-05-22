@@ -118,4 +118,7 @@ config TPM_PIRQ
 config SOC_INTEL_CSE_SEND_EOP_EARLY
 	default n
 
+config VBOOT_FWID_VERSION
+	default "\$(CONFIG_LOCALVERSION)"
+
 endif

@@ -125,4 +125,7 @@ config SEABIOS_PS2_TIMEOUT
 config USE_PM_ACPI_TIMER
 	default n
 
+config VBOOT_FWID_VERSION
+	default "\$(CONFIG_LOCALVERSION)"
+
 endif
