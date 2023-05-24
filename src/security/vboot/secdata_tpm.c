@@ -116,6 +116,17 @@ static const TPMA_NV rw_space_attributes = {
 	.TPMA_NV_WRITE_STCLEAR = 1,
 };
 
+static const TPMA_NV rw_auth_space_attributes = {
+	.TPMA_NV_AUTHWRITE = 1,
+	.TPMA_NV_AUTHREAD = 1,
+	.TPMA_NV_NO_DA = 1,
+	.TPMA_NV_PPREAD = 1,
+	.TPMA_NV_PPWRITE = 1,
+	.TPMA_NV_PLATFORMCREATE = 1,
+	.TPMA_NV_WRITE_STCLEAR = 1,
+	.TPMA_NV_POLICY_DELETE = 1,
+};
+
 static const TPMA_NV fwmp_attr = {
 	.TPMA_NV_PLATFORMCREATE = 1,
 	.TPMA_NV_OWNERWRITE = 1,
@@ -342,6 +353,22 @@ static uint32_t setup_zte_spaces(void)
 	return rv;
 }
 
+/*
+ * Set up enterprise rollback space.
+ *
+ * This space is not used by firmware but needs to survive owner clear. Thus, it
+ * needs to be created here.
+ */
+static uint32_t enterprise_rollback_create_space(void)
+{
+	uint8_t rollback_space_default[32] = {0};
+
+	return setup_space("Enterprise Rollback Space",
+			   ENT_ROLLBACK_SPACE_INDEX, rollback_space_default,
+			   sizeof(rollback_space_default), rw_auth_space_attributes,
+			   unsatisfiable_policy, sizeof(unsatisfiable_policy));
+}
+
 static uint32_t setup_widevine_counter_spaces(void)
 {
 	uint32_t index, rv;
@@ -386,6 +413,14 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	 */
 	if (CONFIG(CHROMEOS) && !(CONFIG(TPM_GOOGLE)))
 		RETURN_ON_FAILURE(setup_zte_spaces());
+
+	/*
+	 * On TPM 2.0, create a space that survives TPM clear. This allows to
+	 * securely lock data during enterprise rollback by binding to this
+	 * space's value.
+	 */
+	if (CONFIG(CHROMEOS))
+		RETURN_ON_FAILURE(enterprise_rollback_create_space());
 
 	/* Define widevine counter space. No need to increment/write to the secure counters
 	   and are expected to be incremented during the first use. */
@@ -488,6 +523,7 @@ static uint32_t _factory_initialize_tpm(struct vb2_context *ctx)
 	TPM_PERMANENT_FLAGS pflags;
 	uint32_t result;
 
+	vb2api_secdata_firmware_create(ctx);
 	vb2api_secdata_kernel_create_v0(ctx);
 
 	result = tlcl_get_permanent_flags(&pflags);
@@ -557,12 +593,6 @@ uint32_t antirollback_lock_space_firmware(void)
 static uint32_t factory_initialize_tpm(struct vb2_context *ctx)
 {
 	uint32_t result;
-
-	/*
-	 * Set initial values of secdata_firmware space.
-	 * kernel space is created in _factory_initialize_tpm().
-	 */
-	vb2api_secdata_firmware_create(ctx);
 
 	VBDEBUG("TPM: factory initialization\n");
 
