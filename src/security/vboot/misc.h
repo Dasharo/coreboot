@@ -17,6 +17,16 @@ struct vb2_context *vboot_get_context(void);
  */
 static inline int vboot_is_firmware_slot_a(struct vb2_context *ctx)
 {
+	/*
+	 * FIXME: is this even ok? vboot always assumes 2 RW partitions so
+	 * recovering RW_A does not always immediately restore the normal boot
+	 * mode if FMAP does not have RW_B partition. It also results in
+	 * pointless additional reboot cycles. Simplify the flow to always
+	 * request RW_A resource, if RW_B is not enabled.
+	 */
+	if (!CONFIG(VBOOT_SLOTS_RW_AB))
+		return 1;
+
 	return !(ctx->flags & VB2_CONTEXT_FW_SLOT_B);
 }
 
