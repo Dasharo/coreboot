@@ -5,7 +5,6 @@
 #include <security/vboot/vboot_common.h>
 #include <vb2_api.h>
 #include <security/tpm/tss.h>
-#include <security/vboot/misc.h>
 #include <security/vboot/mrc_cache_hash_tpm.h>
 #include <console/console.h>
 #include <string.h>

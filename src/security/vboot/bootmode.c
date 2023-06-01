@@ -22,6 +22,10 @@ void vboot_clear_recovery_request(void)
 {
 	struct vb2_context *ctx;
 
+	/* No point in clearing the recovery request if we are not in recovery. */
+	if (!vboot_recovery_mode_enabled())
+		return;
+
 	ctx = vboot_get_context();
 	vb2api_clear_recovery(ctx);
 	save_vbnv(ctx->nvdata);
