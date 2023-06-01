@@ -266,8 +266,7 @@ uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 
 	digest_len = vb2_digest_size(TPM_MEASURE_ALGO);
 	assert(digest_len <= sizeof(digest));
-	if (vb2_digest_init(&ctx, vboot_hwcrypto_allowed(), TPM_MEASURE_ALGO,
-			    region_device_sz(rdev))) {
+	if (vb2_digest_init(&ctx, TPM_MEASURE_ALGO)) {
 		printk(BIOS_ERR, "TPM: Error initializing hash.\n");
 		return TPM_E_HASH_ERROR;
 	}
