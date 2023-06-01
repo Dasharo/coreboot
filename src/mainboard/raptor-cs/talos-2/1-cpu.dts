@@ -392,6 +392,7 @@
 				#address-cells = <0x01>;
 				compatible = "ibm,opal-i2c\0ibm,power8-i2c-port\0ibm,power9-i2c-port";
 				bus-frequency = <0x61a80>;
+				timeout-ms = <2000>;
 
 				eeprom@50 {
 					reg = <0x50>;
