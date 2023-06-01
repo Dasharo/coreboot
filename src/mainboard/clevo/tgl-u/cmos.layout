@@ -31,7 +31,7 @@ entries
 
 # embedded controller settings
 1024	8	h	0	kbl_brightness
-1040	32	h	0	kbl_color
+1032	32	h	0	kbl_color
 
 enumerations
 
