@@ -174,6 +174,12 @@ Device (\_SB.PCI0.LPCB.EC0)
 	{
 		Debug = "EC: Suspend Button"
 		Notify (SLPB, 0x80)
+		/*
+		 * Windows does not immediately execute S0ix entry notification
+		 * and the KBD backlight is up for a dozen of seconds while the
+		 * laptop is already sleeping, so disable KBD backlight here.
+		 */
+		^^^^S76D.EKBL (0)
 	}
 
 	Method (_Q16, 0, NotSerialized) // AC Detect
