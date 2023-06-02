@@ -97,9 +97,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 
 			// Reset System76 Device
 			^^^^S76D.RSET()
-
-			// Enable keyboard backlight
-			^^^^S76D.EKBL (1)
 		}
 	}
 
