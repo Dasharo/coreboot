@@ -39,6 +39,7 @@ Method (MS0X, 1, Serialized)
 	If (Arg0 == 1) {
 		/* HACK: Inform EC to apply PMC hack for S0ix issue */
 		\_SB.PCI0.LPCB.EC0.PTS (0)
+		\_SB.S76D.EKBL (0)
 		/* S0ix Entry */
 		PGPM (MISCCFG_GPIO_PM_CONFIG_BITS)
 	} Else {
