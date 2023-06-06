@@ -14,7 +14,7 @@ unexport $(COREBOOT_EXPORTS)
 all: $(skiboot_elf)
 
 $(skiboot_elf): | $(skiboot_dir) $(build_dir)
-	+$(MAKE) -C $(skiboot_dir) CROSS="$(skiboot_cross)"
+	+$(MAKE) -C $(skiboot_dir) CROSS="$(skiboot_cross)" skiboot.elf
 	cp $(skiboot_dir)/skiboot.elf $@
 	# skiboot is always built with debug information due to unconditional -ggdb
 	$(skiboot_cross)strip $@
