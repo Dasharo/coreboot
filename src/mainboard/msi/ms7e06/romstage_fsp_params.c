@@ -88,9 +88,9 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 	memupd->FspmConfig.OcLock = 0;
 
-	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4))
+	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4))
 		memcfg_init(memupd, &ddr4_mem_config, &dimm_module_spd_info, false);
-	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI))
+	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI))
 		memcfg_init(memupd, &ddr5_mem_config, &dimm_module_spd_info, false);
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));

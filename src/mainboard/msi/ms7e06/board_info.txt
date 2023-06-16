@@ -1,5 +1,5 @@
 Category: desktop
-Board URL: https://www.msi.com/Motherboard/PRO-Z690-A-WIFI-DDR4
+Board URL: https://www.msi.com/Motherboard/PRO-Z790-P-WIFI-DDR4
 ROM IC: MX25U25673G
 ROM package: WSON-8
 ROM socketed: no

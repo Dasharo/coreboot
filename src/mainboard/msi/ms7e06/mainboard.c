@@ -78,23 +78,23 @@ smbios_wakeup_type smbios_system_wakeup_type(void)
 
 const char *smbios_system_product_name(void)
 {
-	return "MS-7D25";
+	return "MS-7E06";
 }
 
 const char *smbios_mainboard_product_name(void)
 {
-	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4)) {
+	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4)) {
 		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z690-A WIFI DDR4(MS-7D25)";
+			return "PRO Z790-P WIFI DDR4(MS-7E06)";
 		else
-			return "PRO Z690-A DDR4(MS-7D25)";
+			return "PRO Z790-P DDR4(MS-7E06)";
 	}
 
-	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI)) {
+	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI)) {
 		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z690-A WIFI (MS-7D25)";
+			return "PRO Z790-P WIFI (MS-7E06)";
 		else
-			return "PRO Z690-A (MS-7D25)";
+			return "PRO Z790-P (MS-7E06)";
 	}
 
 	return CONFIG_MAINBOARD_PART_NUMBER;

@@ -104,7 +104,7 @@ chip soc/intel/alderlake
 	}"
 
 	device domain 0 on
-		subsystemid 0x1462 0x7d25 inherit
+		subsystemid 0x1462 0x7e06 inherit
 		device ref pcie5_0 on
 			register "cpu_pcie_rp[CPU_RP(2)]" = "{
 				.clk_src = 0,
@@ -177,7 +177,7 @@ chip soc/intel/alderlake
 				.clk_req = 15,
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
-			smbios_slot_desc "SlotTypePciExpressGen3X16" "SlotLengthLong"
+			smbios_slot_desc "SlotTypePciExpressGen4x16" "SlotLengthLong"
 					 "PCI_E3" "SlotDataBusWidth4X"
 		end
 
