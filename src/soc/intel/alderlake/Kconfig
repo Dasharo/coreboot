@@ -42,6 +42,7 @@ config SOC_INTEL_ALDERLAKE_PCH_S
 
 config SOC_INTEL_RAPTORLAKE_PCH_S
 	bool
+	select SOC_INTEL_ALDERLAKE
 	select SOC_INTEL_RAPTORLAKE
 	select HAVE_INTEL_FSP_REPO if FSP_TYPE_IOT
 	select PLATFORM_USES_FSP2_3
@@ -388,13 +389,13 @@ config FSP_TYPE_IOT
 
 config FSP_HEADER_PATH
 	string "Location of FSP headers"
-	default "src/vendorcode/intel/fsp/fsp2_0/alderlake_n/" if SOC_INTEL_ALDERLAKE_PCH_N
-	default "src/vendorcode/intel/fsp/fsp2_0/raptorlake/" if SOC_INTEL_RAPTORLAKE
 	default "3rdparty/fsp/AlderLakeFspBinPkg/IoT/AlderLakeP/Include/" if SOC_INTEL_ALDERLAKE_PCH_P && FSP_TYPE_IOT
 	default "3rdparty/fsp/AlderLakeFspBinPkg/IoT/AlderLakeS/Include/" if SOC_INTEL_ALDERLAKE_PCH_S && FSP_TYPE_IOT
 	default "3rdparty/fsp/RaptorLakeFspBinPkg/IoT/RaptorLakeS/Include/" if SOC_INTEL_RAPTORLAKE_PCH_S && FSP_TYPE_IOT
 	default "3rdparty/fsp/AlderLakeFspBinPkg/Client/AlderLakeP/Include/" if SOC_INTEL_ALDERLAKE_PCH_P
 	default "3rdparty/fsp/AlderLakeFspBinPkg/Client/AlderLakeS/Include/" if SOC_INTEL_ALDERLAKE_PCH_S
+	default "src/vendorcode/intel/fsp/fsp2_0/alderlake_n/" if SOC_INTEL_ALDERLAKE_PCH_N
+	default "src/vendorcode/intel/fsp/fsp2_0/raptorlake/" if SOC_INTEL_RAPTORLAKE
 	default "src/vendorcode/intel/fsp/fsp2_0/alderlake/"
 
 config FSP_FD_PATH
