@@ -1,0 +1,82 @@
+config BOARD_MSI_Z690_A_PRO_WIFI_DDR4
+	select BOARD_MSI_MS7D25
+
+config BOARD_MSI_Z690_A_PRO_WIFI
+	select BOARD_MSI_MS7D25
+
+config BOARD_MSI_MS7D25
+	def_bool n
+	select SOC_INTEL_ALDERLAKE_PCH_S
+	select BOARD_ROMSIZE_KB_32768
+	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
+	select SUPERIO_NUVOTON_NCT6687D
+	select DRIVERS_UART_8250IO
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select INTEL_GMA_HAVE_VBT
+	select CRB_TPM
+	select HAVE_INTEL_PTT
+
+if BOARD_MSI_MS7D25
+
+config MAINBOARD_DIR
+	default "msi/ms7d25"
+
+config MAINBOARD_PART_NUMBER
+	default "PRO Z690-A WIFI DDR4(MS-7D25)" if BOARD_MSI_Z690_A_PRO_WIFI_DDR4
+	default "PRO Z690-A WIFI (MS-7D25)" if BOARD_MSI_Z690_A_PRO_WIFI
+
+config MAINBOARD_VENDOR
+	string
+	default "Micro-Star International Co., Ltd."
+
+config MAINBOARD_FAMILY
+	string
+	default "Default string"
+
+config DIMM_SPD_SIZE
+	default 512
+
+config UART_FOR_CONSOLE
+	int
+	default 0
+
+config USE_PM_ACPI_TIMER
+	bool
+	default n
+
+config USE_LEGACY_8254_TIMER
+	bool
+	default y
+
+config CBFS_SIZE
+	hex
+	default 0x1000000
+
+config VBOOT
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select VBOOT_NO_BOARD_SUPPORT
+	select HAS_RECOVERY_MRC_CACHE
+	select VBOOT_NO_TPM
+
+config VBOOT_SLOTS_RW_AB
+	default y if VBOOT
+
+config SOC_INTEL_CSE_SEND_EOP_EARLY
+	default n
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
+
+# gen_test_hwid.sh script doesn't like parentheses in the MAINBOARD_PART_NUMBER
+# Override the GBB_HWID
+config GBB_HWID
+	string
+	default "MSI_MS7D25"
+
+endif
