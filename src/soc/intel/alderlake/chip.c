@@ -80,7 +80,7 @@ const char *soc_acpi_name(const struct device *dev)
 			return "MCHC";
 		else
 			return NULL;
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 	case SA_DEVFN_CPU_PCIE1_0:	return "PEG1";
 	case SA_DEVFN_CPU_PCIE1_1:	return "PEG2";
 	case SA_DEVFN_CPU_PCIE1_2:	return "PEG3";
@@ -136,7 +136,7 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCH_DEVFN_PCIE22:		return "RP22";
 	case PCH_DEVFN_PCIE23:		return "RP23";
 	case PCH_DEVFN_PCIE24:		return "RP24";
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 	/* Avoid conflicts with PCH-N eMMC */
 	case PCH_DEVFN_PCIE25:		return "RP25";
 	case PCH_DEVFN_PCIE26:		return "RP26";

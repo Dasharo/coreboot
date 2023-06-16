@@ -17,7 +17,7 @@ Scope(\_SB) {
 		{
 			Memory32Fixed (ReadWrite, 0, 0, COM0)
 			Memory32Fixed (ReadWrite, 0, 0, COM1)
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 			Memory32Fixed (ReadWrite, 0, 0, COM3)
 #endif
 			Memory32Fixed (ReadWrite, 0, 0, COM4)
@@ -39,7 +39,7 @@ Scope(\_SB) {
 			BAS1 = ^^PCI0.PCRB (PID_GPIOCOM1)
 			LEN1 = GPIO_BASE_SIZE
 
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 			/* GPIO Community 3 */
 			CreateDWordField (^RBUF, ^COM3._BAS, BAS3)
 			CreateDWordField (^RBUF, ^COM3._LEN, LEN3)

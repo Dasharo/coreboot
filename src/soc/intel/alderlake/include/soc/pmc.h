@@ -110,7 +110,7 @@ extern struct device_operations pmc_ops;
 #define  GPE0_DWX_MASK			0xf
 #define  GPE0_DW_SHIFT(x)		(4*(x))
 
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 #define PMC_GPP_I		0x0
 #define PMC_GPP_R		0x1
 #define PMC_GPP_J		0x2

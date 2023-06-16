@@ -33,7 +33,7 @@ const struct pcie_rp_group *get_pch_pcie_rp_table(void)
 	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_M))
 		return pch_m_rp_groups;
 
-	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S))
+	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S))
 		return pch_s_rp_groups;
 
 	return pch_lp_rp_groups; /* Valid for PCH-P and PCH-N */
@@ -75,7 +75,7 @@ const struct pcie_rp_group *get_cpu_pcie_rp_table(void)
 	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_N))
 		return cpu_n_rp_groups;
 
-	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S))
+	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S))
 		return cpu_s_rp_groups;
 
 	return cpu_rp_groups;

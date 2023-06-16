@@ -40,6 +40,14 @@ config SOC_INTEL_ALDERLAKE_PCH_S
 	help
 	  Choose this option if your mainboard has a PCH-S chipset.
 
+config SOC_INTEL_RAPTORLAKE_PCH_S
+	bool
+	select SOC_INTEL_RAPTORLAKE
+	select HAVE_INTEL_FSP_REPO if FSP_TYPE_IOT
+	select PLATFORM_USES_FSP2_3
+	help
+	  Choose this option if your mainboard has a PCH-S chipset.
+
 if SOC_INTEL_ALDERLAKE
 
 config CPU_SPECIFIC_OPTIONS
@@ -100,7 +108,7 @@ config CPU_SPECIFIC_OPTIONS
 	select SOC_INTEL_COMMON_BLOCK_SCS if SOC_INTEL_ALDERLAKE_PCH_N
 	select SOC_INTEL_COMMON_BLOCK_HDA
 	select SOC_INTEL_COMMON_BLOCK_HECI1_DISABLE_USING_PMC_IPC
-	select SOC_INTEL_COMMON_BLOCK_IPU if !SOC_INTEL_ALDERLAKE_PCH_S
+	select SOC_INTEL_COMMON_BLOCK_IPU if !SOC_INTEL_ALDERLAKE_PCH_S || !SOC_INTEL_RAPTORLAKE_PCH_S
 	select SOC_INTEL_COMMON_BLOCK_IRQ
 	select SOC_INTEL_COMMON_BLOCK_MEMINIT
 	select SOC_INTEL_COMMON_BLOCK_OC_WDT
@@ -131,8 +139,8 @@ config CPU_SPECIFIC_OPTIONS
 
 config SOC_INTEL_ALDERLAKE_TCSS_USB4_SUPPORT
 	bool
-	default y if !SOC_INTEL_ALDERLAKE_PCH_S
-	default n if SOC_INTEL_ALDERLAKE_PCH_S
+	default n if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
+	default y
 	select SOC_INTEL_COMMON_BLOCK_TCSS
 	select SOC_INTEL_COMMON_BLOCK_USB4
 	select SOC_INTEL_COMMON_BLOCK_USB4_PCIE
@@ -185,7 +193,7 @@ config FSP_TEMP_RAM_SIZE
 
 config CHIPSET_DEVICETREE
 	string
-	default "soc/intel/alderlake/chipset_pch_s.cb" if SOC_INTEL_ALDERLAKE_PCH_S
+	default "soc/intel/alderlake/chipset_pch_s.cb" if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
 	default "soc/intel/alderlake/chipset.cb"
 
 config EXT_BIOS_WIN_BASE
@@ -232,14 +240,14 @@ config MAX_PCH_ROOT_PORTS
 	default 10 if SOC_INTEL_ALDERLAKE_PCH_M
 	default 12 if SOC_INTEL_ALDERLAKE_PCH_N
 	default 12 if SOC_INTEL_ALDERLAKE_PCH_P
-	default 28 if SOC_INTEL_ALDERLAKE_PCH_S
+	default 28 if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
 
 config MAX_CPU_ROOT_PORTS
 	int
 	default 1 if SOC_INTEL_ALDERLAKE_PCH_M
 	default 0 if SOC_INTEL_ALDERLAKE_PCH_N
 	default 3 if SOC_INTEL_ALDERLAKE_PCH_P
-	default 4 if SOC_INTEL_ALDERLAKE_PCH_S
+	default 4 if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
 
 config MAX_TBT_ROOT_PORTS
 	int
@@ -255,7 +263,7 @@ config MAX_PCIE_CLOCK_SRC
 	int
 	default 6 if SOC_INTEL_ALDERLAKE_PCH_M
 	default 5 if SOC_INTEL_ALDERLAKE_PCH_N
-	default 18 if SOC_INTEL_ALDERLAKE_PCH_S
+	default 18 if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
 	default 10 if SOC_INTEL_ALDERLAKE_PCH_P
 	help
 	  With external clock buffer, Alderlake-P can support up to three additional source clocks.
@@ -268,7 +276,7 @@ config MAX_PCIE_CLOCK_REQ
 	default 6  if SOC_INTEL_ALDERLAKE_PCH_M
 	default 5  if SOC_INTEL_ALDERLAKE_PCH_N
 	default 10 if SOC_INTEL_ALDERLAKE_PCH_P
-	default 18 if SOC_INTEL_ALDERLAKE_PCH_S
+	default 18 if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
 
 config SMM_TSEG_SIZE
 	hex
@@ -280,7 +288,7 @@ config SMM_RESERVED_SIZE
 
 config PCR_BASE_ADDRESS
 	hex
-	default 0xe0000000 if SOC_INTEL_ALDERLAKE_PCH_S
+	default 0xe0000000 if SOC_INTEL_ALDERLAKE_PCH_S || SOC_INTEL_RAPTORLAKE_PCH_S
 	default 0xfd000000
 	help
 	  This option allows you to select MMIO Base Address of sideband bus.
@@ -384,6 +392,7 @@ config FSP_HEADER_PATH
 	default "src/vendorcode/intel/fsp/fsp2_0/raptorlake/" if SOC_INTEL_RAPTORLAKE
 	default "3rdparty/fsp/AlderLakeFspBinPkg/IoT/AlderLakeP/Include/" if SOC_INTEL_ALDERLAKE_PCH_P && FSP_TYPE_IOT
 	default "3rdparty/fsp/AlderLakeFspBinPkg/IoT/AlderLakeS/Include/" if SOC_INTEL_ALDERLAKE_PCH_S && FSP_TYPE_IOT
+	default "3rdparty/fsp/RaptorLakeFspBinPkg/IoT/RaptorLakeS/Include/" if SOC_INTEL_RAPTORLAKE_PCH_S && FSP_TYPE_IOT
 	default "3rdparty/fsp/AlderLakeFspBinPkg/Client/AlderLakeP/Include/" if SOC_INTEL_ALDERLAKE_PCH_P
 	default "3rdparty/fsp/AlderLakeFspBinPkg/Client/AlderLakeS/Include/" if SOC_INTEL_ALDERLAKE_PCH_S
 	default "src/vendorcode/intel/fsp/fsp2_0/alderlake/"
@@ -393,6 +402,7 @@ config FSP_FD_PATH
 	depends on FSP_USE_REPO
 	default "3rdparty/fsp/AlderLakeFspBinPkg/IoT/AlderLakeP/Fsp.fd" if SOC_INTEL_ALDERLAKE_PCH_P && FSP_TYPE_IOT
 	default "3rdparty/fsp/AlderLakeFspBinPkg/IoT/AlderLakeS/Fsp.fd" if SOC_INTEL_ALDERLAKE_PCH_S && FSP_TYPE_IOT
+	default "3rdparty/fsp/RaptorLakeFspBinPkg/IoT/RaptorLakeS/FSP.fd" if SOC_INTEL_RAPTORLAKE_PCH_S && FSP_TYPE_IOT
 	default "3rdparty/fsp/AlderLakeFspBinPkg/Client/AlderLakeP/Fsp.fd" if SOC_INTEL_ALDERLAKE_PCH_P
 	default "3rdparty/fsp/AlderLakeFspBinPkg/Client/AlderLakeS/Fsp.fd" if SOC_INTEL_ALDERLAKE_PCH_S
 

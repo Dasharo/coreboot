@@ -300,7 +300,7 @@ Device (RP12)
 	}
 }
 
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 #include "pcie_pch_s.asl"
 #endif
 

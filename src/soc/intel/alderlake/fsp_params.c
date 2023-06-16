@@ -811,11 +811,9 @@ static void fill_fsps_cnvi_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
 	/* CNVi */
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_P) || CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
-#if !CONFIG(SOC_INTEL_RAPTORLAKE)
+#if !CONFIG(SOC_INTEL_RAPTORLAKE) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 	/* This option is only available in public FSP headers of ADL-P and ADL-S */
 	s_cfg->CnviWifiCore = is_devfn_enabled(PCH_DEVFN_CNVI_WIFI);
-#endif
 #endif
 	s_cfg->CnviMode = is_devfn_enabled(PCH_DEVFN_CNVI_WIFI);
 	s_cfg->CnviBtCore = config->cnvi_bt_core;
@@ -1023,7 +1021,7 @@ static void fill_fsps_irq_params(FSP_S_CONFIG *s_cfg,
 	const struct slot_irq_constraints *constraints;
 	size_t num_slots;
 
-	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)) {
+	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)) {
 		constraints = irq_constraints_pch_s;
 		num_slots = ARRAY_SIZE(irq_constraints_pch_s);
 	} else {

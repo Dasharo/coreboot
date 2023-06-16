@@ -23,7 +23,7 @@ Device (XHCI)
 	{
 
 	}
-#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
 	/* Root Hub for Alder Lake-P PCH */
 	Device (RHUB)
 	{
