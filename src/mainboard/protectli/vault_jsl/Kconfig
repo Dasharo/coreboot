@@ -1,41 +1,30 @@
-if BOARD_PROTECTLI_PT201 || BOARD_PROTECTLI_PT401 || BOARD_PROTECTLI_PT601
+if BOARD_PROTECTLI_PT201_PT401_PT601
 
 config BOARD_SPECIFIC_OPTIONS
-    def_bool y
-    select BOARD_ROMSIZE_KB_16384
-    select HAVE_ACPI_TABLES
-    select SOC_INTEL_JASPERLAKE
+	def_bool y
+	select BOARD_ROMSIZE_KB_16384
+	select SOC_INTEL_JASPERLAKE
+	select SUPERIO_ITE_IT8613E
+	select DRIVERS_USB_ACPI
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select HAVE_SPD_IN_CBFS
+	select USE_LPDDR4
 
 config MAX_CPUS
-    int
-    default 4
+	int
+	default 4
 
 config MAINBOARD_DIR
-    string
-    default "protectli/vault_jsl"
-
-config VARIANT_DIR
-    string
-    default "PT201" if BOARD_PROTECTLI_PT201
-    default "PT401" if BOARD_PROTECTLI_PT401
-    default "PT601" if BOARD_PROTECTLI_PT601
+	string
+	default "protectli/vault_jsl"
 
 config MAINBOARD_PART_NUMBER
-    string
-    default "PT201" if BOARD_PROTECTLI_PT201
-    default "PT401" if BOARD_PROTECTLI_PT401
-    default "PT601" if BOARD_PROTECTLI_PT601
+	string
+	default "PT201/PT401/PT601"
 
 config MAINBOARD_FAMILY
-    string
-    default "Protectli PTXXX"
-
-config DEVICETREE
-    string
-    default "variants/baseboard/devicetree.cb"
-
-#config OVERRIDE_DEVICETREE
-#    string
-#    default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
+	string
+	default "Protectli Vault"
 
 endif
