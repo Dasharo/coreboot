@@ -14,4 +14,8 @@ source "src/mainboard/msi/*/Kconfig"
 config MAINBOARD_VENDOR
 	default "MSI"
 
+config BOARD_HAS_MSI_ROMHOLE
+	bool
+	default n
+
 endif # VENDOR_MSI
