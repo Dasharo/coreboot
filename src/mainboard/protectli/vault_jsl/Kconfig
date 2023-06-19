@@ -38,4 +38,7 @@ config DIMM_MAX
 config DIMM_SPD_SIZE
 	default 512
 
+config CBFS_SIZE
+	default 0x800000
+
 endif

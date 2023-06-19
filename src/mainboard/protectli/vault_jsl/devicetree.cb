@@ -7,9 +7,9 @@ chip soc/intel/jasperlake
 	register "tcc_offset" = "20"
 
 	# GPE configuration
-	register "pmc_gpe0_dw0" = "GPP_B"
-	register "pmc_gpe0_dw1" = "GPP_H"
-	register "pmc_gpe0_dw2" = "GPP_E"
+	register "pmc_gpe0_dw0" = "GPP_G"
+	register "pmc_gpe0_dw1" = "GPP_C"
+	register "pmc_gpe0_dw2" = "GPP_R"
 
 	# FSP configuration
 	register "SaGv" = "SaGv_Enabled"
@@ -45,9 +45,9 @@ chip soc/intel/jasperlake
 	register "usb2_wake_enable_bitmap" = "0x0012"
 	register "usb3_wake_enable_bitmap" = "0x0003"
 
-	register "gen1_dec" = "0x00fc0801"
-	register "gen2_dec" = "0x000c0201"
-	register "gen3_dec" = "0x00fc0901"
+	register "gen1_dec" = "0x003c0a10"
+	register "gen2_dec" = "0x000c0081"
+	register "gen3_dec" = "0x00fc0201"
 
 	# Skip the CPU replacement check
 	register "SkipCpuReplacementCheck" = "1"
@@ -83,6 +83,8 @@ chip soc/intel/jasperlake
 
 	# Set xHCI LFPS period sampling off time, the default is 9ms.
 	register "xhci_lfps_sampling_offtime_ms" = "9"
+
+	register "disable_external_bypass_vr" = "true"
 
 	# Add PL1 and PL2 values
 	register "power_limits_config" = "{
