@@ -11,6 +11,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_ACPI_TABLES
 	select HAVE_SPD_IN_CBFS
 	select USE_LPDDR4
+	select CRB_TPM
+	select HAVE_INTEL_PTT
+	select MAINBOARD_HAS_TPM2
 
 config MAX_CPUS
 	default 4
