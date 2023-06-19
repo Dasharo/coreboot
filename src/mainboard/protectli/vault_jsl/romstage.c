@@ -1,8 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <console/console.h>
+#include <soc/gpio.h>
 #include <soc/meminit.h>
 #include <soc/romstage.h>
+
+#include "gpio.h"
 
 static const struct mb_cfg memcfg_cfg = {
 
@@ -51,8 +54,6 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	/* PT201 uses the same RAM chips as PT401, but only populates channel 1 */
 	if (CONFIG(BOARD_PROTECTLI_PT201))
 		memupd->FspmConfig.MemorySpdPtr00 = 0;
-}
 
-void mainboard_memory_init_params(FSPM_UPD *mupd)
-{
+	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 }
