@@ -24,12 +24,12 @@ static struct {
 	u16 mchid;
 	const char *name;
 } mch_table[] = {
-	{ PCI_DID_INTEL_JSL_ID_1, "Jasperlake SKU4-1" },
-	{ PCI_DID_INTEL_JSL_ID_2, "Jasperlake SKU4-2" },
-	{ PCI_DID_INTEL_JSL_ID_3, "Jasperlake SKU2-1" },
-	{ PCI_DID_INTEL_JSL_ID_4, "Jasperlake SKU2-2" },
-	{ PCI_DID_INTEL_JSL_ID_5, "Jasperlake SKU4-3" },
-	{ PCI_DID_INTEL_JSL_ID_6, "Jasperlake SKU4-3" },
+	{ PCI_DID_INTEL_JSL_ID_1, "Jasperlake N4500" },
+	{ PCI_DID_INTEL_JSL_ID_2, "Jasperlake N6000" },
+	{ PCI_DID_INTEL_JSL_ID_3, "Jasperlake N5100" },
+	{ PCI_DID_INTEL_JSL_ID_4, "Jasperlake N4505" },
+	{ PCI_DID_INTEL_JSL_ID_5, "Jasperlake N5105" },
+	{ PCI_DID_INTEL_JSL_ID_6, "Jasperlake N6005" },
 };
 
 static struct {
