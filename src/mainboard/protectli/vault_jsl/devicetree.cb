@@ -55,18 +55,15 @@ chip soc/intel/jasperlake
 	register "PchHdaDspEnable" = "1"
 	register "PchHdaAudioLinkHdaEnable" = "1"
 
-	# PCIe port 1 for M.2 E-key WLAN
-	# PCIe port 2 and 3 for LAN1 and LAN2
-	# Enable Root Port 5 (x4) for NVMe (2 port platform)
+	# PCIe Root Port 4 for NVMe
+	# PCIe Root Port 1 for LAN3-6 via ASMedia PCIe switch (4 and 6 port platform)
+	# PCIe port 5 for M.2 E-key WiFi
+	# PCIe port 6 and 7 for LAN1 and LAN2
 	register "PcieRpEnable[0]" = "1"
-	register "PcieRpEnable[1]" = "1"
-	register "PcieRpEnable[2]" = "1"
+	register "PcieRpEnable[3]" = "1"
 	register "PcieRpEnable[4]" = "1"
-	# Enable Root Port 6, 7, 8 for LAN3-6 via ASMedia PCIe switch
-	# Only on 4 port and 6 port platform
 	register "PcieRpEnable[5]" = "1"
 	register "PcieRpEnable[6]" = "1"
-	register "PcieRpEnable[7]" = "1"
 
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE" # WiFi
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE" # M.2 NVMe
@@ -180,7 +177,7 @@ chip soc/intel/jasperlake
 			end
 		end
 		device pci 14.1 off end # USB xDCI (OTG)
-		device pci 14.2 off end # PMC SRAM
+		device pci 14.2 on  end # PMC SRAM
 		device pci 14.3 off end # CNVi
 		device pci 14.5 off end # SDCard
 		device pci 15.0 off end # I2C 0
@@ -197,13 +194,19 @@ chip soc/intel/jasperlake
 		device pci 19.2 off end # UART 2
 		device pci 1a.0 on  end # eMMC
 		device pci 1c.0 on  end # PCI Express Root Port 1
-		device pci 1c.1 on  end # PCI Express Root Port 2
-		device pci 1c.2 on  end # PCI Express Root Port 3
-		device pci 1c.3 off end # PCI Express Root Port 4
-		device pci 1c.4 on  end # PCI Express Root Port 5
+		device pci 1c.1 off end # PCI Express Root Port 2
+		device pci 1c.2 off end # PCI Express Root Port 3
+		device pci 1c.3 on	# PCI Express Root Port 4
+			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
+					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth1X"
+		end
+		device pci 1c.4 on	# PCI Express Root Port 5
+			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther"
+					 "M.2/E 2230 (WIFI)" "SlotDataBusWidth1X"
+		end
 		device pci 1c.5 on  end # PCI Express Root Port 6
 		device pci 1c.6 on  end # PCI Express Root Port 7
-		device pci 1c.7 on  end # PCI Express Root Port 8
+		device pci 1c.7 off end # PCI Express Root Port 8
 		device pci 1e.0 off end # UART 0
 		device pci 1e.1 off end # UART 1
 		device pci 1e.2 off end # GSPI 0
