@@ -11,22 +11,22 @@ static const struct pad_config gpio_table[] = {
 
 	/* ------- GPIO Group GPP_G ------- */
 
-	/* GPP_G0 - SD_SDIO_CMD */
-	PAD_CFG_NF(GPP_G0, NONE, DEEP, NF1),
-	/* GPP_G1 - SD_SDIO_D */
-	PAD_CFG_NF(GPP_G1, NONE, DEEP, NF1),
-	/* GPP_G2 - SD_SDIO_D1 */
-	PAD_CFG_NF(GPP_G2, NONE, DEEP, NF1),
-	/* GPP_G3 - SD_SDIO_D2 */
-	PAD_CFG_NF(GPP_G3, NONE, DEEP, NF1),
-	/* GPP_G4 - SD_SDIO_D3 */
-	PAD_CFG_NF(GPP_G4, NONE, DEEP, NF1),
-	/* GPP_G5 - SD_SDIO_CD_N */
-	PAD_CFG_NF(GPP_G5, NONE, DEEP, NF1),
-	/* GPP_G6 - SD_SDIO_CLK */
-	PAD_CFG_NF(GPP_G6, NONE, DEEP, NF1),
-	/* GPP_G7 - SD_SDIO_WP */
-	PAD_CFG_NF(GPP_G7, NONE, DEEP, NF1),
+	/* GPP_G0 - GPIO */
+	PAD_NC(GPP_G0, NONE),
+	/* GPP_G1 - GPIO */
+	PAD_NC(GPP_G1, NONE),
+	/* GPP_G2 - GPIO */
+	PAD_NC(GPP_G2, NONE),
+	/* GPP_G3 - GPIO */
+	PAD_NC(GPP_G3, NONE),
+	/* GPP_G4 - GPIO */
+	PAD_NC(GPP_G4, NONE),
+	/* GPP_G5 - GPIO */
+	PAD_NC(GPP_G5, NONE),
+	/* GPP_G6 - GPIO */
+	PAD_NC(GPP_G6, NONE),
+	/* GPP_G7 - GPIO */
+	PAD_NC(GPP_G7, NONE),
 
 
 	/* ------- GPIO Community 1 ------- */
