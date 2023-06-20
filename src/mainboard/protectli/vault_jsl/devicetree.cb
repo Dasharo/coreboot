@@ -146,7 +146,10 @@ chip soc/intel/jasperlake
 				device pnp 2e.4 off end # Environment Controller
 				device pnp 2e.5 off end # Keyboard
 				device pnp 2e.6 off end # Mouse
-				device pnp 2e.7 off end # GPIO
+				device pnp 2e.7 on	# GPIO
+					io 0x60 = 0xa10
+					io 0x62 = 0xa00
+				end
 				device pnp 2e.a off end # CIR
 			end
 		end
