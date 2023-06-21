@@ -90,6 +90,8 @@ endif
 # PS2_KEYBOARD_ENABLE		= FALSE
 ifeq ($(CONFIG_EDK2_PS2_SUPPORT),y)
 BUILD_STR += -D PS2_KEYBOARD_ENABLE=TRUE
+else
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=FALSE
 endif
 # PLATFORM_BOOT_TIMEOUT		= 3
 ifneq ($(CONFIG_EDK2_BOOT_TIMEOUT),)
