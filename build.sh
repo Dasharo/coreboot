@@ -22,16 +22,16 @@ function buildImage {
 
 	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
 
-	cp configs/config.protectli_$1 .config
+	cp configs/config.protectli_vault_jsl_$1 .config
 
 	echo "Building coreboot for Protectli $1"
 
 	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
-		-w /home/coreboot/coreboot coreboot/coreboot-sdk:0ad5fbd48d \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make olddefconfig && make"
 
 	cp build/coreboot.rom protectli_$1.rom
