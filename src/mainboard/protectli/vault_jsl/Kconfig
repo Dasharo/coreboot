@@ -41,4 +41,7 @@ config DIMM_SPD_SIZE
 config CBFS_SIZE
 	default 0x800000
 
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+
 endif
