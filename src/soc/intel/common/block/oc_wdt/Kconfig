@@ -18,7 +18,7 @@ config SOC_INTEL_COMMON_OC_WDT_TIMEOUT
 	int "Watchdog timeout in seconds"
 	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
 	range 60 1024
-	default 90
+	default 300
 	help
 	  Intel chipset Overclocking Watchdog timeout value in seconds.
 	  coreboot will reload the watchdog with timeout value specified
