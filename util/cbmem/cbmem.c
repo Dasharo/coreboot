@@ -1864,6 +1864,11 @@ int main(int argc, char** argv)
 		print_usage(argv[0], 1);
 	}
 
+	/* Check if Linux driver exposes CBMEM in sysfs. */
+	if (file_fd < 0) {
+		file_fd = open("/sys/firmware/cbmem", O_RDONLY, 0);
+	}
+
 	if (file_fd < 0) {
 		mem_fd = open("/dev/mem", timestamp_id ? O_RDWR : O_RDONLY, 0);
 		if (mem_fd < 0) {
