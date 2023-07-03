@@ -379,7 +379,7 @@ void main(void)
 
 	init_timer();
 
-	timestamp_add_now(TS_START_ROMSTAGE);
+	timestamp_add_now(TS_ROMSTAGE_START);
 
 	console_init();
 
@@ -419,7 +419,7 @@ void main(void)
 	istep_10_12(chips);
 	istep_10_13(chips);
 
-	timestamp_add_now(TS_BEFORE_INITRAM);
+	timestamp_add_now(TS_INITRAM_START);
 
 	vpd_pnor_main();
 	prepare_dimm_data(chips);
@@ -444,7 +444,7 @@ void main(void)
 	report_istep(14, 4);	// no-op
 	istep_14_5(chips);
 
-	timestamp_add_now(TS_AFTER_INITRAM);
+	timestamp_add_now(TS_INITRAM_END);
 
 	/* Test if SCOM still works. Maybe should check also indirect access? */
 	printk(BIOS_WARNING, "0xF000F = %llx\n", read_scom(0, 0xF000F));
