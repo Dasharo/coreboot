@@ -78,9 +78,7 @@ endif
 ifeq ($(CONFIG_SOC_INTEL_ALDERLAKE_PCH_S)$(CONFIG_SOC_INTEL_RAPTORLAKE_PCH_S),y)
 # 06-97-00, 06-97-01, 06-97-04 are ADL-S Engineering Samples
 # 06-97-02 are ADL-S/HX Quality Samples but also ADL-HX Engineering Samples
-# ADL-S/HX C0
-cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-97-02
-# ADL-S H0
+# ADL-S/HX C0 and ADL-S H0
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-97-05
 # RPL-S B0
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-b7-01
@@ -89,9 +87,7 @@ else
 ifneq ($(CONFIG_SOC_INTEL_ALDERLAKE_PCH_N),y)
 # 06-9a-00, 06-9a-01 are ADL-P/ADL-M Engineering Samples
 # Missing 06-9a-02 ADL-P K0
-# ADL-P L0
-cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9a-03
-# ADL-P R0 and ADL-M R0
+# ADL-P L0, ADL-P R0 and ADL-M R0
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-9a-04
 endif
 endif
