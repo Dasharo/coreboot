@@ -24,6 +24,8 @@
 #define TYPE2_SIZE 256
 #define FTB_SIZE 105
 #define FIB_SIZE 512
+#define FDP_SIZE 1024
+#define BUV_SIZE 1024
 #define NUM_VOLUMES 7
 
 struct uuid_structure {
@@ -91,7 +93,7 @@ struct ftb_structure {
 	uint16_t		size;		// size of data field, always 105
 	uint16_t		space1;		// always 0x0
 	uint8_t			magic2[4];	// always MFTD
-	uint8_t			data[FTB_SIZE];	// always 0xfe
+	uint8_t			data[FTB_SIZE];	// default 0xfe
 } __packed;
 
 struct fib_structure {
@@ -99,7 +101,25 @@ struct fib_structure {
 	uint16_t		length;		// structure length
 	uint16_t		size;		// size of data field, always 512
 	uint8_t			magic1[4];	// always $MFX
-	uint8_t			data[FIB_SIZE];	// always 0xfa
+	uint8_t			data[FIB_SIZE];	// default 0xfa
+} __packed;
+
+/* Structure present in newer releases of MSI PRO Z790-P since A.40/1.40 */
+struct fdp_structure {
+	uint8_t			magic0[4];	// always $FDP
+	uint16_t		length;		// structure length
+	uint8_t			magic1[3];	// always $Fd
+	uint8_t			number;		// always 0x1
+	uint8_t			data[FDP_SIZE];	// default 0xff
+} __packed;
+
+/* Structure present in newer releases of MSI PRO Z790-P A.40/1.40 */
+struct buv_structure {
+	uint8_t			magic0[4];	// always $BuV
+	uint16_t		length;		// structure length
+	uint8_t			magic1[3];	// always $Bv
+	uint8_t			number;		// always 0x1
+	uint8_t			data[BUV_SIZE];	// default 0xff
 } __packed;
 
 struct volume_entry {
@@ -132,6 +152,8 @@ struct msi_romhole {
 	struct type2_rw 	t2rw;
 	struct ftb_structure	ftb;
 	struct fib_structure	fib;
+	struct fdp_structure	fdp;
+	struct buv_structure	buv;
 	struct ris_structure	ris;
 	// the rest is padded with 0xff by cbfstool
 } __packed;
@@ -359,6 +381,20 @@ int main(int argc, char **argv)
 	romhole->fib.size = FIB_SIZE;
 	strncpy(romhole->fib.magic1, "$MFX", 4);
 	memset(romhole->fib.data, 0xfa, FIB_SIZE);
+
+	// FDP
+	strncpy(romhole->fdp.magic0, "$FDP", 4);
+	romhole->fdp.length = (uint16_t)sizeof(struct fdp_structure);
+	strncpy(romhole->fdp.magic1, "$Fd", 3);
+	romhole->fdp.number = 1;
+	memset(romhole->fdp.data, 0xff, FDP_SIZE);
+
+	// BUV
+	strncpy(romhole->buv.magic0, "$BuV", 4);
+	romhole->buv.length = (uint16_t)sizeof(struct buv_structure);
+	strncpy(romhole->buv.magic1, "$Bv", 3);
+	romhole->buv.number = 1;
+	memset(romhole->buv.data, 0xff, BUV_SIZE);
 
 	// RIS
 	strncpy(romhole->ris.magic0, "$RiS", 4);
