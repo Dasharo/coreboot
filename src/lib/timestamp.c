@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <console/console.h>
 #include <cbmem.h>
+#include <endian.h>
 #include <symbols.h>
 #include <timer.h>
 #include <timestamp.h>
@@ -18,11 +19,11 @@ static struct timestamp_table *glob_ts_table;
 static void timestamp_cache_init(struct timestamp_table *ts_cache,
 				 uint64_t base)
 {
-	ts_cache->num_entries = 0;
-	ts_cache->base_time = base;
-	ts_cache->max_entries = (REGION_SIZE(timestamp) -
+	ts_cache->num_entries = htole32(0);
+	ts_cache->base_time = htole64(base);
+	ts_cache->max_entries = htole16((REGION_SIZE(timestamp) -
 		offsetof(struct timestamp_table, entries))
-		/ sizeof(struct timestamp_entry);
+		/ sizeof(struct timestamp_entry));
 }
 
 static struct timestamp_table *timestamp_cache_get(void)
@@ -52,9 +53,9 @@ static struct timestamp_table *timestamp_alloc_cbmem_table(void)
 	if (!tst)
 		return NULL;
 
-	tst->base_time = 0;
-	tst->max_entries = MAX_TIMESTAMPS;
-	tst->num_entries = 0;
+	tst->base_time = htole64(0);
+	tst->max_entries = htole16(MAX_TIMESTAMPS);
+	tst->num_entries = htole32(0);
 
 	return tst;
 }
@@ -105,15 +106,17 @@ static void timestamp_add_table_entry(struct timestamp_table *ts_table,
 				      enum timestamp_id id, int64_t ts_time)
 {
 	struct timestamp_entry *tse;
+	uint32_t num_entries = le32toh(ts_table->num_entries);
 
-	if (ts_table->num_entries >= ts_table->max_entries)
+	if (num_entries >= le16toh(ts_table->max_entries))
 		return;
 
-	tse = &ts_table->entries[ts_table->num_entries++];
-	tse->entry_id = id;
-	tse->entry_stamp = ts_time;
+	tse = &ts_table->entries[num_entries++];
+	ts_table->num_entries = htole32(num_entries);
+	tse->entry_id = htole32(id);
+	tse->entry_stamp = htole64(ts_time);
 
-	if (ts_table->num_entries == ts_table->max_entries)
+	if (num_entries == le16toh(ts_table->max_entries))
 		printk(BIOS_ERR, "Timestamp table full\n");
 }
 
@@ -131,7 +134,7 @@ void timestamp_add(enum timestamp_id id, int64_t ts_time)
 		return;
 	}
 
-	ts_time -= ts_table->base_time;
+	ts_time -= le64toh(ts_table->base_time);
 	timestamp_add_table_entry(ts_table, id, ts_time);
 
 	if (CONFIG(TIMESTAMPS_ON_CONSOLE))
@@ -196,14 +199,18 @@ static void timestamp_sync_cache_to_cbmem(struct timestamp_table *ts_cbmem_table
 	/* Inherit cache base_time. */
 	ts_cbmem_table->base_time = ts_cache_table->base_time;
 
-	for (i = 0; i < ts_cache_table->num_entries; i++) {
+	for (i = 0; i < le32toh(ts_cache_table->num_entries); i++) {
 		struct timestamp_entry *tse = &ts_cache_table->entries[i];
-		timestamp_add_table_entry(ts_cbmem_table, tse->entry_id,
-					  tse->entry_stamp);
+		/* timestamp_add_table_entry() converts endianness, but it is already
+		 * converted to LE in cache. We need to swap it back to host endianness
+		 * so it will be properly written as LE to cbmem.
+		 */
+		timestamp_add_table_entry(ts_cbmem_table, le32toh(tse->entry_id),
+					  le64toh(tse->entry_stamp));
 	}
 
 	/* Cache no longer required. */
-	ts_cache_table->num_entries = 0;
+	ts_cache_table->num_entries = htole32(0);
 }
 
 static void timestamp_reinit(int is_recovery)
@@ -233,7 +240,7 @@ static void timestamp_reinit(int is_recovery)
 
 	/* Seed the timestamp tick frequency in ENV_PAYLOAD_LOADER. */
 	if (ENV_PAYLOAD_LOADER)
-		ts_cbmem_table->tick_freq_mhz = timestamp_tick_freq_mhz();
+		ts_cbmem_table->tick_freq_mhz = htole16(timestamp_tick_freq_mhz());
 
 	timestamp_table_set(ts_cbmem_table);
 }
@@ -241,6 +248,7 @@ static void timestamp_reinit(int is_recovery)
 void timestamp_rescale_table(uint16_t N, uint16_t M)
 {
 	uint32_t i;
+	uint64_t base_time;
 	struct timestamp_table *ts_table;
 
 	if (!timestamp_should_run())
@@ -257,12 +265,18 @@ void timestamp_rescale_table(uint16_t N, uint16_t M)
 		return;
 	}
 
-	ts_table->base_time /= M;
-	ts_table->base_time *= N;
-	for (i = 0; i < ts_table->num_entries; i++) {
+	base_time = le64toh(ts_table->base_time);
+	base_time /= M;
+	base_time *= N;
+	ts_table->base_time = htole64(base_time);
+
+	for (i = 0; i < le32toh(ts_table->num_entries); i++) {
+		int64_t entry_stamp;
 		struct timestamp_entry *tse = &ts_table->entries[i];
-		tse->entry_stamp /= M;
-		tse->entry_stamp *= N;
+		entry_stamp = le64toh(tse->entry_stamp);
+		entry_stamp /= M;
+		entry_stamp *= N;
+		tse->entry_stamp = htole64(entry_stamp);
 	}
 }
 
@@ -274,9 +288,9 @@ uint32_t get_us_since_boot(void)
 {
 	struct timestamp_table *ts = timestamp_table_get();
 
-	if (ts == NULL || ts->tick_freq_mhz == 0)
+	if (ts == NULL || le16toh(ts->tick_freq_mhz) == 0)
 		return 0;
-	return (timestamp_get() - ts->base_time) / ts->tick_freq_mhz;
+	return (timestamp_get() - le64toh(ts->base_time)) / le16toh(ts->tick_freq_mhz);
 }
 
 CBMEM_READY_HOOK(timestamp_reinit);
