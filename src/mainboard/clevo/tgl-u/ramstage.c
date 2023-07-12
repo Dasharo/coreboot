@@ -33,17 +33,17 @@ struct smfi_cmd_set_fan_curve {
 } __packed;
 
 struct fan_curve fan_curve_silent = {
-	{ .temp = 0,   .duty = 25  },
-	{ .temp = 65,  .duty = 30  },
+	{ .temp = 0,   .duty = 20  },
+	{ .temp = 65,  .duty = 25  },
 	{ .temp = 75,  .duty = 35  },
-	{ .temp = 100, .duty = 100 }
+	{ .temp = 85, .duty = 100 }
 };
 
 struct fan_curve fan_curve_performance = {
 	{ .temp = 0,   .duty = 25 },
 	{ .temp = 55,  .duty = 35 },
 	{ .temp = 75,  .duty = 60 },
-	{ .temp = 100, .duty = 100}
+	{ .temp = 85,  .duty = 100}
 };
 
 #define FAN_CURVE_OPTION_SILENT 0
