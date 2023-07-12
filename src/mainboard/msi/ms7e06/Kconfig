@@ -28,30 +28,24 @@ config MAINBOARD_PART_NUMBER
 	default "PRO Z790-P WIFI (MS-7E06)" if BOARD_MSI_Z790_P_PRO_WIFI
 
 config MAINBOARD_VENDOR
-	string
 	default "Micro-Star International Co., Ltd."
 
 config MAINBOARD_FAMILY
-	string
 	default "Default string"
 
 config DIMM_SPD_SIZE
 	default 512
 
 config UART_FOR_CONSOLE
-	int
 	default 0
 
 config USE_PM_ACPI_TIMER
-	bool
 	default n
 
 config USE_LEGACY_8254_TIMER
-	bool
 	default y
 
 config CBFS_SIZE
-	hex
 	default 0x1000000
 
 config VBOOT
@@ -71,13 +65,11 @@ config SOC_INTEL_CSE_SEND_EOP_EARLY
 	default n
 
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
 
 # gen_test_hwid.sh script doesn't like parentheses in the MAINBOARD_PART_NUMBER
 # Override the GBB_HWID
 config GBB_HWID
-	string
 	default "MSI_MS7E06"
 
 endif
