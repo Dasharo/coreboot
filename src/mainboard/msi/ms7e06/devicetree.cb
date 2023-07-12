@@ -255,7 +255,7 @@ chip soc/intel/alderlake
 		end
 		device ref p2sb hidden end
 		device ref hda on
-			subsystemid 0x1462 0x9d25
+			subsystemid 0x1462 0x9e06
 			register "pch_hda_dsp_enable" = "0"
 			register "pch_hda_idisp_link_tmode" = "HDA_TMODE_8T"
 			register "pch_hda_idisp_link_frequency" = "HDA_LINKFREQ_96MHZ"

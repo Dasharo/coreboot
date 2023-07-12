@@ -5,9 +5,9 @@
 const u32 cim_verb_data[] = {
 	/* Realtek ALC897 */
 	0x10ec0897, /* Vendor ID */
-	0x14629d25, /* Subsystem ID */
+	0x14629e06, /* Subsystem ID */
 	15, /* Number of entries */
-	AZALIA_SUBVENDOR(0, 0x14629d25),
+	AZALIA_SUBVENDOR(0, 0x14629e06),
 	AZALIA_PIN_CFG(0, 0x11, 0x4037d540),
 	AZALIA_PIN_CFG(0, 0x12, 0x411111f0),
 	AZALIA_PIN_CFG(0, 0x14, 0x01014010),
@@ -24,11 +24,19 @@ const u32 cim_verb_data[] = {
 	AZALIA_PIN_CFG(0, 0x1f, 0x411111f0),
 
 	/* Alderlake HDMI */
-	0x80862815, /* Vendor ID */
+	0x80862818, /* Vendor ID */
 	0x80860101, /* Subsystem ID */
 	2, /* Number of entries */
 	AZALIA_SUBVENDOR(2, 0x80860101),
 	AZALIA_PIN_CFG(2, 0x04, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x06, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x08, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x0a, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x0b, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x0c, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x0d, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x0e, 0x18560010),
+	AZALIA_PIN_CFG(2, 0x0f, 0x18560010),
 };
 
 
