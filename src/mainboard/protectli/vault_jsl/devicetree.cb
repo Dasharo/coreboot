@@ -96,6 +96,7 @@ chip soc/intel/jasperlake
 		device pci 02.0 on  end # Integrated Graphics Device
 		device pci 04.0 off end # SA Thermal device
 		device pci 05.0 off end # IPU
+		device pci 08.0 off end # GNA
 		device pci 09.0 off end # Intel Trace Hub
 		device pci 12.0 off end # Thermal Subsystem
 		device pci 12.5 off end # UFS SCS
