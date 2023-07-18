@@ -8,6 +8,7 @@ Scope (\_SB.PCI0) {
 	{
 		Name (_HID, "INTC1026")
 		Name (_DDN, "Intel(R) Jasper Lake IPC Controller")
+		Name (_STA, 0xB)
 		/*
 		 * PCH preserved 32 MB MMIO range from 0xFC800000 to 0xFE7FFFFF.
 		 * 64KB (0xFE000000 - 0xFE00FFFF) for PMC MBAR.
