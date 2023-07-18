@@ -176,6 +176,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	/* Enable Processor Thermal Control */
 	params->Device4Enable = is_devfn_enabled(SA_DEVFN_DPTF);
 
+	params->GnaEnable = is_devfn_enabled(SA_DEVFN_GNA);
+
 	/* Set TccActivationOffset */
 	params->TccActivationOffset = config->tcc_offset;
 
