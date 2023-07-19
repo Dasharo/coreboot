@@ -18,22 +18,6 @@ int vboot_check_recovery_request(void)
 	return vb2api_get_recovery_reason(vboot_get_context());
 }
 
-void vboot_clear_recovery_request(void)
-{
-	struct vb2_context *ctx;
-
-	/* No point in clearing the recovery request if we are not in recovery. */
-	if (!vboot_recovery_mode_enabled())
-		return;
-
-	ctx = vboot_get_context();
-	vb2api_clear_recovery(ctx);
-	save_vbnv(ctx->nvdata);
-
-	if (CONFIG(VBOOT_VBNV_CMOS_BACKUP_TO_FLASH))
-		save_vbnv_flash(ctx->nvdata);
-}
-
 int vboot_recovery_mode_enabled(void)
 {
 	return vboot_get_context()->flags & VB2_CONTEXT_RECOVERY_MODE;
@@ -67,6 +51,18 @@ static void do_clear_recovery_mode_switch(void *unused)
  */
 BOOT_STATE_INIT_ENTRY(BS_WRITE_TABLES, BS_ON_ENTRY,
 		      do_clear_recovery_mode_switch, NULL);
+
+static void vboot_clear_recovery_request(void *unused)
+{
+	struct vb2_context *ctx;
+
+	ctx = vboot_get_context();
+	vb2api_clear_recovery(ctx);
+	save_vbnv(ctx->nvdata);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY,
+		      vboot_clear_recovery_request, NULL);
 
 int __weak get_recovery_mode_retrain_switch(void)
 {
