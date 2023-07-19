@@ -8,7 +8,6 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <pc80/i8254.h>
-#include <security/vboot/vboot_common.h>
 #include <soc/gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
@@ -53,12 +52,11 @@ const char *smbios_mainboard_product_name(void)
 
 static void mainboard_final(void *unused)
 {
-	if (CONFIG(VBOOT))
-		vboot_clear_recovery_request();
 
 	if (CONFIG(BEEP_ON_BOOT))
 		beep(1500, 100);
 }
+
 struct chip_operations mainboard_ops = {
 	.final = mainboard_final,
 };
