@@ -260,6 +260,9 @@ void verstage_main(void)
 	/* Initialize and read nvdata from non-volatile storage. */
 	vbnv_init(ctx->nvdata);
 
+	if (!CONFIG(VBOOT_SLOTS_RW_AB))
+		ctx->flags |= VB2_CONTEXT_SLOT_A_ONLY;
+
 	/* Set S3 resume flag if vboot should behave differently when selecting
 	 * which slot to boot.  This is only relevant to vboot if the platform
 	 * does verification of memory init and thus must ensure it resumes with
