@@ -83,14 +83,12 @@ int tis_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, uint8_t *recvbuf, siz
 
 static void crb_tpm_fill_ssdt(const struct device *dev)
 {
-	const char *path = acpi_device_path(dev);
-	if (!path) {
-		path = "\\_SB_.TPM";
-		printk(BIOS_DEBUG, "Using default TPM2 ACPI path: '%s'\n", path);
-	}
+	/* Windows 11 requires the following path for TPM to be detected */
+	const char *path = "\\_SB_.PCI0";
 
 	/* Device */
-	acpigen_write_device(path);
+	acpigen_write_scope(path);
+	acpigen_write_device(acpi_device_name(dev));
 
 	acpigen_write_name_string("_HID", "MSFT0101");
 	acpigen_write_name_string("_CID", "MSFT0101");
@@ -110,6 +108,8 @@ static void crb_tpm_fill_ssdt(const struct device *dev)
 		tpm_ppi_acpi_fill_ssdt(dev);
 
 	acpigen_pop_len(); /* Device */
+	acpigen_pop_len(); /* Scope */
+
 }
 
 static const char *crb_tpm_acpi_name(const struct device *dev)
