@@ -180,6 +180,10 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
+ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowOcWdtOptions=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtTimeoutDefault=$(CONFIG_EDK2_DASHARO_OC_WDT_TIMEOUT)
+endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
 BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
