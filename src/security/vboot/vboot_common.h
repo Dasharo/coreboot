@@ -12,11 +12,6 @@
  */
 int vboot_check_recovery_request(void);
 
-/*
- * Function to clear the recovery request and update the VBNV.
- */
-void vboot_clear_recovery_request(void);
-
 /* ============================ VBOOT REBOOT ============================== */
 /*
  * vboot_reboot handles the reboot requests made by vboot_reference library. It
