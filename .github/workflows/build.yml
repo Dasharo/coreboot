@@ -1,4 +1,4 @@
-name: MSI PRO Z-690A
+name: MSI PRO Z690-A/Z790-P
 on:
   push:
     branches:
