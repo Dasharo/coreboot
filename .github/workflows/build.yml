@@ -20,6 +20,12 @@ jobs:
           - vendor: msi
             model: ms7d25
             type: ddr5
+          - vendor: msi
+            model: ms7e06
+            type: ddr4
+          - vendor: msi
+            model: ms7e06
+            type: ddr5
 
     steps:
       - name: Checkout repository
