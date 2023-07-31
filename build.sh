@@ -52,7 +52,7 @@ function build_image_z690 {
 
 	cp configs/config.msi_ms7d25_$1 .config
 
-	#extract_lan_rom
+	extract_lan_rom
 
 	if [ $? -eq 0 ]; then
 		echo "CONFIG_EDK2_LAN_ROM_DRIVER=\"LanRom.efi\"" >> .config
@@ -89,7 +89,7 @@ function build_image_z790 {
 
 	cp configs/config.msi_ms7e06_$1 .config
 
-	#extract_lan_rom
+	extract_lan_rom
 
 	if [ $? -eq 0 ]; then
 		echo "CONFIG_EDK2_LAN_ROM_DRIVER=\"LanRom.efi\"" >> .config

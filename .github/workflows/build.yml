@@ -17,14 +17,18 @@ jobs:
           - vendor: msi
             model: ms7d25
             type: ddr4
+            name: z690a
           - vendor: msi
             model: ms7d25
             type: ddr5
+            name: z690a
           - vendor: msi
             model: ms7e06
             type: ddr4
+            name: z790p
           - vendor: msi
             model: ms7e06
+            name: z790p
             type: ddr5
 
     steps:
@@ -42,7 +46,7 @@ jobs:
 
       - name: Build Dasharo
         run: |
-          ./build.sh ${{ matrix.type }}
+          ./build.sh ${{ matrix.name }}_${{ matrix.type }}
 
       - name: Save artifacts
         uses: actions/upload-artifact@v2
