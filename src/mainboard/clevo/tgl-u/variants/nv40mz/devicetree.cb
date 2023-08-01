@@ -1,4 +1,21 @@
 chip soc/intel/tigerlake
+# CPU (soc/intel/tigerlake/cpu.c)
+    register "power_limits_config[POWER_LIMITS_U_4_CORE]" = "{
+		.tdp_psyspl2 = 65,
+		.tdp_psyspl3 = 67,
+		.tdp_psyspl3_time = 6,
+		.tdp_psyspl3_dutycycle = 4,
+		.tdp_pl4 = 65,
+	}"
+
+	register "power_limits_config[POWER_LIMITS_U_2_CORE]" = "{
+		.tdp_psyspl2 = 65,
+		.tdp_psyspl3 = 67,
+		.tdp_psyspl3_time = 6,
+		.tdp_psyspl3_dutycycle = 4,
+		.tdp_pl4 = 65,
+	}"
+
 	register "common_soc_config" = "{
 		// Touchpad I2C bus
 		.i2c[0] = {
