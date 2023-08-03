@@ -21,7 +21,7 @@ chip soc/intel/tigerlake
 
 # FSP Silicon (soc/intel/tigerlake/fsp_params.c)
 	register "AcousticNoiseMitigation" = "1"
-	register "tcc_offset" = "13"
+	register "tcc_offset" = "25" # TCC of 75C
 
 # Actual device tree
 	device cpu_cluster 0 on
