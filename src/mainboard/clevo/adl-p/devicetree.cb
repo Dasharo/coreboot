@@ -18,7 +18,7 @@ chip soc/intel/alderlake
 	register "enable_c6dram" = "1"
 
 	# Thermal
-	register "tcc_offset" = "8"
+	register "tcc_offset" = "25" # TCC of 75C
 
 	device cpu_cluster 0 on
 		device lapic 0 on end
