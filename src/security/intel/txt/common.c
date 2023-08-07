@@ -214,7 +214,7 @@ static int validate_acm(const void *ptr)
 	struct acm_info_table *info = find_info_table(ptr);
 	if (!info)
 		return ACM_E_NO_INFO_TABLE;
-	if (info->chipset_acm_type != BIOS)
+	if (info->chipset_acm_type != BIOS_ACM)
 		return ACM_E_NOT_BIOS_ACM;
 
 	static const u8 acm_uuid[] = {
