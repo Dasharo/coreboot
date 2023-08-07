@@ -110,10 +110,12 @@ void txt_dump_acm_info(const struct acm_header_v0 *acm_header)
 	if (acm_header->module_type == CHIPSET_ACM)
 		printk(BIOS_INFO, " Type:     Chipset ACM\n");
 
-	if (acm_header->module_sub_type == 0)
-		printk(BIOS_INFO, " Subtype:  undefined\n");
-	else if (acm_header->module_sub_type == 1)
-		printk(BIOS_INFO, " Subtype:  Run at reset\n");
+	if (acm_header->module_sub_type == BIOS_ACM)
+		printk(BIOS_INFO, " Subtype:  BIOS\n");
+	else if (acm_header->module_sub_type == SINIT_ACM)
+		printk(BIOS_INFO, " Subtype:  SINIT\n");
+	else if (acm_header->module_sub_type == BOOTGUARD_ACM)
+		printk(BIOS_INFO, " Subtype:  BOOTGUARD\n");
 
 	printk(BIOS_INFO, " Header:   v%u.%u\n", acm_header->header_version[0],
 	       acm_header->header_version[1]);
