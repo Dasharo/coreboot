@@ -18,24 +18,22 @@
 #include "txt_register.h"
 #include "txt_getsec.h"
 
-/* FIXME: Seems to work only on some platforms */
+static bool is_ibb_measured(uint64_t status)
+{
+	status &= (ACMSTS_BIOS_TRUSTED | ACMSTS_IBB_MEASURED);
+	return status == (ACMSTS_BIOS_TRUSTED | ACMSTS_IBB_MEASURED);
+}
+
+/*
+ * It is supposed to work only on server platforms. Requires the TXT Enabled
+ * bit set in UEP or FPF and a proper LCP. */
 static void log_ibb_measurements(void)
 {
-	const uint64_t mseg_size = read64((void *)TXT_MSEG_SIZE);
-	uint64_t mseg_base = read64((void *)TXT_MSEG_BASE);
-
-	if (!mseg_size || !mseg_base || mseg_size <= mseg_base)
-		return;
-	/*
-	 * MSEG SIZE and MSEG BASE might contain random values.
-	 * Assume below 4GiB and 8byte aligned.
-	 */
-	if (mseg_base & ~0xfffffff8ULL || mseg_size & ~0xfffffff8ULL)
-		return;
+	int i;
 
 	printk(BIOS_INFO, "TEE-TXT: IBB Hash 0x");
-	for (; mseg_base < mseg_size; mseg_base++)
-		printk(BIOS_INFO, "%02X", read8((void *)(uintptr_t)mseg_base));
+	for (i = 0; i < 5; i++)
+		printk(BIOS_INFO, "%08X", read32((void *)TXT_MSEG_BASE + i * 4));
 
 	printk(BIOS_INFO, "\n");
 }
@@ -169,7 +167,7 @@ static void init_intel_txt(void *unused)
 		}
 	}
 
-	if (status & (ACMSTS_BIOS_TRUSTED | ACMSTS_IBB_MEASURED)) {
+	if (is_ibb_measured(status)) {
 		printk(BIOS_INFO, "TEE-TXT: Logging IBB measurements...\n");
 		log_ibb_measurements();
 	}
