@@ -1175,3 +1175,46 @@ enum cb_err mp_init_with_smm(struct bus *cpu_bus, const struct mp_ops *mp_ops)
 
 	return ret;
 }
+
+
+/* AP restart code */
+
+static struct mp_flight_record ap_restart_steps[] = {
+	/* Wait for APs to finish then optionally start looking for work. */
+	MP_FR_BLOCK_APS(ap_wait_for_instruction, NULL),
+};
+
+enum cb_err restart_aps(void)
+{
+	struct mp_params mp_params;
+	atomic_t *ap_count;
+
+	if (!CONFIG(PARALLEL_MP_AP_WORK))
+		return CB_ERR_NOT_IMPLEMENTED;
+
+	mp_params.num_cpus = mp_state.cpu_count;
+	mp_params.num_records = ARRAY_SIZE(ap_restart_steps);
+	mp_params.flight_plan = &ap_restart_steps[0];
+
+	mp_info.num_records = ARRAY_SIZE(ap_restart_steps);
+	mp_info.records = &ap_restart_steps[0];
+
+	/* Load the SIPI vector. */
+	ap_count = load_sipi_vector(&mp_params);
+	if (ap_count == NULL)
+		return CB_ERR;
+
+	/* Make sure SIPI data hits RAM so the APs that come up will see
+	 * the startup code even if the caches are disabled.  */
+	wbinvd();
+
+	if (start_aps(NULL, global_num_aps, ap_count) != CB_SUCCESS) {
+		mdelay(1000);
+		printk(BIOS_DEBUG, "%d/%d eventually checked in?\n",
+		       atomic_read(ap_count), global_num_aps);
+		return CB_ERR;
+	}
+
+	/* Walk the flight plan for the BSP. */
+	return bsp_do_flight_plan(&mp_params);
+}
