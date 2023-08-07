@@ -7,6 +7,7 @@
 #include <cbfs.h>
 #include <console/console.h>
 #include <cpu/intel/common/common.h>
+#include <cpu/x86/mp.h>
 #include <cpu/x86/smm.h>
 #include <device/pci_ops.h>
 #include <security/intel/cbnt/cbnt.h>
@@ -179,6 +180,8 @@ static void init_intel_txt(void *unused)
 		if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0) {
 			printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
 			return;
+		} else {
+			restart_aps();
 		}
 	}
 }
