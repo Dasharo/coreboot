@@ -1,7 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <arch/mmio.h>
+#include <console/console.h>
+#include <security/intel/cbnt/cbnt.h>
+#include <security/intel/txt/txt.h>
 #include <soc/cnl_memcfg_init.h>
 #include <soc/romstage.h>
+#include <cbfs.h>
 
 static const struct cnl_mb_cfg board_memcfg_cfg = {
 	/* Access memory info through SMBUS. */
@@ -41,4 +46,22 @@ static const struct cnl_mb_cfg board_memcfg_cfg = {
 void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
 	cannonlake_memcfg_init(&memupd->FspmConfig, &board_memcfg_cfg);
+	size_t acm_size = 0;
+	uintptr_t acm_base;
+
+	if (CONFIG(INTEL_TXT)) {
+		intel_txt_log_bios_acm_error();
+
+		acm_base = (uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
+
+		memupd->FspmConfig.TxtImplemented = 1;
+		memupd->FspmConfig.Txt = 1;
+		memupd->FspmConfig.SinitMemorySize = CONFIG_INTEL_TXT_SINIT_SIZE;
+		memupd->FspmConfig.TxtHeapMemorySize = CONFIG_INTEL_TXT_HEAP_SIZE;
+		memupd->FspmConfig.TxtDprMemorySize = CONFIG_INTEL_TXT_DPR_SIZE << 20;
+		memupd->FspmConfig.TxtDprMemoryBase = 1; // Set to non-zero, FSP will update it
+		memupd->FspmConfig.BiosAcmBase = acm_base;
+		memupd->FspmConfig.BiosAcmSize = acm_size;
+		memupd->FspmConfig.ApStartupBase = 1;  // Set to non-zero, FSP does NULL check
+	}
 }

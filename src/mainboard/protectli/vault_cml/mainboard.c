@@ -95,4 +95,6 @@ void mainboard_silicon_init_params(FSPS_UPD *supd)
 	supd->FspsTestConfig.PowerLimit3 = 0;
 	supd->FspsTestConfig.PowerLimit3Time = 0;
 	supd->FspsTestConfig.PowerLimit3DutyCycle = 0;
+
+	supd->FspsConfig.TxtEnable = CONFIG(INTEL_TXT);
 }
