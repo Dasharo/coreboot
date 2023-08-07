@@ -336,9 +336,21 @@ config PRERAM_CBMEM_CONSOLE_SIZE
 	hex
 	default 0xe00
 
+if INTEL_TXT
+
 config INTEL_TXT_BIOSACM_ALIGNMENT
-	hex
 	default 0x40000 # 256KB
+
+config INTEL_TXT_DPR_SIZE
+	default 4
+
+config INTEL_TXT_SINIT_SIZE
+	default 0x50000
+
+config INTEL_TXT_HEAP_SIZE
+	default 0xf0000
+
+endif
 
 config INTEL_GMA_BCLV_OFFSET
 	default 0xc8258
