@@ -136,6 +136,13 @@ enum cb_err mp_run_on_all_cpus_synchronously(void (*func)(void *), void *arg);
 enum cb_err mp_park_aps(void);
 
 /*
+ * Restart APs after they have been parked. Used by Intel TXT, which requires
+ * parking APs before running ACM , to restart APs and let coreboot program
+ * MTRRs on APs. For use only after mp_init.
+ */
+enum cb_err restart_aps(void);
+
+/*
  * SMM helpers to use with initializing CPUs.
  */
 
