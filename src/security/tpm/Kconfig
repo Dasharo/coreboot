@@ -138,7 +138,7 @@ endchoice
 
 config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
 	bool
-	depends on TPM_MEASURED_BOOT && !VBOOT
+	depends on TPM_MEASURED_BOOT
 	help
 	  Initialize TPM inside the bootblock instead of ramstage. This is
 	  useful with some form of hardware assisted root of trust
