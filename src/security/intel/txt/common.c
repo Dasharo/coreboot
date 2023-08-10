@@ -11,6 +11,7 @@
 #include <smp/node.h>
 #include <string.h>
 #include <types.h>
+#include <security/tpm/tss.h>
 
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_SA)
 #include <soc/intel/common/reset.h>
@@ -385,6 +386,92 @@ static bool check_precondition(const int cond)
 	return !cond;
 }
 
+#if CONFIG(TPM2)
+#define TXT_TPM2_AUX_INDEX (0x1c10102 - NV_INDEX_FIRST)
+#define TXT_TPM2_PS_INDEX (0x1c10103 - NV_INDEX_FIRST)
+
+static const TPMA_NV txt_tpm2_aux_index_attributes = {
+	.TPMA_NV_POLICYWRITE = 1,
+	.TPMA_NV_POLICY_DELETE = 1,
+	.TPMA_NV_WRITE_STCLEAR = 1,
+	.TPMA_NV_AUTHREAD = 1,
+	.TPMA_NV_NO_DA = 1,
+	.TPMA_NV_PLATFORMCREATE = 1,
+};
+
+static const uint8_t txt_tpm2_aux_index_policy[VB2_SHA256_DIGEST_SIZE] = {
+	0xef, 0x9a, 0x26, 0xfc, 0x22, 0xd1, 0xae, 0x8c, 0xec, 0xff, 0x59, 0xe9,
+	0x48, 0x1a, 0xc1, 0xec, 0x53, 0x3d, 0xbe, 0x22, 0x8b, 0xec, 0x6d, 0x17,
+	0x93, 0x0f, 0x4c, 0xb2, 0xcc, 0x5b, 0x97, 0x24
+};
+
+static const TPMA_NV txt_tpm2_ps_index_attributes = {
+	.TPMA_NV_POLICYWRITE = 1,
+	.TPMA_NV_POLICY_DELETE = 1,
+	.TPMA_NV_AUTHREAD = 1,
+	.TPMA_NV_NO_DA = 1,
+	.TPMA_NV_PLATFORMCREATE = 1,
+};
+
+/* Returns true if TPM indices are not in good condition. */
+static bool check_tpm_indices(void)
+{
+	struct nv_read_public_response nvrp_resp;
+
+	if (tlcl_nv_read_public(TXT_TPM2_AUX_INDEX, &nvrp_resp) != TPM_SUCCESS) {
+		printk(BIOS_ERR, "TEE-TXT: Failed to read public data of TPM2 AUX index\n");
+		return true;
+	}
+
+	/* The index could have been written already, but we don't care. */
+	nvrp_resp.nvPublic.t.nvPublic.attributes.TPMA_NV_WRITTEN = 0;
+
+	if (memcmp(&nvrp_resp.nvPublic.t.nvPublic.attributes, &txt_tpm2_aux_index_attributes,
+		   sizeof(TPMA_NV))) {
+		printk(BIOS_ERR, "TEE-TXT: Incorrect TPM2 AUX index attributes\n");
+		return true;
+	}
+
+	/* FIXME: Support other algorithms */
+	if (nvrp_resp.nvPublic.t.nvPublic.nameAlg != TPM_ALG_SHA256) {
+		printk(BIOS_ERR, "TEE-TXT: Unsupported TPM2 AUX index auth hash algo (%02x)\n",
+			nvrp_resp.nvPublic.t.nvPublic.nameAlg);
+		return true;
+	}
+
+	if (memcmp(nvrp_resp.nvPublic.t.nvPublic.authPolicy.t.buffer,
+		   &txt_tpm2_aux_index_policy,
+		   nvrp_resp.nvPublic.t.nvPublic.authPolicy.t.size)) {
+		printk(BIOS_ERR, "TEE-TXT: Incorrect TPM2 AUX index policy\n");
+		return true;
+	}
+
+	/* CBnT does not need PS/PO index */
+	if (CONFIG(INTEL_CBNT_SUPPORT))
+		return false;
+
+	if (tlcl_nv_read_public(TXT_TPM2_PS_INDEX, &nvrp_resp) != TPM_SUCCESS) {
+		printk(BIOS_ERR, "TEE-TXT: Failed to read public data of TPM2 PS/PO index\n");
+		return true;
+	}
+
+	/* The index could have been written already, but we don't care. */
+	nvrp_resp.nvPublic.t.nvPublic.attributes.TPMA_NV_WRITTEN = 0;
+
+	if (memcmp(&nvrp_resp.nvPublic.t.nvPublic.attributes, &txt_tpm2_ps_index_attributes,
+		   sizeof(TPMA_NV))) {
+		printk(BIOS_ERR, "TEE-TXT: Incorrect TPM2 PS/PO index attributes\n");
+		return true;
+	}
+
+	/*
+	 * We don't check the policy, as it may be any policy the platform
+	 * owner/supplier sets.
+	 */
+	return false;
+}
+#endif
+
 /*
  * Test all bits that are required for Intel TXT.
  * Enable SMX if available.
@@ -514,6 +601,15 @@ bool intel_txt_prepare_txt_env(void)
 			break;
 		}
 	}
+
+#if CONFIG(TPM2)
+	/*
+	 * We can't do SCHECK without the mandatory TPM indices present,
+	 * otherwise we will end up in reset loop
+	 */
+	if (check_tpm_indices())
+		return true;
+#endif
 
 	/* Need to park all APs. */
 	if (CONFIG(PARALLEL_MP_AP_WORK))
