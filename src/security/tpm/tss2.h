@@ -29,6 +29,13 @@ tpm_result_t tlcl2_define_space(uint32_t space_index, size_t space_size,
 				const uint8_t *nv_policy, size_t nv_policy_size);
 
 /*
+ * Read the public data of NV index. [index] is the index for the space,
+ * [nvrp_resp] is hte NV index output data. The TPM error code is returned.
+ */
+tpm_result_t tlcl2_nv_read_public(uint32_t space_index,
+				  struct nv_read_public_response *nvrp_resp);
+
+/*
  * Issue TPM2_GetCapability command
  */
 tpm_result_t tlcl2_get_capability(TPM_CAP capability, uint32_t property,

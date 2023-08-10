@@ -197,6 +197,13 @@ static int marshal_nv_define_space(struct obuf *ob,
 	return rc;
 }
 
+static int marshal_nv_read_public(struct obuf *ob,
+				   const struct tpm2_nv_read_public_cmd *nvrp_in)
+{
+	return obuf_write_be32(ob, nvrp_in->nvIndex);
+}
+
+
 static int marshal_nv_setbits(struct obuf *ob,
 			      const struct tpm2_nv_setbits_cmd *command_body)
 {
@@ -401,6 +408,10 @@ int tpm_marshal_command(TPM_CC command, const void *tpm_command_body, struct obu
 		rc |= marshal_nv_define_space(ob, tpm_command_body);
 		break;
 
+	case TPM2_NV_ReadPublic:
+		rc |= marshal_nv_read_public(ob, tpm_command_body);
+		break;
+
 	case TPM2_NV_SetBits:
 		rc |= marshal_nv_setbits(ob, tpm_command_body);
 		break;
@@ -563,6 +574,80 @@ static int unmarshal_nv_read(struct ibuf *ib, struct nv_read_response *nvr)
 	return 0;
 }
 
+static int unmarshal_TPM2B_NV_PUBLIC(struct ibuf *ib, TPM2B_NV_PUBLIC *nv_public)
+{
+	int rc = 0;
+
+	rc |= ibuf_read_be16(ib, &nv_public->t.size);
+	rc |= ibuf_read_be32(ib, &nv_public->t.nvPublic.nvIndex);
+	rc |= ibuf_read_be16(ib, &nv_public->t.nvPublic.nameAlg);
+	rc |= ibuf_read_be32(ib, (uint32_t *)&nv_public->t.nvPublic.attributes);
+	rc |= ibuf_read_be16(ib, &nv_public->t.nvPublic.authPolicy.t.size);
+
+	nv_public->t.nvPublic.authPolicy.t.buffer =
+		ibuf_oob_drain(ib, nv_public->t.nvPublic.authPolicy.t.size);
+
+	rc |= ibuf_read_be16(ib, &nv_public->t.nvPublic.dataSize);
+
+	return rc;
+}
+
+static int unmarshal_TPM2B_NAME(struct ibuf *ib, TPM2B_NAME *name)
+{
+	int rc = 0;
+	size_t digest_size;
+
+	rc |= ibuf_read_be16(ib, &name->size);
+
+	if (name->size == 0)
+		return rc;
+
+	/* If size is 4 it is a handle, otherwise it should be a digest */
+	if (name->size == 4) {
+		rc |= ibuf_read_be32(ib, &name->name.handle);
+		return rc;
+	}
+
+	rc |= ibuf_read_be16(ib, &name->name.digest.hashAlg);
+
+	switch(name->name.digest.hashAlg) {
+	case TPM_ALG_SHA1:
+		digest_size = SHA1_DIGEST_SIZE;
+		break;
+	case TPM_ALG_SHA256:
+		digest_size = SHA256_DIGEST_SIZE;
+		break;
+	case TPM_ALG_SHA384:
+		digest_size = SHA384_DIGEST_SIZE;
+		break;
+	case TPM_ALG_SHA512:
+		digest_size = SHA512_DIGEST_SIZE;
+		break;
+	case TPM_ALG_SM3_256:
+		digest_size = SM3_256_DIGEST_SIZE;
+		break;
+	default:
+		printk(BIOS_WARNING, "%s: Unknown hash algorithm (%02x)\n",
+		       __func__, name->name.digest.hashAlg);
+		return 1;
+	}
+
+	memcpy(&name->name.digest.digest, ibuf_oob_drain(ib, digest_size), digest_size);
+
+	return rc;
+}
+
+
+static int unmarshal_nv_read_public(struct ibuf *ib, struct nv_read_public_response *nvrp)
+{
+	int rc = 0;
+
+	rc |= unmarshal_TPM2B_NV_PUBLIC(ib, &nvrp->nvPublic);
+	rc |= unmarshal_TPM2B_NAME(ib, &nvrp->nvName);
+
+	return rc;
+}
+
 static int unmarshal_vendor_command(struct ibuf *ib,
 				    struct vendor_command_response *vcr)
 {
@@ -633,6 +718,10 @@ struct tpm2_response *tpm_unmarshal_response(TPM_CC command, struct ibuf *ib)
 
 	case TPM2_NV_Read:
 		rc |= unmarshal_nv_read(ib, &tpm2_static_resp.nvr);
+		break;
+
+	case TPM2_NV_ReadPublic:
+		rc |= unmarshal_nv_read_public(ib, &tpm2_static_resp.nvrp);
 		break;
 
 	case TPM2_Hierarchy_Control:
