@@ -1,7 +1,8 @@
 FLASH 32M {
 	SI_ALL 5M {
 		SI_DESC 4K
-		SI_ME
+		SI_EC 128K
+		SI_ME 4820K
 	}
 
 	UNUSED 11M
