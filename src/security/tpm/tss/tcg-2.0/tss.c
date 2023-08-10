@@ -404,6 +404,34 @@ tpm_result_t tlcl_define_space(uint32_t space_index, size_t space_size,
 	}
 }
 
+uint32_t tlcl_nv_read_public(uint32_t space_index,
+			     struct nv_read_public_response *nvrp_resp)
+{
+	struct tpm2_nv_read_public_cmd nvrp_cmd;
+	struct tpm2_response *response;
+
+	/* Prepare the define space command structure. */
+	memset(&nvrp_cmd, 0, sizeof(nvrp_cmd));
+
+	nvrp_cmd.nvIndex = HR_NV_INDEX + space_index;
+
+	response = tpm_process_command(TPM2_NV_ReadPublic, &nvrp_cmd);
+	printk(BIOS_INFO, "%s: response is %x\n", __func__,
+	       response ? response->hdr.tpm_code : -1);
+
+	if (!response)
+		return TPM_E_NO_DEVICE;
+
+	/* Map TPM2 return codes into common vboot representation. */
+	switch (response->hdr.tpm_code) {
+	case TPM2_RC_SUCCESS:
+		memcpy(nvrp_resp, &response->nvrp, sizeof(*nvrp_resp));
+		return TPM_SUCCESS;
+	default:
+		return TPM_E_INTERNAL_INCONSISTENCY;
+	}
+}
+
 uint16_t tlcl_get_hash_size_from_algo(TPMI_ALG_HASH hash_algo)
 {
 	uint16_t value;
