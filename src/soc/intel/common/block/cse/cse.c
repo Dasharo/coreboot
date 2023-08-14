@@ -1095,6 +1095,12 @@ unsigned int cse_get_me_disable_mode(void)
 	if (smmstore_lookup_region(&rdev))
 		return 0;
 
+    /* Disable ME if in Firmware Update Mode */
+	size = sizeof(var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FirmwareUpdateMode", &var, &size);
+	if (ret == CB_SUCCESS && var == TRUE)
+		return ME_MODE_DISABLE_HAP;
+
 	size = sizeof(var);
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "MeMode", &var, &size);
 	if (ret != CB_SUCCESS)
