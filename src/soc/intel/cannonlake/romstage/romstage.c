@@ -9,6 +9,7 @@
 #include <intelblocks/pmclib.h>
 #include <intelblocks/smbus.h>
 #include <memory_info.h>
+#include <security/intel/txt/txt.h>
 #include <soc/intel/common/smbios.h>
 #include <soc/iomap.h>
 #include <soc/pci_devs.h>
@@ -130,6 +131,10 @@ void mainboard_romstage_entry(void)
 	cse_init(HECI1_BASE_ADDRESS);
 
 	s3wake = pmc_fill_power_state(ps) == ACPI_S3;
+
+	if (CONFIG(INTEL_TXT))
+		intel_txt_romstage_init();
+
 	fsp_memory_init(s3wake);
 	pmc_set_disb();
 	if (!s3wake) {
