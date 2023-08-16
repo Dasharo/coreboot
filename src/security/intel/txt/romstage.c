@@ -1,11 +1,19 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi.h>
 #include <arch/cpu.h>
 #include <console/console.h>
 #include <cpu/intel/common/common.h>
 #include <cpu/x86/cr.h>
 #include <device/mmio.h>
+#include <cpu/x86/msr.h>
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_PMC)
+#include <intelblocks/pmclib.h>
+#endif
+#if CONFIG(SOUTHBRIDGE_INTEL_COMMON_PMBASE)
 #include <southbridge/intel/common/pmbase.h>
+#endif
+#include <timer.h>
 #include <types.h>
 
 #include "txt.h"
@@ -82,8 +90,12 @@ void intel_txt_romstage_init(void)
 		}
 
 		/* FIXME: Clear SLP_TYP# */
-		write_pmbase32(4, read_pmbase32(4) & ~(0x7 << 10));
-
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_PMC)
+		pmc_disable_pm1_control(SLP_TYP);
+#endif
+#if CONFIG(SOUTHBRIDGE_INTEL_COMMON_PMBASE)
+		write_pmbase32(PM1_CNT, read_pmbase32(PM1_CNT) & ~SLP_TYP);
+#endif
 		intel_txt_run_sclean();
 
 		/* If running the BIOS ACM is impossible, manual intervention is required */
