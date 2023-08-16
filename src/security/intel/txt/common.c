@@ -305,11 +305,6 @@ static void *intel_txt_prepare_bios_acm(size_t *acm_len)
 	return acm_data;
 }
 
-#define MCU_BASE_ADDR	(TXT_BASE + 0x278)
-#define BIOACM_ADDR	(TXT_BASE + 0x27c)
-#define APINIT_ADDR	(TXT_BASE + 0x290)
-#define SEMAPHORE	(TXT_BASE + 0x294)
-
 /* Returns on failure, resets the computer on success */
 void intel_txt_run_sclean(void)
 {
@@ -319,13 +314,6 @@ void intel_txt_run_sclean(void)
 
 	if (!acm_data)
 		return;
-
-	/* FIXME: Do we need to program these two? */
-	//write32((void *)MCU_BASE_ADDR, 0xffe1a990);
-	//write32((void *)APINIT_ADDR, 0xfffffff0);
-
-	write32((void *)BIOACM_ADDR, (uintptr_t)acm_data);
-	write32((void *)SEMAPHORE, 0);
 
 	/*
 	 * The time SCLEAN will take depends on the installed RAM size.
