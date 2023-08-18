@@ -57,15 +57,18 @@ chip soc/intel/jasperlake
 	register "PchHdaDspEnable" = "1"
 	register "PchHdaAudioLinkHdaEnable" = "1"
 
+	# PCIe Root Port 1 and 2 for LAN3 and LAN4 on 4 port platform
+	# PCie Root Port 1 (x2) to LAN 3-6 via ASMedia PCIe switch on 6 port platform
 	# PCIe Root Port 4 for NVMe
-	# PCIe Root Port 1 for LAN3-6 via ASMedia PCIe switch (4 and 6 port platform)
 	# PCIe port 5 for M.2 E-key WiFi
 	# PCIe port 6 and 7 for LAN1 and LAN2
 	register "PcieRpEnable[0]" = "1"
+	register "PcieRpEnable[1]" = "1"
 	register "PcieRpEnable[3]" = "1"
 	register "PcieRpEnable[4]" = "1"
 	register "PcieRpEnable[5]" = "1"
 	register "PcieRpEnable[6]" = "1"
+
 
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE" # WiFi
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE" # M.2 NVMe
@@ -120,7 +123,7 @@ chip soc/intel/jasperlake
 		device pci 19.2 off end # UART 2
 		device pci 1a.0 on  end # eMMC
 		device pci 1c.0 on  end # PCI Express Root Port 1
-		device pci 1c.1 off end # PCI Express Root Port 2
+		device pci 1c.1 on  end # PCI Express Root Port 2
 		device pci 1c.2 off end # PCI Express Root Port 3
 		device pci 1c.3 on	# PCI Express Root Port 4
 			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
