@@ -30,7 +30,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpLtrEnable[5] = 1;
 	params->PcieRpLtrEnable[6] = 1;
 
-	/* Set Max Paylaod to 256B */
+	/* Set Max Payload to 256B */
 	params->PcieRpMaxPayload[0] = 1;
 	params->PcieRpMaxPayload[1] = 1;
 	params->PcieRpMaxPayload[3] = 1;
