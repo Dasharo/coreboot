@@ -561,31 +561,79 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 	printk(BIOS_INFO, "ASPM: Enabled %s\n", aspm_type_str[apmc]);
 }
 
+static int pciexp_find_optimal_max_payload(struct device *parent, struct device *child)
+{
+	static int max_payload = -1;
+	unsigned int parent_cap, child_cap;
+	unsigned int child_max_payload, parent_max_payload, max_payload_ret;
+	u32 child_devcap, parent_devcap;
+	u16 flags;
+
+	child_cap = pci_find_capability(child, PCI_CAP_ID_PCIE);
+	if (!child_cap)
+		return -1;
+
+	parent_cap = pci_find_capability(parent, PCI_CAP_ID_PCIE);
+	if (!parent_cap)
+		return -1;
+
+	/* Get max payload size supported by endpoint */
+	child_devcap = pci_read_config32(child, child_cap + PCI_EXP_DEVCAP);
+	child_max_payload = child_devcap & PCI_EXP_DEVCAP_PAYLOAD;
+
+	/* Get max payload size supported by root port */
+	parent_devcap = pci_read_config32(parent, parent_cap + PCI_EXP_DEVCAP);
+	parent_max_payload = parent_devcap & PCI_EXP_DEVCAP_PAYLOAD;
+
+	/* Set max payload to smaller of the reported device capability. */
+	if (max_payload == -1)
+		max_payload = MIN(child_max_payload, parent_max_payload);
+	else {
+		max_payload = MIN(max_payload, parent_max_payload);
+	}
+
+	if (max_payload > 5) {
+		/* Values 6 and 7 are reserved in PCIe 3.0 specs. */
+		printk(BIOS_ERR, "PCIe: Max_Payload_Size field restricted from %d to 5\n",
+		       max_payload);
+		max_payload = 5;
+	}
+
+	/* Check if we reached the Root Port and return the value, else go further. */
+	flags = pci_read_config16(parent, parent_cap + PCI_EXP_FLAGS);
+	switch ((flags & PCI_EXP_FLAGS_TYPE) >> 4) {
+	case PCI_EXP_TYPE_ROOT_PORT:
+		max_payload_ret = max_payload;
+		max_payload = -1;
+		return max_payload_ret;
+	case PCI_EXP_TYPE_UPSTREAM:
+	case PCI_EXP_TYPE_DOWNSTREAM:
+	case PCI_EXP_TYPE_PCI_BRIDGE:
+		if (parent->bus && parent->bus->dev)
+			return pciexp_find_optimal_max_payload(parent->bus->dev, parent);
+		else
+			return -1;
+	default:
+		printk(BIOS_WARNING, "Unknown PCIe device type: %d\n", (flags & PCI_EXP_FLAGS_TYPE) >> 4);
+	}
+
+	return -1;
+}
+
 /*
  * Set max payload size of endpoint in accordance with max payload size of root port.
  */
 static void pciexp_set_max_payload_size(struct device *root, unsigned int root_cap,
 					struct device *endp, unsigned int endp_cap)
 {
-	unsigned int endp_max_payload, root_max_payload, max_payload;
+	int max_payload;
 	u16 endp_devctl, root_devctl;
-	u32 endp_devcap, root_devcap;
 
-	/* Get max payload size supported by endpoint */
-	endp_devcap = pci_read_config32(endp, endp_cap + PCI_EXP_DEVCAP);
-	endp_max_payload = endp_devcap & PCI_EXP_DEVCAP_PAYLOAD;
+	max_payload = pciexp_find_optimal_max_payload(root, endp);
 
-	/* Get max payload size supported by root port */
-	root_devcap = pci_read_config32(root, root_cap + PCI_EXP_DEVCAP);
-	root_max_payload = root_devcap & PCI_EXP_DEVCAP_PAYLOAD;
-
-	/* Set max payload to smaller of the reported device capability. */
-	max_payload = MIN(endp_max_payload, root_max_payload);
-	if (max_payload > 5) {
-		/* Values 6 and 7 are reserved in PCIe 3.0 specs. */
-		printk(BIOS_ERR, "PCIe: Max_Payload_Size field restricted from %d to 5\n",
-		       max_payload);
-		max_payload = 5;
+	if (max_payload == -1) {
+		printk(BIOS_INFO, "PCIe: Could not find optimal Max_Payload_Size\n");
+		return;
 	}
 
 	endp_devctl = pci_read_config16(endp, endp_cap + PCI_EXP_DEVCTL);
