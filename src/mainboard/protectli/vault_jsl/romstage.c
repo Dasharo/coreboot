@@ -46,13 +46,13 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
 	const struct spd_info board_spd_info = {
 		.read_type = READ_SPD_CBFS,
-		.spd_spec.spd_index = CONFIG(BOARD_PROTECTLI_PT601) ? 1 : 0,
+		.spd_spec.spd_index = CONFIG(BOARD_PROTECTLI_V1610) ? 1 : 0,
 	};
 
 	memcfg_init(&memupd->FspmConfig, &memcfg_cfg, &board_spd_info, false);
 
-	/* PT201 uses the same RAM chips as PT401, but only populates channel 1 */
-	if (CONFIG(BOARD_PROTECTLI_PT201))
+	/* V1210 uses the same RAM chips as V1410, but only populates channel 1 */
+	if (CONFIG(BOARD_PROTECTLI_V1210))
 		memupd->FspmConfig.MemorySpdPtr00 = 0;
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));

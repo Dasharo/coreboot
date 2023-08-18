@@ -17,11 +17,11 @@ jobs:
       matrix:
         include:
           - vendor: protectli
-            model: pt201
+            model: v1210
           - vendor: protectli
-            model: pt401
+            model: v1410
           - vendor: protectli
-            model: pt601
+            model: v1610
     steps:
       - uses: actions/checkout@v3
       - name: Checkout repository

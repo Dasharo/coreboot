@@ -4,9 +4,9 @@ function usage {
     echo -e "Usage:"
     echo -e "$0 CMD"
     echo -e "Available CMDs:"
-    echo -e "\tpt201 - build Protectli PT201 coreboot image"
-    echo -e "\tpt401 - build Protectli PT401 coreboot image"
-    echo -e "\tpt601 - build Protectli PT601 coreboot image"
+    echo -e "\tv1210 - build Protectli V1210 coreboot image"
+    echo -e "\tv1410 - build Protectli V1410 coreboot image"
+    echo -e "\tv1610 - build Protectli V1610 coreboot image"
     exit 1
 }
 
@@ -42,14 +42,14 @@ function buildImage {
 CMD="$1"
 
 case "$CMD" in
-    "pt201")
-        buildImage "pt201"
+    "v1210")
+        buildImage "v1210"
         ;;
-    "pt401")
-        buildImage "pt401"
+    "v1410")
+        buildImage "v1410"
         ;;
-    "pt601")
-        buildImage "pt601"
+    "v1610")
+        buildImage "v1610"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
