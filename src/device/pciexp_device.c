@@ -561,26 +561,27 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 	printk(BIOS_INFO, "ASPM: Enabled %s\n", aspm_type_str[apmc]);
 }
 
-/*
- * Set max payload size of endpoint in accordance with max payload size of root port.
- */
-static void pciexp_set_max_payload_size(struct device *root, unsigned int root_cap,
-					struct device *endp, unsigned int endp_cap)
+static unsigned int pciexp_configured_max_payload(struct device *dev)
 {
-	unsigned int endp_max_payload, root_max_payload, max_payload;
-	u16 endp_devctl, root_devctl;
-	u32 endp_devcap, root_devcap;
+	u16 devctl;
+	u16 pcie_cap = pci_find_capability(dev, PCI_CAP_ID_PCIE);
 
-	/* Get max payload size supported by endpoint */
-	endp_devcap = pci_read_config32(endp, endp_cap + PCI_EXP_DEVCAP);
-	endp_max_payload = endp_devcap & PCI_EXP_DEVCAP_PAYLOAD;
+	devctl = pci_read_config16(dev, pcie_cap + PCI_EXP_DEVCTL);
+	devctl &= PCI_EXP_DEVCTL_PAYLOAD;
 
-	/* Get max payload size supported by root port */
-	root_devcap = pci_read_config32(root, root_cap + PCI_EXP_DEVCAP);
-	root_max_payload = root_devcap & PCI_EXP_DEVCAP_PAYLOAD;
+	return devctl >> 5;
+}
 
-	/* Set max payload to smaller of the reported device capability. */
-	max_payload = MIN(endp_max_payload, root_max_payload);
+static void pciexp_limit_max_payload_cap(struct device *dev, unsigned int limit, u16 cap)
+{
+	unsigned int dev_max_payload, max_payload;
+	u32 devcap;
+
+	devcap = pci_read_config32(dev, cap + PCI_EXP_DEVCAP);
+	dev_max_payload = devcap & PCI_EXP_DEVCAP_PAYLOAD;
+
+	max_payload = MIN(limit, dev_max_payload);
+
 	if (max_payload > 5) {
 		/* Values 6 and 7 are reserved in PCIe 3.0 specs. */
 		printk(BIOS_ERR, "PCIe: Max_Payload_Size field restricted from %d to 5\n",
@@ -588,17 +589,63 @@ static void pciexp_set_max_payload_size(struct device *root, unsigned int root_c
 		max_payload = 5;
 	}
 
-	endp_devctl = pci_read_config16(endp, endp_cap + PCI_EXP_DEVCTL);
-	endp_devctl &= ~PCI_EXP_DEVCTL_PAYLOAD;
-	endp_devctl |= max_payload << 5;
-	pci_write_config16(endp, endp_cap + PCI_EXP_DEVCTL, endp_devctl);
+	pci_update_config16(dev, cap + PCI_EXP_DEVCTL, ~PCI_EXP_DEVCTL_PAYLOAD,
+			    max_payload << 5);
+}
 
-	root_devctl = pci_read_config16(root, root_cap + PCI_EXP_DEVCTL);
-	root_devctl &= ~PCI_EXP_DEVCTL_PAYLOAD;
-	root_devctl |= max_payload << 5;
-	pci_write_config16(root, root_cap + PCI_EXP_DEVCTL, root_devctl);
+static void pciexp_limit_max_payload_ctl(struct device *dev, unsigned int limit, u16 cap)
+{
+	unsigned int max_payload;
 
-	printk(BIOS_INFO, "PCIe: Max_Payload_Size adjusted to %d\n", (1 << (max_payload + 7)));
+	max_payload = MIN(limit, pciexp_configured_max_payload(dev));
+
+	pci_update_config16(dev, cap + PCI_EXP_DEVCTL, ~PCI_EXP_DEVCTL_PAYLOAD,
+			    max_payload << 5);
+}
+
+static bool pciexp_device_is_root_port(struct device *dev, u16 cap)
+{
+	u16 flags;
+
+	flags = pci_read_config16(dev, cap + PCI_EXP_FLAGS);
+	if (((flags & PCI_EXP_FLAGS_TYPE) >> 4) == PCI_EXP_TYPE_ROOT_PORT)
+		return true;
+
+	return false;
+}
+
+static bool pciexp_device_is_endpoint(struct device *dev, u16 cap)
+{
+	u16 flags;
+
+	flags = pci_read_config16(dev, cap + PCI_EXP_FLAGS);
+	if (((flags & PCI_EXP_FLAGS_TYPE) >> 4) == PCI_EXP_TYPE_ENDPOINT)
+		return true;
+
+	return false;
+}
+
+static void pciexp_configure_max_payload_bridge(struct device *dev, u16 cap)
+{
+	if (pciexp_device_is_root_port(dev, cap))
+		pciexp_limit_max_payload_cap(dev, UINT_MAX, cap);
+	else
+		pciexp_limit_max_payload_cap(dev, pciexp_configured_max_payload(dev->bus->dev),
+					     cap);
+}
+
+static void pciexp_configure_max_payload(struct device *dev, u16 cap)
+{
+	/* Finalize our walk down to the endpoint */
+	if (pciexp_device_is_endpoint(dev, cap))
+		pciexp_limit_max_payload_cap(dev, pciexp_configured_max_payload(dev->bus->dev),
+					     cap);
+
+	/* Finalize on our way up */
+	pciexp_limit_max_payload_ctl(dev->bus->dev, pciexp_configured_max_payload(dev), cap);
+
+	printk(BIOS_INFO, "PCIe: Max_Payload_Size adjusted to %d\n",
+	       (1 << (pciexp_configured_max_payload(dev) + 7)));
 }
 
 /*
@@ -658,8 +705,8 @@ static void pciexp_tune_dev(struct device *dev)
 	if (CONFIG(PCIEXP_LANE_ERR_STAT_CLEAR))
 		clear_lane_error_status(root);
 
-	/* Adjust Max_Payload_Size of link ends. */
-	pciexp_set_max_payload_size(root, root_cap, dev, cap);
+	/* Adjust Max_Payload_Size */
+	pciexp_configure_max_payload(dev, cap);
 
 	pciexp_configure_ltr(root, root_cap, dev, cap);
 }
@@ -668,8 +715,13 @@ void pciexp_scan_bus(struct bus *bus, unsigned int min_devfn,
 			     unsigned int max_devfn)
 {
 	struct device *child;
+	u16 cap;
+
+	cap = pci_find_capability(bus->dev, PCI_CAP_ID_PCIE);
 
 	pciexp_enable_ltr(bus->dev);
+
+	pciexp_configure_max_payload_bridge(bus->dev, cap);
 
 	pci_scan_bus(bus, min_devfn, max_devfn);
 
