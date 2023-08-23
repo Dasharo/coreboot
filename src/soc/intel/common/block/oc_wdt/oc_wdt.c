@@ -58,7 +58,7 @@ static void get_watchdog_config(void)
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogAvailable",
 				&wdt_available, &size);
 	/*
-	 * Update the watchdog state to indicate whether we want to expose 
+	 * Update the watchdog state to indicate whether we want to expose
 	 * its configuration in the setup menu. Needed to handle the case when
 	 * variable storage would be corrupted.
 	 */
