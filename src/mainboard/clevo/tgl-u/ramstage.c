@@ -12,6 +12,7 @@
 #include <soc/ramstage.h>
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
+#include <device/device.h>
 
 #include <Uefi/UefiBaseType.h>
 
@@ -144,6 +145,35 @@ static void set_camera_enablement(void)
 efi_err:
 #endif
 	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
+
+}
+
+static void set_wifi_bt_radios(void)
+{
+    bool enable = true;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+    struct region_device rdev;
+    enum cb_err ret;
+
+    uint32_t size = sizeof(enable);
+
+    const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+    if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+    ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "EnableWifiBt",
+                            &enable, &size);
+
+    if (ret != CB_SUCCESS)
+            printk(BIOS_DEBUG, "Wifi + BT radios: failed to read curve selection from EFI vars, using board default\n");
+efi_err: ;
+#endif
+	struct device *wifi_card = pcidev_on_root(0x14, 3);
+	wifi_card->enabled = enable;
 }
 
 static void init_mainboard(void *chip_info)
@@ -153,6 +183,8 @@ static void init_mainboard(void *chip_info)
 	set_fan_curve();
 
 	set_camera_enablement();
+
+	set_wifi_bt_radios();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
