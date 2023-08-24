@@ -64,6 +64,9 @@ smbios_enclosure_type smbios_mainboard_enclosure_type(void)
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	variant_configure_fsps(params);
+
+	// Enable reporting CPU C10 state over eSPI
+	params->PchEspiHostC10ReportEnable = 1;
 }
 
 static void set_fan_curve(void)

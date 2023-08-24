@@ -281,6 +281,9 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CpuPcieRpMaxPayload[0] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[0] = 1;
 
+	// Enable reporting CPU C10 state over eSPI
+	params->PchEspiHostC10ReportEnable = 1;
+
 	params->LidStatus = system76_ec_get_lid_state();
 }
 
