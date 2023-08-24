@@ -499,15 +499,15 @@ static const struct pad_config gpio_table[] = {
 
 	/* GPP_D2 - GPIO */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_D2, 0, DEEP),
+	PAD_CFG_GPO(GPP_D2, 1, PLTRST),
 
 	/* GPP_D3 - GPIO */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_D3, 1, DEEP),
+	PAD_CFG_GPO(GPP_D3, 1, PLTRST),
 
 	/* GPP_D4 - GPIO */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_D4, 1, DEEP),
+	PAD_CFG_GPO(GPP_D4, 1, PLTRST),
 
 	/* GPP_D5 - SRCCLKREQ0# */
 	/* DW0: 0x44000502, DW1: 0x00000000 */
@@ -563,7 +563,7 @@ static const struct pad_config gpio_table[] = {
 
 	/* GPP_D16 - GPIO */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_D16, 1, DEEP),
+	PAD_CFG_GPO(GPP_D16, 1, PLTRST),
 
 	/* GPP_D17 - GPIO */
 	/* DW0: 0x44000102, DW1: 0x00000000 */
