@@ -252,21 +252,25 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpEnableCpm[5] = 1;
 	params->PcieRpEnableCpm[7] = 1;
 	params->PcieRpEnableCpm[8] = 1;
+	params->PcieRpEnableCpm[9] = 1;
 
 	params->PcieRpAcsEnabled[4] = 1;
 	params->PcieRpAcsEnabled[5] = 1;
 	params->PcieRpAcsEnabled[7] = 1;
 	params->PcieRpAcsEnabled[8] = 1;
+	params->PcieRpAcsEnabled[9] = 1;
 
 	params->PcieRpMaxPayload[4] = 1;
 	params->PcieRpMaxPayload[5] = 1;
 	params->PcieRpMaxPayload[7] = 1;
 	params->PcieRpMaxPayload[8] = 1;
+	params->PcieRpMaxPayload[9] = 1;
 
 	params->PcieRpPmSci[4] = 1;
 	params->PcieRpPmSci[5] = 1;
 	params->PcieRpPmSci[7] = 1;
 	params->PcieRpPmSci[8] = 1;
+	params->PcieRpPmSci[9] = 1;
 
 	params->CpuPcieRpPmSci[0] = 1;
 	params->CpuPcieRpEnableCpm[0] = 1;
