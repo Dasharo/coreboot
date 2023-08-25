@@ -23,7 +23,7 @@ build_date:
 	.byte ' '
 	.asciz COREBOOT_DMI_DATE
 
-align 8
+.align 8
 
 msi_sign_on:
 	.ascii "$MS1E7E06IMS"
