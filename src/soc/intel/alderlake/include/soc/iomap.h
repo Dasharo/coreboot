@@ -101,7 +101,7 @@
 
 #define P2SB_BAR		CONFIG_PCR_BASE_ADDRESS
 #if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S) || CONFIG(SOC_INTEL_RAPTORLAKE_PCH_S)
-#define P2SB_SIZE		(256 * MiB)
+#define P2SB_SIZE		0x10000000 /* 256 MiB in hex for ACPI syntax */
 #else
 #define P2SB_SIZE		(16 * MiB)
 #endif
