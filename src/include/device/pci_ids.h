@@ -3597,6 +3597,7 @@
 #define PCI_DID_INTEL_MTL_IOE_M_PMC		0x7ebe
 #define PCI_DID_INTEL_MTL_IOE_P_PMC		0x7ece
 #define PCI_DID_INTEL_RPP_P_PMC			0x51a1
+#define PCI_DID_INTEL_RPP_S_PMC			0x7a21
 
 /* Intel I2C device Ids */
 #define PCI_DID_INTEL_LPT_LP_I2C0		0x9c61
@@ -4283,6 +4284,7 @@
 #define PCI_DID_INTEL_MTL_IOE_M_P2SB		0x7eb8
 #define PCI_DID_INTEL_MTL_IOE_P_P2SB		0x7ec8
 #define PCI_DID_INTEL_RPP_P_P2SB		0x51a0
+#define PCI_DID_INTEL_RPP_S_P2SB		0x7a20
 
 /* Intel SRAM device Ids */
 #define PCI_DID_INTEL_APL_SRAM			0x5aec
@@ -4394,7 +4396,12 @@
 #define PCI_DID_INTEL_ADP_M_CSE1		0x54e1
 #define PCI_DID_INTEL_ADP_M_CSE2		0x54e4
 #define PCI_DID_INTEL_ADP_M_CSE3		0x54e5
+#define PCI_DID_INTEL_RPP_S_CSE0		0x7a68
+#define PCI_DID_INTEL_RPP_S_CSE1		0x7a69
+#define PCI_DID_INTEL_RPP_S_CSE2		0x7a6c
+#define PCI_DID_INTEL_RPP_S_CSE3		0x7a6d
 #define PCI_DID_INTEL_MTL_CSE0			0x7e70
+
 
 /* Intel XDCI device Ids */
 #define PCI_DID_INTEL_APL_XDCI			0x5aaa
@@ -4569,6 +4576,7 @@
 #define PCI_DID_INTEL_TGP_PMC_CRASHLOG_SRAM		0xa0ef
 #define PCI_DID_INTEL_MTL_CRASHLOG_SRAM			0x7d0d
 #define PCI_DID_INTEL_RPL_CPU_CRASHLOG_SRAM		0xa77d
+#define PCI_DID_INTEL_RPP_S_PMC_CRASHLOG_SRAM		0x7a27
 
 /* Intel Ethernet Controller device Ids */
 #define PCI_DID_INTEL_EHL_GBE_HOST		0x4B32
