@@ -17,6 +17,9 @@
 /* ESPI 0:1f.0 */
 #include <soc/intel/common/block/acpi/acpi/lpc.asl>
 
+/* OC WDT */
+#include "oc_wdt.asl"
+
 /* PCH HDA */
 #include "pch_hda.asl"
 
