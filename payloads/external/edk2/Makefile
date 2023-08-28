@@ -185,6 +185,10 @@ ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowSleepType=FALSE
 endif
+# DASHARO_PCI_CONFIG	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPciMenu=TRUE
+endif
 # DASHARO_NETWORK_BOOT_DEFAULT_ENABLE	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
@@ -192,6 +196,10 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowOcWdtOptions=TRUE
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtTimeoutDefault=$(CONFIG_EDK2_DASHARO_OC_WDT_TIMEOUT)
+endif
+# PCIEXP_SUPPORT_RESIZABLE_BARS	= FALSE
+ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
 endif
 # MAINBOARD_POWER_FAILURE_STATE = 0
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)

@@ -331,6 +331,12 @@ config EDK2_DASHARO_POWER_CONFIG
 	help
 	  Enables the EDK2 power configuration submenu in Dasharo System Features menu.
 
+config EDK2_DASHARO_PCI_CONFIG
+	bool "Enable EDK2 Dasharo PCI/PCIe Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 PCI/PCIe configuration submenu in Dasharo System Features menu.
+
 config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
 	bool "Enable EDK2 network boot option by default"
 	default n
