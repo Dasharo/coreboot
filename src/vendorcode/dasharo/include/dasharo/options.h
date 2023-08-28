@@ -15,4 +15,13 @@
  */
 uint8_t dasharo_get_power_on_after_fail(void);
 
+/* Looks Dasharo/"PCIeResizeableBarsEnabled" variable if resizeable PCIe BARs
+ * support was enabled at compile-time.
+ *
+ * Result:
+ *  - true  - resizeable PCIe BARs are supported and enabled
+ *  - false - resizeable PCIe BARs are disabled or not supported
+ */
+bool dasharo_resizeable_bars_enabled(void);
+
 #endif /* DASHARO_OPTIONS_H */

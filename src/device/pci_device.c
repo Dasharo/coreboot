@@ -11,6 +11,7 @@
 #include <bootmode.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
+#include <dasharo/options.h>
 #include <stdlib.h>
 #include <string.h>
 #include <delay.h>
@@ -454,7 +455,7 @@ static void pci_read_bases(struct device *dev, unsigned int howmany)
 		resource = pci_get_resource(dev, index);
 
 		const bool is_pcie = pci_find_capability(dev, PCI_CAP_ID_PCIE) != 0;
-		if (CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS) && is_pcie)
+		if (is_pcie && dasharo_resizeable_bars_enabled())
 			configure_adjustable_base(dev, index, resource);
 
 		index += (resource->flags & IORESOURCE_PCI64) ? 8 : 4;
