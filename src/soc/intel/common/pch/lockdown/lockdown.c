@@ -50,7 +50,7 @@ bool is_smm_bwp_permitted(void)
 	if (smmstore_lookup_region(&rdev))
 		return false;
 
-    /* Disable locking if in Firmware Update Mode */
+	/* Disable locking if in Firmware Update Mode */
 	size = sizeof(var);
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FirmwareUpdateMode", &var, &size);
 	if (ret == CB_SUCCESS && var == TRUE)
