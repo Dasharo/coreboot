@@ -309,7 +309,7 @@ static const struct vr_lookup vr_config_tdc_currentlimit[] = {
 static void fill_vr_fast_vmode(FSP_S_CONFIG *s_cfg,
 		int domain, const struct vr_config *chip_cfg)
 {
-#if CONFIG(SOC_INTEL_RAPTORLAKE) || CONFIG(SOC_INTEL_ALDER_LAKE_PCH_S)
+#if CONFIG(SOC_INTEL_RAPTORLAKE) || CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	s_cfg->EnableFastVmode[domain] = chip_cfg->enable_fast_vmode;
 	if (s_cfg->EnableFastVmode[domain])
 		s_cfg->IccLimit[domain] = chip_cfg->fast_vmode_i_trip;

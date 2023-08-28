@@ -8,7 +8,7 @@
 #include <fsp/api.h>
 
 struct vr_config {
-#if CONFIG(SOC_INTEL_RAPTORLAKE)
+#if CONFIG(SOC_INTEL_RAPTORLAKE) || CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
 	/*
 	 * When enabled, this feature makes the SoC throttle when the power
 	 * consumption exceeds the I_TRIP threshold.
