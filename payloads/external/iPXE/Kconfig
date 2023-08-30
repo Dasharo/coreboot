@@ -70,7 +70,7 @@ config PXE_ROM_ID
 
 config PXE_SERIAL_CONSOLE
 	bool "Enable iPXE serial console"
-	default n if SEABIOS_SERCON_PORT
+	default n if SEABIOS_SERCON_PORT_ADDR
 	default n if EDK2_ENABLE_IPXE
 	default y
 	help
