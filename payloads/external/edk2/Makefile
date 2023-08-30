@@ -184,6 +184,7 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowSleepType=FALSE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)
 endif
 # DASHARO_PCI_CONFIG	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)
@@ -201,8 +202,6 @@ endif
 ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
 endif
-# MAINBOARD_POWER_FAILURE_STATE = 0
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
 BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
