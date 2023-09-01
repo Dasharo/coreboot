@@ -19,5 +19,3 @@ void variant_configure_fspm(FSPM_UPD *memupd)
 
 	memcfg_init(memupd, &board_cfg, &spd_info, half_populated);
 }
-
-

@@ -47,26 +47,26 @@ static void mainboard_pre_device(void *unused) {
 }
 
 void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config) {
-    bool enable = true;
+	bool enable = true;
 
 #if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
-    struct region_device rdev;
-    enum cb_err ret;
+	struct region_device rdev;
+	enum cb_err ret;
 
-    uint32_t size = sizeof(enable);
+	uint32_t size = sizeof(enable);
 
-    const EFI_GUID dasharo_system_features_guid = {
+	const EFI_GUID dasharo_system_features_guid = {
 		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
 	};
 
-    if (smmstore_lookup_region(&rdev))
+	if (smmstore_lookup_region(&rdev))
 		goto efi_err;
 
-    ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "EnableWifiBt",
-                            &enable, &size);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "EnableWifiBt",
+	                        &enable, &size);
 
-    if (ret != CB_SUCCESS)
-            printk(BIOS_DEBUG, "Wifi + BT radios: failed to read enablement status from EFI vars, using board default\n");
+	if (ret != CB_SUCCESS)
+	        printk(BIOS_DEBUG, "Wifi + BT radios: failed to read enablement status from EFI vars, using board default\n");
 efi_err: ;
 #endif
 	config->CnviBtCore = enable;

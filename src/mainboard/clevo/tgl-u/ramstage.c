@@ -12,7 +12,6 @@
 #include <soc/ramstage.h>
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
-#include <device/device.h>
 
 #include <Uefi/UefiBaseType.h>
 
@@ -174,7 +173,6 @@ efi_err: ;
 #endif
 	struct device *wifi_card = pcidev_on_root(0x14, 3);
 	wifi_card->enabled = enable;
-	printk(BIOS_DEBUG, enable ? "raa Enabled\n" : "raa disabled\n");
 }
 
 static void init_mainboard(void *chip_info)
