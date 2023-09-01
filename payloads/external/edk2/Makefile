@@ -26,7 +26,7 @@ endif
 BUILD_STR = -p UefiPayloadPkg/UefiPayloadPkg.dsc
 BUILD_STR += -t COREBOOT
 BUILD_STR += -D BOOTLOADER=COREBOOT
-# BUILD_STR += -q -s
+BUILD_STR += -q -s
 
 #
 # EDK II has the following build options relevant to coreboot:
