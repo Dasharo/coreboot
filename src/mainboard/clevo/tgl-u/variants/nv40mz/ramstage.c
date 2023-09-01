@@ -71,7 +71,6 @@ efi_err: ;
 #endif
 	config->CnviBtCore = enable;
 	config->usb2_ports[10].enable = enable;
-	printk(BIOS_DEBUG, enable ? "POZDRO\n" : "ESSA\n");
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, mainboard_pre_device, NULL);
