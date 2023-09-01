@@ -6,10 +6,10 @@
 #include <device/device.h>
 #include <drivers/efi/efivars.h>
 
-void mainboard_memory_init_params(FSPM_UPD *memupd)
-{
-	variant_configure_fspm(memupd);
+bool is_wifi_bt_radios_enabled(void);
 
+bool is_wifi_bt_radios_enabled(void)
+{
 	bool enable = true;
 
 #if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
@@ -32,7 +32,14 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	        printk(BIOS_DEBUG, "Wifi + BT radios: failed to read curve selection from EFI vars, using board default\n");
 efi_err: ;
 #endif
-	if(!enable) {
+	return enable;
+}
+
+void mainboard_memory_init_params(FSPM_UPD *memupd)
+{
+	variant_configure_fspm(memupd);
+
+	if(!is_wifi_bt_radios_enabled()) {
 		uint32_t mask = memupd->FspmConfig.PcieRpEnableMask;
 		// disable PCIe root port 5
 		uint32_t disabled_root_port = ~((uint32_t)1 << 4);
