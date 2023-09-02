@@ -65,51 +65,6 @@ static void mainboard_init(void *chip_info)
 	}
 }
 
-u8 smbios_mainboard_feature_flags(void)
-{
-	return SMBIOS_FEATURE_FLAGS_HOSTING_BOARD | SMBIOS_FEATURE_FLAGS_REPLACEABLE;
-}
-
-smbios_wakeup_type smbios_system_wakeup_type(void)
-{
-	return SMBIOS_WAKEUP_TYPE_POWER_SWITCH;
-}
-
-const char *smbios_system_product_name(void)
-{
-	return "MS-7D25";
-}
-
-const char *smbios_mainboard_product_name(void)
-{
-	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4)) {
-		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z690-A WIFI DDR4(MS-7D25)";
-		else
-			return "PRO Z690-A DDR4(MS-7D25)";
-	}
-
-	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI)) {
-		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z690-A WIFI (MS-7D25)";
-		else
-			return "PRO Z690-A (MS-7D25)";
-	}
-
-	return CONFIG_MAINBOARD_PART_NUMBER;
-}
-
-/* Only baseboard serial number is populated */
-const char *smbios_system_serial_number(void)
-{
-	return "Default string";
-}
-
-const char *smbios_system_sku(void)
-{
-	return "Default string";
-}
-
 static void fill_turbo_ratio_limits(FSP_S_CONFIG *params)
 {
 	msr_t msr;
