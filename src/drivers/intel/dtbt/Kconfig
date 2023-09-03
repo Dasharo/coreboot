@@ -2,3 +2,29 @@ config DRIVERS_INTEL_DTBT
 	def_bool n
 	help
 	  Support for discrete Thunderbolt controllers
+
+
+if !PCIEXP_HOTPLUG
+
+config PCIEXP_HOTPLUG_BUSES
+	int
+	default 42
+
+config PCIEXP_HOTPLUG_MEM
+	hex
+	default 0xc200000
+
+config PCIEXP_HOTPLUG_PREFETCH_MEM
+	hex
+	default 0x1c000000
+
+config PCIEXP_HOTPLUG_IO
+	hex
+	default 0x1000
+
+config PCIEXP_HOTPLUG_PREFETCH_MEM_ABOVE_4G
+	bool
+	depends on RESOURCE_ALLOCATOR_V4
+	default y
+
+endif
