@@ -1,10 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <console/console.h>
+#include <cpu/x86/msr.h>
 #include <device/mmio.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/pmclib.h>
 #include <intelpch/lockdown.h>
 #include <soc/pm.h>
+
+#define MSR_IA32_DEBUG_INTERFACE		0xc80
+#define   MSR_IA32_DEBUG_INTERFACE_EN		(1 << 0)
+#define   MSR_IA32_DEBUG_INTERFACE_LOCK		(1 << 30)
 
 static void pmc_lock_pmsync(void)
 {
@@ -55,8 +61,22 @@ static void pmc_lockdown_cfg(int chipset_lockdown)
 		pmc_lock_smi();
 }
 
+static void cpu_lockdown_cfg(void)
+{
+	msr_t msr = rdmsr(MSR_IA32_DEBUG_INTERFACE);
+
+	if (!(msr.lo & MSR_IA32_DEBUG_INTERFACE_LOCK)) {
+		if (CONFIG(INTEL_TXT))
+			msr.lo &= ~MSR_IA32_DEBUG_INTERFACE_EN;
+
+		msr.lo |= MSR_IA32_DEBUG_INTERFACE_LOCK;
+		wrmsr(MSR_IA32_DEBUG_INTERFACE, msr);
+	}
+}
+
 void soc_lockdown_config(int chipset_lockdown)
 {
 	/* PMC lock down configuration */
 	pmc_lockdown_cfg(chipset_lockdown);
+	cpu_lockdown_cfg();
 }
