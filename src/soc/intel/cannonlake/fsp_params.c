@@ -670,6 +670,13 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PchLockDownRtcMemoryLock = lockdown_by_fsp;
 	tconfig->SkipPamLock = !lockdown_by_fsp;
 #if CONFIG(SOC_INTEL_COMETLAKE)
+	supd->FspsConfig.DebugInterfaceEnable = 0;
+	supd->FspsTestConfig.DebugInterfaceEnable = 0;
+	/*
+	 * IA32_DEBUG_INTERFACE_MSR has to be locked by coreboot,
+	 *  because FSP does not do it unless DebugInterfaceEnable is 1
+	 */
+	supd->FspsTestConfig.DebugInterfaceLockEnable = 0;
 	/*
 	 * Making this config "0" means FSP won't set the FLOCKDN bit
 	 * of SPIBAR + 0x04 (i.e., Bit 15 of BIOS_HSFSTS_CTL).
