@@ -182,8 +182,6 @@ static void mainboard_init(void *chip_info)
 	set_camera_enablement();
 }
 
-
-
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 static uint8_t read_proprietary_ec_version(uint8_t *data)
 {
