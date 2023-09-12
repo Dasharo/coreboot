@@ -18,9 +18,9 @@ Device (S76D) {
 		SAPL(0)
 		EKBL(1)
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-		KBSC(^^PCI0.LPCB.EC0.KBDC)
+		KBSC(^^PCI0.LPCB.RTC.KBDC)
 #endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-		SKBL(^^PCI0.LPCB.EC0.KBDL)
+		SKBL(^^PCI0.LPCB.RTC.KBDL)
 	}
 
 	Method (INIT, 0, Serialized) {
@@ -133,9 +133,7 @@ Device (S76D) {
 
 	// Enable KB Led
 	Method (EKBL, 1, Serialized) {
-
-		If (^^PCI0.LPCB.EC0.ECOK &&
-			^^PCI0.LPCB.EC0.LSTE) {
+		If (^^PCI0.LPCB.EC0.ECOK && ^^PCI0.LPCB.EC0.LSTE) {
 				^^PCI0.LPCB.EC0.FDAT = 0x2
 				^^PCI0.LPCB.EC0.FBUF = Arg0
 				^^PCI0.LPCB.EC0.FCMD = 0xCA

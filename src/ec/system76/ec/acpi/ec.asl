@@ -9,6 +9,10 @@ Scope (\_SB) {
 	#include "s76.asl"
 }
 
+Scope (\_SB.PCI0.LPCB.RTC) {
+	#include "cmos.asl"
+}
+
 Device (\_SB.PCI0.LPCB.EC0)
 {
 	Name (_HID, EisaId ("PNP0C09") /* Embedded Controller Device */)  // _HID: Hardware ID
@@ -30,7 +34,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 	})
 
 	#include "ec_ram.asl"
-	#include "cmos.asl"
 
 	Name (ECOK, Zero)
 	Method (_REG, 2, Serialized)  // _REG: Region Availability
@@ -122,7 +125,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_Q0D, 0, NotSerialized) // Keyboard Backlight
 	{
 		Debug = "EC: Keyboard Backlight"
-		KBDL = ^^^^S76D.GKBL
+		^^RTC.KBDL = ^^^^S76D.GKBL
 	}
 
 	Method (_Q0E, 0, NotSerialized) // Volume Down
@@ -233,24 +236,24 @@ Device (\_SB.PCI0.LPCB.EC0)
 		If (Local0 == 0x8A) {
 			Debug = "EC: White Keyboard Backlight"
 			Notify (^^^^S76D, 0x80)
-			KBDL = ^^^^S76D.GKBL
+			^^RTC.KBDL = ^^^^S76D.GKBL
 		} ElseIf (Local0 == 0x9F) {
 			Debug = "EC: Color Keyboard Toggle"
 			Notify (^^^^S76D, 0x81)
-			KBDL = ^^^^S76D.GKBL
+			^^RTC.KBDL = ^^^^S76D.GKBL
 		} ElseIf (Local0 == 0x81) {
 			Debug = "EC: Color Keyboard Down"
 			Notify (^^^^S76D, 0x82)
-			KBDL = ^^^^S76D.GKBL
+			^^RTC.KBDL = ^^^^S76D.GKBL
 		} ElseIf (Local0 == 0x82) {
 			Debug = "EC: Color Keyboard Up"
 			Notify (^^^^S76D, 0x83)
-			KBDL = ^^^^S76D.GKBL
+			^^RTC.KBDL = ^^^^S76D.GKBL
 		} ElseIf (Local0 == 0x80) {
 			Debug = "EC: Color Keyboard Color Change"
 			//Notify (^^^^S76D, 0x84)
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-			KBDC = ^^^^S76D.GKBC
+			^^RTC.KBDC = ^^^^S76D.GKBC
 #endif
 		} Else {
 			Debug = Concatenate("EC: Other: ", ToHexString(Local0))
