@@ -20,7 +20,7 @@ Device (S76D) {
 #if CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
 		KBSC(^^PCI0.LPCB.RTC.KBDC)
 #endif // CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)
-		SKBL(^^PCI0.LPCB.RTC.KBDL)
+		SKLV(^^PCI0.LPCB.RTC.KBDL)
 	}
 
 	Method (INIT, 0, Serialized) {
@@ -122,8 +122,8 @@ Device (S76D) {
 		Return (Local0)
 	}
 
-	// Set KB Led
-	Method (SKBL, 1, Serialized) {
+	// Set KB Led value
+	Method (SKLV, 1, Serialized) {
 		If (^^PCI0.LPCB.EC0.ECOK) {
 			^^PCI0.LPCB.EC0.FDAT = Zero
 			^^PCI0.LPCB.EC0.FBUF = Arg0
