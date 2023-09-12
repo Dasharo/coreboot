@@ -36,7 +36,6 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	OEM2, 8,
 	OEM3, 16,
 	OEM4, 8,	// Extra SCI data
-	Offset (0xCD),
 	TMP2, 8,	// GPU temperature
 	DUT1, 8,	// Fan 1 duty
 	DUT2, 8,	// Fan 2 duty
