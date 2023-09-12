@@ -123,7 +123,6 @@ uint8_t system76_ec_read_version(uint8_t *data)
 
 static void system76_ec_restore_kbd_backlight(void *unused)
 {
-	uint8_t kbd_backlight;
 	uint32_t kbd_led;
 	uint8_t cmd[4];
 
@@ -132,7 +131,9 @@ static void system76_ec_restore_kbd_backlight(void *unused)
 		return;
 
 	/* Set last keyboard LED brightness */
-	kbd_backlight = cmos_read(CMOS_KBD_BKL);
+	cmd[0] = 0xff; // CMD_LED_INDEX_ALL
+	cmd[1] = cmos_read(CMOS_KBD_BKL);
+	system76_ec_smfi_cmd(CMD_LED_SET_VALUE, 2, cmd);
 
 	if (CONFIG(EC_SYSTEM76_EC_COLOR_KEYBOARD)) {
 		kbd_led = cmos_read32(CMOS_KBD_RGB_LED);
@@ -142,18 +143,6 @@ static void system76_ec_restore_kbd_backlight(void *unused)
 		cmd[2] = (kbd_led & 0x00ff00) >> 8; // G
 		cmd[3] = (kbd_led & 0x0000ff); // B
 		system76_ec_smfi_cmd(CMD_LED_SET_COLOR, 4, cmd);
-
-		/* RGB LED keyboards brightness range is 00 - ff */
-		cmd[0] = 0xff; // CMD_LED_INDEX_ALL
-		cmd[1] = kbd_backlight;
-		system76_ec_smfi_cmd(CMD_LED_SET_VALUE, 2, cmd);
-	} else {
-		/* Monochromatic keyboards have only 5 levels of brightness */
-		if (kbd_backlight <= 5) {
-			cmd[0] = 0xff; // CMD_LED_INDEX_ALL
-			cmd[1] = kbd_backlight;
-			system76_ec_smfi_cmd(CMD_LED_SET_VALUE, 2, cmd);
-		}
 	}
 }
 
