@@ -9,6 +9,7 @@
 #include <cpu/intel/em64t100_save_state.h>
 #include <cpu/intel/em64t101_save_state.h>
 #include <cpu/intel/msr.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/mmio.h>
 #include <device/pci_def.h>
@@ -349,7 +350,7 @@ static void finalize(void)
 		/* Re-init SPI driver to handle locked BAR */
 		fast_spi_init();
 
-	if (CONFIG(BOOTMEDIA_SMM_BWP)) {
+	if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
 		fast_spi_enable_wp();
 		set_insmm_sts(false);
 	}
@@ -440,7 +441,7 @@ void smihandler_southbridge_tco(
 	fast_spi_clear_sync_smi_status();
 
 	/* If enabled, enforce SMM BIOS write protection */
-	if (CONFIG(BOOTMEDIA_SMM_BWP) && fast_spi_wpd_status()) {
+	if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted() && fast_spi_wpd_status()) {
 		/*
 		 * BWE is RW, so the SMI was caused by a
 		 * write to BWE, not by a write to the BIOS
