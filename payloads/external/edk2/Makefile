@@ -43,6 +43,10 @@ endif
 #
 # OPTION			= DEFAULT_VALUE
 #
+# ABOVE_4G_MEMORY		= TRUE
+ifneq ($(CONFIG_EDK2_ABOVE_4G_MEMORY),y)
+BUILD_STR += -D ABOVE_4G_MEMORY=FALSE
+endif
 # BOOTSPLASH_IMAGE		= FALSE
 ifneq ($(CONFIG_EDK2_BOOTSPLASH_FILE),)
 BUILD_STR += -D BOOTSPLASH_IMAGE=TRUE
@@ -71,11 +75,11 @@ endif
 ifeq ($(CONFIG_EDK2_FOLLOW_BGRT_SPEC),y)
 BUILD_STR += -D FOLLOW_BGRT_SPEC=TRUE
 endif
-# MAX_VARIABLE_SIZE		= 0x10000
+# MAX_VARIABLE_SIZE            = 0x10000
 ifeq ($(CONFIG_SMMSTORE_V2),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize=0x8000
 endif
-# PCIE_BASE_ADDRESS		= 0
+# PCIE_BASE_ADDRESS            = 0
 ifneq ($(CONFIG_ECAM_MMCONF_LENGTH),)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress=$(CONFIG_ECAM_MMCONF_BASE_ADDRESS)
 endif
@@ -109,6 +113,10 @@ endif
 ifeq ($(CONFIG_EDK2_CBMEM_LOGGING),y)
 BUILD_STR += -D USE_CBMEM_FOR_CONSOLE=TRUE
 endif
+# SYSTEM76_EC_LOGGING		= FALSE
+ifeq ($(CONFIG_EDK2_SYSTEM76_EC_LOGGING),y)
+BUILD_STR += -D SYSTEM76_EC_LOGGING=TRUE
+endif
 # SD_MMC_TIMEOUT		= 1000000
 ifneq ($(CONFIG_EDK2_SD_MMC_TIMEOUT),)
 BUILD_STR += -D SD_MMC_TIMEOUT=$(shell echo $$(( $(CONFIG_EDK2_SD_MMC_TIMEOUT) * 1000)) )
@@ -122,14 +130,6 @@ endif
 ifeq ($(CONFIG_EDK2_SECURE_BOOT),y)
 BUILD_STR += -D SECURE_BOOT_ENABLE=TRUE
 endif
-# PCIEXP_SUPPORT_RESIZABLE_BARS = FALSE
-ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS), y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
-endif
-# GOP_DRIVER			= FALSE
-ifeq ($(CONFIG_EDK2_GOP_DRIVER), y)
-BUILD_STR += -D USE_PLATFORM_GOP=TRUE
-endif
 # SECURE_BOOT_DEFAULT_ENABLE	= TRUE
 ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
@@ -142,7 +142,11 @@ endif
 ifeq ($(CONFIG_EDK2_OPAL_PASSWORD),y)
 BUILD_STR += -D OPAL_PASSWORD_ENABLE=TRUE
 endif
-# TPM_ENABLE		= TRUE
+# SETUP_PASSWORD_ENABLE		= FALSE
+ifeq ($(CONFIG_EDK2_SETUP_PASSWORD),y)
+BUILD_STR += -D SETUP_PASSWORD_ENABLE=TRUE
+endif
+# TPM_ENABLE			= TRUE
 ifeq ($(CONFIG_EDK2_TPM_ENABLE),y)
 BUILD_STR += -D TPM_ENABLE=TRUE
 endif
@@ -153,6 +157,18 @@ endif
 # DISABLE_MTRR_PROGRAMMING	= TRUE
 ifneq ($(CONFIG_EDK2_DISABLE_MTRR_PROGRAMMING),y)
 BUILD_STR += -D DISABLE_MTRR_PROGRAMMING=FALSE
+endif
+# VARIABLE_SUPPORT undefined
+ifeq ($(CONFIG_CONFIG_SMMSTORE_V2),y)
+BUILD_STR += -D VARIABLE_SUPPORT=SMMSTORE
+endif
+# IOMMU_ENABLE			= FALSE
+ifeq ($(CONFIG_IOMMU_ENABLE),y)
+BUILD_STR += -D IOMMU_ENABLE=TRUE
+endif
+# DASHARO_SYSTEM_FEATURES	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SYSTEM_FEATURES),y)
+BUILD_STR += -D DASHARO_SYSTEM_FEATURES_ENABLE=TRUE
 endif
 # DASHARO_SECURITY_OPTIONS	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SECURITY_OPTIONS),y)
@@ -166,7 +182,7 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowNetworkMenu=TRUE
 endif
-# DASHARO_USB_CONFIG	= FALSE
+# DASHARO_USB_CONFIG		= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
 endif
@@ -174,9 +190,47 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
 endif
-# DASHARO_NETWORK_BOOT_DEFAULT_ENABLE	= FALSE
+# DASHARO_POWER_CONFIG		= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)
+
+ifneq ($(CONFIG_EDK2_SLEEP_TYPE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowSleepType=FALSE
+endif # CONFIG_EDK2_SLEEP_TYPE_OPTION
+
+ifeq ($(CONFIG_EDK2_FAN_CURVE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve=TRUE
+endif # CONFIG_EDK2_FAN_CURVE_OPTION
+
+endif # CONFIG_EDK2_DASHARO_POWER_CONFIG
+# DASHARO_PCI_CONFIG		= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPciMenu=TRUE
+endif
+# DASHARO_NETWORK_BOOT_DEFAULT_ENABLE = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
+endif
+ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowOcWdtOptions=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtTimeoutDefault=$(CONFIG_EDK2_DASHARO_OC_WDT_TIMEOUT)
+endif
+# PCIEXP_SUPPORT_RESIZABLE_BARS	= FALSE
+ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
+endif
+# GOP_DRIVER			= FALSE
+ifeq ($(CONFIG_EDK2_GOP_DRIVER), y)
+BUILD_STR += -D USE_PLATFORM_GOP=TRUE
+endif
+# BATTERY_CHECK			= FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_BATTERY_CHECK), y)
+BUILD_STR += -D BATTERY_CHECK=TRUE
+endif
+# LOAD_OPTION_ROMS		= TRUE
+ifeq ($(CONFIG_EDK2_DISABLE_OPTION_ROMS), y)
+BUILD_STR += -D LOAD_OPTION_ROMS=FALSE
 endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
@@ -230,7 +284,8 @@ $(EDK2_PATH): $(WORKSPACE)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
-		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git reset --hard HEAD > /dev/null 2>&1 || true; \
+		git clean -df > /dev/null 2>&1 || true; \
 		if [ -e UefiPayloadPkg/ShimLayer/UniversalPayload.o ]; then \
 			rm UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
 		fi; \
