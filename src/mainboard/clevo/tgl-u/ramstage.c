@@ -147,7 +147,9 @@ efi_err:
 
 }
 
-static void set_wifi_bt_radios(void)
+bool is_wifi_bt_radios_enabled(void);
+
+bool is_wifi_bt_radios_enabled(void)
 {
 	bool enable = true;
 
@@ -168,11 +170,10 @@ static void set_wifi_bt_radios(void)
 	                        &enable, &size);
 
 	if (ret != CB_SUCCESS)
-	        printk(BIOS_DEBUG, "Wifi + BT radios: failed to read option selection from EFI vars, using board default\n");
+	        printk(BIOS_DEBUG, "Wifi + BT radios: failed to read selection from EFI vars, using board default\n");
 efi_err: ;
 #endif
-	struct device *wifi_card = pcidev_on_root(0x14, 3);
-	wifi_card->enabled = enable;
+	return enable;
 }
 
 static void init_mainboard(void *chip_info)
@@ -184,6 +185,9 @@ static void init_mainboard(void *chip_info)
 	set_camera_enablement();
 
 	set_wifi_bt_radios();
+	bool wifi_bt_radios_enabled = is_wifi_bt_radios_enabled();
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, sizeof(wifi_bt_radios_enabled) / sizeof(uint8_t), (uint8_t *)&wifi_bt_radios_enabled);
+	printk(BIOS_DEBUG, wifi_bt_radios_enabled ? "---WIFI ENABLED:)\n" : "---WIFI DISABLED:(\n");
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
