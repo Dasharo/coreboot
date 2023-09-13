@@ -37,6 +37,20 @@ static enum cb_err read_u8_var(const char *var_name, uint8_t *var)
 	return CB_ERR;
 }
 
+/* Value of *var is not changed on failure, so it's safe to initialize it with
+ * a default before the call. */
+static enum cb_err read_bool_var(const char *var_name, bool *var)
+{
+	uint8_t tmp;
+
+	if (read_u8_var(var_name, &tmp) == CB_SUCCESS) {
+		*var = tmp != 0;
+		return CB_SUCCESS;
+	}
+
+	return CB_ERR;
+}
+
 uint8_t dasharo_get_power_on_after_fail(void)
 {
 	uint8_t power_status;
@@ -50,3 +64,33 @@ uint8_t dasharo_get_power_on_after_fail(void)
 
 	return power_status;
 }
+
+bool dasharo_resizeable_bars_enabled(void)
+{
+	bool enabled = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE) && CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS))
+		read_bool_var("PCIeResizeableBarsEnabled", &enabled);
+
+	return enabled;
+}
+
+
+bool is_vboot_locking_permitted(void)
+{
+	bool lock = true;
+	bool fum = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("FirmwareUpdateMode", &fum);
+
+	/* Disable lock if in Firmware Update Mode */
+	if (fum)
+		return false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("LockBios", &lock);
+
+	return lock;
+}
+
