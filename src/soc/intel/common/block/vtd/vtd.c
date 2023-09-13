@@ -3,6 +3,7 @@
 #include <bootstate.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
+#include <dasharo/options.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <fsp/util.h>
@@ -249,6 +250,9 @@ no_dma_buffer:
 void vtd_enable_dma_protection(void)
 {
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		return;
+
+	if (!dma_protection_enabled())
 		return;
 
 	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
