@@ -2,6 +2,7 @@
 
 #include <arch/io.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <intelblocks/oc_wdt.h>
 #include <soc/iomap.h>
 #include <types.h>
@@ -17,6 +18,7 @@
 #define   PCH_OC_WDT_CTL_LCK			BIT(12)
 #define   PCH_OC_WDT_CTL_TOV_MASK		0x3FF
 
+static struct watchdog_config wdt_config;
 /*
  * Starts and reloads the OC watchdog with given timeout.
  *
@@ -25,9 +27,6 @@
 static void oc_wdt_start(unsigned int timeout)
 {
 	uint32_t oc_wdt_ctrl;
-
-	if (!CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE))
-		return;
 
 	if ((timeout < 70) || (timeout > (PCH_OC_WDT_CTL_TOV_MASK + 1))) {
 		timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
@@ -91,8 +90,10 @@ unsigned int oc_wdt_get_current_timeout(void)
 /* Starts and reloads the OC watchdog if enabled in Kconfig */
 void setup_oc_wdt(void)
 {
-	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE)) {
-		oc_wdt_start(CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS);
+	get_watchdog_config(&wdt_config);
+
+	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE) && wdt_config.wdt_enable) {
+		oc_wdt_start(wdt_config.wdt_timeout);
 		if (is_oc_wdt_enabled())
 			printk(BIOS_DEBUG, "OC Watchdog enabled\n");
 		else
