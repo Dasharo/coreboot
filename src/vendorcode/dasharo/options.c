@@ -94,3 +94,95 @@ bool is_vboot_locking_permitted(void)
 	return lock;
 }
 
+bool dma_protection_enabled(void)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	struct iommu_config {
+		bool iommu_enable;
+		bool iommu_handoff;
+	} __packed iommu_var;
+	uint32_t size;
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = sizeof(iommu_var);
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
+				&iommu_var, &size);
+
+	if (ret != CB_SUCCESS)
+		return false;
+
+	return iommu_var.iommu_enable;
+}
+
+uint8_t cse_get_me_disable_mode(void)
+{
+	uint8_t var = ME_MODE_ENABLE;
+	bool fum = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("FirmwareUpdateMode", &fum);
+
+	/* Disable ME if in Firmware Update Mode */
+	if (fum)
+		return ME_MODE_DISABLE_HAP;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("MeMode", &var);
+
+	return var;
+}
+
+bool is_smm_bwp_permitted(void)
+{
+	bool smm_bwp = false;
+	bool fum = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("FirmwareUpdateMode", &fum);
+
+	/* Disable SMM BWP if in Firmware Update Mode */
+	if (fum)
+		return false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("SmmBwp", &smm_bwp);
+
+	return smm_bwp;
+}
+
+void get_watchdog_config(struct watchdog_config *wdt_cfg)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	uint32_t size;
+
+	wdt_cfg->wdt_enable = false;
+	wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
+
+	if (smmstore_lookup_region(&rdev))
+		return;
+
+	size = sizeof(*wdt_cfg);
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
+					wdt_cfg, &size);
+
+	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
+		wdt_cfg->wdt_enable = false;
+		wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
+	}
+}
+
+bool get_ps2_option(void)
+{
+	bool ps2_en = true;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("Ps2Controller", &ps2_en);
+
+	return ps2_en;
+}
