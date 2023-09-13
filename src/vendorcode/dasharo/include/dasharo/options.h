@@ -33,4 +33,13 @@ bool dasharo_resizeable_bars_enabled(void);
  */
 bool is_vboot_locking_permitted(void);
 
+/* Looks Dasharo/"IommuConfig" variable if early DMA protection lock was
+ * enabled at compile time.
+ *
+ * Result:
+ *  - true  - DMA protection is supported and enabled
+ *  - false - DMA protection is disabled or not supported
+ */
+bool dma_protection_enabled(void);
+
 #endif /* DASHARO_OPTIONS_H */

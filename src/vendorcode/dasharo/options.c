@@ -94,3 +94,27 @@ bool is_vboot_locking_permitted(void)
 	return lock;
 }
 
+bool dma_protection_enabled(void)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	struct iommu_config {
+		bool iommu_enable;
+		bool iommu_handoff;
+	} __packed iommu_var;
+	uint32_t size;
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = sizeof(iommu_var);
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
+				&iommu_var, &size);
+
+	if (ret != CB_SUCCESS)
+		return false;
+
+	return iommu_var.iommu_enable;
+}
+
