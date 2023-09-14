@@ -1,4 +1,5 @@
 config EC_SYSTEM76_EC
+	select EC_ACPI
 	bool
 	help
 	  System76 EC
