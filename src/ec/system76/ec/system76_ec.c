@@ -1,10 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include "system76_ec.h"
+#include <bootstate.h>
 #include <arch/io.h>
 #include <console/system76_ec.h>
-#include <console/console.h>
+#include <pc80/mc146818rtc.h>
 #include <timer.h>
+#include "acpi.h"
+#include "commands.h"
 
 // This is the command region for System76 EC firmware. It must be
 // enabled for LPC in the mainboard.
@@ -15,16 +17,11 @@
 #define REG_RESULT 1
 #define REG_DATA 2	// Start of command data
 
+#define CMOS_KBD_BKL		0x80
+#define CMOS_KBD_RGB_LED	0x81
+
 // When command register is 0, command is complete
 #define CMD_FINISHED 0
-
-#define RESULT_OK 0
-
-// Print command. Registers are unique for each command
-#define CMD_PRINT 4
-#define CMD_PRINT_REG_FLAGS 2
-#define CMD_PRINT_REG_LEN 3
-#define CMD_PRINT_REG_DATA 4
 
 static inline uint8_t system76_ec_read(uint8_t addr)
 {
@@ -65,48 +62,87 @@ void system76_ec_print(uint8_t byte)
 		system76_ec_flush();
 }
 
-bool system76_ec_cmd(uint8_t cmd, const uint8_t *request_data,
-	uint8_t request_size, uint8_t *reply_data, uint8_t reply_size)
+uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 {
-	if (request_size > SYSTEM76_EC_SIZE - REG_DATA ||
-		reply_size > SYSTEM76_EC_SIZE - REG_DATA) {
-		printk(BIOS_ERR, "EC command %d too long - request size %u, reply size %u\n",
-			cmd, request_size, reply_size);
-		return false;
-	}
+	int i;
 
-	/* If any data were buffered by system76_ec_print(), flush it first */
-	uint8_t buffered_len = system76_ec_read(CMD_PRINT_REG_LEN);
-	if (buffered_len > 0)
-		system76_ec_flush();
+	if (len > SYSTEM76_EC_SIZE - 2)
+		return -1;
 
-	/* Write the data */
-	uint8_t i;
-	for (i = 0; i < request_size; ++i)
-		system76_ec_write(REG_DATA + i, request_data[i]);
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
 
-	/* Write the command */
+	// Write data first
+	for (i = 0; i < len; ++i)
+		system76_ec_write(REG_CMD + 2 + i, data[i]);
+
+	// Write command register, which starts command
 	system76_ec_write(REG_CMD, cmd);
 
-	/* Wait for the command to complete */
-	bool ret = true;
-	int elapsed = wait_ms(1000, system76_ec_read(REG_CMD) == CMD_FINISHED);
-	if (elapsed == 0) {
-		/* Timed out: fail the command, don't attempt to read a reply. */
-		printk(BIOS_WARNING, "EC command %d timed out - request size %d, reply size %d\n",
-			cmd, request_size, reply_size);
-		ret = false;
-	} else {
-		/* Read the reply */
-		for (i = 0; i < reply_size; ++i)
-			reply_data[i] = system76_ec_read(REG_DATA+i);
-		/* Check the reply status */
-		ret = (system76_ec_read(REG_RESULT) == RESULT_OK);
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	return (system76_ec_read(REG_RESULT));
+}
+
+uint8_t system76_ec_read_version(uint8_t *data)
+{
+	int i;
+	uint8_t result;
+
+	if (!data)
+		return -1;
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	// Write command register, which starts command
+	system76_ec_write(REG_CMD, CMD_VERSION);
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	result = system76_ec_read(REG_RESULT);
+
+	if (result != 0)
+		return result;
+
+	// Read data bytes, index should be valid due to length test above
+	for (i = 0; i < (SYSTEM76_EC_SIZE - REG_DATA); i++) {
+		data[i] = system76_ec_read(REG_DATA + i);
+		if (data[i] == '\0')
+			break;
 	}
 
-	/* Reset the flags and length so we can buffer console prints again */
-	system76_ec_write(CMD_PRINT_REG_FLAGS, 0);
-	system76_ec_write(CMD_PRINT_REG_LEN, 0);
-
-	return ret;
+	return result;
 }
+
+static void system76_ec_restore_kbd_backlight(void *unused)
+{
+	uint32_t kbd_led;
+	uint8_t cmd[4];
+
+	/* Do not restore the backlight if lid is closed */
+	if (system76_ec_get_lid_state() != 1)
+		return;
+
+	/* Set last keyboard LED brightness */
+	cmd[0] = CMD_LED_INDEX_ALL;
+	cmd[1] = cmos_read(CMOS_KBD_BKL);
+	system76_ec_smfi_cmd(CMD_LED_SET_VALUE, 2, cmd);
+
+	kbd_led = cmos_read32(CMOS_KBD_RGB_LED);
+
+	cmd[0] = CMD_LED_INDEX_ALL;
+	cmd[1] = (kbd_led & 0xff0000) >> 16; // R
+	cmd[2] = (kbd_led & 0x00ff00) >> 8; // G
+	cmd[3] = (kbd_led & 0x0000ff); // B
+	system76_ec_smfi_cmd(CMD_LED_SET_COLOR, 4, cmd);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT,
+		      system76_ec_restore_kbd_backlight, NULL);

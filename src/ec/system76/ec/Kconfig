@@ -1,6 +1,7 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
 config EC_SYSTEM76_EC
+	select EC_ACPI
 	bool
 	help
 	  System76 EC

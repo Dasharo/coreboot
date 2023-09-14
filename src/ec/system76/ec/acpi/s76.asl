@@ -14,12 +14,12 @@ Device (S76D) {
 	Name (_STA, 0xB)
 
 	Method (RSET, 0, Serialized) {
-		Printf ("S76D: RSET")
+		Debug = "S76D: RSET"
 		SAPL(0)
-		SKBB(0)
-		SKBC(0xFFFFFF)
+		EKBL(1)
+		SKBC(^^PCI0.LPCB.EC0.KBDC)
+		SKBB(^^PCI0.LPCB.EC0.KBDL)
 	}
-
 	Method (INIT, 0, Serialized) {
 		Printf ("S76D: INIT")
 		RSET()
@@ -120,6 +120,18 @@ Device (S76D) {
 			^^PCI0.LPCB.EC0.FBF1 = ((Arg0 >> 16) & 0xFF)
 			^^PCI0.LPCB.EC0.FBF2 = ((Arg0 >> 8) & 0xFF)
 			^^PCI0.LPCB.EC0.FCMD = 0xCA
+		}
+	}
+
+
+	// Enable KB Led
+	Method (EKBL, 1, Serialized) {
+
+		If (^^PCI0.LPCB.EC0.ECOK &&
+			^^PCI0.LPCB.EC0.LSTE) {
+				^^PCI0.LPCB.EC0.FDAT = 0x5
+				^^PCI0.LPCB.EC0.FBUF = Arg0
+				^^PCI0.LPCB.EC0.FCMD = 0xCA
 		}
 	}
 
