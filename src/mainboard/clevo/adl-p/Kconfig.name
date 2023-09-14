@@ -1,0 +1,7 @@
+comment "Alder Lake P"
+
+config BOARD_CLEVO_NS50PU
+	bool "NS5xPU / NS7xPU"
+
+config BOARD_CLEVO_NV40PZ
+	bool "NV4xPZ"
