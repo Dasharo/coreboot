@@ -190,6 +190,9 @@ static void acpi_lpi_get_constraints(void *unused)
 			if (min_sleep_state == ACPI_DEVICE_SLEEP_NONE)
 				continue;
 
+			if (dev->path.type == DEVICE_PATH_PCI && !dev->enabled)
+				continue;
+
 			acpigen_write_package(3);
 			{
 				/* Emit the device path */
