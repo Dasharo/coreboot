@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/azalia_device.h>
-#include <stdint.h>
 
 const u32 cim_verb_data[] = {
 	/* Realtek ALC293 */
