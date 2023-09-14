@@ -135,3 +135,21 @@ uint8_t cse_get_me_disable_mode(void)
 
 	return var;
 }
+
+bool is_smm_bwp_permitted(void)
+{
+	bool smm_bwp = false;
+	bool fum = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("FirmwareUpdateMode", &fum);
+
+	/* Disable SMM BWP if in Firmware Update Mode */
+	if (fum)
+		return false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("SmmBwp", &smm_bwp);
+
+	return smm_bwp;
+}

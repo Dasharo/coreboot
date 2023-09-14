@@ -57,4 +57,13 @@ bool dma_protection_enabled(void);
  */
 uint8_t cse_get_me_disable_mode(void);
 
+/* Looks Dasharo/"SmmBwp" variable if SMM BIOS Write Protection was
+ * enabled at compile time.
+ *
+ * Result:
+ *  - true  - DMA protection is supported and enabled
+ *  - false - DMA protection is disabled or not supported
+ */
+bool is_smm_bwp_permitted(void);
+
 #endif /* DASHARO_OPTIONS_H */
