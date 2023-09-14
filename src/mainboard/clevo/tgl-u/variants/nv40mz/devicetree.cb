@@ -1,0 +1,302 @@
+chip soc/intel/tigerlake
+# CPU (soc/intel/tigerlake/cpu.c)
+    register "power_limits_config[POWER_LIMITS_U_4_CORE]" = "{
+		.tdp_psyspl2 = 65,
+		.tdp_psyspl3 = 67,
+		.tdp_psyspl3_time = 6,
+		.tdp_psyspl3_dutycycle = 4,
+		.tdp_pl4 = 65,
+	}"
+
+	register "power_limits_config[POWER_LIMITS_U_2_CORE]" = "{
+		.tdp_psyspl2 = 65,
+		.tdp_psyspl3 = 67,
+		.tdp_psyspl3_time = 6,
+		.tdp_psyspl3_dutycycle = 4,
+		.tdp_pl4 = 65,
+	}"
+
+	register "common_soc_config" = "{
+		// Touchpad I2C bus
+		.i2c[0] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 80,
+			.fall_time_ns = 110,
+		},
+	}"
+
+# ACPI (soc/intel/tigerlake/acpi.c)
+	# Enable Enhanced Intel SpeedStep
+	register "eist_enable" = "1"
+
+	# Enable s0ix, required for TGL-U
+	register "s0ix_enable" = "1"
+
+# FSP Memory (soc/intel/tigerlake/romstage/fsp_params.c)
+	register "enable_c6dram" = "1"
+	register "SaGv" = "SaGv_Enabled"
+
+# FSP Silicon (soc/intel/tigerlake/fsp_params.c)
+	register "AcousticNoiseMitigation" = "1"
+	register "tcc_offset" = "25" # TCC of 75C
+
+# Actual device tree
+	device cpu_cluster 0 on end
+	device domain 0 on
+		subsystemid 0x1558 0x4018 inherit
+
+		#From CPU EDS(575683)
+		device ref system_agent on end
+		device ref igpu on
+			# DDIA is eDP
+			register "DdiPortAConfig" = "1"
+			register "DdiPortAHpd" = "1"
+			register "DdiPortADdc" = "0"
+
+			# DDIB is HDMI
+			register "DdiPortBConfig" = "0"
+			register "DdiPortBHpd" = "1"
+			register "DdiPortBDdc" = "1"
+
+			# ACPI brightness control
+			register "gfx" = "GMA_DEFAULT_PANEL(0)"
+		end
+		device ref peg on
+			# PCIe PEG0 x4, Clock 0 (SSD1)
+			register "PcieClkSrcUsage[0]" = "0x40"
+			register "PcieClkSrcClkReq[0]" = "0"
+
+			chip soc/intel/common/block/pcie/rtd3
+				register "desc" = ""SSD1""
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D14)" # SSD1_PWR_DN#
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_H0)" # GPP_H0_RTD3
+				register "srcclk_pin" = "0" # SSD1_CLKREQ#
+				device generic 0 on end
+			end
+		end
+		device ref tbt_pcie_rp0 on end # TBT Type-C
+		device ref north_xhci on # TBT Type-C
+			register "UsbTcPortEn" = "1"
+			register "TcssXhciEn" = "1"
+			chip drivers/usb/acpi
+				device ref tcss_root_hub on
+					chip drivers/usb/acpi
+						register "desc" = ""USB3 TBT Type-C""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 1)"
+						device ref tcss_usb3_port1 on end
+					end
+				end
+			end
+		end
+		device ref tbt_dma0 on # TBT Type-C
+			chip drivers/intel/usb4/retimer
+				register "dfp[0].power_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_A23)"
+				use tcss_usb3_port1 as dfp[0].typec_port
+				device generic 0 on end
+			end
+		end
+
+		device ref south_xhci on
+			# USB2
+			register "usb2_ports[0]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A port1
+			register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# USB-C port2
+			register "usb2_ports[2]" = "USB2_PORT_MID(OC_SKIP)" 	# USB-A port3
+			register "usb2_ports[4]" = "USB2_PORT_MID(OC_SKIP)" 	# Finger
+			register "usb2_ports[5]" = "USB2_PORT_TYPE_C(OC_SKIP)" 	# TBT USB-C
+			register "usb2_ports[6]" = "USB2_PORT_MID(OC_SKIP)"	# CCD
+			register "usb2_ports[9]" = "USB2_PORT_MID(OC_SKIP)"	# BT
+			# USB3
+			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A port1
+			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C port2 (right port, lane 0)
+			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-A port3
+			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC_SKIP)" # USB-C port4 (right port, lane 1)
+			# ACPI
+			chip drivers/usb/acpi
+				device ref xhci_root_hub on
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 Type-A Port 1""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
+						device ref usb2_port1 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 Type-C Port 2""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						device ref usb2_port2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 Type-A Port 3""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device ref usb2_port3 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 Fingerprint""
+						register "type" = "UPC_TYPE_INTERNAL"
+						device ref usb2_port5 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 TBT Type-C""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(1, 1)"
+						device ref usb2_port6 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 Camera""
+						register "type" = "UPC_TYPE_INTERNAL"
+						device ref usb2_port7 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB2 Bluetooth""
+						register "type" = "UPC_TYPE_INTERNAL"
+						device ref usb2_port10 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB3 Type-A Port 1""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(1, 2)"
+						device ref usb3_port1 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB3 Type-C Port 2""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						device ref usb3_port2 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB3 Type-A Port 3""
+						register "type" = "UPC_TYPE_A"
+						register "group" = "ACPI_PLD_GROUP(2, 2)"
+						device ref usb3_port3 on end
+					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB3 Type-C Port 4""
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
+						register "group" = "ACPI_PLD_GROUP(2, 1)"
+						device ref usb3_port4 on end
+					end
+				end
+			end
+		end
+		device ref shared_ram on end
+		device ref cnvi_wifi on
+			register "CnviBtCore" = "true"
+			chip drivers/wifi/generic
+				register "wake" = "GPE0_PME_B0"
+				device generic 0 on end
+			end
+		end
+		device ref i2c0 on
+			# Touchpad I2C bus
+			register "SerialIoI2cMode[PchSerialIoIndexI2C0]" = "PchSerialIoPci"
+			chip drivers/i2c/hid
+				register "generic.hid" = ""FTCS1000""
+				register "generic.desc" = ""FocalTech Touchpad""
+				register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_B3)"
+				register "generic.probed" = "1"
+				register "hid_desc_reg_offset" = "0x01"
+				device i2c 38 on end
+			end
+		end
+		device ref i2c1 on
+			# USB-PD
+			register "SerialIoI2cMode[PchSerialIoIndexI2C1]" = "PchSerialIoPci"
+		end
+		device ref i2c2 on
+			# Pantone ROM
+			register "SerialIoI2cMode[PchSerialIoIndexI2C2]" = "PchSerialIoPci"
+		end
+		device ref heci1 on end
+		device ref uart2 on
+			# Debug console
+			register "SerialIoUartMode[PchSerialIoIndexUART2]" = "PchSerialIoSkipInit"
+		end
+		device ref pcie_rp5 on
+			# PCIe root port #5 x4, Clock 2 (NVIDIA GPU)
+			register "PcieRpEnable[4]" = "1"
+			register "PcieRpLtrEnable[4]" = "1"
+			register "PcieClkSrcUsage[2]" = "4"
+			register "PcieClkSrcClkReq[2]" = "2"
+			chip drivers/gfx/nvidia/optimus
+				register "desc" = ""DGPU""
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_U5)" # DGPU_PWR_EN
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_U4)" # DGPU_RST#_PCH
+				register "enable_delay_ms" = "16"
+				register "enable_off_delay_ms" = "4"
+				register "reset_delay_ms" = "10"
+				register "reset_off_delay_ms" = "4"
+				register "srcclk_pin" = "2" # PEG_CLKREQ#
+				device generic 0 on end
+			end
+			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M.2/M 2280 (J_SSD1)" "SlotDataBusWidth4X"
+		end
+		device ref pcie_rp9 on
+			# PCIe root port #9 x1, Clock 3 (CARD)
+			register "PcieRpEnable[8]" = "1"
+			register "PcieRpLtrEnable[8]" = "1"
+			register "PcieClkSrcUsage[3]" = "8"
+			register "PcieClkSrcClkReq[3]" = "3"
+		end
+		device ref pcie_rp10 on
+			# PCIe root port #10 x1, Clock 4 (GLAN)
+			register "PcieRpEnable[9]" = "1"
+			register "PcieRpLtrEnable[9]" = "1"
+			register "PcieClkSrcUsage[4]" = "9"
+			register "PcieClkSrcClkReq[4]" = "4"
+			chip soc/intel/common/block/pcie/rtd3
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_F9)" # GPIO_LAN_EN
+				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_C22)" # LAN_PLT_RST
+				register "srcclk_pin" = "4" # LAN_CLKREQ#
+				device generic 0 on end
+			end
+		end
+		device ref pcie_rp11 on
+			# PCIe root port #11 x1, Clock 1 (WLAN)
+			register "PcieRpSlotImplemented[10]" = "1"
+			register "PcieRpEnable[10]" = "1"
+			register "PcieRpLtrEnable[10]" = "1"
+			register "PcieClkSrcUsage[1]" = "10"
+			register "PcieClkSrcClkReq[1]" = "1"
+			chip drivers/wifi/generic
+				register "wake" = "GPE0_DW0_23" # GPP_C23
+				device pci 00.0 on end
+			end
+			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther" "M.2/E 2230 (J_WLAN1)" "SlotDataBusWidth1X"
+		end
+		device ref pch_espi on
+			register "gen1_dec" = "0x000c0081"
+			register "gen2_dec" = "0x00040069"
+			register "gen3_dec" = "0x00fc0e01"
+			register "gen4_dec" = "0x00fc0f01"
+			chip drivers/pc80/tpm
+				device pnp 0c31.0 on end
+			end
+		end
+		device ref p2sb on end
+		device ref pmc hidden
+			register "pmc_gpe0_dw0" = "PMC_GPP_C"
+			register "pmc_gpe0_dw1" = "PMC_GPP_E"
+			register "pmc_gpe0_dw2" = "PMC_GPD"
+			chip drivers/intel/pmc_mux
+				device generic 0 on
+					chip drivers/intel/pmc_mux/conn
+						# TBT Type-C
+						use usb2_port6 as usb2_port
+						use tcss_usb3_port1 as usb3_port
+						device generic 0 alias conn0 on end
+					end
+				end
+			end
+		end
+		device ref hda on
+			subsystemid 0x1558 0x4019
+			register "PchHdaAudioLinkHdaEnable" = "1"
+			register "PchHdaAudioLinkDmicEnable[0]" = "1"
+			register "PchHdaAudioLinkDmicEnable[1]" = "0"
+		end
+		device ref smbus on end
+		device ref fast_spi on end
+	end
+end

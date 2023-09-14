@@ -1,0 +1,9 @@
+comment "Alder Lake P (2022)"
+
+config BOARD_NOVACUSTOM_NS5X_ADLP
+	bool "NS5x ADL"
+	select BOARD_CLEVO_NS50PU_BASE
+
+config BOARD_NOVACUSTOM_NV4X_ADLP
+	bool "NV4x ADL"
+	select BOARD_CLEVO_NV40PZ_BASE
