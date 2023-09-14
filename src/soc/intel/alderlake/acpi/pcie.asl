@@ -310,16 +310,9 @@ Device (PEG0)
 {
 	Name (_ADR, 0x00060000)
 
-	OperationRegion (RPCS, PCI_Config, 0x4c, 4)
-	Field (RPCS, AnyAcc, NoLock, Preserve)
-	{
-		, 24,
-		RPPN, 8,	/* Root Port Number */
-	}
-
 	Method (_PRT)
 	{
-		Return (IRQM (RPPN))
+		Return (IRQM (1))
 	}
 }
 
