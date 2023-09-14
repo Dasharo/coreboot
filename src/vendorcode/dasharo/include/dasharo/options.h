@@ -11,6 +11,11 @@ enum cse_disable_mode {
 	ME_MODE_DISABLE_HAP = 2,
 };
 
+struct watchdog_config {
+	bool wdt_enable;
+	uint16_t wdt_timeout;
+} __packed;
+
 /* Looks up "power_on_after_fail" option and Dasharo/"PowerFailureState"
  * variable.
  *
@@ -65,5 +70,14 @@ uint8_t cse_get_me_disable_mode(void);
  *  - false - DMA protection is disabled or not supported
  */
 bool is_smm_bwp_permitted(void);
+
+/* Looks Dasharo/"WatchdogCOnfig" variable if OC Watchdog was
+ * enabled at compile time.
+ *
+ * Result:
+ *  - true  - DMA protection is supported and enabled
+ *  - false - DMA protection is disabled or not supported
+ */
+void get_watchdog_config(struct watchdog_config *wdt_cfg);
 
 #endif /* DASHARO_OPTIONS_H */

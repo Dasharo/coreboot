@@ -153,3 +153,26 @@ bool is_smm_bwp_permitted(void)
 
 	return smm_bwp;
 }
+
+void get_watchdog_config(struct watchdog_config *wdt_cfg)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	uint32_t size;
+
+	wdt_cfg->wdt_enable = false;
+	wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
+
+	if (smmstore_lookup_region(&rdev))
+		return;
+
+	size = sizeof(*wdt_cfg);
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
+					wdt_cfg, &size);
+
+	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
+		wdt_cfg->wdt_enable = false;
+		wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
+	}
+}
