@@ -20,7 +20,6 @@ DefinitionBlock(
 		#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
 		#include <soc/intel/tigerlake/acpi/southbridge.asl>
 		#include <soc/intel/tigerlake/acpi/tcss.asl>
-		#include <drivers/intel/gma/acpi/default_brightness_levels.asl>
 	}
 
 	Scope (\_SB.PCI0.LPCB)
@@ -30,8 +29,5 @@ DefinitionBlock(
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 
-#if CONFIG(EC_CLEVO_IT5570E)
-	#include <variant.asl>
-	#include <ec/clevo/it5570e/acpi/common.asl>
-#endif
+	#include <acpi/mainboard.asl>
 }
