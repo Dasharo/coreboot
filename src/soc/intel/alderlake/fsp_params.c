@@ -5,6 +5,7 @@
 #include <bootsplash.h>
 #include <console/console.h>
 #include <cpu/intel/microcode.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -672,7 +673,7 @@ static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
 
 	/* D3Hot and D3Cold for TCSS */
 	s_cfg->D3HotEnable = !config->tcss_d3_hot_disable;
-	s_cfg->D3ColdEnable = CONFIG(D3COLD_SUPPORT);
+	s_cfg->D3ColdEnable = get_sleep_type_option() == SLEEP_TYPE_OPTION_S0IX;
 
 	s_cfg->UsbTcPortEn = 0;
 	for (int i = 0; i < MAX_TYPE_C_PORTS; i++) {

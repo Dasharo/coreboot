@@ -3,6 +3,7 @@
 #include <acpi/acpigen.h>
 #include <acpi/acpi_device.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
@@ -533,7 +534,7 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_write_device(acpi_device_name(dev));
 		acpigen_write_ADR(0);
 		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
-		if (CONFIG(D3COLD_SUPPORT))
+		if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S0IX)
 			acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_COLD);
 		else
 			acpigen_write_name_integer("_S0W", ACPI_DEVICE_SLEEP_D3_HOT);
@@ -543,7 +544,13 @@ static void pcie_rtd3_acpi_fill_ssdt(const struct device *dev)
 		acpigen_pop_len(); /* Device */
 
 		printk(BIOS_INFO, "%s: Added StorageD3Enable property\n", scope);
-	}
+	} else {
+		/* Write the device to make PEP happy */
+		acpigen_write_device(acpi_device_name(dev));
+		acpigen_write_ADR(0);
+		acpigen_write_STA(ACPI_STATUS_DEVICE_ALL_ON);
+		acpigen_pop_len(); /* Device */
+ 	}
 
 	acpigen_pop_len(); /* Scope */
 }
