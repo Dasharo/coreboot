@@ -838,12 +838,9 @@ void acpigen_write_thermal_zone(const char *name)
 void acpigen_write_STA(uint8_t status)
 {
 	/*
-	 * Method (_STA, 0, NotSerialized) { Return (status) }
+	 * Name (_STA, status)
 	 */
-	acpigen_write_method("_STA", 0);
-	acpigen_emit_byte(RETURN_OP);
-	acpigen_write_byte(status);
-	acpigen_pop_len();
+	acpigen_write_name_integer("_STA", status);
 }
 
 void acpigen_write_STA_ext(const char *namestring)
