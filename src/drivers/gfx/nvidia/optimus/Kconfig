@@ -1,0 +1,8 @@
+config DRIVER_NVIDIA_OPTIMUS
+	bool
+	default n
+	depends on HAVE_ACPI_TABLES
+	select PMC_IPC_ACPI_INTERFACE
+	help
+	   NVIDIA Optimus driver for ULT platforms with a PMC IPC ACPI interface.
+	   and graphics cards supporting Runtime D3 power management
