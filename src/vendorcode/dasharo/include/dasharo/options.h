@@ -5,6 +5,9 @@
 
 #include <types.h>
 
+#define SLEEP_TYPE_OPTION_S0IX	0
+#define SLEEP_TYPE_OPTION_S3	1
+
 enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
 	ME_MODE_DISABLE_HECI = 1,
@@ -89,5 +92,14 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg);
  *  - false - PS/2 controller disabled
  */
 bool get_ps2_option(void);
+
+/* Looks Dasharo/"SleepType" variable to check which sleep type should be
+ * enabled.
+ *
+ * Result:
+ *  - 0 - S0ix
+ *  - 1 - S3
+ */
+uint8_t get_sleep_type_option(void);
 
 #endif /* DASHARO_OPTIONS_H */
