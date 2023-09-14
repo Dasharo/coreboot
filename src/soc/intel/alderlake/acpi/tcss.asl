@@ -582,78 +582,78 @@ Scope (\_SB.PCI0)
 		}
 	}
 
-#if CONFIG(D3COLD_SUPPORT)
-	Method (TCON, 0)
-	{
-		/* Reset IOM D3 cold bit if it is in D3 cold now. */
-		If (TD3C == 1)  /* It was in D3 cold before. */
+	If (S0IX == 1) {
+		Method (TCON, 0)
 		{
-			/* Reset IOM D3 cold bit. */
-			TD3C = 0    /* Request IOM for D3 cold exit sequence. */
-			Local0 = 0  /* Time check counter variable */
-			/* Wait for ack, the maximum wait time for the ack is 100 msec. */
-			While ((TACK != 0) && (Local0 < TCSS_IOM_ACK_TIMEOUT_IN_MS)) {
-				/*
-				 * Wait in this loop until TACK becomes 0 with timeout
-				 * TCSS_IOM_ACK_TIMEOUT_IN_MS by default.
-				 */
-				Sleep (1)  /* Delay of 1ms. */
-				Local0++
-			}
-
-			If (Local0 == TCSS_IOM_ACK_TIMEOUT_IN_MS) {
-				Printf("Error: Timeout occurred.")
-			}
-			Else
+			/* Reset IOM D3 cold bit if it is in D3 cold now. */
+			If (TD3C == 1)  /* It was in D3 cold before. */
 			{
-				Printf("TCSS D3 exit.");
+				/* Reset IOM D3 cold bit. */
+				TD3C = 0    /* Request IOM for D3 cold exit sequence. */
+				Local0 = 0  /* Time check counter variable */
+				/* Wait for ack, the maximum wait time for the ack is 100 msec. */
+				While ((TACK != 0) && (Local0 < TCSS_IOM_ACK_TIMEOUT_IN_MS)) {
+					/*
+					* Wait in this loop until TACK becomes 0 with timeout
+					* TCSS_IOM_ACK_TIMEOUT_IN_MS by default.
+					*/
+					Sleep (1)  /* Delay of 1ms. */
+					Local0++
+				}
+
+				If (Local0 == TCSS_IOM_ACK_TIMEOUT_IN_MS) {
+					Printf("Error: Timeout occurred.")
+				}
+				Else
+				{
+					Printf("TCSS D3 exit.");
+				}
+			}
+			Else {
+				Printf("Drop TCON due to it is already exit D3 cold.")
 			}
 		}
-		Else {
-			Printf("Drop TCON due to it is already exit D3 cold.")
-		}
-	}
 
-	Method (TCOF, 0)
-	{
-		If ((\_SB.PCI0.TXHC.SD3C != 0) || (\_SB.PCI0.TDM0.SD3C != 0)
-					       || (\_SB.PCI0.TDM1.SD3C != 0))
+		Method (TCOF, 0)
 		{
-			Printf("Skip D3C entry.")
-			Return
+			If ((\_SB.PCI0.TXHC.SD3C != 0) || (\_SB.PCI0.TDM0.SD3C != 0)
+						|| (\_SB.PCI0.TDM1.SD3C != 0))
+			{
+				Printf("Skip D3C entry.")
+				Return
+			}
+
+			/* Request IOM for D3 cold entry sequence. */
+			TD3C = 1
 		}
 
-		/* Request IOM for D3 cold entry sequence. */
-		TD3C = 1
-	}
-
-	PowerResource (D3C, 5, 0)
-	{
-		/*
-		 * Variable to save power state
-		 * 1 - TC Cold request cleared.
-		 * 0 - TC Cold request sent.
-		 */
-		Name (STAT, 0x1)
-
-		Method (_STA, 0)
+		PowerResource (D3C, 5, 0)
 		{
-			Return (STAT)
-		}
+			/*
+			* Variable to save power state
+			* 1 - TC Cold request cleared.
+			* 0 - TC Cold request sent.
+			*/
+			Name (STAT, 0x1)
 
-		Method (_ON, 0)
-		{
-			\_SB.PCI0.TCON()
-			STAT = 1
-		}
+			Method (_STA, 0)
+			{
+				Return (STAT)
+			}
 
-		Method (_OFF, 0)
-		{
-			\_SB.PCI0.TCOF()
-			STAT = 0
+			Method (_ON, 0)
+			{
+				\_SB.PCI0.TCON()
+				STAT = 1
+			}
+
+			Method (_OFF, 0)
+			{
+				\_SB.PCI0.TCOF()
+				STAT = 0
+			}
 		}
-	}
-#endif	// D3COLD_SUPPORT
+	}	// S0IX == 1
 
 	/*
 	 * TCSS xHCI device
