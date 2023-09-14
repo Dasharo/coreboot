@@ -196,3 +196,24 @@ uint8_t get_sleep_type_option(void)
 
 	return sleep_type;
 }
+
+
+uint8_t get_fan_curve_option(void)
+{
+	uint8_t fan_curve = FAN_CURVE_OPTION_SILENT;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("FanCurveOption", &fan_curve);
+
+	return fan_curve;
+}
+
+bool get_camera_option(void)
+{
+	bool cam_en = CAMERA_ENABLED_OPTION;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("EnableCamera", &cam_en);
+
+	return cam_en;
+}
