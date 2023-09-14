@@ -17,25 +17,11 @@ entries
 
 # -----------------------------------------------------------------
 # coreboot config options: cpu
-400		  1	e	1		hyper_threading
+400		  1	e	2		hyper_threading
 
 # -----------------------------------------------------------------
 # coreboot config options: southbridge
 410		  2	e	7		power_on_after_fail
-
-# -----------------------------------------------------------------
-# EC options
-500		  1	e	1		ac_fan_always_on
-502		  2	e	7		camera_boot_state
-504		  1	e	1		fn_win_swap
-505		  1	e	8		tp_toggle_mode
-
-519		  1	e	1		flexicharger_on
-520		  8	h	0		flexicharger_start
-528		  8	h	0		flexicharger_stop
-
-543		  1	e	1		kbled_booteffect
-544		 16	h	0		kbled_timeout
 
 # -----------------------------------------------------------------
 # vboot nv area
@@ -52,6 +38,8 @@ enumerations
 #ID	value	text
 1	0	Disable
 1	1	Enable
+2	0	Enable
+2	1	Disable
 4	0	Fallback
 4	1	Normal
 6	0	Emergency
@@ -66,8 +54,6 @@ enumerations
 7	0	Disable
 7	1	Enable
 7	2	Keep
-8	0	CtrlAltF9
-8	1	KeycodeF7F8
 
 # -----------------------------------------------------------------
 checksums
