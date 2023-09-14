@@ -10,6 +10,7 @@ source "src/mainboard/novacustom/*/Kconfig.name"
 endchoice
 
 source "src/mainboard/novacustom/*/Kconfig"
+source "src/mainboard/clevo/*/Kconfig"
 
 config MAINBOARD_VENDOR
 	default "NovaCustom"
