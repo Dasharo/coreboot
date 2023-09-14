@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <device/azalia_device.h>
-#include <stdint.h>
 
 static const u32 realtek_alc293_verbs[] = {
 	AZALIA_SUBVENDOR(0, 0x155814a1),
