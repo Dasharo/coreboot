@@ -1,0 +1,7 @@
+Vendor name: NovaCustom
+Board name: adl-p
+Category: laptop
+ROM package: WSON-8
+ROM protocol: SPI
+ROM socketed: n
+Flashrom support: y
