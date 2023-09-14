@@ -23,4 +23,5 @@ Field (GNVS, ByteAcc, NoLock, Preserve)
 	U3WE,	16,	// 0x2d - 0x2e USB3 Wake Enable Bitmap
 	UIOR,	8,	// 0x2f - UART debug controller init on S3 resume
 	,	64,	// 0x30 - 0x37 Hest log buffer (used in SMM, not ASL code)
+	S0IX,	8,	// 0x38 - Sleep Type (1 = S0IX, 0 = S3)
 }
