@@ -1,6 +1,6 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
-# 2022.1 - Last commit of January 2022
+# 2023.8 - Last commit of August 2023
 # When updating, change the name both here and in payloads/external/iPXE/Kconfig
 STABLE_COMMIT_ID=7c39c04a537ce29dccc6f2bae9749d1d371429c1
 
