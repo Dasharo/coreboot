@@ -6,6 +6,8 @@ entries
 # start-bit	length	config	config-ID	name
 0		120	r	0		reserved_memory
 
+# coreboot config options: ramtop
+304		 80	h	0		ramtop
 # -----------------------------------------------------------------
 # RTC_BOOT_BYTE (coreboot hardcoded)
 384		  1	e	4		boot_option
@@ -20,20 +22,6 @@ entries
 410		  2	e	7		power_on_after_fail
 
 # -----------------------------------------------------------------
-# EC options
-500		  1	e	1		ac_fan_always_on
-502		  2	e	7		camera_boot_state
-504		  1	e	1		fn_win_swap
-505		  1	e	8		tp_toggle_mode
-
-519		  1	e	1		flexicharger_on
-520		  8	h	0		flexicharger_start
-528		  8	h	0		flexicharger_stop
-
-543		  1	e	1		kbled_booteffect
-544		 16	h	0		kbled_timeout
-
-# -----------------------------------------------------------------
 # vboot nv area
 800		128	r	0		vbnv
 
@@ -42,6 +30,10 @@ entries
 984		 16	h	0		check_sum
 
 # -----------------------------------------------------------------
+
+# embedded controller settings
+1024	8	h	0	kbl_brightness
+1032	32	h	0	kbl_color
 
 enumerations
 
@@ -64,8 +56,6 @@ enumerations
 7	0	Disable
 7	1	Enable
 7	2	Keep
-8	0	CtrlAltF9
-8	1	KeycodeF7F8
 
 # -----------------------------------------------------------------
 checksums
