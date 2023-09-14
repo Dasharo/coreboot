@@ -160,12 +160,6 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
-static void mainboard_final(void *chip_info)
-{
-	if (CONFIG(VBOOT))
-		vboot_clear_recovery_request();
-}
-
 void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config)
 {
 	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
@@ -177,5 +171,4 @@ void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config)
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.init = init_mainboard,
-	.final = mainboard_final,
 };
