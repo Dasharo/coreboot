@@ -5,6 +5,11 @@
 
 #include <types.h>
 
+struct descriptor_byte {
+	size_t offset;
+	uint8_t desired_value;
+};
+
 /* Clear any SPI outstanding status bits, i.e., FCERR, FDONE etc. */
 void fast_spi_clear_outstanding_status(void);
 /* Check if SPI transaction is pending */
@@ -111,5 +116,9 @@ void fast_spi_set_bde(void);
  * Set FAST_SPIBAR Vendor Component Lock bit.
  */
 void fast_spi_set_vcl(void);
+/*
+ * Update bytes in the flash descriptor
+ */
+void configure_descriptor(struct descriptor_byte *bytes, size_t num);
 
 #endif	/* SOC_INTEL_COMMON_BLOCK_FAST_SPI_H */

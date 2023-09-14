@@ -1,6 +1,7 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 bootblock-$(CONFIG_SOC_INTEL_COMMON_BLOCK_FAST_SPI) += fast_spi.c
 bootblock-$(CONFIG_SOC_INTEL_COMMON_BLOCK_FAST_SPI) += fast_spi_flash.c
+bootblock-$(CONFIG_FAST_SPI_CONFIGURE_DESCRIPTOR) += update_descriptor.c
 
 verstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_FAST_SPI) += fast_spi.c
 verstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_FAST_SPI) += fast_spi_flash.c

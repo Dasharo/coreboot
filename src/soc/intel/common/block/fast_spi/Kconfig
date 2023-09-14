@@ -58,3 +58,10 @@ config FAST_SPI_GENERATE_SSDT
 	  If this switch is selected, an entry in the SSDT will be generated
 	  for the controller to report the occupied resource which is not
 	  discoverable at OS runtime.
+
+config FAST_SPI_CONFIGURE_DESCRIPTOR
+	bool
+	help
+	  Select this if the descriptor needs to be updated at runtime. This
+	  can only be done if the descriptor region is writable, and should only
+	  be used as a temporary workaround.

@@ -10,11 +10,6 @@
 #error "Please select exactly one PCH type"
 #endif
 
-struct descriptor_byte {
-	size_t offset;
-	uint8_t desired_value;
-};
-
 /* Bootblock pre console init programming */
 void bootblock_pch_early_init(void);
 
@@ -22,7 +17,5 @@ void bootblock_pch_early_init(void);
 void bootblock_pch_init(void);
 void pch_early_iorange_init(void);
 void report_platform_info(void);
-
-void configure_descriptor(struct descriptor_byte *bytes, size_t num);
 
 #endif
