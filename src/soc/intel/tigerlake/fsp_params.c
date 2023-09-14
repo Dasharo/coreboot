@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <console/console.h>
 #include <cpu/intel/cpu_ids.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 #include <device/pci.h>
@@ -327,7 +328,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	if (cpu_id == CPUID_TIGERLAKE_A0)
 		params->D3ColdEnable = 0;
 	else
-		params->D3ColdEnable = CONFIG(D3COLD_SUPPORT);
+		params->D3ColdEnable = get_sleep_type_option() == SLEEP_TYPE_OPTION_S0IX;
 
 	params->UsbTcPortEn = config->UsbTcPortEn;
 	params->TcssAuxOri = config->TcssAuxOri;
