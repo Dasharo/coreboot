@@ -3,10 +3,24 @@
 #ifndef DASHARO_OPTIONS_H
 #define DASHARO_OPTIONS_H
 
+#include <commonlib/bsd/compiler.h>
 #include <types.h>
 
 #define SLEEP_TYPE_OPTION_S0IX	0
 #define SLEEP_TYPE_OPTION_S3	1
+
+#define FAN_CURVE_OPTION_SILENT 0
+#define FAN_CURVE_OPTION_PERFORMANCE 1
+
+#define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
+
+#define SLEEP_TYPE_OPTION_S0IX	0
+#define SLEEP_TYPE_OPTION_S3	1
+
+#define CAMERA_ENABLED_OPTION 1
+#define CAMERA_DISABLED_OPTION 0
+
+#define CAMERA_ENABLEMENT_DEFAULT CAMERA_ENABLED_OPTION
 
 enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
@@ -17,6 +31,18 @@ enum cse_disable_mode {
 struct watchdog_config {
 	bool wdt_enable;
 	uint16_t wdt_timeout;
+} __packed;
+
+struct fan_point {
+	uint8_t temp;
+	uint8_t duty;
+} __packed;
+
+struct fan_curve {
+	struct fan_point point1;
+	struct fan_point point2;
+	struct fan_point point3;
+	struct fan_point point4;
 } __packed;
 
 /* Looks up "power_on_after_fail" option and Dasharo/"PowerFailureState"
@@ -101,5 +127,24 @@ bool get_ps2_option(void);
  *  - 1 - S3
  */
 uint8_t get_sleep_type_option(void);
+
+/* Looks Dasharo/"FanCurveOption" variable to check which fan curve EC should
+ * apply.
+ *
+ *
+ * Result:
+ *  - 0 - Silent profile
+ *  - 1 - Performance profile
+ */
+uint8_t get_fan_curve_option(void);
+
+/* Looks Dasharo/"EnableCamera" variable to checkif camera USB port should be
+ * emabled.
+ *
+ * Result:
+ *  - true - camera enabled
+ *  - false - camera disabled
+ */
+bool get_camera_option(void);
 
 #endif /* DASHARO_OPTIONS_H */
