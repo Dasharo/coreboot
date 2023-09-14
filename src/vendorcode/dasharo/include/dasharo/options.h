@@ -5,6 +5,12 @@
 
 #include <types.h>
 
+enum cse_disable_mode {
+	ME_MODE_ENABLE = 0,
+	ME_MODE_DISABLE_HECI = 1,
+	ME_MODE_DISABLE_HAP = 2,
+};
+
 /* Looks up "power_on_after_fail" option and Dasharo/"PowerFailureState"
  * variable.
  *
@@ -41,5 +47,14 @@ bool is_vboot_locking_permitted(void);
  *  - false - DMA protection is disabled or not supported
  */
 bool dma_protection_enabled(void);
+
+/* Looks Dasharo/"MeMode" variable if ME should be enabeld or disabled.
+ *
+ * Result:
+ *  - 0 - ME enabled
+ *  - 1 - ME soft disabled
+ *  - 2 - ME HAP disabled
+ */
+uint8_t cse_get_me_disable_mode(void);
 
 #endif /* DASHARO_OPTIONS_H */

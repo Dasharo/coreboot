@@ -118,3 +118,20 @@ bool dma_protection_enabled(void)
 	return iommu_var.iommu_enable;
 }
 
+uint8_t cse_get_me_disable_mode(void)
+{
+	uint8_t var = ME_MODE_ENABLE;
+	bool fum = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("FirmwareUpdateMode", &fum);
+
+	/* Disable ME if in Firmware Update Mode */
+	if (fum)
+		return ME_MODE_DISABLE_HAP;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("MeMode", &var);
+
+	return var;
+}

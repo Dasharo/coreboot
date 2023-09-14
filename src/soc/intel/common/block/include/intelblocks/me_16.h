@@ -3,6 +3,13 @@
 #ifndef _SOC_INTEL_COMMON_ME_SPEC_16_H_
 #define _SOC_INTEL_COMMON_ME_SPEC_16_H_
 
+/* HAP bit */
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+#define HAP_OFFSET			0x1DE
+#elif CONFIG(SOC_INTEL_ALDERLAKE_PCH_P)
+#define HAP_OFFSET			0x17E
+#endif
+
 /* ME Host Firmware Status register 1 */
 union me_hfsts1 {
 	uint32_t data;

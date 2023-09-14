@@ -3,13 +3,16 @@
 #define __SIMPLE_DEVICE__
 
 #include <assert.h>
+#include <bootstate.h>
 #include <commonlib/helpers.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/mmio.h>
 #include <delay.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
+#include <fmap.h>
 #include <intelblocks/cse.h>
 #include <intelblocks/me.h>
 #include <intelblocks/pmclib.h>
@@ -1215,6 +1218,95 @@ void cse_enable_ptt(bool state)
 
 #if ENV_RAMSTAGE
 
+#ifndef HAP_OFFSET
+#define HAP_OFFSET 0
+#endif
+
+/* Flash Master 1 : HOST/BIOS */
+#define FLMSTR1			0x80
+/* Flash signature Offset */
+#define FLASH_SIGN_OFFSET	0x10
+#define FLMSTR_WR_SHIFT_V2	20
+#define FLASH_VAL_SIGN		0xFF0A55A
+#define SI_DESC_SIZE		0x1000
+#define SI_DESC_REGION		"SI_DESC"
+
+/* It checks whether host (Flash Master 1) has write access to the Descriptor Region or not */
+static bool is_descriptor_writeable(uint8_t *desc)
+{
+	/* Check flash has valid signature */
+	if (read32((void *)(desc + FLASH_SIGN_OFFSET)) != FLASH_VAL_SIGN) {
+		printk(BIOS_ERR, "Flash Descriptor is not valid\n");
+		return 0;
+	}
+	/* Check host has write access to the Descriptor Region */
+	if (!((read32((void *)(desc + FLMSTR1)) >> FLMSTR_WR_SHIFT_V2) & BIT(0))) {
+		printk(BIOS_ERR, "Host doesn't have write access to Descriptor Region\n");
+		return 0;
+	}
+	return 1;
+}
+
+static void cse_set_hap_bit(bool state)
+{
+	uint8_t *si_desc_buf;
+	struct region_device desc_rdev;
+
+	si_desc_buf = (uint8_t *)malloc(SI_DESC_SIZE);
+
+	if (!si_desc_buf) {
+		printk(BIOS_ERR, "Failed to allocate buffer for %s\n", SI_DESC_REGION);
+		return;
+	}
+
+	if (fmap_locate_area_as_rdev_rw("SI_DESC", &desc_rdev) < 0) {
+		printk(BIOS_ERR, "Failed to locate %s in the FMAP\n", SI_DESC_REGION);
+		free(si_desc_buf);
+		return;
+	}
+	if (rdev_readat(&desc_rdev, si_desc_buf, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
+		printk(BIOS_ERR, "Failed to read Descriptor Region from SPI Flash\n");
+		free(si_desc_buf);
+		return;
+	}
+	if (!is_descriptor_writeable(si_desc_buf)) {
+		free(si_desc_buf);
+		return;
+	}
+
+	if (!!(si_desc_buf[HAP_OFFSET] & 1) == state) {
+		printk(BIOS_DEBUG, "Update of Descriptor is not required!\n");
+		free(si_desc_buf);
+		return;
+	}
+
+	si_desc_buf[HAP_OFFSET] ^= 1;
+	if (rdev_eraseat(&desc_rdev, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
+		printk(BIOS_ERR, "Failed to erase Descriptor Region area\n");
+		free(si_desc_buf);
+		return;
+	}
+
+	if (rdev_writeat(&desc_rdev, si_desc_buf, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
+		printk(BIOS_ERR, "Failed to update Descriptor Region\n");
+		free(si_desc_buf);
+		return;
+	}
+
+	printk(BIOS_DEBUG, "Update of Descriptor successful\n");
+	free(si_desc_buf);
+	do_global_reset();
+}
+
+static void set_hap_bit(void *unused)
+{
+	bool state = cse_get_me_disable_mode() == ME_MODE_DISABLE_HAP;
+	if (HAP_OFFSET != 0)
+		cse_set_hap_bit(state);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, set_hap_bit, NULL);
+
 /*
  * Disable the Intel (CS)Management Engine via HECI based on a cmos value
  * of `me_state`. A value of `0` will result in a (CS)ME state of `0` (working)
@@ -1316,14 +1408,23 @@ static void cse_set_state(struct device *dev)
 
 	int send;
 	int result;
+	int enable_timeout = 0;
 	/*
 	 * Check if the CMOS value "me_state" exists, if it doesn't, then
 	 * don't do anything.
 	 */
-	const unsigned int cmos_me_state = get_uint_option("me_state", UINT_MAX);
 
-	if (cmos_me_state == UINT_MAX)
-		return;
+	const unsigned int efi_me_state = cse_get_me_disable_mode();
+	const unsigned int cmos_me_state = get_uint_option("me_state", UINT_MAX);
+	unsigned int me_state;
+
+	/* EFI setting takes priority */
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		me_state = efi_me_state;
+	else
+		me_state = cmos_me_state;
+
+	printk(BIOS_DEBUG, "me_state = %u\n", me_state);
 
 	printk(BIOS_DEBUG, "CMOS: me_state = %u\n", cmos_me_state);
 
@@ -1333,20 +1434,33 @@ static void cse_set_state(struct device *dev)
 
 	const unsigned int soft_temp_disable = cse_is_hfs1_com_soft_temp_disable();
 
-	if (cmos_me_state && !soft_temp_disable) {
+	if (me_state && !soft_temp_disable) {
 		/* me_state should be disabled, but it's enabled */
 		printk(BIOS_DEBUG, "ME needs to be disabled.\n");
 		send = heci_send_receive(&me_disable, sizeof(me_disable),
 			&disable_reply, &disable_reply_size, HECI_MKHI_ADDR);
 		result = disable_reply.hdr.result;
-	} else if (!cmos_me_state && soft_temp_disable) {
+	} else if (!me_state && soft_temp_disable) {
 		/* me_state should be enabled, but it's disabled */
 		printk(BIOS_DEBUG, "ME needs to be enabled.\n");
 		send = heci_send_receive(&me_enable, sizeof(me_enable),
 			&enable_reply, &enable_reply_size, HECI_MKHI_ADDR);
 		result = enable_reply.hdr.result;
+
+		while (1) {
+			if (cse_is_hfs1_cws_normal())
+				break;
+
+			delay(1);
+			enable_timeout++;
+			if (enable_timeout > 5) {
+				printk(BIOS_ERR, "Timeout occurred, ME HFSTS1: %08x\n",
+						 me_read_config32(PCI_ME_HFSTS1));
+				break;
+			}
+		}
 	} else {
-		printk(BIOS_DEBUG, "ME is %s.\n", cmos_me_state ? "disabled" : "enabled");
+		printk(BIOS_DEBUG, "ME is %s.\n", me_state ? "disabled" : "enabled");
 		unsigned int cmos_me_state_counter = get_uint_option("me_state_counter",
 								 UINT_MAX);
 		/* set me_state_counter to 0 */
