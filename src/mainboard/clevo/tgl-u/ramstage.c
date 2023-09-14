@@ -1,31 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <dasharo/options.h>
 #include <device/device.h>
-#include <drivers/efi/efivars.h>
 #include <ec/acpi/ec.h>
 #include <ec/system76/ec/commands.h>
 #include <fmap.h>
 #include <lib.h>
 #include <security/vboot/vboot_common.h>
 #include <smbios.h>
-#include <smmstore.h>
 #include <soc/ramstage.h>
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
-
-#include <Uefi/UefiBaseType.h>
-
-struct fan_point {
-	uint8_t temp;
-	uint8_t duty;
-} __packed;
-
-struct fan_curve {
-	struct fan_point point1;
-	struct fan_point point2;
-	struct fan_point point3;
-	struct fan_point point4;
-} __packed;
 
 struct smfi_cmd_set_fan_curve {
 	uint8_t fan;
@@ -45,16 +30,6 @@ struct fan_curve fan_curve_performance = {
 	{ .temp = 75,  .duty = 60 },
 	{ .temp = 85,  .duty = 100}
 };
-
-#define FAN_CURVE_OPTION_SILENT 0
-#define FAN_CURVE_OPTION_PERFORMANCE 1
-
-#define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
-
-#define CAMERA_ENABLED_OPTION 1
-#define CAMERA_DISABLED_OPTION 0
-
-#define CAMERA_ENABLEMENT_DEFAULT CAMERA_ENABLED_OPTION
 
 const char *smbios_system_sku(void)
 {
@@ -77,27 +52,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 static void set_fan_curve(void)
 {
 	int i;
-	uint8_t selection = FAN_CURVE_OPTION_DEFAULT;
+	uint8_t selection = get_fan_curve_option();
 	struct smfi_cmd_set_fan_curve cmd;
-
-#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
-	struct region_device rdev;
-	enum cb_err ret;
-	uint32_t size;
-
-	const EFI_GUID dasharo_system_features_guid = {
-		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
-	};
-
-	if (smmstore_lookup_region(&rdev))
-		goto efi_err;
-
-	size = sizeof(selection);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "FanCurveOption", &selection, &size);
-	if (ret != CB_SUCCESS)
-		printk(BIOS_DEBUG, "fan: failed to read curve selection from EFI vars, using board default\n");
-efi_err:
-#endif
 
 	switch (selection) {
 	case FAN_CURVE_OPTION_SILENT:
@@ -119,30 +75,8 @@ efi_err:
 
 static void set_camera_enablement(void)
 {
-	bool enabled = CAMERA_ENABLEMENT_DEFAULT;
+	bool enabled = get_camera_option();
 
-#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
-	struct region_device rdev;
-	enum cb_err ret;
-	uint32_t size;
-
-	const EFI_GUID dasharo_system_features_guid = {
-		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
-	};
-
-	if (smmstore_lookup_region(&rdev))
-		goto efi_err;
-
-	size = sizeof(enabled);
-	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "EnableCamera", &enabled, &size);
-
-	if (ret != CB_SUCCESS) {
-		printk(BIOS_DEBUG, "camera: failed to read camera enablement status from EFI vars, using board default\n");
-		goto efi_err;
-	}
-
-efi_err:
-#endif
 	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
@@ -230,6 +164,14 @@ static void mainboard_final(void *chip_info)
 {
 	if (CONFIG(VBOOT))
 		vboot_clear_recovery_request();
+}
+
+void mainboard_update_soc_chip_config(struct soc_intel_tigerlake_config *config)
+{
+	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
+		config->s0ix_enable = 0;
+	else
+		config->s0ix_enable = 1;
 }
 
 struct chip_operations mainboard_ops = {
