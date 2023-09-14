@@ -309,6 +309,11 @@ Device (RP12)
 Device (PEG0)
 {
 	Name (_ADR, 0x00060000)
+
+	Method (_PRT)
+	{
+		Return (IRQM (1))
+	}
 }
 #endif
 
