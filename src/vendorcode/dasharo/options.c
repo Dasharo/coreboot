@@ -176,3 +176,13 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 		wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
 	}
 }
+
+bool get_ps2_option(void)
+{
+	bool ps2_en = true;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("Ps2Controller", &ps2_en);
+
+	return ps2_en;
+}

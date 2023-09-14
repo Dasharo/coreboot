@@ -80,4 +80,14 @@ bool is_smm_bwp_permitted(void);
  */
 void get_watchdog_config(struct watchdog_config *wdt_cfg);
 
+/* Looks Dasharo/"WatchdogCOnfig" variable if PS/2 controller should be
+ * enabled. The function should be called from mainboard code to disable
+ * appropriate PNP device in devicetree.
+ *
+ * Result:
+ *  - true  - PS/2 controller enabled
+ *  - false - PS/2 controller disabled
+ */
+bool get_ps2_option(void);
+
 #endif /* DASHARO_OPTIONS_H */
