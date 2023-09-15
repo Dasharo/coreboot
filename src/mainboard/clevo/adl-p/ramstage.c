@@ -147,6 +147,34 @@ efi_err:
 	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
+static bool get_wifi_bt_enable(void)
+{
+	bool enable = true;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+
+	uint32_t size = sizeof(enable);
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "EnableWifiBt",
+							&enable, &size);
+
+	if (ret != CB_SUCCESS)
+			printk(BIOS_DEBUG, "Wifi + BT radios: failed to read selection from EFI vars, using board default\n");
+efi_err:
+#endif
+
+	return enable;
+}
+
 static uint8_t get_sleep_type_option(void)
 {
 	uint8_t sleep_type = SLEEP_TYPE_OPTION_DEFAULT;
@@ -175,6 +203,26 @@ efi_err:
 
 static void mainboard_init(void *chip_info)
 {
+	uint8_t cmd[1];
+	bool radio_enable;
+
+	config_t *cfg = config_of_soc();
+	struct device *wlan_dev = pcidev_on_root(0x1c, 4);
+	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
+
+	radio_enable = get_wifi_bt_enable();
+
+	printk(BIOS_DEBUG, "Wireless is %sabled\n", radio_enable ? "en" : "dis");
+
+	wlan_dev->enabled = radio_enable;
+	cnvi_dev->enabled = radio_enable;
+	cfg->cnvi_bt_core = radio_enable;
+	cfg->cnvi_bt_audio_offload = radio_enable;
+	cfg->usb2_ports[9].enable = radio_enable;
+
+	cmd[0] = radio_enable;
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, cmd);
+
 	mainboard_configure_gpios();
 
 	set_fan_curve();
@@ -237,7 +285,7 @@ static void mainboard_smbios_strings(struct device *dev, struct smbios_type11 *t
 	if (result == 0) {
 		printk(BIOS_DEBUG, "EC firmware version: %s\n", ec_version);
 		t->count = smbios_add_string(t->eos, strconcat("EC firmware version: ",
-					     ec_version));
+						 ec_version));
 	} else {
 		printk(BIOS_ERR, "Unable to probe EC firmware version\n");
 		t->count = smbios_add_string(t->eos, "EC firmware version: unknown");
