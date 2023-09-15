@@ -2,11 +2,6 @@
 
 #include <soc/meminit.h>
 #include <soc/romstage.h>
-#include <smmstore.h>
-#include <device/device.h>
-#include <drivers/efi/efivars.h>
-#include <ec/system76/ec/commands.h>
-
 
 void mainboard_memory_init_params(FSPM_UPD *mupd)
 {
