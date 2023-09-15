@@ -246,6 +246,15 @@ config EDK2_PS2_SUPPORT
 	help
 	  Include support for PS/2 keyboards
 
+config EDK2_SKIP_PS2_DETECT
+	bool "Skip PS/2 keyboard detection check"
+	depends on EDK2_PS2_SUPPORT
+	default n
+	help
+	  Skips checkign for the PS/2 keybaord presence and assuems the PS/2
+	  keybaord is connected. Useful for laptops, where PS/2 keybaord is
+	  always connected, to save a precious second or two of boot time.
+
 config EDK2_SD_MMC_TIMEOUT
 	int "Timeout in ms for initializing SD and eMMC devices"
 	default 10
