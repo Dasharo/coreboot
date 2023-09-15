@@ -2,12 +2,10 @@ name: NovaCustom TGL/ADL
 on:
   push:
     branches:
-      - clevo/develop
-      - clevo/release
+      - common-base-4.21
   pull_request:
     branches:
-      - clevo/develop
-      - clevo/release
+      - common-base-4.21
 
 jobs:
   build:
