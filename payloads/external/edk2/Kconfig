@@ -452,6 +452,13 @@ config EDK2_DISABLE_OPTION_ROMS
 	  Disables OptionROM loading and execution in UEFI Payload. By default
 	  all PCI OptionROMs are loaded and executed.
 
+config EDK2_PRINT_SOL_STRINGS
+	bool "Print Sign Of Life string on boot"
+	default n
+	help
+	  Prints the BIOS and, if available, the EC version on the screen
+	  during boot prompt in UEFI Payload.
+
 config EDK2_GOP_DRIVER
 	bool "Add a GOP driver to the Tianocore build"
 	depends on INTEL_GMA_ADD_VBT && NO_GFX_INIT && (EDK2_REPO_MRCHROMEBOX || EDK2_REPO_CUSTOM)
