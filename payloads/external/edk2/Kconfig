@@ -309,6 +309,12 @@ config EDK2_DASHARO_POWER_CONFIG_FAN_CURVE
 	  Enables fan curve options in the EDK2 power management configuration
 	  submenu.
 
+config EDK2_DASHARO_POWER_CONFIG_BATTERY_THRESHOLDS
+	bool "Enable EDK2 Battery Threshold options in Dasharo Power Configuration Menu"
+	default n
+	help
+	  Enables battery threshold options in the EDK2 power management
+	  configuration submenu.
 endif
 
 config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
