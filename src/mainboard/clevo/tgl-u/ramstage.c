@@ -3,6 +3,7 @@
 #include <device/device.h>
 #include <drivers/efi/efivars.h>
 #include <ec/acpi/ec.h>
+#include <ec/system76/ec/acpi.h>
 #include <ec/system76/ec/commands.h>
 #include <fmap.h>
 #include <lib.h>
@@ -55,6 +56,9 @@ struct fan_curve fan_curve_performance = {
 #define CAMERA_DISABLED_OPTION 0
 
 #define CAMERA_ENABLEMENT_DEFAULT CAMERA_ENABLED_OPTION
+
+#define BATTERY_START_THRESHOLD_DEFAULT 95
+#define BATTERY_STOP_THRESHOLD_DEFAULT  98
 
 const char *smbios_system_sku(void)
 {
@@ -146,6 +150,43 @@ efi_err:
 	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
+static void set_battery_thresholds(void)
+{
+	struct battery_config {
+		uint8_t start_threshold;
+		uint8_t stop_threshold;
+	} __packed battery_var;
+
+	battery_var.start_threshold = BATTERY_START_THRESHOLD_DEFAULT;
+	battery_var.stop_threshold = BATTERY_STOP_THRESHOLD_DEFAULT;
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	size = sizeof(battery_var);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "BatteryConfig", &battery_var, &size);
+
+	if (ret != CB_SUCCESS) {
+		printk(BIOS_DEBUG, "battery thresholds: failed to read thresholds from EFI vars, using board defaults\n");
+		goto efi_err;
+	}
+
+efi_err:
+#endif
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_START, battery_var.start_threshold);
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, battery_var.stop_threshold);
+}
+
+
 static void init_mainboard(void *chip_info)
 {
 	variant_configure_gpios();
@@ -155,6 +196,8 @@ static void init_mainboard(void *chip_info)
 	set_camera_enablement();
 
 	set_fan_curve();
+
+	set_battery_thresholds();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
