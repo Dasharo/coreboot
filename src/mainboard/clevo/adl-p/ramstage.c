@@ -165,7 +165,7 @@ static bool get_wifi_bt_enable(void)
 		goto efi_err;
 
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "EnableWifiBt",
-							&enable, &size);
+				&enable, &size);
 
 	if (ret != CB_SUCCESS)
 			printk(BIOS_DEBUG, "Wifi + BT radios: failed to read selection from EFI vars, using board default\n");
