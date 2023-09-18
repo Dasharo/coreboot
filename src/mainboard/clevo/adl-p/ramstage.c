@@ -283,7 +283,7 @@ static void mainboard_smbios_strings(struct device *dev, struct smbios_type11 *t
 	if (result == 0) {
 		printk(BIOS_DEBUG, "EC firmware version: %s\n", ec_version);
 		t->count = smbios_add_string(t->eos, strconcat("EC firmware version: ",
-						 ec_version));
+					     ec_version));
 	} else {
 		printk(BIOS_ERR, "Unable to probe EC firmware version\n");
 		t->count = smbios_add_string(t->eos, "EC firmware version: unknown");
