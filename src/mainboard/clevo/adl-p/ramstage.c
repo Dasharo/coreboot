@@ -203,7 +203,6 @@ efi_err:
 
 static void mainboard_init(void *chip_info)
 {
-	uint8_t cmd[1];
 	bool radio_enable;
 
 	config_t *cfg = config_of_soc();
@@ -220,8 +219,7 @@ static void mainboard_init(void *chip_info)
 	cfg->cnvi_bt_audio_offload = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
-	cmd[0] = radio_enable;
-	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, cmd);
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
 	mainboard_configure_gpios();
 

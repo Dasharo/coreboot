@@ -80,7 +80,6 @@ static void mainboard_pre_device(void *unused) {
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, mainboard_pre_device, NULL);
 
 void variant_init() {
-	uint8_t cmd[1];
 	bool radio_enable;
 
 	config_t *cfg = config_of_soc();
@@ -95,6 +94,5 @@ void variant_init() {
 	cnvi_dev->enabled = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
-	cmd[0] = radio_enable;
-	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, cmd);
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 }
