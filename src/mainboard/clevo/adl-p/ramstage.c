@@ -168,7 +168,7 @@ static bool get_wifi_bt_enable(void)
 				&enable, &size);
 
 	if (ret != CB_SUCCESS)
-			printk(BIOS_DEBUG, "Wifi + BT radios: failed to read selection from EFI vars, using board default\n");
+		printk(BIOS_DEBUG, "Wifi + BT radios: failed to read selection from EFI vars, using board default\n");
 efi_err:
 #endif
 
