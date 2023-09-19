@@ -1,0 +1,44 @@
+---
+default_stages: [pre-commit]
+
+default_install_hook_types: [pre-commit, commit-msg]
+
+ci:
+  autoupdate_commit_msg: 'pre-commit: autoupdate hooks'
+  autofix_prs: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      # Consider re-enabling
+      # - id: end-of-file-fixer
+      #   exclude: "src/vendorcode"
+      # - id: trailing-whitespace
+      #   exclude: "src/vendorcode"
+      - id: mixed-line-ending
+
+  - repo: https://github.com/talos-systems/conform
+    rev: v0.1.0-alpha.27
+    hooks:
+      - id: conform
+        stages:
+          - commit-msg
+
+    # Consider re-enabling
+    # - repo: https://github.com/codespell-project/codespell
+    #   rev: v2.2.5
+    #   hooks:
+    #     - id: codespell
+
+  - repo: local
+    hooks:
+      - id: coreboot_lint
+        name: Runs coreboot lint-stable linter checks
+        entry: util/lint/lint lint-stable
+        language: script
+        types: [file]
