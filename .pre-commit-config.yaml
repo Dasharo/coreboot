@@ -15,7 +15,8 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: detect-private-key
-      # Consider re-enabling
+      # Consider re-enabling (a lot of coreboot code is affected, but with
+      # vendorcode excluded is much less)
       # - id: end-of-file-fixer
       #   exclude: "src/vendorcode"
       # - id: trailing-whitespace
@@ -29,7 +30,8 @@ repos:
         stages:
           - commit-msg
 
-    # Consider re-enabling
+    # Consider re-enabling (a lot of coreboot code is affected, but with
+    # vendorcode excluded it is much less)
     # - repo: https://github.com/codespell-project/codespell
     #   rev: v2.2.5
     #   hooks:
