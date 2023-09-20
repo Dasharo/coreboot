@@ -30,6 +30,8 @@ else
 IPXE_BUILD_TARGET := bin/$(PXE_ROM_PCI_ID).rom
 endif
 
+PXE_MAKE_OPTS += -j $(CPUS)
+
 all: build
 
 $(project_dir):
