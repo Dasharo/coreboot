@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 External (\_SB.PCI0.I2C0.H038, DeviceObj)
 External (\_SB.PCI0.I2C0.H038._STA, IntObj)
 
