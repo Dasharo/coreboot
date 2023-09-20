@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
 #ifndef EC_SYSTEM76_EC_ACPI_H
 #define EC_SYSTEM76_EC_ACPI_H
 
