@@ -187,17 +187,50 @@ efi_err:
 }
 
 
+static void set_power_on_ac(void)
+{
+	struct smfi_option_get_cmd {
+		uint8_t index;
+		uint8_t value;
+	} __packed cmd = {
+		OPT_POWER_ON_AC,
+		0
+	};
+
+#if CONFIG(DRIVERS_EFI_VARIABLE_STORE)
+	struct region_device rdev;
+	enum cb_err ret;
+	uint32_t size;
+
+	const EFI_GUID dasharo_system_features_guid = {
+		0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
+	};
+
+	if (smmstore_lookup_region(&rdev))
+		goto efi_err;
+
+	size = sizeof(cmd.value);
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "PowerFailureState", (uint8_t *)&cmd.value, &size);
+
+	if (ret != CB_SUCCESS) {
+		printk(BIOS_DEBUG, "camera: failed to read camera enablement status from EFI vars, using board default\n");
+		goto efi_err;
+	}
+
+efi_err:
+#endif
+	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+}
+
 static void init_mainboard(void *chip_info)
 {
 	variant_configure_gpios();
-
 	variant_init();
 
 	set_camera_enablement();
-
 	set_fan_curve();
-
 	set_battery_thresholds();
+	set_power_on_ac();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
