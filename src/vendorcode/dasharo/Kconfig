@@ -1,4 +1,3 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
-config BIOS_VENDOR
-	default "3mdeb"
+
