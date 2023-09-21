@@ -156,6 +156,7 @@ BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
 endif
 ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)
 endif
 ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG_FAN_CURVE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve=TRUE
