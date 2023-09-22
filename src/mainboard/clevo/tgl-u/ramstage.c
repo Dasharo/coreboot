@@ -80,13 +80,39 @@ static void set_camera_enablement(void)
 	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
+static void set_battery_thresholds(void)
+{
+	struct battery_config bat_cfg;
+
+	get_battery_config(&bat_cfg);
+
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
+}
+
+static void set_power_on_ac(void)
+{
+	struct smfi_option_get_cmd {
+		uint8_t index;
+		uint8_t value;
+	} __packed cmd = {
+		OPT_POWER_ON_AC,
+		0
+	};
+
+	cmd.value = dasharo_get_power_on_after_fail();
+
+	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+}
+
 static void init_mainboard(void *chip_info)
 {
 	variant_configure_gpios();
 
 	set_fan_curve();
-
 	set_camera_enablement();
+	set_battery_thresholds();
+	set_power_on_ac();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
