@@ -217,3 +217,36 @@ bool get_camera_option(void)
 
 	return cam_en;
 }
+
+bool get_wireless_option(void)
+{
+	bool wireless_en = true;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("EnableWifiBt", &wireless_en);
+
+	return wireless_en;
+}
+
+void get_battery_config(struct battery_config *bat_cfg)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	uint32_t size;
+
+	bat_cfg->start_threshold = BATTERY_START_THRESHOLD_DEFAULT;
+	bat_cfg->stop_threshold = BATTERY_STOP_THRESHOLD_DEFAULT;
+
+	if (smmstore_lookup_region(&rdev))
+		return;
+
+	size = sizeof(*bat_cfg);
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "BatteryConfig",
+					bat_cfg, &size);
+
+	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
+		bat_cfg->start_threshold = BATTERY_START_THRESHOLD_DEFAULT;
+		bat_cfg->stop_threshold = BATTERY_STOP_THRESHOLD_DEFAULT;
+	}
+}

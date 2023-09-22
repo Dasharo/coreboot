@@ -22,6 +22,9 @@
 
 #define CAMERA_ENABLEMENT_DEFAULT CAMERA_ENABLED_OPTION
 
+#define BATTERY_START_THRESHOLD_DEFAULT 95
+#define BATTERY_STOP_THRESHOLD_DEFAULT 98
+
 enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
 	ME_MODE_DISABLE_HECI = 1,
@@ -43,6 +46,11 @@ struct fan_curve {
 	struct fan_point point2;
 	struct fan_point point3;
 	struct fan_point point4;
+} __packed;
+
+struct battery_config {
+	uint8_t start_threshold;
+	uint8_t stop_threshold;
 } __packed;
 
 /* Looks up "power_on_after_fail" option and Dasharo/"PowerFailureState"
@@ -146,5 +154,22 @@ uint8_t get_fan_curve_option(void);
  *  - false - camera disabled
  */
 bool get_camera_option(void);
+
+/* Looks Dasharo/"EnableWifiBt" variable to check if WiFi and Bluetooth should
+ * be enabled.
+ *
+ * Result:
+ *  - true - Wireless radios enabled
+ *  - false - Wireless radios disabled
+ */
+bool get_wireless_option(void);
+
+/* Looks Dasharo/"BatteryConfig" variable to check battery configuration
+ * (charge thresholds)
+ *
+ * Arguments:
+ *  - bat_cfg - battery configuration parameters
+ */
+void get_battery_config(struct battery_config *bat_cfg)
 
 #endif /* DASHARO_OPTIONS_H */
