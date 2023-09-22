@@ -76,16 +76,39 @@ static void set_camera_enablement(void)
 	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
+static void set_battery_thresholds(void)
+{
+	struct battery_config bat_cfg;
+
+	get_battery_config(&bat_cfg);
+
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
+}
+
 static void mainboard_init(void *chip_info)
 {
+	config_t *cfg = config_of_soc();
+	struct device *wlan_dev = pcidev_on_root(0x1c, 4);
+	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
+	bool radio_enable = get_wireless_option();
+
+	printk(BIOS_DEBUG, "Wireless is %sabled\n", radio_enable ? "en" : "dis");
+
+	wlan_dev->enabled = radio_enable;
+	cnvi_dev->enabled = radio_enable;
+	cfg->cnvi_bt_core = radio_enable;
+	cfg->cnvi_bt_audio_offload = radio_enable;
+	cfg->usb2_ports[9].enable = radio_enable;
+
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
+
 	mainboard_configure_gpios();
 
 	set_fan_curve();
-
 	set_camera_enablement();
+	set_battery_thresholds();
 }
-
-
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 static uint8_t read_proprietary_ec_version(uint8_t *data)
