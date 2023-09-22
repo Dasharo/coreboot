@@ -9,3 +9,5 @@ void variant_configure_fsps(FSP_S_CONFIG *params)
 	params->CpuPcieRpLtrEnable[0] = 1;
 	params->CpuPcieRpSlotImplemented[0] = 1;
 }
+
+void variant_init(void) {}
