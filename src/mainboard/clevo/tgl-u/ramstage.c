@@ -108,6 +108,7 @@ static void set_power_on_ac(void)
 static void init_mainboard(void *chip_info)
 {
 	variant_configure_gpios();
+	variant_init();
 
 	set_fan_curve();
 	set_camera_enablement();

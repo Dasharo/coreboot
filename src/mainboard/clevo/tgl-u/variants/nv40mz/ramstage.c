@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <dasharo/options.h>
 #include <bootstate.h>
 #include <console/console.h>
 #include <delay.h>
@@ -7,6 +8,8 @@
 #include <soc/ramstage.h>
 #include <soc/gpio.h>
 #include <variant/ramstage.h>
+#include <device/device.h>
+#include <ec/system76/ec/commands.h>
 
 #define DGPU_RST_N GPP_U4
 #define DGPU_PWR_EN GPP_U5
@@ -43,3 +46,18 @@ static void mainboard_pre_device(void *unused) {
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, mainboard_pre_device, NULL);
+
+void variant_init() {
+	config_t *cfg = config_of_soc();
+	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
+	struct device *wlan_dev = pcidev_on_root(0x1d, 2);
+	bool radio_enable = get_radio_option();
+
+	printk(BIOS_DEBUG, "Wireless is %sabled\n", radio_enable ? "en" : "dis");
+
+	wlan_dev->enabled = radio_enable;
+	cnvi_dev->enabled = radio_enable;
+	cfg->usb2_ports[9].enable = radio_enable;
+
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
+}
