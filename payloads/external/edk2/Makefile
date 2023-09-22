@@ -209,6 +209,10 @@ ifeq ($(CONFIG_EDK2_FAN_CURVE_OPTION),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve=TRUE
 endif # CONFIG_EDK2_FAN_CURVE_OPTION
 
+ifeq ($(CONFIG_EDK2_BATTERY_CONFIG_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowBatteryThresholds=TRUE
+endif
+
 endif # CONFIG_EDK2_DASHARO_POWER_CONFIG
 # DASHARO_PCI_CONFIG		= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)

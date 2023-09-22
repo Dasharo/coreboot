@@ -372,6 +372,13 @@ config EDK2_FAN_CURVE_OPTION
 	  Shows the Fan Curve option in EDK2 power configuration submenu in
 	  Dasharo System Features menu.
 
+config EDK2_BATTERY_CONFIG_OPTION
+	bool "Show Battery Threshold options in Dasharo Power Configuration Menu"
+	default n
+	help
+	  Enables battery threshold options in the EDK2 power management
+	  configuration submenu.
+
 config EDK2_DASHARO_PCI_CONFIG
 	bool "Enable EDK2 Dasharo PCI/PCIe Configuration Menu"
 	default n
