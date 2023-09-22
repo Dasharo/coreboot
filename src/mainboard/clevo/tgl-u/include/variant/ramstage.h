@@ -4,5 +4,6 @@
 #define VARIANT_RAMSTAGE_H
 
 void variant_configure_fsps(FSP_S_CONFIG *params);
+void variant_init(void);
 
 #endif
