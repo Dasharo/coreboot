@@ -219,7 +219,11 @@ endif # CONFIG_EDK2_DASHARO_POWER_CONFIG
 ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPciMenu=TRUE
 endif
-# DASHARO_NETWORK_BOOT_DEFAULT_ENABLE = FALSE
+# DASHARO_MEMORY_CONFIG	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_MEMORY_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowMemoryMenu=TRUE
+endif
+# DASHARO_NETWORK_BOOT_DEFAULT_ENABLE	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
