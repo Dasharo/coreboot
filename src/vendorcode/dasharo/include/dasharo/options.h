@@ -72,7 +72,7 @@ enum cb_err dasharo_reset_options(void);
  */
 uint8_t dasharo_get_power_on_after_fail(void);
 
-/* Looks Dasharo/"PCIeResizeableBarsEnabled" variable if resizeable PCIe BARs
+/* Looks up Dasharo/"PCIeResizeableBarsEnabled" variable if resizable PCIe BARs
  * support was enabled at compile-time.
  *
  * Result:
@@ -200,5 +200,19 @@ bool get_serial_number_from_efivar(char *serial_number);
  *  - false -  SystemUUID not present in EFI variables
  */
 bool get_uuid_from_efivar(uint8_t *uuid);
+
+/* Looks up Dasharo/"MemoryProfile" variable to know which memory profile to
+ * enable.
+ *
+ * Result (values of FSP_M_CONFIG::SpdProfileSelected):
+ *  - 0 - Default SPD Profile
+ *  - 1 - Custom Profile
+ *  - 2 - XMP Profile 1
+ *  - 3 - XMP Profile 2
+ *  - 4 - XMP Profile 3
+ *  - 5 - XMP User Profile 4
+ *  - 6 - XMP User Profile 5
+ */
+uint8_t dasharo_get_memory_profile(void);
 
 #endif /* DASHARO_OPTIONS_H */
