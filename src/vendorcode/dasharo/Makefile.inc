@@ -3,4 +3,5 @@
 CPPFLAGS_common += -Isrc/vendorcode/dasharo/include/
 
 smm-y += options.c
+romstage-y += options.c
 ramstage-y += options.c

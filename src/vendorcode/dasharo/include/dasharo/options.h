@@ -15,7 +15,7 @@
  */
 uint8_t dasharo_get_power_on_after_fail(void);
 
-/* Looks Dasharo/"PCIeResizeableBarsEnabled" variable if resizeable PCIe BARs
+/* Looks up Dasharo/"PCIeResizeableBarsEnabled" variable if resizable PCIe BARs
  * support was enabled at compile-time.
  *
  * Result:
@@ -23,5 +23,19 @@ uint8_t dasharo_get_power_on_after_fail(void);
  *  - false - resizeable PCIe BARs are disabled or not supported
  */
 bool dasharo_resizeable_bars_enabled(void);
+
+/* Looks up Dasharo/"MemoryProfile" variable to know which memory profile to
+ * enable.
+ *
+ * Result (values of FSP_M_CONFIG::SpdProfileSelected):
+ *  - 0 - Default SPD Profile
+ *  - 1 - Custom Profile
+ *  - 2 - XMP Profile 1
+ *  - 3 - XMP Profile 2
+ *  - 4 - XMP Profile 3
+ *  - 5 - XMP User Profile 4
+ *  - 6 - XMP User Profile 5
+ */
+uint8_t dasharo_get_memory_profile(void);
 
 #endif /* DASHARO_OPTIONS_H */

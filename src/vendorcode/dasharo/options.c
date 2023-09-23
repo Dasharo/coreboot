@@ -74,3 +74,11 @@ bool dasharo_resizeable_bars_enabled(void)
 
 	return enabled;
 }
+
+uint8_t dasharo_get_memory_profile(void)
+{
+	/* Using default SPD/JEDEC profile by default. */
+	uint8_t profile = 0;
+	read_u8_var("MemoryProfile", &profile);
+	return profile;
+}
