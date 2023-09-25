@@ -31,13 +31,12 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          make distclean
           make ./util/kconfig/merge_config.sh configs/config.${{ matrix.vendor }}_${{ matrix.model }} configs/fragments/config.${{ matrix.vendor }}_${{ matrix.build }}_build
           make
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
           path: |
             build/coreboot.rom
           retention-days: 30
