@@ -31,7 +31,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          make ./util/kconfig/merge_config.sh configs/config.${{ matrix.vendor }}_${{ matrix.model }} configs/fragments/config.${{ matrix.vendor }}_${{ matrix.build }}_build
+          ./util/kconfig/merge_config.sh configs/config.${{ matrix.vendor }}_${{ matrix.model }} configs/fragments/config.${{ matrix.vendor }}_${{ matrix.build }}_build
           make
       - name: Save artifacts
         uses: actions/upload-artifact@v2
