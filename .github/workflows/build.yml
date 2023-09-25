@@ -15,10 +15,9 @@ jobs:
       options: --user 1001
     strategy:
       matrix:
-        include:
-          - vendor: [ novacustom ]
-          - model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_adl ]
-          - build: [ debug, release ]
+        vendor: [ novacustom ]
+        model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_adl ]
+        build: [ debug, release ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
