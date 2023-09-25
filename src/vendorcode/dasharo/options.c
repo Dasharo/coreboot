@@ -245,7 +245,7 @@ void get_battery_config(struct battery_config *bat_cfg)
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "BatteryConfig",
 					bat_cfg, &size);
 
-	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
+	if (ret != CB_SUCCESS || size != sizeof(*bat_cfg)) {
 		bat_cfg->start_threshold = BATTERY_START_THRESHOLD_DEFAULT;
 		bat_cfg->stop_threshold = BATTERY_STOP_THRESHOLD_DEFAULT;
 	}
