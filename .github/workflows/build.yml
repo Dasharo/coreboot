@@ -2,10 +2,10 @@ name: NovaCustom TGL/ADL
 on:
   push:
     branches:
-      - common-base-4.21
+      - novacustom_*/rel_*
   pull_request:
     branches:
-      - common-base-4.21
+      - dasharo/release
 
 jobs:
   build:
