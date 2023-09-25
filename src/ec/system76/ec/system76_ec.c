@@ -146,3 +146,34 @@ static void system76_ec_restore_kbd_backlight(void *unused)
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT,
 		      system76_ec_restore_kbd_backlight, NULL);
+
+int system76_ec_get_bat_threshold(enum bat_threshold_type type)
+{
+    int ret = -1;
+
+    switch (type){
+    case BAT_THRESHOLD_START:
+        ret = ec_read(SYSTEM76_EC_REG_BATTERY_START_THRESHOLD);
+        break;
+    case BAT_THRESHOLD_STOP:
+        ret = ec_read(SYSTEM76_EC_REG_BATTERY_STOP_THRESHOLD);
+        break;
+    default:
+        break;
+    }
+
+    return ret;
+}
+void system76_ec_set_bat_threshold(enum bat_threshold_type type, uint8_t value)
+{
+    switch (type){
+    case BAT_THRESHOLD_START:
+        ec_write(SYSTEM76_EC_REG_BATTERY_START_THRESHOLD, value);
+        break;
+    case BAT_THRESHOLD_STOP:
+        ec_write(SYSTEM76_EC_REG_BATTERY_STOP_THRESHOLD, value);
+        break;
+    default:
+        break;
+    }
+}
