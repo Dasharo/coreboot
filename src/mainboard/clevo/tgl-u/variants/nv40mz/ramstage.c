@@ -47,7 +47,7 @@ static void mainboard_pre_device(void *unused) {
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, mainboard_pre_device, NULL);
 
-void variant_init() {
+void variant_init(void) {
 	config_t *cfg = config_of_soc();
 	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
 	struct device *wlan_dev = pcidev_on_root(0x1d, 2);
