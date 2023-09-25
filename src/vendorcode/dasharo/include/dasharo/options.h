@@ -170,6 +170,6 @@ bool get_wireless_option(void);
  * Arguments:
  *  - bat_cfg - battery configuration parameters
  */
-void get_battery_config(struct battery_config *bat_cfg)
+void get_battery_config(struct battery_config *bat_cfg);
 
 #endif /* DASHARO_OPTIONS_H */
