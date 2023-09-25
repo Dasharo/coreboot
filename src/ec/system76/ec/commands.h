@@ -52,6 +52,8 @@
 #define CMD_SECURITY_SET = 22,
 // Set camera enablement
 #define CMD_CAMERA_ENABLEMENT_SET 23
+// Set WiFi + Bluetooth card enablement
+#define CMD_WIFI_BT_ENABLEMENT_SET 24
 
 // Print command. Registers are unique for each command
 #define CMD_PRINT_REG_FLAGS 2
