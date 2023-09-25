@@ -62,5 +62,11 @@
 
 #define CMD_LED_INDEX_ALL 0xFF
 
+// Persistent option definitions
+enum {
+        OPT_POWER_ON_AC = 0,
+        NUM_OPTIONS
+};
+
 uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data);
 uint8_t system76_ec_read_version(uint8_t *data);
