@@ -3,6 +3,7 @@
 #include <dasharo/options.h>
 #include <device/device.h>
 #include <ec/acpi/ec.h>
+#include <ec/system76/ec/acpi.h>
 #include <ec/system76/ec/commands.h>
 #include <fmap.h>
 #include <lib.h>
