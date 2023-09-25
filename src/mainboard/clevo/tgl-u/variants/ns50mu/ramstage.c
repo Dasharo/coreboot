@@ -30,5 +30,5 @@ void variant_init(void)
 	cnvi_dev->enabled = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
-	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable)
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 }
