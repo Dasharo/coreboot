@@ -22,7 +22,7 @@ void variant_init(void)
 	config_t *cfg = config_of_soc();
 	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
 	struct device *wlan_dev = pcidev_on_root(0x1c, 7);
-	bool radio_enable = get_radio_option();
+	bool radio_enable = get_wireless_option();
 
 	printk(BIOS_DEBUG, "Wireless is %sabled\n", radio_enable ? "en" : "dis");
 
