@@ -36,6 +36,8 @@ static struct {
 	{ CPUID_ALDERLAKE_S_H0, "Alderlake-S H0 Platform" },
 	{ CPUID_RAPTORLAKE_S_A0, "Raptorlake-S A0 Platform" },
 	{ CPUID_RAPTORLAKE_S_B0, "Raptorlake-S B0 Platform" },
+	{ CPUID_RAPTORLAKE_S_C0, "Raptorlake-S C0 Platform" },
+	{ CPUID_RAPTORLAKE_S_H0, "Raptorlake-S H0 Platform" },
 	{ CPUID_RAPTORLAKE_P_J0, "Raptorlake-P J0 Platform" },
 	{ CPUID_RAPTORLAKE_P_Q0, "Raptorlake-P Q0 Platform" },
 };
