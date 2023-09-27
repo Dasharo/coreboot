@@ -86,6 +86,9 @@ endif
 bootblock-y += gpio_common.c
 ramstage-y += gpio_common.c
 
+romstage-$(CONFIG_SOC_INTEL_COMETLAKE_1_2) += cometlake_1_2.c
+ramstage-$(CONFIG_SOC_INTEL_COMETLAKE_1_2) += cometlake_1_2.c
+
 ifeq ($(CONFIG_SOC_INTEL_CANNONLAKE),y)
 # Not yet in intel-microcode repo
 #cpu_microcode_bins += $(wildcard 3rdparty/intel-microcode/intel-ucode/06-66-*)
