@@ -347,16 +347,18 @@ void preload_fspm(void)
 	if (!CONFIG(CBFS_PRELOAD))
 		return;
 
-	printk(BIOS_DEBUG, "Preloading %s\n", CONFIG_FSP_M_CBFS);
-	cbfs_preload(CONFIG_FSP_M_CBFS);
+	const char *fspm_cbfs = soc_select_fsp_m_cbfs();
+	printk(BIOS_DEBUG, "Preloading %s\n", fspm_cbfs);
+	cbfs_preload(fspm_cbfs);
 }
 
 void fsp_memory_init(bool s3wake)
 {
 	struct range_entry prog_ranges[2];
 	struct fspm_context context;
+	const char *fspm_cbfs = soc_select_fsp_m_cbfs();
 	struct fsp_load_descriptor fspld = {
-		.fsp_prog = PROG_INIT(PROG_REFCODE, CONFIG_FSP_M_CBFS),
+		.fsp_prog = PROG_INIT(PROG_REFCODE, fspm_cbfs),
 		.arg = &context,
 	};
 	struct fsp_header *hdr = &context.header;
