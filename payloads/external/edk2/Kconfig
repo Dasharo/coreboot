@@ -184,7 +184,7 @@ config EDK2_CPU_TIMER_LIB
 	default n
 	help
 	  For recent Intel and AMD CPUs, the 0x15 CPUID instruction will return Time
-	  Stamp Counter Frequence. For CPUs that do not support this instruction,
+	  Stamp Counter Frequency. For CPUs that do not support this instruction,
 	  EDK2 must include a different library which is the reason why this must be
 	  configured at build time.
 
@@ -284,6 +284,17 @@ config EDK2_SETUP_PASSWORD
 	default n
 	help
 	  Enables setup menu password in the TianoCore Payload.
+
+config EDK2_PERFORMANCE_MEASUREMENT_ENABLE
+	bool "Enable firmware performance measurement"
+	default n
+	help
+	  Enables firmware performance measurement in the TianoCore Payload.
+	  The measurements will be exposed to OS via FPDT ACPI table. Should be
+	  used in conjunction with EDK2_CPU_TIMER_LIB to match the coreboot
+	  measurement made with TSC. If EDK2_CPU_TIMER_LIB cannot be enabled on
+	  the platform, the counters wil be mismatched and the performance will
+	  not be properly reported by OS.
 
 # DasharoModulePkg specific options
 
