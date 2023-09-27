@@ -2,6 +2,7 @@
 
 #include <acpi/acpi.h>
 #include <cpu/x86/msr.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <drivers/efi/efivars.h>
 #include <fmap.h>
@@ -63,6 +64,8 @@ static void mainboard_init(void *chip_info)
 		ps2_dev->enabled = ps2_en & 1;
 		printk(BIOS_DEBUG, "PS2 Controller state: %d\n", ps2_en);
 	}
+
+	dasharo_unstash_memory_profile();
 }
 
 u8 smbios_mainboard_feature_flags(void)

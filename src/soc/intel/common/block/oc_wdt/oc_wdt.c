@@ -71,6 +71,16 @@ static void get_watchdog_config(void)
 		}
 	}
 
+#if 0 // test if this also breaks EFI var storage (doesn't seem like it)
+    printk(BIOS_EMERG, "Updating variables\n");
+    wdt_available = !wdt_available;
+    efi_fv_set_option(&rdev, &dasharo_system_features_guid,
+                      "WatchdogAvailable", &wdt_available, size);
+    wdt_available = !wdt_available;
+    efi_fv_set_option(&rdev, &dasharo_system_features_guid,
+                      "WatchdogAvailable", &wdt_available, size);
+#endif
+
 	size = sizeof(wdt_config);
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
 				&wdt_config, &size);

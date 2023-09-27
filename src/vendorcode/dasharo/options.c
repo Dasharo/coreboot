@@ -11,6 +11,12 @@ static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
 };
 
+static const char *memory_profile_var = "MemoryProfile";
+static const char *memory_profile_stash_var = "MemoryProfileBackup";
+
+/* Default SPD/JEDEC profile. */
+static const uint8_t memory_profile_default = 0;
+
 /* Value of *var is not changed on failure, so it's safe to initialize it with
  * a default before the call. */
 static enum cb_err read_u8_var(const char *var_name, uint8_t *var)
@@ -51,6 +57,26 @@ static enum cb_err read_bool_var(const char *var_name, bool *var)
 	return CB_ERR;
 }
 
+static enum cb_err write_u8_var(const char *var_name, uint8_t val)
+{
+	struct region_device rdev;
+
+	if (!smmstore_lookup_region(&rdev)) {
+		uint32_t size = sizeof(val);
+		enum cb_err ret = efi_fv_set_option(&rdev, &dasharo_system_features_guid,
+						    var_name, &val, size);
+		if (ret != CB_SUCCESS) {
+			printk(BIOS_WARNING,
+			       "dasharo: failed to update EFI variable \"%s\", error code: %d\n",
+			       var_name, ret);
+			return ret;
+		}
+		return CB_SUCCESS;
+	}
+
+	return CB_ERR;
+}
+
 uint8_t dasharo_get_power_on_after_fail(void)
 {
 	uint8_t power_status;
@@ -77,8 +103,22 @@ bool dasharo_resizeable_bars_enabled(void)
 
 uint8_t dasharo_get_memory_profile(void)
 {
-	/* Using default SPD/JEDEC profile by default. */
-	uint8_t profile = 0;
-	read_u8_var("MemoryProfile", &profile);
+	uint8_t profile = memory_profile_default;
+	read_u8_var(memory_profile_var, &profile);
 	return profile;
+}
+
+void dasharo_stash_memory_profile(void)
+{
+	enum cb_err ret;
+	ret = write_u8_var(memory_profile_stash_var, dasharo_get_memory_profile());
+	if (ret == CB_SUCCESS)
+		write_u8_var(memory_profile_var, memory_profile_default);
+}
+
+void dasharo_unstash_memory_profile(void)
+{
+	uint8_t profile = memory_profile_default;
+	read_u8_var(memory_profile_stash_var, &profile);
+	write_u8_var(memory_profile_var, profile);
 }

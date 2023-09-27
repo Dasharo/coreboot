@@ -38,4 +38,10 @@ bool dasharo_resizeable_bars_enabled(void);
  */
 uint8_t dasharo_get_memory_profile(void);
 
+  
+void dasharo_stash_memory_profile(void);
+
+  
+void dasharo_unstash_memory_profile(void);
+
 #endif /* DASHARO_OPTIONS_H */

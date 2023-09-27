@@ -100,4 +100,6 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 	if (!CONFIG(PCIEXP_CLK_PM))
 		disable_pcie_clock_requests(&memupd->FspmConfig);
+
+	dasharo_stash_memory_profile();
 }
