@@ -172,4 +172,24 @@ bool get_wireless_option(void);
  */
 void get_battery_config(struct battery_config *bat_cfg);
 
+/* Looks Dasharo/"Type2SN" variable to check if Serial Number was saved.
+ *
+ * Arguments:
+ *  - serial_number - pointer where the serial number should be returned
+ * Result:
+ *  - true - Serial Number present in EFI variables
+ *  - false -  Serial Number not present in EFI variables
+ */
+bool get_serial_number_from_efivar(char *serial_number);
+
+/* Looks Dasharo/"Type1UUID" variable to check if system UUID was saved.
+ *
+ * Arguments:
+ *  - uuid - pointer where the UUID should be returned
+ * Result:
+ *  - true - System UUID present in EFI variables
+ *  - false -  SystemUUID not present in EFI variables
+ */
+bool get_uuid_from_efivar(uint8_t *uuid);
+
 #endif /* DASHARO_OPTIONS_H */
