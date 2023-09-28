@@ -2,6 +2,7 @@
 
 #include <cbfs.h>
 #include <device/device.h>
+#include <dasharo/options.h>
 #include <smbios.h>
 #include <string.h>
 
@@ -19,6 +20,9 @@ const char *smbios_mainboard_serial_number(void)
 		serial_number[serial_len] = '\0';
 		return serial_number;
 	}
+
+	if (get_serial_number_from_efivar(serial_number))
+		return serial_number;
 
 	strncpy(serial_number, CONFIG_MAINBOARD_SERIAL_NUMBER,
 			MAX_SERIAL_LENGTH);
