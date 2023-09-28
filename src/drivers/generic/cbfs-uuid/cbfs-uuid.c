@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <lib.h>
 #include <cbfs.h>
+#include <console/console.h>
 #include <device/device.h>
+#include <dasharo/options.h>
 #include <smbios.h>
 #include <string.h>
 #include <uuid.h>
@@ -17,7 +20,12 @@ void smbios_system_set_uuid(u8 *uuid)
 	if (uuid_len >= UUID_STRLEN && uuid_len <= UUID_STRLEN + 3) {
 		/* Cut off any trailing whitespace like CR or LF */
 		uuid_str[UUID_STRLEN] = '\0';
-		if (!parse_uuid(system_uuid, uuid_str))
+		if (!parse_uuid(system_uuid, uuid_str)) {
 			memcpy(uuid, system_uuid, UUID_LEN);
+			return;
+		}
 	}
+
+	if (get_uuid_from_efivar(system_uuid))
+		memcpy(uuid, system_uuid, UUID_LEN);
 }
