@@ -6,6 +6,7 @@
 #include <option.h>
 #include <smmstore.h>
 #include <types.h>
+#include <uuid.h>
 
 static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
@@ -249,4 +250,45 @@ void get_battery_config(struct battery_config *bat_cfg)
 		bat_cfg->start_threshold = BATTERY_START_THRESHOLD_DEFAULT;
 		bat_cfg->stop_threshold = BATTERY_STOP_THRESHOLD_DEFAULT;
 	}
+}
+
+#define MAX_SERIAL_LENGTH 0x100
+
+bool get_serial_number_from_efivar(char *serial_number)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	uint32_t size;
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = MAX_SERIAL_LENGTH;
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "Type2SN", serial_number, &size);
+
+	if (ret != CB_SUCCESS || size > MAX_SERIAL_LENGTH)
+		return false;
+
+	serial_number[size] = '\0';
+
+	return true;
+}
+
+
+bool get_uuid_from_efivar(uint8_t *uuid)
+{
+	struct region_device rdev;
+	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
+	uint32_t size;
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	size = UUID_LEN;
+	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "Type1UUID", uuid, &size);
+	if (ret != CB_SUCCESS || size != UUID_LEN)
+		return false;
+
+	return true;
 }
