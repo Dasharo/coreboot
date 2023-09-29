@@ -264,7 +264,6 @@ config EDK2_SD_MMC_TIMEOUT
 
 config EDK2_SERIAL_SUPPORT
 	bool "Support serial output"
-	default y if EDK2_DEBUG
 	default n
 	help
 	  Enable serial port output in edk2. Serial output limits the performance of edk2's
@@ -397,6 +396,14 @@ config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
 	help
 	  Enables the network boot option in EDK2 by default.
 
+config EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE
+	bool "Enable serial console redirection by default"
+	depends on EDK2_SERIAL_SUPPORT
+	default n
+	help
+	  Enable serial port output in edk2 by default. Serial output limits the performance of edk2's
+	  FrontPage.
+
 endif
 
 config EDK2_BOOT_MENU_KEY
@@ -510,5 +517,12 @@ config EDK2_LAN_ROM_DRIVER
 	help
 	  Integrates LAN ROM driver in TianoCore Payload. Takes an EFI driver
 	  as input.
+
+config EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS
+	bool "Create boot entries for pre-installed OSes"
+	default n
+	help
+	  Tell UEFIPaylaod to scan available EFI System Partitions and create
+	  boot options from the bootloader binaries found on the disks.
 
 endif
