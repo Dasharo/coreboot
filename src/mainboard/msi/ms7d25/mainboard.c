@@ -39,13 +39,13 @@ static unsigned int get_ps2_option(void)
 	};
 
 	if (smmstore_lookup_region(&rdev))
-		return 0;
+		return 1;
 
 	size = sizeof(var);
 	ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid,
 				"Ps2Controller", &var, &size);
 	if (ret != CB_SUCCESS)
-		return 0;
+		return 1;
 
 	return var;
 #else
