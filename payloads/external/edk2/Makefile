@@ -246,7 +246,6 @@ endif
 ifeq ($(CONFIG_EDK2_PRINT_SOL_STRINGS),y)
 BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdPrintSolStrings=TRUE
 endif
-
 # DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
@@ -254,6 +253,14 @@ endif
 # CREATE_PREINSTALLED_BOOT_OPTIONS = FALSE
 ifeq ($(CONFIG_EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCreatePreInstalledBootOptions=TRUE
+endif
+# SHOW_CAMERA_OPTION = FALSE
+ifeq ($(CONFIG_EDK2_SHOW_CAMERA_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSecurityShowCameraOption=TRUE
+endif
+# SHOW_WIFI_BT_OPTION = FALSE
+ifeq ($(CONFIG_EDK2_SHOW_WIFI_BT_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSecurityShowWiFiBtOption=TRUE
 endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)

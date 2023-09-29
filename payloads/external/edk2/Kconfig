@@ -332,6 +332,20 @@ config EDK2_DASHARO_SECURITY_OPTIONS
 	help
 	  Enables the security configuration submenu in Dasharo System Features.
 
+config EDK2_SHOW_CAMERA_OPTION
+	bool "Show Camera option in Dasharo Security Options Menu"
+	depends on EDK2_DASHARO_SECURITY_OPTIONS
+	help
+	  Shows the Camera option in Dasharo Security Options submenu in
+	  Dasharo System Features menu.
+
+config EDK2_SHOW_WIFI_BT_OPTION
+	bool "Show WiFi/BT option in Dasharo Security Options Menu"
+	depends on EDK2_DASHARO_SECURITY_OPTIONS
+	help
+	  Shows the WiFi/BT option in Dasharo Security Options submenu in
+	  Dasharo System Features menu.
+
 config EDK2_DASHARO_INTEL_ME_OPTIONS
 	bool "Enable EDK2 Dasharo ME Configuration Menu"
 	default n
