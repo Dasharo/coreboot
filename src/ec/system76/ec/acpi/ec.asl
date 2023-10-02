@@ -103,6 +103,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_Q0A, 0, NotSerialized) // Touchpad Toggle
 	{
 		Printf ("EC: Touchpad Toggle")
+		TPTG ()
 	}
 
 	Method (_Q0B, 0, NotSerialized) // Screen Toggle
