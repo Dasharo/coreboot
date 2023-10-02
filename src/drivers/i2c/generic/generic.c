@@ -88,7 +88,7 @@ void i2c_generic_fill_ssdt(const struct device *dev,
 	acpigen_write_name_integer("_UID", config->uid);
 	if (config->desc)
 		acpigen_write_name_string("_DDN", config->desc);
-	acpigen_write_STA(acpi_device_status(dev));
+	acpigen_write_name_integer("_STA", acpi_device_status(dev));
 
 	/* Resources */
 	acpigen_write_name("_CRS");
