@@ -38,17 +38,4 @@ Scope (\_GPE)
 		Notify (\_SB.PCI0.EHC2, 0x02)
 		Notify (\_SB.PCI0.GLAN, 0x02)
 	}
-
-	Method (_L09, 0, NotSerialized)
-	{
-		Notify (\_SB.PCI0.RP01, 0x02)
-		Notify (\_SB.PCI0.RP02, 0x02)
-		Notify (\_SB.PCI0.RP03, 0x02)
-		Notify (\_SB.PCI0.RP04, 0x02)
-		Notify (\_SB.PCI0.RP05, 0x02)
-		Notify (\_SB.PCI0.RP06, 0x02)
-		Notify (\_SB.PCI0.RP07, 0x02)
-		Notify (\_SB.PCI0.RP08, 0x02)
-		Notify (\_SB.PCI0.PEGP, 0x02)
-	}
 }
