@@ -256,3 +256,125 @@ Method (_OSC, 4)
 	Return (Arg3)
 
 }
+
+Scope (_GPE)
+{
+	Method (_L09, 0, NotSerialized)
+	{
+		If ((RP1D == Zero))
+		{
+			\_SB.PCI0.RP01.HPME ()
+			Notify (\_SB.PCI0.RP01, 0x02)
+		}
+
+		If ((RP2D == Zero))
+		{
+			\_SB.PCI0.RP02.HPME ()
+			Notify (\_SB.PCI0.RP02, 0x02)
+		}
+
+		If ((RP3D == Zero))
+		{
+			\_SB.PCI0.RP03.HPME ()
+			Notify (\_SB.PCI0.RP03, 0x02)
+		}
+
+		If ((RP4D == Zero))
+		{
+			\_SB.PCI0.RP04.HPME ()
+			Notify (\_SB.PCI0.RP04, 0x02)
+		}
+
+		If ((RP5D == Zero))
+		{
+			\_SB.PCI0.RP05.HPME ()
+			Notify (\_SB.PCI0.RP05, 0x02)
+		}
+
+		If ((RP6D == Zero))
+		{
+			\_SB.PCI0.RP06.HPME ()
+			Notify (\_SB.PCI0.RP06, 0x02)
+		}
+
+		If ((RP7D == Zero))
+		{
+			\_SB.PCI0.RP07.HPME ()
+			Notify (\_SB.PCI0.RP07, 0x02)
+		}
+
+		If ((RP8D == Zero))
+		{
+			\_SB.PCI0.RP08.HPME ()
+			Notify (\_SB.PCI0.RP08, 0x02)
+		}
+
+		Notify (\_SB.PCI0.PEGP, 0x02)
+		Notify (\_SB.PCI0.PEGP.DEV0, 0x02)
+		Notify (\_SB.PCI0.PEG1, 0x02)
+		Notify (\_SB.PCI0.PEG1.DEV0, 0x02)
+		Notify (\_SB.PCI0.PEG2, 0x02)
+		Notify (\_SB.PCI0.PEG2.DEV0, 0x02)
+		Notify (\_SB.PCI0.PEG6, 0x02)
+		Notify (\_SB.PCI0.PEG6.DEV0, 0x02)
+	}
+
+	Method (_L01, 0, NotSerialized)
+	{
+		If (((RP1D == Zero) && \_SB.PCI0.RP01.HPCS))
+		{
+			If (\_SB.PCI0.RP01.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP01, 0)
+			}
+		}
+
+		If (((RP2D == Zero) && \_SB.PCI0.RP02.HPCS))
+		{
+			If (\_SB.PCI0.RP02.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP02, 0)
+			}
+		}
+
+		If (((RP3D == Zero) && \_SB.PCI0.RP03.HPCS))
+		{
+			If (\_SB.PCI0.RP03.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP03, 0)
+			}
+		}
+
+		If (((RP4D == Zero) && \_SB.PCI0.RP04.HPCS))
+		{
+			If (\_SB.PCI0.RP04.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP04, 0)
+			}
+		}
+
+		If (((RP5D == Zero) && \_SB.PCI0.RP05.HPCS))
+		{
+			If (\_SB.PCI0.RP05.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP05, 0)
+			}
+		}
+
+		If (((RP6D == Zero) && \_SB.PCI0.RP06.HPCS))
+		{
+			If (\_SB.PCI0.RP06.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP06, 0)
+			}
+		}
+
+		If (((RP7D == Zero) && \_SB.PCI0.RP07.HPCS))
+		{
+			If (\_SB.PCI0.RP07.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP07, 0)
+			}
+		}
+
+		If (((RP8D == Zero) && \_SB.PCI0.RP08.HPCS))
+		{
+			If (\_SB.PCI0.RP08.HPEV () == 1) {
+				Notify (\_SB.PCI0.RP08, 0)
+			}
+		}
+	}
+}
