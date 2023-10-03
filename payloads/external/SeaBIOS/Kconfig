@@ -52,6 +52,20 @@ config SEABIOS_PS2_TIMEOUT
 	  after powering on. This specifies how long SeaBIOS will wait for the
 	  keyboard controller to become ready before giving up.
 
+config SEABIOS_USB_SIGATT_TIME
+	prompt "USB device attachment timeout (milliseconds)"
+	default 0
+	int
+	help
+	  The USB2 specification requires devices to signal that they are
+	  attached within 100ms of the USB port being powered on. Some USB
+	  devices are known to require more time. Prior to receiving an
+	  attachment signal there is no way to know if a USB port is empty or
+	  if it has a device attached. One may specify an amount of time here
+	  (in milliseconds, default 100) to wait for a USB device attachment
+	  signal. Increasing this value will also increase the overall machine
+	  bootup time.
+
 config SEABIOS_THREAD_OPTIONROMS
 	prompt "Hardware init during option ROM execution"
 	default n
