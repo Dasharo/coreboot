@@ -121,6 +121,15 @@ $(call add_intermediate, seabios_sercon, $(CBFSTOOL))
 	$(CBFSTOOL) $< add-int -i $(CONFIG_SEABIOS_SERCON_PORT_ADDR) -n etc/sercon-port
 endif
 
+ifneq ($(CONFIG_SEABIOS_USB_SIGATT_TIME),)
+ifneq ($(CONFIG_SEABIOS_USB_SIGATT_TIME),0)
+$(call add_intermediate, seabios_usb_sigatt_time, $(CBFSTOOL))
+	@printf "    SeaBIOS    Add sercon-port file\n"
+	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n etc/usb-time-sigatt 2>/dev/null)
+	$(CBFSTOOL) $< add-int -i $(CONFIG_SEABIOS_USB_SIGATT_TIME) -n etc/usb-time-sigatt
+endif
+endif
+
 ifeq ($(CONFIG_SEABIOS_THREAD_OPTIONROMS),y)
 $(call add_intermediate, seabios_thread_optionroms, $(CBFSTOOL))
 	@printf "    SeaBIOS    Thread optionroms\n"
