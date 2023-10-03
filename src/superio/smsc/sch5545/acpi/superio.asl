@@ -288,7 +288,6 @@ Device(SIO1) {
 			PMS1 = (Local0 | 0x18)
 			Local0 = PMES
 			PMES = (Local0 | 1)
-
 			Local0 = PME1
 			If (KBFG)
 			{
@@ -337,23 +336,16 @@ Device(SIO1) {
 	/* SIO wake method */
 	Method (SIOW, 1, NotSerialized)
 	{
-		If (Arg0 == 1)
+		If (Arg0 == 0x03 || Arg0 == 1)
 		{
 			GPKM ()
 			ENTER_CONFIG_MODE (1)
 			Local0 = OPT0
 			OPT0 = (Local0 & 0x9F)
-			EXIT_CONFIG_MODE ()
-		}
-
-		If (Arg0 == 0x03)
-		{
-			GPKM ()
-			ENTER_CONFIG_MODE (1)
-			Local0 = OPT0
-			OPT0 = (Local0 & 0x9F)
-			OPT2 |= 1
-			OPT2 &= 0xFE
+			If (Arg0 == 0x03) {
+				OPT2 |= 1
+				OPT2 &= 0xFE
+			}
 			EXIT_CONFIG_MODE ()
 		}
 	}
