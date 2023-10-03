@@ -17,7 +17,6 @@ jobs:
       matrix:
         vendor: [ novacustom ]
         model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl ]
-        build: [ debug, release ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -31,7 +30,8 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          ./util/kconfig/merge_config.sh configs/config.${{ matrix.vendor }}_${{ matrix.model }} configs/fragments/config.${{ matrix.vendor }}_${{ matrix.build }}_build
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
+          make olddefconfig
           make
       - name: Save artifacts
         uses: actions/upload-artifact@v2
