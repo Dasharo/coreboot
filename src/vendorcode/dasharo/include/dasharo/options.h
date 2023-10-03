@@ -53,6 +53,15 @@ struct battery_config {
 	uint8_t stop_threshold;
 } __packed;
 
+/* Attempts to wipe the SMMSTORE region in order to reset EFI options.
+ * UEFIPayload will populate it with default values upon boot.
+ *
+ * Result:
+ *  - CB_SUCCESS - Success
+ *  - CB_ERR - Failure, including partial wipe
+ */
+enum cb_err dasharo_reset_options(void);
+
 /* Looks up "power_on_after_fail" option and Dasharo/"PowerFailureState"
  * variable.
  *
