@@ -52,6 +52,21 @@ static enum cb_err read_bool_var(const char *var_name, bool *var)
 	return CB_ERR;
 }
 
+enum cb_err dasharo_reset_options(void)
+{
+	struct region_device rdev;
+	ssize_t res;
+
+	if (smmstore_lookup_region(&rdev))
+		return CB_ERR;
+
+	res = rdev_eraseat(&rdev, 0, region_device_sz(&rdev));
+	if (res != region_device_sz(&rdev))
+		return CB_ERR;
+
+	return CB_SUCCESS;
+}
+
 uint8_t dasharo_get_power_on_after_fail(void)
 {
 	uint8_t power_status;
