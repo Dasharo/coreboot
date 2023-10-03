@@ -12,12 +12,15 @@ Device (PEGP)
 	Device (DEV0)
 	{
 		Name(_ADR, 0x00000000)
+		Name (_PRW, Package() { 9, 4 })
 	}
 
 	Method (_PRT)
 	{
 		Return (\_SB.PCI0.IRQM (1))
 	}
+
+	Name (_PRW, Package() { 9, 4 })
 }
 
 Device (PEG1)
@@ -32,12 +35,15 @@ Device (PEG1)
 	Device (DEV0)
 	{
 		Name(_ADR, 0x00000000)
+		Name (_PRW, Package() { 9, 4 })
 	}
 
 	Method (_PRT)
 	{
 		Return (\_SB.PCI0.IRQM (2))
 	}
+
+	Name (_PRW, Package() { 9, 4 })
 }
 
 Device (PEG2)
@@ -52,12 +58,15 @@ Device (PEG2)
 	Device (DEV0)
 	{
 		Name(_ADR, 0x00000000)
+		Name (_PRW, Package() { 9, 4 })
 	}
 
 	Method (_PRT)
 	{
 		Return (\_SB.PCI0.IRQM (3))
 	}
+
+	Name (_PRW, Package() { 9, 4 })
 }
 
 Device (PEG6)
@@ -72,10 +81,13 @@ Device (PEG6)
 	Device (DEV0)
 	{
 		Name(_ADR, 0x00000000)
+		Name (_PRW, Package() { 9, 4 })
 	}
 
 	Method (_PRT)
 	{
 		Return (\_SB.PCI0.IRQM (4))
 	}
+
+	Name (_PRW, Package() { 9, 4 })
 }
