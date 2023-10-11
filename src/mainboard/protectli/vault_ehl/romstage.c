@@ -28,7 +28,6 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
 	get_spd_smbus(&blk);
-	dump_spd_info(&blk);
 
 	if (blk.spd_array[0] == NULL)
 		die("No memory detected. Insert DIMM module");
