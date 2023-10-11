@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <pc80/i8254.h>
+#include <soc/gpio.h>
 #include <delay.h>
 #include <gpio.h>
 
