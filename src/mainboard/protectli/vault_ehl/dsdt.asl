@@ -24,5 +24,9 @@ DefinitionBlock(
 		}
 	}
 
+	Scope (\_SB.PCI0.LPCB) {
+		#include "acpi/superio.asl"
+	}
+
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }
