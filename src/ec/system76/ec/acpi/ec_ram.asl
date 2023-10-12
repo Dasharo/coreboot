@@ -45,11 +45,4 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	Offset (0xD9),
 	AIRP, 8,	// Airplane mode LED
 	WINF, 8,	// Enable ACPI brightness controls
-	Offset (0xF8),
-	FCMD, 8,
-	FDAT, 8,
-	FBUF, 8,
-	FBF1, 8,
-	FBF2, 8,
-	FBF3, 8,
 }
