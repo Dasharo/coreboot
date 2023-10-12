@@ -8,6 +8,8 @@
 #define HAP_OFFSET			0x196
 #elif CONFIG(SOC_INTEL_TIGERLAKE)
 #define HAP_OFFSET			0x17E
+#elif CONFIG(SOC_INTEL_ELKHARTLAKE)
+#define HAP_OFFSET			0x186
 #endif
 
 /* ME Host Firmware Status register 1 */
