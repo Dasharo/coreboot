@@ -30,7 +30,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 	})
 
 	#include "ec_ram.asl"
-	#include "cmos.asl"
 
 	Name (ECOK, 0)
 	Method (_REG, 2, Serialized)  // _REG: Region Availability
