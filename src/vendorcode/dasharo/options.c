@@ -121,7 +121,7 @@ bool dma_protection_enabled(void)
 
 uint8_t cse_get_me_disable_mode(void)
 {
-	uint8_t var = ME_MODE_ENABLE;
+	uint8_t var = CONFIG_EDK2_INTEL_ME_DEFAULT_STATE;
 	bool fum = false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
@@ -129,7 +129,8 @@ uint8_t cse_get_me_disable_mode(void)
 
 	/* Disable ME if in Firmware Update Mode */
 	if (fum)
-		return ME_MODE_DISABLE_HAP;
+		return CONFIG(EDK2_HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
+						      : ME_MODE_DISABLE_HECI;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("MeMode", &var);
