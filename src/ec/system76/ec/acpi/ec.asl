@@ -37,7 +37,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 	{
 		Printf ("EC: _REG %o %o", ToHexString(Arg0), ToHexString(Arg1))
 		If ((Arg0 == 0x03) && (Arg1 == 1)) {
-			// Enable hardware touchpad lock, airplane mode, and keyboard backlight keys
+			// Enable hardware touchpad lock and airplane mode keys
 			ECOS = 1
 
 			// Enable software display brightness keys
@@ -72,9 +72,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 
 			// Clear wake cause
 			WFNO = 0
-
-			// Disable keyboard backlight
-			^^^^S76D.EKBL (0)
 		}
 	}
 
@@ -97,9 +94,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 
 			// Reset System76 Device
 			^^^^S76D.RSET()
-
-			// Enable keyboard backlight
-			^^^^S76D.EKBL (1)
 		}
 	}
 
@@ -120,12 +114,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_Q0C, 0, NotSerialized)  // Mute
 	{
 		Printf ("EC: Mute")
-	}
-
-	Method (_Q0D, 0, NotSerialized) // Keyboard Backlight
-	{
-		Printf ("EC: Keyboard Backlight")
-		KBDL = ^^^^S76D.GKBB
 	}
 
 	Method (_Q0E, 0, NotSerialized) // Volume Down
@@ -177,12 +165,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 	{
 		Printf ("EC: Suspend Button")
 		Notify (SLPB, 0x80)
-		/*
-		 * Windows does not immediately execute S0ix entry notification
-		 * and the KBD backlight is up for a dozen of seconds while the
-		 * laptop is already sleeping, so disable KBD backlight here.
-		 */
-		^^^^S76D.EKBL (0)
 	}
 
 	Method (_Q16, 0, NotSerialized) // AC Detect
@@ -233,29 +215,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_Q50, 0, NotSerialized) // Other Events
 	{
 		Local0 = OEM4
-		If (Local0 == 0x8A) {
-			Printf ("EC: White Keyboard Backlight")
-			Notify (^^^^S76D, 0x80)
-			KBDL = ^^^^S76D.GKBB
-		} ElseIf (Local0 == 0x9F) {
-			Printf ("EC: Color Keyboard Toggle")
-			Notify (^^^^S76D, 0x81)
-			KBDL = ^^^^S76D.GKBB
-		} ElseIf (Local0 == 0x81) {
-			Printf ("EC: Color Keyboard Down")
-			Notify (^^^^S76D, 0x82)
-			KBDL = ^^^^S76D.GKBB
-		} ElseIf (Local0 == 0x82) {
-			Printf ("EC: Color Keyboard Up")
-			Notify (^^^^S76D, 0x83)
-			KBDL = ^^^^S76D.GKBB
-		} ElseIf (Local0 == 0x80) {
-			Printf ("EC: Color Keyboard Color Change")
-			Notify (^^^^S76D, 0x84)
-			KBDC = ^^^^S76D.GKBC
-		} Else {
-			Printf ("EC: Other: %o", ToHexString(Local0))
-		}
+		Printf ("EC: Other: %o", ToHexString(Local0))
 	}
 
 	#if CONFIG(EC_SYSTEM76_EC_BAT_THRESHOLDS)

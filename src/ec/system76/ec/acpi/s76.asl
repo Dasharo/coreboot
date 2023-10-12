@@ -16,9 +16,6 @@ Device (S76D) {
 	Method (RSET, 0, Serialized) {
 		Debug = "S76D: RSET"
 		SAPL(0)
-		EKBL(1)
-		SKBC(^^PCI0.LPCB.EC0.KBDC)
-		SKBB(^^PCI0.LPCB.EC0.KBDL)
 	}
 	Method (INIT, 0, Serialized) {
 		Printf ("S76D: INIT")
@@ -62,76 +59,6 @@ Device (S76D) {
 			} Else {
 				^^PCI0.LPCB.EC0.AIRP &= 0xBF
 			}
-		}
-	}
-
-	// Get Keyboard Backlight Kind
-	// 0 - No backlight
-	// 1 - White backlight
-	// 2 - RGB backlight
-	Method (GKBK, 0, Serialized) {
-		Local0 = 0
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 2
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-			Local0 = ^^PCI0.LPCB.EC0.FBUF
-		}
-		Return (Local0)
-	}
-
-	// Get Keyboard Brightness
-	Method (GKBB, 0, Serialized) {
-		Local0 = 0
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 1
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-			Local0 = ^^PCI0.LPCB.EC0.FBUF
-		}
-		Return (Local0)
-	}
-
-	// Set Keyboard Brightness
-	Method (SKBB, 1, Serialized) {
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 0
-			^^PCI0.LPCB.EC0.FBUF = Arg0
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-		}
-	}
-
-	// Get Keyboard Color
-	Method (GKBC, 0, Serialized) {
-		Local0 = 0
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 4
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-			Local0 = ^^PCI0.LPCB.EC0.FBUF
-			Local0 |= (^^PCI0.LPCB.EC0.FBF1) << 16
-			Local0 |= (^^PCI0.LPCB.EC0.FBF2) << 8
-		}
-		Return (Local0)
-	}
-
-	// Set Keyboard Color
-	Method (SKBC, 1, Serialized) {
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 3
-			^^PCI0.LPCB.EC0.FBUF = (Arg0 & 0xFF)
-			^^PCI0.LPCB.EC0.FBF1 = ((Arg0 >> 16) & 0xFF)
-			^^PCI0.LPCB.EC0.FBF2 = ((Arg0 >> 8) & 0xFF)
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-		}
-	}
-
-
-	// Enable KB Led
-	Method (EKBL, 1, Serialized) {
-
-		If (^^PCI0.LPCB.EC0.ECOK &&
-			^^PCI0.LPCB.EC0.LSTE) {
-				^^PCI0.LPCB.EC0.FDAT = 0x5
-				^^PCI0.LPCB.EC0.FBUF = Arg0
-				^^PCI0.LPCB.EC0.FCMD = 0xCA
 		}
 	}
 

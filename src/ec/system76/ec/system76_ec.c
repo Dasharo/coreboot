@@ -17,9 +17,6 @@
 #define REG_RESULT 1
 #define REG_DATA 2	// Start of command data
 
-#define CMOS_KBD_BKL		0x80
-#define CMOS_KBD_RGB_LED	0x81
-
 // When command register is 0, command is complete
 #define CMD_FINISHED 0
 
@@ -120,32 +117,6 @@ uint8_t system76_ec_read_version(uint8_t *data)
 
 	return result;
 }
-
-static void system76_ec_restore_kbd_backlight(void *unused)
-{
-	uint32_t kbd_led;
-	uint8_t cmd[4];
-
-	/* Do not restore the backlight if lid is closed */
-	if (system76_ec_get_lid_state() != 1)
-		return;
-
-	/* Set last keyboard LED brightness */
-	cmd[0] = CMD_LED_INDEX_ALL;
-	cmd[1] = cmos_read(CMOS_KBD_BKL);
-	system76_ec_smfi_cmd(CMD_LED_SET_VALUE, 2, cmd);
-
-	kbd_led = cmos_read32(CMOS_KBD_RGB_LED);
-
-	cmd[0] = CMD_LED_INDEX_ALL;
-	cmd[1] = (kbd_led & 0xff0000) >> 16; // R
-	cmd[2] = (kbd_led & 0x00ff00) >> 8; // G
-	cmd[3] = (kbd_led & 0x0000ff); // B
-	system76_ec_smfi_cmd(CMD_LED_SET_COLOR, 4, cmd);
-}
-
-BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT,
-		      system76_ec_restore_kbd_backlight, NULL);
 
 int system76_ec_get_bat_threshold(enum bat_threshold_type type)
 {
