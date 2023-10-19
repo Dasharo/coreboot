@@ -18,9 +18,7 @@ jobs:
       matrix:
         include:
           - vendor: protectli
-            model: vp4630_vp4650
-          - vendor: protectli
-            model: vp4670
+            model: vp46xx
     steps:
       - uses: actions/checkout@v3
       - name: Checkout repository
@@ -33,7 +31,7 @@ jobs:
           fetch-depth: 0
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
-      - name: Obtain Blobs 
+      - name: Obtain Blobs
         shell: bash
         env:
           SSH_KEY: ${{secrets.PROTECTLI_BLOBS_KEY}}
