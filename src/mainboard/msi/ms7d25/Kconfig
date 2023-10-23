@@ -18,7 +18,6 @@ config BOARD_MSI_MS7D25
 	select INTEL_GMA_HAVE_VBT
 	select CRB_TPM
 	select HAVE_INTEL_PTT
-	select USE_LEGACY_8254_TIMER
 	select BOARD_HAS_MSI_ROMHOLE
 
 if BOARD_MSI_MS7D25
@@ -31,30 +30,27 @@ config MAINBOARD_PART_NUMBER
 	default "PRO Z690-A WIFI (MS-7D25)" if BOARD_MSI_Z690_A_PRO_WIFI_DDR5
 
 config MAINBOARD_VENDOR
-	string
 	default "Micro-Star International Co., Ltd."
 
 config MAINBOARD_FAMILY
-	string
 	default "Default string"
 
 config MAINBOARD_VERSION
-	string
 	default "2.0" if BOARD_MSI_Z690_A_PRO_WIFI_DDR5
 
 config DIMM_SPD_SIZE
 	default 512
 
 config UART_FOR_CONSOLE
-	int
 	default 0
 
 config USE_PM_ACPI_TIMER
-	bool
 	default n
 
+config USE_LEGACY_8254_TIMER
+	default y
+
 config CBFS_SIZE
-	hex
 	default 0x1000000
 
 config VBOOT
@@ -65,18 +61,20 @@ config VBOOT
 	select VBOOT_ALWAYS_ENABLE_DISPLAY
 	select VBOOT_NO_BOARD_SUPPORT
 	select HAS_RECOVERY_MRC_CACHE
+	select VBOOT_NO_TPM
 
 config VBOOT_SLOTS_RW_AB
 	default y if VBOOT
 
+config SOC_INTEL_CSE_SEND_EOP_EARLY
+	default n
+
 config FMDFILE
-	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
 
 # gen_test_hwid.sh script doesn't like parentheses in the MAINBOARD_PART_NUMBER
 # Override the GBB_HWID
 config GBB_HWID
-	string
 	default "MSI_MS7D25"
 
 endif

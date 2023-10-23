@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <fsp/api.h>
 #include <soc/romstage.h>
 #include <soc/meminit.h>
@@ -82,7 +83,14 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.DmiAspmCtrl = 0;
 	memupd->FspmConfig.SkipExtGfxScan = 0;
 
+	memupd->FspmConfig.PchHdaAudioLinkHdaEnable = 1;
 	memupd->FspmConfig.PchHdaSdiEnable[0] = 1;
+
+	memupd->FspmConfig.MmioSize = 0xb00; /* 2.75GB in MB */
+
+	memupd->FspmConfig.OcLock = 0;
+
+	memupd->FspmConfig.SpdProfileSelected = dasharo_get_memory_profile();
 
 	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4))
 		memcfg_init(memupd, &ddr4_mem_config, &dimm_module_spd_info, false);

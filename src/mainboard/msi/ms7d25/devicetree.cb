@@ -12,76 +12,6 @@ chip soc/intel/alderlake
 	register "pmc_gpe0_dw1" = "GPP_VPGIO"
 	register "pmc_gpe0_dw2" = "GPD"
 
-	# USB Configuration
-	register "usb2_ports[0]" = "USB2_PORT_SHORT(OC2)" # USB-C LAN_USB1
-	register "usb2_ports[1]" = "USB2_PORT_SHORT(OC1)" # MSI MYSTIC LIGHT
-	register "usb2_ports[2]" = "USB2_PORT_SHORT(OC0)" # USB-A LAN_USB1
-	register "usb2_ports[3]" = "USB2_PORT_LONG(OC0)" # JUSB5
-	register "usb2_ports[4]" = "USB2_PORT_SHORT(OC3)" # HUB to rear USB 2.0
-	register "usb2_ports[5]" = "USB2_PORT_LONG(OC3)" # empty?
-	register "usb2_ports[6]" = "USB2_PORT_LONG(OC7)" # JUSB4
-	register "usb2_ports[7]" = "USB2_PORT_LONG(OC0)" # JUSB4
-	register "usb2_ports[8]" = "USB2_PORT_LONG(OC2)" # JUSB3
-	register "usb2_ports[9]" = "USB2_PORT_LONG(OC7)" # JUSB3
-	register "usb2_ports[10]" = "USB2_PORT_SHORT(OC0)" # PS2_USB1
-	register "usb2_ports[11]" = "USB2_PORT_SHORT(OC0)" # PS2_USB1
-	register "usb2_ports[12]" = "USB2_PORT_SHORT(OC0)" # HUB to USB 2.0 headers
-	register "usb2_ports[13]" = "USB2_PORT_SHORT(OC6)" # CNVi BT
-	register "usb2_ports[14]" = "USB2_PORT_EMPTY" # USB Redirection port 1
-	register "usb2_ports[15]" = "USB2_PORT_EMPTY" # USB Redirection port 2
-
-	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC2)" # USB-C LAN_USB1
-	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC2)" # USB-A LAN_USB1
-	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC3)" # JUSB5
-	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC0)" # USB-A USB2
-	register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC7)" # USB-A USB2
-	register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC7)" # JUSB4
-	register "usb3_ports[6]" = "USB3_PORT_DEFAULT(OC2)" # JUSB4
-	register "usb3_ports[7]" = "USB3_PORT_DEFAULT(OC2)" # JUSB3
-	register "usb3_ports[8]" = "USB3_PORT_DEFAULT(OC0)" # JUSB3
-	register "usb3_ports[9]" = "USB3_PORT_EMPTY"
-
-	# LPC generic I/O ranges
-	register "gen1_dec" = "0x00fc0201"
-	register "gen2_dec" = "0x003c0a01"
-	register "gen3_dec" = "0x000c03f1"
-	register "gen4_dec" = "0x000c0081"
-
-	register "sata_salp_support" = "1"
-
-	register "sata_ports_enable" = "{
-		[0] = 1,
-		[1] = 1,
-		[2] = 1,
-		[3] = 1,
-		[4] = 1,
-		[5] = 1,
-		[6] = 1,
-		[7] = 1,
-	}"
-
-	register "sata_ports_dev_slp" = "{
-		[0] = 0,
-		[1] = 0,
-		[2] = 0,
-		[3] = 0,
-		[4] = 0,
-		[5] = 0,
-		[6] = 1,
-		[7] = 1,
-	}"
-
-	# HDMI on port B
-	register "ddi_portB_config" = "1"
-	register "ddi_ports_config" = "{
-		[DDI_PORT_B] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
-		[DDI_PORT_C] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
-		[DDI_PORT_1] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
-		[DDI_PORT_2] = DDI_ENABLE_HPD,
-		[DDI_PORT_3] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
-		[DDI_PORT_4] = DDI_ENABLE_HPD,
-	}"
-
 	register "hybrid_storage_mode" = "1"
 	register "dmi_power_optimize_disable" = "1"
 
@@ -104,7 +34,18 @@ chip soc/intel/alderlake
 					 "PCI_E1" "SlotDataBusWidth16X"
 		end
 		device ref pcie5_1 off end
-		device ref igpu on end
+		device ref igpu on
+			# HDMI on port B
+			register "ddi_portB_config" = "1"
+			register "ddi_ports_config" = "{
+				[DDI_PORT_B] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
+				[DDI_PORT_C] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
+				[DDI_PORT_1] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
+				[DDI_PORT_2] = DDI_ENABLE_HPD,
+				[DDI_PORT_3] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
+				[DDI_PORT_4] = DDI_ENABLE_HPD,
+			}"
+		end
 		device ref pcie4_0 on
 			register "cpu_pcie_rp[CPU_RP(1)]" = "{
 				.clk_src = 9,
@@ -114,8 +55,35 @@ chip soc/intel/alderlake
 			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
 					 "M2_1" "SlotDataBusWidth4X"
 		end
-		device ref crashlog off end
-		device ref xhci on end
+		device ref xhci on
+			register "usb2_ports[0]" = "USB2_PORT_SHORT(OC2)" # USB-C LAN_USB1
+			register "usb2_ports[1]" = "USB2_PORT_SHORT(OC1)" # MSI MYSTIC LIGHT
+			register "usb2_ports[2]" = "USB2_PORT_SHORT(OC0)" # USB-A LAN_USB1
+			register "usb2_ports[3]" = "USB2_PORT_LONG(OC0)" # JUSB5
+			register "usb2_ports[4]" = "USB2_PORT_SHORT(OC3)" # HUB to rear USB 2.0
+			register "usb2_ports[5]" = "USB2_PORT_LONG(OC3)" # empty?
+			register "usb2_ports[6]" = "USB2_PORT_LONG(OC7)" # JUSB4
+			register "usb2_ports[7]" = "USB2_PORT_LONG(OC0)" # JUSB4
+			register "usb2_ports[8]" = "USB2_PORT_LONG(OC2)" # JUSB3
+			register "usb2_ports[9]" = "USB2_PORT_LONG(OC7)" # JUSB3
+			register "usb2_ports[10]" = "USB2_PORT_SHORT(OC0)" # PS2_USB1
+			register "usb2_ports[11]" = "USB2_PORT_SHORT(OC0)" # PS2_USB1
+			register "usb2_ports[12]" = "USB2_PORT_SHORT(OC0)" # HUB to USB 2.0 headers
+			register "usb2_ports[13]" = "USB2_PORT_SHORT(OC6)" # CNVi BT
+			register "usb2_ports[14]" = "USB2_PORT_EMPTY" # USB Redirection port 1
+			register "usb2_ports[15]" = "USB2_PORT_EMPTY" # USB Redirection port 2
+
+			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC2)" # USB-C LAN_USB1
+			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC2)" # USB-A LAN_USB1
+			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC3)" # JUSB5
+			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC0)" # USB-A USB2
+			register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC7)" # USB-A USB2
+			register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC7)" # JUSB4
+			register "usb3_ports[6]" = "USB3_PORT_DEFAULT(OC2)" # JUSB4
+			register "usb3_ports[7]" = "USB3_PORT_DEFAULT(OC2)" # JUSB3
+			register "usb3_ports[8]" = "USB3_PORT_DEFAULT(OC0)" # JUSB3
+			register "usb3_ports[9]" = "USB3_PORT_EMPTY"
+		end
 		device ref cnvi_wifi on
 			# Enable CNVi BT
 			register "cnvi_bt_core" = "true"
@@ -127,12 +95,42 @@ chip soc/intel/alderlake
 			end
 		end
 		device ref heci1 on end
-		device ref heci2 off end
-		device ref ide_r off end
-		device ref kt off end
-		device ref heci3 off end
-		device ref heci4 off end
-		device ref sata on end
+		device ref sata on
+			register "sata_salp_support" = "1"
+
+			register "sata_ports_enable" = "{
+				[0] = 1,
+				[1] = 1,
+				[2] = 1,
+				[3] = 1,
+				[4] = 1,
+				[5] = 1,
+				[6] = 1,
+				[7] = 1,
+			}"
+
+			register "sata_ports_dev_slp" = "{
+				[0] = 0,
+				[1] = 0,
+				[2] = 0,
+				[3] = 0,
+				[4] = 0,
+				[5] = 0,
+				[6] = 1,
+				[7] = 1,
+			}"
+
+			register "sata_ports_hotplug" = "{
+				[0] = 1,
+				[1] = 1,
+				[2] = 1,
+				[3] = 1,
+				[4] = 1,
+				[5] = 1,
+				[6] = 1,
+				[7] = 1,
+			}"
+		end
 		device ref pcie_rp1 on
 			register "pch_pcie_rp[PCH_RP(1)]" = "{
 				.clk_src = 10,
@@ -158,7 +156,6 @@ chip soc/intel/alderlake
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED | PCIE_RP_BUILT_IN,
 			}"
 		end
-		device ref pcie_rp4 off end
 
 		device ref pcie_rp5 on
 			register "pch_pcie_rp[PCH_RP(5)]" = "{
@@ -212,6 +209,12 @@ chip soc/intel/alderlake
 					 "M2_2" "SlotDataBusWidth4X"
 		end
 		device ref pch_espi on
+			# LPC generic I/O ranges
+			register "gen1_dec" = "0x00fc0201"
+			register "gen2_dec" = "0x003c0a01"
+			register "gen3_dec" = "0x000c03f1"
+			register "gen4_dec" = "0x000c0081"
+
 			chip superio/nuvoton/nct6687d
 				register "sensors[0]" = "PECI_AGENT0_DOMAIN0"
 				register "sensors[1]" = "TD0P_CURRENT_MODE"
@@ -399,7 +402,7 @@ chip soc/intel/alderlake
 				device pnp 4e.f off end		# Function register
 			end
 		end
-		device ref p2sb on end
+		device ref p2sb hidden end
 		device ref hda on
 			subsystemid 0x1462 0x9d25
 			register "pch_hda_audio_link_hda_enable" = "1"
