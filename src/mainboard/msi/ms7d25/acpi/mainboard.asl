@@ -8,10 +8,10 @@ Scope (_GPE) {
 Scope (\_SB.PCI0) {
 	/* This device triggers automatic drivers and MSI utilities installation on Windows */
 	Device (MSIV) {
-		Name (_HID, "MBID0002")
-		Name (_UID, 1)
+		Name (_HID, "MBID0001")
+		Name (_UID, One)
 		Method (_STA, 0, NotSerialized){
-			Return (1)
+			Return (One)
 		}
 	}
 }
