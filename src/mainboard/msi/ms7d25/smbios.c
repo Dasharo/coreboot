@@ -52,7 +52,7 @@ smbios_wakeup_type smbios_system_wakeup_type(void)
 
 const char *smbios_system_product_name(void)
 {
-	return "MS-7E06";
+	return "MS-7D25";
 }
 const char *smbios_mainboard_product_name(void)
 {
