@@ -259,7 +259,8 @@ enum adl_cpu_type get_adl_cpu_type(void)
 		PCI_DID_INTEL_RPL_S_ID_2,
 		PCI_DID_INTEL_RPL_S_ID_3,
 		PCI_DID_INTEL_RPL_S_ID_4,
-		PCI_DID_INTEL_RPL_S_ID_5
+		PCI_DID_INTEL_RPL_S_ID_5,
+		PCI_DID_INTEL_RPL_S_ID_6
 	};
 
 	const uint16_t rpl_p_mch_ids[] = {

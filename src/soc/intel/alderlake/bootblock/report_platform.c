@@ -94,6 +94,7 @@ static struct {
 	{ PCI_DID_INTEL_RPL_S_ID_3, "Raptorlake-S (8+8)" },
 	{ PCI_DID_INTEL_RPL_S_ID_4, "Raptorlake-S (6+8)" },
 	{ PCI_DID_INTEL_RPL_S_ID_5, "Raptorlake-S (6+4)" },
+	{ PCI_DID_INTEL_RPL_S_ID_6, "Raptorlake-S (8+12)" },
 };
 
 static struct {
@@ -233,7 +234,9 @@ static struct {
 	{ PCI_DID_INTEL_RPL_S_GT0, "Raptorlake S GT0" },
 	{ PCI_DID_INTEL_RPL_S_GT1_1, "Raptorlake S GT1" },
 	{ PCI_DID_INTEL_RPL_S_GT1_2, "Raptorlake S GT1" },
-	{ PCI_DID_INTEL_RPL_S_GT1_3, "Raptorlake S GT1" }
+	{ PCI_DID_INTEL_RPL_S_GT1_3, "Raptorlake S GT1" },
+	{ PCI_DID_INTEL_RPL_S_GT1_4, "Raptorlake S GT1" },
+	{ PCI_DID_INTEL_RPL_S_GT1_5, "Raptorlake S GT1" }
 };
 
 static inline uint8_t get_dev_revision(pci_devfn_t dev)
