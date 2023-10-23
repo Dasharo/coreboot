@@ -119,7 +119,8 @@ static bool pcie_rp_update_dev(
 			       __func__, rp_idx + 1, dev_path(dev));
 			/* Disable the dev and its children if not present */
 			dev->enabled = 0;
-			disable_children(dev->link_list);
+			if (dev->link_list)
+				disable_children(dev->link_list);
 		}
 		return true;
 	} else if (PCI_FUNC(dev->path.pci.devfn) != new_fn) {
