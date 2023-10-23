@@ -1562,6 +1562,33 @@ unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t
 	return lpi_desc->header.length;
 }
 
+void acpi_create_wsmt(acpi_wsmt_t *wsmt, u32 flags)
+{
+	acpi_header_t *header = &(wsmt->header);
+	unsigned long current = (unsigned long)wsmt + sizeof(acpi_wsmt_t);
+
+	memset((void *)wsmt, 0, sizeof(acpi_wsmt_t));
+
+	if (!header)
+		return;
+
+	/* Fill out header fields. */
+	memcpy(header->signature, "WSMT", 4);
+	memcpy(header->oem_id, OEM_ID, 6);
+	memcpy(header->oem_table_id, ACPI_TABLE_CREATOR, 8);
+	memcpy(header->asl_compiler_id, ASLC, 4);
+
+	header->asl_compiler_revision = asl_revision;
+	header->length = sizeof(acpi_wsmt_t);
+	header->revision = get_acpi_table_revision(WSMT);
+
+	wsmt->protection_flags = flags;
+
+	/* (Re)calculate length and checksum. */
+	header->length = current - (unsigned long)wsmt;
+	header->checksum = acpi_checksum((void *)wsmt, header->length);
+}
+
 unsigned long __weak fw_cfg_acpi_tables(unsigned long start)
 {
 	return 0;
@@ -1602,6 +1629,7 @@ unsigned long write_acpi_tables(unsigned long start)
 	acpi_madt_t *madt;
 	acpi_lpit_t *lpit;
 	acpi_bert_t *bert;
+	acpi_wsmt_t *wsmt;
 	struct device *dev;
 	unsigned long fw;
 	size_t slic_size, dsdt_size;
@@ -1821,7 +1849,16 @@ unsigned long write_acpi_tables(unsigned long start)
 	acpi_create_madt(madt);
 	if (madt->header.length > sizeof(acpi_madt_t)) {
 		current += madt->header.length;
+		current = acpi_align_current(current);
 		acpi_add_table(rsdp, madt);
+	}
+
+	printk(BIOS_DEBUG, "ACPI:    * WSMT\n");
+	wsmt = (acpi_wsmt_t *) current;
+	acpi_create_wsmt(wsmt, ACPI_WSMT_FLAG_FIXED_COMM_BUFFERS);
+	if (wsmt->header.length >= sizeof(acpi_wsmt_t)) {
+		current += wsmt->header.length;
+		acpi_add_table(rsdp, wsmt);
 	}
 
 	current = acpi_align_current(current);
@@ -2000,6 +2037,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 1;
 	case LPIT: /* ACPI 5.1 up to 6.3: 0 */
 		return 0;
+	case WSMT:
+		return 1;
 	default:
 		return -1;
 	}

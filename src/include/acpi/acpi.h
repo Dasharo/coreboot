@@ -75,7 +75,7 @@ enum acpi_tables {
 	BERT, DBG2, DMAR, DSDT, EINJ, FACS, FADT, HEST, HMAT, HPET, IVRS, MADT,
 	MCFG, RSDP, RSDT, SLIT, SRAT, SSDT, TCPA, TPM2, XSDT, ECDT, LPIT,
 	/* Additional proprietary tables used by coreboot */
-	VFCT, NHLT, SPMI, CRAT
+	VFCT, NHLT, SPMI, CRAT, WSMT
 };
 
 /* RSDP (Root System Description Pointer) */
@@ -1228,6 +1228,16 @@ typedef struct acpi_einj {
 	acpi_einj_action_table_t action_table[ACTION_COUNT];
 } __packed acpi_einj_t;
 
+#define ACPI_WSMT_FLAG_FIXED_COMM_BUFFERS			(1 << 0)
+#define ACPI_WSMT_FLAG_COMM_BUFFER_NESTED_PTR_PROTECTION	(1 << 1)
+#define ACPI_WSMT_FLAG_SYSTEM_RESOURCE_PROTECTION		(1 << 2)
+
+typedef struct acpi_wsmt {
+	acpi_header_t header;
+	u32 protection_flags;
+} __packed acpi_wsmt_t;
+
+
 
 uintptr_t get_coreboot_rsdp(void);
 void acpi_create_einj(acpi_einj_t *einj, uintptr_t addr, u8 actions);
@@ -1395,6 +1405,8 @@ enum {
 	ACPI_S4 = 4,
 	ACPI_S5 = 5,
 };
+
+void acpi_create_wsmt(acpi_wsmt_t *wsmt, u32 flags);
 
 #if CONFIG(ACPI_INTEL_HARDWARE_SLEEP_VALUES) \
 		|| CONFIG(ACPI_AMD_HARDWARE_SLEEP_VALUES)
