@@ -26,5 +26,7 @@ DefinitionBlock(
 		#include "acpi/superio.asl"
 	}
 
+	#include "acpi/mainboard.asl"
+
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }
