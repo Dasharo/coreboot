@@ -221,7 +221,7 @@ static void init_sensors(const struct superio_nuvoton_nct6687d_config *conf)
 
 	for (i = 0; i < MAX_NUM_SENSORS; i++) {
 		hwm_reg_write(SENSOR_CFG_REG(i), sensors[i] & SENSOR_SRC_SEL_MASK);
-	
+
 		if (sensors[i] >= PECI_AGENT0_DOMAIN0 &&
 		    sensors[i] <= PECI_AGENT3_DOMAIN1) {
 			hwm_reg_and_or(PECI_AGENT_EN_REG, ~PECI_AGENT_EN_MASK,
@@ -285,7 +285,7 @@ static bool intel_dts_sensor_config_check(const struct nct6687d_dts_sensor_confi
 			      "DTS Sensor Temperture Start Point should be <= 127");
 	failure |= check_cond(dts->temp_end <= 127,
 			      "DTS Sensor Temperture End Point should be <= 127");
-	
+
 	if (dts->peci_adjust) {
 		failure |= check_cond(dts->peci_agent_idx < 8,
 				      "DTS Sensor PECI Agent Index should be < 8");
@@ -599,7 +599,7 @@ static bool smart_fan_level_check(const struct nct6687d_fan_config *fan,
 		failure |= check_cond(s_fan->speed_levels[i] <= 0x3fff,
 				      "Smart Fan IV RPM Speed Levels should be"
 				      "<= 16383 RPM");
-	} else { 
+	} else {
 		failure |= check_cond(false, "Smart Fan IV invalid Fan Unit Selection");
 	}
 
@@ -619,7 +619,7 @@ static bool smart_fan_config_check(const struct nct6687d_fan_config *fan,
 	failure |= check_cond(s_fan->temp_levels[0] >= s_fan->temp_cut_off,
 			      "Smart Fan IV Temperature Level 1 should be >= "
 			      "Temperature Cut Off");
-	failure |= check_cond(s_fan->temp_levels[0] >= 
+	failure |= check_cond(s_fan->temp_levels[0] >=
 			      (s_fan->temp_cut_off + s_fan->temp_hystheresis),
 			      "Smart Fan IV Temperature Level 1 should be >= "
 			      "Temperature Cut Off + Temperature Hysteresis");
@@ -787,7 +787,7 @@ static void init_thermal_cruise_fan(const struct superio_nuvoton_nct6687d_config
 
 	hwm_reg_write(FAN_TC_TARGET_TEMP_TOLERANCE_REG(idx),
 		      tc_fan->temp_tolerance & FAN_TC_TEMP_TOLERANCE_MASK);
-	
+
 	hwm_reg_write(FAN_INITIAL_VALUE_REG(idx), tc_fan->initial_value);
 
 	hwm_reg_write(FAN_TC_STOP_TIME_REG(idx), tc_fan->stop_time);
@@ -845,7 +845,7 @@ static void init_speed_cruise_fan(const struct superio_nuvoton_nct6687d_config *
 
 	hwm_reg_write(FAN_SC_TARGET_RPM_HI_REG(idx), sc_fan->target_rpm >> 8);
 	hwm_reg_write(FAN_SC_TARGET_RPM_LO_REG(idx), sc_fan->target_rpm & 0xff);
-	
+
 	hwm_reg_write(FAN_SC_TARGET_RPM_TOLERANCE_HI_REG(idx), sc_fan->rpm_tolerance >> 8);
 	hwm_reg_write(FAN_SC_TARGET_RPM_TOLERANCE_LO_REG(idx), sc_fan->rpm_tolerance & 0xff);
 
@@ -909,7 +909,7 @@ static void report_ec_info(void)
 	unsigned int i;
 
 	printk(BIOS_DEBUG, "NCT6687D EC info:\n");
-	printk(BIOS_DEBUG, "\tChip ID: %04x\n", 
+	printk(BIOS_DEBUG, "\tChip ID: %04x\n",
 	       (uint16_t)hwm_reg_read(CHIP_ID0_REG) |
 	       (uint16_t)(hwm_reg_read(CHIP_ID1_REG) << 8));
 	printk(BIOS_DEBUG, "\tCustomer ID: %04x\n",

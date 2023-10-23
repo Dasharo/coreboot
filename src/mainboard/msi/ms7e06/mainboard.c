@@ -1,12 +1,20 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <cpu/x86/msr.h>
+#include <dasharo/options.h>
 #include <device/device.h>
-#include <identity.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
 #include <string.h>
+#include <superio/nuvoton/nct6687d/nct6687d.h>
+
+
+#define MSR_ATOM_TURBO_RATIO_LIMIT		0x650
+#define MSR_ATOM_TURBO_RATIO_LIMIT_CORES	0x651
+#define MSR_BIGCORE_TURBO_RATIO_LIMIT		0x1ad
+#define MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES	0x1ae
 
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
@@ -17,52 +25,32 @@ void mainboard_fill_fadt(acpi_fadt_t *fadt)
 
 static void mainboard_init(void *chip_info)
 {
+	struct device *ps2_dev = dev_find_slot_pnp(0x4e, NCT6687D_KBC);
+	bool ps2_en = get_ps2_option();
 
+	ps2_dev->enabled = ps2_en & 1;
+	printk(BIOS_DEBUG, "PS2 Controller state: %d\n", ps2_en);
 }
 
-u8 smbios_mainboard_feature_flags(void)
+static void fill_turbo_ratio_limits(FSP_S_CONFIG *params)
 {
-	return SMBIOS_FEATURE_FLAGS_HOSTING_BOARD | SMBIOS_FEATURE_FLAGS_REPLACEABLE;
-}
+	msr_t msr;
 
-smbios_wakeup_type smbios_system_wakeup_type(void)
-{
-	return SMBIOS_WAKEUP_TYPE_POWER_SWITCH;
-}
+	msr = rdmsr(MSR_BIGCORE_TURBO_RATIO_LIMIT);
+	memcpy(&params->TurboRatioLimitRatio[0], &msr.lo, 4);
+	memcpy(&params->TurboRatioLimitRatio[4], &msr.hi, 4);
 
-const char *smbios_system_product_name(void)
-{
-	return "MS-7E06";
-}
+	msr = rdmsr(MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES);
+	memcpy(&params->TurboRatioLimitNumCore[0], &msr.lo, 4);
+	memcpy(&params->TurboRatioLimitNumCore[4], &msr.hi, 4);
 
-const char *smbios_mainboard_product_name(void)
-{
-	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4)) {
-		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z790-P WIFI DDR4(MS-7E06)";
-		else
-			return "PRO Z790-P DDR4(MS-7E06)";
-	}
+	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT);
+	memcpy(&params->AtomTurboRatioLimitRatio[0], &msr.lo, 4);
+	memcpy(&params->AtomTurboRatioLimitRatio[4], &msr.hi, 4);
 
-	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI)) {
-		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z790-P WIFI (MS-7E06)";
-		else
-			return "PRO Z790-P (MS-7E06)";
-	}
-
-	return CONFIG_MAINBOARD_PART_NUMBER;
-}
-
-/* Only baseboard serial number is populated */
-const char *smbios_system_serial_number(void)
-{
-	return "Default string";
-}
-
-const char *smbios_system_sku(void)
-{
-	return "Default string";
+	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT_CORES);
+	memcpy(&params->AtomTurboRatioLimitNumCore[0], &msr.lo, 4);
+	memcpy(&params->AtomTurboRatioLimitNumCore[4], &msr.hi, 4);
 }
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
@@ -172,6 +160,12 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->SataPortsSolidStateDrive[6] = 1; // M2_3
 	params->SataPortsSolidStateDrive[7] = 1; // M2_4
 	params->SataLedEnable = 1;
+
+	/*
+	 * If OcLock is not set in FSP-M UPD, FSP-S UPD will take and program
+	 * zeroed turbo ratio limits. Avoid this by populating defautl values here.
+	 */
+	fill_turbo_ratio_limits(params);
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
@@ -529,7 +523,12 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
+static void mainboard_final(void *chip_info)
+{
+}
+
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
 	.enable_dev = mainboard_enable,
+	.final = mainboard_final,
 };

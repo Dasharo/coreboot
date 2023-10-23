@@ -12,7 +12,7 @@
 build_date:
 	.ascii "$MSESGN$"
 	.ascii "E7E06IMS."
-#if CONFIG(BOARD_MSI_Z790_P_PRO_WIFI)
+#if CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR5)
 	.byte 'A'
 #endif
 #if CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4)
@@ -23,11 +23,11 @@ build_date:
 	.byte ' '
 	.asciz COREBOOT_DMI_DATE
 
-align 8
+.align 8
 
 msi_sign_on:
 	.ascii "$MS1E7E06IMS"
-#if CONFIG(BOARD_MSI_Z790_P_PRO_WIFI)
+#if CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR5)
 	.byte	'A'
 #endif
 #if CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4)
