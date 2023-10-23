@@ -23,6 +23,76 @@
 #define NCT6687D_ACPI_POWER_PREV_STATE		(2 << NCT6687D_ACPI_POWER_LOSS_CONTROL_SHIFT)
 #define NCT6687D_ACPI_POWER_USER_DEFINED	(3 << NCT6687D_ACPI_POWER_LOSS_CONTROL_SHIFT)
 
+/* 0xe7 register definitions */
+#define NCT6687D_ACPI_ON_PSOUT_MASK		0x10
+#define NCT6687D_ACPI_ON_PSOUT_SHIFT		4
+#define NCT6687D_ACPI_ON_PSOUT_DIS		(0 << NCT6687D_ACPI_ON_PSOUT_SHIFT)
+#define NCT6687D_ACPI_ON_PSOUT_EN		(1 << NCT6687D_ACPI_ON_PSOUT_SHIFT)
+
+static void nct6687d_configure_power_fail_state(struct device *dev)
+{
+	uint8_t reg_eb, reg_e7;
+	uint8_t power_status;
+	/* Set power state after power fail */
+	power_status = dasharo_get_power_on_after_fail();
+
+	pnp_enter_conf_mode(dev);
+	pnp_set_logical_device(dev);
+
+	reg_eb = pnp_read_config(dev, 0xeb);
+	reg_e7 = pnp_read_config(dev, 0xe7);
+	reg_eb &= ~NCT6687D_ACPI_POWER_LOSS_CONTROL_MASK;
+	reg_e7 &= ~NCT6687D_ACPI_ON_PSOUT_MASK;
+
+	if (power_status == MAINBOARD_POWER_ON) {
+		reg_eb |= NCT6687D_ACPI_POWER_ALWAYS_ON;
+		reg_e7 |= NCT6687D_ACPI_ON_PSOUT_EN;
+	} else if (power_status == MAINBOARD_POWER_KEEP) {
+		reg_eb |= NCT6687D_ACPI_POWER_PREV_STATE;
+		reg_e7 |= NCT6687D_ACPI_ON_PSOUT_EN;
+	}
+
+	pnp_write_config(dev, 0xeb, reg_eb);
+	pnp_write_config(dev, 0xe7, reg_e7);
+	pnp_exit_conf_mode(dev);
+
+	printk(BIOS_INFO, "set power %s after power fail\n",
+		power_status ? "on" : "off");
+}
+
+static void nct6687d_configure_ps2_wake(struct device *dev)
+{
+	uint8_t reg;
+	struct device *ps2_dev = dev_find_slot_pnp(dev->path.pnp.port, NCT6687D_KBC);
+
+	if (!ps2_dev || !ps2_dev->enabled)
+		return;
+
+	pnp_enter_conf_mode(dev);
+	pnp_set_logical_device(dev);
+
+	reg = pnp_read_config(dev, 0xe0);
+	reg |= 0x01; /* Any character from the keybaord can wake up the system */
+	reg &= 0xed; /* Clear MSXKEY and MSRKEY to allow either left or right click to wake */
+	pnp_write_config(dev, 0xe0, reg);
+
+	reg = pnp_read_config(dev, 0xe6);
+	reg |= 0x80; /* Set ENMDAT to allow either left or right click to wake */
+	pnp_write_config(dev, 0xe6, reg);
+
+	reg = pnp_read_config(dev, 0xe7);
+	reg &= 0x3f; /* Disable 2nd and 3rd set of wake-up key combinations */
+	reg |= 0x20; /* Enable Win98 dedicated wake up key */
+	pnp_write_config(dev, 0xe7, reg);
+
+	reg = pnp_read_config(dev, 0xe4);
+	reg |= 0xc0; /* Enable keyboard and mouse wake via PSOUT# */
+	reg |= 0x08; /* Enable keyboard wake with any key */
+	pnp_write_config(dev, 0xe4, reg);
+
+	pnp_exit_conf_mode(dev);
+}
+
 static void nct6687d_init(struct device *dev)
 {
 	const struct superio_nuvoton_nct6687d_config *conf;
@@ -31,28 +101,13 @@ static void nct6687d_init(struct device *dev)
 	if (!dev->enabled)
 		return;
 
-	uint8_t byte;
-	uint8_t power_status;
 	switch (dev->path.pnp.device) {
-	/* TODO: Might potentially need code for EC, GPIOs, etc. */
 	case NCT6687D_KBC:
 		pc_keyboard_init(PROBE_AUX_DEVICE);
 		break;
 	case NCT6687D_ACPI:
-		/* Set power state after power fail */
-		power_status = dasharo_get_power_on_after_fail();
-		pnp_enter_conf_mode(dev);
-		pnp_set_logical_device(dev);
-		byte = pnp_read_config(dev, 0xeb);
-		byte &= ~NCT6687D_ACPI_POWER_LOSS_CONTROL_MASK;
-		if (power_status == MAINBOARD_POWER_ON)
-			byte |= NCT6687D_ACPI_POWER_ALWAYS_ON;
-		else if (power_status == MAINBOARD_POWER_KEEP)
-			byte |= NCT6687D_ACPI_POWER_PREV_STATE;
-		pnp_write_config(dev, 0xeb, byte);
-		pnp_exit_conf_mode(dev);
-		printk(BIOS_INFO, "set power %s after power fail\n",
-		       power_status ? "on" : "off");
+		nct6687d_configure_power_fail_state(dev);
+		nct6687d_configure_ps2_wake(dev);
 		break;
 	case NCT6687D_EC:
 		conf = dev->chip_info;
