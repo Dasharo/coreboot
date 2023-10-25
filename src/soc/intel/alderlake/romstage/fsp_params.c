@@ -159,7 +159,7 @@ static void fill_fspm_mrc_params(FSP_M_CONFIG *m_cfg,
 		m_cfg->DdrFreqLimit = config->max_dram_speed_mts;
 		m_cfg->DdrSpeedControl = 1;
 	}
-#if CONFIG(SOC_INTEL_RAPTORLAKE) && !CONFIG(FSP_USE_REPO)
+#if CONFIG(SOC_INTEL_RAPTORLAKE) && !CONFIG(FSP_TYPE_IOT)
 	m_cfg->LowerBasicMemTestSize = config->lower_basic_mem_test_size;
 	m_cfg->DisableSagvReorder = config->disable_sagv_reorder;
 #endif

@@ -1078,7 +1078,7 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 		s_cfg->C1e = config->enable_c1e;
 	else
 		s_cfg->C1e = 1;
-#if CONFIG(SOC_INTEL_RAPTORLAKE) && !CONFIG(FSP_USE_REPO)
+#if CONFIG(SOC_INTEL_RAPTORLAKE) && !CONFIG(FSP_TYPE_IOT)
 	s_cfg->EnableHwpScalabilityTracking = config->enable_hwp_scalability_tracking;
 #endif
 }
