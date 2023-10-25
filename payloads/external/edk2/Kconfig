@@ -562,6 +562,12 @@ config EDK2_PRINT_SOL_STRINGS
 	  Prints the BIOS and, if available, the EC version on the screen
 	  during boot prompt in UEFI Payload.
 
+config EDK2_RAM_DISK_ENABLE
+	bool "Enable RAM Disk support"
+	default n
+	help
+	  Enable support for RAM Disks in EDK2 UEFIPayload.
+
 config EDK2_GOP_DRIVER
 	bool "Add a GOP driver to the Tianocore build"
 	depends on INTEL_GMA_ADD_VBT && NO_GFX_INIT && (EDK2_REPO_MRCHROMEBOX || EDK2_REPO_CUSTOM)
