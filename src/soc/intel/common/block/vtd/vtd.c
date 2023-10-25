@@ -286,8 +286,10 @@ void vtd_enable_dma_protection(void)
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
 		return;
 
-	if (!dma_protection_enabled())
+	if (!dma_protection_enabled()) {
+		printk(BIOS_INFO, "VT-d DMA protection disabled by option\n");
 		return;
+	}
 
 	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
 	/*

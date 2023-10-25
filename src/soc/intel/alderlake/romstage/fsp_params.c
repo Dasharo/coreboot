@@ -4,6 +4,7 @@
 #include <console/console.h>
 #include <cpu/x86/msr.h>
 #include <cpu/intel/cpu_ids.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <drivers/wifi/generic/wifi.h>
 #include <elog.h>
@@ -306,7 +307,7 @@ static void fill_fspm_vtd_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->VtdIgdEnable = m_cfg->InternalGfx;
 	m_cfg->VtdIpuEnable = m_cfg->SaIpuEnable;
 
-	m_cfg->PreBootDmaMask = CONFIG(ENABLE_EARLY_DMA_PROTECTION);
+	m_cfg->PreBootDmaMask = CONFIG(ENABLE_EARLY_DMA_PROTECTION) && dma_protection_enabled();
 
 	if (m_cfg->VtdIgdEnable && m_cfg->VtdBaseAddress[VTD_GFX] == 0) {
 		m_cfg->VtdIgdEnable = 0;
