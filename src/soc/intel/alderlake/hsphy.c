@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/mmio.h>
 #include <device/pci_def.h>
@@ -42,6 +43,8 @@ struct ip_push_model {
 	uint16_t address;
 	uint32_t data[];
 } __packed;
+
+static bool dma_protection_en = CONFIG(ENABLE_EARLY_DMA_PROTECTION) ? true : false;
 
 static int heci_get_hsphy_payload(void *buf, uint32_t *buf_size, uint8_t *hash_buf,
 				  uint8_t *hash_alg, uint32_t *status)
@@ -319,7 +322,7 @@ static void *allocate_hsphy_buf(void)
 	void *hsphy_buf;
 	size_t dma_buf_size;
 
-	if (CONFIG(ENABLE_EARLY_DMA_PROTECTION)) {
+	if (dma_protection_en) {
 		hsphy_buf = vtd_get_dma_buffer(&dma_buf_size);
 		if (!hsphy_buf || dma_buf_size < HSPHY_PAYLOAD_SIZE) {
 			printk(BIOS_ERR, "DMA protection enabled but DMA buffer does not"
@@ -359,6 +362,8 @@ void load_and_init_hsphy(void)
 		printk(BIOS_DEBUG, "All HSPHY ports disabled, skipping HSPHY loading\n");
 		return;
 	}
+
+	dma_protection_en = CONFIG(ENABLE_EARLY_DMA_PROTECTION) && dma_protection_enabled();
 
 	/*
 	 * Try to get HSPHY payload from CSME first, so we can always keep our
@@ -400,7 +405,7 @@ void load_and_init_hsphy(void)
 		printk(BIOS_ERR, "%s: CSME not enabled or not visible, but required\n",
 		       __func__);
 		printk(BIOS_ERR, "Aborting HSPHY FW loading, PCIe Gen5 won't work.\n");
-		if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		if (!dma_protection_en)
 			free(hsphy_buf);
 		return;
 	}
@@ -424,7 +429,7 @@ void load_and_init_hsphy(void)
 				cache_hsphy_fw_in_flash(hsphy_buf, buf_size, hsphy_hash,
 							hash_type);
 
-			if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+			if (!dma_protection_en)
 				free(hsphy_buf);
 			return;
 		} else {
@@ -434,7 +439,7 @@ void load_and_init_hsphy(void)
 		printk(BIOS_ERR, "Failed to get HSPHY FW over HECI.\n");
 	}
 
-	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+	if (!dma_protection_en)
 		free(hsphy_buf);
 
 	/* We failed to get HSPHY payload from CSME, cache is our last chance. */
