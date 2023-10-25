@@ -2,6 +2,7 @@ chip soc/intel/alderlake
 	# FSP configuration
 
 	register "eist_enable" = "1"
+	register "enable_hwp_scalability_tracking" = "true"
 
 	# Sagv Configuration
 	register "sagv" = "SaGv_Enabled"
