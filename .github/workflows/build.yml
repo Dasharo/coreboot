@@ -100,3 +100,10 @@ jobs:
       - name: Build Dasharo
         run: |
           ./build.sh ${{ matrix.model }}
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+          path: |
+            build/coreboot.rom
+          retention-days: 30
