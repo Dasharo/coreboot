@@ -102,8 +102,8 @@ function build_vp46xx {
 		fi
 	fi
 
-	version=$(git describe --abbrev=1 --tags --always --dirty)
-	version=${version//protectli_vault_cml_/}
+	DEFCONFIG="configs/config.protectli_cml_vp46xx"
+	FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
 	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
@@ -112,17 +112,17 @@ function build_vp46xx {
 
 	cp configs/config.protectli_cml_vp46xx .config
 
-	echo "Building Dasharo for Protectli VP46XX (version $version)"
+	echo "Building Dasharo for Protectli VP46XX (version $FW_VERSION)"
 
 	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-	cp build/coreboot.rom protectli_vault_cml_${version}_vp46xx.rom
+	cp build/coreboot.rom protectli_vault_cml_${FW_VERSION}_vp46xx.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_vault_cml_${version}_vp46xx.rom"
-		sha256sum protectli_vault_cml_${version}_vp46xx.rom > protectli_vault_cml_${version}_vp46xx.rom.sha256
+		echo "Result binary placed in $PWD/protectli_vault_cml_${FW_VERSION}_vp46xx.rom"
+		sha256sum protectli_vault_cml_${FW_VERSION}_vp46xx.rom > protectli_vault_cml_${FW_VERSION}_vp46xx.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
