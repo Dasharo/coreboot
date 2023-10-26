@@ -70,6 +70,7 @@ jobs:
             build/coreboot.rom
           retention-days: 30
   build_protectli:
+    environment: Protectli
     runs-on: ubuntu-22.04
     strategy:
       matrix:
