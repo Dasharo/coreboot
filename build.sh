@@ -42,7 +42,6 @@ function extract_lan_rom()
 function build_msi {
   DEFCONFIG="configs/config.${BOARD}_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
-  PERSISTENT_LOGO="3rdparty/blobs/mainboard/protectli/vault_cml/bootsplash.bmp"
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
@@ -66,18 +65,6 @@ function build_msi {
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-  echo "Building with PERSISTENT_LOGO: $PERSISTENT_LOGO"
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
-    /bin/bash -c "./build/cbfstool \
-	  ./build/coreboot.rom add \
-	  -r BOOTSPLASH \
-	  -f "$PERSISTENT_LOGO" \
-	  -n logo.bmp \
-	  -t raw \
-	  -c lzma"
-
   cp build/coreboot.rom ${BOARD}_${FW_VERSION}_$1.rom
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/${BOARD}_${FW_VERSION}_$1.rom"
@@ -89,6 +76,10 @@ function build_msi {
 }
 
 function build_vp46xx {
+	DEFCONFIG="configs/config.protectli_cml_vp46xx"
+	FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+	PERSISTENT_LOGO="3rdparty/blobs/mainboard/protectli/vault_cml/bootsplash.bmp"
+
 	if [ ! -d 3rdparty/blobs/mainboard ]; then
 		git submodule update --init --checkout
 	fi
@@ -101,9 +92,6 @@ function build_vp46xx {
 			exit 1
 		fi
 	fi
-
-	DEFCONFIG="configs/config.protectli_cml_vp46xx"
-	FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
 	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
@@ -118,6 +106,18 @@ function build_vp46xx {
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+	echo "Building with PERSISTENT_LOGO: $PERSISTENT_LOGO"
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+	-v $HOME/.ssh:/home/coreboot/.ssh \
+	-w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+	/bin/bash -c "./build/cbfstool \
+		./build/coreboot.rom add \
+		-r BOOTSPLASH \
+		-f "$PERSISTENT_LOGO" \
+		-n logo.bmp \
+		-t raw \
+		-c lzma"
 
 	cp build/coreboot.rom protectli_vault_cml_${FW_VERSION}_vp46xx.rom
 	if [ $? -eq 0 ]; then
