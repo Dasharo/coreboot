@@ -9,6 +9,7 @@ usage() {
   echo -e "\tz690a_ddr5 - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
   echo -e "\tz790p_ddr4  - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
   echo -e "\tz790p_ddr5 - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
+  echo -e "\tvp46xx- build Dasharo for Protectli VP46xx"
 }
 
 SDKVER="2021-09-23_b0d87f753c"
@@ -66,12 +67,53 @@ function build_msi {
 
   cp build/coreboot.rom ${BOARD}_${FW_VERSION}_$1.rom
   if [ $? -eq 0 ]; then
-    echo "Result binary placed in $PWD/${BOARD}_${FW_VERSION}_$1.rom" 
+    echo "Result binary placed in $PWD/${BOARD}_${FW_VERSION}_$1.rom"
     sha256sum ${BOARD}_${FW_VERSION}_$1.rom > ${BOARD}_${FW_VERSION}_$1.rom.sha256
   else
     echo "Build failed!"
     exit 1
   fi
+}
+
+function build_vp46xx {
+	if [ ! -d 3rdparty/blobs/mainboard ]; then
+		git submodule update --init --checkout
+	fi
+
+	if [ ! -d 3rdparty/blobs/mainboard/protectli/vault_cml ]; then
+		if [ -f protectli_blobs.zip ]; then
+			unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
+		else
+			echo "Platform blobs missing! You must obtain them first."
+			exit 1
+		fi
+	fi
+
+	version=$(git describe --abbrev=1 --tags --always --dirty)
+	version=${version//protectli_vault_cml_/}
+
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+		-v $HOME/.ssh:/home/coreboot/.ssh \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
+		/bin/bash -c "make distclean"
+
+	cp configs/config.protectli_cml_vp46xx .config
+
+	echo "Building Dasharo for Protectli VP46XX (version $version)"
+
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+		-v $HOME/.ssh:/home/coreboot/.ssh \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+		/bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+	cp build/coreboot.rom protectli_vault_cml_${version}_vp46xx.rom
+	if [ $? -eq 0 ]; then
+		echo "Result binary placed in $PWD/protectli_vault_cml_${version}_vp46xx.rom"
+		sha256sum protectli_vault_cml_${version}_vp46xx.rom > protectli_vault_cml_${version}_vp46xx.rom.sha256
+	else
+		echo "Build failed!"
+		exit 1
+	fi
 }
 
 
@@ -93,6 +135,9 @@ case "$CMD" in
     "z790p_ddr5")
         BOARD="msi_ms7e06"
         build_msi ddr5 "Z790-P DDR5 "
+        ;;
+    "vp46xx")
+        build_vp46xx
         ;;
     *)
         echo "Invalid command: \"$CMD\""
