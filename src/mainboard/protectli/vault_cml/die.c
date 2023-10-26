@@ -9,7 +9,7 @@
 static void beep_and_blink(void)
 {
 	static uint8_t blink = 0;
-	static uint8_t beep_count = 0;
+	static uint8_t beep_count = 0;;
 
 	gpio_set(GPP_E8, blink);
 	/* Beep 12 times at most, constant beeps may be annoying */

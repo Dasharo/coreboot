@@ -2,7 +2,7 @@ chip soc/intel/cannonlake
 	# Enable Enhanced Intel SpeedStep
 	register "eist_enable" = "1"
 
-	register "cpu_pl2_4_cfg" = "baseline"
+	register "cpu_pl2_4_cfg" = "performance"
 
 	register "gen1_dec" = "0x00fc0201"
 	register "gen2_dec" = "0x007c0a01"
@@ -49,6 +49,7 @@ chip soc/intel/cannonlake
 
 	register "enable_c6dram" = "1"
 
+	register "SataMode" = "0"
 	register "SataPortsEnable[0]" = "1"
 	register "SataPortsEnable[2]" = "1"
 
@@ -60,6 +61,9 @@ chip soc/intel/cannonlake
 	register "PcieRpEnable[9]" = "1" # LAN6
 	register "PcieRpEnable[11]" = "1" # M.2 WiFi
 	register "PcieRpEnable[12]" = "1" # M.2 NVMe x4
+	register "PcieRpEnable[13]" = "1"
+	register "PcieRpEnable[14]" = "1"
+	register "PcieRpEnable[15]" = "1"
 
 	# Enable Advanced Error Reporting for RP 5-10, 12, 13
 	register "PcieRpAdvancedErrorReporting[4]" = "1"
@@ -70,6 +74,9 @@ chip soc/intel/cannonlake
 	register "PcieRpAdvancedErrorReporting[9]" = "1"
 	register "PcieRpAdvancedErrorReporting[11]" = "1"
 	register "PcieRpAdvancedErrorReporting[12]" = "1"
+	register "PcieRpAdvancedErrorReporting[13]" = "1"
+	register "PcieRpAdvancedErrorReporting[14]" = "1"
+	register "PcieRpAdvancedErrorReporting[15]" = "1"
 
 	# Enable Latency Tolerance Reporting Mechanism RP 5-10, 12, 13
 	register "PcieRpLtrEnable[4]" = "1"
@@ -80,6 +87,9 @@ chip soc/intel/cannonlake
 	register "PcieRpLtrEnable[9]" = "1"
 	register "PcieRpLtrEnable[11]" = "1"
 	register "PcieRpLtrEnable[12]" = "1"
+	register "PcieRpLtrEnable[13]" = "1"
+	register "PcieRpLtrEnable[14]" = "1"
+	register "PcieRpLtrEnable[15]" = "1"
 
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE"
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE"
@@ -139,10 +149,15 @@ chip soc/intel/cannonlake
 		[PchSerialIoIndexUART2] = PchSerialIoDisabled,
 	}"
 
-	device cpu_cluster 0 on	end
+	device cpu_cluster 0 on
+		device lapic 0 on end
+	end
 	device domain 0 on
+		subsystemid 0x8086 0x7270 inherit
 		device ref system_agent on  end
-		device ref igpu on  end
+		device ref igpu on
+			subsystemid 0x8086 0x2212
+		end
 		device ref dptf on  end
 		device ref gna off end
 		device ref thermal on  end
@@ -184,9 +199,9 @@ chip soc/intel/cannonlake
 			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
 						"M.2/M 2280 (J1)" "SlotDataBusWidth4X"
 		end
-		device ref pcie_rp14 off end
-		device ref pcie_rp15 off end
-		device ref pcie_rp16 off end
+		device ref pcie_rp14 on end
+		device ref pcie_rp15 on end
+		device ref pcie_rp16 on end
 		device ref uart0 off end
 		device ref uart1 off end
 		device ref gspi0 off end
@@ -209,13 +224,13 @@ chip soc/intel/cannonlake
 				register "FAN1.smart.tmp_delta" = " 2"
 				register "FAN1.smart.pwm_start" = "20"
 				register "FAN1.smart.slope"     = "24"
-				register "FAN2.mode"      = "FAN_MODE_OFF"
-				register "FAN3.mode"      = "FAN_MODE_OFF"
+				register "FAN2.mode" = "FAN_MODE_OFF"
+				register "FAN3.mode" = "FAN_MODE_OFF"
 				device pnp 2e.1 on	# COM 1
 					io 0x60 = 0x3f8
 					irq 0x70 = 4
 				end
-				device pnp 2e.2 on end # COM 2
+				device pnp 2e.2 off end	# COM 2
 				device pnp 2e.3 off end # Printer Port
 				device pnp 2e.4 on	# Environment Controller
 					io 0x60 = 0xa40
