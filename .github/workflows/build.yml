@@ -71,9 +71,6 @@ jobs:
           retention-days: 30
   build_protectli:
     runs-on: ubuntu-22.04
-    container:
-      image: coreboot/coreboot-sdk:2021-09-23_b0d87f753c
-      options: --user 1001
     strategy:
       matrix:
         vendor: [ protectli ]
