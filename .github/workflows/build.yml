@@ -45,7 +45,9 @@ jobs:
     strategy:
       matrix:
         vendor: [ msi ]
-        model: [ ms7d25_ddr4, ms7d25_ddr5, ms7e06_ddr4, ms7e06_ddr5 ]
+        model: [ ms7d25, ms7e06 ]
+        mem: [ ddr4, ddr5 ]
+        variant: [ '' , _stm ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -59,13 +61,13 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }}_${{ matrix.mem }}${{ matrix.variant }} .config
           make olddefconfig
           make
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.mem }}-${{ matrix.build }}${{ matrix.variant }}"
           path: |
             build/coreboot.rom
           retention-days: 30
