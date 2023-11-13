@@ -96,6 +96,20 @@ Device (\_SB.PCI0.LPCB.EC0)
 		}
 	}
 
+	Method (S0IX, 1, Serialized) {
+		Printf ("EC: S0ix hook")
+		If (ECOK) {
+			S0XH = Arg0
+		}
+	}
+
+	Method (EDSX, 1, Serialized) {
+		Printf ("EC: Display hook")
+		If (ECOK) {
+			DSPH = Arg0
+		}
+	}
+
 	Method (_Q0A, 0, NotSerialized) // Touchpad Toggle
 	{
 		Printf ("EC: Touchpad Toggle")
