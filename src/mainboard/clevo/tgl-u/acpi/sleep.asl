@@ -16,7 +16,6 @@ Method (PGPM, 1, Serialized)
  */
 Method (MPTS, 1, Serialized)
 {
-	\_SB.PCI0.LPCB.EC0.PTS (Arg0)
 	PGPM (MISCCFG_GPIO_PM_CONFIG_BITS)
 }
 
@@ -27,7 +26,6 @@ Method (MPTS, 1, Serialized)
 Method (MWAK, 1, Serialized)
 {
 	PGPM (0)
-	\_SB.PCI0.LPCB.EC0.WAK (Arg0)
 }
 
 /*
