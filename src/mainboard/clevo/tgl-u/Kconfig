@@ -112,7 +112,7 @@ config VBOOT_SLOTS_RW_A
 
 config VBOOT_VBNV_OFFSET
 	hex
-	default 0x56
+	default 0x28
 
 config FMDFILE
 	string
