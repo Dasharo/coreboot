@@ -111,10 +111,11 @@ run_robot() {
     local category="$1"
     local test="$2"
 
+    # We want to run all tests, even if some fail
     robot -l "test-results-$vendor-$model/dasharo-${category}.log.html" \
           -r "test-results-$vendor-$model/dasharo-${category}.html" \
           -o "test-results-$vendor-$model/dasharo-${category}.xml" \
-          ${options[@]} "$root/dasharo-${category}/$test.robot"
+          ${options[@]} "$root/dasharo-${category}/$test.robot" || true
 }
 
 if [ "$command" == "test" ]; then
