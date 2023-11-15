@@ -83,7 +83,8 @@ case "$vendor" in
                 compatibility_tests+=(
                     custom-boot-menu-key
 		    esp-scanning
-		    memory-profile
+		    # Z690A DDR5 with current memmory modules do not support XMP profiles
+		    # memory-profile
 		    power-after-fail
                 )
 
