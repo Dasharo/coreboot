@@ -66,13 +66,17 @@ jobs:
         run: |
           cp build/coreboot.rom build/coreboot_serial_enabled.rom
           build/util/cbfstool/cbfstool build/coreboot_serial_enabled.rom write -r SMMSTORE -f ci/smmstore-serial-enabled
+
+          if [ -e "ci/${{ matrix.vendor }}_${{ matrix.model }}_pretrained" ]; then
+            cp build/coreboot_serial_enabled.rom build/coreboot_serial_enabled_pretrained.rom
+            build/util/cbfstool/cbfstool build/coreboot_serial_enabled_pretrained.rom write -r RW_MRC_CACHE -f ci/${{ matrix.vendor }}_${{ matrix.model }}_pretrained
+          fi
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
           path: |
-            build/coreboot.rom
-            build/coreboot_serial_enabled.rom
+            build/coreboot_*.rom
           retention-days: 30
   build_protectli:
     environment: Protectli
@@ -141,11 +145,17 @@ jobs:
 
       - name: Flash firmware
         shell: bash
-        run: ./ci/ci.sh -r validation -v "${{ matrix.vendor }}" -m "${{ matrix.model }}" -f firmware/coreboot_serial_enabled.rom flash
+        run: |
+          if [ -e firmware/coreboot_serial_enabled_pretrained.rom ]; then
+            fw_file="firmware/coreboot_serial_enabled_pretrained.rom"
+          else
+            fw_file="firmware/coreboot_serial_enabled.rom"
+          fi
+          ./ci/ci.sh -r validation -v "${{ matrix.vendor }}" -m "${{ matrix.model }}" -f "$fw_file" flash
 
       - name: Run tests
         shell: bash
-        run: ./ci/ci.sh -r validation -v "${{ matrix.vendor }}" -m "${{ matrix.model }}" -f firmware/coreboot_serial_enabled.rom test
+        run: ./ci/ci.sh -r validation -v "${{ matrix.vendor }}" -m "${{ matrix.model }}" test
 
       - name: Upload test results
         uses: actions/upload-artifact@v3
