@@ -65,7 +65,7 @@ esac
 options+=(
     -v device_ip:$device_ip
     -v rte_ip:$rte_ip
-    -v pikvm_ip:$pikvm_ip 
+    -v pikvm_ip:$pikvm_ip
     -v config:$config
     -v snipeit:no
 )
@@ -82,10 +82,15 @@ case "$vendor" in
             ms7d25_ddr5)
                 compatibility_tests+=(
                     custom-boot-menu-key
+		    esp-scanning
+		    memory-profile
+		    power-after-fail
                 )
 
                 security_tests+=(
                     me-neuter
+		    option-rom
+		    rebar
                 )
                 ;;
             *)
