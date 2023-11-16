@@ -35,40 +35,23 @@ Method (_S0W, 0x0)
 	}
 }
 
-/*
- * Get power resources that are dependent on this device for Operating System Power Management
- * to put the device in the D0 device state
- */
-Method (_PR0)
-{
-	If (S0IX == 1) {
+
+If (S0IX == 1) {
+	Method (_PR0)
+	{
 		If (DUID == 0) {
 			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
 		} Else {
 			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
-		}
-	} Else {
-		If (DUID == 0) {
-			Return (Package() { \_SB.PCI0.TBT0 })
-		} Else {
-			Return (Package() { \_SB.PCI0.TBT1 })
 		}
 	}
-}
 
-Method (_PR3)
-{
-	If (S0IX == 1) {
+	Method (_PR3)
+	{
 		If (DUID == 0) {
 			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
 		} Else {
 			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
-		}
-	} Else {
-		If (DUID == 0) {
-			Return (Package() { \_SB.PCI0.TBT0 })
-		} Else {
-			Return (Package() { \_SB.PCI0.TBT1 })
 		}
 	}
 }
