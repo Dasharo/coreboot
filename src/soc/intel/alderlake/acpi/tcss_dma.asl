@@ -35,37 +35,24 @@ Method (_S0W, 0x0)
 	}
 }
 
-Method (_PR0)
-{
-	If (S0IX == 1) {
+
+If (S0IX == 1) {
+	Method (_PR0)
+	{
 		If (DUID == 0) {
 			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
 		} Else {
 			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
-		}
-	} Else {
-		If (DUID == 0) {
-			Return (Package() { \_SB.PCI0.TBT0 })
-		} Else {
-			Return (Package() { \_SB.PCI0.TBT1 })
 		}
 	}
-}
 
-Method (_PR3)
-{
-	If (S0IX == 1) {
-		If (DUID == 0) {
-			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
-		} Else {
-			Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
-		}
-	} Else {
-		If (DUID == 0) {
-			Return (Package() { \_SB.PCI0.TBT0 })
-		} Else {
-			Return (Package() { \_SB.PCI0.TBT1 })
-		}
+	Method (_PR3)
+	{
+			If (DUID == 0) {
+				Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT0 })
+			} Else {
+				Return (Package() { \_SB.PCI0.D3C, \_SB.PCI0.TBT1 })
+			}
 	}
 }
 
