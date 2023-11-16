@@ -177,15 +177,15 @@ bool ioe_tcss_valid_tbt_auth(void);
 #define FW_RESET_TIME			50000
 
 /* Number of microseconds to wait after data link layer active report */
-#define FW_DL_UP_TIME			1
+#define FW_DL_UP_TIME			Ones
 
 /* Number of microseconds to wait after a function level reset */
-#define FW_FLR_RESET_TIME		1
+#define FW_FLR_RESET_TIME		Ones
 
 /* Number of microseconds to wait from D3 hot to D0 transition */
 #define FW_D3HOT_TO_D0_TIME		50000
 
 /* Number of microseconds to wait after setting the VF enable bit  */
-#define FW_VF_ENABLE_TIME		1
+#define FW_VF_ENABLE_TIME		Ones
 
 #endif /* _TCSS_H_ */
