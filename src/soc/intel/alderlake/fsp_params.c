@@ -670,6 +670,8 @@ static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
 	 */
 	s_cfg->ITbtConnectTopologyTimeoutInMs = 0;
 
+	s_cfg->Usb4CmMode = CONFIG(SOFTWARE_CONNECTION_MANAGER);
+
 	/* D3Hot and D3Cold for TCSS */
 	s_cfg->D3HotEnable = !config->tcss_d3_hot_disable;
 	s_cfg->D3ColdEnable = get_sleep_type_option() == SLEEP_TYPE_OPTION_S0IX;
