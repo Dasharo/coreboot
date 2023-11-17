@@ -8,7 +8,7 @@
 //   0x84 - backlight color change
 //   0x85 - OLED screen toggle
 Device (S76D) {
-	Name (_HID, "17761776")
+	Name (_HID, "DASHEC00")
 	Name (_UID, 0)
 	// Hide the device so that Windows does not warn about a missing driver.
 	Name (_STA, 0xB)
