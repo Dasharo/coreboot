@@ -373,14 +373,15 @@ static uint64_t get_rebar_sizes_mask(const struct device *dev,
 static void pci_store_rebar_size(const struct device *dev,
 				 const struct resource *resource)
 {
-	const unsigned int num_bits = __fls64(resource->size);
+	/* The ReBAR size value in the register is in MiB */
+	const unsigned int num_bits = __fls64(resource->size / MiB);
 	const uint32_t offset = get_rebar_offset(dev, resource->index);
 	if (!offset)
 		return;
 
 	pci_update_config32(dev, offset + PCI_REBAR_CTRL_OFFSET,
-			    ~PCI_REBAR_CTRL_SIZE_MASK,
-			    num_bits << PCI_REBAR_CTRL_SIZE_SHIFT);
+			    PCI_REBAR_CTRL_BAR_SIZE_MASK,
+			    num_bits << PCI_REBAR_CTRL_BAR_SIZE_SHIFT);
 }
 
 static void configure_adjustable_base(const struct device *dev,
@@ -699,7 +700,8 @@ static void pci_set_resource(struct device *dev, struct resource *resource)
 
 	if (!(resource->flags & IORESOURCE_PCI_BRIDGE)) {
 		if (CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS) &&
-		    (resource->flags & IORESOURCE_PCIE_RESIZABLE_BAR))
+		    (resource->flags & IORESOURCE_PCIE_RESIZABLE_BAR) &&
+		    dasharo_resizeable_bars_enabled())
 			pci_store_rebar_size(dev, resource);
 
 		pci_store_resource(dev, resource);
