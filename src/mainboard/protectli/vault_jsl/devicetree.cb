@@ -1,0 +1,176 @@
+chip soc/intel/jasperlake
+
+	device cpu_cluster 0 on end
+
+	register "eist_enable" = "1"
+
+	register "enable_c6dram" = "1"
+
+	register "tcc_offset" = "20"
+
+	# GPE configuration
+	register "pmc_gpe0_dw0" = "GPP_G"
+	register "pmc_gpe0_dw1" = "GPP_C"
+	register "pmc_gpe0_dw2" = "GPP_R"
+
+	# FSP configuration
+	register "SaGv" = "SaGv_Enabled"
+	register "SmbusEnable" = "1"
+	register "ScsEmmcHs400Enabled" = "1"
+
+	# Display related UPDs
+
+	# Enable HPD for DDI port C
+	register "DdiPortCHpd" = "1"
+
+	# Enable DDC for DDI port C
+	register "DdiPortCDdc" = "1"
+
+	register "SkipExtGfxScan" = "1"
+
+	register "usb2_ports[0]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[1]" = "USB2_PORT_SHORT(OC_SKIP)"	# Type A port1
+	register "usb2_ports[2]" = "USB2_PORT_SHORT(OC_SKIP)"	# M.2 LTE
+	register "usb2_ports[3]" = "USB2_PORT_SHORT(OC_SKIP)"	# WiFi slot BT
+	register "usb2_ports[4]" = "USB2_PORT_SHORT(OC_SKIP)"	# VIA VL817 hub
+	register "usb2_ports[5]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[6]" = "USB2_PORT_EMPTY"
+	register "usb2_ports[7]" = "USB2_PORT_EMPTY"
+
+	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# Type A Port1
+	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# VIA VL817 hub
+	register "usb3_ports[2]" = "USB3_PORT_EMPTY"
+	register "usb3_ports[3]" = "USB3_PORT_EMPTY"
+	register "usb3_ports[4]" = "USB3_PORT_EMPTY"
+	register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# M.2 LTE
+
+	register "usb2_wake_enable_bitmap" = "0x0012"
+	register "usb3_wake_enable_bitmap" = "0x0003"
+
+	register "gen1_dec" = "0x003c0a10"
+	register "gen2_dec" = "0x000c0081"
+	register "gen3_dec" = "0x00fc0201"
+
+	# Skip the CPU replacement check
+	register "SkipCpuReplacementCheck" = "1"
+
+	register "PchHdaDspEnable" = "1"
+	register "PchHdaAudioLinkHdaEnable" = "1"
+
+	# PCIe Root Port 1 and 2 for LAN3 and LAN4 on 4 port platform
+	# PCie Root Port 1 (x2) to LAN 3-6 via ASMedia PCIe switch on 6 port platform
+	# PCIe Root Port 4 for NVMe
+	# PCIe port 5 for M.2 E-key WiFi
+	# PCIe port 6 and 7 for LAN1 and LAN2
+	register "PcieRpEnable[0]" = "1"
+	register "PcieRpEnable[1]" = "1"
+	register "PcieRpEnable[3]" = "1"
+	register "PcieRpEnable[4]" = "1"
+	register "PcieRpEnable[5]" = "1"
+	register "PcieRpEnable[6]" = "1"
+
+
+	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE" # WiFi
+	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE" # M.2 NVMe
+	register "PcieClkSrcUsage[2]" = "PCIE_CLK_FREE" # LAN1
+	register "PcieClkSrcUsage[3]" = "PCIE_CLK_FREE" # LAN2
+	register "PcieClkSrcUsage[4]" = "PCIE_CLK_FREE" # clock buffer for LAN3-6
+	register "PcieClkSrcUsage[5]" = "PCIE_CLK_NOTUSED"
+
+	# Set the minimum assertion width
+	register "PchPmSlpS3MinAssert"  = "3"  # 50ms
+	register "PchPmSlpS4MinAssert"  = "1"  # 1s
+	register "PchPmSlpSusMinAssert" = "3"  # 1s
+	register "PchPmSlpAMinAssert"   = "3"  # 98ms
+
+	# Set xHCI LFPS period sampling off time, the default is 9ms.
+	register "xhci_lfps_sampling_offtime_ms" = "9"
+
+	register "disable_external_bypass_vr" = "true"
+
+	# Add PL1 and PL2 values
+	register "power_limits_config[JSL_N5105_10W_CORE]" = "{
+		.tdp_pl1_override = 10,
+		.tdp_pl2_override = 20,
+	}"
+	register "power_limits_config[JSL_N6005_10W_CORE]" = "{
+		.tdp_pl1_override = 10,
+		.tdp_pl2_override = 20,
+	}"
+
+	device domain 0 on
+		device pci 00.0 on  end # Host Bridge
+		device pci 02.0 on  end # Integrated Graphics Device
+		device pci 04.0 off end # SA Thermal device
+		device pci 05.0 off end # IPU
+		device pci 08.0 off end # GNA
+		device pci 09.0 off end # Intel Trace Hub
+		device pci 12.0 off end # Thermal Subsystem
+		device pci 12.5 off end # UFS SCS
+		device pci 12.6 off end # GSPI 2
+		device pci 14.0 on  end # USB xHCI
+		device pci 14.1 off end # USB xDCI (OTG)
+		device pci 14.2 on  end # PMC SRAM
+		device pci 14.3 off end # CNVi
+		device pci 14.5 off end # SDCard
+		device pci 15.0 off end # I2C 0
+		device pci 15.1 off end # I2C 1
+		device pci 15.2 off end # I2C 2
+		device pci 15.3 off end # I2C 3
+		device pci 16.0 on  end # HECI 1
+		device pci 16.1 off end # HECI 2
+		device pci 16.4 off end # HECI 3
+		device pci 16.5 off end # HECI 4
+		device pci 17.0 on  end # SATA
+		device pci 19.0 off end # I2C 4
+		device pci 19.1 off end # I2C 5
+		device pci 19.2 off end # UART 2
+		device pci 1a.0 on  end # eMMC
+		device pci 1c.0 on  end # PCI Express Root Port 1
+		device pci 1c.1 on  end # PCI Express Root Port 2
+		device pci 1c.2 off end # PCI Express Root Port 3
+		device pci 1c.3 on	# PCI Express Root Port 4
+			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
+					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth1X"
+		end
+		device pci 1c.4 on	# PCI Express Root Port 5
+			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther"
+					 "M.2/E 2230 (WIFI)" "SlotDataBusWidth1X"
+		end
+		device pci 1c.5 on  end # PCI Express Root Port 6
+		device pci 1c.6 on  end # PCI Express Root Port 7
+		device pci 1c.7 off end # PCI Express Root Port 8
+		device pci 1e.0 off end # UART 0
+		device pci 1e.1 off end # UART 1
+		device pci 1e.2 off end # GSPI 0
+		device pci 1e.3 off end # GSPI 1
+		device pci 1f.0 on	# eSPI
+			chip superio/ite/it8613e
+				device pnp 2e.0 off end
+				device pnp 2e.1 on	# COM 1
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+				end
+				device pnp 2e.4 off end # Environment Controller
+				device pnp 2e.5 off end # Keyboard
+				device pnp 2e.6 off end # Mouse
+				device pnp 2e.7 on	# GPIO
+					io 0x60 = 0xa10
+					io 0x62 = 0xa00
+				end
+				device pnp 2e.a off end # CIR
+			end
+		end
+		device pci 1f.1 hidden end # P2SB
+		device pci 1f.2 hidden end # Power Management Controller
+		device pci 1f.3 on  end # Intel HDA/cAVS
+		device pci 1f.4 on  end # SMBus
+		device pci 1f.5 on  end # PCH SPI
+		device pci 1f.7 off end # Intel Trace Hub
+	end
+
+	chip drivers/crb
+		device mmio 0xfed40000 on end
+	end
+
+end
