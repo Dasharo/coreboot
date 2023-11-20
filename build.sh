@@ -116,6 +116,47 @@ function build_vp46xx {
 	fi
 }
 
+function build_v1x10 {
+	DEFCONFIG="configs/config.protectli_vault_jsl_$1"
+	FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+	if [ ! -d 3rdparty/blobs/mainboard ]; then
+		git submodule update --init --checkout
+	fi
+
+	if [ ! -d 3rdparty/blobs/mainboard/protectli/vault_jsl ]; then
+		if [ -f protectli_blobs.zip ]; then
+			unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
+		else
+			echo "Platform blobs missing! You must obtain them first."
+			exit 1
+		fi
+	fi
+
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+		-v $HOME/.ssh:/home/coreboot/.ssh \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
+		/bin/bash -c "make distclean"
+
+	cp $DEFCONFIG .config
+
+	echo "Building Dasharo for Protectli $1 (version $FW_VERSION)"
+
+	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+		-v $HOME/.ssh:/home/coreboot/.ssh \
+		-w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+		/bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+	cp build/coreboot.rom protectli_$1_${FW_VERSION}.rom
+	if [ $? -eq 0 ]; then
+		echo "Result binary placed in $PWD/protectli_$1_${FW_VERSION}.rom"
+		sha256sum protectli_$1_${FW_VERSION}.rom > protectli_$1_${FW_VERSION}.rom.sha256
+	else
+		echo "Build failed!"
+		exit 1
+	fi
+}
+
 
 CMD="$1"
 
@@ -138,6 +179,9 @@ case "$CMD" in
         ;;
     "vp46xx")
         build_vp46xx
+        ;;
+    "v1210" | "v1410" | "v1610")
+        build_v1x10 $1
         ;;
     *)
         echo "Invalid command: \"$CMD\""
