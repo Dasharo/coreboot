@@ -1,0 +1,6 @@
+Vendor name: Protectli
+Board name: V1210/V1410/V1610
+Category: sbc
+ROM protocol: SPI
+ROM socketed: n
+Flashrom support: y
