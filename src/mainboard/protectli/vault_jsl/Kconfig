@@ -1,0 +1,47 @@
+if BOARD_PROTECTLI_V1210 || BOARD_PROTECTLI_V1410 || BOARD_PROTECTLI_V1610
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_16384
+	select SOC_INTEL_JASPERLAKE
+	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
+	select SUPERIO_ITE_IT8613E
+	select INTEL_GMA_HAVE_VBT
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select HAVE_SPD_IN_CBFS
+	select USE_LPDDR4
+	select CRB_TPM
+	select HAVE_INTEL_PTT
+	select MAINBOARD_HAS_TPM2
+
+config MAX_CPUS
+	default 4
+
+config MAINBOARD_DIR
+	string
+	default "protectli/vault_jsl"
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "V1210" if BOARD_PROTECTLI_V1210
+	default "V1410" if BOARD_PROTECTLI_V1410
+	default "V1610" if BOARD_PROTECTLI_V1610
+
+config MAINBOARD_FAMILY
+	string
+	default "Vault"
+
+config DIMM_MAX
+	default 2
+
+config DIMM_SPD_SIZE
+	default 512
+
+config CBFS_SIZE
+	default 0x800000
+
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+
+endif
