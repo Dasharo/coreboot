@@ -10,6 +10,9 @@ usage() {
   echo -e "\tz790p_ddr4  - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
   echo -e "\tz790p_ddr5 - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
   echo -e "\tvp46xx- build Dasharo for Protectli VP46xx"
+  echo -e "\tV1210- build Dasharo for Protectli V1210"
+  echo -e "\tV1410- build Dasharo for Protectli V1410"
+  echo -e "\tV1610- build Dasharo for Protectli V1610"
 }
 
 SDKVER="2021-09-23_b0d87f753c"
@@ -180,8 +183,14 @@ case "$CMD" in
     "vp46xx")
         build_vp46xx
         ;;
-    "v1210" | "v1410" | "v1610")
-        build_v1x10 $1
+    "v1210" | "V1210" )
+        build_v1x10 "v1210"
+        ;;
+    "v1410" | "V1410" )
+        build_v1x10 "v1410"
+        ;;
+    "v1610" | "V1610" )
+        build_v1x10 "v1610"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
