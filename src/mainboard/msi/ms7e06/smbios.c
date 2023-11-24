@@ -59,9 +59,9 @@ const char *smbios_mainboard_product_name(void)
 {
 	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4)) {
 		if (is_devfn_enabled(PCH_DEVFN_CNVI_WIFI))
-			return "PRO Z790-P WIFI DDR4(MS-7E06)";
+			return "PRO Z790-P WIFI DDR4 (MS-7E06)";
 		else
-			return "PRO Z790-P DDR4(MS-7E06)";
+			return "PRO Z790-P DDR4 (MS-7E06)";
 	}
 
 	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR5)) {
