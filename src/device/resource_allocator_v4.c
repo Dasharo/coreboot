@@ -88,6 +88,10 @@ static resource_t effective_limit(const struct resource *const res)
 	if (res->flags & IORESOURCE_BRIDGE)
 		return res->limit;
 
+	/* If the resource is bigger than 4G or resource 64bit, force 64bit limit */
+	if (res->size > UINT32_MAX || res->flags & IORESOURCE_PCI64)
+		return UINT64_MAX;
+
 	const resource_t quirk_4g_limit =
 		res->flags & IORESOURCE_ABOVE_4G ? UINT64_MAX : UINT32_MAX;
 	return MIN(res->limit, quirk_4g_limit);
