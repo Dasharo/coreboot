@@ -185,8 +185,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_F19, NONE),
 	PAD_NC(GPP_F20, NONE),
 	PAD_CFG_GPI_TRIG_OWN(GPP_F21, DN_20K, DEEP, OFF, ACPI),
-	PAD_CFG_NF(GPP_F22, NONE, DEEP, NF1),
-	PAD_CFG_NF(GPP_F23, NONE, DEEP, NF1),
+	PAD_NC(GPP_F22, NONE),
+	PAD_NC(GPP_F23, NONE),
 	/* ------- GPIO Group GPP_E ------- */
 	PAD_NC(GPP_E0, NONE),
 	PAD_CFG_GPO(GPP_E1, 0, PLTRST),
