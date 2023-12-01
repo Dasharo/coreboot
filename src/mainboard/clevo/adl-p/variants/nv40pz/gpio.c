@@ -326,7 +326,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPI_TRIG_OWN(GPP_D1, NONE, DEEP, OFF, ACPI),
 
 	/* GPP_D2 - GPIO */
-	PAD_CFG_GPO(GPP_D2, 0, DEEP),
+	PAD_CFG_GPO(GPP_D2, 1, DEEP),
 
 	/* GPP_D3 - GPIO */
 	PAD_CFG_GPO(GPP_D3, 0, DEEP),
