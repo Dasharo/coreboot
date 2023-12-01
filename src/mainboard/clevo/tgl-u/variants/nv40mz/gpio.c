@@ -189,7 +189,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_F23, NONE),
 	/* ------- GPIO Group GPP_E ------- */
 	PAD_NC(GPP_E0, NONE),
-	PAD_CFG_GPO(GPP_E1, 0, PLTRST),
+	PAD_CFG_GPO(GPP_E1, 1, PLTRST),
 	PAD_CFG_GPI_SCI(GPP_E2, NONE, DEEP, LEVEL, INVERT),
 	PAD_NC(GPP_E3, NONE),
 	PAD_NC(GPP_E4, NONE),
