@@ -48,6 +48,10 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	// Enable reporting CPU C10 state over eSPI
 	params->PchEspiHostC10ReportEnable = 1;
+
+	// IOM config
+	params->PchUsbOverCurrentEnable = 0;
+	params->PortResetMessageEnable[5] = 1; // J_TYPEC2
 }
 
 static void set_fan_curve(void)
