@@ -20,6 +20,14 @@ chip soc/intel/alderlake
 	# Thermal
 	register "tcc_offset" = "25" # TCC of 75C
 
+	# Noise mitigation
+	register "acoustic_noise_mitigation" = "1"
+	register "slow_slew_rate[VR_DOMAIN_IA]" = "SLEW_FAST_8"
+	register "slow_slew_rate[VR_DOMAIN_GT]" = "SLEW_FAST_8"
+	register "fast_pkg_c_ramp_disable[VR_DOMAIN_IA]" = "1"
+	register "fast_pkg_c_ramp_disable[VR_DOMAIN_GT]" = "1"
+	register "PreWake" = "150"
+
 	device cpu_cluster 0 on end
 	device domain 0 on
 		device ref system_agent on end
