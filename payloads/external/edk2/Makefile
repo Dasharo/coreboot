@@ -404,7 +404,7 @@ print:
 	echo "   Repository:     $(CONFIG_EDK2_REPOSITORY)"
 	echo "   Branch:         $(CONFIG_EDK2_TAG_OR_REV)"
 	echo "   Packages path:  $(PACKAGES_PATH)"
-	echo " $(BUILD_STR)" | \
+	echo " -a IA32 -a X64 -b $(RELEASE_STR) $(BUILD_STR)" | \
 		sed -e 's/--/-/g' -e 's/-/\n   /g' | sort | sed \
 		-e 's/a /Architecture:   /g' \
 		-e 's/b /Release:        /g' \
