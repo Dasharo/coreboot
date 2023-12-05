@@ -297,6 +297,13 @@ config SOC_INTEL_CSE_HAVE_SPEC_SUPPORT
 	 common code. Enabling this option will use those CSE defined ME specification
 	 for the SoC. User should select pertinent ME spec version along with this option.
 
+config SOC_INTEL_COMMON_BLOCK_ME_SPEC_11
+	bool
+	select SOC_INTEL_CSE_HAVE_SPEC_SUPPORT
+	help
+	  This config will enable 'ME specification version 11'. It will ensure ME specific
+	  declaration and uses of required data structures for Host firmware status registers.
+
 config SOC_INTEL_COMMON_BLOCK_ME_SPEC_12
 	bool
 	select SOC_INTEL_CSE_HAVE_SPEC_SUPPORT
@@ -336,6 +343,7 @@ if SOC_INTEL_CSE_HAVE_SPEC_SUPPORT
 
 config ME_SPEC
 	int
+	default 11 if SOC_INTEL_COMMON_BLOCK_ME_SPEC_11
 	default 12 if SOC_INTEL_COMMON_BLOCK_ME_SPEC_12
 	default 13 if SOC_INTEL_COMMON_BLOCK_ME_SPEC_13
 	default 15 if SOC_INTEL_COMMON_BLOCK_ME_SPEC_15

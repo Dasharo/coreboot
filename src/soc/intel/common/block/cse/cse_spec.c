@@ -88,6 +88,10 @@ static void dump_me_status(void *unused)
 		hfsts1.fields.operation_mode);
 	printk(BIOS_DEBUG, "ME: Error Code                  : %u\n",
 		hfsts1.fields.error_code);
+#if CONFIG_ME_SPEC == 11
+	printk(BIOS_DEBUG, "ME: FPFs Committed              : %s\n",
+		hfsts6.fields.fpf_nvars & 1 ? "YES" : "NO");
+#endif
 #if CONFIG_ME_SPEC >= 15
 	printk(BIOS_DEBUG, "ME: FPFs Committed              : %s\n",
 		hfsts6.fields.fpf_soc_lock ? "YES" : "NO");
@@ -98,8 +102,10 @@ static void dump_me_status(void *unused)
 #if CONFIG_ME_SPEC <= 16
 	printk(BIOS_DEBUG, "ME: CPU Debug Disabled          : %s\n",
 		hfsts6.fields.cpu_debug_disable ? "YES" : "NO");
+#if CONFIG_ME_SPEC >= 12
 	printk(BIOS_DEBUG, "ME: TXT Support                 : %s\n",
 		hfsts6.fields.txt_support ? "YES" : "NO");
+#endif
 #else
 	printk(BIOS_DEBUG, "ME: CPU Debug Disabled          : %s\n",
 		hfsts5.fields.cpu_debug_disabled ? "YES" : "NO");

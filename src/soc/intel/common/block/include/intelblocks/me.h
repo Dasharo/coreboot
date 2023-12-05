@@ -6,7 +6,9 @@
 #include <stdint.h>
 #if CONFIG(SOC_INTEL_CSE_HAVE_SPEC_SUPPORT)
 
-#if CONFIG_ME_SPEC == 12
+#if CONFIG_ME_SPEC == 11
+#include "me_11.h"
+#elif CONFIG_ME_SPEC == 12
 #include "me_12.h"
 #elif CONFIG_ME_SPEC == 13
 #include "me_13.h"
