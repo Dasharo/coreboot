@@ -1,3 +1,1 @@
-/* SPDX-License-Identifier: CC-PDDC */
-
-/* Please update the license if adding licensable material. */
+/* SPDX-License-Identifier: GPL-2.0-or-later */

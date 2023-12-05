@@ -9,8 +9,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select MAINBOARD_HAS_LIBGFXINIT
 	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
 	select SOC_INTEL_KABYLAKE
+	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
 	select SPI_FLASH_MACRONIX
-	select SUPERIO_ITE_IT8772F
+	select SUPERIO_ITE_IT8613E
 	select CRB_TPM
 	select HAVE_INTEL_PTT
 	select MAINBOARD_HAS_TPM2
@@ -19,7 +20,10 @@ config MAINBOARD_DIR
 	default "protectli/vault_kbl"
 
 config MAINBOARD_PART_NUMBER
-	default "FW6"
+	default	"FW6"
+
+config MAINBOARD_FAMILY
+	default "Vault"
 
 config DIMM_MAX
 	default 2
@@ -28,21 +32,33 @@ config DIMM_SPD_SIZE
 	default 512
 
 config MAX_CPUS
-	int
-	default 4
+	default 8
+
+config DEVICETREE
+	default "devicetree.cb"
 
 config VGA_BIOS_ID
-	string
-	default "8086,5916" # 8086,5906 for FW6A
+	default "8086,5916" # FW6A/B/C
+
+config VGA_BIOS_SECOND_ID
+	default "8086,5917" # FW6D/E
 
 config PXE_ROM_ID
-	string
 	default "8086,150c"
 
 config CBFS_SIZE
 	default 0x600000
 
-config USE_PM_ACPI_TIMER
-	default n
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+
+config BEEP_ON_BOOT
+	bool "Beep on successful boot"
+	default y
+	help
+	  Make the platform beep using the PC speaker in final coreboot phase.
+	  May serve as a useful indicator in headless mode that platform is
+	  properly booting.
+
 
 endif
