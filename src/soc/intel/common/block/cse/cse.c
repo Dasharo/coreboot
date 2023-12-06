@@ -1414,7 +1414,7 @@ static void cse_set_state(struct device *dev)
 	 * don't do anything.
 	 */
 
-	const unsigned int efi_me_state = cse_get_me_disable_mode();
+	const unsigned int efi_me_state = cse_get_me_disable_mode() == ME_MODE_DISABLE_HECI;
 	const unsigned int cmos_me_state = get_uint_option("me_state", UINT_MAX);
 	unsigned int me_state;
 
