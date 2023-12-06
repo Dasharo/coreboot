@@ -4,9 +4,14 @@
 #include <dasharo/options.h>
 #include <drivers/efi/efivars.h>
 #include <option.h>
+#include <soc/intel/common/reset.h>
 #include <smmstore.h>
 #include <types.h>
 #include <uuid.h>
+
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_CSE)
+#include <intelblocks/cse.h>
+#endif
 
 static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
@@ -133,24 +138,74 @@ bool dma_protection_enabled(void)
 	return iommu_var.iommu_enable;
 }
 
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_CSE)
+static void disable_me_hmrfpo(uint8_t *var)
+{
+	int hmrfpo_sts = cse_hmrfpo_get_status();
+
+	if (hmrfpo_sts == -1) {
+		printk (BIOS_DEBUG, "ME HMRFPO Get Status failed\n");
+		goto hmrfpo_error;
+	}
+
+	printk (BIOS_DEBUG, "ME HMRFPO status: ");
+	switch (hmrfpo_sts) {
+	case 0: 
+		printk (BIOS_DEBUG, "DISABLED\n");
+		if (cse_hmrfpo_enable() != CB_SUCCESS)
+			goto hmrfpo_error;
+		else
+			do_global_reset(); /* No return */
+		break;
+	case 1: 
+		printk (BIOS_DEBUG, "LOCKED\n");
+		goto hmrfpo_error;
+	case 2: 
+		printk (BIOS_DEBUG, "ENABLED\n");
+		/* Override ME disable method to not switch ME mode */
+		*var =  ME_MODE_DISABLE_HMRFPO;
+		/* TODO: disable HMRFPO here if not in FUM? Reboot disables HMRFPO. */
+		break;
+	default:
+		printk (BIOS_DEBUG, "UNKNOWN\n");
+		goto hmrfpo_error;
+	}
+
+	return;
+
+hmrfpo_error:
+	/* Try other available methods if something goes wrong */
+	*var = CONFIG(EDK2_HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
+						: ME_MODE_DISABLE_HECI;
+}
+
 uint8_t cse_get_me_disable_mode(void)
 {
 	uint8_t var = CONFIG_EDK2_INTEL_ME_DEFAULT_STATE;
 	bool fum = false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
 		read_bool_var("FirmwareUpdateMode", &fum);
-
-	/* Disable ME if in Firmware Update Mode */
-	if (fum)
-		return CONFIG(EDK2_HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
-						      : ME_MODE_DISABLE_HECI;
-
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("MeMode", &var);
+	}
+
+	/* Disable ME via HMRPFO if in Firmware Update Mode */
+	if (fum) {
+		/* Check if already in HMRFPO mode */
+		if (cse_is_hfs1_com_secover_mei_msg())
+			return ME_MODE_DISABLE_HMRFPO;
+		else
+			disable_me_hmrfpo(&var);
+	}
 
 	return var;
 }
+#else
+uint8_t cse_get_me_disable_mode(void)
+{
+	return 0;
+}
+#endif
 
 bool is_smm_bwp_permitted(void)
 {
