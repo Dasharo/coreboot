@@ -2,6 +2,9 @@
 
 bootblock-y += bootblock.c
 
-ramstage-y += ramstage.c
-
 ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-mainboard.ads
+
+bootblock-y += die.c
+romstage-y += die.c
+ramstage-y += die.c
+smm-y += die.c

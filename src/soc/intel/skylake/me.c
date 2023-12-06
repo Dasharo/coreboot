@@ -228,7 +228,7 @@ void intel_me_status(void)
 	printk(BIOS_DEBUG, "ME: Low Power State Enabled : %s\n",
 	       hfs2.fields.low_power_state ? "YES" : "NO");
 	printk(BIOS_DEBUG, "ME: CPU Replaced            : %s\n",
-	       hfs2.fields.cpu_replaced_sts  ? "YES" : "NO");
+	       hfs2.fields.cpu_replaced  ? "YES" : "NO");
 	printk(BIOS_DEBUG, "ME: CPU Replacement Valid   : %s\n",
 	       hfs2.fields.cpu_replaced_valid ? "YES" : "NO");
 	printk(BIOS_DEBUG, "ME: Current Working State   : %s\n",
