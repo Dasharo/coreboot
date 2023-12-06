@@ -29,6 +29,8 @@ enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
 	ME_MODE_DISABLE_HECI = 1,
 	ME_MODE_DISABLE_HAP = 2,
+	/* Not a variable value, but serves a purpose of disabling ME in boot flow */
+	ME_MODE_DISABLE_HMRFPO = 10
 };
 
 struct watchdog_config {

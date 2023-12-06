@@ -138,6 +138,12 @@ static enum cse_cmd_result cse_send_eop(void)
 		return CSE_CMD_RESULT_DISABLED;
 	}
 
+	if (cse_is_hfs1_com_secover_mei_msg()) {
+		printk(BIOS_ERR, "HECI: Prerequisites not met for sending EOP\n");
+		/* For CSE Lite this is expected state in update flow, so don't return an error */
+		return CSE_CMD_RESULT_DISABLED;
+	}
+
 	if (!cse_is_hfs1_cws_normal() || !cse_is_hfs1_com_normal()) {
 		printk(BIOS_ERR, "HECI: Prerequisites not met for sending EOP\n");
 		return CSE_CMD_RESULT_ERROR;
