@@ -85,10 +85,19 @@ uint8_t dasharo_get_power_on_after_fail(void)
 
 bool dasharo_resizeable_bars_enabled(void)
 {
-	bool enabled = false;
+	static bool enabled = false;
+	static bool read_once = false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE) && CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS))
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE) &&
+	    CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS) &&
+	    !read_once) {
 		read_bool_var("PCIeResizeableBarsEnabled", &enabled);
+		/*
+		 * This variable would be read for each PCIe device.
+		 * Avoid it by reading the variable only once.
+		 */
+		read_once = true;
+	}
 
 	return enabled;
 }
