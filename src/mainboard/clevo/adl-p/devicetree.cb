@@ -28,6 +28,33 @@ chip soc/intel/alderlake
 	register "fast_pkg_c_ramp_disable[VR_DOMAIN_GT]" = "1"
 	register "PreWake" = "150"
 
+	# VR configuration
+	# +-----------+-------+-------+---------+-------------+----------+
+	# | Setting   | AC LL | DC LL | ICC MAX | TDC Current | TDC Time |
+	# |           |(mOhms)|(mOhms)|   (A)   |     (A)     |   (msec) |
+	# +-----------+-------+-------+---------+-------------+----------+
+	# |    IA     |  2.3  |  2.3  |   109   |      63     |  28000   |
+	# +-----------+-------+-------+---------+-------------+----------+
+	# |    GT     |  3.1  |  3.1  |    50   |      30     |  28000   |
+	# +-----------+-------+-------+---------+-------------+----------+
+	register "domain_vr_config[VR_DOMAIN_IA]" = "{
+		.vr_config_enable = 1,
+		.ac_loadline = 230,
+		.dc_loadline = 230,
+		.icc_max = VR_CFG_AMP(109),
+		.tdc_timewindow = 28000,
+		.tdc_currentlimit = VR_CFG_TDC_AMP(63),
+	}"
+
+	register "domain_vr_config[VR_DOMAIN_GT]" = "{
+		.vr_config_enable = 1,
+		.ac_loadline = 310,
+		.dc_loadline = 310,
+		.icc_max = VR_CFG_AMP(50),
+		.tdc_timewindow = 28000,
+		.tdc_currentlimit = VR_CFG_TDC_AMP(30),
+	}"
+
 	device cpu_cluster 0 on end
 	device domain 0 on
 		device ref system_agent on end
