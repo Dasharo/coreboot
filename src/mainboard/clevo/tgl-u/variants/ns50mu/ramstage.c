@@ -15,6 +15,17 @@ void variant_configure_fsps(FSP_S_CONFIG *params)
 	params->CpuPcieRpAdvancedErrorReporting[0] = 0;
 	params->CpuPcieRpLtrEnable[0] = 1;
 	params->CpuPcieRpSlotImplemented[0] = 1;
+
+	/*
+	 * VR configuration
+	 * Only one VR domain in TGL-U (VCCIN)
+	 * ICCMax: 55A
+	 * DC_LL: 2mOhm
+	 * OCP: 72A
+	 */
+	params->AcLoadline[0] = 200;
+	params->DcLoadline[0] = 200;
+	params->IccMax[0] = 154;
 }
 
 void variant_init(void)
