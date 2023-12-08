@@ -2,6 +2,7 @@
 
 #include <arch/mmio.h>
 #include <device/device.h>
+#include <pc80/i8254.h>
 #include <soc/iomap.h>
 #include <soc/ramstage.h>
 
@@ -44,10 +45,12 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpDetectTimeoutMs[1] = 200;
 }
 
-static void mainboard_enable(struct device *dev)
+static void mainboard_final(void *unused)
 {
+	if (CONFIG(BEEP_ON_BOOT))
+		beep(1500, 100);
 }
 
 struct chip_operations mainboard_ops = {
-	.enable_dev = mainboard_enable,
+	.final = mainboard_final,
 };
