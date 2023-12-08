@@ -27,7 +27,7 @@ static const struct mb_cfg memcfg_cfg = {
 		{0x0, 0x0}
 	},
 
-	/* Copied from the worksheet after filing DQS map */
+	/* Copied from the worksheet after filling DQS map */
 	.dqs_map[DDR_CH0] = {0, 1, 2, 3, 4, 5, 6, 7},
 	.dqs_map[DDR_CH1] = {0, 1, 2, 3, 4, 5, 6, 7},
 
@@ -46,13 +46,13 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
 	const struct spd_info board_spd_info = {
 		.read_type = READ_SPD_CBFS,
-		.spd_spec.spd_index = CONFIG(BOARD_PROTECTLI_V1610) ? 1 : 0,
+		.spd_spec.spd_index = CONFIG(BOARD_PROTECTLI_V1210) ? 0 : 1,
 	};
 
 	memcfg_init(&memupd->FspmConfig, &memcfg_cfg, &board_spd_info, false);
 
-	/* V1210 uses the same RAM chips as V1410, but only populates channel 1 */
-	if (CONFIG(BOARD_PROTECTLI_V1210))
+	/* V1210 and V1410 populates only channel 1 */
+	if (!CONFIG(BOARD_PROTECTLI_V1610))
 		memupd->FspmConfig.MemorySpdPtr00 = 0;
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
