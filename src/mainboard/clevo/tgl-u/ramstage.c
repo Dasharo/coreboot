@@ -51,6 +51,13 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	// IOM config
 	params->PchUsbOverCurrentEnable = 0;
+
+	// Acoustic / RFI optimizations
+	// TODO optimize
+	params->PreWake = 150;
+	params->RampUp = 150;
+	params->RampDown = 150;
+	params->RfiMitigation = 1;
 }
 
 static void set_fan_curve(void)
