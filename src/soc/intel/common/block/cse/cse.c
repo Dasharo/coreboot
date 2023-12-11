@@ -1276,6 +1276,7 @@ static void cse_set_hap_bit(bool state)
 
 	if (!!(si_desc_buf[HAP_OFFSET] & 1) == state) {
 		printk(BIOS_DEBUG, "Update of Descriptor is not required!\n");
+		printk(BIOS_INFO, "ME is HAP disabled\n");
 		free(si_desc_buf);
 		return;
 	}
