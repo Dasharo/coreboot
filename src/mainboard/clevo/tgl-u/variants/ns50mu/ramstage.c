@@ -25,7 +25,7 @@ void variant_configure_fsps(FSP_S_CONFIG *params)
 	 */
 	params->AcLoadline[0] = 200;
 	params->DcLoadline[0] = 200;
-	params->IccMax[0] = 154;
+	params->IccMax[0] = 220;
 }
 
 void variant_init(void)
