@@ -18,7 +18,7 @@ chip soc/intel/alderlake
 	register "enable_c6dram" = "1"
 
 	# Thermal
-	register "tcc_offset" = "25" # TCC of 75C
+	register "tcc_offset" = "20" # TCC of 80C
 
 	# Noise mitigation
 	register "acoustic_noise_mitigation" = "1"
