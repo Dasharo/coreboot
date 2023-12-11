@@ -40,7 +40,7 @@ chip soc/intel/tigerlake
 	register "AcousticNoiseMitigation" = "1"
 	register "SlowSlewRate" = "SLEW_FAST_8"
 	register "FastPkgCRampDisable" = "1"
-	register "tcc_offset" = "25" # TCC of 75C
+	register "tcc_offset" = "20" # TCC of 80C
 
 # Actual device tree
 	device cpu_cluster 0 on end
