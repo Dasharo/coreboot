@@ -75,7 +75,7 @@ jobs:
     strategy:
       matrix:
         vendor: [ protectli ]
-        model: [ vp46xx, V1210, V1410, V1610 ]
+        model: [ vp46xx, vp2420, V1210, V1410, V1610 ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
