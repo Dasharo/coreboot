@@ -78,15 +78,15 @@ function build_msi {
   fi
 }
 
-function build_vp46xx {
-	DEFCONFIG="configs/config.protectli_cml_vp46xx"
+function build_protectli_vault {
+  DEFCONFIG="configs/config.protectli_${BOARD}"
 	FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
 	if [ ! -d 3rdparty/blobs/mainboard ]; then
 		git submodule update --init --checkout
 	fi
 
-	if [ ! -d 3rdparty/blobs/mainboard/protectli/vault_cml ]; then
+	if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
 		if [ -f protectli_blobs.zip ]; then
 			unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
 		else
@@ -100,19 +100,19 @@ function build_vp46xx {
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
 		/bin/bash -c "make distclean"
 
-	cp configs/config.protectli_cml_vp46xx .config
+	cp $DEFCONFIG .config
 
-	echo "Building Dasharo for Protectli VP46XX (version $FW_VERSION)"
+	echo "Building Dasharo for Protectli $BOARD (version $FW_VERSION)"
 
 	docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
 		-v $HOME/.ssh:/home/coreboot/.ssh \
 		-w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
 		/bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-	cp build/coreboot.rom protectli_vault_cml_${FW_VERSION}_vp46xx.rom
+	cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
 	if [ $? -eq 0 ]; then
-		echo "Result binary placed in $PWD/protectli_vault_cml_${FW_VERSION}_vp46xx.rom"
-		sha256sum protectli_vault_cml_${FW_VERSION}_vp46xx.rom > protectli_vault_cml_${FW_VERSION}_vp46xx.rom.sha256
+		echo "Result binary placed in $PWD/protectli_${BOARD}_${FW_VERSION}.rom"
+		sha256sum protectli_${BOARD}_${FW_VERSION}.rom > protectli_${BOARD}_${FW_VERSION}.rom.sha256
 	else
 		echo "Build failed!"
 		exit 1
@@ -180,8 +180,13 @@ case "$CMD" in
         BOARD="msi_ms7e06"
         build_msi ddr5 "Z790-P DDR5 "
         ;;
-    "vp46xx")
-        build_vp46xx
+    "vp46xx" | "VP46XX")
+        BOARD="vp46xx"
+        build_protectli_vault
+        ;;
+    "vp2420" | "VP2420")
+        BOARD="vp2420"
+        build_protectli_vault
         ;;
     "v1210" | "V1210" )
         build_v1x10 "v1210"
