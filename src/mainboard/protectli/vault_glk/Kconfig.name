@@ -1,0 +1,4 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+config BOARD_PROTECTLI_VP2410
+	bool "VP2410"
