@@ -1,0 +1,53 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_PROTECTLI_VP2410
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select SOC_INTEL_GEMINILAKE
+	select BOARD_ROMSIZE_KB_8192
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select MEMORY_MAPPED_TPM
+	select SUPERIO_ITE_IT8613E
+	select SPI_FLASH_MACRONIX
+	select INTEL_GMA_HAVE_VBT
+	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
+	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
+	select NEED_IFWI
+
+config MAINBOARD_DIR
+	string
+	default "protectli/vault_glk"
+
+config DEVICETREE
+	string
+	default "devicetree.cb"
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "VP2410"
+
+config MAINBOARD_FAMILY
+	default "Vault Pro"
+
+config DIMM_MAX
+	default 1
+
+config DIMM_SPD_SIZE
+	default 512
+
+config MAX_CPUS
+	default 4
+
+config SOC_INTEL_COMMON_BLOCK_SGX_ENABLE
+	default y
+
+config USE_LEGACY_8254_TIMER
+	default y
+
+config FMDFILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
+
+endif # BOARD_PROTECTLI_VP2410
