@@ -19,9 +19,9 @@
  * Controllable through preprocessor defines:
  * SUPERIO_DEV		Device identifier for this SIO (e.g. SIO0)
  * SUPERIO_PNP_BASE	I/O address of the first PnP configuration register
- * IT8786E_SHOW_UARTA	If defined, UARTA will be exposed.
- * IT8786E_SHOW_KBC	If defined, the KBC will be exposed.
- * IT8786E_SHOW_PS2M	If defined, PS/2 mouse support will be exposed.
+ * IT8613E_SHOW_UARTA	If defined, UARTA will be exposed.
+ * IT8613E_SHOW_KBC	If defined, the KBC will be exposed.
+ * IT8613E_SHOW_PS2M	If defined, PS/2 mouse support will be exposed.
  */
 
 #undef SUPERIO_CHIP_NAME
@@ -95,7 +95,7 @@ Device (SUPERIO_DEV) {
 	#define PNP_EXIT_SPECIAL_VAL	0x02
 	#include <superio/acpi/pnp_config.asl>
 
-#ifdef IT8786E_SHOW_UARTA
+#ifdef IT8613E_SHOW_UARTA
 	#undef SUPERIO_UART_LDN
 	#undef SUPERIO_UART_DDN
 	#undef SUPERIO_UART_PM_REG
@@ -105,12 +105,12 @@ Device (SUPERIO_DEV) {
 	#include <superio/acpi/pnp_uart.asl>
 #endif
 
-#ifdef IT8786E_SHOW_KBC
+#ifdef IT8613E_SHOW_KBC
 	#undef SUPERIO_KBC_LDN
 	#undef SUPERIO_KBC_PS2M
 	#undef SUPERIO_KBC_PS2LDN
 	#define SUPERIO_KBC_LDN 5
-#ifdef IT8786E_SHOW_PS2M
+#ifdef IT8613E_SHOW_PS2M
 	#define SUPERIO_KBC_PS2LDN 6
 #endif
 	#include <superio/acpi/pnp_kbc.asl>
