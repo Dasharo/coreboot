@@ -14,8 +14,17 @@
 
 #define SMMSTORE_MIN_SIZE (64 * KiB)
 
+#if !CONFIG(SOC_INTEL_APOLLOLAKE)
 _Static_assert(IS_ALIGNED(FMAP_SECTION_SMMSTORE_START, SMM_BLOCK_SIZE),
 	       "SMMSTORE FMAP region not aligned to block size");
+#else
+/*
+ * On APL and GLK the addresses in FMAP are off by 4KiB due to architectural
+ * changes in flash mapping to host memory space
+ */
+_Static_assert(IS_ALIGNED(FMAP_SECTION_SMMSTORE_START + 0x1000, SMM_BLOCK_SIZE),
+	       "SMMSTORE FMAP region not aligned to block size");
+#endif
 
 _Static_assert(FMAP_SECTION_SMMSTORE_SIZE >= SMMSTORE_MIN_SIZE,
 	       "SMMSTORE FMAP region must be at least 64 KiB");
