@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <assert.h>
+#include <device/device.h>
 #include <fsp/api.h>
-#include <intelblocks/mp_init.h>
 
 /*
  * As per FSP integration guide:
@@ -10,5 +11,8 @@
  */
 void do_mpinit_after_fsp(void)
 {
-	init_cpus();
+	struct device *dev = dev_find_path(NULL, DEVICE_PATH_CPU_CLUSTER);
+	assert(dev != NULL);
+
+	mp_cpu_bus_init(dev);
 }
