@@ -119,5 +119,14 @@ config PXE_CUSTOM_BUILD_ID
 	  This option allows user to customize build_id for reproducible builds.
 	  It is 32-bit hexadecimal number without "0x" prefix.
 
+config PXE_TRUST_CMD
+	bool "Enable TRUST commands"
+	default y
+	depends on BUILD_IPXE
+	help
+	  Enable imgverify and imgtrust commands, which allow you to verify
+	  digital signature of file prior loading it, and restrict to loading
+	  trusted files only.
+
 endmenu
 endif
