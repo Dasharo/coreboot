@@ -661,4 +661,8 @@ static inline bool soc_disable_heci1_at_pre_boot(void)
 			       CONFIG(DISABLE_HECI1_AT_PRE_BOOT)) != 0;
 }
 
+unsigned int soc_get_heci_dev(unsigned int heci_idx);
+
+int cse_write_smbios_type14(int *handle, unsigned long *current);
+
 #endif // SOC_INTEL_COMMON_CSE_H
