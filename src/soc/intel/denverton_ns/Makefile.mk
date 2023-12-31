@@ -68,6 +68,8 @@ verstage-y += spi.c
 verstage-y += tsc_freq.c
 verstage-$(CONFIG_DRIVERS_UART_8250MEM) += uart_debug.c
 
+all-y += me.c
+
 CPPFLAGS_common += -I$(src)/soc/intel/denverton_ns/include
 
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-5f-01
