@@ -625,4 +625,8 @@ bool is_cse_fw_update_required(void);
  */
 bool is_cse_boot_to_rw(void);
 
+unsigned int soc_get_heci_dev(unsigned int heci_idx);
+
+int cse_write_smbios_type14(int *handle, unsigned long *current);
+
 #endif // SOC_INTEL_COMMON_CSE_H
