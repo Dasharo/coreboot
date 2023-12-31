@@ -116,6 +116,10 @@ config MAX_HECI_DEVICES
 	int
 	default 3
 
+config MAX_MEI_DEVICES
+	int
+	default 3
+
 config MAX_CPUS
 	int
 	default 4

@@ -76,6 +76,21 @@
 #define MEI_HDR_CSE_ADDR_START	0
 #define MEI_HDR_CSE_ADDR	(((1 << 8) - 1) << MEI_HDR_CSE_ADDR_START)
 
+__weak unsigned int soc_get_heci_dev(unsigned int heci_idx)
+{
+	if (heci_idx > 3)
+		return 0;
+
+	const unsigned int heci_devs[] = {
+		PCI_DEVFN(0x16, 0),
+		PCI_DEVFN(0x16, 1),
+		PCI_DEVFN(0x16, 4),
+		PCI_DEVFN(0x16, 5)
+	};
+
+	return heci_devs[heci_idx];
+}
+
 /* Get HECI BAR 0 from PCI configuration space */
 static uintptr_t get_cse_bar(pci_devfn_t dev)
 {
@@ -1577,6 +1592,96 @@ static void cse_final(struct device *dev)
 	if (!CONFIG(USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE))
 		cse_final_end_of_firmware();
 }
+#if CONFIG(GENERATE_SMBIOS_TABLES)
+
+struct fwsts_record {
+	u8 heci_name;
+	u32 reg[6];
+} __packed;
+
+struct fwsts_smbios_table {
+	struct smbios_header header;
+	u8 version;
+	u8 count;
+	struct fwsts_record record[CONFIG_MAX_MEI_DEVICES];
+	u8 eos[2];
+} __packed;
+
+static struct fwsts_record fwsts_cache[CONFIG_MAX_MEI_DEVICES] = { 0 };
+
+static void fill_cse_fwsts(struct fwsts_record *rec, int idx)
+{
+	unsigned int heci_devfn = soc_get_heci_dev(idx);
+	pci_devfn_t heci;
+
+	if (heci_devfn == 0)
+		return;
+
+	heci = PCI_DEV(0, PCI_SLOT(heci_devfn), PCI_FUNC(heci_devfn));
+
+	if (pci_read_config16(heci, PCI_VENDOR_ID) != 0xffff &&
+	    pci_read_config16(heci, PCI_VENDOR_ID) != 0x0000) {
+		rec->reg[0] = pci_read_config32(heci, PCI_ME_HFSTS1);
+		rec->reg[1] = pci_read_config32(heci, PCI_ME_HFSTS2);
+		rec->reg[2] = pci_read_config32(heci, PCI_ME_HFSTS3);
+		rec->reg[3] = pci_read_config32(heci, PCI_ME_HFSTS4);
+		rec->reg[4] = pci_read_config32(heci, PCI_ME_HFSTS5);
+		rec->reg[5] = pci_read_config32(heci, PCI_ME_HFSTS6);
+	} else {
+		rec->reg[0] = 0xffffffff;
+		rec->reg[1] = 0xffffffff;
+		rec->reg[2] = 0xffffffff;
+		rec->reg[3] = 0xffffffff;
+		rec->reg[4] = 0xffffffff;
+		rec->reg[5] = 0xffffffff;
+		printk(BIOS_WARNING, "HECI: CSE device %02x.%01x is hidden\n", 
+		       PCI_SLOT(heci_devfn), PCI_FUNC(heci_devfn));
+	}
+}
+
+static void cache_cse_fwsts(void *unused)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_MAX_MEI_DEVICES; i++)
+		fill_cse_fwsts(&fwsts_cache[i], i);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, cache_cse_fwsts, NULL);
+
+int cse_write_smbios_type14(int *handle, unsigned long *current)
+{
+	int i, len;
+	char name[5];
+	struct smbios_type14 *t = smbios_carve_table(*current, SMBIOS_GROUP_ASSOCIATIONS,
+						     sizeof(*t), *handle);
+
+	*handle += 1;
+	t->group_name = smbios_add_string(t->eos, "$MEI");
+	t->item_type = 0xdb;
+	t->item_handle = *handle;
+
+	len = smbios_full_table_len(&t->header, t->eos);
+
+	struct fwsts_smbios_table *fwsts = smbios_carve_table(*current + len, 0xdb,
+							      sizeof(*fwsts), *handle);
+
+	*handle += 1;
+	fwsts->version = 1;
+	fwsts->count = CONFIG_MAX_MEI_DEVICES;
+
+	for (i = 0; i < CONFIG_MAX_MEI_DEVICES; i++) {
+		snprintf(name, sizeof(name), "MEI%d", i + 1);
+		fwsts->record[i].heci_name = smbios_add_string(fwsts->eos, name);
+		memcpy(fwsts->record[i].reg, fwsts_cache[i].reg, sizeof(fwsts->record[i].reg));
+	}
+
+	len += smbios_full_table_len(&fwsts->header, fwsts->eos);
+	*current += len;
+
+	return len;
+}
+#endif
 
 struct device_operations cse_ops = {
 	.set_resources		= pci_dev_set_resources,

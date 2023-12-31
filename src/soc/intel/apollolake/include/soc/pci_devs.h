@@ -62,7 +62,11 @@
 
 #define PCH_DEV_SLOT_CSE	0x0f
 #define  PCH_DEVFN_CSE		_PCH_DEVFN(CSE, 0)
+#define  PCH_DEVFN_CSE_2	_PCH_DEVFN(CSE, 1)
+#define  PCH_DEVFN_CSE_3	_PCH_DEVFN(CSE, 2)
 #define  PCH_DEV_CSE		_PCH_DEV(CSE, 0)
+#define  PCH_DEV_CSE_2		_PCH_DEV(CSE, 1)
+#define  PCH_DEV_CSE_3		_PCH_DEV(CSE, 2)
 
 #define PCH_DEV_SLOT_ISH	0x11
 #define  PCH_DEVFN_ISH		_PCH_DEVFN(ISH, 0)

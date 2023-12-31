@@ -270,6 +270,7 @@ typedef enum {
 	SMBIOS_PORT_CONNECTOR_INFORMATION = 8,
 	SMBIOS_SYSTEM_SLOTS = 9,
 	SMBIOS_OEM_STRINGS = 11,
+	SMBIOS_GROUP_ASSOCIATIONS = 14,
 	SMBIOS_EVENT_LOG = 15,
 	SMBIOS_PHYS_MEMORY_ARRAY = 16,
 	SMBIOS_MEMORY_DEVICE = 17,
@@ -933,6 +934,14 @@ struct smbios_type9 {
 struct smbios_type11 {
 	struct smbios_header header;
 	u8 count;
+	u8 eos[2];
+} __packed;
+
+struct smbios_type14 {
+	struct smbios_header header;
+	u8 group_name;
+	u8 item_type;
+	u16 item_handle;
 	u8 eos[2];
 } __packed;
 
