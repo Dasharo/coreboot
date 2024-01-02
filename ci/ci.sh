@@ -44,11 +44,23 @@ stability_tests=()
 case "$vendor" in
     msi)
         case "$model" in
+            ms7d25_ddr4)
+                device_ip="192.168.10.183"
+                rte_ip="192.168.10.199"
+                pikvm_ip="192.168.10.16"
+                config="msi-pro-z690-a-ddr4"
+                ;;
             ms7d25_ddr5)
                 device_ip="192.168.10.93"
                 rte_ip="192.168.10.188"
                 pikvm_ip="192.168.10.45"
                 config="msi-pro-z690-a-ddr5"
+                ;;
+            ms7e06_ddr5)
+                device_ip="192.168.10.10"
+                rte_ip="192.168.10.127"
+                pikvm_ip="192.168.10.226"
+                config="msi-pro-z790-p-ddr5"
                 ;;
             *)
                 echo unknown board: $model
@@ -79,19 +91,19 @@ fi
 case "$vendor" in
     msi)
         case "$model" in
-            ms7d25_ddr5)
+            ms7d25_ddr5 | ms7e06_ddr5 | ms7e06_ddr5)
                 compatibility_tests+=(
                     custom-boot-menu-key
-		    esp-scanning
-		    # Z690A DDR5 with current memmory modules do not support XMP profiles
-		    # memory-profile
-		    power-after-fail
+                    esp-scanning
+                    # Z690A DDR5 with current memmory modules do not support XMP profiles
+                    # memory-profile
+                    power-after-fail
                 )
 
                 security_tests+=(
                     me-neuter
-		    option-rom
-		    rebar
+                    option-rom
+                    rebar
                 )
                 ;;
             *)
