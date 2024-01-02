@@ -33,7 +33,6 @@ shift 1
 
 options=(
     -L TRACE
-    -v snipeit:none
 )
 
 compatibility_tests=()
@@ -79,7 +78,6 @@ options+=(
     -v rte_ip:$rte_ip
     -v pikvm_ip:$pikvm_ip
     -v config:$config
-    -v snipeit:no
 )
 
 if [ "$command" == "flash" ]; then
