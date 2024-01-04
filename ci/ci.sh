@@ -89,7 +89,7 @@ fi
 case "$vendor" in
     msi)
         case "$model" in
-            ms7d25_ddr5 | ms7e06_ddr5 | ms7e06_ddr5)
+            ms7d25_ddr4 | ms7d25_ddr5 | ms7e06_ddr5)
                 compatibility_tests+=(
                     custom-boot-menu-key
                     esp-scanning
