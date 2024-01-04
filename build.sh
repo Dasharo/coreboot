@@ -51,17 +51,8 @@ function build_protectli_vault {
   DEFCONFIG="configs/config.protectli_${BOARD}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  if [ ! -d 3rdparty/blobs/mainboard ]; then
+  if [ ! -d 3rdparty/dasharo-blobs/protectli ]; then
     git submodule update --init --checkout
-  fi
-
-  if [ ! -d 3rdparty/blobs/mainboard/protectli ]; then
-    if [ -f protectli_blobs.zip ]; then
-      unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
-    else
-      echo "Platform blobs missing! You must obtain them first."
-      exit 1
-    fi
   fi
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
@@ -92,17 +83,8 @@ function build_v1x10 {
   DEFCONFIG="configs/config.protectli_vault_jsl_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  if [ ! -d 3rdparty/blobs/mainboard ]; then
+  if [ ! -d 3rdparty/dasharo-blobs/protectli ]; then
     git submodule update --init --checkout
-  fi
-
-  if [ ! -d 3rdparty/blobs/mainboard/protectli/vault_jsl ]; then
-    if [ -f protectli_blobs.zip ]; then
-      unzip protectli_blobs.zip -d 3rdparty/blobs/mainboard
-    else
-      echo "Platform blobs missing! You must obtain them first."
-      exit 1
-    fi
   fi
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
