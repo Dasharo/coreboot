@@ -17,31 +17,6 @@ usage() {
 
 SDKVER="2021-09-23_b0d87f753c"
 
-function extract_lan_rom()
-{
-  if which UEFIExtract &> /dev/null; then
-    echo "Downloading and extracting original firmware"
-    wget https://download.msi.com/bos_exe/mb/7D25v13.zip 2> /dev/null && \
-      unzip 7D25v13.zip > /dev/null
-    if [[ -f 7D25v13/E7D25IMS.130 ]]; then
-      echo "Extracting LAN ROM from vendor firmware"
-      UEFIExtract 7D25v13/E7D25IMS.130 DEB917C0-C56A-4860-A05B-BF2F22EBB717 \
-        -o ./lanrom -m body > /dev/null && \
-      cp lanrom/body_1.bin LanRom.efi && \
-      rm -rf lanrom 7D25v13 7D25v13.zip && \
-      echo "LAN ROM extracted successfully" && \
-      return 0
-    fi
-    echo "Failed to extract LAN ROM. Network boot will not work."
-    return 1
-  else
-    echo "UEFIExtract not found, but it's required to extract LAN ROM!"
-    echo "Install it from: https://github.com/LongSoft/UEFITool/releases/download/A59/UEFIExtract_NE_A59_linux_x86_64.zip"
-    echo "Failed to extract LAN ROM. Network boot will not work."
-    return 1
-  fi
-}
-
 function build_msi {
   DEFCONFIG="configs/config.${BOARD}_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
@@ -52,12 +27,6 @@ function build_msi {
     /bin/bash -c "make distclean"
 
   cp "${DEFCONFIG}" .config
-
-  extract_lan_rom
-
-  if [ $? -eq 0 ]; then
-    echo "CONFIG_EDK2_LAN_ROM_DRIVER=\"LanRom.efi\"" >> .config
-  fi
 
   git submodule update --init --checkout
 
