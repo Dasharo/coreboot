@@ -47,7 +47,7 @@ case "$vendor" in
                 device_ip="192.168.10.183"
                 rte_ip="192.168.10.199"
                 pikvm_ip="192.168.10.16"
-                config="msi-pro-z690-a-ddr4"
+                config="msi-pro-z690-a-wifi-ddr4"
                 ;;
             ms7d25_ddr5)
                 device_ip="192.168.10.93"
@@ -59,7 +59,7 @@ case "$vendor" in
                 device_ip="192.168.10.10"
                 rte_ip="192.168.10.127"
                 pikvm_ip="192.168.10.226"
-                config="msi-pro-z790-p-ddr5"
+                config="msi-pro-z790-p"
                 ;;
             *)
                 echo unknown board: $model
