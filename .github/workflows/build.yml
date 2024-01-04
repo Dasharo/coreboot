@@ -87,16 +87,13 @@ jobs:
           fetch-depth: 0
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
-      - name: Obtain Blobs
-        shell: bash
-        env:
-          SSH_KEY: ${{secrets.PROTECTLI_BLOBS_KEY}}
-          BLOB_REPO: ${{secrets.PROTECTLI_BLOBS_REPO}}
-        run: |
-          eval `ssh-agent -s`
-          echo "${SSH_KEY}" | ssh-add -
-          git clone $BLOB_REPO
-          cp -r protectli-blobs/protectli/ 3rdparty/blobs/mainboard/
       - name: Build Dasharo
         run: |
           ./build.sh ${{ matrix.model }}
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          path: |
+            build/coreboot.rom
+          retention-days: 30
