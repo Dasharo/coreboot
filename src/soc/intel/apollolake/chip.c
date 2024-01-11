@@ -347,6 +347,10 @@ static void soc_final(void *data)
 static void disable_dev(struct device *dev, FSP_S_CONFIG *silconfig)
 {
 	switch (dev->path.pci.devfn) {
+	case PCH_DEVFN_DPTF:
+		/* FSP does not offer an option to disable DPTF, use DEVEN register */
+		pci_update_config32(pcidev_path_on_root(SA_DEVFN_ROOT), 0x54, ~2, 0);
+		break;
 	case PCH_DEVFN_NPK:
 		/*
 		 * Disable this device in the parse_devicetree_setting() function
