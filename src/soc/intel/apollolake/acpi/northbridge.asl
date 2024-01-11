@@ -56,6 +56,84 @@ Method (_CRS, 0, Serialized)
 				0x00000000, 0x000a0000, 0x000bffff, 0x00000000,
 				0x00020000,,,)
 
+		/*  OPROM reserved (0xc0000-0xc3fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000c0000, 0x000c3fff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xc4000-0xc7fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000c4000, 0x000c7fff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xc8000-0xcbfff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000c8000, 0x000cbfff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xcc000-0xcffff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000cc000, 0x000cffff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xd0000-0xd3fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000d0000, 0x000d3fff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xd4000-0xd7fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000d4000, 0x000d7fff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xd8000-0xdbfff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000d8000, 0x000dbfff, 0x00000000,
+			0x00004000)
+
+		/* OPROM reserved (0xdc000-0xdffff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000dc000, 0x000dffff, 0x00000000,
+			0x00004000)
+
+		/* BIOS Extension (0xe0000-0xe3fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000e0000, 0x000e3fff, 0x00000000,
+			0x00004000)
+
+		/* BIOS Extension (0xe4000-0xe7fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000e4000, 0x000e7fff, 0x00000000,
+			0x00004000)
+
+		/* BIOS Extension (0xe8000-0xebfff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000e8000, 0x000ebfff, 0x00000000,
+			0x00004000)
+
+		/* BIOS Extension (0xec000-0xeffff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000ec000, 0x000effff, 0x00000000,
+			0x00004000)
+
+		/* System BIOS (0xf0000-0xfffff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0x000f0000, 0x000fffff, 0x00000000,
+			0x00010000)
+
 		/*
 		 * PCI MMIO Region (TOLUD - PCI extended base MMCONF)
 		 * This assumes that MMCONF is placed after PCI config space,
@@ -75,6 +153,12 @@ Method (_CRS, 0, Serialized)
 				NonCacheable, ReadWrite,
 				0x00000000, 0x00010000, 0x0001ffff, 0x00000000,
 				0x00010000,,, PM02)
+
+		/* TPM Area (0xfed40000-0xfed47fff) */
+		DWordMemory (ResourceProducer, PosDecode, MinFixed, MaxFixed,
+			Cacheable, ReadWrite,
+			0x00000000, 0xfed40000, 0xfed47fff, 0x00000000,
+			0x00008000)
 	})
 
 	/* Find PCI resource area in MCRS */
