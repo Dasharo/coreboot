@@ -20,6 +20,9 @@
 /* LPC */
 #include <soc/intel/common/block/acpi/acpi/lpc.asl>
 
+/* SMBUS */
+#include "smbus.asl"
+
 /* eMMC */
 #include "scs.asl"
 
