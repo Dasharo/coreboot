@@ -39,6 +39,9 @@
 #define SA_GLK_DEV_GMM		PCI_DEV(0, SA_GLK_DEV_SLOT_GMM, 0)
 
 /* PCH Devices */
+#define PCH_DEV_SLOT_DPTF	0x00
+#define  PCH_DEVFN_DPTF		_PCH_DEVFN(DPTF, 1)
+#define  PCH_DEV_DPTF		_PCH_DEV(DPTF,1)
 
 #define PCH_DEV_SLOT_NPK	0x00
 #define  PCH_DEVFN_NPK		_PCH_DEVFN(NPK, 2)
