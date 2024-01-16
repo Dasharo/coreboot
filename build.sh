@@ -9,7 +9,10 @@ usage() {
   echo -e "\tz690a_ddr5 - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
   echo -e "\tz790p_ddr4  - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
   echo -e "\tz790p_ddr5 - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
+  echo -e "\tvp66xx- build Dasharo for Protectli VP66xx"
   echo -e "\tvp46xx- build Dasharo for Protectli VP46xx"
+  echo -e "\tvp2420- build Dasharo for Protectli VP2420"
+  echo -e "\tvp2410- build Dasharo for Protectli VP2410"
   echo -e "\tV1210- build Dasharo for Protectli V1210"
   echo -e "\tV1410- build Dasharo for Protectli V1410"
   echo -e "\tV1610- build Dasharo for Protectli V1610"
@@ -130,6 +133,10 @@ case "$CMD" in
     "z790p_ddr5")
         BOARD="msi_ms7e06"
         build_msi ddr5 "Z790-P DDR5 "
+        ;;
+    "vp66xx" | "VP66XX")
+        BOARD="vp66xx"
+        build_protectli_vault
         ;;
     "vp46xx" | "VP46XX")
         BOARD="vp46xx"
