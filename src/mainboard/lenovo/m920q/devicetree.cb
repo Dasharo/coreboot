@@ -1,0 +1,204 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/intel/cannonlake
+
+	device cpu_cluster 0 on end
+
+	# FSP configuration
+	register "RMT" = "1"
+
+	register "PchHdaDspEnable" = "0"
+	register "PchHdaAudioLinkHda" = "1"
+
+	# FSP Configuration
+	register "usb2_ports[0]" = "USB2_PORT_MID(OC0)" # Internal USB header
+	register "usb2_ports[1]" = "USB2_PORT_TYPE_C(OC1)" # Front port (charger)
+	register "usb2_ports[3]" = "USB2_PORT_TYPE_C(OC2)" # Front Type C port
+	register "usb2_ports[4]" = "USB2_PORT_MID(OC4)" # Rear USB 3.1 port 1
+	register "usb2_ports[5]" = "USB2_PORT_MID(OC6)" # Rear USB 3.1 port 2
+	register "usb2_ports[6]" = "USB2_PORT_MID(OC3)" # Rear USB 3.0 port 1
+	register "usb2_ports[7]" = "USB2_PORT_MID(OC5)" # Rear USB 3.0 port 2
+	register "usb2_ports[13]" = "USB2_PORT_SHORT(OC_SKIP)" # M.2 2230
+
+	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC1)" # Front port (charger)
+	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC2)" # Front Type C port
+	register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC4)" # Rear USB 3.1 port 1
+	register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC6)" # Rear USB 3.2 port 2
+	register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC3)" # Rear USB 3.0 port 1
+	register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC5)" # Rear USB 3.0 port 2
+	register "usb3_ports[6]" = "USB3_PORT_DEFAULT(OC0)" # Internal USB header
+
+	register "SataSalpSupport" = "1"
+	register "SataPortsEnable[0]" = "1"
+	register "SataPortsEnable[1]" = "0"
+	register "SataPortsEnable[2]" = "0"
+	register "SataPortsEnable[3]" = "0"
+	register "SataPortsEnable[4]" = "0"
+	register "SataPortsEnable[5]" = "0"
+	register "SataPortsEnable[6]" = "0"
+	register "SataPortsEnable[7]" = "0"
+
+
+	register "PcieRpEnable[0]" = "0"
+	register "PcieRpEnable[1]" = "0"
+	register "PcieRpEnable[2]" = "0"
+	register "PcieRpEnable[3]" = "0"
+	register "PcieRpEnable[4]" = "1" # LAN
+	register "PcieRpEnable[5]" = "1" # WLAN
+	register "PcieRpEnable[6]" = "0"
+	register "PcieRpEnable[7]" = "0"
+	register "PcieRpEnable[8]" = "0"
+	register "PcieRpEnable[9]" = "0"
+	register "PcieRpEnable[10]" = "1" # PCIEx4 slot
+	register "PcieRpEnable[11]" = "0" # PCIEx4 slot
+	register "PcieRpEnable[12]" = "0" # PCIEx4 slot
+	register "PcieRpEnable[13]" = "0" # PCIEx4 slot
+	register "PcieRpEnable[14]" = "0"
+	register "PcieRpEnable[15]" = "0"
+	register "PcieRpEnable[16]" = "0"
+	register "PcieRpEnable[17]" = "0"
+	register "PcieRpEnable[18]" = "1" # M.2 SSD #2
+	register "PcieRpEnable[19]" = "0" # M.2 SSD #2
+	register "PcieRpEnable[20]" = "1" # M.2 SSD #1
+	register "PcieRpEnable[21]" = "0" # M.2 SSD #1
+	register "PcieRpEnable[22]" = "0" # M.2 SSD #1
+	register "PcieRpEnable[23]" = "0" # M.2 SSD #1
+
+	register "PcieClkSrcUsage[0]" = "0x40" # PCIEx8 slot
+	register "PcieClkSrcUsage[1]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[2]" = "8" # PCIEx4 slot
+	register "PcieClkSrcUsage[3]" = "5" # WLAN
+	register "PcieClkSrcUsage[4]" = "20" # SSD #1
+	register "PcieClkSrcUsage[5]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[6]" = "0x70" # LAN
+	register "PcieClkSrcUsage[7]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[8]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[9]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[10]" = "16" # SSD #2
+	register "PcieClkSrcUsage[11]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[12]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[13]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[14]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcUsage[15]" = "PCIE_CLK_NOTUSED"
+
+	register "PcieClkSrcClkReq[0]" = "0"
+	register "PcieClkSrcClkReq[1]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[2]" = "2"
+	register "PcieClkSrcClkReq[3]" = "3"
+	register "PcieClkSrcClkReq[4]" = "4"
+	register "PcieClkSrcClkReq[5]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[6]" = "6"
+	register "PcieClkSrcClkReq[7]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[8]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[9]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[10]" = "10"
+	register "PcieClkSrcClkReq[11]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[12]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[13]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[14]" = "PCIE_CLK_NOTUSED"
+	register "PcieClkSrcClkReq[15]" = "PCIE_CLK_NOTUSED"
+
+	# PL2 override 65W
+	register "power_limits_config" = "{
+		.tdp_pl2_override = 65,
+	}"
+
+	device domain 0 on
+		subsystemid 0x17aa 0x3136 inherit
+		device pci 00.0 on	end	# Host Bridge
+		device pci 01.0 on	end	# PEG PCIe x8 slot JP3 - not tested
+		device pci 01.1 off	end	# PCIe x8
+		device pci 01.2 off	end	# PCIe x4
+		device pci 02.0 on	end	# Integrated Graphics Device
+		device pci 04.0 on	end	# Thermal Subsystem
+		device pci 05.0 off	end	# Imaging Processing Unit
+		device pci 08.0 off	end	# Gaussian Mixture Model
+		device pci 12.0 on	end	# Thermal Subsystem
+		device pci 12.5 off	end	# UFS SCS
+		device pci 12.6 off	end	# GSPI #2
+		device pci 13.0 off	end	# ISH
+		device pci 14.0 on	end	# USB xHCI
+		device pci 14.1 off	end	# USB xDCI (OTG)
+		device pci 14.2 on	end	# RAM controller
+		device pci 14.3 on		# CNVi Wifi
+			chip drivers/wifi/generic
+				register "wake" = "PME_B0_EN_BIT"
+				device generic 0 on end
+			end
+		end
+		device pci 14.5 off	end	# SDCard
+		device pci 15.0 off	end	# I2C #0
+		device pci 15.1 off	end	# I2C #1
+		device pci 15.2 off	end	# I2C #2
+		device pci 15.3 off	end	# I2C #3
+		device pci 16.0 on	end	# Magement Engine Interface 1
+		device pci 16.1 on	end	# Management Engine Interface 2
+		device pci 16.2 off	end	# Management Engine IDE-R
+		device pci 16.3 on	end	# AMT SOL
+		device pci 16.4 off	end	# Management Engine Interface 3
+		device pci 16.5 off	end	# Management Engine Interface 4
+		device pci 17.0 on	end	# SATA
+		device pci 19.0 off	end	# I2C #4
+		device pci 19.1 off	end	# I2C #5
+		device pci 19.2 off	end	# UART #2
+		device pci 1a.0 off	end	# eMMC
+
+		# TODO: check? 00:1b.0 PCI bridge [0604]: Intel Corporation Cannon Lake PCH PCI Express Root Port #21 [8086:a32c] (rev f0) (prog-if 00 [Normal decode])
+		device pci 1b.0 on	# PCI Express Port 21 - SSD M.2
+			register "PcieRpSlotImplemented[20]" = "1"
+		end
+
+		# TODO: check? 00:1d.0 PCI bridge [0604]: Intel Corporation Cannon Lake PCH PCI Express Root Port #9 [8086:a330] (rev f0) (prog-if 00 [Normal decode])
+		device pci 1d.0 on	# PCI Express Port 9 - WLAN M.2
+			register "PcieRpSlotImplemented[8]" = "1"
+		end
+
+		device pci 1e.0 off	end	# UART #0
+		device pci 1e.1 off	end	# UART #1
+		device pci 1e.2 off	end	# GSPI #0
+		device pci 1e.3 off	end	# GSPI #1
+
+		device pci 1f.0 on		# eSPI controller
+			chip superio/nuvoton/nct6687d
+				device pnp 2e.1 off	end	# Parallel port
+				device pnp 2e.2 off	end	# UARTA (USB debug port?)
+				device pnp 2e.3 on		# UARTB - COM1 header - optional sub-board
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+					irq 0xf0 = 0
+					irq 0xf1 = 0
+				end
+				device pnp 2e.5 off	end	# Keyboard
+				device pnp 2e.6 off	end	# CIR
+				device pnp 2e.7 off	end	# GPIO0-7
+				device pnp 2e.8 off	end	# P80 UART
+				device pnp 2e.9 off	end	# GPIO8-9, GPIO1-8 AF
+				device pnp 2e.a on		# ACPI
+					io 0x60 = 0x00
+					irq 0x70 = 0x40
+				end
+				device pnp 2e.b on		# EC
+					io 0x60 = 0xa20
+					irq 0x70 = 0
+				end
+				device pnp 2e.c off	end	# RTC
+				device pnp 2e.d off	end	# Deep Sleep
+				device pnp 2e.e on		# TACH/PWM assignment
+					irq 0xe4 = 0x10
+					irq 0xe5 = 0x09
+				end
+				device pnp 2e.f off	end	# Function register
+			end
+			chip drivers/pc80/tpm
+				device pnp 0c31.0 on	end
+			end
+		end # eSPI controller
+		device pci 1f.1 on	end	# P2SB
+		device pci 1f.2 on	end	# Power Management Controller
+		device pci 1f.3 on	end	# Intel HDA
+		device pci 1f.4 on	end	# SMBus
+		device pci 1f.5 on	end	# PCH SPI
+		device pci 1f.6 on	end	# GbE
+		device pci 1f.7 off	end	# TraceHub
+	end
+end
