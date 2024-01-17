@@ -281,6 +281,10 @@ endif
 ifeq ($(CONFIG_EDK2_RAM_DISK_ENABLE),y)
 BUILD_STR += -D RAM_DISK_ENABLE=TRUE
 endif
+# MEMTEST_ENABLE		= FALSE
+ifeq ($(CONFIG_EDK2_MEMTEST),y)
+BUILD_STR += -D MEMTEST_ENABLE=TRUE
+endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
 BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
@@ -387,6 +391,13 @@ ipxe_rom: $(EDK2_PATH)
 			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
 	fi \
 
+memtest_efi: $(EDK2_PATH)
+	if [ "$(CONFIG_EDK2_MEMTEST)" == "y" ]; then \
+		echo "    Including externally built Memtest86+"; \
+		cp $(top)/payloads/external/Memtest86Plus/memtest86plus_v6/build64/memtest.efi \
+			$(EDK2_PATH)/UefiPayloadPkg/; \
+	fi \
+
 checktools:
 	echo -n "EDK2: Checking uuid-dev:"
 	echo "#include <uuid/uuid.h>" > libtest.c
@@ -415,7 +426,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_rom ipxe_rom
+prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_rom ipxe_rom memtest_efi
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \

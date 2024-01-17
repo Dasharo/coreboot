@@ -4,6 +4,7 @@ comment "Memtest86+"
 
 choice
 	prompt "Memtest86+ 5/6"
+	default MEMTEST86PLUS_V6 if EDK2_ENABLE_MEMTEST
 
 config MEMTEST86PLUS_V6
 	bool "Memtest86+ V6"
@@ -16,6 +17,7 @@ endchoice
 choice
 	prompt "Target architecture"
 	depends on MEMTEST86PLUS_V6
+	default MEMTEST86PLUS_ARCH_64 if EDK2_ENABLE_MEMTEST
 
 config MEMTEST86PLUS_ARCH_64
 	bool "64 bit"

@@ -167,7 +167,15 @@ ifeq ($(CONFIG_EDK2_ENABLE_IPXE),y)
 IPXE_EFI := payloads/external/iPXE/ipxe/ipxe.rom
 endif
 
-$(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
+ifeq ($(CONFIG_EDK2_ENABLE_MEMTEST),y)
+
+payloads/external/Memtest86Plus/memtest86plus_v6/build64/memtest.efi: memtest
+
+MEMTEST_EFI := payloads/external/Memtest86Plus/memtest86plus_v6/build64/memtest.efi
+
+endif
+
+$(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI) $(MEMTEST_EFI)
 	$(MAKE) -C payloads/external/edk2 UefiPayloadPkg \
 		HOSTCC="$(HOSTCC)" \
 		CC="$(HOSTCC)" \
@@ -198,6 +206,7 @@ $(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
 		CONFIG_EDK2_HAVE_EFI_SHELL=$(CONFIG_EDK2_HAVE_EFI_SHELL) \
 		CONFIG_EDK2_IPXE=$(CONFIG_EDK2_ENABLE_IPXE) \
 		CONFIG_EDK2_IPXE_OPTION_NAME=$(CONFIG_EDK2_IPXE_OPTION_NAME) \
+		CONFIG_EDK2_MEMTEST=$(CONFIG_EDK2_ENABLE_MEMTEST) \
 		CONFIG_EDK2_OPAL_PASSWORD=$(CONFIG_EDK2_OPAL_PASSWORD) \
 		CONFIG_EDK2_PRIORITIZE_INTERNAL=$(CONFIG_EDK2_PRIORITIZE_INTERNAL) \
 		CONFIG_EDK2_PS2_SUPPORT=$(CONFIG_EDK2_PS2_SUPPORT) \
@@ -384,6 +393,8 @@ else
 memtest_dir:=memtest86plus_v5
 endif
 
+ifneq ($(CONFIG_EDK2_ENABLE_MEMTEST),y)
+
 cbfs-files-$(CONFIG_MEMTEST_SECONDARY_PAYLOAD) += img/memtest
 img/memtest-file := payloads/external/Memtest86Plus/$(memtest_dir)/memtest
 img/memtest-type := payload
@@ -395,18 +406,30 @@ ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
 		SERIAL_BAUD_RATE=$(CONFIG_TTYS0_BAUD)
 endif
 
-payloads/external/Memtest86Plus/$(memtest_dir)/memtest: $(DOTCONFIG)
-	$(MAKE) -C payloads/external/Memtest86Plus all \
-		CC="$(CC_x86_32)" \
+endif
+
+ifeq ($(CONFIG_MEMTEST86PLUS_V6)$(CONFIG_MEMTEST86PLUS_ARCH_64),yy)
+	MEMTEST_COMPILER_OPTIONS=CC="$(CC_x86_64)" \
+		LD="$(LD_x86_64)" \
+		OBJCOPY="$(OBJCOPY_x86_64)" \
+		AS="$(AS_x86_64)"
+else
+	MEMTEST_COMPILER_OPTIONS=CC="$(CC_x86_32)" \
 		LD="$(LD_x86_32)" \
 		OBJCOPY="$(OBJCOPY_x86_32)" \
-		AS="$(AS_x86_32)" \
+		AS="$(AS_x86_32)"
+endif
+
+payloads/external/Memtest86Plus/$(memtest_dir)/memtest memtest: $(DOTCONFIG)
+	$(MAKE) -C payloads/external/Memtest86Plus all \
+		$(MEMTEST_COMPILER_OPTIONS) \
 		CONFIG_MEMTEST_REVISION=$(CONFIG_MEMTEST_REVISION) \
 		CONFIG_MEMTEST_REVISION_ID=$(CONFIG_MEMTEST_REVISION_ID) \
 		CONFIG_MEMTEST_MAIN=$(CONFIG_MEMTEST_MAIN) \
 		CONFIG_MEMTEST_STABLE=$(CONFIG_MEMTEST_STABLE) \
 		CONFIG_MEMTEST86PLUS_V5=$(CONFIG_MEMTEST86PLUS_V5) \
 		CONFIG_MEMTEST86PLUS_V6=$(CONFIG_MEMTEST86PLUS_V6) \
+		MEMTEST86PLUS_ARCH_64=$(CONFIG_MEMTEST86PLUS_ARCH_64) \
 		$(MEMTEST_SERIAL_OPTIONS) \
 		MFLAGS= MAKEFLAGS=
 
