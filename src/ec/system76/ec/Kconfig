@@ -20,3 +20,17 @@ config EC_SYSTEM76_EC_OLED
 	depends on EC_SYSTEM76_EC
 	bool
 	default n
+
+config EC_SYSTEM76_EC_UPDATE
+	depends on EC_SYSTEM76_EC
+	bool "Update the embedded controller firmware"
+	default n
+
+config EC_SYSTEM76_EC_UPDATE_FILE
+	depends on EC_SYSTEM76_EC_UPDATE
+	string "Path to the EC update file"
+	default "ec.rom"
+
+config EC_SYSTEM76_EC_FLASH_SIZE
+	hex
+	default 0x20000
