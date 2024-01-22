@@ -14,6 +14,9 @@
 #define SYSTEM76_EC_BASE 0x0E00
 #define SYSTEM76_EC_SIZE 256
 
+#define SPI_FLASH_SIZE (128 * 1024)
+#define SPI_SECTOR_SIZE 1024
+
 #define REG_CMD 0
 #define REG_RESULT 1
 #define REG_DATA 2	// Start of command data
@@ -216,6 +219,50 @@ static int firmware_str(char *data, int data_len, const char *key, char *dest, i
 	return ret_i;
 }
 
+struct smfi_spi_cmd_hdr {
+	uint8_t flags;
+	uint8_t len;
+} __packed;
+
+static uint32_t flash_read(uint8_t *dest, uint32_t len) {
+	struct smfi_spi_cmd_hdr read_cmd = {
+		CMD_SPI_FLAG_READ,
+		SYSTEM76_EC_SIZE - 4,
+	};
+
+	uint32_t addr = 0;
+	uint32_t bytes_read = 0;
+	int i;
+
+	while (addr < len) {
+		wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+		if (system76_ec_smfi_cmd(CMD_SPI, sizeof(read_cmd) / sizeof(uint8_t), (uint8_t *)&read_cmd)) {
+			printk(BIOS_DEBUG, "EC flash read failed!\n");
+			return addr + 1;
+		}
+
+		/* Check how many data bytes were actually read */
+		bytes_read = system76_ec_read(REG_DATA + 1);
+
+		/* Sanity check */
+		if (bytes_read == 0 || bytes_read > SYSTEM76_EC_SIZE - 4)
+			return 0;
+
+		/* Read data bytes, index should be valid due to length test above */
+		for (i = 0; i < bytes_read; i++)
+			dest[addr + i] = system76_ec_read(REG_DATA + 2 + i);
+
+		addr += bytes_read;
+
+		/* Check if this was the last chunk */
+		if (bytes_read < SYSTEM76_EC_SIZE - 4)
+			break;
+	}
+
+	return addr + 1;
+}
+
 static void system76_ec_fw_sync(void *unused)
 {
 	size_t image_sz;
@@ -265,6 +312,31 @@ static void system76_ec_fw_sync(void *unused)
 	} else {
 		printk(BIOS_DEBUG, "EC update required!\n");
 	}
+
+	/* Jump to Scratch ROM */
+	struct smfi_spi_cmd_hdr smfi_cmd = {
+		CMD_SPI_FLAG_SCRATCH,
+		0,
+	};
+
+	/* If we failed to jump to scratch ROM, then we can probably continue booting. */
+	if (system76_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd) / sizeof(uint8_t), (uint8_t *)&smfi_cmd)) {
+		printk(BIOS_ERR, "EC update failed!\n");
+		return;
+	}
+
+	uint8_t current_rom[SPI_FLASH_SIZE] = { 0xFF };
+	uint32_t current_size;
+
+	current_size = flash_read(current_rom, ARRAY_SIZE(current_rom));
+	printk(BIOS_ERR, "EC read %u bytes\n", current_size);
+
+	//smfi_cmd.flags = CMD_SPI_FLAG_DISABLE;
+
+	//if (system76_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd) / sizeof(uint8_t), (uint8_t *)&smfi_cmd)) {
+	//	printk(BIOS_ERR, "EC update failed!\n");
+	//	return;
+	//}
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, system76_ec_fw_sync, NULL);

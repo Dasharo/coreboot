@@ -64,6 +64,16 @@
 #define CMD_PRINT_REG_LEN 3
 #define CMD_PRINT_REG_DATA 4
 
+// SPI command
+// Read from SPI chip if set, write otherwise
+#define CMD_SPI_FLAG_READ BIT(0)
+// Disable SPI chip after executing command
+#define CMD_SPI_FLAG_DISABLE BIT(1)
+// Run firmware from scratch RAM if necessary
+#define CMD_SPI_FLAG_SCRATCH BIT(2)
+// Write to backup ROM instead
+#define CMD_SPI_FLAG_BACKUP BIT(3)
+
 #define CMD_LED_INDEX_ALL 0xFF
 
 // Persistent option definitions
