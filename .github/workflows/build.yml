@@ -124,6 +124,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Dasharo/open-source-firmware-validation
+          ref: msi_fixes
           path: validation
           submodules: true
 
