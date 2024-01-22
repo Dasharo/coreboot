@@ -74,3 +74,4 @@ enum {
 
 uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data);
 uint8_t system76_ec_read_version(uint8_t *data);
+uint8_t system76_ec_read_board(uint8_t *data);

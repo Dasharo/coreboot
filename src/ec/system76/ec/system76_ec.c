@@ -2,6 +2,7 @@
 
 #include <bootstate.h>
 #include <arch/io.h>
+#include <cbfs.h>
 #include <console/system76_ec.h>
 #include <pc80/mc146818rtc.h>
 #include <timer.h>
@@ -118,6 +119,40 @@ uint8_t system76_ec_read_version(uint8_t *data)
 	return result;
 }
 
+uint8_t system76_ec_read_board(uint8_t *data)
+{
+	int i;
+	uint8_t result;
+
+	if (!data)
+		return -1;
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	// Write command register, which starts command
+	system76_ec_write(REG_CMD, CMD_BOARD);
+
+	// Wait for previous command completion, for up to 10 milliseconds, with a
+	// test period of 1 microsecond
+	wait_us(10000, system76_ec_read(REG_CMD) == CMD_FINISHED);
+
+	result = system76_ec_read(REG_RESULT);
+
+	if (result != 0)
+		return result;
+
+	// Read data bytes, index should be valid due to length test above
+	for (i = 0; i < (SYSTEM76_EC_SIZE - REG_DATA); i++) {
+		data[i] = system76_ec_read(REG_DATA + i);
+		if (data[i] == '\0')
+			break;
+	}
+
+	return result;
+}
+
 int system76_ec_get_bat_threshold(enum bat_threshold_type type)
 {
     int ret = -1;
@@ -135,6 +170,7 @@ int system76_ec_get_bat_threshold(enum bat_threshold_type type)
 
     return ret;
 }
+
 void system76_ec_set_bat_threshold(enum bat_threshold_type type, uint8_t value)
 {
     switch (type){
@@ -148,3 +184,87 @@ void system76_ec_set_bat_threshold(enum bat_threshold_type type, uint8_t value)
         break;
     }
 }
+
+/* Ported from system76_ectool */
+static int firmware_str(char *data, int data_len, const char *key, char *dest, int dest_len)
+{
+	int data_i, key_i, ret_i;
+	int key_len = strlen(key);
+
+	data_i = key_i = ret_i = 0;
+
+	/* Locate the key */
+	while (data_i < data_len && key_i < key_len) {
+		if (data[data_i] == key[key_i])
+			key_i += 1;
+		else
+			key_i = 0;
+		data_i += 1;
+	}
+
+	/* Exit if not found */
+	if (key_i < key_len)
+		return 0;
+
+	/* Copy the data */
+	while (data_i < data_len && ret_i < dest_len - 1 && data[data_i] != 0)
+		dest[ret_i++] = data[data_i++];
+
+	/* Terminate the result */
+	dest[ret_i] = '\0';
+
+	return ret_i;
+}
+
+static void system76_ec_fw_sync(void *unused)
+{
+	size_t image_sz;
+	char *image;
+	char img_board_str[64];
+	char img_version_str[64];
+	char cur_board_str[64];
+	char cur_version_str[64];
+
+	/* EC update is loaded from verified CBFS */
+	image = cbfs_map("ec.rom", &image_sz);
+
+	if (image == NULL) {
+		printk(BIOS_DEBUG, "No EC firmware update found.\n");
+		return;
+	}
+
+	printk(BIOS_DEBUG, "EC update found (%ld bytes)\n", image_sz);
+
+	/* Sanity checks */
+	if (!firmware_str(image, image_sz, "76EC_BOARD=", img_board_str, ARRAY_SIZE(img_board_str))) {
+		printk(BIOS_DEBUG, "Could not determine EC update target board.\n");
+		return;
+	}
+
+	if (!firmware_str(image, image_sz, "76EC_VERSION=", img_version_str, ARRAY_SIZE(img_version_str))) {
+		printk(BIOS_DEBUG, "Could not determine EC update version.\n");
+		return;
+	}
+
+	printk(BIOS_DEBUG, "EC update target: %s\n", img_board_str);
+	printk(BIOS_DEBUG, "EC update version: %s\n", img_version_str);
+
+	system76_ec_read_board((uint8_t *)cur_board_str);
+	system76_ec_read_version((uint8_t *)cur_version_str);
+
+	if (strcmp(img_board_str, cur_board_str)) {
+		printk(BIOS_DEBUG, "EC update mismatch detected! Found %s, expected %s\n",
+			img_board_str, cur_board_str);
+		return;
+	}
+
+	printk(BIOS_DEBUG, "EC current version: %s\n", cur_version_str);
+	if (!strcmp(img_version_str, cur_version_str)) {
+		printk(BIOS_DEBUG, "EC update not needed.\n");
+		return;
+	} else {
+		printk(BIOS_DEBUG, "EC update required!\n");
+	}
+}
+
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, system76_ec_fw_sync, NULL);
