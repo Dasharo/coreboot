@@ -244,10 +244,11 @@ static uint32_t flash_read(uint8_t *dest, uint32_t len) {
 
 		/* Check how many data bytes were actually read */
 		bytes_read = system76_ec_read(REG_DATA + 1);
+		return bytes_read;
 
 		/* Sanity check */
-		if (bytes_read == 0 || bytes_read > SYSTEM76_EC_SIZE - 4)
-			return 0;
+		if (bytes_read > SYSTEM76_EC_SIZE - 4)
+			break;
 
 		/* Read data bytes, index should be valid due to length test above */
 		for (i = 0; i < bytes_read; i++)
@@ -325,18 +326,26 @@ static void system76_ec_fw_sync(void *unused)
 		return;
 	}
 
-	uint8_t current_rom[SPI_FLASH_SIZE] = { 0xFF };
+	uint8_t *current_rom = malloc(SPI_FLASH_SIZE);
+	if (!current_rom) {
+		printk(BIOS_ERR, "EC update failed!\n");
+		return;
+	}
+
+	memset(current_rom, 0xff, SPI_FLASH_SIZE);
 	uint32_t current_size;
 
-	current_size = flash_read(current_rom, ARRAY_SIZE(current_rom));
+	current_size = flash_read(current_rom, SPI_FLASH_SIZE);
 	printk(BIOS_ERR, "EC read %u bytes\n", current_size);
 
-	//smfi_cmd.flags = CMD_SPI_FLAG_DISABLE;
+	free(current_rom);
 
-	//if (system76_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd) / sizeof(uint8_t), (uint8_t *)&smfi_cmd)) {
-	//	printk(BIOS_ERR, "EC update failed!\n");
-	//	return;
-	//}
+	smfi_cmd.flags = CMD_SPI_FLAG_DISABLE;
+
+	if (system76_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd) / sizeof(uint8_t), (uint8_t *)&smfi_cmd)) {
+		printk(BIOS_ERR, "EC update failed!\n");
+		return;
+	}
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, system76_ec_fw_sync, NULL);
