@@ -226,6 +226,8 @@ int spd_decode_ddr4(struct dimm_attr_ddr4_st *dimm, spd_raw_data spd)
 
 	dimm->ecc_extension = spd[SPD_PRIMARY_SDRAM_WIDTH] & SPD_ECC_8BIT;
 
+	dimm->dimms_per_channel = 4;
+
 	/* make sure we have the manufacturing information block */
 	if (spd_bytes_used > 320) {
 		dimm->manufacturer_id = (spd[351] << 8) | spd[350];
@@ -234,6 +236,78 @@ int spd_decode_ddr4(struct dimm_attr_ddr4_st *dimm, spd_raw_data spd)
 		memcpy(dimm->serial_number, &spd[325], sizeof(dimm->serial_number));
 	}
 	return SPD_STATUS_OK;
+}
+
+/**
+ * \brief Decode the raw SPD XMP data
+ *
+ * Decodes a raw SPD XMP data from a DDR4 DIMM, and organizes it into a
+ * @ref dimm_attr structure. The SPD data must first be read in a contiguous
+ * array, and passed to this function.
+ *
+ * @param dimm pointer to @ref dimm_attr structure where the decoded data is to
+ *        be stored
+ * @param spd array of raw data previously read from the SPD.
+ *
+ * @param profile select one of the profiles to load
+ *
+ * @return @ref spd_status enumerator
+ *		SPD_STATUS_OK -- decoding was successful
+ *		SPD_STATUS_INVALID -- invalid SPD or not a DDR4 SPD
+ *		SPD_STATUS_CRC_ERROR -- CRC did not verify
+ *		SPD_STATUS_INVALID_FIELD -- A field with an invalid value was
+ *					    detected.
+ */
+int spd_xmp_decode_ddr4(struct dimm_attr_ddr4_st *dimm, spd_raw_data spd,
+			enum ddr4_xmp_profile profile)
+{
+	int ret;
+	u8 *xmp; /* pointer to XMP profile data */
+
+	/* need a valid SPD */
+	ret = spd_decode_ddr4(dimm, spd);
+	if (ret != SPD_STATUS_OK)
+		return ret;
+
+	/* search for magic header */
+	if (spd[384] != 0x0C || spd[385] != 0x4A) {
+		printk(BIOS_ERR, "Not a DDR4 XMP profile!\n");
+		dimm->dram_type = SPD_MEMORY_TYPE_UNDEFINED;
+		return SPD_STATUS_INVALID;
+	}
+
+	if (profile == DDR4_XMP_PROFILE_1) {
+		if (!(spd[386] & 1)) {
+			printk(BIOS_ERR, "XMP profile 1 disabled!\n");
+			dimm->dram_type = SPD_MEMORY_TYPE_UNDEFINED;
+			return SPD_STATUS_INVALID;
+		}
+
+		xmp = &spd[393];
+		dimm->dimms_per_channel = ((spd[386] >> 2) & 0x3) + 1;
+		printk(BIOS_DEBUG, "XMP profile 1 present\n");
+	} else {
+		if (!(spd[386] & 2)) {
+			printk(BIOS_ERR, "XMP 2 profile disabled!\n");
+			dimm->dram_type = SPD_MEMORY_TYPE_UNDEFINED;
+			return SPD_STATUS_INVALID;
+		}
+		xmp = &spd[440];
+		dimm->dimms_per_channel = ((spd[386] >> 4) & 0x3) + 1;
+		printk(BIOS_DEBUG, "XMP profile 2 present\n");
+	}
+
+	printk(BIOS_DEBUG, "  Max DIMMs/channel  : %u\n", dimm->dimms_per_channel);
+
+	printk(BIOS_DEBUG, "  XMP Revision       : %u.%u\n", spd[387] >> 4, spd[387] & 0xf);
+
+	/* calculate voltage in mV */
+	dimm->vdd_voltage = (xmp[0] & 0x7f) * 10;
+	dimm->vdd_voltage += (xmp[0] >> 7) * 1000;
+
+	printk(BIOS_DEBUG, "  Requested voltage  : %u mV\n", dimm->vdd_voltage);
+
+	return ret;
 }
 
 enum cb_err spd_add_smbios17_ddr4(const u8 channel, const u8 slot, const u16 selected_freq,

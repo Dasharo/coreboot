@@ -184,7 +184,7 @@ static void init_pch_smbus_sensor(const struct nct6687d_pch_smbus_sensor *smbus_
 	}
 
 	/* Enable SMBUS first */
-	hwm_reg_write(SMBUS_MASTER_CFG2_REG, 0x04);
+	hwm_reg_write(SMBUS_MASTER_CFG2_REG, SMB_MASTER_PORT(4));
 	hwm_reg_write(SMBUS_MASTER_BAUD_RATE_SEL_REG, SMB_MASTER_BAUD_100K);
 	hwm_reg_set_bits(SMBUS_MASTER_CFG1_REG, SMB_MASTER_EN);
 
