@@ -199,6 +199,10 @@ static void check_ddr4_xmp_valid(FSPM_UPD *memupd)
 	else if (memupd->FspmConfig.SpdProfileSelected == 3) { // XMP2
 		profile = DDR4_XMP_PROFILE_2;
 	} else {
+		/* XMP3 and user profiles not available on DDR4 */
+		if (memupd->FspmConfig.SpdProfileSelected > 3)
+			memupd->FspmConfig.SpdProfileSelected = 0;
+
 		boost_dram_voltage(requested_voltage);
 		return;
 	}
@@ -232,6 +236,12 @@ static void check_ddr4_xmp_valid(FSPM_UPD *memupd)
 		requested_voltage = MIN(requested_voltage, 1500);
 
 		memupd->FspmConfig.RefClk = 1; // Use 100Mhz Memory Reference Clock
+		memupd->FspmConfig.GearRatio = 1;
+		memupd->FspmConfig.SaGv = 0;
+		memupd->FspmConfig.NModeSupport = 2;
+		memupd->FspmConfig.RealtimeMemoryTiming = 1;
+		memupd->FspmArchUpd.BootMode = 0;
+		memupd->FspmConfig.VddVoltage = requested_voltage;
 		// /* Give SA additional voltage for high frequency XMP1 profile */
 		// if (profile == DDR4_XMP_PROFILE_1) {
 		// 	memupd->FspmConfig.SaOcSupport = 1;
