@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootblock_common.h>
+#include <dasharo/options.h>
 #include <device/pnp_ops.h>
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct6687d/nct6687d.h>
@@ -76,4 +77,9 @@ void bootblock_mainboard_early_init(void)
 
 	if (CONFIG(CONSOLE_SERIAL))
 		nuvoton_enable_serial(SERIAL_DEV, CONFIG_TTYS0_BASE);
+}
+
+void bootblock_mainboard_init(void)
+{
+	dasharo_reset_options_if_cmos_invalid();
 }
