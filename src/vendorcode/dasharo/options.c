@@ -5,6 +5,7 @@
 #include <drivers/efi/efivars.h>
 #include <intelblocks/cse.h>
 #include <option.h>
+#include <security/vboot/vbnv.h>
 #include <soc/intel/common/reset.h>
 #include <smmstore.h>
 #include <types.h>
@@ -368,4 +369,16 @@ uint8_t dasharo_get_memory_profile(void)
 	uint8_t profile = 0;
 	read_u8_var("MemoryProfile", &profile);
 	return profile;
+}
+
+
+void dasharo_reset_options_if_cmos_invalid(void)
+{
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		return;
+
+	if (!vbnv_cmos_failed())
+		return;
+
+	smmstore_clear_region();
 }

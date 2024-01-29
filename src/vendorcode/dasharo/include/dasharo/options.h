@@ -217,4 +217,9 @@ bool get_uuid_from_efivar(uint8_t *uuid);
  */
 uint8_t dasharo_get_memory_profile(void);
 
+/* Erases the SMMSTORE region if CMOS failure occurred and EFI variables
+ * are enabled.
+ */
+void dasharo_reset_options_if_cmos_invalid(void);
+
 #endif /* DASHARO_OPTIONS_H */
