@@ -271,11 +271,11 @@ endif
 ifeq ($(CONFIG_EDK2_PERFORMANCE_MEASUREMENT_ENABLE),y)
 BUILD_STR += -D PERFORMANCE_MEASUREMENT_ENABLE=TRUE
 endif
-ifneq ($(CONFIG_EDK2_HAVE_INTEL_ME_HAP),y)
+ifneq ($(CONFIG_HAVE_INTEL_ME_HAP),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeHapAvailable=FALSE
 endif
-ifneq ($(CONFIG_EDK2_INTEL_ME_DEFAULT_STATE),)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeDefaultState=$(CONFIG_EDK2_INTEL_ME_DEFAULT_STATE)
+ifneq ($(CONFIG_INTEL_ME_DEFAULT_STATE),)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeDefaultState=$(CONFIG_INTEL_ME_DEFAULT_STATE)
 endif
 # RAM_DISK_ENABLE		= FALSE
 ifeq ($(CONFIG_EDK2_RAM_DISK_ENABLE),y)

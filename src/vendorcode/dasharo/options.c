@@ -180,13 +180,13 @@ static void disable_me_hmrfpo(uint8_t *var)
 
 hmrfpo_error:
 	/* Try other available methods if something goes wrong */
-	*var = CONFIG(EDK2_HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
-						: ME_MODE_DISABLE_HECI;
+	*var = CONFIG(HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
+					 : ME_MODE_DISABLE_HECI;
 }
 
 uint8_t cse_get_me_disable_mode(void)
 {
-	uint8_t var = CONFIG_EDK2_INTEL_ME_DEFAULT_STATE;
+	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
 	bool fum = false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {

@@ -365,47 +365,6 @@ config EDK2_DASHARO_INTEL_ME_OPTIONS
 	help
 	  Enables the Intel ME configuration submenu in Dasharo System Features.
 
-config EDK2_HAVE_INTEL_ME_HAP
-	bool
-	default n
-	help
-	 SoC should select this option if it support disablign ME with HAP bit.
-
-choice
-	prompt "Default ME state option value"
-	default EDK2_INTEL_ME_ENABLED
-	help
-	  Provides a default for the power state the system should
-	  go into after G3 (power loss). On many boards this can be
-	  overridden by an NVRAM option.
-
-config EDK2_INTEL_ME_DISABLED_HECI
-	bool "ME disabled (soft)"
-	help
-	  Choose this option if you want to put ME into soft disabled state via
-	  HECI by default.
-
-config EDK2_INTEL_ME_DISABLED_HAP
-	bool "ME disabled (HAP)"
-	depends on EDK2_HAVE_INTEL_ME_HAP
-	help
-	  Choose this option if you want to put ME into HAP disabled state by
-	  default.
-
-config EDK2_INTEL_ME_ENABLED
-	bool "ME enabled"
-	help
-	  Choose this option if you want to keep ME enabled by default.
-	  You can always set ME to disabled state via setup option
-
-endchoice
-
-config EDK2_INTEL_ME_DEFAULT_STATE
-	int
-	default 2 if EDK2_INTEL_ME_DISABLED_HAP
-	default 1 if EDK2_INTEL_ME_DISABLED_HECI
-	default 0
-
 config EDK2_DASHARO_USB_CONFIG
 	bool "Enable EDK2 Dasharo USB Configuration Menu"
 	default n
