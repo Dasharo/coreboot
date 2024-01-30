@@ -24,6 +24,14 @@ config IFD_BIN_PATH
 	default "3rdparty/blobs/mainboard/\$(MAINBOARDDIR)/descriptor.bin"
 	depends on HAVE_IFD_BIN
 
+config IFDTOOL_DISABLE_ME
+	bool "Set AltMeDisable/HAP bit with ifdtool"
+	default n
+	depends on HAVE_IFD_BIN
+	help
+	  Uses ifdtool to set AltMeDisable/HAP in Intel Flash Descriptor binary
+	  if added to the build.
+
 config HAVE_ME_BIN
 	bool "Add Intel ME/TXE firmware"
 	depends on HAVE_IFD_BIN
