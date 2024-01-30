@@ -47,7 +47,7 @@ chip soc/intel/jasperlake
 	register "usb2_wake_enable_bitmap" = "0x0012"
 	register "usb3_wake_enable_bitmap" = "0x0003"
 
-	register "gen1_dec" = "0x003c0a10"
+	register "gen1_dec" = "0x003c0a01"
 	register "gen2_dec" = "0x000c0081"
 	register "gen3_dec" = "0x00fc0201"
 
