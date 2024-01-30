@@ -31,6 +31,6 @@ void bootblock_mainboard_early_init(void)
 	ite_reg_write(GPIO_DEV, 0xc9, 0x0a); /* GP21 and GP23 as output */
 	ite_set_gpio_base(GPIO_DEV, 0xa00);
 
-	/* GP21 and GP23 as high to enable USB ports VBUS */
-	outb(0x03, 0xa02);
+	/* GP21 and GP23 to low to enable USB ports VBUS */
+	outb(inb(0xa01) & ~0x0a, 0xa01);
 }
