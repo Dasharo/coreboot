@@ -6,3 +6,16 @@ config BIOS_VENDOR
 	default "3mdeb"
 
 endif
+
+comment "=================================== Dasharo ===================================="
+
+menu "Dasharo Configuration"
+
+config DASHARO_PREFER_S3_SLEEP
+	bool "Prefer S3 suspend over S0ix"
+	default n if PAYLOAD_EDK2
+	default y
+
+endmenu
+
+comment "================================================================================"
