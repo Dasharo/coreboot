@@ -12,5 +12,6 @@ ramstage-y += ramstage.c
 ramstage-y += variants/$(VARIANT_DIR)/ramstage.c
 ramstage-y += variants/$(VARIANT_DIR)/gpio.c
 ramstage-y += variants/$(VARIANT_DIR)/hda_verb.c
+ramstage-$(CONFIG_HAVE_ACPI_TABLES) += fadt.c
 
 subdirs-y += variants/$(VARIANT_DIR)
