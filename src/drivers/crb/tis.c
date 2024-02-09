@@ -50,6 +50,14 @@ static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 {
 	struct tpm2_info info;
 
+	if (CONFIG(HAVE_INTEL_PTT)) {
+		if (!ptt_active()) {
+			printk(BIOS_ERR, "%s: Intel PTT is not active.\n", __func__);
+			return NULL;
+		}
+		printk(BIOS_DEBUG, "%s: Intel PTT is active.\n", __func__);
+	}
+
 	/* Wake TPM up (if necessary) */
 	if (tpm2_init())
 		return NULL;
@@ -61,14 +69,6 @@ static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 
 	printk(BIOS_INFO, "Initialized TPM device %s revision %d\n", tis_get_dev_name(&info),
 	       info.revision);
-
-	if (CONFIG(HAVE_INTEL_PTT)) {
-		if (!ptt_active()) {
-			printk(BIOS_ERR, "%s: Intel PTT is not active.\n", __func__);
-			return NULL;
-		}
-		printk(BIOS_DEBUG, "%s: Intel PTT is active.\n", __func__);
-	}
 
 	return &crb_tpm_sendrecv;
 }
