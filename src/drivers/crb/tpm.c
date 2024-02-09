@@ -119,6 +119,19 @@ static int crb_probe(void)
 	return 0;
 }
 
+bool tpm_is_crb(void)
+{
+	uint64_t tpmStatus = read64(CRB_REG(cur_loc, CRB_REG_INTF_ID));
+
+	if ((tpmStatus & CRB_INTF_REG_CAP_CRB) == 0)
+		return false;
+
+	if ((tpmStatus & (0xf)) != 1)
+		return false;
+
+	return true;
+}
+
 /*
  * Get active Locality
  *

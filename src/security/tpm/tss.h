@@ -36,6 +36,11 @@ extern enum tpm_family tlcl_tpm_family;
 uint32_t tlcl_lib_init(void);
 
 /**
+ * Check for TPM CRB interface. Returns true if CRB, false otherwise.
+ */
+bool tpm_is_crb(void);
+
+/**
  * Query active TPM family.  Returns TPM_UNKNOWN if uninitialized and TPM_1 or TPM_2 otherwise.
  */
 static inline enum tpm_family tlcl_get_family(void)
