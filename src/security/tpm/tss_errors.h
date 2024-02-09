@@ -12,19 +12,24 @@
 
 #include <stdint.h>
 
-#define TPM_E_BASE 0x0
-#define TPM_E_NON_FATAL 0x800
+typedef uint32_t tpm_result_t;
+#define TPM_Vendor_Specific32 0x400
 
-#define TPM_E_AREA_LOCKED           ((uint32_t)0x0000003c)
-#define TPM_E_BADINDEX              ((uint32_t)0x00000002)
-#define TPM_E_BAD_PRESENCE          ((uint32_t)0x0000002d)
-#define TPM_E_IOERROR               ((uint32_t)0x0000001f)
-#define TPM_E_INVALID_POSTINIT      ((uint32_t)0x00000026)
-#define TPM_E_MAXNVWRITES           ((uint32_t)0x00000048)
-#define TPM_E_OWNER_SET             ((uint32_t)0x00000014)
+#define TPM_BASE 0x0
 
-#define TPM_E_NEEDS_SELFTEST ((uint32_t)(TPM_E_NON_FATAL + 1))
-#define TPM_E_DOING_SELFTEST ((uint32_t)(TPM_E_NON_FATAL + 2))
+#define TPM_NON_FATAL (0x800 + TPM_BASE)
+#define TPM_CB_ERROR TPM_Vendor_Specific32
+
+#define TPM_CB_AREA_LOCKED           ((uint32_t)0x0000003c)
+#define TPM_CB_BADINDEX              ((uint32_t)0x00000002)
+#define TPM_CB_BAD_PRESENCE          ((uint32_t)0x0000002d)
+#define TPM_CB_IOERROR               ((uint32_t)0x0000001f)
+#define TPM_CB_INVALID_POSTINIT      ((uint32_t)0x00000026)
+#define TPM_CB_MAXNVWRITES           ((uint32_t)0x00000048)
+#define TPM_CB_OWNER_SET             ((uint32_t)0x00000014)
+
+#define TPM_CB_NEEDS_SELFTEST ((uint32_t)(TPM_CB_NON_FATAL + 1))
+#define TPM_CB_DOING_SELFTEST ((uint32_t)(TPM_CB_NON_FATAL + 2))
 
 #define TPM_SUCCESS               ((tpm_result_t) (TPM_BASE + 0x00))
 #define TPM_BADINDEX              ((tpm_result_t) (TPM_BASE + 0x02))

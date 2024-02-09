@@ -200,6 +200,9 @@ static void *get_tcpa_log(u32 *size)
 
 static void acpi_create_tcpa(acpi_header_t *header, void *unused)
 {
+	if (!CONFIG(MEMORY_MAPPED_TPM))
+		return;
+
 	if (tlcl_get_family() != TPM_1)
 		return;
 
@@ -246,6 +249,9 @@ static void *get_tpm2_log(u32 *size)
 
 static void acpi_create_tpm2(acpi_header_t *header, void *unused)
 {
+	if (!CONFIG(MEMORY_MAPPED_TPM) && !CONFIG(CRB_TPM))
+		return;
+
 	if (tlcl_get_family() != TPM_2)
 		return;
 

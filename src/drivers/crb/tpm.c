@@ -18,6 +18,7 @@
 #include <string.h>
 #include <soc/pci_devs.h>
 #include <device/pci_ops.h>
+#include <security/tpm/tss.h>
 
 #include "tpm.h"
 
@@ -54,7 +55,7 @@ static void crb_readControlArea(void)
 	 * register before each command submission otherwise the control area
 	 * is all zeroed. This has been observed on Alder Lake S CPU and may be
 	 * applicable to other new microarchitectures. Update the local control
-	 * area data to make tpm2_process_command not fail on buffer checks.
+	 * area data to make tpm2_crb_process_command not fail on buffer checks.
 	 * PTT command/response buffer is fixed to be at offset 0x80 and spans
 	 * up to the end of 4KB region for the current locality.
 	 */
@@ -194,14 +195,14 @@ static int crb_switch_to_ready(void)
 }
 
 /*
- * tpm2_init
+ * tpm2_crb_init
  *
  * Even though the TPM does not need an initialization we check
  * if the TPM responds and is in IDLE mode, which should be the
  * normal bring up mode.
  *
  */
-int tpm2_init(void)
+int tpm2_crb_init(void)
 {
 	if (crb_probe()) {
 		printk(BIOS_ERR, "TPM: Probe failed.\n");
@@ -239,10 +240,10 @@ static void set_ptt_cmd_resp_buffers(void)
 }
 
 /*
- * tpm2_process_command
+ * tpm2_crb_process_command
  */
-size_t tpm2_process_command(const void *tpm2_command, size_t command_size, void *tpm2_response,
-			    size_t max_response)
+size_t tpm2_crb_process_command(const void *tpm2_command, size_t command_size,
+				void *tpm2_response, size_t max_response)
 {
 	int rc;
 
@@ -320,7 +321,7 @@ size_t tpm2_process_command(const void *tpm2_command, size_t command_size, void 
  * Returns information about the TPM
  *
  */
-void tpm2_get_info(struct tpm2_info *tpm2_info)
+void tpm2_crb_get_info(struct tpm2_crb_info *tpm2_info)
 {
 	uint64_t interfaceReg = read64(CRB_REG(cur_loc, CRB_REG_INTF_ID));
 

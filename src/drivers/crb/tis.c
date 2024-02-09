@@ -23,7 +23,7 @@ static const struct {
 	{0xa13a, 0x8086, "Intel iTPM"}
 };
 
-static const char *tis_get_dev_name(struct tpm2_info *info)
+static const char *tis_get_dev_name(struct tpm2_crb_info *info)
 {
 	int i;
 
@@ -36,7 +36,7 @@ static const char *tis_get_dev_name(struct tpm2_info *info)
 static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, uint8_t *recvbuf,
 				     size_t *rbuf_len)
 {
-	int len = tpm2_process_command(sendbuf, sbuf_size, recvbuf, *rbuf_len);
+	int len = tpm2_crb_process_command(sendbuf, sbuf_size, recvbuf, *rbuf_len);
 
 	if (len == 0)
 		return -1;
@@ -48,7 +48,7 @@ static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, u
 
 static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 {
-	struct tpm2_info info;
+	struct tpm2_crb_info info;
 
 	if (CONFIG(HAVE_INTEL_PTT)) {
 		if (!ptt_active()) {
@@ -59,13 +59,14 @@ static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 	}
 
 	/* Wake TPM up (if necessary) */
-	if (tpm2_init())
+	if (tpm2_crb_init())
 		return NULL;
 
 	/* CRB interface exists only in TPM2 */
-	*family = TPM_2;
+	if (family)
+		*family = TPM_2;
 
-	tpm2_get_info(&info);
+	tpm2_crb_get_info(&info);
 
 	printk(BIOS_INFO, "Initialized TPM device %s revision %d\n", tis_get_dev_name(&info),
 	       info.revision);
@@ -121,7 +122,7 @@ static int tpm_get_cap(uint32_t property, uint32_t *value)
 	if (!value)
 		return -1;
 
-	rc = tlcl2_get_capability(TPM_CAP_TPM_PROPERTIES, property, 1, &cap_data);
+	status = tlcl2_get_capability(TPM_CAP_TPM_PROPERTIES, property, 1, &cap_data);
 
 	if (status)
 		return -1;
@@ -138,7 +139,7 @@ static int tpm_get_cap(uint32_t property, uint32_t *value)
 
 static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned long *current)
 {
-	struct tpm2_info info;
+	struct tpm2_crb_info info;
 	uint32_t tpm_manuf, tpm_family;
 	uint32_t fw_ver1, fw_ver2;
 	uint8_t major_spec_ver, minor_spec_ver;
@@ -146,7 +147,7 @@ static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned lon
 	if (tlcl_get_family() == TPM_1)
 		return 0;
 
-	tpm2_get_info(&info);
+	tpm2_crb_get_info(&info);
 
 	/* If any of these have invalid values, assume TPM not present or disabled */
 	if (info.vendor_id == 0 || info.vendor_id == 0xFFFF ||
@@ -208,9 +209,7 @@ static struct device_operations __maybe_unused crb_ops = {
 
 static void enable_dev(struct device *dev)
 {
-	enum tpm_family family;
-
-	if (crb_tis_probe(&family) == NULL) {
+	if (crb_tis_probe(NULL) == NULL) {
 		dev->enabled = 0;
 		return;
 	}

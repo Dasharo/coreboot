@@ -211,7 +211,7 @@ static void check_boot_mode(struct vb2_context *ctx)
 
 	rv = tlcl_cr50_get_boot_mode(&boot_mode);
 	switch (rv) {
-	case TPM_E_NO_SUCH_COMMAND:
+	case TPM_CB_NO_SUCH_COMMAND:
 		printk(BIOS_WARNING, "GSC does not support GET_BOOT_MODE.\n");
 		/* Proceed to legacy boot model. */
 		return;

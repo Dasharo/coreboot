@@ -107,7 +107,8 @@ static tis_sendrecv_fn atmel_i2c_tis_probe(enum tpm_family *family)
 {
 	/* Can't query version or really anything as interface of the device doesn't support
 	 * much through this interface (can't specify address on accesses) */
-	*family = TPM_1;
+	if (family)
+		*family = TPM_1;
 
 	return &i2c_tis_sendrecv;
 }

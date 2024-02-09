@@ -46,6 +46,7 @@ bool tpm_is_crb(void);
 static inline enum tpm_family tlcl_get_family(void)
 {
 	if (CONFIG(TPM1) && CONFIG(TPM2)) {
+		tlcl_lib_init();
 		return tlcl_tpm_family;
 	} else if (CONFIG(TPM1)) {
 		return TPM_1;

@@ -13,7 +13,7 @@
  * A tpm device descriptor, values read from the appropriate device regisrers
  * are cached here.
  */
-struct tpm2_info {
+struct tpm2_spi_info {
 	uint16_t vendor_id;
 	uint16_t device_id;
 	uint16_t revision;
@@ -26,7 +26,7 @@ struct tpm2_info {
  *
  * Return 0 on success, non-zero on failure.
  */
-int tpm2_init(struct spi_slave *spi_if);
+int tpm2_spi_init(struct spi_slave *spi_if);
 
 /*
  * Each command processing consists of sending the command to the TPM, by
@@ -37,10 +37,10 @@ int tpm2_init(struct spi_slave *spi_if);
  * This function places the response into the tpm2_response buffer and returns
  * the size of the response.
  */
-size_t tpm2_process_command(const void *tpm2_command, size_t command_size,
-			    void *tpm2_response, size_t max_response);
+size_t tpm2_spi_process_command(const void *tpm2_command, size_t command_size,
+				void *tpm2_response, size_t max_response);
 
 /* Get information about previously initialized TPM device. */
-void tpm2_get_info(struct tpm2_info *info);
+void tpm2_spi_get_info(struct tpm2_spi_info *info);
 
 #endif  /* ! __COREBOOT_SRC_DRIVERS_SPI_TPM_TPM_H */

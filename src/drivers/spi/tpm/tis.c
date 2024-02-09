@@ -16,7 +16,7 @@ static const struct {
 	{ 0x6666, 0x504a, "TI50" },
 };
 
-static const char *tis_get_dev_name(struct tpm2_info *info)
+static const char *tis_get_dev_name(struct tpm2_spi_info *info)
 {
 	int i;
 
@@ -30,7 +30,7 @@ static const char *tis_get_dev_name(struct tpm2_info *info)
 static tpm_result_t tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size,
 				 uint8_t *recvbuf, size_t *rbuf_len)
 {
-	int len = tpm2_process_command(sendbuf, sbuf_size, recvbuf, *rbuf_len);
+	int len = tpm2_spi_process_command(sendbuf, sbuf_size, recvbuf, *rbuf_len);
 
 	if (len == 0)
 		return -1;
@@ -43,7 +43,7 @@ static tpm_result_t tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size,
 static tis_sendrecv_fn spi_tis_probe(enum tpm_family *family)
 {
 	struct spi_slave spi;
-	struct tpm2_info info;
+	struct tpm2_spi_info info;
 
 	if (spi_setup_slave(CONFIG_DRIVER_TPM_SPI_BUS,
 			    CONFIG_DRIVER_TPM_SPI_CHIP, &spi)) {
@@ -51,14 +51,15 @@ static tis_sendrecv_fn spi_tis_probe(enum tpm_family *family)
 		return NULL;
 	}
 
-	if (tpm2_init(&spi)) {
+	if (tpm2_spi_init(&spi)) {
 		printk(BIOS_ERR, "Failed to initialize TPM SPI interface\n");
 		return NULL;
 	}
 
-	*family = TPM_2;
+	if (family)
+		*family = TPM_2;
 
-	tpm2_get_info(&info);
+	tpm2_spi_get_info(&info);
 
 	printk(BIOS_INFO, "Initialized TPM device %s revision %d\n",
 	       tis_get_dev_name(&info), info.revision);

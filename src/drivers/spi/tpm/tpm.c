@@ -40,7 +40,7 @@
 static struct spi_slave spi_slave;
 
 /* Cached TPM device identification. */
-static struct tpm2_info tpm_info;
+static struct tpm2_spi_info tpm_info;
 
 /*
  * TODO(vbendeb): make CONFIG(DEBUG_TPM) an int to allow different level of
@@ -56,7 +56,7 @@ typedef struct {
 	unsigned char body[4];
 } spi_frame_header;
 
-void tpm2_get_info(struct tpm2_info *info)
+void tpm2_spi_get_info(struct tpm2_spi_info *info)
 {
 	*info = tpm_info;
 }
@@ -394,7 +394,7 @@ static const uint32_t supported_did_vids[] = {
 	0x0000104a   /* ST33HTPH2E32 */
 };
 
-int tpm2_init(struct spi_slave *spi_if)
+int tpm2_spi_init(struct spi_slave *spi_if)
 {
 	uint32_t did_vid, status, intf_id;
 	uint8_t cmd;
@@ -576,8 +576,8 @@ static enum cb_err __must_check fifo_transfer(size_t transfer_size,
 	return CB_SUCCESS;
 }
 
-size_t tpm2_process_command(const void *tpm2_command, size_t command_size,
-			    void *tpm2_response, size_t max_response)
+size_t tpm2_spi_process_command(const void *tpm2_command, size_t command_size,
+				void *tpm2_response, size_t max_response)
 {
 	uint32_t status;
 	uint32_t expected_status_bits;

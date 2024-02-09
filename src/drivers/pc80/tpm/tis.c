@@ -397,13 +397,18 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 	u8 locality = 0, intf_type;
 	int i;
 	const char *family_str;
+	static enum tpm_family tpm_fam = TPM_UNKNOWN;
 
-	if (vendor_dev_id)
-		return 0;  /* Already probed. */
+	if (vendor_dev_id) {
+		if (family)
+			*family = tpm_fam;
+
+		return TPM_SUCCESS;	/* Already probed. */
+	}
 
 	didvid = tpm_read_did_vid(0);
 	if (!didvid || (didvid == 0xffffffff)) {
-		printf("%s: No TPM device found\n", __func__);
+		printk(BIOS_ERR, "%s: No TPM device found\n", __func__);
 		return TPM_DRIVER_ERR;
 	}
 
@@ -415,20 +420,20 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 		switch (intf_version) {
 		case 0:
 		case 2:
-			*family = TPM_1;
+			tpm_fam = TPM_1;
 			break;
 		case 3:
-			*family = TPM_2;
+			tpm_fam = TPM_2;
 			break;
 		default:
-			printf("%s: Unexpected TPM interface version: %d\n", __func__,
+			printk(BIOS_WARNING, "%s: Unexpected TPM interface version: %d\n", __func__,
 			       intf_version);
 			return TPM_CB_PROBE_FAILURE;
 		}
 	} else if (intf_type == 0) {
-		*family = TPM_2;
+		tpm_fam = TPM_2;
 	} else {
-		printf("%s: Unexpected TPM interface type: %d\n", __func__, intf_type);
+		printk(BIOS_WARNING, "%s: Unexpected TPM interface type: %d\n", __func__, intf_type);
 		return TPM_CB_PROBE_FAILURE;
 	}
 
@@ -445,7 +450,7 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 		}
 		dev = &vendor_names[i].dev_names[j];
 		while (dev->dev_id != 0xffff) {
-			if (dev->dev_id == did && dev->family == *family) {
+			if (dev->dev_id == did && dev->family == tpm_fam) {
 				device_name = dev->dev_name;
 				break;
 			}
@@ -455,7 +460,9 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 		break;
 	}
 
-	family_str = (*family == TPM_1 ? "TPM 1.2" : "TPM 2.0");
+	family_str = (tpm_fam == TPM_1 ? "TPM 1.2" :
+		      tpm_fam == TPM_2 ? "TPM 2.0" :
+					 "unknown TPM");
 	if (vendor_name == NULL) {
 		printk(BIOS_INFO, "Found %s 0x%04x by 0x%04x\n", family_str, did, vid);
 	} else if (device_name == NULL) {
@@ -465,6 +472,9 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 		printk(BIOS_INFO, "Found %s %s (0x%04x) by %s (0x%04x)\n", family_str,
 		       device_name, did, vendor_name, vid);
 	}
+
+	if (family)
+		*family = tpm_fam;
 
 	return TPM_SUCCESS;
 }
@@ -896,9 +906,7 @@ static struct pnp_info pnp_dev_info[] = {
 
 static void enable_dev(struct device *dev)
 {
-	enum tpm_family family;
-
-	if (pc80_tis_probe(&family) == NULL) {
+	if (pc80_tis_probe(NULL) == NULL) {
 		dev->enabled = 0;
 		return;
 	}

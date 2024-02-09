@@ -9,12 +9,14 @@
 #define TPM_PCR_BOOT_MODE "VBOOT: boot mode"
 #define TPM_PCR_GBB_HWID_NAME "VBOOT: GBB HWID"
 
+#define TPM_PCR_MINIMUM_DIGEST_SIZE 20
+
 uint32_t vboot_setup_tpm(struct vb2_context *ctx)
 {
 	uint32_t result;
 
 	result = tpm_setup(ctx->flags & VB2_CONTEXT_S3_RESUME);
-	if (result == TPM_E_MUST_REBOOT)
+	if (result == TPM_CB_MUST_REBOOT)
 		ctx->flags |= VB2_CONTEXT_SECDATA_WANTS_REBOOT;
 
 	return result;

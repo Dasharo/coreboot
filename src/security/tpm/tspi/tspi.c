@@ -15,7 +15,7 @@ static uint32_t tpm1_invoke_state_machine(void)
 {
 	uint8_t disabled;
 	uint8_t deactivated;
-	uint32_t result = TPM_SUCCESS;
+	uint32_t rc = TPM_SUCCESS;
 
 	if (tlcl_get_family() != TPM_1)
 		return rc;
@@ -44,14 +44,14 @@ static uint32_t tpm1_invoke_state_machine(void)
 		if (rc != TPM_SUCCESS) {
 			printk(BIOS_ERR,
 			       "TPM: Can't toggle deactivated state.\n");
-			return result;
+			return rc;
 		}
 
 		deactivated = !deactivated;
-		result = TPM_E_MUST_REBOOT;
+		rc = TPM_CB_MUST_REBOOT;
 	}
 
-	return result;
+	return rc;
 }
 #endif
 
@@ -64,7 +64,7 @@ static uint32_t tpm_setup_s3_helper(void)
 	case TPM_SUCCESS:
 		break;
 
-	case TPM_E_INVALID_POSTINIT:
+	case TPM_CB_INVALID_POSTINIT:
 		/*
 		 * We're on a platform where the TPM maintains power
 		 * in S3, so it's already initialized.
@@ -154,7 +154,7 @@ uint32_t tpm_setup(int s3flag)
 
 	result = tlcl_startup();
 	if (CONFIG(TPM_STARTUP_IGNORE_POSTINIT)
-	    && result == TPM_E_INVALID_POSTINIT) {
+	    && result == TPM_CB_INVALID_POSTINIT) {
 		printk(BIOS_DEBUG, "TPM: ignoring invalid POSTINIT\n");
 		result = TPM_SUCCESS;
 	}
@@ -195,13 +195,13 @@ uint32_t tpm_setup(int s3flag)
 
 uint32_t tpm_clear_and_reenable(void)
 {
-	uint32_t result;
+	uint32_t rc;
 
 	printk(BIOS_INFO, "TPM: Clear and re-enable\n");
-	result = tlcl_force_clear();
-	if (result != TPM_SUCCESS) {
+	rc = tlcl_force_clear();
+	if (rc != TPM_SUCCESS) {
 		printk(BIOS_ERR, "TPM: Can't initiate a force clear.\n");
-		return result;
+		return rc;
 	}
 
 	if (CONFIG(TPM1) && tlcl_get_family() == TPM_1) {
@@ -227,7 +227,7 @@ uint32_t tpm_extend_pcr(int pcr, enum vb2_hash_algorithm digest_algo,
 	uint32_t result;
 
 	if (!digest)
-		return TPM_E_IOERROR;
+		return TPM_CB_IOERROR;
 
 	if (tspi_tpm_is_setup()) {
 		result = tlcl_lib_init();
@@ -265,14 +265,14 @@ uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 	struct vb2_digest_context ctx;
 
 	if (!rdev || !rname)
-		return TPM_E_INVALID_ARG;
+		return TPM_CB_INVALID_ARG;
 
 	digest_len = vb2_digest_size(TPM_MEASURE_ALGO);
 	assert(digest_len <= sizeof(digest));
 	if (vb2_digest_init(&ctx, vboot_hwcrypto_allowed(), TPM_MEASURE_ALGO,
 			    region_device_sz(rdev))) {
 		printk(BIOS_ERR, "TPM: Error initializing hash.\n");
-		return TPM_E_HASH_ERROR;
+		return TPM_CB_HASH_ERROR;
 	}
 	/*
 	 * Though one can mmap the full needed region on x86 this is not the
@@ -284,16 +284,16 @@ uint32_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 		if (rdev_readat(rdev, buf, offset, len) < 0) {
 			printk(BIOS_ERR, "TPM: Not able to read region %s.\n",
 			       rname);
-			return TPM_E_READ_FAILURE;
+			return TPM_CB_READ_FAILURE;
 		}
 		if (vb2_digest_extend(&ctx, buf, len)) {
 			printk(BIOS_ERR, "TPM: Error extending hash.\n");
-			return TPM_E_HASH_ERROR;
+			return TPM_CB_HASH_ERROR;
 		}
 	}
 	if (vb2_digest_finalize(&ctx, digest, digest_len)) {
 		printk(BIOS_ERR, "TPM: Error finalizing hash.\n");
-		return TPM_E_HASH_ERROR;
+		return TPM_CB_HASH_ERROR;
 	}
 	return tpm_extend_pcr(pcr, TPM_MEASURE_ALGO, digest, digest_len, rname);
 }

@@ -3,6 +3,7 @@
 #ifndef TIS_H_
 #define TIS_H_
 
+#include <security/tpm/tss_errors.h>
 #include <types.h>
 
 enum tis_access {

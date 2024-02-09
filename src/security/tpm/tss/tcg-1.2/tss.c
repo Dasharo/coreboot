@@ -132,7 +132,7 @@ tpm_result_t tlcl1_send_receive(const uint8_t *request, uint8_t *response, int m
 		} while (rc == TPM_DOING_SELFTEST);
 #endif
 	}
-	return result;
+	return rc;
 }
 
 /* Sends a command and returns the error code. */
@@ -213,7 +213,7 @@ tpm_result_t tlcl1_read(uint32_t index, void *data, uint32_t length)
 	struct s_tpm_nv_read_cmd cmd;
 	uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
 	uint32_t result_length;
-	uint32_t result;
+	uint32_t rc;
 
 	VBDEBUG("TPM: %s(0x%x, %d)\n", __func__, index, length);
 	memcpy(&cmd, &tpm_nv_read_cmd, sizeof(cmd));
@@ -225,12 +225,12 @@ tpm_result_t tlcl1_read(uint32_t index, void *data, uint32_t length)
 		uint8_t *nv_read_cursor = response + kTpmResponseHeaderLength;
 		from_tpm_uint32(nv_read_cursor, &result_length);
 		if (result_length > length)
-			return TPM_E_IOERROR;
+			return TPM_CB_IOERROR;
 		nv_read_cursor += sizeof(uint32_t);
 		memcpy(data, nv_read_cursor, result_length);
 	}
 
-	return result;
+	return rc;
 }
 
 tpm_result_t tlcl1_assert_physical_presence(void)
@@ -288,10 +288,10 @@ tpm_result_t tlcl1_get_permanent_flags(TPM_PERMANENT_FLAGS *pflags)
 		return rc;
 	from_tpm_uint32(response + kTpmResponseHeaderLength, &size);
 	if (size != sizeof(TPM_PERMANENT_FLAGS))
-		return TPM_E_IOERROR;
+		return TPM_CB_IOERROR;
 	memcpy(pflags, response + kTpmResponseHeaderLength + sizeof(size),
 	       sizeof(TPM_PERMANENT_FLAGS));
-	return result;
+	return rc;
 }
 
 tpm_result_t tlcl1_get_flags(uint8_t *disable, uint8_t *deactivated, uint8_t *nvlocked)
@@ -308,7 +308,7 @@ tpm_result_t tlcl1_get_flags(uint8_t *disable, uint8_t *deactivated, uint8_t *nv
 		VBDEBUG("TPM: flags disable=%d, deactivated=%d, nvlocked=%d\n",
 			pflags.disable, pflags.deactivated, pflags.nvLocked);
 	}
-	return result;
+	return rc;
 }
 
 tpm_result_t tlcl1_set_global_lock(void)
@@ -324,7 +324,7 @@ tpm_result_t tlcl1_extend(int pcr_num, const uint8_t *digest_data,
 	uint8_t response[kTpmResponseHeaderLength + kPcrDigestLength];
 
 	if (digest_algo != VB2_HASH_SHA1)
-		return TPM_E_INVALID_ARG;
+		return TPM_CB_INVALID_ARG;
 
 	memcpy(&cmd, &tpm_extend_cmd, sizeof(cmd));
 	to_tpm_uint32(cmd.buffer + tpm_extend_cmd.pcrNum, pcr_num);
@@ -338,7 +338,7 @@ tpm_result_t tlcl1_get_permissions(uint32_t index, uint32_t *permissions)
 	struct s_tpm_getpermissions_cmd cmd;
 	uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
 	uint8_t *nvdata;
-	uint32_t result;
+	uint32_t rc;
 	uint32_t size;
 
 	memcpy(&cmd, &tpm_getpermissions_cmd, sizeof(cmd));
@@ -349,5 +349,5 @@ tpm_result_t tlcl1_get_permissions(uint32_t index, uint32_t *permissions)
 
 	nvdata = response + kTpmResponseHeaderLength + sizeof(size);
 	from_tpm_uint32(nvdata + kNvDataPublicPermissionsOffset, permissions);
-	return result;
+	return rc;
 }

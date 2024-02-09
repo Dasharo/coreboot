@@ -8,7 +8,6 @@
  * constants and structures needed for functions used in coreboot.
  */
 #include <types.h>
-#include "../common/tss_common.h"
 
 /* This should be plenty for what firmware needs. */
 #define TPM_BUFFER_SIZE 256
