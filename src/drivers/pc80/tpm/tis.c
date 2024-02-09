@@ -909,6 +909,13 @@ static struct pnp_info pnp_dev_info[] = {
 
 static void enable_dev(struct device *dev)
 {
+	enum tpm_family family;
+
+	if (pc80_tis_probe(&family) == NULL) {
+		dev->enabled = 0;
+		return;
+	}
+
 	if (CONFIG(TPM))
 		pnp_enable_devices(dev, &lpc_tpm_ops,
 			ARRAY_SIZE(pnp_dev_info), pnp_dev_info);
