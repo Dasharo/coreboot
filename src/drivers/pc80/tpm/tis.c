@@ -658,19 +658,6 @@ static u32 tis_readresponse(u8 *buffer, size_t *len)
 }
 
 /*
- * tis_init()
- *
- * Initialize the TPM device. Returns 0 on success or TPM_DRIVER_ERR on
- * failure (in case device probing did not succeed).
- */
-int tis_init(void)
-{
-	if (tis_probe())
-		return TPM_DRIVER_ERR;
-	return 0;
-}
-
-/*
  * pc80_tis_open()
  *
  * Requests access to locality 0 for the caller.
