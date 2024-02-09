@@ -23,7 +23,7 @@ static enum cb_err read_u8_var(const char *var_name, uint8_t *var)
 {
 	struct region_device rdev;
 
-	if (!smmstore_lookup_region(&rdev)) {
+	if (CONFIG(SMMSTORE_V2) && !smmstore_lookup_region(&rdev)) {
 		uint8_t tmp;
 		uint32_t size = sizeof(tmp);
 		enum cb_err ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid,
@@ -62,7 +62,7 @@ enum cb_err dasharo_reset_options(void)
 	struct region_device rdev;
 	ssize_t res;
 
-	if (smmstore_lookup_region(&rdev))
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return CB_ERR;
 
 	res = rdev_eraseat(&rdev, 0, region_device_sz(&rdev));
@@ -133,7 +133,7 @@ bool dma_protection_enabled(void)
 	} __packed iommu_var;
 	uint32_t size;
 
-	if (smmstore_lookup_region(&rdev))
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return false;
 
 	size = sizeof(iommu_var);
@@ -243,7 +243,7 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 	wdt_cfg->wdt_enable = false;
 	wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
 
-	if (smmstore_lookup_region(&rdev))
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return;
 
 	size = sizeof(*wdt_cfg);
@@ -318,7 +318,7 @@ void get_battery_config(struct battery_config *bat_cfg)
 	bat_cfg->start_threshold = BATTERY_START_THRESHOLD_DEFAULT;
 	bat_cfg->stop_threshold = BATTERY_STOP_THRESHOLD_DEFAULT;
 
-	if (smmstore_lookup_region(&rdev))
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return;
 
 	size = sizeof(*bat_cfg);
@@ -340,7 +340,7 @@ bool get_serial_number_from_efivar(char *serial_number)
 	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
 	uint32_t size;
 
-	if (smmstore_lookup_region(&rdev))
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return false;
 
 	size = MAX_SERIAL_LENGTH;
@@ -362,7 +362,7 @@ bool get_uuid_from_efivar(uint8_t *uuid)
 	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
 	uint32_t size;
 
-	if (smmstore_lookup_region(&rdev))
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return false;
 
 	size = UUID_LEN;
