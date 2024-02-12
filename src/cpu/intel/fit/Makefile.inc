@@ -13,6 +13,10 @@ intel_fit-file := fit_table.c:struct
 intel_fit-type := intel_fit
 intel_fit-align := 16
 
+ifneq ($(CONFIG_INTEL_FIT_LOC),)
+intel_fit-COREBOOT-position := $(CONFIG_INTEL_FIT_LOC)
+endif
+
 $(call add_intermediate, set_fit_ptr, $(IFITTOOL))
 	@printf "    UPDATE-FIT set FIT pointer to table\n"
 	$(IFITTOOL) -f $< -F -n intel_fit -r COREBOOT -c
