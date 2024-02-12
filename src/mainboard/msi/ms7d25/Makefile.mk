@@ -11,3 +11,17 @@ ramstage-y += smbios.c
 
 all-y += die.c
 smm-y += die.c
+
+ifeq ($(CONFIG_MSI_ROMHOLE_IN_CBFS),y)
+
+$(obj)/mainboard/$(MAINBOARDDIR)/bpa.bin:
+	dd if=/dev/zero of=$@ bs=64K count=1
+
+cbfs-files-y += bpa.bin
+
+bpa.bin-file := $(obj)/mainboard/$(MAINBOARDDIR)/bpa.bin
+bpa.bin-type := raw
+bpa.bin-compression := none
+bpa.bin-position := 0xff080000
+
+endif
