@@ -10,7 +10,8 @@
 #include <intelblocks/spi.h>
 #include <soc/pci_devs.h>
 
-#define PSF_SPI_DESTINATION_ID	0x23a8
+#define PCH_LP_PSF_SPI_DESTINATION_ID	0x23a8
+#define PCH_S_PSF_SPI_DESTINATION_ID	0x23b8
 
 int spi_soc_devfn_to_bus(unsigned int devfn)
 {
@@ -29,5 +30,8 @@ int spi_soc_devfn_to_bus(unsigned int devfn)
 
 uint32_t soc_get_spi_psf_destination_id(void)
 {
-	return PSF_SPI_DESTINATION_ID;
+	if (CONFIG(SOC_INTEL_ALDERLAKE_PCH_S))
+		return PCH_S_PSF_SPI_DESTINATION_ID;
+	else
+		return PCH_LP_PSF_SPI_DESTINATION_ID;
 }
