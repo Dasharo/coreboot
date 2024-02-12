@@ -13,6 +13,10 @@ intel_fit-file := fit_table.c:struct
 intel_fit-type := intel_fit
 intel_fit-align := 16
 
+ifneq ($(CONFIG_INTEL_FIT_LOC),)
+intel_fit-COREBOOT-position := $(CONFIG_INTEL_FIT_LOC)
+endif
+
 ifeq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
 regions-for-file-intel_fit = BOOTBLOCK
 regions-for-file-intel_fit_ts = TOPSWAP
