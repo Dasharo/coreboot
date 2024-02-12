@@ -588,6 +588,7 @@ config SOC_INTEL_SPI_DEV_MAX
 
 config SOC_INTEL_SPI_PSF_DESTINATION_ID
 	hex
+	default 0x23b8 if SOC_INTEL_ALDERLAKE_PCH_S
 	default 0x23a8
 
 endif
