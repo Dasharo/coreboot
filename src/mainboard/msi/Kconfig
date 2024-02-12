@@ -18,4 +18,19 @@ config BOARD_HAS_MSI_ROMHOLE
 	bool
 	default n
 
+config MSI_ROMHOLE_IN_CBFS
+	bool "Put the MSI ROMHOLE as CBFS file"
+	depends on BOARD_HAS_MSI_ROMHOLE && !VBOOT
+	default n
+
+config MSI_ROMHOLE_ADDRESS_IN_CBFS
+	hex "MSI ROMHOLE address in CBFS"
+	depends on MSI_ROMHOLE_IN_CBFS
+	default 0xff7c0000 if BOARD_ROMSIZE_KB_32768
+
+config MSI_ROMHOLE_SIZE_IN_CBFS
+	hex "MSI ROMHOLE size in CBFS"
+	depends on MSI_ROMHOLE_IN_CBFS
+	default 0x20000
+
 endif # VENDOR_MSI
