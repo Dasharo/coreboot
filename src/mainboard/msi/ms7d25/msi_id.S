@@ -46,10 +46,10 @@ bpa:
 	.long	0x1000
 	.long	6
 	.byte	2
-	.long	FMAP_SECTION_ROMHOLE_START
-	.long	FMAP_SECTION_ROMHOLE_SIZE
+	.long	0x17c0000
+	.long	0x20000
 	.byte	3
-	.long	FMAP_SECTION_BPA_START
+	.long	0x1080000
 	.long	64
 	.byte	4
 	.long	2
