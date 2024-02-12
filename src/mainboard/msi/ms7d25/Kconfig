@@ -79,4 +79,18 @@ config FMDFILE
 config GBB_HWID
 	default "MSI_MS7D25"
 
+if !VBOOT && MSI_ROMHOLE_IN_CBFS
+
+# FIXME: Make coreboot build system automatically fixup the ucode and FIT location
+# so that creating FIT does not fail.
+config CPU_MICROCODE_CBFS_LOC
+	hex
+	default 0xff800000
+
+config INTEL_FIT_LOC
+	hex
+	default 0xfffc0000
+
+endif
+
 endif
