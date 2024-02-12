@@ -62,12 +62,16 @@ jobs:
           cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
           make olddefconfig
           make
+      - name: Create patched binary with pre-enabled serial output
+        run: |
+          cp build/coreboot.rom build/coreboot_serial_enabled.rom
+          build/util/cbfstool/cbfstool build/coreboot_serial_enabled.rom write -r SMMSTORE -f ci/smmstore-serial-enabled
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
           path: |
-            build/coreboot.rom
+            build/coreboot_*.rom
           retention-days: 30
   build_protectli:
     environment: Protectli
@@ -97,3 +101,57 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+  test_msi:
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        vendor: [ msi ]
+        model: [ ms7d25_ddr4, ms7d25_ddr5, ms7e06_ddr5 ] # no ms7e06_ddr4 in lab yet
+    needs: [ build_msi ]
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Fetch CI script
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: ci
+          sparse-checkout-cone-mode: false
+
+      - name: Checkout test repository
+        uses: actions/checkout@v4
+        with:
+          repository: Dasharo/open-source-firmware-validation
+          ref: msi_fixes
+          path: validation
+          submodules: true
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r validation/requirements.txt
+
+      - name: Fetch latest firmware
+        uses: actions/download-artifact@v3
+        with:
+          name: dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}
+          path: firmware
+
+      - name: Flash firmware
+        shell: bash
+        run: |
+          fw_file="firmware/coreboot_serial_enabled.rom"
+          ./ci/ci.sh -r validation -v "${{ matrix.vendor }}" -m "${{ matrix.model }}" -f "$fw_file" flash
+
+      - name: Run tests
+        shell: bash
+        run: ./ci/ci.sh -r validation -v "${{ matrix.vendor }}" -m "${{ matrix.model }}" test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-${{ matrix.vendor }}-${{ matrix.model }}
+          path: test-results-${{ matrix.vendor }}-${{ matrix.model }}
+        if: always()
