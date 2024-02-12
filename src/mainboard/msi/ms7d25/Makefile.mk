@@ -22,6 +22,11 @@ cbfs-files-y += bpa.bin
 bpa.bin-file := $(obj)/mainboard/$(MAINBOARDDIR)/bpa.bin
 bpa.bin-type := raw
 bpa.bin-compression := none
-bpa.bin-position := 0xff080000
+bpa.bin-position := 0xff080000 # Fixed position from original MSI firmware
+
+# Workaround: place build_info exactly at the EXT_BIOS_WINDOW boundary (plus
+# the metadata size) to avoid files getting fragmented between
+# FIXED_BIOS_WINDOW and EXT_BIOS_WINDOW.
+build_info-COREBOOT-position := 0xff000040
 
 endif
