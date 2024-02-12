@@ -158,10 +158,12 @@ struct msi_romhole {
 	// the rest is padded with 0xff by cbfstool
 } __packed;
 
-static const char *optstring  = "i:l:o:h";
+static const char *optstring  = "i:a:s:l:o:h";
 
 static struct option long_options[] = {
 	{"layout",             required_argument, 0, 'l' },
+	{"address",            required_argument, 0, 'a' },
+	{"size",               required_argument, 0, 's' },
 	{"output",             required_argument, 0, 'o' },
 	{"help",                     no_argument, 0, 'h' },
 };
@@ -169,10 +171,13 @@ static struct option long_options[] = {
 static void usage(void)
 {
 	printf("romholetool: Create ROMHOLE for MSI BIOS updates compatibility\n");
-	printf("Usage: romholetool [options] -i build.h  -l fmap_config.h -o <filename>\n");
-	printf("-l | --layout <FILE>             The fmap_config.h file to parse\n");
-	printf("-o | --output <FILE>             The file to generate\n");
-	printf("-h | --help                      Print this help\n");
+	printf("Usage: romholetool [options] -i build.h -l fmap_config.h -o <filename>\n");
+	printf("       romholetool [options] -i build.h -a 0xff7c0000 -s 0x20000 -o <filename>\n");
+	printf("-l | --layout  <FILE>             The fmap_config.h file to parse\n");
+	printf("-a | --address <HEX>              The address of ROMHOLE in CBFS\n");
+	printf("-s | --size    <HEX>              The size of ROMHOLE in CBFS\n");
+	printf("-o | --output  <FILE>             The file to generate\n");
+	printf("-h | --help                       Print this help\n");
 }
 
 static int bcd2int(int hex)
@@ -236,6 +241,8 @@ int main(int argc, char **argv)
 	int ret = 1;
 	char *filename = NULL;
 	char *layoutfile = NULL;
+	char *addr_param = NULL;
+	char *size_param = NULL;
 	uint32_t flash_start, flash_size, romhole_addr, romhole_size;
 	struct msi_romhole *romhole = NULL;
 
@@ -248,6 +255,12 @@ int main(int argc, char **argv)
 			break;
 
 		switch (c) {
+		case 'a':
+			addr_param = strdup(optarg);
+			break;
+		case 's':
+			size_param = strdup(optarg);
+			break;
 		case 'l':
 			layoutfile = strdup(optarg);
 			break;
@@ -263,8 +276,8 @@ int main(int argc, char **argv)
 			break;
 		}
 	}
-	if (!layoutfile) {
-		fprintf(stderr, "E: Must specify a fmap_config.h filename\n");
+	if (!layoutfile && (!addr_param || !size_param)) {
+		fprintf(stderr, "E: Must specify either a fmap_config.h filename or address and size\n");
 		goto out;
 	}
 	if (!filename) {
@@ -272,10 +285,27 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	flash_start = get_line_as_int(layoutfile, "FMAP_SECTION_FLASH_START", 0);
-	flash_size = get_line_as_int(layoutfile, "FMAP_SECTION_FLASH_SIZE", 0);
-	romhole_addr = get_line_as_int(layoutfile, "FMAP_SECTION_ROMHOLE_START", 0);
-	romhole_size = get_line_as_int(layoutfile, "FMAP_SECTION_ROMHOLE_SIZE", 0);
+	if (layoutfile) {
+		flash_start = get_line_as_int(layoutfile, "FMAP_SECTION_FLASH_START", 0);
+		flash_size = get_line_as_int(layoutfile, "FMAP_SECTION_FLASH_SIZE", 0);
+		romhole_addr = get_line_as_int(layoutfile, "FMAP_SECTION_ROMHOLE_START", 0);
+		romhole_size = get_line_as_int(layoutfile, "FMAP_SECTION_ROMHOLE_SIZE", 0);
+
+		// If flash is greater than 16 MiB, we have to adjust the start offset.
+		// Only 16MiB long BIOS region is mapped under 4G.
+		romhole_addr -= flash_start;
+		if ((flash_size > 16*MiB) && (romhole_addr > 16*MiB))
+			romhole_addr -= 16*MiB;
+
+		// The ROMHOLE structure needs the 32bit flash base address in host memory
+		romhole_addr += 0xff000000;
+	} else if (addr_param && size_param) {
+		romhole_addr = strtol(addr_param, NULL, 16);
+		romhole_size = strtol(size_param, NULL, 16);
+	} else {
+		fprintf(stderr, "E: Incorrect input parameters\n");
+		goto out;
+	}
 
 	if (romhole_size < 0x20000) {
 		fprintf(stderr, "E: The romhole flash region should be at least 128K\n");
@@ -287,15 +317,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "E: Failed to allocate memory for the romhole\n");
 		goto out;
 	}
-
-	// If flash is greater than 16 MiB, we have to adjust the start offset.
-	// Only 16MiB long BIOS region is mapped under 4G.
-	romhole_addr -= flash_start;
-	if ((flash_size > 16*MiB) && (romhole_addr > 16*MiB))
-		romhole_addr -= 16*MiB;
-
-	// The ROMHOLE structure needs the 32bit flash base address in host memory
-	romhole_addr += 0xff000000;
 
 	// Generate the table
 
