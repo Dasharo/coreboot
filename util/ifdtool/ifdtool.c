@@ -775,19 +775,220 @@ static void dump_fcba(const struct fcba *fcba, const struct fpsba *fpsba)
 	}
 }
 
+static int ifd2_platform_get_hap_location(const struct fpsba *fpsba)
+{
+	switch (platform) {
+	case PLATFORM_SKLKBL:
+		/* No exceptions, always strap 0 */
+		return 0;
+	case PLATFORM_IFD2:
+		printf("To change the AltMeDisable/HAP bit please provide the platform as parameter\n");
+		return -1;
+	case PLATFORM_CNL:
+		/*
+		 * This gets little tricky here.
+		 * 1. CNL/CFL/CML-LP strap 106 (FPSBA + 0x70), but
+		 *    FSPBA + 0x70 bits 15:4 set to 0x1b
+		 *    FPSBA + 0x80 strap has configurable bits,
+		 *    FPSBA + 0x82/0x83 bytes are set to zeros,
+		 *    FPSBA + 0x00 is set to zeros,
+		 * 2. CML-V strap 0 (FPSBA + 0x00) with bits 15:2 set to 0x00, but
+		 *    FSPBA + 0x00 bits 15:2 must be set to 0,
+		 *    FPSBA + 0x00 bits 23:22 must be set to 0x2,
+		 *    FPSBA + 0x70 is set to all zeros,
+		 *    FPSBA + 0x80 byte has configurable bits,
+		 *    FPSBA + 0x81/0x82 bytes are set to zeros.
+		 * 3. CML-H/S strap 123 (FPSBA + 0x80), but
+		 *    FSPBA + 0x80 bits 15:4 set to 0x1b
+		 *    FPSBA + 0x00/0x70 is set to all zeros.
+		 *
+		 * So we do like this:
+		 *
+		 * 1. Prioritize CML-V detection as strap 0 cannot be all zeros.
+		 * 2. Then heck if FSPBA + 0x70 is zero for CML-H/S, CNL/CFL/CML-LP
+		 *    cannot have FPSBA + 0x70 all zeros.
+		 */
+		if (fpsba->pchstrp[0] != 0) {
+			/* CML-V, one more safetycheck ot exclude other SKUs */
+			if (fpsba->pchstrp[0x70 / 4] == 0) {
+				printf("Detected Comet Lake V platform flash descriptor\n");
+				return 0;
+			}
+		} else {
+			/* Do safety check for CML-H/S to be sure */
+			if (fpsba->pchstrp[0x70 / 4] == 0) {
+				printf("Detected Comet Lake H/S platform flash descriptor\n");
+				return 0x80 / 4;
+			}
+			/* Do safety check for CNL/CFL/CML-LP to be sure */
+			if (((fpsba->pchstrp[0x70 / 4] >> 4) & 0xfff) == 0x1b) {
+				printf("Detected Cannon Lake/Coffee Lake/Comet Lake LP "
+				       "platform flash descriptor\n");
+				return 0x70 / 4;
+			}
+		}
+		printf("Unusual Cannon Lake/Coffee Lake/Comet Lake flash descriptor detected\n"
+		       "Not modifying flash descriptor\n");
+		return -1;
+	case PLATFORM_TGL:
+		/*
+		 * RKL-H/TGL-H strap 141 (FPSBA + 0x94), but
+		 * FPSBA + 0x94 bits 8:1 set to 0x18.
+		 * FPSBA + 0x7c must be zero.
+		 * TGL-LP has non-zero FPSBA + 0x7c.
+		 */
+		if ((((fpsba->pchstrp[0x94 / 4] >> 1) & 0xff) == 0x18) &&
+		    (fpsba->pchstrp[0x7c / 4] == 0)) {
+			printf("Detected Rocket Lake H/Tiger Lake H platform "
+			       "flash descriptor\n");
+			return 0x94 / 4;
+		}
+		/*
+		 * TGL-LP strap 114 (FPSBA + 0x7c), but
+		 * FSPBA + 0x7c bits 8:1 set to 0x18
+		 * FPSBA + 0x92/0x93/0x94/0x95 must be all zeros.
+		 * TGL-H has non-zero FPSBA + 0x94/0x95.
+		 */
+		if ((((fpsba->pchstrp[0x7c / 4] >> 1) & 0xff) == 0x18) &&
+		    (((fpsba->pchstrp[0x94 / 4] >> 16) & 0xffff) == 0)) {
+			printf("Detected Tiger Lake LP platform flash descriptor\n");
+			return 0x7c / 4;
+		}
+
+		printf("Unusual Tiger Lake flash descriptor detected\n"
+		       "Not modifying flash descriptor\n");
+		return -1;
+	case PLATFORM_ADL:
+		/*
+		 * This gets little tricky here.
+		 * 1. RPL-P/ADL-N/P strap 114 (FSPBA + 0x7c), but
+		 *    FPSBA + 0x7c bits 8:1 set to 0x18,
+		 *    FPSBA + 0xdc strap has configurable bits,
+		 *    FPSBA + 0xd0 must be set to 0x00000300.
+		 * 2. ADL-S B0 step/RPL-S strap 193 (FSPBA + 0xdc), but
+		 *    FPSBA + 0xdc bits 8:1 set to 0x58,
+		 *    FPSBA + 0x7c strap has configurable bits,
+		 *    FPSBA + 0xd0 must be set to 0x10081008.
+		 * 3. ADL-S A0 step strap 183 (FSPBA + 0xd0), but
+		 *    FPSBA + 0xd0 bits 8:1 set to 0x58,
+		 *    FPSBA + 0x7c/0xdc straps have configurable bits, however
+		 *    analogically to 0xdc vs. 0xd0, the FPSBA + (0xd0 - 0x0c)
+		 *    must be 0x10081008.
+		 *
+		 * So we do like this:
+		 *
+		 * 1. Prioritize ADL-S detection by checking 0xd0/0xdc bits 8:1
+		 *    and 0xd0/0xc4 straps are set to 0x10081008.
+		 * 2. ADL-S and ADL-N/P is mutually exclusive due to 0xd0
+		 *    reserved values. SO 0xd0 can be used to distinguish all
+		 *    SKUs.
+		 */
+		if (fpsba->pchstrp[0xd0 / 4] == 0x10081008) {
+			/* ADL-S B0 step/RPL-S, do safety check to be sure */
+			if (((fpsba->pchstrp[0xdc / 4] >> 1) & 0xff) == 0x58) {
+				printf("Detected Raptor Lake S/Alder Lake S B0"
+				       " step platform flash descriptor\n");
+				return 0xdc / 4;
+			}
+		} else if (fpsba->pchstrp[0xd0 / 4] == 0x00000300) {
+			/* RPL-P/ADL-N/P, do safety check to be sure */
+			if (((fpsba->pchstrp[0x7c / 4] >> 1) & 0xff) == 0x18) {
+				printf("Detected Raptor Lake P/Alder Lake P/N"
+				       " platform flash descriptor\n");
+				return 0x7c / 4;
+			}
+		} else if (((fpsba->pchstrp[0xd0 / 4] >> 1) & 0xff) == 0x58) {
+			/* ADL-S A0 step, do safety check to be sure */
+			if (fpsba->pchstrp[0xc4 / 4] == 0x10081008) {
+				printf("Detected Alder Lake S A0 step platform"
+				       " flash descriptor\n");
+				return 0xd0 / 4;
+			}
+		}
+		printf("Unusual Alder Lake flash descriptor detected\n"
+		       "Not modifying flash descriptor\n");
+		return -1;
+	case PLATFORM_MTL:
+		/* MTL-U/H strap 225 (FPSBA + 0x11c) */
+		return 0x11c / 4;
+	case PLATFORM_ICL:
+		/*
+		 * ICX-D strap 56 (FPSBA + 0xe0), unconfirmed.
+		 * ICX-D FPSBA + 0x78 must be zero.
+		 */
+		if ((((fpsba->pchstrp[0xe0 / 4] >> 1) & 0xff) == 0x98) &&
+		    (fpsba->pchstrp[0x78 / 4] == 0)) {
+			printf("Detected Ice Lake D platform flash descriptor\n");
+			return 0xe0 / 4;
+		}
+		/*
+		 * ICL-LP strap 113 (FPSBA + 0x78), but
+		 * FSPBA + 0x78 bits 9:1 set to 0x98.
+		 * FPSBA + 0xe0 must be 0x68070000.
+		 */
+		if ((((fpsba->pchstrp[0x78 / 4] >> 1) & 0xff) == 0x98) &&
+		    (fpsba->pchstrp[0xe0 / 4] == 0x68070000)) {
+			printf("Detected Ice Lake LP platform flash descriptor\n");
+			return 0x94 / 4;
+		}
+
+		printf("Unusual Ice Lake flash descriptor detected\n"
+		       "Not modifying flash descriptor\n");
+		return -1;
+	case PLATFORM_LBG:
+		/* LBG strap 53 (FPSBA + 0xd4) */
+		return 0xd4 / 4;
+	case PLATFORM_DNV:
+		/* DNV strap 14 (FPSBA + 0x38) */
+		return 0x38 / 4;
+	case PLATFORM_APL:
+	case PLATFORM_GLK:
+		/*
+		 * Strap 10 (FPSBA + 0x2c), but can be only set through SMIP?
+		 * Couldn't get it to work on GLK.
+		 */
+		return 0x2c / 4;
+	case PLATFORM_JSL:
+		/* JSL strap 113 (FSPBA + 0x68) */
+		return 0x68 / 4;
+	case PLATFORM_EHL:
+		/* EHL strap 122 (FSPBA + 0x84) */
+		return 0x84 / 4;
+	default:
+		printf("HAP bit location unknown for selected platform\n"
+		       "Not modifying flash descriptor\n");
+		return -1;
+	}
+}
+
 static void dump_fpsba(const struct fdbar *fdb, const struct fpsba *fpsba)
 {
 	unsigned int i;
 	/* SoC Straps, aka PSL, aka ISL */
 	unsigned int SS = (fdb->flmap1 >> 24) & 0xff;
+	int loc;
+	bool hap_state;
 
 	printf("Found PCH Strap Section\n");
 	for (i = 0; i < SS; i++)
 		printf("PCHSTRP%-3u: 0x%08x\n", i, fpsba->pchstrp[i]);
 
 	if (ifd_version >= IFD_VERSION_2) {
+		loc = ifd2_platform_get_hap_location(fpsba);
+
+		if (loc == -1) {
+			printf("\n");
+			return;
+		}
+
+		/* Special case for APL/GLK */
+		if (platform == PLATFORM_APL || platform == PLATFORM_GLK)
+			hap_state = !!(fpsba->pchstrp[loc] & (1 << 7));
+		else
+			hap_state = !!(fpsba->pchstrp[loc] & (1 << 16));
+
 		printf("HAP bit is %sset\n",
-		       fpsba->pchstrp[0] & (1 << 16) ? "" : "not ");
+		       hap_state ? "" : "not ");
 	} else if (chipset >= CHIPSET_ICH8 && chipset <= CHIPSET_ICH10) {
 		printf("ICH_MeDisable bit is %sset\n",
 		       fpsba->pchstrp[0] & 1 ? "" : "not ");
@@ -1801,199 +2002,13 @@ static void set_pchstrap(struct fpsba *fpsba, const struct fdbar *fdb, const int
 	fpsba->pchstrp[strap] = value;
 }
 
-static int ifd2_platform_get_hap_location(struct fpsba *fpsba)
-{
-	switch (platform) {
-	case PLATFORM_SKLKBL:
-		/* No exceptions, always strap 0 */
-		return 0;
-	case PLATFORM_IFD2:
-		printf("To change the AltMeDisable/HAP bit please provide the platform as parameter\n");
-		return -1;
-	case PLATFORM_CNL:
-		/*
-		 * This gets little tricky here.
-		 * 1. CNL/CFL/CML-LP strap 106 (FPSBA + 0x70), but
-		 *    FSPBA + 0x70 bits 15:4 set to 0x1b
-		 *    FPSBA + 0x80 strap has configurable bits,
-		 *    FPSBA + 0x82/0x83 bytes are set to zeros,
-		 *    FPSBA + 0x00 is set to zeros,
-		 * 2. CML-V strap 0 (FPSBA + 0x00) with bits 15:2 set to 0x00, but
-		 *    FSPBA + 0x00 bits 15:2 must be set to 0,
-		 *    FPSBA + 0x00 bits 23:22 must be set to 0x2,
-		 *    FPSBA + 0x70 is set to all zeros,
-		 *    FPSBA + 0x80 byte has configurable bits,
-		 *    FPSBA + 0x81/0x82 bytes are set to zeros.
-		 * 3. CML-H/S strap 123 (FPSBA + 0x80), but
-		 *    FSPBA + 0x80 bits 15:4 set to 0x1b
-		 *    FPSBA + 0x00/0x70 is set to all zeros.
-		 *
-		 * So we do like this:
-		 *
-		 * 1. Prioritize CML-V detection as strap 0 cannot be all zeros.
-		 * 2. Then heck if FSPBA + 0x70 is zero for CML-H/S, CNL/CFL/CML-LP
-		 *    cannot have FPSBA + 0x70 all zeros.
-		 */
-		if (fpsba->pchstrp[0] != 0) {
-			/* CML-V, one more safetycheck ot exclude other SKUs */
-			if (fpsba->pchstrp[0x70 / 4] == 0) {
-				printf("Detected Comet Lake V platform flash descriptor\n");
-				return 0;
-			}
-		} else {
-			/* Do safety check for CML-H/S to be sure */
-			if (fpsba->pchstrp[0x70 / 4] == 0) {
-				printf("Detected Comet Lake H/S platform flash descriptor\n");
-				return 0x80 / 4;
-			}
-			/* Do safety check for CNL/CFL/CML-LP to be sure */
-			if (((fpsba->pchstrp[0x70 / 4] >> 4) & 0xfff) == 0x1b) {
-				printf("Detected Cannon Lake/Coffee Lake/Comet Lake LP "
-				       "platform flash descriptor\n");
-				return 0x70 / 4;
-			}
-		}
-		printf("Unusual Cannon Lake/Coffee Lake/Comet Lake flash descriptor detected\n"
-		       "Not modifying flash descriptor\n");
-		return -1;
-	case PLATFORM_TGL:
-		/*
-		 * RKL-H/TGL-H strap 141 (FPSBA + 0x94), but
-		 * FPSBA + 0x94 bits 8:1 set to 0x18.
-		 * FPSBA + 0x7c must be zero.
-		 * TGL-LP has non-zero FPSBA + 0x7c.
-		 */
-		if ((((fpsba->pchstrp[0x94 / 4] >> 1) & 0xff) == 0x18) &&
-		    (fpsba->pchstrp[0x7c / 4] == 0)) {
-			printf("Detected Rocket Lake H/Tiger Lake H platform "
-			       "flash descriptor\n");
-			return 0x94 / 4;
-		}
-		/*
-		 * TGL-LP strap 114 (FPSBA + 0x7c), but
-		 * FSPBA + 0x7c bits 8:1 set to 0x18
-		 * FPSBA + 0x92/0x93/0x94/0x95 must be all zeros.
-		 * TGL-H has non-zero FPSBA + 0x94/0x95.
-		 */
-		if ((((fpsba->pchstrp[0x7c / 4] >> 1) & 0xff) == 0x18) &&
-		    (((fpsba->pchstrp[0x94 / 4] >> 16) & 0xffff) == 0)) {
-			printf("Detected Tiger Lake LP platform flash descriptor\n");
-			return 0x7c / 4;
-		}
-
-		printf("Unusual Tiger Lake flash descriptor detected\n"
-		       "Not modifying flash descriptor\n");
-		return -1;
-	case PLATFORM_ADL:
-		/*
-		 * This gets little tricky here.
-		 * 1. RPL-P/ADL-N/P strap 114 (FSPBA + 0x7c), but
-		 *    FPSBA + 0x7c bits 8:1 set to 0x18,
-		 *    FPSBA + 0xdc strap has configurable bits,
-		 *    FPSBA + 0xd0 must be set to 0x00000300.
-		 * 2. ADL-S B0 step/RPL-S strap 193 (FSPBA + 0xdc), but
-		 *    FPSBA + 0xdc bits 8:1 set to 0x58,
-		 *    FPSBA + 0x7c strap has configurable bits,
-		 *    FPSBA + 0xd0 must be set to 0x10081008.
-		 * 3. ADL-S A0 step strap 183 (FSPBA + 0xd0), but
-		 *    FPSBA + 0xd0 bits 8:1 set to 0x58,
-		 *    FPSBA + 0x7c/0xdc straps have configurable bits, however
-		 *    analogically to 0xdc vs. 0xd0, the FPSBA + (0xd0 - 0x0c)
-		 *    must be 0x10081008.
-		 *
-		 * So we do like this:
-		 *
-		 * 1. Prioritize ADL-S detection by checking 0xd0/0xdc bits 8:1
-		 *    and 0xd0/0xc4 straps are set to 0x10081008.
-		 * 2. ADL-S and ADL-N/P is mutually exclusive due to 0xd0
-		 *    reserved values. SO 0xd0 can be used to distinguish all
-		 *    SKUs.
-		 */
-		if (fpsba->pchstrp[0xd0 / 4] == 0x10081008) {
-			/* ADL-S B0 step/RPL-S, do safety check to be sure */
-			if (((fpsba->pchstrp[0xdc / 4] >> 1) & 0xff) == 0x58) {
-				printf("Detected Raptor Lake S/Alder Lake S B0"
-				       " step platform flash descriptor\n");
-				return 0xdc / 4;
-			}
-		} else if (fpsba->pchstrp[0xd0 / 4] == 0x00000300) {
-			/* RPL-P/ADL-N/P, do safety check to be sure */
-			if (((fpsba->pchstrp[0x7c / 4] >> 1) & 0xff) == 0x18) {
-				printf("Detected Raptor Lake P/Alder Lake P/N"
-				       " platform flash descriptor\n");
-				return 0x7c / 4;
-			}
-		} else if (((fpsba->pchstrp[0xd0 / 4] >> 1) & 0xff) == 0x58) {
-			/* ADL-S A0 step, do safety check to be sure */
-			if (fpsba->pchstrp[0xc4 / 4] == 0x10081008) {
-				printf("Detected Alder Lake S A0 step platform"
-				       " flash descriptor\n");
-				return 0xd0 / 4;
-			}
-		}
-		printf("Unusual Alder Lake flash descriptor detected\n"
-		       "Not modifying flash descriptor\n");
-		return -1;
-	case PLATFORM_MTL:
-		/* MTL-U/H strap 225 (FPSBA + 0x11c) */
-		return 0x11c / 4;
-	case PLATFORM_ICL:
-		/*
-		 * ICX-D strap 56 (FPSBA + 0xe0), unconfirmed.
-		 * ICX-D FPSBA + 0x78 must be zero.
-		 */
-		if ((((fpsba->pchstrp[0xe0 / 4] >> 1) & 0xff) == 0x98) &&
-		    (fpsba->pchstrp[0x78 / 4] == 0)) {
-			printf("Detected Ice Lake D platform flash descriptor\n");
-			return 0xe0 / 4;
-		}
-		/*
-		 * ICL-LP strap 113 (FPSBA + 0x78), but
-		 * FSPBA + 0x78 bits 9:1 set to 0x98.
-		 * FPSBA + 0xe0 must be 0x68070000.
-		 */
-		if ((((fpsba->pchstrp[0x78 / 4] >> 1) & 0xff) == 0x98) &&
-		    (fpsba->pchstrp[0xe0 / 4] == 0x68070000)) {
-			printf("Detected Ice Lake LP platform flash descriptor\n");
-			return 0x94 / 4;
-		}
-
-		printf("Unusual Ice Lake flash descriptor detected\n"
-		       "Not modifying flash descriptor\n");
-		return -1;
-	case PLATFORM_LBG:
-		/* LBG strap 53 (FPSBA + 0xd4) */
-		return 0xd4 / 4;
-	case PLATFORM_DNV:
-		/* DNV strap 14 (FPSBA + 0x38) */
-		return 0x38 / 4;
-	case PLATFORM_APL:
-	case PLATFORM_GLK:
-		/*
-		 * Strap 10 (FPSBA + 0x2c), but can be only set through SMIP?
-		 * Couldn't get it to work on GLK.
-		 */
-		return 0x2c / 4;
-	case PLATFORM_JSL:
-		/* JSL strap 113 (FSPBA + 0x68) */
-		return 0x68 / 4;
-	case PLATFORM_EHL:
-		/* EHL strap 122 (FSPBA + 0x84) */
-		return 0x84 / 4;
-	default:
-		printf("HAP bit location unknown for selected platform\n"
-		       "Not modifying flash descriptor\n");
-		return -1;
-	}
-}
-
 /* Set the AltMeDisable (or HAP for >= IFD_VERSION_2) */
 static void fpsba_set_altmedisable(struct fpsba *fpsba, struct fmsba *fmsba, bool altmedisable)
 {
 	int loc;
 
 	if (ifd_version >= IFD_VERSION_2) {
-		loc = ifd2_platform_get_hap_location(fpsba);
+		loc = ifd2_platform_get_hap_location((const struct fpsba *)fpsba);
 
 		if (loc == -1)
 			return;
