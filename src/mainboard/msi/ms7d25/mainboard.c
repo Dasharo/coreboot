@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <boot/coreboot_tables.h>
+#include <bootstate.h>
 #include <cpu/x86/msr.h>
 #include <dasharo/options.h>
 #include <device/device.h>
+#include <fsp/util.h>
+#include <gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
@@ -15,6 +19,28 @@
 #define MSR_BIGCORE_TURBO_RATIO_LIMIT		0x1ad
 #define MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES	0x1ae
 
+void fill_lb_gpios(struct lb_gpios *gpios)
+{
+	/* Pass the EZ LEDs to payload. We may need to turn off VGA LED there. */
+	struct lb_gpio ez_debug_leds[] = {
+		{ (uint32_t)gpio_dwx_address(GPP_H20), ACTIVE_LOW, 1, "EZ LED DEVICE" },
+		{ (uint32_t)gpio_dwx_address(GPP_H21), ACTIVE_HIGH, 0, "EZ LED CPU" },
+		{ (uint32_t)gpio_dwx_address(GPP_H22), ACTIVE_LOW, 1, "EZ LED DRAM" },
+		{ (uint32_t)gpio_dwx_address(GPP_H23), ACTIVE_LOW, 1, "EZ LED VGA" }
+	};	
+	lb_add_gpios(gpios, ez_debug_leds, ARRAY_SIZE(ez_debug_leds));
+}
+
+static void unset_device_ez_led(void *unused)
+{
+	/*
+	 * Turn off the EZ LED DEVICE, at this point, coreboot/FSP have
+	 * initialized the PCI devices.
+	 */
+	gpio_set(GPP_H20, 1);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, unset_device_ez_led, NULL);
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
 {
@@ -56,6 +82,12 @@ static void fill_turbo_ratio_limits(FSP_S_CONFIG *params)
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	uint8_t aspm, aspm_l1;
+
+	/*
+	 * Turn off the EZ LED DRAM, at this point, coreboot/FSP have
+	 * initialized the memory and it should be working properly.
+	 */
+	gpio_set(GPP_H22, 1);
 
 	if (CONFIG(PCIEXP_L1_SUB_STATE) && CONFIG(PCIEXP_CLK_PM))
 		aspm_l1 = 2; // 2 - L1.1 and L1.2
@@ -523,8 +555,22 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
+static const uint8_t fsp_graphics_info_guid[16] = {
+	0xce, 0x2c, 0xf6, 0x39, 0x25, 0x68, 0x69, 0x46,
+	0xbb, 0x56, 0x54, 0x1a, 0xba, 0x75, 0x3a, 0x07
+};
+
+
 static void mainboard_final(void *chip_info)
 {
+	size_t size;
+
+	/*
+	 * Turn off the EZ LED VGA, if graphics hob is present,
+	 * meaning the graphics output has been initialized.
+	 */
+	if (fsp_find_extension_hob_by_guid(fsp_graphics_info_guid, &size))
+		gpio_set(GPP_H22, 1);
 }
 
 struct chip_operations mainboard_ops = {
