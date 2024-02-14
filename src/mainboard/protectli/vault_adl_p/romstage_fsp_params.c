@@ -42,4 +42,7 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[0] = 0;
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[1] = 0;
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[2] = 0;
+
+	/* Limit the max speed for memory compatibility */
+	memupd->FspmConfig.DdrFreqLimit = 4200;
 }
