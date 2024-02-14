@@ -167,10 +167,9 @@ chip soc/intel/jasperlake
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI
 		device pci 1f.7 off end # Intel Trace Hub
-	end
 
-	chip drivers/crb
-		device mmio 0xfed40000 on end
+		chip drivers/crb
+			device mmio 0xfed40000 on end
+		end
 	end
-
 end
