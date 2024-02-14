@@ -1,21 +1,45 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <acpi/acpi.h>
+#include <boot/coreboot_tables.h>
+#include <bootstate.h>
 #include <cpu/x86/msr.h>
 #include <dasharo/options.h>
 #include <device/device.h>
+#include <gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
 #include <string.h>
 #include <superio/nuvoton/nct6687d/nct6687d.h>
 
-
 #define MSR_ATOM_TURBO_RATIO_LIMIT		0x650
 #define MSR_ATOM_TURBO_RATIO_LIMIT_CORES	0x651
 #define MSR_BIGCORE_TURBO_RATIO_LIMIT		0x1ad
 #define MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES	0x1ae
 
+void fill_lb_gpios(struct lb_gpios *gpios)
+{
+	/* Pass the EZ LEDs to payload. We may need to turn off VGA LED there. */
+	struct lb_gpio ez_debug_leds[] = {
+		{ (uint32_t)gpio_dwx_address(GPP_H20), ACTIVE_LOW, 1, "EZ LED DEVICE" },
+		{ (uint32_t)gpio_dwx_address(GPP_H21), ACTIVE_HIGH, 0, "EZ LED CPU" },
+		{ (uint32_t)gpio_dwx_address(GPP_H22), ACTIVE_LOW, 1, "EZ LED DRAM" },
+		{ (uint32_t)gpio_dwx_address(GPP_H23), ACTIVE_LOW, 1, "EZ LED VGA" }
+	};
+	lb_add_gpios(gpios, ez_debug_leds, ARRAY_SIZE(ez_debug_leds));
+}
+
+static void unset_device_ez_led(void *unused)
+{
+	/*
+	 * Turn off the EZ LED DEVICE, at this point, coreboot/FSP have
+	 * initialized the PCI devices.
+	 */
+	gpio_set(GPP_H20, 1);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, unset_device_ez_led, NULL);
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
 {
@@ -57,6 +81,19 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	uint8_t aspm, aspm_l1;
 
+	/*
+	 * Turn off the EZ LED DRAM, at this point, coreboot/FSP have
+	 * initialized the memory and it should be working properly.
+	 */
+	gpio_set(GPP_H22, 1);
+
+	/*
+	 * Turn on the EZ LED DEVICE, to indicate coreboot/FSP have
+	 * started initializing devices.
+	 */
+	gpio_set(GPP_H20, 0);
+
+	/* ASPM L1 sub-states require CLKREQ, so CLK_PM should be enabled as well */
 	if (CONFIG(PCIEXP_L1_SUB_STATE) && CONFIG(PCIEXP_CLK_PM))
 		aspm_l1 = 2; // 2 - L1.1 and L1.2
 	else
