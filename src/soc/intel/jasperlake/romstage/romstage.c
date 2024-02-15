@@ -6,6 +6,7 @@
 #include <fsp/util.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/cse.h>
+#include <intelblocks/oc_wdt.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/smbus.h>
 #include <memory_info.h>
@@ -127,6 +128,8 @@ void mainboard_romstage_entry(void)
 {
 	bool s3wake;
 	struct chipset_power_state *ps = pmc_get_power_state();
+
+	setup_oc_wdt();
 
 	/* Program MCHBAR, DMIBAR, GDXBAR and EDRAMBAR */
 	systemagent_early_init();
