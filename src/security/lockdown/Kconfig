@@ -62,7 +62,6 @@ config BOOTMEDIA_LOCK_WHOLE_NO_ACCESS
 
 config BOOTMEDIA_LOCK_WPRO_VBOOT_RO
 	bool "Write-protect WP_RO FMAP region in boot medium"
-	depends on VBOOT
 	help
 	  Select this if you want to write-protect the WP_RO region as specified
 	  in the VBOOT FMAP. You will be able to write every region outside
@@ -76,7 +75,7 @@ config BOOTMEDIA_LOCK_WPRO_VBOOT_RO
 endchoice
 
 config BOOTMEDIA_LOCK_IN_VERSTAGE
-	depends on BOOTMEDIA_LOCK_WPRO_VBOOT_RO
+	depends on VBOOT
 	bool "Lock boot media down in verstage"
 	help
 	  Select this if you want to write-protect the WP_RO region as soon as
