@@ -318,7 +318,7 @@ chip soc/intel/alderlake
 				device pnp 2e.a off end	# CIR
 			end
 			chip drivers/pc80/tpm
-				device pnp 0c31.0 on end
+				device pnp 0.0 on end
 			end
 
 		end
