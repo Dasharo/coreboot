@@ -33,4 +33,8 @@ config DIMM_SPD_SIZE
 config CBFS_SIZE
 	default 0x900000
 
+config DRIVER_LENOVO_SERIALS
+	bool
+	default n
+
 endif
