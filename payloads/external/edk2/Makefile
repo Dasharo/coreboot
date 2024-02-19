@@ -94,7 +94,7 @@ endif
 # PS2_KEYBOARD_ENABLE		= FALSE
 ifeq ($(CONFIG_EDK2_PS2_SUPPORT),y)
 BUILD_STR += -D PS2_KEYBOARD_ENABLE=TRUE
-
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPs2Option=TRUE
 # SKIP_PS2_DETECT		= FALSE
 ifeq ($(CONFIG_EDK2_SKIP_PS2_DETECT),y)
 BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=TRUE
@@ -102,6 +102,7 @@ endif # SKIP_PS2_DETECT
 
 else
 BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPs2Option=FALSE
 endif # PS2_KEYBOARD_ENABLE
 # PLATFORM_BOOT_TIMEOUT		= 3
 ifneq ($(CONFIG_EDK2_BOOT_TIMEOUT),)
@@ -284,6 +285,23 @@ endif
 
 BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
 BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
+
+# PcdShowLockBios		= FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_BIOS_LOCK),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowLockBios=TRUE
+endif
+# PcdShowSmmBwp			= FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_SMM_BWP),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSmmBwp=TRUE
+endif
+# PcdSleepTypeDefaultS3		= FALSE
+ifeq ($(CONFIG_EDK2_S3_SLEEP_DEFAULT),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSleepTypeDefaultS3=TRUE
+endif
+# PcdShowFum			= TRUE
+ifneq ($(CONFIG_EDK2_ENABLE_FUM),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowFum=FALSE
+endif
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:
