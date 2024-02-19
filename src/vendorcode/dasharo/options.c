@@ -88,15 +88,20 @@ bool dasharo_resizeable_bars_enabled(void)
 	static bool enabled = false;
 	static bool read_once = false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE) &&
-	    CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS) &&
-	    !read_once) {
-		read_bool_var("PCIeResizeableBarsEnabled", &enabled);
+	if (!CONFIG(PCIEXP_SUPPORT_RESIZABLE_BARS))
+		return false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+		if (!read_once)
+			read_bool_var("PCIeResizeableBarsEnabled", &enabled);
 		/*
 		 * This variable would be read for each PCIe device.
 		 * Avoid it by reading the variable only once.
 		 */
 		read_once = true;
+	} else {
+		/* If no variables are not enabled, follow Kconfig */
+		return true;
 	}
 
 	return enabled;
@@ -109,6 +114,8 @@ bool is_vboot_locking_permitted(void)
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("FirmwareUpdateMode", &fum);
+	else
+		return !CONFIG(BOOTMEDIA_LOCK_NONE);
 
 	/* Disable lock if in Firmware Update Mode */
 	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
@@ -220,6 +227,8 @@ bool is_smm_bwp_permitted(void)
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("SmmBwp", &smm_bwp);
+	else
+		return CONFIG(BOOTMEDIA_SMM_BWP);
 
 	return smm_bwp;
 }
@@ -366,6 +375,9 @@ uint8_t dasharo_get_memory_profile(void)
 {
 	/* Using default SPD/JEDEC profile by default. */
 	uint8_t profile = 0;
-	read_u8_var("MemoryProfile", &profile);
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("MemoryProfile", &profile);
+
 	return profile;
 }
