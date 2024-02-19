@@ -70,7 +70,20 @@ endif
 # SERIAL_TERMINAL	= TRUE
 ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
 BUILD_STR += -D SERIAL_TERMINAL=TRUE
+# PcdSerialRedirectionDefaultState	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
 endif
+
+ifeq ($(CONFIG_EDK2_HAVE_2ND_UART),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdHave2ndUart=TRUE
+# PcdSerialRedirection2DefaultState	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION2_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirection2DefaultState=TRUE
+endif
+endif # CONFIG_EDK2_HAVE_2ND_UART
+
+endif # SERIAL_TERMINAL
 # FOLLOW_BGRT_SPEC		= FALSE
 ifeq ($(CONFIG_EDK2_FOLLOW_BGRT_SPEC),y)
 BUILD_STR += -D FOLLOW_BGRT_SPEC=TRUE
@@ -252,10 +265,6 @@ endif
 ifeq ($(CONFIG_EDK2_PRINT_SOL_STRINGS),y)
 BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdPrintSolStrings=TRUE
 endif
-# DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE = FALSE
-ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
-endif
 # CREATE_PREINSTALLED_BOOT_OPTIONS = FALSE
 ifeq ($(CONFIG_EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCreatePreInstalledBootOptions=TRUE
@@ -301,6 +310,10 @@ endif
 # PcdShowFum			= TRUE
 ifneq ($(CONFIG_EDK2_ENABLE_FUM),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowFum=FALSE
+endif
+# UART_ON_SUPERIO		= FALSE
+ifeq ($(CONFIG_EDK2_SERIAL_ON_SUPERIO),y)
+BUILD_STR += -D UART_ON_SUPERIO=TRUE
 endif
 
 #

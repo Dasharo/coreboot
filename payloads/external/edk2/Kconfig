@@ -434,8 +434,25 @@ config EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE
 	depends on EDK2_SERIAL_SUPPORT
 	default n
 	help
-	  Enable serial port output in edk2 by default. Serial output limits the performance of edk2's
-	  FrontPage.
+	  Enable serial port output in edk2 by default. Serial output limits
+	  the performance of edk2's FrontPage.
+
+config EDK2_HAVE_2ND_UART
+	bool "Have second serial port for console redirection"
+	depends on EDK2_SERIAL_SUPPORT
+	depends on DRIVERS_UART_8250IO
+	default n
+	help
+	  Enable support for two serial ports in edk2.
+
+config EDK2_DASHARO_SERIAL_REDIRECTION2_DEFAULT_ENABLE
+	bool "Enable second serial port console redirection by default"
+	depends on EDK2_SERIAL_SUPPORT
+	depends on EDK2_HAVE_2ND_UART
+	default n
+	help
+	  Enable serial port output on second UART in edk2 by default. Serial
+	  output limits the performance of edk2's FrontPage.
 
 endif
 
