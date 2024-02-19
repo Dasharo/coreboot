@@ -111,7 +111,7 @@ bool is_vboot_locking_permitted(void)
 		read_bool_var("FirmwareUpdateMode", &fum);
 
 	/* Disable lock if in Firmware Update Mode */
-	if (fum)
+	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
 		return false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
@@ -195,7 +195,7 @@ uint8_t cse_get_me_disable_mode(void)
 	}
 
 	/* Disable ME via HMRPFO if in Firmware Update Mode */
-	if (fum) {
+	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -215,7 +215,7 @@ bool is_smm_bwp_permitted(void)
 		read_bool_var("FirmwareUpdateMode", &fum);
 
 	/* Disable SMM BWP if in Firmware Update Mode */
-	if (fum)
+	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
 		return false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
@@ -267,7 +267,6 @@ uint8_t get_sleep_type_option(void)
 
 	return sleep_type;
 }
-
 
 uint8_t get_fan_curve_option(void)
 {
