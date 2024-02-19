@@ -13,8 +13,18 @@ menu "Dasharo Configuration"
 
 config DASHARO_PREFER_S3_SLEEP
 	bool "Prefer S3 suspend over S0ix"
+	depends on HAVE_ACPI_RESUME
 	default n if PAYLOAD_EDK2
 	default y
+	help
+	  Enables S3 sleep state as default in the coreboot and EDK2 UEFI Payload.
+
+config DASHARO_FIRMWARE_UPDATE_MODE
+	bool "Enable Firmware Update Mode in the project"
+	default y if PAYLOAD_EDK2
+	help
+	  Enables Frimware Update Flow in coreboot and shows the FUM option in
+	  Dasharo menu.
 
 endmenu
 
