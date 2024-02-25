@@ -12,7 +12,8 @@ config UDK_2017_BINDING
 	select UDK_BASE
 
 config UDK_202005_BINDING
-	def_bool n
+	bool "UDK 202005 BINDING"
+	default n
 	select UDK_BASE
 
 config UDK_202302_BINDING
