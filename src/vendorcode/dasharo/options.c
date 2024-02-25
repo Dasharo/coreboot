@@ -3,12 +3,15 @@
 #include <console/console.h>
 #include <dasharo/options.h>
 #include <drivers/efi/efivars.h>
-#include <intelblocks/cse.h>
 #include <option.h>
 #include <soc/intel/common/reset.h>
 #include <smmstore.h>
 #include <types.h>
 #include <uuid.h>
+
+#if !CONFIG(SOC_AMD_COMMON)
+#include <intelblocks/cse.h>
+#endif
 
 static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
@@ -151,6 +154,7 @@ bool dma_protection_enabled(void)
 	return iommu_var.iommu_enable;
 }
 
+#if !CONFIG(SOC_AMD_COMMON)
 static void disable_me_hmrfpo(uint8_t *var)
 {
 	int hmrfpo_sts = cse_hmrfpo_get_status();
@@ -212,6 +216,12 @@ uint8_t cse_get_me_disable_mode(void)
 
 	return var;
 }
+#else
+uint8_t cse_get_me_disable_mode(void)
+{
+	return 0;
+}
+#endif
 
 bool is_smm_bwp_permitted(void)
 {
