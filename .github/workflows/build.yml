@@ -97,3 +97,35 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+  build_lenovo:
+    runs-on: ubuntu-22.04
+    container:
+      image: coreboot/coreboot-sdk:2021-09-23_b0d87f753c
+      options: --user 1001
+    strategy:
+      matrix:
+        vendor: [ lenovo ]
+        model: [ m900_tiny ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+      - name: Build Dasharo
+        run: |
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
+          make olddefconfig
+          make
+      - name: Save artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          path: |
+            build/coreboot.rom
+          retention-days: 30
