@@ -25,7 +25,7 @@ VBOOT_CFLAGS_$(1) += -DVBOOT_DEBUG
 $$(VBOOT_LIB_$(1)): $(obj)/config.h
 	printf "    MAKE       $(subst $(obj)/,,$(@))\n"
 	+FIRMWARE_ARCH=$$(ARCHDIR-$$(ARCH-$(1)-y)) \
-	CC="$$(CC_$(1))" \
+	CC="$$(call vboot-fixup-includes,$$(CC_$(1)))" \
 	CFLAGS="$$(VBOOT_CFLAGS_$(1))" VBOOT2="y" \
 	EC_EFS="$(CONFIG_VBOOT_EC_EFS)" \
 	X86_SHA_EXT="$(if $(CONFIG_ARCH_$(call toupper,$(1))_X86_32)$(CONFIG_ARCH_$(call toupper,$(1))_X86_64),$\
