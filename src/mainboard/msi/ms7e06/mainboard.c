@@ -4,6 +4,7 @@
 #include <cpu/x86/msr.h>
 #include <dasharo/options.h>
 #include <device/device.h>
+#include <intelblocks/cse.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
@@ -504,6 +505,8 @@ static const struct port_information smbios_type8_info[] = {
 static int mainboard_smbios_data(struct device *dev, int *handle, unsigned long *current)
 {
 	int len = 0;
+
+	len += cse_write_smbios_type14(handle, current);
 
 	// add port information
 	len += smbios_write_type8(
