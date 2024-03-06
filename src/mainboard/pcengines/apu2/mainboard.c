@@ -229,11 +229,53 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 	return len;
 }
 
+static int mainboard_smbios_type19(unsigned long *current, int *handle, int type16, u64 *addr_end)
+{
+	struct smbios_type19 *t = smbios_carve_table(*current,
+						     SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS,
+						     sizeof(*t), *handle + 2);
+
+	t->memory_array_handle = type16;
+	t->extended_ending_address = get_spd_offset() == 0 ? 2 * 1024 : 4 * 1024; /* unit: megabytes */
+	t->partition_width = 1;
+	t->extended_ending_address *= MiB;
+	t->starting_address = 0;
+	t->ending_address = t->extended_ending_address / KiB - 1;
+	t->extended_starting_address = 0;
+	t->extended_ending_address = 0;
+	*addr_end = t->ending_address;
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
+	*current += len;
+
+	return len;
+}
+
+static int mainboard_smbios_type20(unsigned long *current, int *handle, int type17, u64 addr_end)
+{
+	struct smbios_type20 *t = smbios_carve_table(*current, SMBIOS_MEMORY_DEVICE_MAPPED_ADDRESS,
+						     sizeof(*t), *handle + 3);
+
+	t->memory_device_handle = type17;
+	t->memory_array_mapped_address_handle = type17 + 1;
+	t->addr_start = 0;
+	t->addr_end = addr_end;
+	t->partition_row_pos = 0xff;
+	t->interleave_pos = 0xff;
+	t->interleave_depth = 0xff;
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
+	*current += len;
+
+	return len;
+}
+
 static int mainboard_smbios_data(struct device *dev, int *handle,
 				 unsigned long *current)
 {
 	DMI_INFO *agesa_dmi;
 	int len = 0;
+	u64 addr_end;
 
 	agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
 
@@ -242,10 +284,52 @@ static int mainboard_smbios_data(struct device *dev, int *handle,
 
 	len += mainboard_smbios_type16(agesa_dmi, handle, current);
 	len += mainboard_smbios_type17(agesa_dmi, handle, current);
+	len += mainboard_smbios_type19(current, handle, *handle, &addr_end);
+	len += mainboard_smbios_type20(current, handle, *handle + 1, addr_end);
 
-	*handle += 2;
+	*handle += 4;
 
 	return len;
+}
+
+unsigned int smbios_cpu_get_current_speed_mhz(void)
+{
+	DMI_INFO *agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
+
+	if (!agesa_dmi)
+		return 0;
+
+	return agesa_dmi->T4[0].T4CurrentSpeed;
+}
+
+unsigned int smbios_processor_external_clock(void)
+{
+	DMI_INFO *agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
+
+	if (!agesa_dmi)
+		return 0;
+
+	return agesa_dmi->T4[0].T4ExternalClock;
+}
+
+unsigned int smbios_cpu_get_max_speed_mhz(void)
+{
+	DMI_INFO *agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
+
+	if (!agesa_dmi)
+		return 0;
+
+	return agesa_dmi->T4[0].T4MaxSpeed;
+}
+
+unsigned int smbios_cpu_get_voltage(void)
+{
+	DMI_INFO *agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
+
+	if (!agesa_dmi)
+		return 0;
+
+	return agesa_dmi->T4[0].T4Voltage;
 }
 #endif
 
