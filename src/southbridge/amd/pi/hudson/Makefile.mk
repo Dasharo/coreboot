@@ -51,7 +51,7 @@ CPPFLAGS_common += -I$(src)/southbridge/amd/pi/hudson/include
 ifeq ($(CONFIG_AMDFW_OUTSIDE_CBFS),y)
 HUDSON_FWM_POSITION=$(call int-add, $(call int-subtract, 0xffffffff $(CONFIG_ROM_SIZE)) 0x20000 1)
 else
-HUDSON_FWM_POSITION=0xfff20000
+HUDSON_FWM_POSITION=0xfffa0000
 endif
 
 ifeq ($(CONFIG_HUDSON_PSP), y)
