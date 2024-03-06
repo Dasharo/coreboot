@@ -48,7 +48,7 @@ CPPFLAGS_common += -I$(src)/southbridge/amd/pi/hudson/include
 #
 # EC ROM should be 64K aligned.
 
-HUDSON_FWM_POSITION=0x720000
+HUDSON_FWM_POSITION=0x7a0000
 
 add_opt_prefix=$(if $(call strip_quotes, $(1)), $(2) $(call strip_quotes, $(1)), )
 
