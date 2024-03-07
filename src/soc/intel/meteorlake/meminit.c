@@ -116,7 +116,7 @@ static void mem_init_spd_upds(FSP_M_CONFIG *mem_cfg, const struct mem_channel_da
 			 * Channel 6 data is used by channel 6 and 7
 			 */
 			if (expand_channels)
-				*spd_ptr = data->spd[ch & ~1][dimm];
+				*spd_ptr = data->spd[ch & 6][dimm];
 			else
 				*spd_ptr = data->spd[ch][dimm];
 
