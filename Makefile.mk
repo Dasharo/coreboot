@@ -999,9 +999,12 @@ placed-files-in-region = $(foreach file,$(call all-files-in-region,$(1)), \
 
 # $(call sort-files,subset of $(cbfs-files))
 # reorders the files in the given set to list files at fixed positions first,
-# followed by aligned files and finally those with no constraints.
+# followed by a payload (which might be big, best to place it first when there
+# is little files in CBFS), followed by aligned files, and finally those with
+# no constraints.
 sort-files = \
 	$(eval _tmp_fixed:=) \
+	$(eval _tmp_payload:=) \
 	$(eval _tmp_aligned:=) \
 	$(eval _tmp_regular:=) \
 	$(foreach file,$(1), \
@@ -1009,8 +1012,10 @@ sort-files = \
 			$(eval _tmp_fixed += $(file)), \
 		$(if $(call extract_nth,6,$(file)), \
 			$(eval _tmp_aligned += $(file)), \
-			$(eval _tmp_regular += $(file))))) \
-	$(_tmp_fixed) $(_tmp_aligned) $(_tmp_regular)
+		$(if $(filter payload,$(call extract_nth,3,$(file))), \
+			$(eval _tmp_payload += $(file)), \
+			$(eval _tmp_regular += $(file)))))) \
+	$(_tmp_fixed) $(_tmp_payload) $(_tmp_aligned) $(_tmp_regular)
 
 # command list to add files to CBFS
 prebuild-files = $(foreach region,$(all-regions), \
