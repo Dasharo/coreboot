@@ -210,8 +210,12 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
 endif
-# Awlays set the default power failure state
+# Always set the default power failure state to some value
+ifeq ($(CONFIG_HAVE_POWER_STATE_AFTER_FAILURE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)
+else
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=0
+endif
 # DASHARO_POWER_CONFIG		= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
