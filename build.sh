@@ -16,6 +16,10 @@ usage() {
   echo -e "\tV1210- build Dasharo for Protectli V1210"
   echo -e "\tV1410- build Dasharo for Protectli V1410"
   echo -e "\tV1610- build Dasharo for Protectli V1610"
+  echo -e "\tapu2 - build Dasharo for PC Engines APU2"
+  echo -e "\tapu3 - build Dasharo for PC Engines APU3"
+  echo -e "\tapu4 - build Dasharo for PC Engines APU4"
+  echo -e "\tapu6 - build Dasharo for PC Engines APU6"
 }
 
 SDKVER="2021-09-23_b0d87f753c"
@@ -114,6 +118,41 @@ function build_v1x10 {
   fi
 }
 
+function build_pcengines {
+  VARIANT=$1
+  DEFCONFIG="configs/config.pcengines_${VARIANT}"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  # checkout several submodules needed by these boards (some others are checked
+  # out by coreboot's Makefile)
+  git submodule update --init --force --checkout \
+      3rdparty/dasharo-blobs \
+      3rdparty/vboot
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    /bin/bash -c "make distclean"
+
+  cp $DEFCONFIG .config
+
+  echo "Building Dasharo for PC Engines ${VARIANT^^*} (version $FW_VERSION)"
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+  cp build/coreboot.rom pcengines_${VARIANT}_${FW_VERSION}.rom
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/pcengines_${VARIANT}_${FW_VERSION}.rom"
+    sha256sum pcengines_${VARIANT}_${FW_VERSION}.rom > pcengines_${VARIANT}_${FW_VERSION}.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
 
 CMD="$1"
 
@@ -158,6 +197,18 @@ case "$CMD" in
         ;;
     "v1610" | "V1610" )
         build_v1x10 "v1610"
+        ;;
+    "apu2" | "APU2" )
+        build_pcengines "apu2"
+        ;;
+    "apu3" | "APU3" )
+        build_pcengines "apu3"
+        ;;
+    "apu4" | "APU4" )
+        build_pcengines "apu4"
+        ;;
+    "apu6" | "APU6" )
+        build_pcengines "apu6"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
