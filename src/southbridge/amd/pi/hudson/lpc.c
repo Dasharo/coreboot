@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/acpi.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/lpc.h>
 #include <console/console.h>
@@ -341,10 +342,12 @@ static const char *lpc_acpi_name(const struct device *dev)
 static void lpc_final(struct device *dev)
 {
 	if (!acpi_is_wakeup_s3()) {
+		acpi_clear_pm_gpe_status();
+
 		if (CONFIG(HAVE_SMI_HANDLER))
-			outl(0x0, ACPI_PM1_CNT_BLK);	/* clear SCI_EN */
+			acpi_disable_sci();
 		else
-			outl(0x1, ACPI_PM1_CNT_BLK);	/* set SCI_EN */
+			acpi_enable_sci();
 	}
 }
 
