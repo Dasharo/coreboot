@@ -10,6 +10,7 @@
 #include <northbridge/amd/agesa/state_machine.h>
 #include <northbridge/amd/agesa/agesa_helper.h>
 #include <northbridge/amd/nb_common.h>
+#include <southbridge/amd/pi/hudson/hudson.h>
 
 void platform_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 {
@@ -18,6 +19,9 @@ void platform_BeforeInitReset(struct sysinfo *cb, AMD_RESET_PARAMS *Reset)
 void platform_BeforeInitEarly(struct sysinfo *cb, AMD_EARLY_PARAMS *Early)
 {
 	Early->GnbConfig.PsppPolicy = PsppDisabled;
+
+	/* Init Reset reconfigures ROM address registers */
+	hudson_enable_lpc_rom();
 }
 
 void platform_BeforeInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
