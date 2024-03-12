@@ -17,3 +17,22 @@ config SOC_INTEL_COMMON_BLOCK_TCO_ENABLE_THROUGH_SMBUS
 	depends on SOC_INTEL_COMMON_BLOCK_TCO
 	help
 	  Select this config to enable TCO BAR through SMBUS
+
+config SOC_INTEL_COMMON_BLOCK_TCO_WDT_ENABLE
+	bool
+	depends on SOC_INTEL_COMMON_BLOCK_TCO
+	default y
+	help
+	  Select this config to start the watchdog in coreboot, before the
+	  OS has booted.
+
+config SOC_INTEL_COMMON_BLOCK_TCO_WDT_TIMEOUT_SECONDS
+	int
+	depends on SOC_INTEL_COMMON_BLOCK_TCO_WDT_ENABLE
+	range 2 613
+	default 60
+	help
+	  The Intel TCO Watchdog timeout value in seconds. coreboot will preload the
+	  watchdog with this value. Specify a high enough value, so that the
+	  platform has a chance to complete memory training and boot to an operating
+	  system. Default value is 60 seconds.

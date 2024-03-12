@@ -87,6 +87,30 @@ static void tco_timer_disable(void)
 	tco_write_reg(TCO1_CNT, tcocnt);
 }
 
+static uint16_t seconds_to_ticks(uint16_t seconds)
+{
+	return (seconds * 10) / 6;
+}
+
+static void tco_timer_enable(uint16_t timeout)
+{
+	uint16_t tcocnt;
+	/*
+	 * Program the timeout in ticks.
+	 * Reset is triggered on second timeout, so divide by 2 to get the correct
+	 * timeout.
+	 */
+	tco_write_reg(TCO_TMR, seconds_to_ticks(timeout / 2));
+
+	/* Enable reset on second timeout */
+	tcocnt = tco_read_reg(TCO1_CNT);
+	tcocnt &= ~TCO_NO_RESET;
+	tco_write_reg(TCO1_CNT, tcocnt);
+
+	/* Reload the watchdog config */
+	tco_write_reg(TCO_RLD, 0x01);
+}
+
 /* Enable and initialize TCO intruder SMI */
 static void tco_intruder_smi_enable(void)
 {
@@ -131,7 +155,11 @@ void tco_configure(void)
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_TCO_ENABLE_THROUGH_SMBUS))
 		tco_enable_bar();
 
-	tco_timer_disable();
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_TCO_WDT_ENABLE))
+		tco_timer_enable(CONFIG(SOC_INTEL_COMMON_BLOCK_TCO_WDT_TIMEOUT_SECONDS));
+	else
+		tco_timer_disable();
 
 	/* Enable intruder interrupt if TCO interrupts are enabled*/
 	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_TCO_ENABLE))
