@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <stdint.h>
+#include <Fch/Fch.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/gpio.h>
 #include <amdblocks/gpio_defs.h>
@@ -16,6 +17,9 @@ static void early_lpc_init(void);
 void board_BeforeAgesa(struct sysinfo *cb)
 {
 	u32 val;
+
+	/* CF9 shadow */
+	pm_write8(FCH_PMIOA_REGC5, 0);
 
 	early_lpc_init();
 
