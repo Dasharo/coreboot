@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/acpimmio.h>
+#include <cbfs.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <console/console.h>
@@ -333,6 +334,22 @@ unsigned int smbios_cpu_get_voltage(void)
 }
 #endif
 
+static void measure_amd_blobs(void)
+{
+	void *amdfw = NULL;
+	size_t size;
+
+	/* Simply mapping the CBFS file will trigger the measurement */
+	amdfw = cbfs_unverified_area_map("COREBOOT", "apu/amdfw", &size);
+
+	if (!amdfw) {
+		printk(BIOS_ERR,"Could not map apu/amdfw CBFS file\n");
+		return;
+	}
+
+	cbfs_unmap(amdfw);
+}
+
 static void mainboard_enable(struct device *dev)
 {
 	/* Maintain this text unchanged for manufacture process. */
@@ -365,6 +382,9 @@ static void mainboard_enable(struct device *dev)
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 	dev->ops->get_smbios_data = mainboard_smbios_data;
 #endif
+
+	if (CONFIG(TPM_MEASURED_BOOT))
+		measure_amd_blobs();
 }
 
 static void mainboard_final(void *chip_info)
