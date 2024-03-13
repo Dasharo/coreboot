@@ -257,7 +257,7 @@ void hudson_tpm_decode_spi(void)
 }
 
 /*
- * Enable 4MB (LPC) ROM access at 0xFFC00000 - 0xFFFFFFFF.
+ * Enable LPC ROM access at 0xFFXX0000 - 0xFFFFFFFF.
  *
  * Hardware should enable LPC ROM by pin straps. This function does not
  * handle the theoretically possible PCI ROM, FWH, or SPI ROM configurations.
@@ -288,6 +288,7 @@ void hudson_enable_lpc_rom(void)
 	 * 0xfff0(0000): 1MB
 	 * 0xffe0(0000): 2MB
 	 * 0xffc0(0000): 4MB
+	 * ...
 	 */
 	pci_s_write_config16(dev, 0x6c, 0x10000 - (CONFIG_COREBOOT_ROMSIZE_KB >> 6));
 	/* Enable LPC ROM range end at 0xffff(ffff). */
