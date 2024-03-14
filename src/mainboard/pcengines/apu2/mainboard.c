@@ -170,6 +170,8 @@ static int mainboard_smbios_type16(DMI_INFO *agesa_dmi, int *handle,
 
 	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
+	*handle += 1;
+
 	return len;
 }
 
@@ -193,13 +195,13 @@ static int ddr_speed_from_bus_speed(int bus)
 	}
 }
 
-static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
+static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle, int type16,
 				 unsigned long *current)
 {
 	struct smbios_type17 *t = smbios_carve_table(*current, SMBIOS_MEMORY_DEVICE,
-						     sizeof(*t), *handle + 1);
+						     sizeof(*t), *handle);
 
-	t->phys_memory_array_handle = *handle;
+	t->phys_memory_array_handle = type16;
 	t->memory_error_information_handle = 0xfffe;
 	t->total_width = agesa_dmi->T17[0][0][0].TotalWidth;
 	t->data_width = agesa_dmi->T17[0][0][0].DataWidth;
@@ -227,6 +229,8 @@ static int mainboard_smbios_type17(DMI_INFO *agesa_dmi, int *handle,
 
 	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
+	*handle += 1;
+
 	return len;
 }
 
@@ -234,7 +238,7 @@ static int mainboard_smbios_type19(unsigned long *current, int *handle, int type
 {
 	struct smbios_type19 *t = smbios_carve_table(*current,
 						     SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS,
-						     sizeof(*t), *handle + 2);
+						     sizeof(*t), *handle);
 
 	t->memory_array_handle = type16;
 	t->extended_ending_address = get_spd_offset() == 0 ? 2 * 1024 : 4 * 1024; /* unit: megabytes */
@@ -248,17 +252,19 @@ static int mainboard_smbios_type19(unsigned long *current, int *handle, int type
 
 	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
+	*handle += 1;
 
 	return len;
 }
 
-static int mainboard_smbios_type20(unsigned long *current, int *handle, int type17, u64 addr_end)
+static int mainboard_smbios_type20(unsigned long *current, int *handle, int type17, int type19,
+				   u64 addr_end)
 {
 	struct smbios_type20 *t = smbios_carve_table(*current, SMBIOS_MEMORY_DEVICE_MAPPED_ADDRESS,
-						     sizeof(*t), *handle + 3);
+						     sizeof(*t), *handle);
 
 	t->memory_device_handle = type17;
-	t->memory_array_mapped_address_handle = type17 + 1;
+	t->memory_array_mapped_address_handle = type19;
 	t->addr_start = 0;
 	t->addr_end = addr_end;
 	t->partition_row_pos = 0xff;
@@ -267,6 +273,7 @@ static int mainboard_smbios_type20(unsigned long *current, int *handle, int type
 
 	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
+	*handle += 1;
 
 	return len;
 }
@@ -277,18 +284,20 @@ static int mainboard_smbios_data(struct device *dev, int *handle,
 	DMI_INFO *agesa_dmi;
 	int len = 0;
 	u64 addr_end;
+	int type16, type17, type19;
 
 	agesa_dmi = agesawrapper_getlateinitptr(PICK_DMI);
 
 	if (!agesa_dmi)
 		return len;
 
+	type16 = *handle;
 	len += mainboard_smbios_type16(agesa_dmi, handle, current);
-	len += mainboard_smbios_type17(agesa_dmi, handle, current);
-	len += mainboard_smbios_type19(current, handle, *handle, &addr_end);
-	len += mainboard_smbios_type20(current, handle, *handle + 1, addr_end);
-
-	*handle += 4;
+	type17 = *handle;
+	len += mainboard_smbios_type17(agesa_dmi, handle, type16, current);
+	type19 = *handle;
+	len += mainboard_smbios_type19(current, handle, type16, &addr_end);
+	len += mainboard_smbios_type20(current, handle, type17, type19, addr_end);
 
 	return len;
 }
