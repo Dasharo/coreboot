@@ -1231,6 +1231,8 @@ static void acpi_create_iort(acpi_header_t *header, void *unused)
 	header->length = current - (unsigned long)iort;
 }
 
+__weak void acpi_soc_fill_wdat(acpi_fadt_t *fadt) { }
+
 static void acpi_create_wdat(acpi_header_t *header, void *unused)
 {
 	if (!CONFIG(ACPI_WDAT_WDT))
