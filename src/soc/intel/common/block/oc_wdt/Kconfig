@@ -39,3 +39,11 @@ config SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI
 	  unless the OS drivers are installed for this watchdog.
 
 	  If unsure, say Y.
+
+config SOC_INTEL_COMMON_OC_WDT_WDAT
+	bool
+	depends on SOC_INTEL_COMMON_BLOCK_OC_WDT
+	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
+	select ACPI_WDAT_WDT
+	help
+	  Select this option to expose the OC watchdog in ACPI WDAT tables.
