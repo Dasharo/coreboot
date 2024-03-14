@@ -32,6 +32,7 @@ config SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI
 	bool "Reload the overclocking watchdog using periodic SMI"
 	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
 	depends on SOC_INTEL_COMMON_BLOCK_SMM
+	default n if SOC_INTEL_COMMON_OC_WDT_WDAT
 	default y
 	help
 	  Enables Intel chipset Overclocking Watchdog reloading in the periodic
@@ -43,7 +44,6 @@ config SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI
 config SOC_INTEL_COMMON_OC_WDT_WDAT
 	bool
 	depends on SOC_INTEL_COMMON_BLOCK_OC_WDT
-	depends on SOC_INTEL_COMMON_OC_WDT_ENABLE
 	select ACPI_WDAT_WDT
 	help
 	  Select this option to expose the OC watchdog in ACPI WDAT tables.
