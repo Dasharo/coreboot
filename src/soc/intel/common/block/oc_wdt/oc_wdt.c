@@ -7,17 +7,6 @@
 #include <soc/iomap.h>
 #include <types.h>
 
-/* OC WDT configuration */
-#define PCH_OC_WDT_CTL				(ACPI_BASE_ADDRESS + 0x54)
-#define   PCH_OC_WDT_CTL_RLD			BIT(31)
-#define   PCH_OC_WDT_CTL_ICCSURV_STS		BIT(25)
-#define   PCH_OC_WDT_CTL_NO_ICCSURV_STS		BIT(24)
-#define   PCH_OC_WDT_CTL_FORCE_ALL		BIT(15)
-#define   PCH_OC_WDT_CTL_EN			BIT(14)
-#define   PCH_OC_WDT_CTL_ICCSURV		BIT(13)
-#define   PCH_OC_WDT_CTL_LCK			BIT(12)
-#define   PCH_OC_WDT_CTL_TOV_MASK		0x3FF
-
 static struct watchdog_config wdt_config;
 /*
  * Starts and reloads the OC watchdog with given timeout.
