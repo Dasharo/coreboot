@@ -1166,7 +1166,10 @@ unsigned long acpi_gtdt_add_watchdog(unsigned long current, uint64_t refresh_fra
 	return current + sizeof(struct acpi_gtdt_watchdog);
 }
 
-__weak void acpi_soc_fill_wdat(acpi_fadt_t *fadt) { }
+__weak unsigned long acpi_soc_fill_wdat(acpi_wdat_t *wdat, unsigned long current)
+{
+	return 0;
+}
 
 static void acpi_create_wdat(acpi_header_t *header, void *unused)
 {
