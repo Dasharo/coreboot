@@ -30,7 +30,7 @@ static bool fill_wdat_boot_status_entry(acpi_wdat_entry_t *entry, uint8_t action
 	entry->action = action;
 	entry->instruction = instruction;
 	entry->value = value;
-	entry->mask = PCH_OC_WDT_CTL_ICCSURV_STS;
+	entry->mask = PCH_OC_WDT_CTL_SCRATCH_MASK;
 	entry->register_region.space_id = ACPI_ADDRESS_SPACE_IO;
 	entry->register_region.addrl = PCH_OC_WDT_CTL;
 	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_DWORD;
@@ -95,7 +95,7 @@ unsigned long acpi_soc_fill_wdat(acpi_wdat_t *wdat, unsigned long current)
 
 	/* Get boot status */
 	if (!fill_wdat_boot_status_entry(entry, ACPI_WDAT_GET_STATUS,
-					 ACPI_WDAT_READ_VALUE, PCH_OC_WDT_CTL_ICCSURV_STS))
+					 ACPI_WDAT_READ_VALUE, 1))
 		goto out_err;
 
 	entry++;

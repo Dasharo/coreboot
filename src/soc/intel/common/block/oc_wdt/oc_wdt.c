@@ -16,6 +16,7 @@ static struct watchdog_config wdt_config;
 static void oc_wdt_start(unsigned int timeout)
 {
 	uint32_t oc_wdt_ctrl;
+	bool bootstatus;
 
 	if ((timeout < 70) || (timeout > (PCH_OC_WDT_CTL_TOV_MASK + 1))) {
 		timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
@@ -23,11 +24,19 @@ static void oc_wdt_start(unsigned int timeout)
 				     " using config default: %ds\n", timeout);
 	}
 
-	printk(BIOS_SPEW, "OC Watchdog: start and relaod timer (timeout %ds)\n", timeout);
+	printk(BIOS_SPEW, "OC Watchdog: start and reload timer (timeout %ds)\n", timeout);
 
 	oc_wdt_ctrl = inl(PCH_OC_WDT_CTL);
-	oc_wdt_ctrl |= (PCH_OC_WDT_CTL_EN | PCH_OC_WDT_CTL_FORCE_ALL | PCH_OC_WDT_CTL_ICCSURV);
 
+	bootstatus = !!(oc_wdt_ctrl & (PCH_OC_WDT_CTL_ICCSURV_STS | PCH_OC_WDT_CTL_NO_ICCSURV_STS));
+	if (bootstatus)
+		printk(BIOS_ALERT, "OC Watchdog: Last reset caused by timeout!\n");
+
+	/* Store bootstatus in scratch register to be consumed by WDAT */
+	oc_wdt_ctrl &= ~PCH_OC_WDT_CTL_SCRATCH_MASK;
+	oc_wdt_ctrl |= bootstatus << PCH_OC_WDT_CTL_SCRATCH_OFFSET;
+
+	oc_wdt_ctrl |= (PCH_OC_WDT_CTL_EN | PCH_OC_WDT_CTL_FORCE_ALL | PCH_OC_WDT_CTL_ICCSURV);
 
 	oc_wdt_ctrl &= ~PCH_OC_WDT_CTL_TOV_MASK;
 	oc_wdt_ctrl |= (timeout - 1);
