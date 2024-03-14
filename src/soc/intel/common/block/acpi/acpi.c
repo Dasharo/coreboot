@@ -402,6 +402,7 @@ void generate_cpu_entries(const struct device *device)
 		sgx_fill_ssdt();
 }
 
+#if !CONFIG(SOC_INTEL_COMMON_OC_WDT_WDAT)
 
 static bool fill_wdat_timeout_entry(acpi_wdat_entry_t *entry)
 {
@@ -574,3 +575,5 @@ out_err:
 
 	return current;
 }
+
+#endif /* #if !CONFIG(SOC_INTEL_COMMON_OC_WDT_WDAT) */
