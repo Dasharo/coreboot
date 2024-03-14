@@ -19,3 +19,10 @@ config SOC_INTEL_COMMON_BLOCK_TCO_ENABLE_THROUGH_SMBUS
 	depends on SOC_INTEL_COMMON_BLOCK_TCO
 	help
 	  Select this config to enable TCO BAR through SMBUS
+
+config SOC_INTEL_COMMON_BLOCK_TCO_WDT_WDAT
+	bool
+	depends on SOC_INTEL_COMMON_BLOCK_TCO
+	select ACPI_WDAT_WDT
+	help
+	  Select this option to expose the TCO watchdog in ACPI WDAT tables.
