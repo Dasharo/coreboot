@@ -9,6 +9,7 @@ romstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_TCO) += tco.c
 
 ramstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_SMBUS) += smbus.c
 ramstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_TCO) += tco.c
+ramstage-$(CONFIG_SOC_INTEL_COMMON_BLOCK_TCO_WDT_WDAT) += acpi.c
 
 postcar-$(CONFIG_SOC_INTEL_COMMON_BLOCK_TCO) += tco.c
 smm-$(CONFIG_SOC_INTEL_COMMON_BLOCK_TCO) += tco.c
