@@ -300,7 +300,7 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
 	uint32_t size;
 
-	wdt_cfg->wdt_enable = false;
+	wdt_cfg->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
 	wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
 
 	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
@@ -312,7 +312,7 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 					wdt_cfg, &size);
 
 	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
-		wdt_cfg->wdt_enable = false;
+		wdt_cfg->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
 		wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
 	}
 }
