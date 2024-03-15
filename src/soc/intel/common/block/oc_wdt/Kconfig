@@ -42,7 +42,7 @@ config SOC_INTEL_COMMON_OC_WDT_RELOAD_IN_PERIODIC_SMI
 	  If unsure, say Y.
 
 config SOC_INTEL_COMMON_OC_WDT_WDAT
-	bool
+	bool "Expose the overclocking watchdog in ACPI WDAT table"
 	depends on SOC_INTEL_COMMON_BLOCK_OC_WDT
 	select ACPI_WDAT_WDT
 	help
