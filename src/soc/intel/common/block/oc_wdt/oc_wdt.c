@@ -90,7 +90,7 @@ void setup_oc_wdt(void)
 {
 	get_watchdog_config(&wdt_config);
 
-	if (CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE) && wdt_config.wdt_enable) {
+	if (wdt_config.wdt_enable) {
 		oc_wdt_start(wdt_config.wdt_timeout);
 		if (is_oc_wdt_enabled())
 			printk(BIOS_DEBUG, "OC Watchdog enabled\n");
