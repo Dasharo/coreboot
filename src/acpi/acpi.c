@@ -1166,6 +1166,30 @@ unsigned long acpi_gtdt_add_watchdog(unsigned long current, uint64_t refresh_fra
 	return current + sizeof(struct acpi_gtdt_watchdog);
 }
 
+__weak unsigned long acpi_soc_fill_wdat(acpi_wdat_t *wdat, unsigned long current)
+{
+	return 0;
+}
+
+static void acpi_create_wdat(acpi_header_t *header, void *unused)
+{
+	if (!CONFIG(ACPI_WDAT_WDT))
+		return;
+
+	acpi_wdat_t *wdat = (acpi_wdat_t *)header;
+	unsigned long current = (unsigned long)wdat + sizeof(acpi_wdat_t);
+
+	memset((void *)wdat, 0, sizeof(acpi_wdat_t));
+
+	if (acpi_fill_header(header, "WDAT", WDAT, sizeof(acpi_wdat_t)) != CB_SUCCESS)
+		return;
+
+	current = acpi_soc_fill_wdat(wdat, current);
+
+	/* (Re)calculate length. */
+	header->length = current - (unsigned long)wdat;
+}
+
 unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t uid)
 {
 	memset(lpi_desc, 0, sizeof(acpi_lpi_desc_ncst_t));
@@ -1366,6 +1390,7 @@ unsigned long write_acpi_tables(const unsigned long start)
 		{ acpi_create_bert, NULL, sizeof(acpi_bert_t) },
 		{ acpi_create_spcr, NULL, sizeof(acpi_spcr_t) },
 		{ acpi_create_gtdt, NULL, sizeof(acpi_gtdt_t) },
+		{ acpi_create_wdat, NULL, sizeof(acpi_wdat_t) },
 	};
 
 	current = start;
@@ -1692,6 +1717,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 4;
 	case GTDT:
 		return 3;
+	case WDAT:
+		return 1;
 	default:
 		return -1;
 	}

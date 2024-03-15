@@ -217,17 +217,17 @@ static void disable_me_hmrfpo(uint8_t *var)
 
 	printk (BIOS_DEBUG, "ME HMRFPO status: ");
 	switch (hmrfpo_sts) {
-	case 0: 
+	case 0:
 		printk (BIOS_DEBUG, "DISABLED\n");
 		if (cse_hmrfpo_enable() != CB_SUCCESS)
 			goto hmrfpo_error;
 		else
 			do_global_reset(); /* No return */
 		break;
-	case 1: 
+	case 1:
 		printk (BIOS_DEBUG, "LOCKED\n");
 		goto hmrfpo_error;
-	case 2: 
+	case 2:
 		printk (BIOS_DEBUG, "ENABLED\n");
 		/* Override ME disable method to not switch ME mode */
 		*var =  ME_MODE_DISABLE_HMRFPO;
@@ -300,7 +300,7 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 	enum cb_err ret = CB_EFI_OPTION_NOT_FOUND;
 	uint32_t size;
 
-	wdt_cfg->wdt_enable = false;
+	wdt_cfg->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
 	wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
 
 	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
@@ -312,7 +312,7 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 					wdt_cfg, &size);
 
 	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
-		wdt_cfg->wdt_enable = false;
+		wdt_cfg->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
 		wdt_cfg->wdt_timeout = CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS;
 	}
 }
