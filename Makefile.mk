@@ -1000,7 +1000,7 @@ placed-files-in-region = $(foreach file,$(call all-files-in-region,$(1)), \
 # $(call sort-files,subset of $(cbfs-files))
 # reorders the files in the given set to list files at fixed positions first,
 # followed by a payload (which might be big, best to place it first when there
-# is little files in CBFS), followed by aligned files, and finally those with
+# are few files in CBFS), followed by aligned files, and finally those with
 # no constraints.
 sort-files = \
 	$(eval _tmp_fixed:=) \
