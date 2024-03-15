@@ -17,7 +17,7 @@ static bool fill_wdat_timeout_entry(acpi_wdat_entry_t *entry)
 	entry->mask = PCH_OC_WDT_CTL_TOV_MASK;
 	entry->register_region.space_id = ACPI_ADDRESS_SPACE_IO;
 	entry->register_region.addrl = PCH_OC_WDT_CTL;
-	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_DWORD;
+	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_WORD;
 
 	return true;
 }
@@ -30,10 +30,10 @@ static bool fill_wdat_boot_status_entry(acpi_wdat_entry_t *entry, uint8_t action
 	entry->action = action;
 	entry->instruction = instruction;
 	entry->value = value;
-	entry->mask = PCH_OC_WDT_CTL_SCRATCH_MASK;
+	entry->mask = PCH_OC_WDT_CTL_SCRATCH_MASK >> PCH_OC_WDT_CTL_SCRATCH_OFFSET;
 	entry->register_region.space_id = ACPI_ADDRESS_SPACE_IO;
-	entry->register_region.addrl = PCH_OC_WDT_CTL;
-	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_DWORD;
+	entry->register_region.addrl = PCH_OC_WDT_CTL + 2;
+	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_BYTE;
 
 	return true;
 }
@@ -49,7 +49,7 @@ static bool fill_wdat_run_state_entry(acpi_wdat_entry_t *entry, uint8_t action,
 	entry->mask = PCH_OC_WDT_CTL_EN;
 	entry->register_region.space_id = ACPI_ADDRESS_SPACE_IO;
 	entry->register_region.addrl = PCH_OC_WDT_CTL;
-	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_DWORD;
+	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_WORD;
 
 	return true;
 }
@@ -59,12 +59,12 @@ static bool fill_wdat_ping_entry(acpi_wdat_entry_t *entry)
 	memset((void *)entry, 0, sizeof(acpi_wdat_entry_t));
 
 	entry->action = ACPI_WDAT_RESET;
-	entry->instruction = ACPI_WDAT_WRITE_VALUE | ACPI_WDAT_PRESERVE_REGISTER;
-	entry->value = PCH_OC_WDT_CTL_RLD;
-	entry->mask = PCH_OC_WDT_CTL_RLD;
+	entry->instruction = ACPI_WDAT_WRITE_VALUE;
+	entry->value = PCH_OC_WDT_CTL_RLD >> 24;
+	entry->mask = PCH_OC_WDT_CTL_RLD >> 24;
 	entry->register_region.space_id = ACPI_ADDRESS_SPACE_IO;
-	entry->register_region.addrl = PCH_OC_WDT_CTL;
-	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_DWORD;
+	entry->register_region.addrl = PCH_OC_WDT_CTL + 3;
+	entry->register_region.access_size = ACPI_WDAT_ACCESS_SIZE_BYTE;
 
 	return true;
 }
@@ -102,7 +102,7 @@ unsigned long acpi_soc_fill_wdat(acpi_wdat_t *wdat, unsigned long current)
 
 	/* Set boot status */
 	if (!fill_wdat_boot_status_entry(entry, ACPI_WDAT_SET_STATUS,
-					 ACPI_WDAT_WRITE_VALUE | ACPI_WDAT_PRESERVE_REGISTER,
+					 ACPI_WDAT_WRITE_VALUE,
 					 0))
 		goto out_err;
 
