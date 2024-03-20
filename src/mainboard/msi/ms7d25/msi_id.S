@@ -31,7 +31,7 @@ msi_sign_on:
 	.byte	'A'
 #endif
 #if CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4)
-	.byte	0x30 + DASHARO_MAJOR_VERSION
+	.byte	'1'
 #endif
 	.byte	0x30 + DASHARO_MINOR_VERSION
 	.byte	0x30 + DASHARO_PATCH_VERSION
