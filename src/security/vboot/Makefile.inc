@@ -14,6 +14,57 @@
 ## GNU General Public License for more details.
 ##
 
+ifeq ($(CONFIG_VBOOT_LIB),y)
+
+bootblock-y += vboot_lib.c
+verstage-y += vboot_lib.c
+romstage-y += vboot_lib.c
+ramstage-y += vboot_lib.c
+postcar-y += vboot_lib.c
+
+vboot-fixup-includes = $(patsubst -I%,-I$(top)/%,\
+		       $(patsubst $(src)/%.h,$(top)/$(src)/%.h,\
+		       $(filter-out -I$(obj),$(1))))
+
+vboot-fixup-includes = $(patsubst -I%,-I$(top)/%,\
+		       $(patsubst $(src)/%.h,$(top)/$(src)/%.h,\
+		       $(filter-out -I$(obj),$(1))))
+
+# call with $1 = stage name to create rules for building the library
+# for the stage and adding it to the stage's set of object files.
+define vboot-for-stage
+VB2_LIB_$(1) = $(obj)/external/vboot_reference-$(1)/vboot_fw20.a
+VBOOT_CFLAGS_$(1) += $$(call vboot-fixup-includes,$$(CPPFLAGS_$(1)))
+VBOOT_CFLAGS_$(1) += $$(CFLAGS_$(1))
+VBOOT_CFLAGS_$(1) += $$(call vboot-fixup-includes,$$($(1)-c-ccopts))
+VBOOT_CFLAGS_$(1) += -I$(abspath $(obj)) -Wno-missing-prototypes
+VBOOT_CFLAGS_$(1) += -DVBOOT_DEBUG
+
+$$(VB2_LIB_$(1)): $(obj)/config.h
+	printf "    MAKE       $(subst $(obj)/,,$(@))\n"
+	+FIRMWARE_ARCH=$$(ARCHDIR-$$(ARCH-$(1)-y)) \
+	CC="$$(CC_$(1))" \
+	CFLAGS="$$(VBOOT_CFLAGS_$(1))" VBOOT2="y" \
+	$(MAKE) -C $(VBOOT_SOURCE) \
+		BUILD=$$(abspath $$(dir $$(VB2_LIB_$(1)))) \
+		V=$(V) \
+		fwlib20
+
+.PHONY: $$(VB2_LIB_$(1))
+
+$(1)-srcs += $$(VB2_LIB_$(1))
+
+endef # vboot-for-stage
+
+CFLAGS_common += -I3rdparty/vboot/firmware/2lib/include
+
+$(eval $(call vboot-for-stage,bootblock))
+$(eval $(call vboot-for-stage,romstage))
+$(eval $(call vboot-for-stage,ramstage))
+$(eval $(call vboot-for-stage,postcar))
+
+endif # CONFIG_VBOOT_LIB
+
 ifeq ($(CONFIG_VBOOT),y)
 
 bootblock-y += bootmode.c

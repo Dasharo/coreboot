@@ -97,6 +97,8 @@ config ENABLE_BUILTIN_COM1
 
 config TXE_SECURE_BOOT
 	bool "Perform verified boot with TXE Secure Boot"
+	depends on !VBOOT
+	select VBOOT_LIB
 	help
 	  The TXE on Baytrail SOC has Secure Boot capability. Choose this
 	  option to enable the TXE Secure Boot verified boot flow in coreboot.
@@ -105,9 +107,6 @@ config TXE_SECURE_BOOT
 # Memory mapped location of the binary is 0xffff8000 (0x80 offset for CBFS metadata)
 config ROMSTAGE_ADDR
 	default 0xffff8080 if TXE_SECURE_BOOT
-
-config VBOOT
-	depends on !TXE_SECURE_BOOT
 
 config VGA_BIOS_FILE
 	string
