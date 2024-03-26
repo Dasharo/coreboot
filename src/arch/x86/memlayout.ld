@@ -45,9 +45,10 @@ SECTIONS
 #else
 	/* Link exactly at the requested address and rely on cbfstool to
 	 * relocate to XIP (it will relocate to the same address anyway).
-	 * Restrict the size by decrementing the space of bootblock (around 2K)
+	 * Set the size to occupy the rest of flash space. The cbfstool will
+	 * refuse to add romstage to CBFS if it overlaps the bootblock.
 	 */
-	ROMSTAGE(CONFIG_ROMSTAGE_ADDR, 0xfffff800 - CONFIG_ROMSTAGE_ADDR)
+	ROMSTAGE(CONFIG_ROMSTAGE_ADDR, 0xffffffff - CONFIG_ROMSTAGE_ADDR + 1)
 #endif
 
 	#include EARLY_MEMLAYOUT
