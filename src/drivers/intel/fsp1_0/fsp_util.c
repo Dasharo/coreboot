@@ -345,7 +345,7 @@ static void fsp_finalize(void *unused)
 
 
 /* Set up for the ramstage FSP calls */
-BOOT_STATE_INIT_ENTRY(BS_DEV_ENUMERATE, BS_ON_EXIT, fsp_after_pci_enum, NULL);
+BOOT_STATE_INIT_ENTRY(BS_DEV_RESOURCES, BS_ON_EXIT, fsp_after_pci_enum, NULL);
 BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_BOOT, BS_ON_ENTRY, fsp_finalize, NULL);
 
 /* Update the MRC/fast boot cache as part of the late table writing stage */
