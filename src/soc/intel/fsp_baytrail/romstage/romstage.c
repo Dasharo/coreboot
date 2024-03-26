@@ -41,6 +41,7 @@
 #include <version.h>
 #include <pc80/mc146818rtc.h>
 #include <device/pci_def.h>
+#include <device/pci_ops.h>
 #include <security/vboot/vboot_common.h>
 
 /* Return 0, 3, 4 or 5 to indicate the previous sleep state. */
@@ -202,11 +203,16 @@ void main(FSP_INFO_HEADER *fsp_info_header)
 
 	timestamp_add_now(TS_BEFORE_INITRAM);
 
-  /*
-   * Call early init to initialize memory and chipset. This function returns
-   * to the romstage_main_continue function with a pointer to the HOB
-   * structure.
-   */
+	printk(BIOS_DEBUG, "TXE Device ID %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0));
+	printk(BIOS_DEBUG, "TXE SEC FWSTS0 %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0x40));
+	printk(BIOS_DEBUG, "TXE SEC FWSTS1 %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0x48));
+	printk(BIOS_DEBUG, "TXE SB STATUS %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0x50));
+
+	/*
+	 * Call early init to initialize memory and chipset. This function returns
+	 * to the romstage_main_continue function with a pointer to the HOB
+	 * structure.
+	 */
 	post_code(0x48);
 	printk(BIOS_DEBUG, "Starting the Intel FSP (early_init)\n");
 	fsp_early_init(fsp_info_header);
@@ -259,6 +265,11 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr)
 
 	if (CONFIG(SMM_TSEG))
 		smm_list_regions();
+
+	printk(BIOS_DEBUG, "TXE Device ID %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0));
+	printk(BIOS_DEBUG, "TXE SEC FWSTS0 %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0x40));
+	printk(BIOS_DEBUG, "TXE SEC FWSTS1 %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0x48));
+	printk(BIOS_DEBUG, "TXE SB STATUS %08x\n", pci_read_config32(PCI_DEV(0, TXE_DEV, TXE_FUNC), 0x50));
 
 	/* Load the ramstage. */
 	post_code(0x4f);
