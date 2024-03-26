@@ -95,6 +95,20 @@ config ENABLE_BUILTIN_COM1
 	  configure the pads and enable it. This serial port can be used for
 	  the debug console.
 
+config TXE_SECURE_BOOT
+	bool "Perform verified boot with TXE Secure Boot"
+	help
+	  The TXE on Baytrail SOC has Secure Boot capability. Choose this
+	  option to enable the TXE Secure Boot verified boot flow in coreboot.
+
+# Romstage must be put between bootblock and FSP to fit inside IBB.
+# Memory mapped location of the binary is 0xffff8000 (0x80 offset for CBFS metadata)
+config ROMSTAGE_ADDR
+	default 0xffff8080 if TXE_SECURE_BOOT
+
+config VBOOT
+	depends on !TXE_SECURE_BOOT
+
 config VGA_BIOS_FILE
 	string
 	default "../intel/cpu/baytrail/vbios/Vga.dat" if VGA_BIOS

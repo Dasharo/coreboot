@@ -30,6 +30,10 @@
 #include <soc/acpi.h>
 #include <soc/iomap.h>
 
+#define FSP_DEBUG(x...) \
+	if (CONFIG(DISPLAY_UPD_DATA)) \
+		printk(FSP_INFO_LEVEL, x)
+
 /* Copy the default UPD region and settings to a buffer for modification */
 static void GetUpdDefaultFromFsp (FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION   *UpdData)
 {
@@ -77,7 +81,7 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 {
 	DEVTREE_CONST struct device *dev;
 	DEVTREE_CONST config_t *config;
-	printk(FSP_INFO_LEVEL, "Configure Default UPD Data\n");
+	FSP_DEBUG("Configure Default UPD Data\n");
 
 	dev = pcidev_path_on_root(SOC_DEVFN_SOC);
 	config = config_of(dev);
@@ -116,13 +120,13 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 
 	UpdData->PcdMrcInitTsegSize = CONFIG_SMM_TSEG_SIZE >> 20;
 
-	printk(FSP_INFO_LEVEL, "GTT Size:\t\t%d MB\n", UpdData->PcdGttSize);
-	printk(FSP_INFO_LEVEL, "Tseg Size:\t\t%d MB\n", UpdData->PcdMrcInitTsegSize);
-	printk(FSP_INFO_LEVEL, "Aperture Size:\t\t%d MB\n",
+	FSP_DEBUG("GTT Size:\t\t%d MB\n", UpdData->PcdGttSize);
+	FSP_DEBUG("Tseg Size:\t\t%d MB\n", UpdData->PcdMrcInitTsegSize);
+	FSP_DEBUG("Aperture Size:\t\t%d MB\n",
 		APERTURE_SIZE_BASE << UpdData->PcdApertureSize);
-	printk(FSP_INFO_LEVEL, "IGD Memory Size:\t%d MB\n",
+	FSP_DEBUG("IGD Memory Size:\t%d MB\n",
 		UpdData->PcdIgdDvmt50PreAlloc * IGD_MEMSIZE_MULTIPLIER);
-	printk(FSP_INFO_LEVEL, "MMIO Size:\t\t%d MB\n", UpdData->PcdMrcInitMmioSize);
+	FSP_DEBUG("MMIO Size:\t\t%d MB\n", UpdData->PcdMrcInitMmioSize);
 
 	/* Advance dev to PCI device 0.0 */
 	for (dev = &dev_root; dev; dev = dev_find_next_pci_device(dev)){
@@ -168,11 +172,9 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 					/* Gold2 and earlier FSP: ISPEnable is the field	*/
 					/* next to PcdGttSize in UPD_DATA_REGION struct		*/
 					*(&(UpdData->PcdGttSize)+sizeof(UINT8)) = dev->enabled;
-					printk (FSP_INFO_LEVEL,
-						"Baytrail Gold2 or earlier FSP, adjust ISPEnable offset.\n");
+					FSP_DEBUG("Baytrail Gold2 or earlier FSP, adjust ISPEnable offset.\n");
 				}
-				printk(FSP_INFO_LEVEL, "MIPI/ISP:\t\t%s\n",
-						dev->enabled?"Enabled":"Disabled");
+				FSP_DEBUG("MIPI/ISP:\t\t%s\n", dev->enabled ? "Enabled" : "Disabled");
 				break;
 			case SOC_DEVFN_EMMC: /* EMMC 4.1*/
 				if ((dev->enabled) &&
@@ -200,27 +202,23 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 		}
 	}
 
-	if (UpdData->PcdEnableLpe < sizeof(acpi_pci_mode_strings) / sizeof (char *))
-		printk(FSP_INFO_LEVEL, "Lpe:\t\t\t%s\n",
-			acpi_pci_mode_strings[UpdData->PcdEnableLpe]);
-	else
-		printk(FSP_INFO_LEVEL, "Lpe:\t\t\tUnknown (0x%02x)\n",
-			UpdData->PcdEnableLpe);
+	if (UpdData->PcdEnableLpe < sizeof(acpi_pci_mode_strings) / sizeof (char *)) {
+		FSP_DEBUG("Lpe:\t\t\t%s\n", acpi_pci_mode_strings[UpdData->PcdEnableLpe]);
+	} else {
+		FSP_DEBUG("Lpe:\t\t\tUnknown (0x%02x)\n", UpdData->PcdEnableLpe);
+	}
 
-	if (UpdData->PcdeMMCBootMode < sizeof(emmc_mode_strings) / sizeof (char *))
-		printk(FSP_INFO_LEVEL, "eMMC Mode:\t\t%s\n",
-			emmc_mode_strings[UpdData->PcdeMMCBootMode]);
-	else
-		printk(FSP_INFO_LEVEL, "eMMC Mode:\t\tUnknown (0x%02x)\n",
-			UpdData->PcdeMMCBootMode);
+	if (UpdData->PcdeMMCBootMode < sizeof(emmc_mode_strings) / sizeof (char *)) {
+		FSP_DEBUG("eMMC Mode:\t\t%s\n", emmc_mode_strings[UpdData->PcdeMMCBootMode]);
+	} else {
+		FSP_DEBUG("eMMC Mode:\t\tUnknown (0x%02x)\n", UpdData->PcdeMMCBootMode);
+	}
 
+	if (UpdData->PcdEnableSata) {
+		FSP_DEBUG("SATA Mode:\t\t%s\n", UpdData->PcdSataMode?"AHCI":"IDE");
+	}
 
-	if (UpdData->PcdEnableSata)
-		printk(FSP_INFO_LEVEL, "SATA Mode:\t\t%s\n",
-			UpdData->PcdSataMode?"AHCI":"IDE");
-
-	printk(FSP_INFO_LEVEL, "Xhci:\t\t\t%s\n",
-		UpdData->PcdEnableXhci?"Enabled":"Disabled");
+	FSP_DEBUG("Xhci:\t\t\t%s\n", UpdData->PcdEnableXhci?"Enabled":"Disabled");
 
 	/*
 	 * set memory down parameters
@@ -246,7 +244,7 @@ static void ConfigureDefaultUpdData(FSP_INFO_HEADER *FspInfo, UPD_DATA_REGION *U
 			UPD_MEMDOWN_CHECK(DIMMtRTP,     NO_DECREMENT_FOR_DEFAULT);
 			UPD_MEMDOWN_CHECK(DIMMtFAW,     NO_DECREMENT_FOR_DEFAULT);
 
-			printk (FSP_INFO_LEVEL,
+			FSP_DEBUG(
 				"Memory Down Data Existed : %s\n"\
 				"- Speed (0: 800, 1: 1066, 2: 1333, 3: 1600): %d\n"\
 				"- Type  (0: DDR3, 1: DDR3L) : %d\n"\
