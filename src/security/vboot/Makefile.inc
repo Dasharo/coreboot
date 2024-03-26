@@ -32,6 +32,7 @@ vboot-fixup-includes = $(patsubst -I%,-I$(top)/%,\
 
 # call with $1 = stage name to create rules for building the library
 # for the stage and adding it to the stage's set of object files.
+# For TXE Secure Boot, add only SHA256 to save space for romstage
 define vboot-for-stage
 VB2_LIB_$(1) = $(obj)/external/vboot_reference-$(1)/vboot_fw20.a
 VBOOT_CFLAGS_$(1) += $$(call vboot-fixup-includes,$$(CPPFLAGS_$(1)))
@@ -39,6 +40,13 @@ VBOOT_CFLAGS_$(1) += $$(CFLAGS_$(1))
 VBOOT_CFLAGS_$(1) += $$(call vboot-fixup-includes,$$($(1)-c-ccopts))
 VBOOT_CFLAGS_$(1) += -I$(abspath $(obj)) -Wno-missing-prototypes
 VBOOT_CFLAGS_$(1) += -DVBOOT_DEBUG
+
+ifeq ($(CONFIG_TXE_SECURE_BOOT),y)
+ifeq ($(1),romstage)
+VBOOT_CFLAGS_$(1) += -D VB2_SUPPORT_SHA1=0
+VBOOT_CFLAGS_$(1) += -D VB2_SUPPORT_SHA512=0
+endif
+endif
 
 $$(VB2_LIB_$(1)): $(obj)/config.h
 	printf "    MAKE       $(subst $(obj)/,,$(@))\n"
@@ -58,7 +66,9 @@ endef # vboot-for-stage
 
 CFLAGS_common += -I3rdparty/vboot/firmware/2lib/include
 
+ifeq ($(CONFIG_C_ENVIRONMENT_BOOTBLOCK),y)
 $(eval $(call vboot-for-stage,bootblock))
+endif
 $(eval $(call vboot-for-stage,romstage))
 $(eval $(call vboot-for-stage,ramstage))
 $(eval $(call vboot-for-stage,postcar))
