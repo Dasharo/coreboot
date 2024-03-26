@@ -86,6 +86,24 @@
 #define RID_C_STEPPING_START 0xe
 #define RID_D_STEPPING_START 0x11
 
+#define PCH_LPC_RID_1	0x01 // A0 Stepping (17 x 17)
+#define PCH_LPC_RID_2	0x02 // A0 Stepping (25 x 27)
+#define PCH_LPC_RID_3	0x03 // A1 Stepping (17 x 17)
+#define PCH_LPC_RID_4	0x04 // A1 Stepping (25 x 27)
+#define PCH_LPC_RID_5	0x05 // B0 Stepping (17 x 17)
+#define PCH_LPC_RID_6	0x06 // B0 Stepping (25 x 27)
+#define PCH_LPC_RID_7	0x07 // B1 Stepping (17 x 17)
+#define PCH_LPC_RID_8	0x08 // B1 Stepping (25 x 27)
+#define PCH_LPC_RID_9	0x09 // B2 Stepping (17 x 17)
+#define PCH_LPC_RID_A	0x0A // B2 Stepping (25 x 27)
+#define PCH_LPC_RID_B	0x0B // B3 Stepping (17 x 17)
+#define PCH_LPC_RID_C	0x0C // B3 Stepping (25 x 27)
+#define PCH_LPC_RID_D	0x0D // C0 Stepping (17 x 17)
+#define PCH_LPC_RID_E	0x0E // C0 Stepping (25 x 27)
+#define PCH_LPC_RID_11	0x11 // D0 Stepping (25 x 27)
+#define PCH_LPC_RID_12	0x12 // D0 Stepping (25 x 27)
+#define PCH_LPC_RID_13	0x13 // D1 Stepping (25 x 27)
+
 enum baytrail_stepping {
 	STEP_A0,
 	STEP_A1,
@@ -95,6 +113,7 @@ enum baytrail_stepping {
 	STEP_B3,
 	STEP_C0,
 	STEP_D0,
+	STEP_D1
 };
 
 /* Registers behind the RCBA_BASE_ADDRESS bar. */

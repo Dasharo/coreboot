@@ -28,13 +28,13 @@ subdirs-y += ../../../cpu/x86/smm
 subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../lib/fsp
 
-romstage-y += gpio.c
 romstage-y += iosf.c
 romstage-y += memmap.c
 romstage-y += pmutil.c
 romstage-y += spi.c
 romstage-y += tsc_freq.c
 romstage-y += i2c.c
+romstage-$(CONFIG_TXE_SECURE_BOOT) += secure_boot.c
 
 postcar-y += tsc_freq.c
 
@@ -51,9 +51,11 @@ ramstage-y += memmap.c
 ramstage-y += northcluster.c
 ramstage-y += pmutil.c
 ramstage-y += ramstage.c
+ramstage-y += report_platform.c
 ramstage-y += southcluster.c
 ramstage-y += spi.c
 ramstage-y += tsc_freq.c
+ramstage-$(CONFIG_TXE_SECURE_BOOT) += secure_boot.c
 ramstage-$(CONFIG_HAVE_SMI_HANDLER) += smm.c
 
 smm-y += pmutil.c

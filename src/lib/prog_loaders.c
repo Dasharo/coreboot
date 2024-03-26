@@ -50,6 +50,9 @@ int prog_locate(struct prog *prog)
 
 	cbfs_file_data(prog_rdev(prog), &file);
 
+	if (prog_load_hook(prog))
+		return -1;
+
 	return 0;
 }
 
@@ -80,6 +83,7 @@ fail:
 }
 
 int __weak prog_locate_hook(struct prog *prog) { return 0; }
+int __weak prog_load_hook(struct prog *prog) { return 0; }
 
 static void ramstage_cache_invalid(void)
 {

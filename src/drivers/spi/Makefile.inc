@@ -31,10 +31,12 @@ $(1)-$(CONFIG_SPI_FLASH_WINBOND) += winbond.c
 $(1)-$(CONFIG_SPI_FRAM_RAMTRON) += ramtron.c
 endef
 
+ifeq ($(CONFIG_BOOT_DEVICE_SPI_FLASH_RW_NOMMAP_EARLY),y)
 $(eval $(call add_spi_stage,bootblock,_EARLY))
 $(eval $(call add_spi_stage,romstage,_EARLY))
 $(eval $(call add_spi_stage,verstage,_EARLY))
 $(eval $(call add_spi_stage,postcar,_EARLY))
+endif
 $(eval $(call add_spi_stage,ramstage))
 ifeq ($(CONFIG_SPI_FLASH_SMM),y)
 $(eval $(call add_spi_stage,smm))

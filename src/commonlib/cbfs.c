@@ -21,19 +21,22 @@
 #if !defined(ERROR)
 #define ERROR(x...) printk(BIOS_ERR, "CBFS: " x)
 #endif
-#if !defined(LOG)
-#define LOG(x...) printk(BIOS_INFO, "CBFS: " x)
-#endif
 #if defined(CONFIG)
 
 #if CONFIG(DEBUG_CBFS)
 #define DEBUG(x...) printk(BIOS_SPEW, "CBFS: " x)
+#if !defined(LOG)
+#define LOG(x...) printk(BIOS_INFO, "CBFS: " x)
+#endif
 #else
 #define DEBUG(x...)
 #endif
-
 #elif !defined(DEBUG)
 #define DEBUG(x...)
+#endif
+
+#if !defined(LOG)
+#define LOG(x...) printk(BIOS_INFO, "CBFS: " x)
 #endif
 
 static size_t cbfs_next_offset(const struct region_device *cbfs,

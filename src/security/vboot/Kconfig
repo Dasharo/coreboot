@@ -15,6 +15,13 @@
 
 menu "Verified Boot (vboot)"
 
+config VBOOT_LIB
+	bool
+	help
+	  Build and link the vboot library. Makes the vboot API accessible across
+	  all coreboot stages, without enabling vboot verification. For verification,
+	  please see the VBOOT option below.
+
 config VBOOT
 	bool "Verify firmware with vboot."
 	default n
