@@ -429,6 +429,17 @@ static inline void ssus_set_gpio(int pad, int val)
 	write32(val_addr, ((read32(val_addr) & ~0x1) | val));
 }
 
+static inline void score_set_internal_pull(int pad, uint32_t pull)
+{
+	uint32_t reg;
+	uint32_t *pconf0_addr = score_pconf0(pad);
+
+	reg = read32(pconf0_addr);
+	reg &= ~(0xf << 7);
+	reg |= pull;
+	write32(pconf0_addr, reg);
+}
+
 static inline void ssus_disable_internal_pull(int pad)
 {
 	uint32_t reg;
