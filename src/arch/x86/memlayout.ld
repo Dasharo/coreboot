@@ -37,9 +37,18 @@ SECTIONS
 					CONFIG_RAMTOP - CONFIG_RAMBASE))
 
 #elif ENV_ROMSTAGE
+
+#if !CONFIG(TXE_SECURE_BOOT)
 	/* The 1M size is not allocated. It's just for basic size checking.
 	 * Link at 32MiB address and rely on cbfstool to relocate to XIP. */
 	ROMSTAGE(CONFIG_ROMSTAGE_ADDR, 1M)
+#else
+	/* Link exactly at the requested address and rely on cbfstool to
+	 * relocate to XIP (it will relocate to the same address anyway).
+	 * Restrict the size by decrementing the space of bootblock (around 2K)
+	 */
+	ROMSTAGE(CONFIG_ROMSTAGE_ADDR, 0xfffff800 - CONFIG_ROMSTAGE_ADDR)
+#endif
 
 	#include EARLY_MEMLAYOUT
 #elif ENV_VERSTAGE
