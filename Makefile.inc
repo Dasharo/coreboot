@@ -1183,8 +1183,13 @@ ifeq ($(CONFIG_ARCH_ROMSTAGE_X86_32)$(CONFIG_ARCH_ROMSTAGE_X86_64),y)
 # requirements of the program segment.
 #
 # Make sure that segment for .car.data is ignored while adding romstage.
-$(CONFIG_CBFS_PREFIX)/romstage-align := 64
 $(CONFIG_CBFS_PREFIX)/romstage-options := -S ".car.data"
+ifeq ($(CONFIG_TXE_SECURE_BOOT),y)
+$(CONFIG_CBFS_PREFIX)/romstage-position := $(CONFIG_ROMSTAGE_ADDR)
+# $(CONFIG_CBFS_PREFIX)/romstage-options += -g
+else
+$(CONFIG_CBFS_PREFIX)/romstage-align := 64
+endif
 
 # If CAR does not support execution of code, romstage on x86 is expected to be
 # xip.
