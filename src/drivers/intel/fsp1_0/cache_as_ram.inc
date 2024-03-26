@@ -40,6 +40,22 @@ find_fsp_ret:
 find_fsp_ok:
 	post_code(POST_FSP_TEMP_RAM_INIT)
 
+#if CONFIG(TXE_SECURE_BOOT)
+	/*
+	* Find the 2nd FSP Header and compare the two headers
+	* EBP contains the primary FSP header
+	*/
+	cld
+	mov	%ebp, %edi
+	mov	$(CONFIG_FSP_LOC + 0x20494), %esi
+	mov	4(%esi), %ecx
+	repe	cmpsb
+	jz	fsp_2nd_header_ok
+	mov	$0xb1, %eax
+	jmp	.Lhlt
+
+fsp_2nd_header_ok:
+#endif
 	/* Calculate entry into FSP */
 	mov	0x30(%ebp), %eax	/* Load TempRamInitEntry */
 	add	0x1c(%ebp), %eax	/* add in the offset for the FSP base address */
