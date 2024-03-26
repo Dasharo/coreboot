@@ -245,8 +245,6 @@ void romstage_main_continue(EFI_STATUS status, void *hob_list_ptr)
 	prev_sleep_state = chipset_prev_sleep_state(1);
 	printk(BIOS_DEBUG, "%s: prev_sleep_state = S%d\n", __func__, prev_sleep_state);
 
-	report_platform_info();
-
 	post_code(0x4b);
 
 	late_mainboard_romstage_entry();

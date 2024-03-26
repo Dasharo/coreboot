@@ -450,4 +450,15 @@ static inline void ssus_disable_internal_pull(int pad)
 	write32(pconf0_addr, reg);
 }
 
+static inline void ssus_set_as_input(int pad)
+{
+	uint32_t reg;
+	uint32_t *val_addr = ssus_pconf0(pad) + (PAD_VAL_REG/sizeof(uint32_t));
+
+	reg = read32(val_addr);
+	reg &= ~0x6;
+	reg |= 4;
+	write32(val_addr, reg);
+}
+
 #endif /* _BAYTRAIL_GPIO_H_ */

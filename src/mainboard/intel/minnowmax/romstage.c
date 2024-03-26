@@ -123,8 +123,11 @@ void romstage_fsp_rt_buffer_callback(FSP_INIT_RT_BUFFER *FspRtBuffer)
 	 *
 	 * devicetree.cb assumes 1GB SKU board
 	 */
-	configure_ssus_gpio(5, PAD_FUNC0 | PAD_PULL_DISABLE, PAD_VAL_INPUT);
-	gpio5 = read_ssus_gpio(5);
+	ssus_disable_internal_pull(5);
+	ssus_select_func(5, PAD_FUNC0);
+	ssus_set_as_input(5);
+
+	gpio5 = ssus_get_gpio(5);
 	if (gpio5)
 		UpdData->PcdMemoryParameters.DIMMDensity
 		+= (DIMM_DENSITY_4G_BIT - DIMM_DENSITY_2G_BIT);

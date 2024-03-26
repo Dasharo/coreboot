@@ -16,5 +16,4 @@
 
 romstage-y += romstage.c
 romstage-y += pmc.c
-romstage-y += report_platform.c
 romstage-$(CONFIG_ENABLE_BUILTIN_COM1) += uart.c

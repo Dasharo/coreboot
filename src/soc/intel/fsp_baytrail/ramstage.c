@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <soc/baytrail.h>
 #include <soc/gpio.h>
 #include <soc/lpc.h>
 #include <soc/nvs.h>
@@ -144,6 +145,8 @@ static void s3_resume_prepare(void)
 void baytrail_init_pre_device(void)
 {
 	struct soc_gpio_config *config;
+
+	report_platform_info();
 
 	fill_in_pattrs();
 

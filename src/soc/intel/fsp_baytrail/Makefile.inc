@@ -28,7 +28,6 @@ subdirs-y += ../../../cpu/x86/smm
 subdirs-y += ../../../cpu/x86/tsc
 subdirs-y += ../../../lib/fsp
 
-romstage-y += gpio.c
 romstage-y += iosf.c
 romstage-y += memmap.c
 romstage-y += pmutil.c
@@ -52,6 +51,7 @@ ramstage-y += memmap.c
 ramstage-y += northcluster.c
 ramstage-y += pmutil.c
 ramstage-y += ramstage.c
+ramstage-y += report_platform.c
 ramstage-y += southcluster.c
 ramstage-y += spi.c
 ramstage-y += tsc_freq.c
