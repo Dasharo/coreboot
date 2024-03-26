@@ -25,6 +25,16 @@
 
 #include "fmap_config.h"
 
+#if defined(CONFIG)
+#if CONFIG(DEBUG_CBFS)
+#define FMAP_DEBUG(x...) printk(BIOS_DEBUG, "FMAP: " x)
+#else
+#define FMAP_DEBUG(x...)
+#endif
+#elif !defined(FMAP_DEBUG)
+#define FMAP_DEBUG(x...)
+#endif
+
 /*
  * See http://code.google.com/p/flashmap/ for more information on FMAP.
  */
@@ -136,7 +146,7 @@ static int find_fmap_directory(struct region_device *fmrd)
 		return -1;
 
 	if (check_signature(fmap)) {
-		printk(BIOS_DEBUG, "No FMAP found at %zx offset.\n", offset);
+		printk(BIOS_ERR, "No FMAP found at %zx offset.\n", offset);
 		rdev_munmap(boot, fmap);
 		return -1;
 	}
@@ -193,8 +203,8 @@ int fmap_locate_area(const char *name, struct region *ar)
 			continue;
 		}
 
-		printk(BIOS_DEBUG, "FMAP: area %s found @ %x (%d bytes)\n",
-		       name, area->offset, area->size);
+		FMAP_DEBUG("FMAP: area %s found @ %x (%d bytes)\n",
+			   name, area->offset, area->size);
 
 		ar->offset = area->offset;
 		ar->size = area->size;
@@ -236,8 +246,8 @@ int fmap_find_region_name(const struct region * const ar,
 			continue;
 		}
 
-		printk(BIOS_DEBUG, "FMAP: area (%zx, %zx) found, named %s\n",
-			ar->offset, ar->size, area->name);
+		FMAP_DEBUG("FMAP: area (%zx, %zx) found, named %s\n",
+			   ar->offset, ar->size, area->name);
 
 		memcpy(name, area->name, FMAP_STRLEN);
 
@@ -246,7 +256,7 @@ int fmap_find_region_name(const struct region * const ar,
 		return 0;
 	}
 
-	printk(BIOS_DEBUG, "FMAP: area (%zx, %zx) not found\n",
+	printk(BIOS_ERR, "FMAP: area (%zx, %zx) not found\n",
 		ar->offset, ar->size);
 
 	return -1;
