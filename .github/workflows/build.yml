@@ -106,6 +106,7 @@ jobs:
       matrix:
         vendor: [ pcengines ]
         model: [ apu2, apu3, apu4, apu6 ]
+        payload: [ uefi ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -119,7 +120,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.payload }}_${{ matrix.model }} .config
           make olddefconfig
           make
       - name: Save artifacts
