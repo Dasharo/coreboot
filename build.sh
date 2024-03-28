@@ -120,7 +120,7 @@ function build_v1x10 {
 
 function build_pcengines {
   VARIANT=$1
-  DEFCONFIG="configs/config.pcengines_${VARIANT}"
+  DEFCONFIG="configs/config.pcengines_uefi_${VARIANT}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   # checkout several submodules needed by these boards (some others are checked
