@@ -98,7 +98,7 @@ void romstage_fsp_rt_buffer_callback(FSP_INIT_RT_BUFFER *FspRtBuffer)
 {
 	UPD_DATA_REGION *UpdData = FspRtBuffer->Common.UpdDataRgnPtr;
 	u8 use_xhci = UpdData->PcdEnableXhci;
-	u8 gpio5 = 0;
+	u8 gpio34 = 0;
 	int is_1333_sku;
 
 	/*
@@ -117,22 +117,20 @@ void romstage_fsp_rt_buffer_callback(FSP_INIT_RT_BUFFER *FspRtBuffer)
 
 	/*
 	 * Minnow Max Board
-	 * Read SSUS gpio 5 to determine memory type
+	 * Read SSUS gpio 5 (34) to determine memory type
 	 *                    0 : 1GB SKU uses 2Gb density memory
 	 *                    1 : 2GB SKU uses 4Gb density memory
 	 *
 	 * devicetree.cb assumes 1GB SKU board
 	 */
-	ssus_disable_internal_pull(5);
-	ssus_select_func(5, PAD_FUNC0);
-	ssus_set_as_input(5);
+	setup_ssus_gpio(34, PAD_FUNC0 | PAD_PULL_DISABLE, PAD_VAL_INPUT);
 
-	gpio5 = ssus_get_gpio(5);
-	if (gpio5)
+	gpio34 = ssus_get_gpio(34);
+	if (gpio34)
 		UpdData->PcdMemoryParameters.DIMMDensity
 		+= (DIMM_DENSITY_4G_BIT - DIMM_DENSITY_2G_BIT);
 	printk(BIOS_NOTICE, "%s GB Minnowboard Max detected.\n",
-			gpio5 ? "2 / 4" : "1");
+			gpio34 ? "2 / 4" : "1");
 	/* Update XHCI UPD value if required */
 	get_option(&use_xhci, "use_xhci_over_ehci");
 	if ((use_xhci < 2) && (use_xhci != UpdData->PcdEnableXhci)) {

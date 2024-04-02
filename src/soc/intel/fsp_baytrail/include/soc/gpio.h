@@ -422,13 +422,6 @@ static inline void score_set_gpio(int pad, int val)
 	write32(val_addr, ((read32(val_addr) & ~0x1) | val));
 }
 
-static inline void ssus_set_gpio(int pad, int val)
-{
-	uint32_t *val_addr = ssus_pconf0(pad) + (PAD_VAL_REG/sizeof(uint32_t));
-
-	write32(val_addr, ((read32(val_addr) & ~0x1) | val));
-}
-
 static inline void score_set_internal_pull(int pad, uint32_t pull)
 {
 	uint32_t reg;
@@ -438,6 +431,13 @@ static inline void score_set_internal_pull(int pad, uint32_t pull)
 	reg &= ~(0xf << 7);
 	reg |= pull;
 	write32(pconf0_addr, reg);
+}
+
+static inline void ssus_set_gpio(int pad, int val)
+{
+	uint32_t *val_addr = ssus_pconf0(pad) + (PAD_VAL_REG/sizeof(uint32_t));
+
+	write32(val_addr, ((read32(val_addr) & ~0x1) | val));
 }
 
 static inline void ssus_disable_internal_pull(int pad)
@@ -450,15 +450,32 @@ static inline void ssus_disable_internal_pull(int pad)
 	write32(pconf0_addr, reg);
 }
 
-static inline void ssus_set_as_input(int pad)
+
+static inline void setup_ssus_gpio(uint8_t gpio_num, uint32_t pconf0, uint32_t pad_val)
 {
 	uint32_t reg;
-	uint32_t *val_addr = ssus_pconf0(pad) + (PAD_VAL_REG/sizeof(uint32_t));
+	uint32_t *pad_addr = ssus_pconf0(gpio_num);
+	/*
+	 * Pad Configuration 0 Register
+	 *  2:0 - func_pin_mux
+	 *  8:7 - Pull assignment: 00 - Non pull 01 - Pull Up 10 - Pull down
+	 *                         11 - reserved
+	 * 10:9 - Pull strength: 00 - 2K 01 - 10K 10 - 20K 11 - 40K
+	 */
+	reg = PAD_CONFIG0_DEFAULT;
+	reg |= pconf0 & 0x787;
+	write32(pad_addr + (PAD_CONF0_REG/sizeof(u32)), reg);
 
-	reg = read32(val_addr);
-	reg &= ~0x6;
-	reg |= 4;
-	write32(val_addr, reg);
+	/*
+	 * Pad Value Register
+	 * 0: Pad value
+	 * 1: output enable (0 is enabled)
+	 * 2: input enable  (0 is enabled)
+	 */
+	reg = read32(pad_addr + (PAD_VAL_REG/sizeof(u32)));
+	reg &= ~0x7;
+	reg |= pad_val & 0x7;
+	write32(pad_addr + (PAD_VAL_REG/sizeof(u32)), reg);
 }
 
 #endif /* _BAYTRAIL_GPIO_H_ */
