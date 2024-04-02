@@ -153,9 +153,12 @@ int prog_locate_hook(struct prog *prog);
 /* The prog_load_hook() is called prior to CBFS loading and decompression. The
  * hook can be used to implement policy that allows or prohibits further
  * progress through prog_locate(). The type, name and rdev fields within
- * struct prog are already valid. A 0 return value allows further
- * progress while a non-zero return value prohibits further progress */
-int prog_load_hook(struct prog *prog);
+ * struct prog are already valid. A 0 return value allows further progress
+ * while a non-zero return value prohibits further progress. The buffer points
+ * to a location in memory where teh program has been loaded and prog_size is
+ * the size of the program in the buffer after possible decompression.
+ */
+int prog_load_hook(struct prog *prog, void *buffer, size_t prog_size);
 
 /* Run the program described by prog. */
 void prog_run(struct prog *prog);

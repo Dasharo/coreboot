@@ -284,6 +284,9 @@ int cbfs_prog_stage_load(struct prog *pstage)
 	if (!fsize)
 		return -1;
 
+	if (prog_load_hook(pstage, (void *)load, fsize))
+		return -2;
+
 	/* Clear area not covered by file. */
 	memset(&load[fsize], 0, stage.memlen - fsize);
 
