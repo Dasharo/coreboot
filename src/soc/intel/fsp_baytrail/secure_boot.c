@@ -20,16 +20,22 @@
 #include <soc/manifest.h>
 #include <vb2_sha.h>
 
-int prog_load_hook(struct prog *prog)
+static void print_hash(const uint8_t *buf, uint8_t len)
 {
-	struct cbfs_stage stage;
+	for (uint8_t i = 0; i < len; i++)
+		printk(BIOS_DEBUG, "%02X", buf[i]);
+
+	printk(BIOS_DEBUG, "\n");
+}
+
+int prog_load_hook(struct prog *prog, void *buffer, size_t prog_size)
+{
 	const uint8_t *sbm_digest_ptr;
-	void *start;
-	size_t fsize;
-	size_t foffset;
 	const struct sb_manifest *sbm = (struct sb_manifest *)SB_MANIFEST_BASE;
-	const struct region_device *fh = prog_rdev(prog);
 	uint8_t digest[VB2_SHA256_DIGEST_SIZE];
+
+	if (!prog || !buffer || prog_size == 0)
+		return -1;
 
 	switch (prog->type) {
 	case PROG_RAMSTAGE:
@@ -42,35 +48,23 @@ int prog_load_hook(struct prog *prog)
 		return 0;
 	}
 
-	if (rdev_readat(fh, &stage, 0, sizeof(stage)) != sizeof(stage))
-		return -1;
+	printk (BIOS_INFO, "Verifying SHA256 hash of %s\n", prog->name);
 
-	fsize = region_device_sz(fh);
-	fsize -= sizeof(stage);
-	foffset = 0;
-	foffset += sizeof(stage);
-
-	if (stage.len != fsize)
-		return -2;
-
-	start = rdev_mmap(fh, foffset, fsize);
-
-	if (!start)
-		return -3;
-
-	if (vb2_digest_buffer((const uint8_t*)start, fsize,
+	if (vb2_digest_buffer((const uint8_t*)buffer, prog_size,
 			      VB2_HASH_SHA256, digest,
 			      VB2_SHA256_DIGEST_SIZE) != VB2_SUCCESS) {
-		rdev_munmap(fh, start);
-		return -4;
+		return -2;
 	}
 
 	if (!memcmp((void *)sbm_digest_ptr, digest, VB2_SHA256_DIGEST_SIZE)) {
 		printk (BIOS_INFO, "%s SHA256 hash verified\n", prog->name);
-		rdev_munmap(fh, start);
 		return 0;
 	}
 
-	rdev_munmap(fh, start);
-	return -5;
+	printk (BIOS_INFO, "SHA256 hash of %s:\n", prog->name);
+	print_hash(sbm_digest_ptr, VB2_SHA256_DIGEST_SIZE);
+	printk (BIOS_INFO, "Calculated:\n");
+	print_hash(digest, VB2_SHA256_DIGEST_SIZE);
+
+	return -3;
 }
