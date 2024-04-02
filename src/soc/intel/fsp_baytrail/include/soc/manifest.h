@@ -21,7 +21,7 @@
 
 #define SB_MANIFEST_BASE		(0xfffe0000)
 #define SB_MANIFEST_SIZE		0x1000
-#define SB_MANIFEST_MAGIC		0x4d425324  /* $SBM in LE */
+#define SB_MANIFEST_MAGIC		0x4d425624  /* $VBM in LE */
 #define SB_MANIFEST_VERSION		0x1
 
 #define KEY_MANIFEST_BASE		(0xfffe0000 - 0x1000)
