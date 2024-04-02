@@ -723,14 +723,23 @@ static int cbfstool_convert_mkstage(struct buffer *buffer, uint32_t *offset,
 			return 1;
 		}
 
-		/*
-		 * Ensure the address is a memory mapped one. This assumes
-		 * x86 semantics about the boot media being directly mapped
-		 * below 4GiB in the CPU address space.
-		 **/
-		address = -convert_to_from_absolute_top_aligned(
-				param.image_region, address);
-		*offset = address;
+		/* Special case for romstage in TXE Secure Boot */
+		if (param.baseaddress_assigned) {
+			address = *offset;
+			if (!IS_TOP_ALIGNED_ADDRESS(address))
+				address = -convert_to_from_absolute_top_aligned(
+						param.image_region, address);
+		} else {
+			/*
+			* Ensure the address is a memory mapped one. This assumes
+			* x86 semantics about the boot media being directly mapped
+			* below 4GiB in the CPU address space.
+			**/
+			address = -convert_to_from_absolute_top_aligned(
+					param.image_region, address);
+			*offset = address;
+		}
+
 
 		ret = parse_elf_to_xip_stage(buffer, &output, offset,
 						param.ignore_section);
@@ -845,7 +854,7 @@ static int cbfs_add(void)
 static int cbfs_add_stage(void)
 {
 	if (param.stage_xip) {
-		if (param.baseaddress_assigned) {
+		if (param.baseaddress_assigned && strstr(param.name, "romstage") == NULL) {
 			ERROR("Cannot specify base address for XIP.\n");
 			return 1;
 		}

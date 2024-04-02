@@ -697,4 +697,6 @@ config SOFTWARE_I2C
 	  I2C controller is not (yet) available. The platform code needs to
 	  provide bindings to manually toggle I2C lines.
 
+source "dram/Kconfig"
+
 endmenu

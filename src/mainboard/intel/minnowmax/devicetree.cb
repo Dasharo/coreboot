@@ -49,6 +49,7 @@ chip soc/intel/fsp_baytrail
 	register "DIMMtRRD"                = "6"
 	register "DIMMtRTP"                = "6"
 	register "DIMMtFAW"                = "20"
+	register "TxeUmaEnable"            = "TXE_UMA_ENABLE"
 
 	device cpu_cluster 0 on
 		device lapic 0 on end

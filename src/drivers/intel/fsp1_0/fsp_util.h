@@ -95,8 +95,9 @@ extern void *FspHobListPtr;
 	if (config->member != UPD_DEFAULT) { \
 		UpdData->member = config->member - 1; \
 	} \
-	printk(FSP_INFO_LEVEL, #member ":\t\t0x%02x %s\n", UpdData->member, \
-		config->member ? "(set)" : "(default)");
+	if (CONFIG(DISPLAY_UPD_DATA)) \
+		printk(FSP_INFO_LEVEL, #member ":\t\t0x%02x %s\n", UpdData->member, \
+			config->member ? "(set)" : "(default)");
 
 #define UPD_SPD_CHECK(member) \
 	if (config->member == UPD_SPD_ADDR_DISABLED) { \
@@ -104,14 +105,16 @@ extern void *FspHobListPtr;
 	} else if (config->member != UPD_SPD_ADDR_DEFAULT) { \
 		UpdData->member = config->member; \
 	} \
-	printk(FSP_INFO_LEVEL, #member ":\t\t0x%02x %s\n", UpdData->member, \
-		config->member ? "(set)" : "(default)");
+	if (CONFIG(DISPLAY_UPD_DATA)) \
+		printk(FSP_INFO_LEVEL, #member ":\t\t0x%02x %s\n", UpdData->member, \
+			config->member ? "(set)" : "(default)");
 
 #define UPD_DEVICE_CHECK(devicename, member, statement) \
 	case devicename: \
 		UpdData->member = dev->enabled; \
-		printk(FSP_INFO_LEVEL, statement "%s\n", \
-			UpdData->member?"Enabled":"Disabled"); \
+		if (CONFIG(DISPLAY_UPD_DATA)) \
+			printk(FSP_INFO_LEVEL, statement "%s\n", \
+				UpdData->member?"Enabled":"Disabled"); \
 	break;
 
 

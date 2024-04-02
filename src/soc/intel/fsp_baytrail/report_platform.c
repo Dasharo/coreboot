@@ -15,7 +15,7 @@
  */
 
 #include <console/console.h>
-#include <device/pci_ops.h>
+#include <device/pci.h>
 #include <soc/iosf.h>
 #include <soc/baytrail.h>
 #include <cpu/x86/msr.h>
@@ -25,7 +25,7 @@
 static void print_dram_info(void)
 {
 	const int mrc_ver_reg = 0xf0;
-	const uint32_t soc_dev = PCI_DEV(0, SOC_DEV, SOC_FUNC);
+	const struct device *soc_dev = pcidev_on_root(SOC_DEV, SOC_FUNC);
 	uint32_t reg;
 	int num_channels;
 	int speed;
