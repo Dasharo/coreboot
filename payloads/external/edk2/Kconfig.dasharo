@@ -36,7 +36,7 @@ config EDK2_IPXE_OPTION_NAME
 config EDK2_SECURE_BOOT_DEFAULT_ENABLE
 	bool "Set Secure Boot state to enabled by default"
 	default y
-	depends on EDK2_SECURE_BOOT
+	depends on EDK2_SECURE_BOOT_SUPPORT
 	help
 	  Sets the UEFI Secure Boot state to enabled by default.
 
