@@ -242,8 +242,8 @@ static void disable_me_hmrfpo(uint8_t *var)
 
 hmrfpo_error:
 	/* Try other available methods if something goes wrong */
-	*var = CONFIG(EDK2_HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
-						: ME_MODE_DISABLE_HECI;
+	*var = CONFIG(HAVE_INTEL_ME_HAP) ? ME_MODE_DISABLE_HAP
+					 : ME_MODE_DISABLE_HECI;
 }
 
 uint8_t cse_get_me_disable_mode(void)
