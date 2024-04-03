@@ -128,7 +128,6 @@ choice
 
 config EDK2_DEBUG
 	bool "Generate edk2 debug build"
-	select CONSOLE_SERIAL
 	help
 	  Generate a debug build. Select this if you want to enable serial debugging output.
 
@@ -191,7 +190,6 @@ config EDK2_BOOT_TIMEOUT
 
 config EDK2_CBMEM_LOGGING
 	bool "Enable edk2 logging to CBMEM"
-	depends on EDK2_RELEASE
 	help
 	  Select this option if you want to enable edk2 logging to CBMEM.
 	  You will want to increase the default cbmem buffer size when selecting
@@ -267,8 +265,6 @@ config EDK2_SERIAL_SUPPORT
 	bool "Enable serial console"
 	default y if EDK2_DEBUG
 	default n
-	depends on !EDK2_CBMEM_LOGGING
-	select CONSOLE_SERIAL
 	help
 	  Enable serial consule support in edk2. Serial output limits the performance of edk2's
 	  FrontPage. This option does not enable debugging output over serial. For that, use EDK2_DEBUG.
