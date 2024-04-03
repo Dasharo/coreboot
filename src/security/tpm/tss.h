@@ -159,16 +159,6 @@ static inline tpm_result_t tlcl_extend(int pcr_num, const uint8_t *digest_data,
 	TLCL_CALL(extend, pcr_num, digest_data, digest_algo);
 }
 
-/**
- * Read the public data of NV index. [index] is the index for the space,
- * [nvrp_resp] is hte NV index output data. The TPM error code is returned.
- */
-uint32_t tlcl_nv_read_public(uint32_t space_index,
-			     struct nv_read_public_response *nvrp_resp)
-{
-	TLCL_CALL(nv_read_public, space_index, nvrp_resp);
-}
-
 extern tis_sendrecv_fn tlcl_tis_sendrecv;
 
 #endif /* TSS_H_ */

@@ -402,7 +402,7 @@ uint32_t tlcl2_nv_read_public(uint32_t space_index,
 
 	nvrp_cmd.nvIndex = HR_NV_INDEX + space_index;
 
-	response = tpm_process_command(TPM2_NV_ReadPublic, &nvrp_cmd);
+	response = tlcl2_process_command(TPM2_NV_ReadPublic, &nvrp_cmd);
 	printk(BIOS_INFO, "%s: response is %x\n", __func__,
 	       response ? response->hdr.tpm_code : -1);
 

@@ -79,5 +79,7 @@ tpm_result_t tlcl2_finalize_physical_presence(void);
 tpm_result_t tlcl2_force_clear(void);
 tpm_result_t tlcl2_extend(int pcr_num, const uint8_t *digest_data,
 			  enum vb2_hash_algorithm digest_algo);
+tpm_result_t tlcl2_nv_read_public(uint32_t space_index,
+				  struct nv_read_public_response *nvrp_resp);
 
 #endif /* TSS2_H_ */

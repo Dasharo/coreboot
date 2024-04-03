@@ -414,11 +414,11 @@ static const TPMA_NV txt_tpm2_ps_index_attributes = {
 };
 
 /* Returns true if TPM indices are not in good condition. */
-static bool check_tpm_indices(void)
+static bool check_tpm2_indices(void)
 {
 	struct nv_read_public_response nvrp_resp;
 
-	if (tlcl_nv_read_public(TXT_TPM2_AUX_INDEX, &nvrp_resp) != TPM_SUCCESS) {
+	if (tlcl2_nv_read_public(TXT_TPM2_AUX_INDEX, &nvrp_resp) != TPM_SUCCESS) {
 		printk(BIOS_ERR, "TEE-TXT: Failed to read public data of TPM2 AUX index\n");
 		return true;
 	}
@@ -450,7 +450,7 @@ static bool check_tpm_indices(void)
 	if (CONFIG(INTEL_CBNT_SUPPORT))
 		return false;
 
-	if (tlcl_nv_read_public(TXT_TPM2_PS_INDEX, &nvrp_resp) != TPM_SUCCESS) {
+	if (tlcl2_nv_read_public(TXT_TPM2_PS_INDEX, &nvrp_resp) != TPM_SUCCESS) {
 		printk(BIOS_ERR, "TEE-TXT: Failed to read public data of TPM2 PS/PO index\n");
 		return true;
 	}
@@ -602,14 +602,14 @@ bool intel_txt_prepare_txt_env(void)
 		}
 	}
 
-#if CONFIG(TPM2)
-	/*
-	 * We can't do SCHECK without the mandatory TPM indices present,
-	 * otherwise we will end up in reset loop
-	 */
-	if (check_tpm_indices())
-		return true;
-#endif
+	if (tlcl_get_family() == TPM_2) {
+		/*
+		 * We can't do SCHECK without the mandatory TPM indices present,
+		 * otherwise we will end up in reset loop
+		 */
+		if (check_tpm2_indices())
+			return true;
+	}
 
 	/* Need to park all APs. */
 	if (CONFIG(PARALLEL_MP_AP_WORK))
