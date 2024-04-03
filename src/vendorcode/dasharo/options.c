@@ -217,17 +217,17 @@ static void disable_me_hmrfpo(uint8_t *var)
 
 	printk (BIOS_DEBUG, "ME HMRFPO status: ");
 	switch (hmrfpo_sts) {
-	case 0: 
+	case 0:
 		printk (BIOS_DEBUG, "DISABLED\n");
 		if (cse_hmrfpo_enable() != CB_SUCCESS)
 			goto hmrfpo_error;
 		else
 			do_global_reset(); /* No return */
 		break;
-	case 1: 
+	case 1:
 		printk (BIOS_DEBUG, "LOCKED\n");
 		goto hmrfpo_error;
-	case 2: 
+	case 2:
 		printk (BIOS_DEBUG, "ENABLED\n");
 		/* Override ME disable method to not switch ME mode */
 		*var =  ME_MODE_DISABLE_HMRFPO;
@@ -248,7 +248,7 @@ hmrfpo_error:
 
 uint8_t cse_get_me_disable_mode(void)
 {
-	uint8_t var = CONFIG_EDK2_INTEL_ME_DEFAULT_STATE;
+	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
 	bool fum = false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
