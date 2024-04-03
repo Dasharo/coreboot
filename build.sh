@@ -22,7 +22,7 @@ usage() {
   echo -e "\tapu6 - build Dasharo for PC Engines APU6"
 }
 
-SDKVER="2021-09-23_b0d87f753c"
+SDKVER="2023-11-24_2731fa619b"
 
 function build_msi {
   DEFCONFIG="configs/config.${BOARD}_$1"
@@ -96,7 +96,7 @@ function build_v1x10 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
