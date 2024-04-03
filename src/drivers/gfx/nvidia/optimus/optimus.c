@@ -294,6 +294,6 @@ static void nvidia_optimus_acpi_enable(struct device *dev)
 }
 
 struct chip_operations drivers_gfx_nvidia_optimus_ops = {
-	CHIP_NAME("NVIDIA Optimus Hybrid Graphics")
-	.enable_dev = nvidia_optimus_acpi_enable
+	.name = "NVIDIA Optimus Hybrid Graphics",
+	.enable_dev = nvidia_optimus_acpi_enable,
 };
