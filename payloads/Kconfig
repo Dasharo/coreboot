@@ -46,6 +46,10 @@ endchoice
 
 source "payloads/external/*/Kconfig"
 
+menu "Dasharo specific payload options"
+source "payloads/external/*/Kconfig.dasharo"
+endmenu
+
 config PAYLOAD_FILE
 	string "Payload path and filename"
 	depends on PAYLOAD_ELF || PAYLOAD_FIT
