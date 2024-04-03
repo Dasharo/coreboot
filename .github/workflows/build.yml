@@ -36,7 +36,7 @@ jobs:
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
             build/coreboot.rom
           retention-days: 30
@@ -68,7 +68,7 @@ jobs:
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
             build/coreboot.rom
           retention-days: 30
@@ -98,7 +98,7 @@ jobs:
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
             build/coreboot.rom
           retention-days: 30
@@ -131,7 +131,7 @@ jobs:
       - name: Save artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.build }}"
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
           path: |
             build/coreboot.rom
           retention-days: 30
