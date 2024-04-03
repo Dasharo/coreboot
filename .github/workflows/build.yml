@@ -8,7 +8,7 @@ jobs:
   build_novacustom:
     runs-on: ubuntu-22.04
     container:
-      image: coreboot/coreboot-sdk:2021-09-23_b0d87f753c
+      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
       options: --user 1001
     strategy:
       matrix:
@@ -40,7 +40,7 @@ jobs:
   build_msi:
     runs-on: ubuntu-22.04
     container:
-      image: coreboot/coreboot-sdk:2021-09-23_b0d87f753c
+      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
       options: --user 1001
     strategy:
       matrix:
@@ -100,7 +100,7 @@ jobs:
   build_pcengines:
     runs-on: ubuntu-22.04
     container:
-      image: coreboot/coreboot-sdk:2021-09-23_b0d87f753c
+      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
       options: --user 1001
     strategy:
       matrix:
