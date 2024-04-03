@@ -138,6 +138,210 @@ ifeq ($(CONFIG_EDK2_DISABLE_TPM),y)
 BUILD_STR += -D TPM_ENABLE=FALSE
 endif
 
+#
+# The Dasharo repository has the following additional options:
+#
+
+# ABOVE_4G_MEMORY		= TRUE
+ifneq ($(CONFIG_EDK2_ABOVE_4G_MEMORY),y)
+BUILD_STR += -D ABOVE_4G_MEMORY=FALSE
+endif
+# PcdSerialRedirectionDefaultState	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
+endif
+# SERIAL_TERMINAL	= FALSE
+ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
+BUILD_STR += -D DISABLE_SERIAL_TERMINAL=TRUE
+ifeq ($(CONFIG_EDK2_HAVE_2ND_UART),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdHave2ndUart=TRUE
+ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION2_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirection2DefaultState=TRUE
+endif
+endif # CONFIG_EDK2_HAVE_2ND_UART
+endif # SERIAL_TERMINAL
+# PS2_KEYBOARD_ENABLE           = FALSE
+ifeq ($(CONFIG_EDK2_PS2_SUPPORT),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPs2Option=TRUE
+# SKIP_PS2_DETECT               = FALSE
+ifeq ($(CONFIG_EDK2_SKIP_PS2_DETECT),y)
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=TRUE
+endif # SKIP_PS2_DETECT
+else
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPs2Option=FALSE
+endif # PS2_KEYBOARD_ENABLE
+# SYSTEM76_EC_LOGGING		= FALSE
+ifeq ($(CONFIG_EDK2_SYSTEM76_EC_LOGGING),y)
+BUILD_STR += -D SYSTEM76_EC_LOGGING=TRUE
+endif
+# NETWORK_IPXE                  = FALSE
+ifeq ($(CONFIG_EDK2_IPXE),y)
+BUILD_STR += -D NETWORK_IPXE=TRUE
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
+endif
+# SECURE_BOOT_DEFAULT_ENABLE    = TRUE
+ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += -D SECURE_BOOT_DEFAULT_ENABLE=FALSE
+endif
+# SATA_PASSWORD_ENABLE          = TRUE
+ifeq ($(CONFIG_EDK2_SATA_PASSWORD),y)
+BUILD_STR += -D SATA_PASSWORD_ENABLE=TRUE
+endif
+# OPAL_PASSWORD_ENABLE          = TRUE
+ifeq ($(CONFIG_EDK2_OPAL_PASSWORD),y)
+BUILD_STR += -D OPAL_PASSWORD_ENABLE=TRUE
+endif
+# SETUP_PASSWORD_ENABLE         = FALSE
+ifeq ($(CONFIG_EDK2_SETUP_PASSWORD),y)
+BUILD_STR += -D SETUP_PASSWORD_ENABLE=TRUE
+endif
+# NETWORK_LAN_ROM               = FALSE
+ifneq ($(CONFIG_EDK2_LAN_ROM_DRIVER),)
+BUILD_STR += -D NETWORK_LAN_ROM=TRUE
+endif
+# DISABLE_MTRR_PROGRAMMING      = TRUE
+ifneq ($(CONFIG_EDK2_DISABLE_MTRR_PROGRAMMING),y)
+BUILD_STR += -D DISABLE_MTRR_PROGRAMMING=FALSE
+endif
+# IOMMU_ENABLE                  = FALSE
+ifeq ($(CONFIG_IOMMU_ENABLE),y)
+BUILD_STR += -D IOMMU_ENABLE=TRUE
+endif
+# DASHARO_SYSTEM_FEATURES       = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SYSTEM_FEATURES),y)
+BUILD_STR += -D DASHARO_SYSTEM_FEATURES_ENABLE=TRUE
+endif
+# DASHARO_SECURITY_OPTIONS      = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SECURITY_OPTIONS),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSecurityMenu=TRUE
+endif
+# DASHARO_INTEL_ME_OPTIONS      = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_INTEL_ME_OPTIONS),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowIntelMeMenu=TRUE
+endif
+# DASHARO_NETWORK_CONFIG        = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowNetworkMenu=TRUE
+endif
+# DASHARO_USB_CONFIG            = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
+endif
+# DASHARO_CHIPSET_CONFIG        = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowChipsetMenu=TRUE
+endif
+# Always set the default power failure state to some value
+ifeq ($(CONFIG_HAVE_POWER_STATE_AFTER_FAILURE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=$(CONFIG_MAINBOARD_POWER_FAILURE_STATE)
+else
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultPowerFailureState=0
+endif
+# DASHARO_POWER_CONFIG          = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_POWER_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPowerMenu=TRUE
+
+ifneq ($(CONFIG_EDK2_SLEEP_TYPE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowSleepType=FALSE
+endif # CONFIG_EDK2_SLEEP_TYPE_OPTION
+
+ifeq ($(CONFIG_EDK2_FAN_CURVE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve=TRUE
+endif # CONFIG_EDK2_FAN_CURVE_OPTION
+
+ifeq ($(CONFIG_EDK2_BATTERY_CONFIG_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowBatteryThresholds=TRUE
+endif
+
+endif # CONFIG_EDK2_DASHARO_POWER_CONFIG
+# DASHARO_PCI_CONFIG            = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPciMenu=TRUE
+endif
+# DASHARO_MEMORY_CONFIG = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_MEMORY_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowMemoryMenu=TRUE
+endif
+# DASHARO_NETWORK_BOOT_DEFAULT_ENABLE   = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
+endif
+ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowOcWdtOptions=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtTimeoutDefault=$(CONFIG_EDK2_DASHARO_OC_WDT_TIMEOUT)
+endif
+# PCIEXP_SUPPORT_RESIZABLE_BARS = FALSE
+ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
+endif
+# BATTERY_CHECK                 = FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_BATTERY_CHECK),y)
+BUILD_STR += -D BATTERY_CHECK=TRUE
+endif
+# LOAD_OPTION_ROMS              = TRUE
+ifeq ($(CONFIG_EDK2_DISABLE_OPTION_ROMS),y)
+BUILD_STR += -D LOAD_OPTION_ROMS=FALSE
+endif
+# PRINT_SOL_STRINGS             = FALSE
+ifeq ($(CONFIG_EDK2_PRINT_SOL_STRINGS),y)
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdPrintSolStrings=TRUE
+endif
+# CREATE_PREINSTALLED_BOOT_OPTIONS = FALSE
+ifeq ($(CONFIG_EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS),y)
+BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCreatePreInstalledBootOptions=TRUE
+endif
+# SHOW_CAMERA_OPTION = FALSE
+ifeq ($(CONFIG_EDK2_SHOW_CAMERA_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSecurityShowCameraOption=TRUE
+endif
+# SHOW_WIFI_BT_OPTION = FALSE
+ifeq ($(CONFIG_EDK2_SHOW_WIFI_BT_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSecurityShowWiFiBtOption=TRUE
+endif
+# PERFORMANCE_MEASUREMENT_ENABLE = FALSE
+ifeq ($(CONFIG_EDK2_PERFORMANCE_MEASUREMENT_ENABLE),y)
+BUILD_STR += -D PERFORMANCE_MEASUREMENT_ENABLE=TRUE
+endif
+ifneq ($(CONFIG_HAVE_INTEL_ME_HAP),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeHapAvailable=FALSE
+endif
+ifneq ($(CONFIG_INTEL_ME_DEFAULT_STATE),)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeDefaultState=$(CONFIG_INTEL_ME_DEFAULT_STATE)
+endif
+# RAM_DISK_ENABLE               = FALSE
+ifeq ($(CONFIG_EDK2_RAM_DISK_ENABLE),y)
+BUILD_STR += -D RAM_DISK_ENABLE=TRUE
+endif
+# APU_CONFIG_ENABLE             = FALSE
+ifeq ($(CONFIG_VENDOR_PCENGINES),y)
+BUILD_STR += -D APU_CONFIG_ENABLE=TRUE
+endif
+
+BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
+BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
+
+# PcdShowLockBios               = FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_BIOS_LOCK),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowLockBios=TRUE
+endif
+# PcdShowSmmBwp                 = FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_SMM_BWP),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSmmBwp=TRUE
+endif
+# PcdSleepTypeDefaultS3         = FALSE
+ifeq ($(CONFIG_EDK2_S3_SLEEP_DEFAULT),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSleepTypeDefaultS3=TRUE
+endif
+# PcdShowFum                    = TRUE
+ifneq ($(CONFIG_EDK2_ENABLE_FUM),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowFum=FALSE
+endif
+# UART_ON_SUPERIO               = FALSE
+ifeq ($(CONFIG_EDK2_SERIAL_ON_SUPERIO),y)
+BUILD_STR += -D UART_ON_SUPERIO=TRUE
+endif
+
 endif
 
 #
@@ -184,7 +388,8 @@ $(EDK2_PATH): $(WORKSPACE)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
-		git checkout MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		git reset --hard HEAD > /dev/null 2>&1 || true; \
+		git clean -df > /dev/null 2>&1 || true; \
 		if [ -e UefiPayloadPkg/ShimLayer/UniversalPayload.o ]; then \
 			rm UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
 		fi; \
@@ -206,10 +411,10 @@ $(EDK2_PATH): $(WORKSPACE)
 logo: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
-		/*) convert -background None $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
-		*) convert -background None $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
+			$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
+			$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
 gop_driver:
@@ -218,6 +423,25 @@ gop_driver:
 		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/UefiPayloadPkg/IntelGopDriver.efi; \
 		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/UefiPayloadPkg/vbt.bin; \
 	fi; \
+
+lan_rom: $(EDK2_PATH)
+	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
+		"") ;; \
+		/*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+		    cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+		*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+		   cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
+				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+	esac \
+
+ipxe_rom: $(EDK2_PATH)
+	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
+		echo "    Including externally built iPXE"; \
+		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
+			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+	fi \
 
 checktools:
 	echo -n "EDK2: Checking uuid-dev:"
@@ -230,15 +454,6 @@ checktools:
 	echo -n "EDK2: Checking nasm:"
 	type nasm > /dev/null 2>&1 && echo "        Found!" || \
 		( echo "        Not found!"; echo "ERROR: Please install nasm."; exit 1 )
-	echo -n "EDK2: Checking imagemagick:"
-	-convert -size 1x1 xc: test.png &> /dev/null;
-	if [ -f test.png ]; then \
-		rm test.png && echo " Found!"; \
-	else \
-		echo " Not found!"; \
-		echo "ERROR: Please install imagemagick"; \
-		exit 1; \
-	fi
 
 print:
 	echo "   ##### $(project_name) Build Summary #####"
@@ -256,7 +471,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver
+prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_rom ipxe_rom
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
