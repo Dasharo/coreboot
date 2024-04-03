@@ -2,8 +2,6 @@ comment "Tiger Lake U (2021)"
 
 config BOARD_NOVACUSTOM_NV4X_TGLU
 	bool "NV4x TGL"
-	select BOARD_CLEVO_NV40MZ_BASE
 
 config BOARD_NOVACUSTOM_NS5X_TGLU
 	bool "NS5x TGL"
-	select BOARD_CLEVO_NS50MU_BASE

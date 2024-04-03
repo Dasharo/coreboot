@@ -4,6 +4,7 @@ choice
 	prompt "Mainboard model"
 
 source "src/mainboard/novacustom/*/Kconfig.name"
+
 endchoice
 
 source "src/mainboard/novacustom/*/Kconfig"
