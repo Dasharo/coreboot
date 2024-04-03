@@ -68,3 +68,6 @@
 [submodule "src/vendorcode/amd/opensil/genoa_poc/opensil"]
 	path = src/vendorcode/amd/opensil/genoa_poc/opensil
 	url = https://review.coreboot.org/opensil_genoa_poc.git
+[submodule "3rdparty/dasharo-blobs"]
+	path = 3rdparty/dasharo-blobs
+	url = https://github.com/Dasharo/dasharo-blobs.git
