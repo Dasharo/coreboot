@@ -28,21 +28,18 @@ chip soc/intel/jasperlake
 
 	register "SkipExtGfxScan" = "1"
 
-	register "usb2_ports[0]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[1]" = "USB2_PORT_SHORT(OC_SKIP)"	# Type A port1
-	register "usb2_ports[2]" = "USB2_PORT_SHORT(OC_SKIP)"	# M.2 LTE
-	register "usb2_ports[3]" = "USB2_PORT_SHORT(OC_SKIP)"	# WiFi slot BT
-	register "usb2_ports[4]" = "USB2_PORT_SHORT(OC_SKIP)"	# VIA VL817 hub
-	register "usb2_ports[5]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[6]" = "USB2_PORT_EMPTY"
-	register "usb2_ports[7]" = "USB2_PORT_EMPTY"
+	register "usb2_ports" = "{
+		[1] = USB2_PORT_SHORT(OC_SKIP),		// Type A port1
+		[2] = USB2_PORT_SHORT(OC_SKIP),		// M.2 LTE
+		[3] = USB2_PORT_SHORT(OC_SKIP),		// WiFi slot BT
+		[4] = USB2_PORT_SHORT(OC_SKIP),		// VIA VL817 hub
+	}"
 
-	register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# Type A Port1
-	register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# VIA VL817 hub
-	register "usb3_ports[2]" = "USB3_PORT_EMPTY"
-	register "usb3_ports[3]" = "USB3_PORT_EMPTY"
-	register "usb3_ports[4]" = "USB3_PORT_EMPTY"
-	register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC_SKIP)"	# M.2 LTE
+	register "usb3_ports" = "{
+		[0] = USB3_PORT_DEFAULT(OC_SKIP),	// Type A Port1
+		[1] = USB3_PORT_DEFAULT(OC_SKIP),	// VIA VL817 hub
+		[5] = USB3_PORT_DEFAULT(OC_SKIP),	// M.2 LTE
+	}"
 
 	register "usb2_wake_enable_bitmap" = "0x0012"
 	register "usb3_wake_enable_bitmap" = "0x0003"
@@ -56,19 +53,6 @@ chip soc/intel/jasperlake
 
 	register "PchHdaDspEnable" = "1"
 	register "PchHdaAudioLinkHdaEnable" = "1"
-
-	# PCIe Root Port 1 and 2 for LAN3 and LAN4 on 4 port platform
-	# PCie Root Port 1 (x2) to LAN 3-6 via ASMedia PCIe switch on 6 port platform
-	# PCIe Root Port 4 for NVMe
-	# PCIe port 5 for M.2 E-key WiFi
-	# PCIe port 6 and 7 for LAN1 and LAN2
-	register "PcieRpEnable[0]" = "1"
-	register "PcieRpEnable[1]" = "1"
-	register "PcieRpEnable[3]" = "1"
-	register "PcieRpEnable[4]" = "1"
-	register "PcieRpEnable[5]" = "1"
-	register "PcieRpEnable[6]" = "1"
-
 
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE" # WiFi
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE" # M.2 NVMe
