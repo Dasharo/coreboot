@@ -115,9 +115,9 @@ ifeq ($(CONFIG_EDK2_SECURE_BOOT_SUPPORT), y)
 BUILD_STR += -D SECURE_BOOT_ENABLE=TRUE
 endif
 # PCIEXP_SUPPORT_RESIZABLE_BARS = FALSE
-ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS), y)
-BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport=TRUE
-endif
+#ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS), y)
+#BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport=TRUE
+#endif
 # Preserve VRT bit in RTC_ADDRESS_REGISTER_D
 # AMD SoC sets this every 1.024msec, but the generic code assumes it's read-only and
 # hardcoded to 1 like on every Intel chipset since Intel ICH.
