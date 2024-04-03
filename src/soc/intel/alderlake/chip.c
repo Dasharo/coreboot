@@ -76,7 +76,7 @@ const char *soc_acpi_name(const struct device *dev)
 	switch (dev->path.pci.devfn) {
 	case SA_DEVFN_ROOT:
 		/* MCHC only for bus 0 */
-		if (dev->bus && dev->bus->secondary == 0)
+		if (dev->upstream && dev->upstream->secondary == 0)
 			return "MCHC";
 		else
 		/* FIXME: handle RTD3 generic dev path in PEP to return correct acpi_name */

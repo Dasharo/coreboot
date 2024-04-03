@@ -171,7 +171,7 @@ static void nvidia_optimus_acpi_fill_ssdt(const struct device *dev)
 {
 	const struct drivers_gfx_nvidia_optimus_config *config = config_of(dev);
 	static const char *const power_res_states[] = {"_PR0", "_PR2", "_PR3"};
-	const struct device *parent = dev->bus->dev;
+	const struct device *parent = dev->upstream->dev;
 	const char *scope = acpi_device_path(parent);
 
 	/* PCH RP PCIe configuration space */
