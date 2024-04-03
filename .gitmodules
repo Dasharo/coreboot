@@ -68,3 +68,6 @@
 [submodule "3rdparty/open-power-signing-utils"]
 	path = 3rdparty/open-power-signing-utils
 	url = https://review.coreboot.org/open-power-signing-utils.git
+[submodule "3rdparty/dasharo-blobs"]
+	path = 3rdparty/dasharo-blobs
+	url = https://github.com/Dasharo/dasharo-blobs.git
