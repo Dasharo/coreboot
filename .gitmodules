@@ -78,3 +78,6 @@
 	path = src/vendorcode/amd/opensil/turin_poc/opensil
 	url = https://github.com/openSIL/openSIL.git
 	branch = turin_poc
+[submodule "3rdparty/dasharo-blobs"]
+	path = 3rdparty/dasharo-blobs
+	url = https://github.com/Dasharo/dasharo-blobs.git
