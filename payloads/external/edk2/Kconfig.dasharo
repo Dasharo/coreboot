@@ -1,0 +1,300 @@
+if PAYLOAD_EDK2
+
+config EDK2_SYSTEM76_EC_LOGGING
+	bool "Enable edk2 logging to System76 EC"
+	default n
+	depends on EC_SYSTEM76_EC
+	help
+	  Select this option if you want to enable edk2 logging to S76 EC.
+
+config EDK2_SKIP_PS2_DETECT
+	bool "Skip PS/2 keyboard detection check"
+	depends on EDK2_PS2_SUPPORT
+	default n
+	help
+	  Skips checking for the PS/2 keyboard presence and assumes the PS/2
+	  keyboard is connected. Useful for laptops, where PS/2 keyboard is
+	  always connected, to save a precious second or two of boot time.
+
+config EDK2_ENABLE_IPXE
+	bool "Include iPXE in edk2 payload"
+	default n
+	select PXE
+	help
+	  Instructs coreboot build system to build iPXE EFI target and include
+	  it in the EDK2 payload.
+
+config EDK2_IPXE_OPTION_NAME
+	string "iPXE option name"
+	depends on EDK2_ENABLE_IPXE
+	default "iPXE Network Boot"
+	help
+	  Configures how the iPXE boot option should be displayed in boot menu
+	  of EDK2 Payload. This name will be passed as PCD to the EDK2 build
+	  system.
+
+config EDK2_SECURE_BOOT_DEFAULT_ENABLE
+	bool "Set Secure Boot state to enabled by default"
+	default y
+	depends on EDK2_SECURE_BOOT
+	help
+	  Sets the UEFI Secure Boot state to enabled by default.
+
+config EDK2_SATA_PASSWORD
+	bool "Enable TianoCore SATA disk password"
+	default n
+	help
+	  Enable SATA disk password suupport in the TianoCore payload.
+
+config EDK2_OPAL_PASSWORD
+	bool "Enable TianoCore TCG OPAL password"
+	default n
+	help
+	  Enables TCG OPAL disk password in the TianoCore Payload.
+
+config EDK2_SETUP_PASSWORD
+	bool "Enable Setup Menu password"
+	default n
+	help
+	  Enables setup menu password in the TianoCore Payload.
+
+config EDK2_PERFORMANCE_MEASUREMENT_ENABLE
+	bool "Enable firmware performance measurement"
+	default n
+	help
+	  Enables firmware performance measurement in the TianoCore Payload.
+	  The measurements will be exposed to OS via FPDT ACPI table. Should be
+	  used in conjunction with EDK2_CPU_TIMER_LIB to match the coreboot
+	  measurement made with TSC. If EDK2_CPU_TIMER_LIB cannot be enabled on
+	  the platform, the counters wil be mismatched and the performance will
+	  not be properly reported by OS.
+
+# DasharoModulePkg specific options
+
+config EDK2_DASHARO_SYSTEM_FEATURES
+	bool "Enable Dasharo System Features menu in EDK2"
+	default n
+	help
+	  Enables Dasharo System Features submenu in the EDK2 setup menu.
+
+if EDK2_DASHARO_SYSTEM_FEATURES
+
+config EDK2_DASHARO_SECURITY_OPTIONS
+	bool "Enable EDK2 Dasharo Security Options Menu"
+	default n
+	help
+	  Enables the security configuration submenu in Dasharo System Features.
+
+config EDK2_SHOW_CAMERA_OPTION
+	bool "Show Camera option in Dasharo Security Options Menu"
+	depends on EDK2_DASHARO_SECURITY_OPTIONS
+	help
+	  Shows the Camera option in Dasharo Security Options submenu in
+	  Dasharo System Features menu.
+
+config EDK2_SHOW_WIFI_BT_OPTION
+	bool "Show WiFi/BT option in Dasharo Security Options Menu"
+	depends on EDK2_DASHARO_SECURITY_OPTIONS
+	help
+	  Shows the WiFi/BT option in Dasharo Security Options submenu in
+	  Dasharo System Features menu.
+
+config EDK2_DASHARO_INTEL_ME_OPTIONS
+	bool "Enable EDK2 Dasharo ME Configuration Menu"
+	default n
+	help
+	  Enables the Intel ME configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_USB_CONFIG
+	bool "Enable EDK2 Dasharo USB Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 USB stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_NETWORK_CONFIG
+	bool "Enable EDK2 Dasharo Network Stack Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 network stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_CHIPSET_CONFIG
+	bool "Enable EDK2 Dasharo Chipset Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 chipset configuration submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_POWER_CONFIG
+	bool "Enable EDK2 Dasharo Power Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 power configuration submenu in Dasharo System Features menu.
+
+config EDK2_SLEEP_TYPE_OPTION
+	bool "Show Sleep Type option in Dasharo Power Configuration Menu"
+	default n
+	depends on EDK2_DASHARO_POWER_CONFIG
+	help
+	  Shows the Sleep Type option in EDK2 power configuration submenu in
+	  Dasharo System Features menu.
+
+config EDK2_FAN_CURVE_OPTION
+	bool "Show Fan Curve option in Dasharo Power Configuration Menu"
+	depends on EDK2_DASHARO_POWER_CONFIG
+	help
+	  Shows the Fan Curve option in EDK2 power configuration submenu in
+	  Dasharo System Features menu.
+
+config EDK2_BATTERY_CONFIG_OPTION
+	bool "Show Battery Threshold options in Dasharo Power Configuration Menu"
+	default n
+	help
+	  Enables battery threshold options in the EDK2 power management
+	  configuration submenu.
+
+config EDK2_DASHARO_PCI_CONFIG
+	bool "Enable EDK2 Dasharo PCI/PCIe Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 PCI/PCIe configuration submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_MEMORY_CONFIG
+	bool "Enable EDK2 Dasharo Memory Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 Memory configuration submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
+	bool "Enable EDK2 network boot option by default"
+	default n
+	help
+	  Enables the network boot option in EDK2 by default.
+
+config EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE
+	bool "Enable serial console redirection by default"
+	depends on EDK2_SERIAL_SUPPORT
+	default n
+	help
+	  Enable serial port output in edk2 by default. Serial output limits
+	  the performance of edk2's FrontPage.
+
+config EDK2_HAVE_2ND_UART
+	bool "Have second serial port for console redirection"
+	depends on EDK2_SERIAL_SUPPORT
+	depends on DRIVERS_UART_8250IO
+	default n
+	help
+	  Enable support for two serial ports in edk2.
+
+config EDK2_DASHARO_SERIAL_REDIRECTION2_DEFAULT_ENABLE
+	bool "Enable second serial port console redirection by default"
+	depends on EDK2_SERIAL_SUPPORT
+	depends on EDK2_HAVE_2ND_UART
+	default n
+	help
+	  Enable serial port output on second UART in edk2 by default. Serial
+	  output limits the performance of edk2's FrontPage.
+
+endif
+
+config EDK2_BOOT_MENU_KEY
+	hex "TianoCore boot menu key"
+	default 0x0016
+	help
+	  Select the TianoCore payload boot menu key:
+	  UP         0x0001
+	  DOWN       0x0002
+	  RIGHT      0x0003
+	  LEFT       0x0004
+	  HOME       0x0005
+	  END        0x0006
+	  INSERT     0x0007
+	  DELETE     0x0008
+	  F1         0x000B
+	  F2         0x000C
+	  F3         0x000D
+	  F4         0x000E
+	  F5         0x000F
+	  F6         0x0010
+	  F7         0x0011
+	  F8         0x0012
+	  F9         0x0013
+	  F10        0x0014
+	  F11        0x0015
+	  F12        0x0016
+	  ESC        0x0017
+
+config EDK2_SETUP_MENU_KEY
+	hex "TianoCore setup menu key"
+	default 0x0017
+	help
+	  Select the TianoCore payload setup menu key:
+	  UP         0x0001
+	  DOWN       0x0002
+	  RIGHT      0x0003
+	  LEFT       0x0004
+	  HOME       0x0005
+	  END        0x0006
+	  INSERT     0x0007
+	  DELETE     0x0008
+	  F1         0x000B
+	  F2         0x000C
+	  F3         0x000D
+	  F4         0x000E
+	  F5         0x000F
+	  F6         0x0010
+	  F7         0x0011
+	  F8         0x0012
+	  F9         0x0013
+	  F10        0x0014
+	  F11        0x0015
+	  F12        0x0016
+	  ESC        0x0017
+
+config EDK2_DISABLE_MTRR_PROGRAMMING
+	bool "Disable MTRR programming in EDK2 Payload"
+	default y
+	help
+	  Disables MTRRs programming in the TianoCore Payload.
+
+config EDK2_ENABLE_BATTERY_CHECK
+	bool "Enable battery level check"
+	default n
+	help
+	  Enables the battery level check in the UEFI Payload. If the battery
+	  level is too low, a pop up will appear with appropriate warning and
+	  prevent booting, which could cause disk data corruption.
+
+config EDK2_DISABLE_OPTION_ROMS
+	bool "Disable OptionROM loading by default"
+	default n
+	help
+	  Disables OptionROM loading and execution in UEFI Payload. By default
+	  all PCI OptionROMs are loaded and executed.
+
+config EDK2_PRINT_SOL_STRINGS
+	bool "Print Sign Of Life string on boot"
+	default n
+	help
+	  Prints the BIOS and, if available, the EC version on the screen
+	  during boot prompt in UEFI Payload.
+
+config EDK2_RAM_DISK_ENABLE
+	bool "Enable RAM Disk support"
+	default n
+	help
+	  Enable support for RAM Disks in EDK2 UEFIPayload.
+
+config EDK2_LAN_ROM_DRIVER
+	string "Optional LAN ROM driver file"
+	help
+	  Integrates LAN ROM driver in TianoCore Payload. Takes an EFI driver
+	  as input.
+
+config EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS
+	bool "Create boot entries for pre-installed OSes"
+	default n
+	help
+	  Tell UEFIPaylaod to scan available EFI System Partitions and create
+	  boot options from the bootloader binaries found on the disks.
+
+endif
