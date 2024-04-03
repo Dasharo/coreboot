@@ -420,7 +420,7 @@ uint32_t tlcl_nv_read_public(uint32_t space_index,
 	       response ? response->hdr.tpm_code : -1);
 
 	if (!response)
-		return TPM_E_NO_DEVICE;
+		return TPM_CB_NO_DEVICE;
 
 	/* Map TPM2 return codes into common vboot representation. */
 	switch (response->hdr.tpm_code) {
@@ -428,7 +428,7 @@ uint32_t tlcl_nv_read_public(uint32_t space_index,
 		memcpy(nvrp_resp, &response->nvrp, sizeof(*nvrp_resp));
 		return TPM_SUCCESS;
 	default:
-		return TPM_E_INTERNAL_INCONSISTENCY;
+		return TPM_CB_INTERNAL_INCONSISTENCY;
 	}
 }
 
