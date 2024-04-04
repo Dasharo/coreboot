@@ -3,7 +3,7 @@
 #include <build.h>
 #include <fmap_config.h>
 
-.section ".msi_id", "a", @progbits
+.section .init, "a", @progbits
 
 /* The following structures must reside in the last 64KiB of flash */
 
