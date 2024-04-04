@@ -19,7 +19,7 @@ jobs:
         model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -34,7 +34,7 @@ jobs:
           make olddefconfig
           make
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -51,7 +51,7 @@ jobs:
         model: [ ms7d25_ddr4, ms7d25_ddr5, ms7e06_ddr4, ms7e06_ddr5 ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -66,7 +66,7 @@ jobs:
           make olddefconfig
           make
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -80,7 +80,7 @@ jobs:
         model: [ vp66xx, vp46xx, vp2420, vp2410, V1210, V1410, V1610 ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -93,7 +93,7 @@ jobs:
         run: |
           ./build.sh ${{ matrix.model }}
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -111,7 +111,7 @@ jobs:
         payload: [ uefi ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -126,7 +126,7 @@ jobs:
           make olddefconfig
           make
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
           path: |
