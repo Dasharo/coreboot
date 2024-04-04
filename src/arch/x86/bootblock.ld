@@ -31,18 +31,13 @@ SECTIONS {
 	 */
 	PROGRAM_SZ = SIZEOF(.text) + 512;
 
-	. = _etext;
-	.msi_id (.): {
-		KEEP(*(.msi_id));
-	}
-
 	. = MIN(_ECFW_PTR, MIN(_ID_SECTION, _FIT_POINTER)) - EARLYASM_SZ;
 	. = CONFIG(SIPI_VECTOR_IN_ROM) ? ALIGN(4096) : ALIGN(16);
 	BOOTBLOCK_TOP = .;
 	.init (.) : {
 		*(.init._start);
-		*(.init);
-		*(.init.*);
+		KEEP(*(.init));
+		KEEP(*(.init.*));
 	}
 
 	/*
