@@ -17,6 +17,8 @@ chip soc/intel/alderlake
 		},
 	}"
 
+	register "tcc_offset" = "20" # TCC of 80C
+
 	device cpu_cluster 0 on end
 	device domain 0 on
 		subsystemid 0x8086 0x7270 inherit
