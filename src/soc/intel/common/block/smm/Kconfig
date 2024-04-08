@@ -55,3 +55,12 @@ config PERIODIC_SMI_RATE_SELECTION_IN_GEN_PMCON_B
 	  Intel Core processors select the periodic SMI rate via GEN_PMCON_A.
 	  On Intel Atom processors the register is different and they use
 	  GEN_PMCON_B/GEN_PMCON2 with different address.
+
+config SOC_INTEL_COMMON_BLOCK_SMM_NO_MSR_SPCL_CHIPSET_USAGE
+	bool
+	depends on SOC_INTEL_COMMON_BLOCK_SMM
+	default n
+	help
+	  Intel Core processors write the MSR_SPCL_CHIPSET_USAGE to allow
+	  writes to the BIOS region when EISS is enabled. Some processors
+	  may not have this MSR. If so, select this option.
