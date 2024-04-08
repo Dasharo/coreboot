@@ -92,11 +92,23 @@ uint32_t soc_get_smi_status(uint32_t generic_sts)
 	return generic_sts & ~(1 << GPE0_STS_BIT);
 }
 
+
+/*
+ * TCO
+ */
 const char *const *soc_tco_sts_array(size_t *a)
 {
 	static const char *const tco_sts_bits[] = {
+		[0] = "NMI2SMI",
+		[1] = "SW_TCO",
+		[2] = "TCO_INT",
 		[3] = "TIMEOUT",
-		[17] = "SECOND_TO",
+		[7] = "NEWCENTURY",
+		[8] = "BIOSWR",
+		[9] = "DMISCI",
+		[10] = "DMISMI",
+		[12] = "DMISERR",
+		[13] = "SLVSEL",
 	};
 
 	*a = ARRAY_SIZE(tco_sts_bits);
