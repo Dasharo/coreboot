@@ -276,7 +276,8 @@ static void set_insmm_sts(const bool enable_writes)
 	else
 		msr.lo &= ~1;
 
-	wrmsr(MSR_SPCL_CHIPSET_USAGE, msr);
+	if (!CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_NO_MSR_SPCL_CHIPSET_USAGE))
+		wrmsr(MSR_SPCL_CHIPSET_USAGE, msr);
 }
 
 static void southbridge_smi_store(
