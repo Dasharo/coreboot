@@ -66,15 +66,21 @@ static void spi_init(void)
 
 static void byt_config_com1_and_enable(void)
 {
-	uint32_t reg;
+	uint32_t reg32;
 
-	/* Enable the UART hardware for COM1. */
-	reg = 1;
-	pci_write_config32(PCI_DEV(0, LPC_DEV, 0), UART_CONT, reg);
+	/* Enable COM1 for debug message output. */
+	reg32 = read32((const volatile void *)(PMC_BASE_ADDRESS + GEN_PMCON1));
+	reg32 &= ~(SUS_PWR_FLR | PWR_FLR);
+	reg32 |= UART_EN;
+	write32 ((volatile void *)(PMC_BASE_ADDRESS + GEN_PMCON1), reg32);
 
 	/* Set up the pads to select the UART function */
+	ssus_enable_internal_pull(UART_RXD_PAD, PAD_PU_2K | PAD_PULL_UP);
 	score_select_func(UART_RXD_PAD, 1);
 	score_select_func(UART_TXD_PAD, 1);
+
+	/* Enable the legacy UART hardware. */
+	pci_write_config32(PCI_DEV(0, LPC_DEV, 0), UART_CONT, 1);
 }
 
 static void setup_mmconfig(void)
