@@ -85,6 +85,16 @@ static int chipset_prev_sleep_state(const struct chipset_power_state *ps)
 	return prev_sleep_state;
 }
 
+static void print_txe_status(const char* timepoint)
+{
+	pci_devfn_t txe = PCI_DEV(0, TXE_DEV, TXE_FUNC);
+
+	printk(BIOS_DEBUG, "TXE status %s\n", timepoint);
+	printk(BIOS_DEBUG, "TXE SEC FWSTS0 %08x\n", pci_read_config32(txe, 0x40));
+	printk(BIOS_DEBUG, "TXE SEC FWSTS1 %08x\n", pci_read_config32(txe, 0x48));
+	printk(BIOS_DEBUG, "TXE SB STATUS %08x\n", pci_read_config32(txe, 0x50));
+}
+
 /* Entry from cpu/intel/car/romstage.c */
 void mainboard_romstage_entry(void)
 {
@@ -112,8 +122,12 @@ void mainboard_romstage_entry(void)
 
 	elog_boot_notify(s3resume);
 
+	print_txe_status("before MRC");
+
 	/* Initialize RAM */
 	raminit(&mp, prev_sleep_state);
+
+	print_txe_status("after MRC");
 
 	timestamp_add_now(TS_INITRAM_END);
 
