@@ -11,6 +11,9 @@ all-y += tsc_freq.c
 bootblock-y += ../../../cpu/intel/car/non-evict/cache_as_ram.S
 bootblock-y += ../../../cpu/intel/car/bootblock.c
 bootblock-y += ../../../cpu/x86/early_reset.S
+ifeq ($(CONFIG_CBFS_VERIFICATION),y)
+bootblock-$(CONFIG_TXE_SECURE_BOOT) += bootblock/microcode_asm.S
+endif
 bootblock-y += bootblock/bootblock.c
 
 romstage-y += iosf.c
@@ -90,33 +93,26 @@ endif
 
 ifeq ($(CONFIG_TXE_SECURE_BOOT),y)
 
-cbfs-files-y += manifests.bin
-manifests.bin-file := $(objcbfs)/sb_manifests
-manifests.bin-type := raw
+# Add BSP microcode to bootblock region
+microcode_pos = $(call int-subtract, $(CONFIG_ROM_SIZE) $(call int-subtract, 0x100000000 $(CONFIG_EARLY_CPU_MICROCODE_LOC)))
+
+add_bootblock = \
+	$(CBFSTOOL) $(1) write -d -r BOOTBLOCK -f $(2); \
+	dd if=$(cpu_microcode_blob.bin-file) of=$(1) conv=notrunc bs=1 \
+		seek=$(microcode_pos) >/dev/null 2>&1
 
 ifeq ($(CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST),y)
-
-manifests.bin-COREBOOT-position := $(call int-subtract, 0x100000000 0x21000)
-
 ifneq ($(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH)),)
 
-$(objcbfs)/sb_manifests: $(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH))
-	dd if=/dev/zero of=$@ bs=5120 count=1 2> /dev/null
-	dd if=$< of=$@ conv=notrunc 2> /dev/null
-else
+key_manifest_pos = $(call int-subtract, $(CONFIG_ROM_SIZE) 0x21000)
 
-$(objcbfs)/sb_manifests:
-	dd if=/dev/zero of=$@ bs=5120 count=1 2> /dev/null
+$(call add_intermediate, add_txe_sb_km, $(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH)))
+	printf "    DD         Adding SB Key Manifest\n" \
+	dd if=$(CONFIG_TXE_SB_KEY_MANIFEST_PATH) \
+		of=$< conv=notrunc bs=4K \
+		seek=$(key_manifest_pos) >/dev/null 2>&1
 
 endif
-
-else # CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST
-
-manifests.bin-COREBOOT-position := $(call int-subtract, 0x100000000 0x20000)
-
-$(objcbfs)/sb_manifests:
-	dd if=/dev/zero of=$@ bs=1024 count=1 2> /dev/null
-
 endif # CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST
 
 files_added:: $(obj)/coreboot.rom $(TXESBMANTOOL)
