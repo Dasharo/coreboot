@@ -388,8 +388,7 @@ $(EDK2_PATH): $(WORKSPACE)
 		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
-		git reset --hard HEAD > /dev/null 2>&1 || true; \
-		git clean -df > /dev/null 2>&1 || true; \
+		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
 		if [ -e UefiPayloadPkg/ShimLayer/UniversalPayload.o ]; then \
 			rm UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
 		fi; \
@@ -408,13 +407,13 @@ $(EDK2_PATH): $(WORKSPACE)
 		fi; \
 		git submodule update --init --checkout
 
-logo: $(EDK2_PATH)
+logo:
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
-		/*) cp $(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
-		*) cp $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
-			$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		/*) convert -background None $(CONFIG_EDK2_BOOTSPLASH_FILE) \
+			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
+		*) convert -background None $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
+			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
 gop_driver:
@@ -424,7 +423,7 @@ gop_driver:
 		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/UefiPayloadPkg/vbt.bin; \
 	fi; \
 
-lan_rom: $(EDK2_PATH)
+lan_rom:
 	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
 		"") ;; \
 		/*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
@@ -435,7 +434,7 @@ lan_rom: $(EDK2_PATH)
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
-ipxe_rom: $(EDK2_PATH)
+ipxe_rom:
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
 		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
@@ -454,6 +453,16 @@ checktools:
 	echo -n "EDK2: Checking nasm:"
 	type nasm > /dev/null 2>&1 && echo "        Found!" || \
 		( echo "        Not found!"; echo "ERROR: Please install nasm."; exit 1 )
+	echo -n "EDK2: Checking imagemagick:"
+	-convert -size 1x1 xc: test.png &> /dev/null;
+	if [ -f test.png ]; then \
+		rm test.png && echo " Found!"; \
+	else \
+		echo " Not found!"; \
+		echo "ERROR: Please install imagemagick"; \
+		exit 1; \
+	fi
+
 
 print:
 	echo "   ##### $(project_name) Build Summary #####"
