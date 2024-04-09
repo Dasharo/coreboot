@@ -48,6 +48,11 @@
 .global update_bsp_microcode
 
 update_bsp_microcode:
+#if CONFIG_CPU_MICROCODE_CBFS_LOC != 0 && CONFIG_CPU_MICROCODE_CBFS_LEN != 0
+	movl	$(CONFIG_CPU_MICROCODE_CBFS_LOC), %esi
+	movl	$(CONFIG_CPU_MICROCODE_CBFS_LEN), %edi
+	addl	%esi, %edi
+#else
 	/* Keep return address */
 	movl	%esp, %edx
 	/* find microcodes in cbfs */
@@ -69,6 +74,7 @@ update_bsp_microcode:
 	movl	CBFS_FILE_LEN(%eax), %edi
 	bswap	%edi
 	addl	%esi, %edi
+#endif
 
 	/*
 	 * Microcode revision -> %ebx
