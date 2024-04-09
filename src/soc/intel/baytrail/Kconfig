@@ -33,6 +33,7 @@ config SOC_INTEL_BAYTRAIL
 	select CPU_HAS_L2_ENABLE_MSR
 	select TCO_SPACE_NOT_YET_SPLIT
 	select USE_DDR3
+	select UDK_2017_BINDING
 	help
 	  Bay Trail M/D part support.
 
@@ -204,7 +205,7 @@ config TXE_SB_KEY_MANIFEST_PATH
 if TXE_SECURE_BOOT
 
 # Put the microcode right after the manifest, so it will be verified by IBB
-# and accessible without walkcbfs ASM routine.
+# and accessible without walkcbfs ASM routine if CBFS_VERIFICATION is enabled.
 config CPU_MICROCODE_CBFS_LOC
 	hex
 	default 0xfffe0480
