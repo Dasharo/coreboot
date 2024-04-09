@@ -157,4 +157,62 @@ config VGA_BIOS_ID
 	depends on VGA_BIOS
 	default "8086,0f31"
 
+config TXE_SECURE_BOOT
+	bool "Perform verified boot with TXE Secure Boot"
+	depends on !VBOOT
+	default n
+	help
+	  The TXE on Baytrail SOC has Secure Boot capability. Choose this
+	  option to enable the TXE Secure Boot verified boot flow in coreboot.
+
+config TXE_SB_INCLUDE_KEY_MANIFEST
+	bool "Include TXE Secure Boot Key Manifest"
+	depends on TXE_SECURE_BOOT
+	default n
+	help
+	  The TXE on Baytrail SOC has Secure Boot capability. Choose this
+	  option to include the TXE Secure Boot Key Manifest, which can be
+	  used to authorize the Secure Boot firmware signing key. This key
+	  should be fused into TXE FPF instead of Secure Boot firmware signing
+	  key. TXE Key Manifest ID FPF must not be zero in such case.
+
+	  Key Manifest is optional.
+
+config TXE_SB_GENERATE_KEY_MANIFEST
+	bool "Generate TXE Secure Boot Key Manifest"
+	depends on TXE_SB_INCLUDE_KEY_MANIFEST
+	default n
+	help
+	  The TXE on Baytrail SOC has Secure Boot capability. Choose this
+	  option to generate the TXE Secure Boot Key Manifest, which can be
+	  used to authorize the Secure Boot firmware signing key. This key
+	  should be fused into TXE FPF instead of Secure Boot firmware signing
+	  key. TXE Key Manifest ID FPF must not be zero in such case.
+
+	  Key Manifest is optional.
+
+config TXE_SB_KEY_MANIFEST_PATH
+	string "TXE Secure Boot Key Manifest file path"
+	depends on TXE_SB_INCLUDE_KEY_MANIFEST && !TXE_SB_GENERATE_KEY_MANIFEST
+	default ""
+	help
+	  THe path to a pre-generated TXE Secure Boot Key Manifest to be included
+	  in the coreboot image.
+
+	  Key Manifest is optional.
+
+if TXE_SECURE_BOOT
+
+# Put the microcode right after the manifest, so it will be verified by IBB
+# and accessible without walkcbfs ASM routine.
+config CPU_MICROCODE_CBFS_LOC
+	hex
+	default 0xfffe0480
+
+config CPU_MICROCODE_CBFS_LEN
+	hex
+	default 0x19800
+
+endif
+
 endif

@@ -84,4 +84,38 @@ mrc.bin-position := $(shell printf "0x%x" $$(( $(mrcelfentry) - $(mrcelfoffset) 
 mrc.bin-type := mrc
 
 endif
+
+ifeq ($(CONFIG_TXE_SECURE_BOOT),y)
+
+cbfs-files-y += manifests.bin
+manifests.bin-file := $(objcbfs)/sb_manifests
+manifests.bin-type := raw
+
+ifeq ($(CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST),y)
+
+manifests.bin-position := $(call int-subtract, 0x100000000, 0x21000)
+
+ifneq ($(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH)),)
+
+$(objcbfs)/sb_manifests: $(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH))
+	dd if=/dev/zero of=$@ bs=5120 count=1 2> /dev/null
+	dd if=$< of=$@ conv=notrunc 2> /dev/null
+else
+
+$(objcbfs)/sb_manifests:
+	dd if=/dev/zero of=$@ bs=5120 count=1 2> /dev/null
+
 endif
+
+else # CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST
+
+manifests.bin-position := $(call int-subtract, 0x100000000 0x20000)
+
+$(objcbfs)/sb_manifests:
+	dd if=/dev/zero of=$@ bs=1024 count=1 2> /dev/null
+
+endif # CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST
+
+endif # CONFIG_TXE_SECURE_BOOT
+
+endif # CONFIG_SOC_INTEL_BAYTRAIL
