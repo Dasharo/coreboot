@@ -1,0 +1,94 @@
+##
+## This file is part of the coreboot project.
+##
+## Copyright (C) 2013-2014 Sage Electronic Engineering, LLC.
+## Copyright (C) 2014 Intel Corporation
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; version 2 of the License.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+
+chip soc/intel/baytrail
+	# SATA port enable mask (2 ports)
+	register "sata_port_map" = "0x1"
+	register "sata_ahci" = "0x1"
+	register "ide_legacy_combined" = "0x0"
+
+	# Route USB ports to XHCI
+	register "usb_route_to_xhci" = "1"
+
+	# USB Port Disable Mask
+	register "usb2_port_disable_mask" = "0x0"
+	register "usb3_port_disable_mask" = "0x0"
+
+	# USB PHY settings
+	# TODO: These values are from Baytrail and need tuned for MinnowMax board
+	register "usb2_comp_bg" = "0x4680"
+	register "usb2_per_port_lane0" = "0x0004C209"
+	register "usb2_per_port_rcomp_hs_pullup0" = "0x0300401d"
+	register "usb2_per_port_lane1" = "0x00049a09"
+	register "usb2_per_port_rcomp_hs_pullup1" = "0x0300401d"
+	register "usb2_per_port_lane2" = "0x00049209"
+	register "usb2_per_port_rcomp_hs_pullup2" = "0x01004015"
+	register "usb2_per_port_lane3" = "0x0004B209"
+	register "usb2_per_port_rcomp_hs_pullup3" = "0x0300401d"
+
+	# SD Card controller
+	register "sdcard_cap_low" = "0x036864b2"
+	register "sdcard_cap_high" = "0x0"
+
+	# VR PS2 control
+	register "vnn_ps2_enable" = "1"
+	register "vcc_ps2_enable" = "1"
+
+	# Allow PCIe devices to wake system from suspend
+	register "pcie_wake_enable" = "1"
+
+
+	# Disable SLP_X stretching after SUS power well fail.
+	register "disable_slp_x_stretch_sus_fail" = "1"
+
+	device cpu_cluster 0 on end
+
+	device domain 0 on
+		device pci 00.0 on end	# 8086 0F00 - SoC router
+		device pci 02.0 on end	# 8086 0F31 - GFX micro HDMI
+		device pci 03.0 off end # 8086 0F38 - MIPI
+		device pci 10.0 off end	# 8086 0F14 - EMMC Port
+		device pci 11.0 off end	# 8086 0F15 - SDIO Port
+		device pci 12.0 on end	# 8086 0F16 - SD Port	MicroSD on SD3
+		device pci 13.0 on end	# 8086 0F23 - SATA AHCI	Onboard & HSEC
+		device pci 14.0 on end	# 8086 0F35 - USB XHCI - Onboard & HSEC  - Enabling both EHCI and XHCI will default to EHCI if not changed at runtime
+		device pci 15.0 on end	# 8086 0F28 - LP Engine Audio	LSEC
+		device pci 17.0 off end	# 8086 0F50 - MMC Port
+		device pci 18.0 on end	# 8086 0F40 - SIO - DMA
+		device pci 18.1 off end	# 8086 0F41 -   I2C Port 1 (0)
+		device pci 18.2 on end	# 8086 0F42 -   I2C Port 2 (1)	- (testpoints)
+		device pci 18.3 off end	# 8086 0F43 -   I2C Port 3 (2)
+		device pci 18.4 off end	# 8086 0F44 -   I2C Port 4 (3)
+		device pci 18.5 off end	# 8086 0F45 -   I2C Port 5 (4)
+		device pci 18.6 on end	# 8086 0F46 -   I2C Port 6 (5)	LSEC
+		device pci 18.7 on end	# 8086 0F47 -   I2C Port 7 (6)	HSEC
+		device pci 1a.0 on end	# 8086 0F18 - TXE
+		device pci 1b.0 off end	# 8086 0F04 - HD Audio
+		device pci 1c.0 on end	# 8086 0F48 - PCIe Port 1 (0)	Must remain on
+		device pci 1c.1 on end	# 8086 0F4A - PCIe Port 2 (1)	Onboard GBE (some models)
+		device pci 1c.2 on end	# 8086 0F4C - PCIe Port 3 (2)	Onboard GBE
+		device pci 1c.3 on end	# 8086 0F4E - PCIe Port 4 (3)	HSEC
+		device pci 1d.0 on end	# 8086 0F34 - USB EHCI - Enabling both EHCI and XHCI will default to EHCI if not changed at runtime
+		device pci 1e.0 on end	# 8086 0F06 - SIO - DMA
+		device pci 1e.1 on end	# 8086 0F08 -   PWM 1			LSEC
+		device pci 1e.2 on end	# 8086 0F09 -   PWM 2			LSEC
+		device pci 1e.3 on end	# 8086 0F0A -   HSUART 1		LSEC
+		device pci 1e.4 on end	# 8086 0F0C -   HSUART 2		LSEC
+		device pci 1e.5 on end	# 8086 0F0E -   SPI			LSEC
+		device pci 1f.0 on end	# 8086 0F1C - LPC bridge		No connector
+		device pci 1f.3 on end	# 8086 0F12 - SMBus 0			SPC
+	end
+end

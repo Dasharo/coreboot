@@ -1,0 +1,57 @@
+##
+## This file is part of the coreboot project.
+##
+## Copyright (C) 2013-2014 Sage Electronic Engineering, LLC.
+## Copyright (C) 2014 Intel Corporation
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; version 2 of the License.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+
+if BOARD_INTEL_MINNOWMAX
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select SOC_INTEL_BAYTRAIL
+	select BOARD_ROMSIZE_KB_8192
+	select ENABLE_BUILTIN_COM1
+	select HAVE_SPD_IN_CBFS
+	select HAVE_ACPI_TABLES
+	select HAVE_OPTION_TABLE
+	select INTEL_GMA_HAVE_VBT
+
+config MAINBOARD_DIR
+	string
+	default "intel/minnowmax"
+
+config MAINBOARD_PART_NUMBER
+	string
+	default "Minnow Max"
+
+config MAX_CPUS
+	int
+	default 16
+
+config DIMM_SPD_SIZE
+	int
+	default 256
+
+config CBFS_SIZE
+	hex
+	default 0x00600000
+
+config POST_DEVICE
+	bool
+	default n
+
+config VGA_BIOS
+	bool
+	default y
+
+endif # BOARD_INTEL_MINNOWMAX
