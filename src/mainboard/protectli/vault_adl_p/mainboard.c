@@ -71,6 +71,9 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	memset(params->CpuPciePowerGating, 0, sizeof(params->CpuPciePowerGating));
 	memset(params->CpuPcieRpPmSci, 0, sizeof(params->CpuPcieRpPmSci));
 
+	// Max payload 256B
+	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpEnableCpm));
+
 	// Type-C PD
 	params->PmcPdEnable = 1;
 	params->PchSerialIoI2cSdaPinMux[1] = 0x1947c606; // GPP_H6
