@@ -9,7 +9,7 @@
 #include <types.h>
 #include <uuid.h>
 
-#if !CONFIG(SOC_AMD_COMMON)
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_CSE)
 #include <intelblocks/cse.h>
 #endif
 
@@ -205,7 +205,7 @@ bool dma_protection_enabled(void)
 	return iommu_var.iommu_enable;
 }
 
-#if !CONFIG(SOC_AMD_COMMON)
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_CSE)
 static void disable_me_hmrfpo(uint8_t *var)
 {
 	int hmrfpo_sts = cse_hmrfpo_get_status();
