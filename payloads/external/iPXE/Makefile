@@ -24,6 +24,14 @@ ifneq ($(CONFIG_IPXE_CUSTOM_BUILD_ID),)
 PXE_MAKE_OPTS := BUILD_ID_CMD="echo 0x$(CONFIG_IPXE_CUSTOM_BUILD_ID)"
 endif
 
+ifeq ($(CONFIG_IPXE_BUILD_EFI),y)
+IPXE_BUILD_TARGET := bin-x86_64-efi-sb/ipxe.efi
+# Workaround problems with unrecognized ipxe/util/elf2efi relocations
+PXE_MAKE_OPTS += EXTRA_CFLAGS="$(CFLAGS_x86_64) -fno-pic"
+else
+IPXE_BUILD_TARGET := bin/$(PXE_ROM_PCI_ID).rom
+endif
+
 all: build
 
 $(project_dir):
@@ -66,16 +74,20 @@ endif
 ifeq ($(CONFIG_IPXE_HAS_HTTPS),y)
 	sed -i'' 's|.*DOWNLOAD_PROTO_HTTPS|#define DOWNLOAD_PROTO_HTTPS|g' "$(project_dir)/src/config/general.h"
 endif
+ifeq ($(CONFIG_PXE_TRUST_CMD),y)
+	sed 's|.*IMAGE_TRUST_CMD|#define IMAGE_TRUST_CMD|g' "$(project_dir)/src/config/general.h" > "$(project_dir)/src/config/general.h.tmp"
+	mv "$(project_dir)/src/config/general.h.tmp" "$(project_dir)/src/config/general.h"
+endif
 
 build: config $(CONFIG_SCRIPT)
 ifeq ($(CONFIG_HAS_SCRIPT),y)
 	echo "    MAKE       $(project_name) $(TAG-y) EMBED=$(CONFIG_SCRIPT)"
-	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom EMBED=$(CONFIG_SCRIPT) $(PXE_MAKE_OPTS)
+	$(MAKE) -C $(project_dir)/src $(IPXE_BUILD_TARGET) EMBED=$(CONFIG_SCRIPT) $(PXE_MAKE_OPTS)
 else
 	echo "    MAKE       $(project_name) $(TAG-y)"
-	$(MAKE) -C $(project_dir)/src bin/$(PXE_ROM_PCI_ID).rom $(PXE_MAKE_OPTS)
+	$(MAKE) -C $(project_dir)/src $(IPXE_BUILD_TARGET) $(PXE_MAKE_OPTS)
 endif
-	cp $(project_dir)/src/bin/$(PXE_ROM_PCI_ID).rom $(project_dir)/ipxe.rom
+	cp $(project_dir)/src/$(IPXE_BUILD_TARGET) $(project_dir)/ipxe.rom
 ifeq ($(CONSOLE_SERIAL),yy)
 	cp "$(project_dir)/src/config/console.h.cb" "$(project_dir)/src/config/console.h"
 	cp "$(project_dir)/src/config/serial.h.cb" "$(project_dir)/src/config/serial.h"
