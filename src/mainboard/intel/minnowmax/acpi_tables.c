@@ -28,5 +28,5 @@ void mainboard_fill_gnvs(struct global_nvs *gnvs)
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
 {
-	fadt->preferred_pm_profile = PM_UNSPECIFIED;
+	fadt->preferred_pm_profile = PM_MOBILE;
 }
