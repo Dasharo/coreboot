@@ -176,6 +176,14 @@ static void sc_init(struct device *dev)
  * Common code for the south cluster devices.
  */
 
+#define SET_DIS_MASK(name_) \
+	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC): \
+		mask |= name_ ## _DIS
+#define SET_DIS_MASK2(name_) \
+	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC): \
+		mask2 |= name_ ## _DIS
+
+
 /* Set bit in function disable register to hide this device. */
 static void sc_disable_devfn(struct device *dev)
 {
@@ -185,94 +193,72 @@ static void sc_disable_devfn(struct device *dev)
 	uint32_t mask2 = 0;
 
 	switch (dev->path.pci.devfn) {
-	case PCI_DEVFN(MMC_DEV, MMC_FUNC):
-		mask |= MMC_DIS;
+	SET_DIS_MASK(MIPI);
 		break;
-	case PCI_DEVFN(SDIO_DEV, SDIO_FUNC):
-		mask |= SDIO_DIS;
+	SET_DIS_MASK(SDIO);
 		break;
-	case PCI_DEVFN(SD_DEV, SD_FUNC):
-		mask |= SD_DIS;
+	SET_DIS_MASK(SD);
 		break;
-	case PCI_DEVFN(SATA_DEV, SATA_FUNC):
-		mask |= SATA_DIS;
+	SET_DIS_MASK(SATA);
 		break;
-	case PCI_DEVFN(XHCI_DEV, XHCI_FUNC):
-		mask |= XHCI_DIS;
+	SET_DIS_MASK(XHCI);
 		/* Disable super speed PHY when XHCI is not available. */
 		mask2 |= USH_SS_PHY_DIS;
 		break;
-	case PCI_DEVFN(LPE_DEV, LPE_FUNC):
-		mask |= LPE_DIS;
+	SET_DIS_MASK(LPE);
 		break;
-	case PCI_DEVFN(MMC45_DEV, MMC45_FUNC):
-		mask |= MMC45_DIS;
+	SET_DIS_MASK(MMC);
 		break;
-	case PCI_DEVFN(SIO_DMA1_DEV, SIO_DMA1_FUNC):
-		mask |= SIO_DMA1_DIS;
+	SET_DIS_MASK(MMC45);
 		break;
-	case PCI_DEVFN(I2C1_DEV, I2C1_FUNC):
-		mask |= I2C1_DIS;
+	SET_DIS_MASK(SIO_DMA1);
 		break;
-	case PCI_DEVFN(I2C2_DEV, I2C2_FUNC):
-		mask |= I2C1_DIS;
+	SET_DIS_MASK(I2C1);
 		break;
-	case PCI_DEVFN(I2C3_DEV, I2C3_FUNC):
-		mask |= I2C3_DIS;
+	SET_DIS_MASK(I2C2);
 		break;
-	case PCI_DEVFN(I2C4_DEV, I2C4_FUNC):
-		mask |= I2C4_DIS;
+	SET_DIS_MASK(I2C3);
 		break;
-	case PCI_DEVFN(I2C5_DEV, I2C5_FUNC):
-		mask |= I2C5_DIS;
+	SET_DIS_MASK(I2C4);
 		break;
-	case PCI_DEVFN(I2C6_DEV, I2C6_FUNC):
-		mask |= I2C6_DIS;
+	SET_DIS_MASK(I2C5);
 		break;
-	case PCI_DEVFN(I2C7_DEV, I2C7_FUNC):
-		mask |= I2C7_DIS;
+	SET_DIS_MASK(I2C6);
 		break;
-	case PCI_DEVFN(TXE_DEV, TXE_FUNC):
-		mask |= TXE_DIS;
+	SET_DIS_MASK(I2C7);
 		break;
-	case PCI_DEVFN(HDA_DEV, HDA_FUNC):
-		mask |= HDA_DIS;
+	SET_DIS_MASK(TXE);
 		break;
-	case PCI_DEVFN(PCIE_PORT1_DEV, PCIE_PORT1_FUNC):
-		mask |= PCIE_PORT1_DIS;
+	SET_DIS_MASK(HDA);
 		break;
-	case PCI_DEVFN(PCIE_PORT2_DEV, PCIE_PORT2_FUNC):
-		mask |= PCIE_PORT2_DIS;
+	SET_DIS_MASK(PCIE_PORT1);
 		break;
-	case PCI_DEVFN(PCIE_PORT3_DEV, PCIE_PORT3_FUNC):
-		mask |= PCIE_PORT3_DIS;
+	SET_DIS_MASK(PCIE_PORT2);
 		break;
-	case PCI_DEVFN(PCIE_PORT4_DEV, PCIE_PORT4_FUNC):
-		mask |= PCIE_PORT4_DIS;
+	SET_DIS_MASK(PCIE_PORT3);
 		break;
-	case PCI_DEVFN(EHCI_DEV, EHCI_FUNC):
-		mask |= EHCI_DIS;
+	SET_DIS_MASK(PCIE_PORT4);
 		break;
-	case PCI_DEVFN(SIO_DMA2_DEV, SIO_DMA2_FUNC):
-		mask |= SIO_DMA2_DIS;
+	SET_DIS_MASK2(SMBUS);
 		break;
-	case PCI_DEVFN(PWM1_DEV, PWM1_FUNC):
-		mask |= PWM1_DIS;
+	SET_DIS_MASK(EHCI);
 		break;
-	case PCI_DEVFN(PWM2_DEV, PWM2_FUNC):
-		mask |= PWM2_DIS;
+	SET_DIS_MASK(SIO_DMA2);
 		break;
-	case PCI_DEVFN(HSUART1_DEV, HSUART1_FUNC):
-		mask |= HSUART1_DIS;
+	SET_DIS_MASK(PWM1);
 		break;
-	case PCI_DEVFN(HSUART2_DEV, HSUART2_FUNC):
-		mask |= HSUART2_DIS;
+	SET_DIS_MASK(PWM2);
 		break;
-	case PCI_DEVFN(SPI_DEV, SPI_FUNC):
-		mask |= SPI_DIS;
+	SET_DIS_MASK(HSUART1);
 		break;
-	case PCI_DEVFN(SMBUS_DEV, SMBUS_FUNC):
-		mask2 |= SMBUS_DIS;
+	SET_DIS_MASK(HSUART2);
+		break;
+	SET_DIS_MASK(SPI);
+		break;
+
+	SET_DIS_MASK(OTG);
+		/* Disable OTG PHY when OTG is not available. */
+		mask2 |= OTG_SS_PHY_DIS;
 		break;
 	}
 
