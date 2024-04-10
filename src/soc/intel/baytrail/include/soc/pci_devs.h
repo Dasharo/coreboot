@@ -13,6 +13,10 @@
 #define GFX_DEV 0x2
 #define GFX_FUNC 0
 
+/* MIPI */
+#define MIPI_DEV 0x3
+#define MIPI_FUNC 0
+
 /* MMC Port */
 #define MMC_DEV 0x10
 #define MMC_FUNC 0
@@ -36,6 +40,10 @@
 /* LPE Audio */
 #define LPE_DEV 0x15
 #define LPE_FUNC 0
+
+/* OTG */
+#define OTG_DEV 0x16
+#define OTG_FUNC 0
 
 /* MMC45 Port */
 #define MMC45_DEV 0x17
@@ -107,6 +115,7 @@
 
 #define SOC_DEVID 0x0f00
 #define GFX_DEVID 0x0f31
+#define MIPI_DEVID 0x0f38
 #define MMC_DEVID 0x0f14
 #define SDIO_DEVID 0x0f15
 #define SD_DEVID 0x0f16
@@ -116,6 +125,7 @@
 #define AHCI2_DEVID 0x0f23
 #define XHCI_DEVID 0x0f35
 #define LPE_DEVID 0x0f28
+#define OTG_DEVID 0x0f37
 #define MMC45_DEVID 0x0f50
 #define SIO_DMA1_DEVID 0x0f40
 #define I2C1_DEVID 0x0f41
