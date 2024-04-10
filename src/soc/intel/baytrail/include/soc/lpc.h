@@ -36,4 +36,14 @@ enum baytrail_stepping {
 #define GCS		0x00
 # define BILD		(1 << 0)
 
+/* iLB Memory Mapped IO */
+#define ILB_OIC	0x60
+#define  SIRQEN (1 << 12)
+#define  AEN    (1 << 8)
+
+/* Memory Mapped IO in LPC bridge */
+#define ILB_SERIRQ_CNTL	0x10
+#define  SCNT_CONTINUOUS_MODE	(1 << 7)
+#define  SCNT_QUIET_MODE	0
+
 #endif /* _BAYTRAIL_LPC_H_ */
