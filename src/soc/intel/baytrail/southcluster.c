@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <arch/io.h>
+#include <cpu/x86/smm.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <acpi/acpi.h>
@@ -526,6 +527,8 @@ static void finalize_chipset(void *unused)
 		write32(spi + UVSCC, cfg.uvscc);
 		write32(spi + LVSCC, cfg.lvscc | VCL);
 	}
+
+	apm_control(APM_CNT_FINALIZE);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, finalize_chipset, NULL);
