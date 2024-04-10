@@ -77,7 +77,6 @@
 #define GPIO_S5_DED_IRQ(slot)		_GPIO_S5_DED_IRQ(slot)
 
 /* PIC IRQ settings. */
-#define PIRQ_PIC_IRQDISABLE		0x0
 #define PIRQ_PIC_IRQ3			0x3
 #define PIRQ_PIC_IRQ4			0x4
 #define PIRQ_PIC_IRQ5			0x5
@@ -89,6 +88,8 @@
 #define PIRQ_PIC_IRQ12			0xc
 #define PIRQ_PIC_IRQ14			0xe
 #define PIRQ_PIC_IRQ15			0xf
+#define PIRQ_PIC_IRQDISABLE		0x80
+#define PIRQ_PIC_UNKNOWN_UNUSED		0xff
 
 /* Overloaded term, but these values determine the per device route. */
 #define PIRQA				0
@@ -110,7 +111,7 @@
 # define SCIS_IRQ21				0x05
 # define SCIS_IRQ22				0x06
 # define SCIS_IRQ23				0x07
-
+#define ILB_MC				0x04
 /*
  * In each mainboard directory there should exist a header file irqroute.h that
  * defines the PCI_DEV_PIRQ_ROUTES and PIRQ_PIC_ROUTES macros which
