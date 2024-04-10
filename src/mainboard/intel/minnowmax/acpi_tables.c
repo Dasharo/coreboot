@@ -21,9 +21,19 @@
 
 void mainboard_fill_gnvs(struct global_nvs *gnvs)
 {
+	/* Enable USB ports in S3 */
+	gnvs->s3u0 = 1;
+	gnvs->s3u1 = 1;
+
+	/* Disable USB ports in S5 */
+	gnvs->s5u0 = 0;
+	gnvs->s5u1 = 0;
+
 	/* No TPM Present */
 	gnvs->tpmp = 0;
 
+	/* Enable DPTF */
+	gnvs->dpte = 0;
 }
 
 void mainboard_fill_fadt(acpi_fadt_t *fadt)
