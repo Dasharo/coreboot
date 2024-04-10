@@ -8,6 +8,7 @@
 #include <device/pci_ids.h>
 #include <reg_script.h>
 
+#include <soc/iomap.h>
 #include <soc/iosf.h>
 #include <soc/nvs.h>
 #include <soc/device_nvs.h>
@@ -104,6 +105,55 @@ static void dev_ctl_reg(struct device *dev, int *iosf_reg, int *nvs_index)
 }
 
 #define CASE_I2C(name_) case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
+#define PIN_SET_FOR_I2C 0x2003C881
+
+static void i2c_set_pins(struct device *dev)
+{
+	switch (dev->path.pci.devfn) {
+	CASE_I2C(I2C1) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0210),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0200),
+			PIN_SET_FOR_I2C);
+		break;
+	CASE_I2C(I2C2) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x01F0),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x01E0),
+			PIN_SET_FOR_I2C);
+		break;
+	CASE_I2C(I2C3) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x01D0),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x01B0),
+			PIN_SET_FOR_I2C);
+		break;
+	CASE_I2C(I2C4) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0190),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x01C0),
+			PIN_SET_FOR_I2C);
+		break;
+	CASE_I2C(I2C5) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x01A0),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0170),
+			PIN_SET_FOR_I2C);
+		break;
+	CASE_I2C(I2C6) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0150),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0140),
+			PIN_SET_FOR_I2C);
+		break;
+	CASE_I2C(I2C7) :
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0180),
+			PIN_SET_FOR_I2C);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0160),
+			PIN_SET_FOR_I2C);
+		break;
+	}
+}
 
 static void i2c_disable_resets(struct device *dev)
 {
@@ -144,6 +194,7 @@ static void lpss_init(struct device *dev)
 	}
 	dev_enable_snoop_and_pm(dev, iosf_reg);
 	i2c_disable_resets(dev);
+	i2c_set_pins(dev);
 
 	if (config->lpss_acpi_mode)
 		dev_enable_acpi_mode(dev, iosf_reg, nvs_index);
