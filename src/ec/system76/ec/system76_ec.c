@@ -237,8 +237,8 @@ static int ec_spi_bus_read(uint8_t *dest, uint32_t len)
 	uint32_t addr, i, rv;
 
 	uint8_t read_cmd[2] = {
-		CMD_SPI_FLAG_READ | CMD_SPI_FLAG_SCRATCH,
-		0,
+		[0] = CMD_SPI_FLAG_READ | CMD_SPI_FLAG_SCRATCH,
+		[1] = 0,
 	};
 
 	for (addr = 0; addr + SPI_ACCESS_SIZE < len; addr += SPI_ACCESS_SIZE) {
@@ -315,35 +315,34 @@ static int ec_spi_bus_write(uint8_t *data, uint8_t len)
 
 static int ec_spi_cmd_status(void)
 {
-	uint8_t rv;
-	uint8_t buf[1];
+	int rv;
+	uint8_t cmd;
 
 	if ((rv = ec_spi_reset()))
 		return rv;
 
-	buf[0] = 0x05; /* SPI Read Status */
+	cmd = 0x05; /* SPI Read Status */
 
-	if ((rv = ec_spi_bus_write(buf, 1)))
+	if ((rv = ec_spi_bus_write(&cmd, 1)))
 		return rv;
 
-	if ((rv = ec_spi_bus_read(buf, 1)))
+	if ((rv = ec_spi_bus_read(&cmd, 1)))
 		return rv;
 
-	return buf[0];
+	return cmd;
 }
 
 static int ec_spi_cmd_write_enable(void)
 {
-	int status;
-	uint8_t rv;
-	uint8_t buf[1];
+	int status, rv;
+	uint8_t cmd;
 
 	if ((rv = ec_spi_reset()))
 		return rv;
 
-	buf[0] = 0x06; /* SPI Write Enable */
+	cmd = 0x06; /* SPI Write Enable */
 
-	if ((rv = ec_spi_bus_write(buf, 1)))
+	if ((rv = ec_spi_bus_write(&cmd, 1)))
 		return rv;
 
 	do {
@@ -355,16 +354,15 @@ static int ec_spi_cmd_write_enable(void)
 
 static int ec_spi_cmd_write_disable(void)
 {
-	int status;
-	uint8_t rv;
-	uint8_t buf[1];
+	int status, rv;
+	uint8_t cmd;
 
 	if ((rv = ec_spi_reset()))
 		return rv;
 
-	buf[0] = 0x04; /* SPI Write Disable */
+	cmd = 0x04; /* SPI Write Disable */
 
-	if ((rv = ec_spi_bus_write(buf, 1)))
+	if ((rv = ec_spi_bus_write(&cmd, 1)))
 		return rv;
 
 	do {
@@ -377,8 +375,7 @@ static int ec_spi_cmd_write_disable(void)
 /* Erase a sector at addr. Returns 0 on success <0 on error. */
 static int ec_spi_erase_sector(uint32_t addr)
 {
-	int status;
-	uint8_t rv;
+	int status, rv;
 	uint8_t buf[4] = {
 		[0] = 0xD7, /* SPI Sector Erase */
 		[1] = (addr >> 16) & 0xFF,
@@ -412,13 +409,12 @@ static int ec_spi_erase_sector(uint32_t addr)
  */
 static int ec_spi_erase_chip(void)
 {
-	uint32_t addr;
 	int rv;
+	uint32_t addr;
 
-	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE; addr += SPI_SECTOR_SIZE) {
+	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE; addr += SPI_SECTOR_SIZE)
 		if ((rv = ec_spi_erase_sector(addr)))
 			return rv;
-	}
 
 	return addr;
 }
@@ -429,8 +425,7 @@ static int ec_spi_erase_chip(void)
  */
 static int ec_spi_image_write(uint8_t *image, ssize_t size)
 {
-	int status;
-	uint8_t rv;
+	int status, rv;
 	uint32_t addr;
 	uint8_t buf[6] = {0};
 
@@ -474,15 +469,14 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 /* Read a sector into dest. Returns 0 on success and <0 on error. */
 static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 {
-	uint8_t rv;
-	uint8_t buf[5] = {0};
-
-	/* SPI Read */
-	buf[0] = 0x0B;
-	buf[1] = (addr >> 16) & 0xFF;
-	buf[2] = (addr >> 8) & 0xFF;
-	buf[3] = addr & 0xFF;
-	buf[4] = 0;
+	int rv;
+	uint8_t buf[5] = {
+		[0] = 0x0B, /* SPI Read */
+		[1] = (addr >> 16) & 0xFF,
+		[2] = (addr >> 8) & 0xFF,
+		[3] = addr & 0xFF,
+		[4] = 0,
+	};
 
 	if ((rv = ec_spi_reset()))
 		return rv;
