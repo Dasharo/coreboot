@@ -408,7 +408,7 @@ $(EDK2_PATH): $(WORKSPACE)
 		fi; \
 		git submodule update --init --checkout
 
-logo:
+logo: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_BOOTSPLASH_FILE)" in \
 		"") ;; \
 		/*) convert -background None $(CONFIG_EDK2_BOOTSPLASH_FILE) \
@@ -417,14 +417,14 @@ logo:
 			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 	esac \
 
-gop_driver:
+gop_driver: $(EDK2_PATH)
 	if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
 		echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
 		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/UefiPayloadPkg/IntelGopDriver.efi; \
 		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/UefiPayloadPkg/vbt.bin; \
 	fi; \
 
-lan_rom:
+lan_rom: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
 		"") ;; \
 		/*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
@@ -435,7 +435,7 @@ lan_rom:
 				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
 	esac \
 
-ipxe_rom:
+ipxe_rom: $(EDK2_PATH)
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
 		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
