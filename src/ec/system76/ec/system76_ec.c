@@ -4,7 +4,6 @@
 #include <arch/io.h>
 #include <cbfs.h>
 #include <console/system76_ec.h>
-#include <lib.h>
 #include <pc80/mc146818rtc.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/vboot_common.h>
@@ -231,9 +230,9 @@ static uint8_t ec_spi_reset(void)
 
 /*
  * Read len bytes from EC SPI bus into dest
- * Returns 0 on success, >0 on error
+ * Returns 0 on success, <0 on error
  */
-static uint32_t ec_spi_bus_read(uint8_t *dest, uint32_t len)
+static int ec_spi_bus_read(uint8_t *dest, uint32_t len)
 {
 	uint32_t addr, i, rv;
 
@@ -246,10 +245,10 @@ static uint32_t ec_spi_bus_read(uint8_t *dest, uint32_t len)
 		read_cmd[1] = SPI_ACCESS_SIZE;
 
 		if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(read_cmd), read_cmd)))
-			return rv;
+			return -rv;
 
 		if (system76_ec_read(REG_DATA + 1) != read_cmd[1])
-			return 1;
+			return -1;
 
 		for (i = 0; i < read_cmd[1]; i++)
 			dest[addr + i] = system76_ec_read(REG_DATA + 2 + i);
@@ -261,10 +260,10 @@ static uint32_t ec_spi_bus_read(uint8_t *dest, uint32_t len)
 	read_cmd[1] = len % SPI_ACCESS_SIZE;
 
 	if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(read_cmd), read_cmd)))
-		return rv;
+		return -rv;
 
 	if (system76_ec_read(REG_DATA + 1) != read_cmd[1])
-		return 1;
+		return -1;
 
 	for (i = 0; i < read_cmd[1]; i++)
 		dest[addr + i] = system76_ec_read(REG_DATA + 2 + i);
@@ -274,9 +273,9 @@ static uint32_t ec_spi_bus_read(uint8_t *dest, uint32_t len)
 
 /*
  * Write len bytes from data to EC SPI bus
- * Returns 0 on success, >0 on error
+ * Returns 0 on success, <0 on error
  */
-static uint32_t ec_spi_bus_write(uint8_t *data, uint8_t len)
+static int ec_spi_bus_write(uint8_t *data, uint8_t len)
 {
 	uint32_t addr, i, rv;
 	uint8_t write_cmd[2] = {
@@ -291,10 +290,10 @@ static uint32_t ec_spi_bus_write(uint8_t *data, uint8_t len)
 			system76_ec_write(REG_DATA + 2 + i, data[addr + i]);
 
 		if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(write_cmd), write_cmd)))
-			return rv;
+			return -rv;
 
 		if (system76_ec_read(REG_DATA + 1) != write_cmd[1])
-			return 1;
+			return -1;
 	}
 
 	if (addr == len)
@@ -306,10 +305,10 @@ static uint32_t ec_spi_bus_write(uint8_t *data, uint8_t len)
 		system76_ec_write(REG_DATA + 2 + i, data[addr + i]);
 
 	if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(write_cmd), write_cmd)))
-		return rv;
+		return -rv;
 
 	if (system76_ec_read(REG_DATA + 1) != write_cmd[1])
-		return 1;
+		return -1;
 
 	return 0;
 }
@@ -320,15 +319,15 @@ static int ec_spi_cmd_status(void)
 	uint8_t buf[1];
 
 	if ((rv = ec_spi_reset()))
-		return -rv;
+		return rv;
 
 	buf[0] = 0x05; /* SPI Read Status */
 
 	if ((rv = ec_spi_bus_write(buf, 1)))
-		return -rv;
+		return rv;
 
 	if ((rv = ec_spi_bus_read(buf, 1)))
-		return -rv;
+		return rv;
 
 	return buf[0];
 }
@@ -340,12 +339,12 @@ static int ec_spi_cmd_write_enable(void)
 	uint8_t buf[1];
 
 	if ((rv = ec_spi_reset()))
-		return -rv;
+		return rv;
 
 	buf[0] = 0x06; /* SPI Write Enable */
 
 	if ((rv = ec_spi_bus_write(buf, 1)))
-		return -rv;
+		return rv;
 
 	do {
 		status = ec_spi_cmd_status();
@@ -361,12 +360,12 @@ static int ec_spi_cmd_write_disable(void)
 	uint8_t buf[1];
 
 	if ((rv = ec_spi_reset()))
-		return -rv;
+		return rv;
 
 	buf[0] = 0x04; /* SPI Write Disable */
 
 	if ((rv = ec_spi_bus_write(buf, 1)))
-		return -rv;
+		return rv;
 
 	do {
 		status = ec_spi_cmd_status();
@@ -388,20 +387,20 @@ static int ec_spi_erase_sector(uint32_t addr)
 	};
 
 	if ((rv = ec_spi_cmd_write_enable()))
-		return -rv;
+		return rv;
 
 	if ((rv = ec_spi_reset()))
-		return -rv;
+		return rv;
 
 	if ((rv = ec_spi_bus_write(buf, 4)))
-		return -rv;
+		return rv;
 
 	do {
 		status = ec_spi_cmd_status();
 	} while (status > 0 && (status & 1) != 0);
 
 	if ((rv = ec_spi_cmd_write_disable()))
-		return -rv;
+		return rv;
 
 	return 0;
 }
@@ -418,7 +417,7 @@ static int ec_spi_erase_chip(void)
 
 	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE; addr += SPI_SECTOR_SIZE) {
 		if ((rv = ec_spi_erase_sector(addr)))
-			return -rv;
+			return rv;
 	}
 
 	return addr;
@@ -436,14 +435,14 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 	uint8_t buf[6] = {0};
 
 	if ((rv = ec_spi_cmd_write_enable()))
-		return -rv;
+		return rv;
 
 	/* SPI AAI Word Program */
 	buf[0] = 0xAD;
 
 	for (addr = 0; addr < size; addr += 2) {
 		if ((rv = ec_spi_reset()))
-			return -rv;
+			return rv;
 
 		if (addr == 0) {
 			/* 1st cmd bytes 1,2,3 are the address */
@@ -459,7 +458,7 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 		}
 
 		if (rv)
-			return -rv;
+			return rv;
 
 		do {
 			status = ec_spi_cmd_status();
@@ -467,7 +466,7 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 	}
 
 	if ((rv = ec_spi_cmd_write_disable()))
-		return -rv;
+		return rv;
 
 	return addr;
 }
@@ -486,13 +485,13 @@ static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 	buf[4] = 0;
 
 	if ((rv = ec_spi_reset()))
-		return -rv;
+		return rv;
 
 	if ((rv = ec_spi_bus_write(buf, 5)))
-		return -rv;
+		return rv;
 
 	if ((rv = ec_spi_bus_read(dest, SPI_SECTOR_SIZE)))
-		return -rv;
+		return rv;
 
 	return 0;
 }
@@ -510,7 +509,7 @@ static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 	     addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE && addr + SPI_SECTOR_SIZE < image_sz;
 	     addr += SPI_SECTOR_SIZE) {
 		if ((rv = ec_spi_read_sector(sector, addr)))
-			return -rv;
+			return rv;
 
 		if (memcmp(sector, image + addr, SPI_SECTOR_SIZE))
 			return -1;
@@ -520,7 +519,7 @@ static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 		return 0;
 
 	if ((rv = ec_spi_read_sector(sector, addr)))
-		return -rv;
+		return rv;
 
 	if (memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE))
 		return -1;
