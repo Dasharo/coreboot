@@ -19,9 +19,9 @@
 
 #define SPI_SECTOR_SIZE 1024
 
-#define REG_CMD 0
+#define REG_CMD    0
 #define REG_RESULT 1
-#define REG_DATA 2 // Start of command data
+#define REG_DATA   2 // Start of command data
 
 // When command register is 0, command is complete
 #define CMD_FINISHED 0
