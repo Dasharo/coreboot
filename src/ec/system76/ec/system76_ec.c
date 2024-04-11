@@ -498,27 +498,32 @@ static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 	int rv;
 
 	sector = malloc(SPI_SECTOR_SIZE);
+	if (!sector)
+		return -1;
+	rv = 0;
 
 	for (addr = 0;
 	     addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE && addr + SPI_SECTOR_SIZE < image_sz;
 	     addr += SPI_SECTOR_SIZE) {
 		if ((rv = ec_spi_read_sector(sector, addr)))
-			return rv;
+			goto exit;
 
-		if (memcmp(sector, image + addr, SPI_SECTOR_SIZE))
-			return -1;
+		if ((rv = -memcmp(sector, image + addr, SPI_SECTOR_SIZE)))
+			goto exit;
 	}
 
 	if (addr == image_sz)
-		return 0;
+		goto exit;
 
 	if ((rv = ec_spi_read_sector(sector, addr)))
-		return rv;
+		goto exit;
 
-	if (memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE))
-		return -1;
+	if ((rv = -memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE)))
+		goto exit;
 
-	return 0;
+exit:
+	free(sector);
+	return rv;
 }
 
 /* Sync the EC firmware with an image contained in CBFS. */
