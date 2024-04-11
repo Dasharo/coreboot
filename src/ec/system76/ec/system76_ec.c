@@ -6,10 +6,12 @@
 #include <console/system76_ec.h>
 #include <lib.h>
 #include <pc80/mc146818rtc.h>
+#include <security/vboot/misc.h>
 #include <security/vboot/vboot_common.h>
 #include <timer.h>
 #include "acpi.h"
 #include "commands.h"
+#include "system76_ec.h"
 
 // This is the command region for System76 EC firmware. It must be
 // enabled for LPC in the mainboard.
@@ -206,15 +208,12 @@ static int firmware_str(char *data, int data_len, const char *key, char *dest, i
 		data_i += 1;
 	}
 
-	/* Exit if not found */
 	if (key_i < key_len)
 		return 0;
 
-	/* Copy the data */
 	while (data_i < data_len && ret_i < dest_len - 1 && data[data_i] != 0)
 		dest[ret_i++] = data[data_i++];
 
-	/* Terminate the result */
 	dest[ret_i] = '\0';
 
 	return ret_i;
@@ -256,11 +255,9 @@ static uint32_t ec_spi_bus_read(uint8_t *dest, uint32_t len)
 			dest[addr + i] = system76_ec_read(REG_DATA + 2 + i);
 	}
 
-	/* All chunks read? */
 	if (addr == len)
 		return 0;
 
-	/* Read last chunk */
 	read_cmd[1] = len % SPI_ACCESS_SIZE;
 
 	if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(read_cmd), read_cmd)))
@@ -300,11 +297,9 @@ static uint32_t ec_spi_bus_write(uint8_t *data, uint8_t len)
 			return 1;
 	}
 
-	/* All chunks written? */
 	if (addr == len)
 		return 0;
 
-	/* Write last chunk */
 	write_cmd[1] = len % SPI_ACCESS_SIZE;
 
 	for (i = 0; i < write_cmd[1]; i++)
@@ -381,7 +376,7 @@ static int ec_spi_cmd_write_disable(void)
 }
 
 /* Erase a sector at addr. Returns 0 on success <0 on error. */
-static long ec_spi_erase_sector(uint32_t addr)
+static int ec_spi_erase_sector(uint32_t addr)
 {
 	int status;
 	uint8_t rv;
@@ -416,10 +411,10 @@ static long ec_spi_erase_sector(uint32_t addr)
  * Chip / bulk erase doesn't work on this hardware.
  * Returns erased byte count on success and <0 on error.
  */
-static long ec_spi_erase_chip(void)
+static int ec_spi_erase_chip(void)
 {
 	uint32_t addr;
-	long rv;
+	int rv;
 
 	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE; addr += SPI_SECTOR_SIZE) {
 		if ((rv = ec_spi_erase_sector(addr)))
@@ -433,7 +428,7 @@ static long ec_spi_erase_chip(void)
  * Program an entire chip with a given image.
  * Returns written byte count on success and <0 on error.
  */
-static long ec_spi_image_write(uint8_t *image, ssize_t size)
+static int ec_spi_image_write(uint8_t *image, ssize_t size)
 {
 	int status;
 	uint8_t rv;
@@ -478,7 +473,7 @@ static long ec_spi_image_write(uint8_t *image, ssize_t size)
 }
 
 /* Read a sector into dest. Returns 0 on success and <0 on error. */
-static long ec_spi_read_sector(uint8_t *dest, uint32_t addr)
+static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 {
 	uint8_t rv;
 	uint8_t buf[5] = {0};
@@ -503,15 +498,16 @@ static long ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 }
 
 /* Verify an image sector by sector. Returns 0 on success and <0 on error. */
-static long ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
+static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 {
 	uint8_t *sector;
 	uint32_t addr;
-	long rv;
+	int rv;
 
 	sector = malloc(SPI_SECTOR_SIZE);
 
-	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE && addr + SPI_SECTOR_SIZE < image_sz;
+	for (addr = 0;
+	     addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE && addr + SPI_SECTOR_SIZE < image_sz;
 	     addr += SPI_SECTOR_SIZE) {
 		if ((rv = ec_spi_read_sector(sector, addr)))
 			return -rv;
@@ -542,7 +538,10 @@ static void system76_ec_fw_sync(void *unused)
 	char cur_board_str[64];
 	char cur_version_str[64];
 	uint8_t smfi_cmd;
-	long rv;
+	int rv;
+
+	if (!CONFIG(EC_SYSTEM76_EC_UPDATE))
+		return;
 
 	if (vboot_recovery_mode_enabled()) {
 		printk(BIOS_DEBUG, "Skipping EC update in recovery mode.\n");
@@ -558,11 +557,6 @@ static void system76_ec_fw_sync(void *unused)
 	printk(BIOS_DEBUG, "EC update found (%ld bytes)\n", image_sz);
 
 	/* Sanity checks */
-	if ((ec_read(0x10) & 0x01) != 0x01) {
-		printk(BIOS_WARNING, "AC adapter not connected. Skipping update.\n");
-		return;
-	}
-
 	if (!image_sz || image_sz % 2 || image_sz > CONFIG_EC_SYSTEM76_EC_FLASH_SIZE) {
 		printk(BIOS_ERR, "Incorrect EC update size.\n");
 		return;
@@ -600,6 +594,14 @@ static void system76_ec_fw_sync(void *unused)
 		printk(BIOS_INFO, "EC update required!\n");
 	}
 
+	if ((ec_read(0x10) & 0x01) != 0x01) {
+		printk(BIOS_WARNING, "AC adapter not connected. Skipping update.\n");
+		if (CONFIG(VBOOT))
+			vboot_fail_and_reboot(vboot_get_context(),
+					      VB2_RECOVERY_EC_SOFTWARE_SYNC, EC_UPDATE_NO_AC);
+		return;
+	}
+
 	/* Jump to Scratch ROM */
 	smfi_cmd = CMD_SPI_FLAG_SCRATCH;
 	if (system76_ec_smfi_cmd(CMD_SPI, 1, &smfi_cmd)) {
@@ -618,7 +620,7 @@ static void system76_ec_fw_sync(void *unused)
 		printk(BIOS_CRIT, "EC erase failed!\n");
 		return;
 	}
-	printk(BIOS_DEBUG, "EC erased %ld bytes\n", rv);
+	printk(BIOS_DEBUG, "EC erased %d bytes\n", rv);
 
 	rv = ec_spi_image_write((uint8_t *)image, image_sz);
 	if (rv < 0) {
@@ -626,7 +628,7 @@ static void system76_ec_fw_sync(void *unused)
 		printk(BIOS_ALERT, "EC update failed!\n");
 		return;
 	}
-	printk(BIOS_DEBUG, "EC wrote %ld bytes\n", rv);
+	printk(BIOS_DEBUG, "EC wrote %d bytes\n", rv);
 
 	rv = ec_spi_image_verify((uint8_t *)image, image_sz);
 	if (rv < 0) {
