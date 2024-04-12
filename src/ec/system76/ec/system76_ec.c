@@ -608,8 +608,7 @@ static void system76_ec_fw_sync(void *unused)
 	/* Jump to Scratch ROM */
 	smfi_cmd = CMD_SPI_FLAG_SCRATCH;
 	if (system76_ec_smfi_cmd(CMD_SPI, 1, &smfi_cmd)) {
-		/* If we failed to jump to scratch ROM, then we can probably continue booting.
-			 */
+		/* If we failed to jump to scratch ROM, then we can probably continue booting. */
 		printk(BIOS_ERR, "EC: failed to jump to scratch ROM!\n");
 		goto cleanup;
 	}
@@ -617,9 +616,9 @@ static void system76_ec_fw_sync(void *unused)
 	rv = ec_spi_erase_chip();
 	if (rv < 0) {
 		/*
-			 * Best case, nothing was erased.
-			 * Worst case, everything is erased and EC will boot from backup.
-			 */
+		 * Best case, nothing was erased.
+		 * Worst case, everything is erased and EC will boot from backup.
+		 */
 		printk(BIOS_CRIT, "EC: erase failed!\n");
 		goto cleanup;
 	}
