@@ -6,7 +6,6 @@
 #include <ec/system76/ec/acpi.h>
 #include <fmap.h>
 #include <lib.h>
-#include <mainboard/gpio.h>
 #include <security/vboot/vboot_common.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
@@ -53,12 +52,10 @@ static void set_fan_curve(void)
 	struct smfi_cmd_set_fan_curve cmd;
 
 	switch (selection) {
-	case FAN_CURVE_OPTION_SILENT:
-		cmd.curve = fan_curve_silent;
-		break;
 	case FAN_CURVE_OPTION_PERFORMANCE:
 		cmd.curve = fan_curve_performance;
 		break;
+	case FAN_CURVE_OPTION_SILENT:
 	default:
 		cmd.curve = fan_curve_silent;
 		break;
@@ -66,7 +63,7 @@ static void set_fan_curve(void)
 
 	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
 		cmd.fan = i;
-		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd), (uint8_t *)&cmd);
 	}
 }
 
@@ -74,7 +71,7 @@ static void set_camera_enablement(void)
 {
 	bool enabled = get_camera_option();
 
-	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
+	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled), (uint8_t *)&enabled);
 }
 
 static void set_battery_thresholds(void)
@@ -99,13 +96,13 @@ static void set_power_on_ac(void)
 
 	cmd.value = dasharo_get_power_on_after_fail();
 
-	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd), (uint8_t *)&cmd);
 }
 
 static void mainboard_init(void *chip_info)
 {
 	config_t *cfg = config_of_soc();
-	struct device *wlan_dev = pcidev_on_root(0x1c, 4);
+	struct device *wlan_dev = pcidev_on_root(0x1c, 7);
 	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
 	bool radio_enable = get_wireless_option();
 
@@ -119,7 +116,6 @@ static void mainboard_init(void *chip_info)
 
 	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
-	mainboard_configure_gpios();
 	set_fan_curve();
 	set_camera_enablement();
 	set_battery_thresholds();
@@ -205,63 +201,23 @@ struct chip_operations mainboard_ops = {
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
-	params->CnviRfResetPinMux = 0x194CE404; // GPP_F4
-	params->CnviClkreqPinMux = 0x394CE605; // GPP_F5
-
-	params->PchSerialIoI2cSdaPinMux[0] = 0x1947c404; // GPP_H4
-	params->PchSerialIoI2cSclPinMux[0] = 0x1947a405; // GPP_H5
-	params->PchSerialIoI2cSdaPinMux[1] = 0x1947c606; // GPP_H6
-	params->PchSerialIoI2cSclPinMux[1] = 0x1947a607; // GPP_H7
-
-	// DEVSLP doesn't work due to broken board design (crossed wiring)
-	params->SataPortDevSlpPinMux[0] = 0x59673e0c; // GPP_H12
-	params->SataPortDevSlpPinMux[1] = 0x5967400d; // GPP_H13
-
-	params->SataPortsSolidStateDrive[1] = 1;
-
-	params->PcieRpEnableCpm[4] = 1;
-	params->PcieRpEnableCpm[5] = 1;
-	params->PcieRpEnableCpm[7] = 1;
-	params->PcieRpEnableCpm[8] = 1;
-	params->PcieRpEnableCpm[9] = 1;
-
-	params->PcieRpAcsEnabled[4] = 1;
-	params->PcieRpAcsEnabled[5] = 1;
-	params->PcieRpAcsEnabled[7] = 1;
-	params->PcieRpAcsEnabled[8] = 1;
-	params->PcieRpAcsEnabled[9] = 1;
-
-	params->PcieRpMaxPayload[4] = 1;
-	params->PcieRpMaxPayload[5] = 1;
-	params->PcieRpMaxPayload[7] = 1;
-	params->PcieRpMaxPayload[8] = 1;
-	params->PcieRpMaxPayload[9] = 1;
-
-	params->PcieRpPmSci[4] = 1;
-	params->PcieRpPmSci[5] = 1;
-	params->PcieRpPmSci[7] = 1;
-	params->PcieRpPmSci[8] = 1;
-	params->PcieRpPmSci[9] = 1;
-
-	params->CpuPcieRpPmSci[0] = 1;
-	params->CpuPcieRpEnableCpm[0] = 1;
-	params->CpuPcieClockGating[0] = 1;
-	params->CpuPciePowerGating[0] = 1;
-	params->CpuPcieRpMultiVcEnabled[0] = 1;
-	params->CpuPcieRpPeerToPeerMode[0] = 1;
-	params->CpuPcieRpMaxPayload[0] = 2; // 512B
-	params->CpuPcieRpAcsEnabled[0] = 1;
-
 	// Enable reporting CPU C10 state over eSPI
 	params->PchEspiHostC10ReportEnable = 1;
 
-	params->LidStatus = system76_ec_get_lid_state();
-}
+	// Pinmux configuration
+	params->PchSerialIoI2cSdaPinMux[3] = 0x1A45CA06; // GPP_H6
+	params->PchSerialIoI2cSclPinMux[3] = 0x1A45AA07; // GPP_H7
 
-void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
-{
-	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
-		config->s0ix_enable = 0;
-	else
-		config->s0ix_enable = 1;
+	params->PchSerialIoI2cSdaPinMux[4] = 0x8A44CC0C; // GPP_E12
+	params->PchSerialIoI2cSclPinMux[4] = 0x8A44AC0D; // GPP_E13
+
+	params->PchSerialIoI2cSdaPinMux[5] = 0x8A46CE0D; // GPP_F13
+	params->PchSerialIoI2cSclPinMux[5] = 0x8A46AE0C; // GPP_F12
+
+	params->CnviRfResetPinMux = 0x194CE404; // GPP_F4
+	params->CnviClkreqPinMux = 0x394CE605;  // GPP_F5
+
+	params->EnableTcssCovTypeA[1] = 1;
+
+	params->LidStatus = system76_ec_get_lid_state();
 }
