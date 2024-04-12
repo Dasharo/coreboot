@@ -83,7 +83,11 @@ config MRC_BIN_ADDRESS
 	default 0xfffa0000
 
 config MRC_RMT
-	bool "Enable MRC RMT training + debug prints"
+	bool "Enable MRC RMT training"
+	default n
+
+config MRC_DEBUG_PRINTS
+	bool "Enable MRC debug prints"
 	default n
 
 # Cache As RAM region layout:

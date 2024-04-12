@@ -50,7 +50,8 @@ int smbus_enable_iobar(uintptr_t base)
 
 static void ABI_X86 send_to_console(unsigned char b)
 {
-	do_putchar(b);
+	if (CONFIG(MRC_DEBUG_PRINTS))
+		do_putchar(b);
 }
 
 static void populate_smbios_tables(void *dram_data, int speed, int num_channels)
