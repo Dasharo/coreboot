@@ -1,0 +1,4 @@
+comment "Meteor Lake H"
+
+config BOARD_CLEVO_V540TU
+	bool "V540TU"
