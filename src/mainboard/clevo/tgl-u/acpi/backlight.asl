@@ -4,9 +4,10 @@
 
 Scope (GFX0)
 {
-	Name (BRIG, Package (22) {
+	Name (BRIG, Package (23) {
 		40, /* default AC */
 		40, /* default Battery */
+		0,
 		5,
 		10,
 		15,
