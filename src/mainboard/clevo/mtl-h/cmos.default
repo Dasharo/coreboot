@@ -1,0 +1,5 @@
+boot_option=Fallback
+debug_level=Debug
+me_state=Enable
+kbl_brightness=0xff
+kbl_color=0x00ffffff
