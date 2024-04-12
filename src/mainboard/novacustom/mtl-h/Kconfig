@@ -19,6 +19,7 @@ config BOARD_NOVACUSTOM_MTLH_COMMON
 	select PMC_IPC_ACPI_INTERFACE
 	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
 	select SOC_INTEL_CRASHLOG
+	select SOC_INTEL_CSE_PRE_CPU_RESET_TELEMETRY_V2
 	select SOC_INTEL_ENABLE_USB4_PCIE_RESOURCES
 	select SOC_INTEL_METEORLAKE_U_H
 	select SPD_READ_BY_WORD
@@ -61,7 +62,7 @@ config VARIANT_DIR
 	default "dgpu" if BOARD_NOVACUSTOM_V5X0TNX_BASE
 
 config OVERRIDE_DEVICETREE
-	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
+	default "variants/$(CONFIG_VARIANT_DIR)/overridetree.cb"
 
 config MAINBOARD_PART_NUMBER
 	default "V54x_6x_TU" if BOARD_NOVACUSTOM_V5X0TU_BASE
@@ -93,8 +94,14 @@ config CONSOLE_POST
 config DIMM_SPD_SIZE
 	default 1024
 
+config ONBOARD_VGA_IS_PRIMARY
+	default y
+
 config POST_DEVICE
 	default n
+
+config UART_FOR_CONSOLE
+	default 0
 
 config USE_PM_ACPI_TIMER
 	default n
@@ -120,12 +127,23 @@ config TPM_PIRQ
 	default 0x61 # GPP_E01
 
 config FMDFILE
-	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+	default "src/mainboard/$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
 
 config SOC_INTEL_CSE_SEND_EOP_EARLY
 	default n
 
+config VBOOT_FWID_VERSION
+	default "$(CONFIG_LOCALVERSION)"
+
 config EC_DASHARO_EC_FLASH_SIZE
 	default 0x40000
+
+if PAYLOAD_EDK2
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	default 30
+
+endif
 
 endif
