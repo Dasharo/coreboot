@@ -542,110 +542,119 @@ static void system76_ec_fw_sync(void *unused)
 		return;
 
 	if (vboot_recovery_mode_enabled()) {
-		printk(BIOS_DEBUG, "Skipping EC update in recovery mode.\n");
+		printk(BIOS_DEBUG, "EC: skipping update in recovery mode.\n");
 		return;
 	}
 
-	image = cbfs_map("ec.rom", &image_sz);
+	image = malloc(CONFIG_EC_SYSTEM76_EC_FLASH_SIZE);
 	if (image == NULL) {
-		printk(BIOS_DEBUG, "No EC firmware update found.\n");
+		printk(BIOS_ERR, "EC: failed to allocate memory for update.");
 		return;
 	}
 
-	printk(BIOS_DEBUG, "EC update found (%ld bytes)\n", image_sz);
+	if (!(image_sz = cbfs_load("ec.rom", image, CONFIG_EC_SYSTEM76_EC_FLASH_SIZE))) {
+		printk(BIOS_ERR, "EC: failed to load update from CBFS.");
+		goto cleanup;
+	}
+
+	printk(BIOS_DEBUG, "EC: update found (%ld bytes)\n", image_sz);
 
 	/* Sanity checks */
 	if (!image_sz || image_sz % 2 || image_sz > CONFIG_EC_SYSTEM76_EC_FLASH_SIZE) {
-		printk(BIOS_ERR, "Incorrect EC update size.\n");
-		return;
+		printk(BIOS_ERR, "EC: incorrect update size.\n");
+		goto cleanup;
 	}
 
 	if (!firmware_str(image, image_sz, "76EC_BOARD=", img_board_str,
 			  ARRAY_SIZE(img_board_str))) {
-		printk(BIOS_ERR, "Could not determine EC update target board.\n");
-		return;
+		printk(BIOS_ERR, "EC: could not determine update target board.\n");
+		goto cleanup;
 	}
 
 	if (!firmware_str(image, image_sz, "76EC_VERSION=", img_version_str,
 			  ARRAY_SIZE(img_version_str))) {
-		printk(BIOS_ERR, "Could not determine EC update version.\n");
-		return;
+		printk(BIOS_ERR, "EC: could not determine update version.\n");
+		goto cleanup;
 	}
 
-	printk(BIOS_DEBUG, "EC update target: %s\n", img_board_str);
-	printk(BIOS_DEBUG, "EC update version: %s\n", img_version_str);
+	printk(BIOS_DEBUG, "EC: update target: %s\n", img_board_str);
+	printk(BIOS_DEBUG, "EC: update version: %s\n", img_version_str);
 
 	system76_ec_read_board((uint8_t *)cur_board_str);
 	system76_ec_read_version((uint8_t *)cur_version_str);
 
 	if (strcmp(img_board_str, cur_board_str)) {
-		printk(BIOS_ERR, "EC update mismatch detected! Found %s, expected %s\n",
+		printk(BIOS_ERR, "EC: update target mismatch detected! Found %s, expected %s\n",
 		       img_board_str, cur_board_str);
-		return;
+		goto cleanup;
 	}
 
-	printk(BIOS_DEBUG, "EC current version: %s\n", cur_version_str);
+	printk(BIOS_DEBUG, "EC: current version: %s\n", cur_version_str);
 	if (!strcmp(img_version_str, cur_version_str)) {
-		printk(BIOS_DEBUG, "EC update not needed.\n");
-		return;
+		printk(BIOS_DEBUG, "EC: update not needed.\n");
+		goto cleanup;
 	} else {
-		printk(BIOS_INFO, "EC update required!\n");
+		printk(BIOS_INFO, "EC: update required!\n");
 	}
 
 	if ((ec_read(0x10) & 0x01) != 0x01) {
-		printk(BIOS_WARNING, "AC adapter not connected. Skipping update.\n");
+		printk(BIOS_WARNING, "EC: AC adapter not connected, skipping update.\n");
 		if (CONFIG(VBOOT))
 			vboot_fail_and_reboot(vboot_get_context(),
 					      VB2_RECOVERY_EC_SOFTWARE_SYNC, EC_UPDATE_NO_AC);
-		return;
+		goto cleanup;
 	}
 
 	/* Jump to Scratch ROM */
 	smfi_cmd = CMD_SPI_FLAG_SCRATCH;
 	if (system76_ec_smfi_cmd(CMD_SPI, 1, &smfi_cmd)) {
 		/* If we failed to jump to scratch ROM, then we can probably continue booting.
-		 */
-		printk(BIOS_ERR, "EC update failed!\n");
-		return;
+			 */
+		printk(BIOS_ERR, "EC: failed to jump to scratch ROM!\n");
+		goto cleanup;
 	}
 
 	rv = ec_spi_erase_chip();
 	if (rv < 0) {
 		/*
-		 * Best case, nothing was erased.
-		 * Worst case, everything is erased and EC will boot from backup.
-		 */
-		printk(BIOS_CRIT, "EC erase failed!\n");
-		return;
+			 * Best case, nothing was erased.
+			 * Worst case, everything is erased and EC will boot from backup.
+			 */
+		printk(BIOS_CRIT, "EC: erase failed!\n");
+		goto cleanup;
 	}
-	printk(BIOS_DEBUG, "EC erased %d bytes\n", rv);
+	printk(BIOS_DEBUG, "EC: erased %d bytes\n", rv);
 
 	rv = ec_spi_image_write((uint8_t *)image, image_sz);
 	if (rv < 0) {
 		/* EC is now in an unknown state. It may still boot from backup. */
-		printk(BIOS_ALERT, "EC update failed!\n");
-		return;
+		printk(BIOS_ALERT, "EC: update failed!\n");
+		goto cleanup;
 	}
-	printk(BIOS_DEBUG, "EC wrote %d bytes\n", rv);
+	printk(BIOS_DEBUG, "EC: wrote %d bytes\n", rv);
 
 	rv = ec_spi_image_verify((uint8_t *)image, image_sz);
 	if (rv < 0) {
-		printk(BIOS_ALERT, "EC update verification failed!\n");
+		printk(BIOS_ALERT, "EC: update verification failed!\n");
 	} else {
-		printk(BIOS_DEBUG, "EC update verified.\n");
+		printk(BIOS_DEBUG, "EC: update verified.\n");
 	}
 
 	smfi_cmd = CMD_SPI_FLAG_DISABLE;
 	if (system76_ec_smfi_cmd(CMD_SPI, 1, &smfi_cmd)) {
-		printk(BIOS_ERR, "Failed to disable EC SPI bus!\n");
-		return;
+		printk(BIOS_ERR, "EC: failed to disable SPI bus!\n");
+		goto cleanup;
 	}
 
 	smfi_cmd = 0;
 	if (system76_ec_smfi_cmd(CMD_RESET, 1, &smfi_cmd)) {
-		printk(BIOS_ERR, "Failed to reset EC!\n");
-		return;
+		printk(BIOS_ERR, "EC: failed to trigger reset!\n");
+		goto cleanup;
 	}
+
+cleanup:
+	free(image);
+	return;
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, system76_ec_fw_sync, NULL);
