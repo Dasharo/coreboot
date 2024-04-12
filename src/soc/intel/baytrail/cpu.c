@@ -14,11 +14,37 @@
 #include <cpu/x86/smm.h>
 #include <device/device.h>
 #include <reg_script.h>
+#include <smbios.h>
 #include <soc/iosf.h>
 #include <soc/msr.h>
 #include <soc/pattrs.h>
 #include <soc/ramstage.h>
 #include <types.h>
+
+unsigned int smbios_cpu_get_current_speed_mhz(void)
+{
+	unsigned int ratio = (rdmsr(IA32_PERF_STATUS).lo >> 8) & 0x1f;
+
+	return bus_freq_khz() * ratio / 1000;
+}
+
+unsigned int smbios_processor_external_clock(void)
+{
+	return bus_freq_khz() / 1000;
+}
+
+unsigned int smbios_cpu_get_max_speed_mhz(void)
+{
+	unsigned int ratio = (rdmsr(IA32_PLATFORM_ID).lo >> 8) & 0x1f;
+
+	return bus_freq_khz() * ratio / 1000;
+}
+
+unsigned int smbios_processor_family(struct cpuid_result res)
+{
+	return 0x2b; /* Intel Atom */
+}
+
 
 /* Core level MSRs */
 static const struct reg_script core_msr_script[] = {
