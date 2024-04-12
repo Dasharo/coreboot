@@ -61,7 +61,13 @@ static void configure_rp_clocks(FSP_M_CONFIG *m_cfg,
 		m_cfg->PcieClkSrcClkReq[rp_cfg->clk_src] = rp_cfg->clk_req;
 		clk_req_mapping |= BIT(rp_cfg->clk_req);
 	}
-	m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] = index;
+	/*
+	 * Override the usage only if the clock is unused, otherwise we lose
+	 * FSP_CLK_FREE_RUNNING and FSP_CLK_LAN setting from fill_fspm_pcie_rp_params.
+	 */
+	if (m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] == FSP_CLK_NOTUSED)
+		m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] = index;
+	
 }
 
 static void pcie_rp_init(FSP_M_CONFIG *m_cfg, uint32_t en_mask,
