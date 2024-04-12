@@ -248,6 +248,15 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_C262		0x7a14
 #define PCI_DEVICE_ID_INTEL_C266		0x7a13
 
+#define PCI_DEVICE_ID_INTEL_MTL_0		0x7e00
+#define PCI_DEVICE_ID_INTEL_MTL_1		0x7e01
+#define PCI_DEVICE_ID_INTEL_MTL_2		0x7e02
+#define PCI_DEVICE_ID_INTEL_MTL_3		0x7e03
+#define PCI_DEVICE_ID_INTEL_MTL_4		0x7e04
+#define PCI_DEVICE_ID_INTEL_MTL_5		0x7e05
+#define PCI_DEVICE_ID_INTEL_MTL_6		0x7e06
+#define PCI_DEVICE_ID_INTEL_MTL_7		0x7e07
+
 #define PCI_DEVICE_ID_INTEL_82810		0x7120
 #define PCI_DEVICE_ID_INTEL_82810_DC	0x7122
 #define PCI_DEVICE_ID_INTEL_82810E_DC	0x7124
@@ -388,6 +397,12 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_P_6_8	0x4641 /* Alderlake P 6+8 */
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_P_4_8	0x4621 /* Alderlake P 4+8 */
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_P_2_8	0x4601 /* Alderlake P 2+8 */
+#define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_M	0x7D00 /* Meteorlake M */
+#define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_P_1	0x7D01 /* Meteorlake P */
+#define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_P_2	0x7D02 /* Meteorlake P */
+#define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_P_3	0x7d14 /* Meteorlake P */
+#define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_P_4	0x7d15 /* Meteorlake P */
+#define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_P_5	0x7d16 /* Meteorlake P */
 
 /* Intel GPUs */
 #define PCI_DEVICE_ID_INTEL_G35_EXPRESS		0x2982
@@ -468,6 +483,11 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_ADL_S_GT1_2		0x4682
 #define PCI_DEVICE_ID_INTEL_ADL_S_GT1_3		0x4690
 #define PCI_DEVICE_ID_INTEL_ADL_S_GT1_4		0x4692
+#define PCI_DEVICE_ID_INTEL_MTL_M_GT2		0x7d40
+#define PCI_DEVICE_ID_INTEL_MTL_P_GT2_1		0x7d45
+#define PCI_DEVICE_ID_INTEL_MTL_P_GT2_2		0x7d50
+#define PCI_DEVICE_ID_INTEL_MTL_P_GT2_3		0x7d55
+#define PCI_DEVICE_ID_INTEL_MTL_P_GT2_4		0x7d60
 
 #if !defined(__DARWIN__) && !defined(__FreeBSD__)
 typedef struct { uint32_t hi, lo; } msr_t;
