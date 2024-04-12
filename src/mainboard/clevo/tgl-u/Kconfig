@@ -133,4 +133,11 @@ config USE_PM_ACPI_TIMER
 config VBOOT_FWID_VERSION
 	default "\$(CONFIG_LOCALVERSION)"
 
+if PAYLOAD_EDK2
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	default 20
+
+endif
+
 endif
