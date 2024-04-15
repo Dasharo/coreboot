@@ -244,13 +244,12 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D3, NONE),
 	/* GPP_D4 - GPIO */
 	PAD_NC(GPP_D4, NONE),
-	/* CLKREQ not configured, because there is very little benefit for just 2 devices */
-	/* PAD_NC - SRCCLKREQ0# to PCIE RP 6 */
-	PAD_NC(GPP_D5, NONE),
+	/* GPP_D5 - SRCCLKREQ0# to PCIE RP 6 */
+	PAD_CFG_NF(GPP_D5, NONE, DEEP, NF1),
 	/* GPP_D6 - GPIO */
 	PAD_NC(GPP_D6, NONE),
 	/* GPP_D7 - SRCCLKREQ2# to PCIE RP 5 */
-	PAD_NC(GPP_D7, NONE),
+	PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1),
 	/* GPP_D8 - GPIO */
 	PAD_NC(GPP_D8, NONE),
 	/* GPP_D9 - GPIO */
