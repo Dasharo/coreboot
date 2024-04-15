@@ -16,7 +16,13 @@ bool system76_ec_cmd(uint8_t cmd, const uint8_t *request_data, uint8_t request_s
 
 enum ec_update_error {
 	/* AC adapter is not connected. */
-	EC_UPDATE_NO_AC,
+	EC_UPDATE_ERR_NO_AC,
+	/* EC did not jump to scratch ROM */
+	EC_UPDATE_ERR_SCRATCH,
+	/* EC erase failed */
+	EC_UPDATE_ERR_ERASE,
+	/* Programming EC failed */
+	EC_UPDATE_ERR_PROGRAM,
 };
 
 #endif

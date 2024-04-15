@@ -601,7 +601,8 @@ static void system76_ec_fw_sync(void *unused)
 		printk(BIOS_WARNING, "EC: AC adapter not connected, skipping update.\n");
 		if (CONFIG(VBOOT))
 			vboot_fail_and_reboot(vboot_get_context(),
-					      VB2_RECOVERY_EC_SOFTWARE_SYNC, EC_UPDATE_NO_AC);
+					      VB2_RECOVERY_EC_SOFTWARE_SYNC,
+					      EC_UPDATE_ERR_NO_AC);
 		goto cleanup;
 	}
 
@@ -610,6 +611,10 @@ static void system76_ec_fw_sync(void *unused)
 	if (system76_ec_smfi_cmd(CMD_SPI, 1, &smfi_cmd)) {
 		/* If we failed to jump to scratch ROM, then we can probably continue booting. */
 		printk(BIOS_ERR, "EC: failed to jump to scratch ROM!\n");
+		if (CONFIG(VBOOT))
+			vboot_fail_and_reboot(vboot_get_context(),
+					      VB2_RECOVERY_EC_SOFTWARE_SYNC,
+					      EC_UPDATE_ERR_SCRATCH);
 		goto cleanup;
 	}
 
@@ -620,6 +625,10 @@ static void system76_ec_fw_sync(void *unused)
 		 * Worst case, everything is erased and EC will boot from backup.
 		 */
 		printk(BIOS_CRIT, "EC: erase failed!\n");
+		if (CONFIG(VBOOT))
+			vboot_fail_and_reboot(vboot_get_context(),
+					      VB2_RECOVERY_EC_SOFTWARE_SYNC,
+					      EC_UPDATE_ERR_ERASE);
 		goto cleanup;
 	}
 	printk(BIOS_DEBUG, "EC: erased %d bytes\n", rv);
@@ -628,6 +637,10 @@ static void system76_ec_fw_sync(void *unused)
 	if (rv < 0) {
 		/* EC is now in an unknown state. It may still boot from backup. */
 		printk(BIOS_ALERT, "EC: update failed!\n");
+		if (CONFIG(VBOOT))
+			vboot_fail_and_reboot(vboot_get_context(),
+					      VB2_RECOVERY_EC_SOFTWARE_SYNC,
+					      EC_UPDATE_ERR_PROGRAM);
 		goto cleanup;
 	}
 	printk(BIOS_DEBUG, "EC: wrote %d bytes\n", rv);
