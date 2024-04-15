@@ -72,7 +72,11 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	memset(params->CpuPcieRpPmSci, 0, sizeof(params->CpuPcieRpPmSci));
 
 	// Max payload 256B
-	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpEnableCpm));
+	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
+
+	// CLKREQs connected only to RP5 and RP6
+	params->PcieRpEnableCpm[4] = 1;
+	params->PcieRpEnableCpm[5] = 1;
 
 	// Type-C PD
 	params->PmcPdEnable = 1;
