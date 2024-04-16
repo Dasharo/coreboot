@@ -93,7 +93,7 @@ manifests.bin-type := raw
 
 ifeq ($(CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST),y)
 
-manifests.bin-position := $(call int-subtract, 0x100000000, 0x21000)
+manifests.bin-COREBOOT-position := $(call int-subtract, 0x100000000 0x21000)
 
 ifneq ($(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH)),)
 
@@ -109,7 +109,7 @@ endif
 
 else # CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST
 
-manifests.bin-position := $(call int-subtract, 0x100000000 0x20000)
+manifests.bin-COREBOOT-position := $(call int-subtract, 0x100000000 0x20000)
 
 $(objcbfs)/sb_manifests:
 	dd if=/dev/zero of=$@ bs=1024 count=1 2> /dev/null

@@ -211,7 +211,7 @@ if TXE_SECURE_BOOT
 # and accessible without walkcbfs ASM routine if CBFS_VERIFICATION is enabled.
 config CPU_MICROCODE_CBFS_LOC
 	hex
-	default 0xfffe0480
+	default 0xfffe1000
 
 config CPU_MICROCODE_CBFS_LEN
 	hex
