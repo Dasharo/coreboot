@@ -106,7 +106,7 @@ subdirs-y += $(wildcard src/drivers/*) $(wildcard src/drivers/*/*) $(wildcard sr
 subdirs-y += src/cpu src/vendorcode
 subdirs-y += util/cbfstool util/sconfig util/nvramtool util/pgtblgen util/amdfwtool
 subdirs-y += util/futility util/marvell util/bincfg util/supermicro util/qemu util/msi
-subdirs-y += util/ifdtool
+subdirs-y += util/ifdtool util/txesbmantool
 subdirs-y += $(wildcard src/arch/*)
 subdirs-y += src/mainboard/$(MAINBOARDDIR)
 subdirs-y += src/security
@@ -634,6 +634,12 @@ AMDCOMPRESS:=$(objutil)/cbfstool/amdcompress
 CSE_FPT:=$(objutil)/cbfstool/cse_fpt
 CSE_SERGER:=$(objutil)/cbfstool/cse_serger
 
+ifeq ($(CONFIG_TXE_SECURE_BOOT),y)
+TXESBMANTOOL:=$(objutil)/txesbmantool/txesbmantool
+else
+TXESBMANTOOL:=
+endif
+
 $(obj)/cbfstool: $(CBFSTOOL)
 	cp $< $@
 
@@ -784,7 +790,7 @@ install-git-commit-clangfmt:
 include util/crossgcc/Makefile.mk
 
 .PHONY: tools
-tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(objutil)/msi/romholetool $(CSE_FPT) $(CSE_SERGER) $(AMDFWREAD)
+tools: $(objutil)/kconfig/conf $(objutil)/kconfig/toada $(CBFSTOOL) $(objutil)/cbfstool/cbfs-compression-tool $(FMAPTOOL) $(RMODTOOL) $(IFWITOOL) $(objutil)/nvramtool/nvramtool $(objutil)/sconfig/sconfig $(IFDTOOL) $(CBOOTIMAGE) $(AMDFWTOOL) $(AMDCOMPRESS) $(FUTILITY) $(BINCFG) $(IFITTOOL) $(objutil)/supermicro/smcbiosinfo $(objutil)/msi/romholetool $(CSE_FPT) $(CSE_SERGER) $(AMDFWREAD) $(TXESBMANTOOL)
 
 ###########################################################################
 # Common recipes for all stages
