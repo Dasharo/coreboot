@@ -205,6 +205,54 @@ config TXE_SB_KEY_MANIFEST_PATH
 
 	  Key Manifest is optional.
 
+config TXE_SB_KEY_MANIFEST_KEY_PATH
+	string "Include TXE Secure Boot Key Manifest Signing Key path"
+	depends on TXE_SB_GENERATE_KEY_MANIFEST
+	default ""
+	help
+	  Path to the signing key used to generate TXE Secure Boot Key Manifest.
+	  RSA2048 private key in PEM or DER format required.
+
+	  Key Manifest is optional.
+
+config TXE_SB_KEY_MANIFEST_ID
+	int "TXE Secure Boot Key Manifest ID value"
+	depends on TXE_SB_GENERATE_KEY_MANIFEST
+	range 1 15
+	default 1
+	help
+	  Key Manifest ID used to generate TXE Secure Boot Key Manifest.
+
+	  Key Manifest is optional.
+
+config TXE_SB_KEY_MANIFEST_SVN
+	int "TXE Secure Boot Key Manifest SVN value"
+	depends on TXE_SB_GENERATE_KEY_MANIFEST
+	range 0 15
+	default 2
+	help
+	  Secure Version Number used to generate TXE Secure Boot Key Manifest.
+
+	  Key Manifest is optional.
+
+config TXE_SB_SBM_MANIFEST_KEY_PATH
+	string "Include TXE Secure Boot Manifest Signing Key path"
+	depends on TXE_SECURE_BOOT
+	default ""
+	help
+	  Path to the signing key used to generate TXE Secure Boot Manifest.
+	  RSA2048 private key in PEM or DER format required.
+
+config TXE_SB_SBM_MANIFEST_SVN
+	int "TXE Secure Boot Manifest SVN value"
+	depends on TXE_SECURE_BOOT
+	range 0 63
+	default 2
+	help
+	  Secure Version Number used to generate TXE Secure Boot Manifest.
+
+	  Key Manifest is optional.
+
 if TXE_SECURE_BOOT
 
 # Put the microcode right after the manifest, so it will be verified by IBB

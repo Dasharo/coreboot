@@ -116,6 +116,21 @@ $(objcbfs)/sb_manifests:
 
 endif # CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST
 
+files_added:: $(obj)/coreboot.rom $(TXESBMANTOOL)
+	if [ "$(CONFIG_TXE_SB_GENERATE_KEY_MANIFEST)" = 'y' ]; then \
+		$(TXESBMANTOOL) $(obj)/coreboot.rom generate-km \
+			--sbm-key-file $(CONFIG_TXE_SB_SBM_MANIFEST_KEY_PATH) \
+			--km-key-file $(CONFIG_TXE_SB_KEY_MANIFEST_KEY_PATH) \
+			--km-id $(CONFIG_TXE_SB_KEY_MANIFEST_ID) \
+			--svn $(CONFIG_TXE_SB_KEY_MANIFEST_SVN) \
+			;\
+		printf "    TXE Secure Boot Key Manifest generated.\n"; \
+	fi; \
+	$(TXESBMANTOOL) $(obj)/coreboot.rom generate-sbm \
+		--sbm-key-file $(CONFIG_TXE_SB_SBM_MANIFEST_KEY_PATH) \
+		--svn $(CONFIG_TXE_SB_SBM_MANIFEST_SVN) ;\
+	printf "    TXE Secure Boot Manifest generated.\n\n"; \
+
 endif # CONFIG_TXE_SECURE_BOOT
 
 endif # CONFIG_SOC_INTEL_BAYTRAIL
