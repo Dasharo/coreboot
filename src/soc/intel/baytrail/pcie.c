@@ -67,8 +67,6 @@ static const struct reg_script init_static_after_exit_latency[] = {
 	/* Read and write back capability registers. */
 	REG_PCI_OR32(0x34, 0),
 	REG_PCI_OR32(0x80, 0),
-	/* Retrain the link. */
-	REG_PCI_OR16(LCTL, RL),
 	REG_SCRIPT_END,
 };
 
@@ -81,10 +79,12 @@ static void byt_pcie_init(struct device *dev)
 		REG_PCI_RMW32(LCAP, ~L1EXIT_MASK,
 			2 << (L1EXIT_SHIFT + pll_en_off)),
 		REG_SCRIPT_NEXT(init_static_after_exit_latency),
+#if !CONFIG(PCIEXP_HOTPLUG)
 		/* Disable hot plug, set power to 10W, set slot number. */
 		REG_PCI_RMW32(SLCAP, ~(HPC | HPS),
 			(1 << SLS_SHIFT) | (100 << SLV_SHIFT) |
 			(root_port_offset(dev) << SLN_SHIFT)),
+#endif
 		/* Dynamic clock gating. */
 		REG_PCI_OR32(RPPGEN, RPDLCGEN | RPDBCGEN | RPSCGEN),
 		REG_PCI_OR32(PWRCTL, RPL1SQPOL | RPDTSQPOL),
@@ -93,6 +93,9 @@ static void byt_pcie_init(struct device *dev)
 	};
 
 	reg_script_run_on_dev(dev, init_script);
+
+	if (pci_read_config32(dev, SLCTL_SLSTS) & PDS)
+		pci_update_config16(dev, LCTL, ~RL, RL);
 
 	if (is_first_port(dev)) {
 		struct soc_intel_baytrail_config *config = config_of(dev);
@@ -170,6 +173,19 @@ static u8 all_ports_no_dev_present(struct device *dev)
 
 static void check_device_present(struct device *dev)
 {
+	struct reg_script hotplug_port[] = {
+		REG_PCI_RMW32(PCIEALC, ~(1 << 26), 0),
+		/* Configure hot plug, set power to 10W, set slot number. */
+		REG_PCI_RMW32(SLCAP, ~(HPC | HPS),
+			(1 << SLS_SHIFT) | (100 << SLV_SHIFT) |
+			(root_port_offset(dev) << SLN_SHIFT) |
+			(HPC | HPS)),
+		REG_PCI_RMW32(SLCTL_SLSTS, ~HPE, 0),
+		REG_PCI_OR32(SLCTL_SLSTS, (ABE | PDE)),
+		REG_PCI_OR32(UEM, CT),
+		REG_SCRIPT_END,
+	};
+
 	/* Set slot implemented. */
 	pci_write_config32(dev, XCAP, pci_read_config32(dev, XCAP) | SI);
 
@@ -177,19 +193,25 @@ static void check_device_present(struct device *dev)
 	if (!(pci_read_config32(dev, SLCTL_SLSTS) & PDS)) {
 		printk(BIOS_DEBUG, "No PCIe device present.\n");
 		if (is_first_port(dev)) {
-			if (all_ports_no_dev_present(dev)) {
+			if (all_ports_no_dev_present(dev) && !CONFIG(PCIEXP_HOTPLUG)) {
 				reg_script_run_on_dev(dev, no_dev_behind_port);
 				dev->enabled = 0;
 			}
 		} else {
-			reg_script_run_on_dev(dev, no_dev_behind_port);
-			dev->enabled = 0;
+			if (!CONFIG(PCIEXP_HOTPLUG)) {
+				reg_script_run_on_dev(dev, no_dev_behind_port);
+				dev->enabled = 0;
+			}
 		}
 	} else if (!dev->enabled) {
 		/* Port is disabled, but device present. Disable link. */
 		pci_write_config32(dev, LCTL,
 			pci_read_config32(dev, LCTL) | LD);
+		return;
 	}
+
+	if (CONFIG(PCIEXP_HOTPLUG))
+		reg_script_run_on_dev(dev, hotplug_port);
 }
 
 static void byt_pcie_enable(struct device *dev)
