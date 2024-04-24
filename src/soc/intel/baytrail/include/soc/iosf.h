@@ -239,6 +239,12 @@ void iosf_ssus_write(int reg, uint32_t val);
 
 #define PUNIT_SOC_POWER_BUDGET		0x02
 #define PUNIT_SOC_ENERGY_CREDIT		0x03
+#define PUNIT_ISPSSPM0			0x39
+# define  PUNIT_ISPSSPM0_ISPSSC_MASK	(3 << 0)
+# define  PUNIT_ISPSSPM0_ISPSSC_SHIFT	0
+# define  PUNIT_ISPSSPM0_ISPSSS_MASK	(3 << 24)
+# define  PUNIT_ISPSSPM0_ISPSSS_SHIFT	24
+# define  PUNIT_ISPSSPM0_FUSEDIS	(1 << 26)
 #define PUNIT_PTMC			0x80
 #define PUNIT_GFXT			0x88
 #define PUNIT_VEDT			0x89

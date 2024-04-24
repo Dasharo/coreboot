@@ -19,6 +19,7 @@
 #include <drivers/uart/uart8250reg.h>
 
 #include <soc/iomap.h>
+#include <soc/iosf.h>
 #include <soc/irq.h>
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
@@ -415,6 +416,42 @@ static void sc_init(struct device *dev)
  * Common code for the south cluster devices.
  */
 
+static void disable_mipi_dev(struct device *dev)
+{
+	u32 val;
+
+	/*
+	 * ISP/IUNIT PCI D3hot request via PCI PM_CAP is ignored by HW.
+	 * Requesting power state of ISP is done via P-unit.
+	 * Check ISP current state and disable it if needed.
+	 */
+	val = iosf_punit_read(PUNIT_ISPSSPM0);
+	if ((val & PUNIT_ISPSSPM0_ISPSSS_MASK) == 0) {
+		printk(BIOS_DEBUG, "ISP subsystem powered on, requesting power off\n");
+		iosf_punit_write(PUNIT_ISPSSPM0, val | PUNIT_ISPSSPM0_ISPSSC_MASK);
+		val = iosf_punit_read(PUNIT_ISPSSPM0);
+		if ((val & PUNIT_ISPSSPM0_ISPSSS_MASK) == 0) {
+			printk(BIOS_DEBUG, "ISP subsystem powered off\n");
+		}
+	} else if ((val & PUNIT_ISPSSPM0_ISPSSS_MASK) == PUNIT_ISPSSPM0_ISPSSS_MASK) {
+		printk(BIOS_DEBUG, "ISP subsystem already powered off\n");
+	} else {
+		printk(BIOS_WARNING, "ISP subsystem invalid power state\n");
+	}
+
+	/* Disable BARs */
+	pci_write_config16(dev, PCI_COMMAND, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_0, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_1, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_2, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_3, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_4, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_5, 0);
+
+	/* Disable DMA, MMIO access and PCICFG access */
+	pci_update_config32(dev, 0xfc, ~0, (3 << 30) | (1 << 4));
+}
+
 #define SET_DIS_MASK(name_) \
 	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC): \
 		mask |= name_ ## _DIS
@@ -432,6 +469,9 @@ static void sc_disable_devfn(struct device *dev)
 	uint32_t mask2 = 0;
 
 	switch (dev->path.pci.devfn) {
+	case PCI_DEVFN(MIPI_DEV, MIPI_FUNC):
+		disable_mipi_dev(dev);
+		return;
 	SET_DIS_MASK(SDIO);
 		break;
 	SET_DIS_MASK(SD);
@@ -569,6 +609,9 @@ static int place_device_in_d3hot(struct device *dev)
 	 * Work around this by hard coding the offset.
 	 */
 	switch (dev->path.pci.devfn) {
+	case PCI_DEVFN(MIPI_DEV, MIPI_FUNC):
+		offset = 0x80;
+		break;
 	case PCI_DEVFN(MMC_DEV, MMC_FUNC):
 		offset = 0x80;
 		break;
@@ -582,6 +625,9 @@ static int place_device_in_d3hot(struct device *dev)
 		offset = 0x80;
 		break;
 	case PCI_DEVFN(LPE_DEV, LPE_FUNC):
+		offset = 0x80;
+		break;
+	case PCI_DEVFN(OTG_DEV, OTG_FUNC):
 		offset = 0x80;
 		break;
 	case PCI_DEVFN(SIO_DMA1_DEV, SIO_DMA1_FUNC):
