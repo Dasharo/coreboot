@@ -18,6 +18,23 @@
 
 #include "chip.h"
 
+#define LPSS_SPI_CLOCK_PARAMS			0x400
+#define LPSS_UART_CLOCK_PARAMS			0x800
+# define  LPSS_CLOCK_PARAMS_CLOCK_EN		(1 << 0)
+# define  LPSS_CLOCK_PARAMS_CLOCK_UPDATE	(1 << 31)
+#define LPSS_SPI_SOFTWARE_RESET			0x404
+#define LPSS_SOFTWARE_RESET			0x804
+# define   LPSS_SOFTWARE_RESET_FUNC		(1 << 0)
+# define   LPSS_SOFTWARE_RESET_APB		(1 << 1)
+
+/* Setting for UART 44.2368Mhz M/N = 0.442368 (0x1b00/0x3d09) x 100 Mhz */
+#define UART_CLOCK_44P2368_MHZ			 ((0x3d09 << 16) | (0x1b00 << 1))
+/* Setting for SPI 50Mhz M/N = 0.5 (0x1/0x2) x 100 Mhz */
+#define SPI_CLOCK_50_MHZ			 ((0x2 << 16) | (0x1 << 1))
+
+#define CASE_DEV(name_) \
+	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
+
 static void dev_enable_acpi_mode(struct device *dev, int iosf_reg, int nvs_index)
 {
 	struct reg_script ops[] = {
@@ -47,6 +64,31 @@ static void dev_enable_acpi_mode(struct device *dev, int iosf_reg, int nvs_index
 
 	/* Put device in ACPI mode */
 	reg_script_run_on_dev(dev, ops);
+}
+
+static void dev_set_frequency(struct device *dev, u32 reg, u32 freq)
+{
+	struct reg_script ops[] = {
+		REG_RES_WRITE32(PCI_BASE_ADDRESS_0, reg, freq),
+		REG_RES_OR32(PCI_BASE_ADDRESS_0, reg, LPSS_CLOCK_PARAMS_CLOCK_EN),
+		REG_RES_OR32(PCI_BASE_ADDRESS_0, reg, LPSS_CLOCK_PARAMS_CLOCK_UPDATE),
+		REG_SCRIPT_END
+	};
+
+	reg_script_run_on_dev(dev, ops);
+}
+
+static void dev_configure_default_frequency(struct device *dev)
+{
+	switch (dev->path.pci.devfn) {
+	CASE_DEV(HSUART1):
+	CASE_DEV(HSUART2):
+		dev_set_frequency(dev, LPSS_UART_CLOCK_PARAMS, UART_CLOCK_44P2368_MHZ);
+		break;
+	CASE_DEV(SPI):
+		dev_set_frequency(dev, LPSS_SPI_CLOCK_PARAMS, SPI_CLOCK_50_MHZ);
+		break;
+	}
 }
 
 static void dev_enable_snoop_and_pm(struct device *dev, int iosf_reg)
@@ -105,59 +147,97 @@ static void dev_ctl_reg(struct device *dev, int *iosf_reg, int *nvs_index)
 	}
 }
 
-#define CASE_I2C(name_) case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
-#define PIN_SET_FOR_I2C 0x2003C881
+#define PIN_SET_FOR_I2C		0x2003C881
+#define PIN_SET_FOR_PWM		0x2003CD01
+#define PIN_SET_FOR_UART	0x2003CC81
+#define PIN_SET_FOR_SPI		0x2003CC81
+#define PIN_SET_FOR_SPI_CLK	0x2003CD01
 
-static void i2c_set_pins(struct device *dev)
+static void dev_set_pins(struct device *dev)
 {
 	switch (dev->path.pci.devfn) {
-	CASE_I2C(I2C1) :
+	CASE_DEV(I2C1):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0210),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0200),
 			PIN_SET_FOR_I2C);
 		break;
-	CASE_I2C(I2C2) :
+	CASE_DEV(I2C2):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x01F0),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x01E0),
 			PIN_SET_FOR_I2C);
 		break;
-	CASE_I2C(I2C3) :
+	CASE_DEV(I2C3):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x01D0),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x01B0),
 			PIN_SET_FOR_I2C);
 		break;
-	CASE_I2C(I2C4) :
+	CASE_DEV(I2C4):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0190),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x01C0),
 			PIN_SET_FOR_I2C);
 		break;
-	CASE_I2C(I2C5) :
+	CASE_DEV(I2C5):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x01A0),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0170),
 			PIN_SET_FOR_I2C);
 		break;
-	CASE_I2C(I2C6) :
+	CASE_DEV(I2C6):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0150),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0140),
 			PIN_SET_FOR_I2C);
 		break;
-	CASE_I2C(I2C7) :
+	CASE_DEV(I2C7):
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0180),
 			PIN_SET_FOR_I2C);
 		write32((volatile void *)(IO_BASE_ADDRESS + 0x0160),
 			PIN_SET_FOR_I2C);
 		break;
+	CASE_DEV(PWM1):
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x00A0),
+			PIN_SET_FOR_PWM);
+		break;
+	CASE_DEV(PWM2):
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x00B0),
+			PIN_SET_FOR_PWM);
+		break;
+	CASE_DEV(HSUART1):
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0020),
+			PIN_SET_FOR_UART);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0010),
+			PIN_SET_FOR_UART);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0000),
+			PIN_SET_FOR_UART);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0040),
+			PIN_SET_FOR_UART);
+		break;
+	CASE_DEV(HSUART2):
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0090),
+			PIN_SET_FOR_UART);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0080),
+			PIN_SET_FOR_UART);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0060),
+			PIN_SET_FOR_UART);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0070),
+			PIN_SET_FOR_UART);
+		break;
+	CASE_DEV(SPI):
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0110),
+			PIN_SET_FOR_SPI);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0100),
+			PIN_SET_FOR_SPI_CLK);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0130),
+			PIN_SET_FOR_SPI);
+		write32((volatile void *)(IO_BASE_ADDRESS + 0x0120),
+			PIN_SET_FOR_SPI);
+		break;
 	}
 }
-
-#define CASE_DEV(name_) \
-	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
 
 #define INTA		1
 #define INTB		2
@@ -222,28 +302,48 @@ static void dev_set_int_pin(struct device *dev, int iosf_reg)
 	iosf_lpss_write(iosf_reg, val);
 }
 
-static void i2c_disable_resets(struct device *dev)
+static void dev_disable_resets(struct device *dev)
 {
-	/* Release the I2C devices from reset. */
+	/* Release the LPSS devices from reset. */
 	static const struct reg_script ops[] = {
-		REG_RES_WRITE32(PCI_BASE_ADDRESS_0, 0x804, 0x3),
+		REG_RES_WRITE32(PCI_BASE_ADDRESS_0, LPSS_SOFTWARE_RESET,
+				LPSS_SOFTWARE_RESET_FUNC | LPSS_SOFTWARE_RESET_APB),
+		REG_SCRIPT_END,
+	};
+
+	static const struct reg_script spi_ops[] = {
+		REG_RES_WRITE32(PCI_BASE_ADDRESS_0, LPSS_SPI_SOFTWARE_RESET,
+				LPSS_SOFTWARE_RESET_FUNC | LPSS_SOFTWARE_RESET_APB),
 		REG_SCRIPT_END,
 	};
 
 	switch (dev->path.pci.devfn) {
-	CASE_I2C(I2C1):
-	CASE_I2C(I2C2):
-	CASE_I2C(I2C3):
-	CASE_I2C(I2C4):
-	CASE_I2C(I2C5):
-	CASE_I2C(I2C6):
-	CASE_I2C(I2C7):
+	CASE_DEV(I2C1):
+	CASE_DEV(I2C2):
+	CASE_DEV(I2C3):
+	CASE_DEV(I2C4):
+	CASE_DEV(I2C5):
+	CASE_DEV(I2C6):
+	CASE_DEV(I2C7):
 		printk(BIOS_DEBUG, "Releasing I2C device from reset.\n");
-		reg_script_run_on_dev(dev, ops);
 		break;
+	CASE_DEV(PWM1):
+	CASE_DEV(PWM2):
+		printk(BIOS_DEBUG, "Releasing PWM device from reset.\n");
+		break;
+	CASE_DEV(HSUART1):
+	CASE_DEV(HSUART2):
+		printk(BIOS_DEBUG, "Releasing HSUART device from reset.\n");
+		break;
+	CASE_DEV(SPI):
+		printk(BIOS_DEBUG, "Releasing SPI device from reset.\n");
+		reg_script_run_on_dev(dev, spi_ops);
+		return;
 	default:
 		return;
 	}
+
+	reg_script_run_on_dev(dev, ops);
 }
 
 static void lpss_init(struct device *dev)
@@ -261,8 +361,9 @@ static void lpss_init(struct device *dev)
 	}
 	dev_enable_snoop_and_pm(dev, iosf_reg);
 	dev_set_int_pin(dev, iosf_reg);
-	i2c_disable_resets(dev);
-	i2c_set_pins(dev);
+	dev_configure_default_frequency(dev);
+	dev_disable_resets(dev);
+	dev_set_pins(dev);
 
 	if (config->lpss_acpi_mode)
 		dev_enable_acpi_mode(dev, iosf_reg, nvs_index);
