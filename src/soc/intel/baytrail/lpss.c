@@ -10,6 +10,7 @@
 
 #include <soc/iomap.h>
 #include <soc/iosf.h>
+#include <soc/irq.h>
 #include <soc/nvs.h>
 #include <soc/device_nvs.h>
 #include <soc/pci_devs.h>
@@ -155,6 +156,72 @@ static void i2c_set_pins(struct device *dev)
 	}
 }
 
+#define CASE_DEV(name_) \
+	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
+
+#define INTA		1
+#define INTB		2
+#define INTC		3
+#define INTD		4
+
+static void dev_set_int_pin(struct device *dev, int iosf_reg)
+{
+	u32 val;
+	u8 pin = INTA;
+
+	switch (dev->path.pci.devfn) {
+	CASE_DEV(SIO_DMA1):
+		pin = INTA;
+		break;
+	CASE_DEV(I2C1):
+		pin = INTC;
+		break;
+	CASE_DEV(I2C2):
+		pin = INTD;
+		break;
+	CASE_DEV(I2C3):
+		pin = INTB;
+		break;
+	CASE_DEV(I2C4):
+		pin = INTA;
+		break;
+	CASE_DEV(I2C5):
+		pin = INTC;
+		break;
+	CASE_DEV(I2C6):
+		pin = INTD;
+		break;
+	CASE_DEV(I2C7):
+		pin = INTB;
+		break;
+	CASE_DEV(SIO_DMA2):
+		pin = INTA;
+		break;
+	CASE_DEV(PWM1):
+		pin = INTD;
+		break;
+	CASE_DEV(PWM2):
+		pin = INTB;
+		break;
+	CASE_DEV(HSUART1):
+		pin = INTC;
+		break;
+	CASE_DEV(HSUART2):
+		pin = INTD;
+		break;
+	CASE_DEV(SPI):
+		pin = INTB;
+		break;
+	default:
+		return;
+	}
+
+	val = iosf_lpss_read(iosf_reg);
+	val &= ~LPSS_CTL_INT_PIN_MASK;
+	val |= (pin << LPSS_CTL_INT_PIN_SHIFT);
+	iosf_lpss_write(iosf_reg, val);
+}
+
 static void i2c_disable_resets(struct device *dev)
 {
 	/* Release the I2C devices from reset. */
@@ -193,6 +260,7 @@ static void lpss_init(struct device *dev)
 		return;
 	}
 	dev_enable_snoop_and_pm(dev, iosf_reg);
+	dev_set_int_pin(dev, iosf_reg);
 	i2c_disable_resets(dev);
 	i2c_set_pins(dev);
 
