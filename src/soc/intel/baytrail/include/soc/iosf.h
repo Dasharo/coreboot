@@ -276,6 +276,8 @@ void iosf_ssus_write(int reg, uint32_t val);
 # define LPSS_CTL_PCI_CFG_DIS			(1 << 20)
 # define LPSS_CTL_SNOOP				(1 << 18)
 # define LPSS_CTL_NOSNOOP			(1 << 19)
+# define LPSS_CTL_INT_PIN_MASK			(0xf << 2)
+# define LPSS_CTL_INT_PIN_SHIFT			2
 # define LPSS_CTL_PM_CAP_PRSNT			(1 <<  1)
 
 /*
