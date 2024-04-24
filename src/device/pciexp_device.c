@@ -576,7 +576,7 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 	if (exit_latency >= 0 && exit_latency <= ok_latency)
 		apmc |= PCIE_ASPM_L1;
 
-	if (apmc != PCIE_ASPM_NONE) {
+	if (CONFIG(PCIEXP_ASPM) && apmc != PCIE_ASPM_NONE) {
 		/* Set APMC in root port first */
 		lnkctl = pci_read_config16(root, root_cap + PCI_EXP_LNKCTL);
 		lnkctl |= apmc;
@@ -586,9 +586,22 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 		lnkctl = pci_read_config16(endp, endp_cap + PCI_EXP_LNKCTL);
 		lnkctl |= apmc;
 		pci_write_config16(endp, endp_cap + PCI_EXP_LNKCTL, lnkctl);
+	} else {
+		/* Disable ASPM in root port first */
+		lnkctl = pci_read_config16(root, root_cap + PCI_EXP_LNKCTL);
+		lnkctl &= ~3;
+		pci_write_config16(root, root_cap + PCI_EXP_LNKCTL, lnkctl);
+
+		/* Disable ASPM in endpoint device next */
+		lnkctl = pci_read_config16(endp, endp_cap + PCI_EXP_LNKCTL);
+		lnkctl &= ~3;
+		pci_write_config16(endp, endp_cap + PCI_EXP_LNKCTL, lnkctl);
 	}
 
-	printk(BIOS_INFO, "ASPM: Enabled %s\n", aspm_type_str[apmc]);
+	if (CONFIG(PCIEXP_ASPM))
+		printk(BIOS_INFO, "ASPM: Enabled %s\n", aspm_type_str[apmc]);
+	else
+		printk(BIOS_INFO, "ASPM: Disabled\n");
 }
 
 static void pciexp_dev_set_max_payload_size(struct device *dev, unsigned int max_payload)
@@ -714,8 +727,7 @@ static void pciexp_tune_dev(struct device *dev)
 			pciexp_config_L1_sub_state(root, dev);
 
 		/* Check for and enable ASPM */
-		if (CONFIG(PCIEXP_ASPM))
-			pciexp_enable_aspm(root, root_cap, dev, cap);
+		pciexp_enable_aspm(root, root_cap, dev, cap);
 	}
 
 	/* Clear PCIe Lane Error Status */
