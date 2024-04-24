@@ -432,8 +432,6 @@ static void sc_disable_devfn(struct device *dev)
 	uint32_t mask2 = 0;
 
 	switch (dev->path.pci.devfn) {
-	SET_DIS_MASK(MIPI);
-		break;
 	SET_DIS_MASK(SDIO);
 		break;
 	SET_DIS_MASK(SD);
