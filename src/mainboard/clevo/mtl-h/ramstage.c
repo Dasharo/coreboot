@@ -113,6 +113,10 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	// Enable reporting CPU C10 state over eSPI
 	params->PchEspiHostC10ReportEnable = 1;
 
+	// Pinmux configuration
+	params->CnviRfResetPinMux = 0x194CE404; // GPP_F04
+	params->CnviClkreqPinMux = 0x394CE605;  // GPP_F05
+
 	params->LidStatus = system76_ec_get_lid_state();
 }
 
