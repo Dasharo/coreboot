@@ -45,6 +45,7 @@ chip soc/intel/meteorlake
 
 	device cpu_cluster 0 on end
 	device domain 0 on
+		subsystemid 0x1558 0xa743 inherit
 		device ref system_agent on end
 		device ref pcie_rp12 on # PEG
 			register "pcie_rp[PCH_RP(12)]" = "{
@@ -170,7 +171,6 @@ chip soc/intel/meteorlake
 						register "desc" = ""USB2 Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
 						register "has_power_resource" = "1"
-						register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B18)"
 						device ref usb2_port10 on end
 					end
 					chip drivers/usb/acpi
@@ -218,19 +218,6 @@ chip soc/intel/meteorlake
 		end
 		device ref i2c3 on # Pantone ROM
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C3]" = "PchSerialIoPci"
-		end
-		device ref pcie_rp5 on # GLAN - only on NVIDIA models
-			register "pcie_rp[PCH_RP(5)]" = "{
-				.clk_src = 2,
-				.clk_req = 2,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
-			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B17)"
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_A20)"
-				register "srcclk_pin" = "2"
-				device generic 0 on end
-			end
 		end
 		device ref pcie_rp6 on # SD Card Reader
 			register "pcie_rp[PCH_RP(6)]" = "{
@@ -286,6 +273,7 @@ chip soc/intel/meteorlake
 			end
 		end
 		device ref hda on
+			subsystemid 0x1558 0xa763
 			register "pch_hda_audio_link_hda_enable" = "1"
 			register "pch_hda_sdi_enable[0]" = "1"
 			register "pch_hda_dsp_enable" = "1"
