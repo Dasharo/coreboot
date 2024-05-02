@@ -56,7 +56,7 @@ chip northbridge/amd/pi/00730F01/root_complex
 					device pnp 2e.108 off end
 					device pnp 2e.f off end
 					device pnp 2e.007 off end
-					device pnp 2e.107 off end
+					device pnp 2e.107 on end
 					device pnp 2e.607 off end
 				end # SIO NCT5104D
 				chip drivers/pc80/tpm
