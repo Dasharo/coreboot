@@ -302,6 +302,18 @@ static void mainboard_final(void *chip_info)
 	//
 	gpio_set(GPIO_58, 1);
 	gpio_set(GPIO_59, 1);
+
+	if (!check_console()) {
+	/*The console is disabled, check if S1 is pressed and enable if so */
+#if CONFIG(BOARD_PCENGINES_APU5)
+		if (!gpio_get(GPIO_22)) {
+#else
+		if (!gpio_get(GPIO_32)) {
+#endif
+			printk(BIOS_INFO, "S1 PRESSED\n");
+			enable_console();
+		}
+	}
 }
 
 /*
