@@ -29,6 +29,7 @@
 #include <southbridge/amd/pi/hudson/chip.h>
 #include <cpu/amd/mtrr.h>
 #include <spd_bin.h>
+#include <memory_info.h>
 #include <spi_flash.h>
 
 #include "gpio_ftns.h"
@@ -196,6 +197,7 @@ static void config_gpio_mux(void)
 			gpio->enabled = 1;
 	}
 }
+
 
 /**********************************************
  * enable the dedicated function in mainboard.
