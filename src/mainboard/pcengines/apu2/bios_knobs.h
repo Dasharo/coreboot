@@ -30,5 +30,6 @@ int check_com2(void);
 int check_boost(void);
 u8 check_sd3_mode(void);
 u16 get_watchdog_timeout(void);
+char *get_bootorder(void);
 
 #endif
