@@ -33,6 +33,7 @@
 
 #include "gpio_ftns.h"
 #include "bios_knobs.h"
+#include "s1_button.h"
 
 #define SPD_SIZE  128
 #define PM_RTC_CONTROL		0x56
@@ -305,6 +306,18 @@ static void mainboard_final(void *chip_info)
 	//
 	gpio_set(GPIO_58, 1);
 	gpio_set(GPIO_59, 1);
+
+	if (!check_console()) {
+	/*The console is disabled, check if S1 is pressed and enable if so */
+#if CONFIG(BOARD_PCENGINES_APU5)
+		if (!gpio_get(GPIO_22)) {
+#else
+		if (!gpio_get(GPIO_32)) {
+#endif
+			printk(BIOS_INFO, "S1 PRESSED\n");
+			enable_console();
+		}
+	}
 }
 
 /*
