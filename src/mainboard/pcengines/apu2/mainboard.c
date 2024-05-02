@@ -196,67 +196,6 @@ static void config_gpio_mux(void)
 	}
 }
 
-size_t get_bootorder_cbfs_offset(const char *name, uint32_t type)
-{
-	struct region_device rdev;
-	const struct region_device *boot_dev;
-	struct cbfs_props props;
-	struct cbfsf fh;
-
-	boot_dev = boot_device_ro();
-
-	if (boot_dev == NULL) {
-		printk(BIOS_WARNING, "Can't init CBFS boot device\n");
-		return 0;
-	}
-
-	if (cbfs_boot_region_properties(&props)) {
-		printk(BIOS_WARNING, "Can't locate CBFS\n");
-		return 0;
-	}
-
-	if (rdev_chain(&rdev, boot_dev, props.offset, props.size)) {
-		printk(BIOS_WARNING, "Rdev chain failed\n");
-		return 0;
-	}
-
-	if (cbfs_locate(&fh, &rdev, name, &type)) {
-		printk(BIOS_WARNING, "Can't locate file in CBFS\n");
-		return 0;
-	}
-
-	return (size_t) rdev_relative_offset(boot_dev, &fh.data);
-}
-
-int find_knob_index(const char *s, const char *pattern)
-{
-
-	int pattern_index = 0;
-	char *result = (char *) s;
-	char *lpattern = (char *) pattern;
-
-	while (*result && *pattern ) {
-		if ( *lpattern == 0)  // the pattern matches return the pointer
-			return pattern_index;
-		if ( *result == 0)  // We're at the end of the file content but don't have a patter match yet
-			return -1;
-		if (*result == *lpattern ) {
-			// The string matches, simply advance
-			result++;
-			pattern_index++;
-			lpattern++;
-		} else {
-			// The string doesn't match restart the pattern
-			result++;
-			pattern_index++;
-			lpattern = (char *) pattern;
-		}
-	}
-
-	return -1;
-
-}
-
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
