@@ -35,7 +35,6 @@
 #include "bios_knobs.h"
 #include "s1_button.h"
 
-#define SPD_SIZE  128
 #define PM_RTC_CONTROL	    0x56
 #define PM_RTC_SHADOW	    0x5B
 #define PM_S_STATE_CONTROL  0xBA
