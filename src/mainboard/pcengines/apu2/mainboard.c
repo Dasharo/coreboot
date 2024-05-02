@@ -197,6 +197,7 @@ static void config_gpio_mux(void)
 	}
 }
 
+
 /**********************************************
  * enable the dedicated function in mainboard.
  **********************************************/
