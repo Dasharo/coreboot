@@ -448,8 +448,8 @@ struct chip_operations mainboard_ops = {
 static void change_build_date_format()
 {
 	char tmp[15];
-    
-/* 
+
+/*
  * Following lines change format of date in coreboot_dmi_date[]
  * from "dd/mm/yyyy" to "yyyymmdd", as is expected by vendor.
  */
