@@ -99,11 +99,13 @@ img/seabios-type := payload
 img/seabios-compression := $(CBFS_SECONDARY_PAYLOAD_COMPRESS_FLAG)
 
 # add a SeaBIOS bootorder file
+ifneq ($(CONFIG_SEABIOS_BOOTORDER_IN_FMAP),y)
 ifneq ($(strip $(CONFIG_SEABIOS_BOOTORDER_FILE)),)
 cbfs-files-y += bootorder
 bootorder-file := $(strip $(CONFIG_SEABIOS_BOOTORDER_FILE))
 bootorder-type := raw
 bootorder-align := 0x1000
+endif
 endif
 
 # add a SeaBIOS bootorder_map file
@@ -139,6 +141,23 @@ ifneq ($(strip $(CONFIG_SEABIOS_BOOTMENU_MESSAGE_FILE)),)
 cbfs-files-y += etc/boot-menu-message
 etc/boot-menu-message-file := $(strip $(CONFIG_SEABIOS_BOOTMENU_MESSAGE_FILE))
 etc/boot-menu-message-type := raw
+endif
+
+
+# add a SeaBIOS sercon-port file
+ifneq ($(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE)),)
+cbfs-files-y += etc/sercon-port
+etc/sercon-port-file := $(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE))
+etc/sercon-port-type := raw
+endif
+
+ifeq ($(CONFIG_SEABIOS_NO_OPROMS),y)
+$(call add_intermediate, seabios_no_oproms, $(CBFSTOOL))
+	@printf "    SeaBIOS    Add pci-optionrom-exec file\n"
+	$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n etc/pci-optionrom-exec 2>/dev/null)
+	$(CBFSTOOL) $< add-int -i 0 -n etc/pci-optionrom-exec
+endif
+
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),)
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),0)
 $(call add_intermediate, seabios_ps2_timeout, $(CBFSTOOL))
@@ -364,7 +383,13 @@ payloads/external/Memtest86Plus/memtest86plus/memtest: $(DOTCONFIG)
 # sortbootorder
 
 payloads/external/sortbootorder/sortbootorder/sortbootorder.elf sortbootorder:
-	$(MAKE) -C payloads/external/sortbootorder
+	$(MAKE) -C payloads/external/sortbootorder all \
+		TARGET_APU1=$(CONFIG_BOARD_PCENGINES_APU1) \
+		SORTBOOTORDER_REVISION=$(CONFIG_SORTBOOTORDER_REVISION) \
+		SORTBOOTORDER_REVISION_ID=$(CONFIG_SORTBOOTORDER_REVISION_ID) \
+		SORTBOOTORDER_MASTER=$(CONFIG_SORTBOOTORDER_MASTER) \
+		SORTBOOTORDER_STABLE=$(CONFIG_SORTBOOTORDER_STABLE) \
+
 
 cbfs-files-$(CONFIG_SORTBOOTORDER_SECONDARY_PAYLOAD) += img/setup
 img/setup-file := payloads/external/sortbootorder/sortbootorder/sortbootorder.elf
