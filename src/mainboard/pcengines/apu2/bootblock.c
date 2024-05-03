@@ -15,10 +15,10 @@ void bootblock_mainboard_early_init(void)
 	hudson_lpc_port80();
 	hudson_clk_output_48Mhz();
 
-	/* COM2 on apu5 is reserved so only COM1 should be supported */
-	if ((CONFIG_UART_FOR_CONSOLE == 1) &&
-		!CONFIG(BOARD_PCENGINES_APU5))
-		nuvoton_enable_serial(SERIAL2_DEV, CONFIG_TTYS0_BASE);
-	else if (CONFIG_UART_FOR_CONSOLE == 0)
-		nuvoton_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
+	/* Enable UARTB for LPC MCU */
+	if (CONFIG(BOARD_PCENGINES_APU5))
+		nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
+
+	if ((check_com2() || (CONFIG_UART_FOR_CONSOLE == 1)))
+		nuvoton_enable_serial(SERIAL2_DEV, 0x2f8);
 }
