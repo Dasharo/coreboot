@@ -202,8 +202,6 @@ static void config_gpio_mux(void)
 static void measure_amd_blobs(void)
 {
 	struct region_device rdev;
-	uint32_t cbfs_type = CBFS_TYPE_SPD;
-	struct cbfsf fh;
 
 	printk(BIOS_DEBUG, "Measuring AMD blobs.\n");
 
@@ -212,13 +210,6 @@ static void measure_amd_blobs(void)
 		return;
 	}
 	tpm_measure_region(&rdev, TPM_RUNTIME_DATA_PCR,"PSPDIR");
-
-	/* Measure SPD */
-	if (cbfs_locate_file_in_region(&fh, "COREBOOT", "spd.bin",
-				       &cbfs_type) < 0) {
-		printk(BIOS_ERR, "Error: Couldn't find SPD.");
-		return;
-	}
 }
 
 /**********************************************
