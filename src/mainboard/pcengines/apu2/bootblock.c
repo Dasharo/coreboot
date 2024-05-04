@@ -6,6 +6,8 @@
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct5104d/nct5104d.h>
 
+#include "bios_knobs.h"
+
 #define SIO_PORT 0x2e
 #define SERIAL1_DEV PNP_DEV(SIO_PORT, NCT5104D_SP1)
 #define SERIAL2_DEV PNP_DEV(SIO_PORT, NCT5104D_SP2)
