@@ -118,6 +118,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	}
 
 	printk(BIOS_ERR, "TCSS IOM not ready, USB3.0 ports will not be functional\n");
+
+	params->TxtEnable = CONFIG(INTEL_TXT);
 }
 
 static void mainboard_final(void *chip_info)
