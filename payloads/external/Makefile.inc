@@ -320,6 +320,22 @@ payloads/external/Memtest86Plus/memtest86plus/memtest: $(DOTCONFIG)
 		$(MEMTEST_SERIAL_OPTIONS) \
 		MFLAGS= MAKEFLAGS=
 
+# sortbootorder
+
+payloads/external/sortbootorder/sortbootorder/sortbootorder.elf sortbootorder:
+	$(MAKE) -C payloads/external/sortbootorder all \
+		TARGET_APU1=$(CONFIG_BOARD_PCENGINES_APU1) \
+		SORTBOOTORDER_REVISION=$(CONFIG_SORTBOOTORDER_REVISION) \
+		SORTBOOTORDER_REVISION_ID=$(CONFIG_SORTBOOTORDER_REVISION_ID) \
+		SORTBOOTORDER_MASTER=$(CONFIG_SORTBOOTORDER_MASTER) \
+		SORTBOOTORDER_STABLE=$(CONFIG_SORTBOOTORDER_STABLE) \
+
+
+cbfs-files-$(CONFIG_SORTBOOTORDER_SECONDARY_PAYLOAD) += img/setup
+img/setup-file := payloads/external/sortbootorder/sortbootorder/sortbootorder.elf
+img/setup-type := payload
+img/setup-compression := $(CBFS_PAYLOAD_COMPRESS_FLAG)
+
 # iPXE
 
 PXE_ROM_PCI_ID:=$(subst $(comma),,$(CONFIG_PXE_ROM_ID))
