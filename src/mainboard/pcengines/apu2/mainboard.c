@@ -275,14 +275,10 @@ static void mainboard_enable(struct device *dev)
 		printk(BIOS_ALERT, " DRAM\n\n");
 	}
 
-	//
-	// Enable the RTC output
-	//
+	/* Enable the RTC output */
 	pm_write16(PM_RTC_CONTROL, pm_read16(PM_RTC_CONTROL) | (1 << 11));
 
-	//
-	// Enable power on from WAKE#
-	//
+	/* Enable power on from WAKE# */
 	pm_write16(PM_S_STATE_CONTROL, pm_read16(PM_S_STATE_CONTROL) | (1 << 14));
 
 	/* Enable power on after power fail */
@@ -399,5 +395,5 @@ const char *smbios_system_sku(void)
 
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
-	.final = mainboard_final,
+	.final = mainboard_final
 };
