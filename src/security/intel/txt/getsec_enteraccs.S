@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/cr.h>
 #include <cpu/x86/msr.h>
@@ -109,6 +110,22 @@ cond_push_var_mtrrs:
 	orl	$(CR0_CD | CR0_NW), %eax
 	movl	%eax, %cr0
 
+	/* Check how the cache should be invalidated */
+	movl	8(%ebp), %eax		/* ACM function in eax */
+	cmp	$0, %eax		/* SCLEAN? */
+	je	invalidate_cache
+	cmp	$5, %eax		/* CLEAR_SECRETS? */
+	je	invalidate_cache
+	cmp	$7, %eax		/* ACHECK? */
+	je	invalidate_cache
+
+	wbinvd				/* writeback is necessary */
+	jmp	disable_mtrrs
+
+invalidate_cache:
+	invd
+
+disable_mtrrs:
 	/* Disable all MTRRs */
 	movl	$(MTRR_DEF_TYPE_MSR), %ecx
 	xorl	%eax, %eax
@@ -211,10 +228,29 @@ cond_clear_var_mtrrs:
 	orl	$(CR0_NE), %eax
 	movl	%eax, %cr0
 
-	/* Enable SMX and FXSTORE - for getsec */
+	/* Enable SMX and FXSTORE - for getsec; make accesses of DR4/DR5 cause #UD (invalid opcode) */
 	movl	%cr4, %eax
-	orl	$(CR4_SMXE | CR4_OSFXSR), %eax
+	orl	$(CR4_SMXE | CR4_DE | CR4_OSFXSR), %eax
 	movl	%eax, %cr4
+
+#if CONFIG(INTEL_CBNT_SUPPORT)
+	/* Clean all MCi_STATUS MSR registers */
+	movl	$(IA32_MCG_CAP), %ecx		/* MCG_CAP */
+	rdmsr
+	movzx	%al, %ebx		/* ebx = MCR bank count */
+	xorl	%eax, %eax		/* Write 0 into all MCi_STATUS registers */
+	xorl	%edx, %edx
+	movl	$(IA32_MC0_STATUS), %ecx		/* MC0_STATUS */
+
+mca_clean_loop:
+	wrmsr
+	dec	%ebx
+	jz	mca_clean_done
+	addl	$4, %ecx		/* ecx = number of MSRs per bank */
+	jmp	mca_clean_loop
+
+mca_clean_done:
+#endif
 
 	/*
 	 * Save GDT
@@ -268,6 +304,15 @@ cond_clear_var_mtrrs:
 	/* Restore %gs used by cpu_info */
 	movd	%xmm2, %eax
 	movl	%eax, %gs
+
+	/* Check if we need a reset */
+	movl	8(%ebp), %eax		/* ACM function in eax */
+	cmp	$0, %eax 		/* SCLEAN? */
+	je	reset_system
+	cmp	$5, %eax 		/* CLEAR_SECRETS? */
+	je	reset_system
+	cmp	$7, %eax		/* ACHECK? */
+	je	reset_system
 
 	/* Disable cache */
 	movl	%cr0, %eax
@@ -334,3 +379,17 @@ cond_pop_var_mtrrs:
 	popl	%ebp
 
 	ret
+
+reset_system:
+	movw	$0xcf9, %dx
+	movb	$0, %al
+	outb	%al, %dx
+
+	movw	$0xcf9, %dx
+	movb	$0x0e, %al  /* FULL_RST | RST_CPU | SYS_RST */
+	outb	%al, %dx
+
+	cli
+.halt_forever:
+	hlt
+	jmp	.halt_forever
