@@ -402,6 +402,8 @@ static void lb_record_version_timestamp(struct lb_header *header)
 
 void __weak lb_board(struct lb_header *header) { /* NOOP */ }
 
+void __weak lb_uefi_capsules(struct lb_header *header) { /* NOOP */ }
+
 /*
  * It's possible that the system is using a SPI flash as the boot device,
  * however it is not probing for devices to fill in specifics. In that
@@ -571,6 +573,9 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 
 	/* Add board-specific table entries, if any. */
 	lb_board(head);
+
+	/* Possibly add UEFI capsules. */
+	lb_uefi_capsules(head);
 
 	if (CONFIG(CHROMEOS_RAMOOPS))
 		lb_ramoops(head);
