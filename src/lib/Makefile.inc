@@ -374,6 +374,7 @@ $(foreach stage,$(libhwbase-stages), \
 endif # CONFIG_ROMSTAGE_LIBHWBASE || CONFIG_RAMSTAGE_LIBHWBASE
 
 romstage-y += spd_bin.c
+ramstage-y += spd_bin.c
 
 ifeq ($(CONFIG_HAVE_SPD_IN_CBFS),y)
 LIB_SPD_BIN = $(obj)/spd.bin
