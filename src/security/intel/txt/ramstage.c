@@ -90,6 +90,7 @@ static void check_secrets_txt(void *unused)
 	if (status & ACMSTS_TXT_DISABLED)
 		return;
 
+	printk(BIOS_INFO, "TEE-TXT: Checking for secrets in memory...\n");
 	/*
 	 * Check if secrets bit needs to be reset. Only platforms that support
 	 * CONFIG(PLATFORM_HAS_DRAM_CLEAR) will be able to run this code.
@@ -99,12 +100,25 @@ static void check_secrets_txt(void *unused)
 	 * TXT will issue a platform reset to come up sober.
 	 */
 	if (intel_txt_memory_has_secrets()) {
+		if (intel_txt_prepare_txt_env()) {
+			printk(BIOS_ERR, "TEE-TXT: Failed to prepare TXT environment\n");
+			return;
+		}
+
+		/* Check for fatal ACM error and TXT reset */
+		if (get_wake_error_status()) {
+			/* Can't run ACMs with TXT_ESTS_WAKE_ERROR_STS set */
+			printk(BIOS_ERR, "TEE-TXT: Fatal BIOS ACM error reported\n");
+			return;
+		}
 		printk(BIOS_INFO, "TEE-TXT: Wiping TEE...\n");
 		intel_txt_run_bios_acm(ACMINPUT_CLEAR_SECRETS);
 
 		/* Should never reach this point ... */
 		intel_txt_log_acm_error(read32p(TXT_BIOSACM_ERRORCODE));
 		die("Waiting for platform reset...\n");
+	} else {
+		printk(BIOS_INFO, "TEE-TXT: No secrets in memory\n");
 	}
 }
 
@@ -165,6 +179,7 @@ static void init_intel_txt(void *unused)
 		if (intel_txt_run_bios_acm(ACMINPUT_NOP) < 0) {
 			printk(BIOS_ERR,
 				"TEE-TXT: Error calling BIOS ACM with NOP function.\n");
+			restart_aps();
 			return;
 		}
 	}
@@ -183,6 +198,9 @@ static void init_intel_txt(void *unused)
 		} else {
 			restart_aps();
 		}
+	} else {
+		/* Let coreboot sync MTRRs on APs */
+		restart_aps();
 	}
 }
 
@@ -200,6 +218,13 @@ static void push_sinit_heap(u8 **heap_ptr, void *data, size_t data_length)
 		memcpy(*heap_ptr, data, data_length);
 		*heap_ptr += data_length;
 	}
+}
+
+static bool is_txt_server_capable(void)
+{
+	msr_t msr = rdmsr(MSR_BOOT_GUARD_SACM_INFO);
+
+	return !!(msr.hi & (B_BOOT_GUARD_SACM_INFO_TXT_CAPABILITY >> 32));
 }
 
 static void txt_heap_fill_common_bdr(struct txt_biosdataregion *bdr)
@@ -222,7 +247,16 @@ static void txt_heap_fill_common_bdr(struct txt_biosdataregion *bdr)
 	}
 
 	bdr->support_acpi_ppi = 0;
-	bdr->platform_type = 0;
+
+	if (CONFIG(INTEL_CBNT_SUPPORT)) {
+		if (is_txt_server_capable()) {
+			bdr->platform_type = 2;
+		} else {
+			bdr->platform_type = 1;
+		}
+	} else {
+		bdr->platform_type = 0;
+	}
 }
 
 static void txt_heap_fill_bios_spec(struct txt_bios_spec_ver_element *spec)
@@ -387,16 +421,36 @@ static void lockdown_intel_txt(void *unused)
 	if (!getsec_parameter(NULL, NULL, NULL, NULL, NULL, &txt_feature_flags))
 		return;
 
-	/* LockConfig only exists on Intel TXT for Servers */
-	if (txt_feature_flags & GETSEC_PARAMS_TXT_EXT_CRTM_SUPPORT) {
+	/* LockConfig only exists on Intel TXT for Servers and CBnT */
+	if ((txt_feature_flags & GETSEC_PARAMS_TXT_EXT_CRTM_SUPPORT) ||
+	     CONFIG(INTEL_CBNT_SUPPORT)) {
+		/*
+		 * We have to ensure the TXT environment is prepared to run ACM.
+		 * We may have restarted the APs to program MTRRs, etc.
+		 */
+		if (intel_txt_prepare_txt_env()) {
+			printk(BIOS_ERR, "TEE-TXT: Failed to prepare TXT environment\n");
+			return;
+		}
+
+		/* Check for fatal ACM error and TXT reset */
+		if (get_wake_error_status()) {
+			/* Can't run ACMs with TXT_ESTS_WAKE_ERROR_STS set */
+			printk(BIOS_ERR, "TEE-TXT: Fatal BIOS ACM error reported\n");
+			restart_aps();
+			return;
+		}
+
 		printk(BIOS_INFO, "TEE-TXT: Locking TEE...\n");
 
 		/* Lock TXT config, unlocks TXT_HEAP_BASE */
 		if (intel_txt_run_bios_acm(ACMINPUT_LOCK_CONFIG) < 0) {
 			printk(BIOS_ERR, "TEE-TXT: Failed to lock registers.\n");
 			printk(BIOS_ERR, "TEE-TXT: SINIT won't be supported.\n");
+			restart_aps();
 			return;
 		}
+		restart_aps();
 	}
 
 	/*
