@@ -6,6 +6,7 @@
 #include <cpu/intel/common/common.h>
 #include <cpu/intel/cpu_ids.h>
 #include <cpu/x86/msr.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <drivers/wifi/generic/wifi.h>
@@ -362,6 +363,8 @@ static void fill_fspm_vtd_params(FSP_M_CONFIG *m_cfg,
 
 	/* Change VmxEnable UPD value according to ENABLE_VMX Kconfig */
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
+
+	m_cfg->PreBootDmaMask = CONFIG(ENABLE_EARLY_DMA_PROTECTION) && dma_protection_enabled();
 }
 
 static void fill_fspm_trace_params(FSP_M_CONFIG *m_cfg,
