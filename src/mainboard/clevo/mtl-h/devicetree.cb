@@ -284,6 +284,8 @@ chip soc/intel/meteorlake
 		end
 		device ref smbus on end
 		device ref fast_spi on end
-		device ref gbe on end
+		device ref gbe on
+			register "pcie_clk_config_flag[2]" = "PCIE_CLK_LAN"
+		end
 	end
 end
