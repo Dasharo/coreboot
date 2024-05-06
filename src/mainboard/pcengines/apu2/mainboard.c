@@ -38,6 +38,7 @@
 #define PM_RTC_CONTROL		0x56
 #define PM_RTC_SHADOW		0x5B
 #define PM_S_STATE_CONTROL	0xBA
+#define PM_PCI_CONFIG		0xEA
 
 #define SEC_REG_SERIAL_ADDR	0x1000
 #define MAX_SERIAL_LEN		10
@@ -287,8 +288,8 @@ static void mainboard_enable(struct device *dev)
 	/* Enable power on after power fail */
 	pm_write8(PM_RTC_SHADOW, pm_read8(PM_RTC_SHADOW) | (1 << 0));
 
-
-
+	/* Enable GENINTx as GPIO */
+	pm_write8(PM_PCI_CONFIG, 1);
 
 	/* Initialize the PIRQ data structures for consumption */
 	pirq_setup();
