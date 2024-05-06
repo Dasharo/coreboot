@@ -360,6 +360,7 @@ int intel_txt_run_bios_acm(const u8 input_params)
 	if (!acm_data)
 		return -1;
 
+	printk(BIOS_INFO, "TEE-TXT: Running GETSEC[ENTERACCS] with input %d\n", input_params);
 	/* Call into assembly which invokes the referenced ACM */
 	getsec_enteraccs(input_params, (uintptr_t)acm_data, acm_len);
 
