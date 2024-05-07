@@ -66,7 +66,6 @@ void mainboard_fill_mrc_params(struct mrc_params *mp)
 
 	mp->mainboard.dram_type = DRAM_DDR3L;
 	mp->mainboard.dram_info_location = DRAM_INFO_SPD_MEM,
-	mp->txe_size_mb = 16;
 
 	mp->mainboard.dram_data[0] = spd_content;
 	mp->mainboard.dram_data[1] = NULL;

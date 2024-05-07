@@ -272,6 +272,8 @@ void enable_gpe(uint32_t mask);
 void disable_gpe(uint32_t mask);
 void disable_all_gpe(void);
 
+void global_reset(void);
+
 void southcluster_log_state(void);
 
 /* Return non-zero when RTC failure happened. */
