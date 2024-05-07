@@ -32,6 +32,7 @@ config SOC_INTEL_BAYTRAIL
 	select TCO_SPACE_NOT_YET_SPLIT
 	select USE_DDR3
 	select UDK_2017_BINDING
+	select HAVE_CF9_RESET_PREPARE
 	help
 	  Bay Trail M/D part support.
 
@@ -265,5 +266,9 @@ config CPU_MICROCODE_CBFS_LEN
 	default 0x19800
 
 endif
+
+config BAYTRAIL_FTPM
+	bool "Enable fTPM functionality in TXE"
+	default n
 
 endif
