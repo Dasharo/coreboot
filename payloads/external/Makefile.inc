@@ -142,6 +142,12 @@ cbfs-files-y += etc/boot-menu-message
 etc/boot-menu-message-file := $(strip $(CONFIG_SEABIOS_BOOTMENU_MESSAGE_FILE))
 etc/boot-menu-message-type := raw
 endif
+# add a SeaBIOS sercon-port file
+ifneq ($(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE)),)
+cbfs-files-y += etc/sercon-port
+etc/sercon-port-file := $(strip $(CONFIG_SEABIOS_SERCON_PORT_FILE))
+etc/sercon-port-type := raw
+endif
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),)
 ifneq ($(CONFIG_SEABIOS_PS2_TIMEOUT),0)
 $(call add_intermediate, seabios_ps2_timeout, $(CBFSTOOL))
