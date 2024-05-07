@@ -72,7 +72,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(10)]" = "{
 				.clk_src = 8,
 				.clk_req = 8,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_HOTPLUG | PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "is_storage" = "true"
@@ -87,7 +87,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(11)]" = "{
 				.clk_src = 7,
 				.clk_req = 7,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_HOTPLUG | PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "is_storage" = "true"
@@ -170,7 +170,6 @@ chip soc/intel/meteorlake
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Bluetooth""
 						register "type" = "UPC_TYPE_INTERNAL"
-						register "has_power_resource" = "1"
 						device ref usb2_port10 on end
 					end
 					chip drivers/usb/acpi
@@ -223,7 +222,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(6)]" = "{
 				.clk_src = 3,
 				.clk_req = 3,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_BUILT_IN,
 			}"
 			chip drivers/generic/bayhub_lv2
 				register "enable_power_saving" = "1"
