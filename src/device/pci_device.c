@@ -1003,6 +1003,10 @@ static void pci_bridge_vga_compat(struct bus *const bus)
 	bridge_ctrl = pci_read_config16(bus->dev, PCI_BRIDGE_CONTROL);
 
 	bus->no_vga16 = !(bridge_ctrl & PCI_BRIDGE_CTL_VGA16);
+
+	/* Clear the VGA16 and let coreboot set it where necessary later */
+	bridge_ctrl &= ~PCI_BRIDGE_CTL_VGA16;
+	pci_write_config16(bus->dev, PCI_BRIDGE_CONTROL, bridge_ctrl);
 }
 
 /**
