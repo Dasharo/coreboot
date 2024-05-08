@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - dasharo
+      - dasharo-24.02.1
   push:
     branches:
       - dasharo-24.02.1
