@@ -2,10 +2,14 @@
 
 #include <arch/cpu.h>
 #include <arch/io.h>
+#include <console/console.h>
 #include <delay.h>
 #include <device/device.h>
+#include <intelblocks/systemagent.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
+#include <soc/pcr_ids.h>
+#include <soc/tcss.h>
 
 #include <string.h>
 
@@ -63,6 +67,8 @@ const char *smbios_mainboard_product_name(void)
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
+	int i;
+
 	memset(params->PcieRpEnableCpm, 0, sizeof(params->PcieRpEnableCpm));
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
@@ -97,6 +103,21 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
+
+	/*
+	 * Workaround: poll for IOM ready before SiliconInit for 2 seconds.
+	 * ME seems to be too sluggish with its firmware initialization and IOM
+	 * is not ready during TCSS Init in SiliconInit, when debugging is
+	 * disabled in coreboot.
+	 */
+	for (i = 0; i < 200; i++) {
+		if (REGBAR32(PID_IOM, IOM_TYPEC_STATUS_1) & IOM_READY)
+			return;
+
+		mdelay(10);
+	}
+
+	printk(BIOS_ERR, "TCSS IOM not ready, USB3.0 ports will not be functional\n");
 }
 
 static void mainboard_final(void *chip_info)
