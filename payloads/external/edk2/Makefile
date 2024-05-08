@@ -268,9 +268,12 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
-ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_ENABLE),y)
+ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_SHOW),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowOcWdtOptions=TRUE
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtTimeoutDefault=$(CONFIG_EDK2_DASHARO_OC_WDT_TIMEOUT)
+ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtEnableDefault=TRUE
+endif
 endif
 # PCIEXP_SUPPORT_RESIZABLE_BARS = FALSE
 ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS),y)
