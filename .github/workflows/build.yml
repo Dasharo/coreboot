@@ -8,8 +8,29 @@ on:
       - dasharo-24.02.1
 
 jobs:
+  build_novacustom_ec:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        vendor: [ novacustom ]
+        model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl ]
+    steps:
+    - name: Checkout EC
+      uses: actions/checkout@v3
+      with:
+        repository: Dasharo/ec
+    - name: Build EC
+      run: EC_BOARD_VENDOR=${{ matrix.vendor }} EC_BOARD_MODEL=${{ matrix.model }} ./build.sh
+    - name: Save artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+        path: |
+          ${{ matrix.vendor }}_${{ matrix.model }}_ec.rom
+        retention-days: 30
   build_novacustom:
     runs-on: ubuntu-22.04
+    needs: build_novacustom_ec
     container:
       image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
       options: --user 1001
@@ -28,6 +49,11 @@ jobs:
           fetch-depth: 0
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
+      - name: Obtain EC
+        uses: actions/download-artifact@master
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+          path: ec.rom
       - name: Build Dasharo
         run: |
           cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
