@@ -123,6 +123,15 @@ config EDK2_DASHARO_CHIPSET_CONFIG
 	help
 	  Enables the EDK2 chipset configuration submenu in Dasharo System Features menu.
 
+config EDK2_DASHARO_OC_WDT_SHOW
+	bool "Enable watchdog configuration options"
+	depends on EDK2_DASHARO_CHIPSET_CONFIG
+	default y if SOC_INTEL_COMMON_OC_WDT_ENABLE
+	default n
+	help
+	  Enable watchdog-related options in the Dasharo Chipset Configuration
+	  submenu.
+
 config EDK2_DASHARO_POWER_CONFIG
 	bool "Enable EDK2 Dasharo Power Configuration Menu"
 	default n
