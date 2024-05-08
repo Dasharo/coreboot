@@ -3,6 +3,7 @@
 #include <acpi/acpi.h>
 #include <console/console.h>
 #include <intelblocks/oc_wdt.h>
+#include <soc/iomap.h>
 
 #define OC_WDT_MIN_VALUE 0
 #define OC_WDT_MAX_VALUE 1023
