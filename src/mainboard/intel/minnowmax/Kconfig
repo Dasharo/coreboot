@@ -54,4 +54,8 @@ config VGA_BIOS
 	bool
 	default y
 
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board_sb.fmd" if TXE_SECURE_BOOT
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+
 endif # BOARD_INTEL_MINNOWMAX
