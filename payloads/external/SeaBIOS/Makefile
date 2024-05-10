@@ -39,6 +39,7 @@ checkout: fetch
 config: checkout
 	echo "    CONFIG     SeaBIOS $(TAG-y)"
 	echo "CONFIG_COREBOOT=y" > seabios/.config
+	echo "CONFIG_CBFS_LOCATION=$(CONFIG_SEABIOS_CBFS_LOCATION)" >> seabios/.config
 ifeq ($(CONFIG_CONSOLE_SERIAL)$(CONFIG_DRIVERS_UART_8250IO),yy)
 	echo "CONFIG_DEBUG_SERIAL=y" >> seabios/.config
 	echo "CONFIG_DEBUG_SERIAL_PORT=$(CONFIG_TTYS0_BASE)" >> seabios/.config
