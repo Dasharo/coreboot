@@ -115,7 +115,7 @@ config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
 
 config TPM_PIRQ
-	default 0x27 if BOARD_CLEVO_NS50PU_BASE # GPP_E1
+	default 0x27 # GPP_E1
 
 config SOC_INTEL_CSE_SEND_EOP_EARLY
 	default n
