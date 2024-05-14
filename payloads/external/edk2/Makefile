@@ -323,6 +323,10 @@ endif
 ifeq ($(CONFIG_EDK2_SERIAL_ON_SUPERIO),y)
 BUILD_STR += -D UART_ON_SUPERIO=TRUE
 endif
+# CPU THROTTLING
+ifneq($(CONFIG_EDK2_CPU_THROTTLING_THRESHOLD_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuThrottlingThreshold=FALSE
+
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:

@@ -581,4 +581,10 @@ config EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS
 	  Tell UEFIPaylaod to scan available EFI System Partitions and create
 	  boot options from the bootloader binaries found on the disks.
 
+config EDK2_CPU_THROTTLING_THRESHOLD_OPTION
+	bool "Display CPU throttling threshold option"
+	default n
+	help
+	  Enables setting a custom CPU throttling threshold temperature
+
 endif
