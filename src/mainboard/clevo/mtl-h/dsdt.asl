@@ -22,6 +22,9 @@ DefinitionBlock(
 		#include <soc/intel/meteorlake/acpi/tcss.asl>
 	}
 
+	/* Chipset specific sleep states */
+	#include <southbridge/intel/common/acpi/sleepstates.asl>
+
 	Scope (\_SB.PCI0.LPCB)
 	{
 		#include <drivers/pc80/pc/ps2_controller.asl>
