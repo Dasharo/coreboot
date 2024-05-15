@@ -18,6 +18,10 @@ chip soc/intel/meteorlake
 	# SaGv configuration
 	register "sagv" = "SAGV_ENABLED"
 
+	# Disable C1 and Package C-state auto-demotion
+	register "disable_c1_state_auto_demotion" = "1"
+	register "disable_package_c_state_demotion" = "1"
+
 	# Enable Energy Reporting
 	register "pch_pm_energy_report_enable" = "1"
 
@@ -47,32 +51,38 @@ chip soc/intel/meteorlake
 	device domain 0 on
 		subsystemid 0x1558 0xa743 inherit
 		device ref system_agent on end
-		device ref pcie_rp12 on # PEG
-			register "pcie_rp[PCH_RP(12)]" = "{
-				.clk_src = 6,
-				.clk_req = 6,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
-			}"
-			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_D03)"
-				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_B09)"
-				register "srcclk_pin" = "6"
-				device generic 0 on end
-			end
-		end
 		device ref igpu on
 			register "ddi_port_A_config" = "1"
 			register "ddi_ports_config" = "{
 				[DDI_PORT_A] = DDI_ENABLE_HPD, 			/* eDP */
 				[DDI_PORT_2] = DDI_ENABLE_DDC | DDI_ENABLE_HPD,	/* HDMI 2.1 */
 			}"
+			chip drivers/gfx/generic
+				register "device_count" = "3"
+				# DDIA for eDP
+				register "device[0].name" = ""LCD0""
+				register "device[0].type" = "panel"
+				# DDIB unused
+				register "device[1].name" = ""DD01""
+				# TCP0 for Thunderbolt 4
+				register "device[2].name" = ""DD02""
+				register "device[2].use_pld" = "true"
+				register "device[2].pld" = "ACPI_PLD_TYPE_C(RIGHT, CENTER, ACPI_PLD_GROUP(1, 1))"
+				# TCP1 unused
+				register "device[3].name" = ""DD03""
+				# TCP2 for HDMI 2.1
+				register "device[4].name" = ""DD04""
+				# TCP3 unused
+				register "device[5].name" = ""DD05""
+				device generic 0 on end
+			end
 		end
 		device ref dtt on end
 		device ref pcie_rp10 on # M.2 2280 #2
 			register "pcie_rp[PCH_RP(10)]" = "{
 				.clk_src = 8,
 				.clk_req = 8,
-				.flags = PCIE_RP_HOTPLUG | PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "is_storage" = "true"
@@ -87,7 +97,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(11)]" = "{
 				.clk_src = 7,
 				.clk_req = 7,
-				.flags = PCIE_RP_HOTPLUG | PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "is_storage" = "true"
@@ -129,7 +139,6 @@ chip soc/intel/meteorlake
 				device generic 0 on end
 			end
 		end
-		device ref vmd on end
 		device ref ioe_shared_sram on end
 		device ref xhci on
 			chip drivers/usb/acpi
@@ -195,7 +204,7 @@ chip soc/intel/meteorlake
 			register "cnvi_bt_core" = "true"
 			register "cnvi_bt_audio_offload" = "true"
 			chip drivers/wifi/generic
-				register "wake" = "GPE0_PME_B0" # TODO
+				register "wake" = "GPE0_PME_B0"
 				register "add_acpi_dma_property" = "true"
 				register "enable_cnvi_ddr_rfim" = "true"
 				device generic 0 on end
@@ -211,6 +220,14 @@ chip soc/intel/meteorlake
 				register "hid_desc_reg_offset" = "0x01"
 				device i2c 15 on end
 			end
+			chip drivers/i2c/hid
+				register "generic.hid" = ""FTCS1000""
+				register "generic.desc" = ""FocalTech Touchpad""
+				register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_B00)"
+				register "generic.detect" = "1"
+				register "hid_desc_reg_offset" = "0x01"
+				device i2c 38 on end
+			end
 		end
 		device ref i2c1 on # USB-PD EEPROM
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C1]" = "PchSerialIoPci"
@@ -218,11 +235,19 @@ chip soc/intel/meteorlake
 		device ref i2c3 on # Pantone ROM
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C3]" = "PchSerialIoPci"
 		end
+		device ref pcie_rp5 on # GLAN
+			register "pcie_rp[PCH_RP(5)]" = "{
+				.clk_src = 2,
+				.clk_req = 2,
+				.flags = PCIE_RP_LTR | PCIE_RP_CLK_SRC_UNUSED,
+			}"
+			register "pcie_clk_config_flag[2]" = "PCIE_CLK_LAN"
+		end
 		device ref pcie_rp6 on # SD Card Reader
 			register "pcie_rp[PCH_RP(6)]" = "{
 				.clk_src = 3,
 				.clk_req = 3,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_BUILT_IN,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip drivers/generic/bayhub_lv2
 				register "enable_power_saving" = "1"
@@ -231,8 +256,8 @@ chip soc/intel/meteorlake
 		end
 		device ref pcie_rp8 on # M.2 2230
 			register "pcie_rp[PCH_RP(8)]" = "{
-				.clk_src = 7,
-				.clk_req = 7,
+				.clk_src = 5,
+				.clk_req = 5,
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip drivers/wifi/generic
@@ -254,6 +279,9 @@ chip soc/intel/meteorlake
 			end
 		end
 		device ref pmc hidden
+			register "pmc_gpe0_dw0" = "PMC_GPP_V"
+			register "pmc_gpe0_dw1" = "PMC_GPP_B"
+			register "pmc_gpe0_dw2" = "PMC_GPP_S"
 			chip drivers/intel/pmc_mux
 				device generic 0 on
 					chip drivers/intel/pmc_mux/conn
@@ -283,8 +311,6 @@ chip soc/intel/meteorlake
 		end
 		device ref smbus on end
 		device ref fast_spi on end
-		device ref gbe on
-			register "pcie_clk_config_flag[2]" = "PCIE_CLK_LAN"
-		end
+		device ref gbe on end
 	end
 end

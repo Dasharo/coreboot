@@ -11,6 +11,25 @@
 #include <smbios.h>
 #include <soc/ramstage.h>
 
+struct smfi_cmd_set_fan_curve {
+	uint8_t fan;
+	struct fan_curve curve;
+} __packed;
+
+struct fan_curve fan_curve_silent = {
+	{ .temp = 0,   .duty = 20  },
+	{ .temp = 65,  .duty = 25  },
+	{ .temp = 75,  .duty = 35  },
+	{ .temp = 85,  .duty = 100 }
+};
+
+struct fan_curve fan_curve_performance = {
+	{ .temp = 0,   .duty = 25 },
+	{ .temp = 55,  .duty = 35 },
+	{ .temp = 75,  .duty = 60 },
+	{ .temp = 85,  .duty = 100}
+};
+
 const char *smbios_system_sku(void)
 {
 	return "Not Applicable";
@@ -26,9 +45,83 @@ smbios_wakeup_type smbios_system_wakeup_type(void)
 	return SMBIOS_WAKEUP_TYPE_POWER_SWITCH;
 }
 
+static void set_fan_curve(void)
+{
+	int i;
+	uint8_t selection = get_fan_curve_option();
+	struct smfi_cmd_set_fan_curve cmd;
+
+	switch (selection) {
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		cmd.curve = fan_curve_performance;
+		break;
+	case FAN_CURVE_OPTION_SILENT:
+	default:
+		cmd.curve = fan_curve_silent;
+		break;
+	}
+
+	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
+		cmd.fan = i;
+		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+	}
+}
+
+static void set_camera_enablement(void)
+{
+	bool enabled = get_camera_option();
+
+	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
+}
+
+static void set_battery_thresholds(void)
+{
+	struct battery_config bat_cfg;
+
+	get_battery_config(&bat_cfg);
+
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
+	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
+}
+
+static void set_power_on_ac(void)
+{
+	struct smfi_option_get_cmd {
+		uint8_t index;
+		uint8_t value;
+	} __packed cmd = {
+		OPT_POWER_ON_AC,
+		0
+	};
+
+	cmd.value = dasharo_get_power_on_after_fail();
+
+	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+}
+
 static void mainboard_init(void *chip_info)
 {
+	config_t *cfg = config_of_soc();
+	struct device *wlan_dev = pcidev_on_root(0x1c, 7);
+	struct device *cnvi_dev = pcidev_on_root(0x14, 3);
+	bool radio_enable = get_wireless_option();
+
+	printk(BIOS_DEBUG, "Wireless is %sabled\n", radio_enable ? "en" : "dis");
+
+	wlan_dev->enabled = radio_enable;
+	cnvi_dev->enabled = radio_enable;
+	cfg->cnvi_bt_core = radio_enable;
+	cfg->cnvi_bt_audio_offload = radio_enable;
+	cfg->usb2_ports[9].enable = radio_enable;
+
+	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
+
 	mainboard_configure_gpios();
+
+	set_fan_curve();
+	set_camera_enablement();
+	set_battery_thresholds();
+	set_power_on_ac();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
