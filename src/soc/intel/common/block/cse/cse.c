@@ -1175,7 +1175,7 @@ void cse_enable_ptt(bool state)
 	 */
 	if (!cse_is_hfs1_cws_normal() || !cse_is_hfs1_com_normal() ||
 	    !cse_is_hfs1_fw_init_complete() || !ENV_RAMSTAGE) {
-		printk(BIOS_ERR, "HECI: Unmet prerequisites for"
+		printk(BIOS_ERR, "HECI: Unmet prerequisites for "
 				 "FW FEATURE SHIPMENT TIME STATE OVERRIDE\n");
 		return;
 	}
@@ -1423,8 +1423,10 @@ static void cse_set_state(struct device *dev)
 	/* EFI setting takes priority */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		me_state = efi_me_state;
-	else
+	else if (CONFIG(USE_OPTION_TABLE))
 		me_state = cmos_me_state;
+	else
+		me_state = CONFIG_INTEL_ME_DEFAULT_STATE;
 
 	printk(BIOS_DEBUG, "me_state = %u\n", me_state);
 
