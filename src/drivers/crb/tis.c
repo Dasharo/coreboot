@@ -208,6 +208,10 @@ static struct device_operations __maybe_unused crb_ops = {
 
 static void enable_dev(struct device *dev)
 {
+	enum tpm_family family;
+	if (crb_tis_probe(&family) == NULL)
+		dev->enabled = 0;
+
 #if !DEVTREE_EARLY
 	dev->ops = &crb_ops;
 #endif
