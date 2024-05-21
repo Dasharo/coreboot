@@ -7,21 +7,18 @@
 //   0x83 - backlight up
 //   0x84 - backlight color change
 //   0x85 - OLED screen toggle
-Device (S76D) {
-	Name (_HID, "17761776")
+Device (DASH) {
+	Name (_HID, "XXXX0000") // TODO: Update after we get a valid ACPI HID prefix
 	Name (_UID, 0)
 	// Hide the device so that Windows does not warn about a missing driver.
 	Name (_STA, 0xB)
 
 	Method (RSET, 0, Serialized) {
-		Printf ("S76D: RSET")
+		Debug = "DASH: RSET"
 		SAPL(0)
-		SKBB(0)
-		SKBC(0xFFFFFF)
 	}
-
 	Method (INIT, 0, Serialized) {
-		Printf ("S76D: INIT")
+		Printf ("DASH: INIT")
 		RSET()
 		If (^^PCI0.LPCB.EC0.ECOK) {
 			// Set flags to use software control
@@ -33,7 +30,7 @@ Device (S76D) {
 	}
 
 	Method (FINI, 0, Serialized) {
-		Printf ("S76D: FINI")
+		Printf ("DASH: FINI")
 		RSET()
 		If (^^PCI0.LPCB.EC0.ECOK) {
 			// Set flags to use hardware control
@@ -62,64 +59,6 @@ Device (S76D) {
 			} Else {
 				^^PCI0.LPCB.EC0.AIRP &= 0xBF
 			}
-		}
-	}
-
-	// Get Keyboard Backlight Kind
-	// 0 - No backlight
-	// 1 - White backlight
-	// 2 - RGB backlight
-	Method (GKBK, 0, Serialized) {
-		Local0 = 0
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 2
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-			Local0 = ^^PCI0.LPCB.EC0.FBUF
-		}
-		Return (Local0)
-	}
-
-	// Get Keyboard Brightness
-	Method (GKBB, 0, Serialized) {
-		Local0 = 0
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 1
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-			Local0 = ^^PCI0.LPCB.EC0.FBUF
-		}
-		Return (Local0)
-	}
-
-	// Set Keyboard Brightness
-	Method (SKBB, 1, Serialized) {
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 0
-			^^PCI0.LPCB.EC0.FBUF = Arg0
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-		}
-	}
-
-	// Get Keyboard Color
-	Method (GKBC, 0, Serialized) {
-		Local0 = 0
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 4
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
-			Local0 = ^^PCI0.LPCB.EC0.FBUF
-			Local0 |= (^^PCI0.LPCB.EC0.FBF1) << 16
-			Local0 |= (^^PCI0.LPCB.EC0.FBF2) << 8
-		}
-		Return (Local0)
-	}
-
-	// Set Keyboard Color
-	Method (SKBC, 1, Serialized) {
-		If (^^PCI0.LPCB.EC0.ECOK) {
-			^^PCI0.LPCB.EC0.FDAT = 3
-			^^PCI0.LPCB.EC0.FBUF = (Arg0 & 0xFF)
-			^^PCI0.LPCB.EC0.FBF1 = ((Arg0 >> 16) & 0xFF)
-			^^PCI0.LPCB.EC0.FBF2 = ((Arg0 >> 8) & 0xFF)
-			^^PCI0.LPCB.EC0.FCMD = 0xCA
 		}
 	}
 
