@@ -5,11 +5,7 @@ FLASH 32M {
 		SI_ME
 	}
 	SI_BIOS {
-		RW_SECTION_A 7M {
-			VBLOCK_A 8K
-			FW_MAIN_A(CBFS)
-			RW_FWID_A 64
-		}
+		RW_UNUSED 7M
 
 		# This section starts at the 16M boundary in SPI flash.
 		# MTL does not support a region crossing this boundary,
@@ -30,7 +26,7 @@ FLASH 32M {
 			BOOTSPLASH(CBFS) 1M
 		}
 
-		RW_SECTION_B 7M {
+		RW_SECTION_B@ 7M {
 			VBLOCK_B 8K
 			FW_MAIN_B(CBFS)
 			RW_FWID_B 64
