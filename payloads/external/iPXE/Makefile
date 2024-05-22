@@ -4,7 +4,7 @@
 # When updating, change the name both here and in payloads/external/iPXE/Kconfig
 
 # Temporarily Dasharo fork is used until i225/i226 native support is merged.
-STABLE_COMMIT_ID=838611b34e172baee46a10b443e9f1e5f6e6344f
+STABLE_COMMIT_ID=35d84756c8fc55b55922a24a8cd9e7ea27f92edb
 
 TAG-$(CONFIG_IPXE_MASTER)=origin/master
 TAG-$(CONFIG_IPXE_STABLE)=$(STABLE_COMMIT_ID)
