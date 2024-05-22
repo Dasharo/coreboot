@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         vendor: [ novacustom ]
-        model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl ]
+        model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl, v540tu, v560tu ]
     steps:
     - name: Checkout EC
       uses: actions/checkout@v4
