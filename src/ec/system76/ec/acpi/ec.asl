@@ -222,7 +222,6 @@ Device (\_SB.PCI0.LPCB.EC0)
 	Method (_Q1D, 0, NotSerialized) // Power Button
 	{
 		Printf ("EC: Power Button")
-		Notify (PWRB, 0x80)
 	}
 
 	Method (_Q50, 0, NotSerialized) // Other Events
