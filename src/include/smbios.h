@@ -122,6 +122,7 @@ int smbios_write_type8(unsigned long *current, int *handle,
 #define BIOS_CHARACTERISTICS_BIOS_SOCKETED	(1 << 17)
 
 #define BIOS_EXT1_CHARACTERISTICS_ACPI		(1 << 0)
+#define BIOS_EXT2_CHARACTERISTICS_BIOS_BOOT	(1 << 1)
 #define BIOS_EXT2_CHARACTERISTICS_TARGET	(1 << 2)
 #define BIOS_EXT2_CHARACTERISTICS_UEFI_SUPPORT	(1 << 3)
 
