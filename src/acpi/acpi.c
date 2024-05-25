@@ -1512,36 +1512,35 @@ unsigned long write_acpi_tables(const unsigned long start)
 			for (int i = 0; existing_rsdt->entry[i]; i++)
 				acpi_add_table(rsdp, (void *)(uintptr_t)existing_rsdt->entry[i]);
 
+			/* Add BOOT0000 for Linux google firmware driver */
+			printk(BIOS_DEBUG, "ACPI:     * SSDT\n");
+			ssdt = (acpi_header_t *)current;
+			current += sizeof(acpi_header_t);
+
+			memset((void *)ssdt, 0, sizeof(acpi_header_t));
+
+			memcpy(&ssdt->signature, "SSDT", 4);
+			ssdt->revision = get_acpi_table_revision(SSDT);
+			memcpy(&ssdt->oem_id, OEM_ID, 6);
+			memcpy(&ssdt->oem_table_id, oem_table_id, 8);
+			ssdt->oem_revision = 42;
+			memcpy(&ssdt->asl_compiler_id, ASLC, 4);
+			ssdt->asl_compiler_revision = asl_revision;
+			ssdt->length = sizeof(acpi_header_t);
+
+			acpigen_set_current((char *)current);
+
+			/* Write object to declare coreboot tables */
+			acpi_ssdt_write_cbtable();
+
+			/* (Re)calculate length and checksum. */
+			ssdt->length = current - (unsigned long)ssdt;
+			ssdt->checksum = acpi_checksum((void *)ssdt, ssdt->length);
+
+			acpi_create_ssdt_generator(ssdt, NULL);
+
+			acpi_add_table(rsdp, ssdt);
 		}
-
-		/* Add BOOT0000 for Linux google firmware driver */
-		printk(BIOS_DEBUG, "ACPI:     * SSDT\n");
-		ssdt = (acpi_header_t *)current;
-		current += sizeof(acpi_header_t);
-
-		memset((void *)ssdt, 0, sizeof(acpi_header_t));
-
-		memcpy(&ssdt->signature, "SSDT", 4);
-		ssdt->revision = get_acpi_table_revision(SSDT);
-		memcpy(&ssdt->oem_id, OEM_ID, 6);
-		memcpy(&ssdt->oem_table_id, oem_table_id, 8);
-		ssdt->oem_revision = 42;
-		memcpy(&ssdt->asl_compiler_id, ASLC, 4);
-		ssdt->asl_compiler_revision = asl_revision;
-		ssdt->length = sizeof(acpi_header_t);
-
-		acpigen_set_current((char *)current);
-
-		/* Write object to declare coreboot tables */
-		acpi_ssdt_write_cbtable();
-
-		/* (Re)calculate length and checksum. */
-		ssdt->length = current - (unsigned long)ssdt;
-		ssdt->checksum = acpi_checksum((void *)ssdt, ssdt->length);
-
-		acpi_create_ssdt_generator(ssdt, NULL);
-
-		acpi_add_table(rsdp, ssdt);
 
 		return fw;
 	}
