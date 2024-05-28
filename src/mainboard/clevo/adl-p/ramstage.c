@@ -96,9 +96,9 @@ static void set_cpu_throttling_threshold(void)
 	cpu_throttling_threshold = get_cpu_throttling_threshold();
 	printk(BIOS_DEBUG, "CPU throttling threshold: %d\n", cpu_throttling_threshold);
 
-	// read tjmax from EDK2 kconfig
+	// read tjmax from config
 	uint8_t tjmax;
-	tjmax = get_cpu_max_temperature();
+	tjmax = CONFIG(CPU_MAX_TEMPERATURE);
 	printk(BIOS_DEBUG, "CPU max. temperature (TjMax): %d\n", tjmax);
 
 	cfg->tcc_offset = tjmax - cpu_throttling_threshold;
@@ -139,9 +139,8 @@ static void mainboard_init(void *chip_info)
 	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
 	mainboard_configure_gpios();
-#if CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION)
-	set_cpu_throttling_threshold();
-#endif
+	if (CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION))
+		set_cpu_throttling_threshold();
 	set_fan_curve();
 	set_camera_enablement();
 	set_battery_thresholds();

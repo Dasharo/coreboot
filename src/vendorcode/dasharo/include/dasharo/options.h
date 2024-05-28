@@ -26,7 +26,6 @@
 #define BATTERY_STOP_THRESHOLD_DEFAULT 98
 
 #define CPU_THROTTLING_THRESHOLD_DEFAULT 80
-#define CPU_MAX_TEMPERATURE_DEFAULT 100
 
 enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
@@ -255,14 +254,5 @@ bool dasharo_apu_cpu_boost_enabled(void);
  *  returns uint8 - cpu_throttling_threshold
  */
 uint8_t get_cpu_throttling_threshold(void);
-
-/* Looks up Dasharo/"CpuMaxTemperaure" variable to return the maximum CPU
- * temperature (TjMax).
- *
- * Result:
- *  returns uint8 - tjmax
- */
-uint8_t get_cpu_max_temperature(void);
-
 
 #endif /* DASHARO_OPTIONS_H */
