@@ -98,7 +98,7 @@ static void set_cpu_throttling_threshold(void)
 
 	// read tjmax from config
 	uint8_t tjmax;
-	tjmax = CONFIG(CPU_MAX_TEMPERATURE);
+	tjmax = CONFIG_CPU_MAX_TEMPERATURE;
 	printk(BIOS_DEBUG, "CPU max. temperature (TjMax): %d\n", tjmax);
 
 	cfg->tcc_offset = tjmax - cpu_throttling_threshold;
