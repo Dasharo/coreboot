@@ -327,6 +327,26 @@ bool get_ps2_option(void)
 	return ps2_en;
 }
 
+uint8_t get_cpu_throttling_threshold(void)
+{
+	uint8_t cpu_throttling_threshold = CPU_THROTTLING_THRESHOLD_DEFAULT;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("CpuThrottlingThreshold", &cpu_throttling_threshold);
+
+	return cpu_throttling_threshold;
+}
+
+uint8_t get_cpu_max_temperature(void)
+{
+	uint8_t tjmax = CPU_MAX_TEMPERATURE_DEFAULT;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("CpuMaxTemperature", &tjmax);
+
+	return tjmax;
+}
+
 uint8_t get_sleep_type_option(void)
 {
 	uint8_t sleep_type = CONFIG(DASHARO_PREFER_S3_SLEEP) ? SLEEP_TYPE_OPTION_S3
