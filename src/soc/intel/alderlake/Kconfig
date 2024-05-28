@@ -561,4 +561,11 @@ config HSPHY_FW_MAX_SIZE
 config HAVE_BMP_LOGO_COMPRESS_LZMA
 	default n
 
+config CPU_MAX_TEMPERATURE
+	int "CPU maximum temperature (TjMax)"
+	default 100
+	help
+	  Maximum temperature allowed for the CPU family. If in doubt, check
+	  the datasheets.
+
 endif

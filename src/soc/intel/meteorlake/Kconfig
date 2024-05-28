@@ -467,4 +467,11 @@ config SOC_PHYSICAL_ADDRESS_WIDTH
 	int
 	default 42
 
+config CPU_MAX_TEMPERATURE
+	int "CPU maximum temperature (TjMax)"
+	default 110
+	help
+	  Maximum temperature allowed for the CPU family. If in doubt, check
+	  the datasheets.
+
 endif
