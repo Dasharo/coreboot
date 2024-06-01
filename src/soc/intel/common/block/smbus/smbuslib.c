@@ -42,14 +42,12 @@ static void smbus_read_spd(u8 *spd, u8 addr)
 
 static void switch_page(u8 spd_addr, u8 new_page)
 {
-	u32 page_ptr;
 	/*
 	 *  By default, an SPD5 hub accepts 1 byte addressing pointing
 	 *  to the first 128 bytes of memory. MR11[2:0] selects the page
 	 *  pointer to address the entire 1024 bytes of non-volatile memory.
 	 */
-	page_ptr = SPD5_MEMREG_REG(SPD5_MR11);
-	smbus_write_byte(spd_addr, page_ptr, new_page);
+	smbus_write_byte(spd_addr, SPD5_MEMREG_REG(SPD5_MR11), new_page);
 }
 
 /*
@@ -91,8 +89,7 @@ static int is_spd5_hub(u8 spd_addr)
  */
 static void reset_page_spd5(u8 spd_addr)
 {
-	/* Set SPD5 MR11[2:0] = 0 (Page 0) */
-	smbus_write_byte(spd_addr, SPD5_MEMREG_REG(SPD5_MR11), 0);
+	switch_page(spd_addr, 0);
 }
 
 /* return -1 if SMBus errors otherwise return 0 */
@@ -110,35 +107,29 @@ static int get_spd(u8 *spd, u8 addr)
 		return -1;
 	}
 
-	/* DDR5 */
 	if (is_spd5_hub(addr)) {
-		smbus_read_spd5(spd, addr, CONFIG_DIMM_SPD_SIZE);
+		smbus_read_spd5(spd, addr, SPD_LEN_DDR5);
 
 		/* Reset the page for the next loop iteration */
 		reset_page_spd5(addr);
-	/* DDR4 */
-	} else if (spd[SPD_DRAM_TYPE] == SPD_DRAM_DDR4 &&
-		   CONFIG_DIMM_SPD_SIZE > SPD_PAGE_LEN) {
-
-		if (i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd) < 0) {
-			printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
-			smbus_read_spd(spd, addr);
-		}
-
-		/* Switch to page 1 */
-		smbus_write_byte(SPD_PAGE_1, 0, 0);
-
-		if (i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd + SPD_PAGE_LEN) < 0) {
-			printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
-			smbus_read_spd(spd + SPD_PAGE_LEN, addr);
-		}
-		/* Restore to page 0 */
-		smbus_write_byte(SPD_PAGE_0, 0, 0);
-	/* older */
 	} else {
 		if (i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd) < 0) {
 			printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
 			smbus_read_spd(spd, addr);
+		}
+
+		/* Check if module is DDR4, DDR4 spd is 512 byte. */
+		if (spd[SPD_DRAM_TYPE] == SPD_DRAM_DDR4 &&
+					CONFIG_DIMM_SPD_SIZE > SPD_PAGE_LEN) {
+			/* Switch to page 1 */
+			smbus_write_byte(SPD_PAGE_1, 0, 0);
+
+			if (i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd + SPD_PAGE_LEN) < 0) {
+				printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
+				smbus_read_spd(spd + SPD_PAGE_LEN, addr);
+			}
+			/* Restore to page 0 */
+			smbus_write_byte(SPD_PAGE_0, 0, 0);
 		}
 	}
 	return 0;
