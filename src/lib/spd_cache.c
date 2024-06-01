@@ -212,10 +212,10 @@ enum cb_err spd_fill_from_cache(uint8_t *spd_cache, struct spd_block *blk)
 
 	dram_type = *(spd_cache + SC_SPD_OFFSET(i) + SPD_MEMORY_TYPE);
 
-	if (dram_type == SPD_MEMORY_TYPE_DDR5_SDRAM)
+	if (dram_type == SPD_DRAM_DDR5)
 		blk->len = CONFIG_DIMM_SPD_SIZE;
-	else if (dram_type == SPD_MEMORY_TYPE_DDR4_SDRAM)
-		blk->len = SPD_SIZE_MAX_DDR4;
+	else if (dram_type == SPD_DRAM_DDR4)
+		blk->len = SPD_PAGE_LEN_DDR4;
 	else
 		blk->len = SPD_SIZE_MAX_DDR3;
 
