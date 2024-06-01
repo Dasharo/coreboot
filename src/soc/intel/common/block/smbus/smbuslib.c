@@ -9,6 +9,24 @@
 #include <device/smbus_host.h>
 #include "smbuslib.h"
 
+static void update_spd_len(struct spd_block *blk)
+{
+	u8 i, j = 0;
+	for (i = 0 ; i < CONFIG_DIMM_MAX; i++)
+		if (blk->spd_array[i] != NULL)
+			j |= blk->spd_array[i][SPD_DRAM_TYPE];
+
+	/* If spd used is DDR5, then its length is 1024 byte. */
+	if (j == SPD_DRAM_DDR5)
+		blk->len = CONFIG_DIMM_SPD_SIZE;
+	/* If spd used is DDR4, then its length is 512 byte. */
+	else if (j == SPD_DRAM_DDR4)
+		blk->len = SPD_PAGE_LEN_DDR4;
+	else
+		blk->len = SPD_PAGE_LEN;
+}
+
+
 static void spd_read(u8 *spd, u8 addr)
 {
 	u16 i;
@@ -29,7 +47,7 @@ static void spd_read(u8 *spd, u8 addr)
 static void switch_page(u8 spd_addr, u8 new_page)
 {
 	/*
-	 *  By default,an SPD5 hub accepts 1 byte addressing pointing
+	 *  By default, an SPD5 hub accepts 1 byte addressing pointing
 	 *  to the first 128 bytes of memory. MR11[2:0] selects the page
 	 *  pointer to address the entire 1024 bytes of non-volatile memory.
 	 */
@@ -102,25 +120,25 @@ static int get_spd(u8 *spd, u8 addr)
 	} else {
 		/* IMC doesn't support i2c eeprom read. */
 		if (CONFIG(SOC_INTEL_COMMON_BLOCK_IMC) ||
-		    i2c_eeprom_read(addr, 0, SPD_SIZE_MAX_DDR3, spd) < 0) {
+		    i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd) < 0) {
 			printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
 			spd_read(spd, addr);
 		}
 
 		/* Check if module is DDR4, DDR4 spd is 512 byte. */
-		if (spd[SPD_MEMORY_TYPE] == SPD_MEMORY_TYPE_DDR4_SDRAM &&
-		    CONFIG_DIMM_SPD_SIZE > SPD_SIZE_MAX_DDR3) {
+		if (spd[SPD_DRAM_TYPE] == SPD_DRAM_DDR4 &&
+					CONFIG_DIMM_SPD_SIZE > SPD_PAGE_LEN) {
 			/* Switch to page 1 */
-			spd_write_byte(SPD_PAGE_1, 0, 0);
+			smbus_write_byte(SPD_PAGE_1, 0, 0);
 
 			/* IMC doesn't support i2c eeprom read. */
 			if (CONFIG(SOC_INTEL_COMMON_BLOCK_IMC) ||
-			    i2c_eeprom_read(addr, 0, SPD_SIZE_MAX_DDR3, spd + SPD_SIZE_MAX_DDR3) < 0) {
+					i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd + SPD_PAGE_LEN) < 0) {
 				printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
-				spd_read(spd + SPD_SIZE_MAX_DDR3, addr);
+				spd_read(spd + SPD_PAGE_LEN, addr);
 			}
 			/* Restore to page 0 */
-			spd_write_byte(SPD_PAGE_0, 0, 0);
+			smbus_write_byte(SPD_PAGE_0, 0, 0);
 		}
 	}
 
