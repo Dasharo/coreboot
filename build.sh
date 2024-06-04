@@ -5,21 +5,23 @@ set -euo pipefail
 usage() {
   echo "${0} CMD"
   echo "Available CMDs:"
-  echo -e "\tz690a_ddr4  - build Dasharo image compatible with MSI PRO Z690-A (WIFI) DDR4"
+  echo -e "\tz690a_ddr4 - build Dasharo image compatible with MSI PRO Z690-A (WIFI) DDR4"
   echo -e "\tz690a_ddr5 - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
-  echo -e "\tz790p_ddr4  - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
+  echo -e "\tz790p_ddr4 - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
   echo -e "\tz790p_ddr5 - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
-  echo -e "\tvp66xx- build Dasharo for Protectli VP66xx"
-  echo -e "\tvp46xx- build Dasharo for Protectli VP46xx"
-  echo -e "\tvp2420- build Dasharo for Protectli VP2420"
-  echo -e "\tvp2410- build Dasharo for Protectli VP2410"
-  echo -e "\tV1210- build Dasharo for Protectli V1210"
-  echo -e "\tV1410- build Dasharo for Protectli V1410"
-  echo -e "\tV1610- build Dasharo for Protectli V1610"
-  echo -e "\tapu2 - build Dasharo for PC Engines APU2"
-  echo -e "\tapu3 - build Dasharo for PC Engines APU3"
-  echo -e "\tapu4 - build Dasharo for PC Engines APU4"
-  echo -e "\tapu6 - build Dasharo for PC Engines APU6"
+  echo -e "\tvp66xx     - build Dasharo for Protectli VP66xx"
+  echo -e "\tvp46xx     - build Dasharo for Protectli VP46xx"
+  echo -e "\tvp2420     - build Dasharo for Protectli VP2420"
+  echo -e "\tvp2410     - build Dasharo for Protectli VP2410"
+  echo -e "\tV1210      - build Dasharo for Protectli V1210"
+  echo -e "\tV1410      - build Dasharo for Protectli V1410"
+  echo -e "\tV1610      - build Dasharo for Protectli V1610"
+  echo -e "\tapu2       - build Dasharo for PC Engines APU2"
+  echo -e "\tapu3       - build Dasharo for PC Engines APU3"
+  echo -e "\tapu4       - build Dasharo for PC Engines APU4"
+  echo -e "\tapu6       - build Dasharo for PC Engines APU6"
+  echo -e "\tqemu       - build Dasharo for QEMU Q35"
+  echo -e "\tqemu_full  - build Dasharo for QEMU Q35 with all menus available"
 }
 
 SDKVER="2023-11-24_2731fa619b"
@@ -153,6 +155,38 @@ function build_pcengines {
   fi
 }
 
+function build_qemu {
+  DEFCONFIG="configs/config.emulation_qemu_x86_q35_uefi${1:-}"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  # checkout several submodules needed by these boards (some others are checked
+  # out by coreboot's Makefile)
+  git submodule update --init --force --checkout \
+      3rdparty/dasharo-blobs
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    /bin/bash -c "make distclean"
+
+  cp $DEFCONFIG .config
+
+  echo "Building Dasharo for QEMU Q35 (version $FW_VERSION)"
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+  cp build/coreboot.rom qemu_q35_${FW_VERSION}.rom
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/qemu_q35_${FW_VERSION}.rom"
+    sha256sum qemu_q35_${FW_VERSION}.rom > qemu_q35_${FW_VERSION}.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
 
 CMD="$1"
 
@@ -212,6 +246,12 @@ case "$CMD" in
         ;;
     "apu6" | "APU6" )
         build_pcengines "apu6"
+        ;;
+    "qemu" | "QEMU" | "q35" | "Q35" )
+        build_qemu
+        ;;
+    "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" )
+        build_qemu "_all_menus"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
