@@ -146,7 +146,7 @@ static void init_mainboard(void *chip_info)
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
-	if CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION)
+	if (CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION))
 		set_cpu_throttling_threshold();
 }
 
