@@ -25,8 +25,10 @@ endif
 
 OBJCOPY = $(GCC_PREFIX)objcopy
 
+PAYLOAD_NAME=DasharoPayloadPkg
+
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
-BUILD_STR = -p UefiPayloadPkg/UefiPayloadPkg.dsc
+BUILD_STR = -p $(PAYLOAD_NAME)/$(PAYLOAD_NAME).dsc
 endif
 BUILD_STR += -t COREBOOT
 BUILD_STR += -D BOOTLOADER=COREBOOT
@@ -166,10 +168,10 @@ ifeq ($(CONFIG_EDK2_PS2_SUPPORT),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPs2Option=TRUE
 # SKIP_PS2_DETECT               = FALSE
 ifeq ($(CONFIG_EDK2_SKIP_PS2_DETECT),y)
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=TRUE
+BUILD_STR += --pcd g$(PAYLOAD_NAME)TokenSpaceGuid.PcdSkipPs2Detect=TRUE
 endif # SKIP_PS2_DETECT
 else
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdSkipPs2Detect=TRUE
+BUILD_STR += --pcd g$(PAYLOAD_NAME)TokenSpaceGuid.PcdSkipPs2Detect=TRUE
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowPs2Option=FALSE
 endif # PS2_KEYBOARD_ENABLE
 # SYSTEM76_EC_LOGGING		= FALSE
@@ -179,7 +181,7 @@ endif
 # NETWORK_IPXE                  = FALSE
 ifeq ($(CONFIG_EDK2_IPXE),y)
 BUILD_STR += -D NETWORK_IPXE=TRUE
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
+BUILD_STR += --pcd g$(PAYLOAD_NAME)TokenSpaceGuid.PcdiPXEOptionName=L"$(CONFIG_EDK2_IPXE_OPTION_NAME)"
 endif
 # SECURE_BOOT_DEFAULT_ENABLE    = TRUE
 ifneq ($(CONFIG_EDK2_SECURE_BOOT_DEFAULT_ENABLE),y)
@@ -289,7 +291,7 @@ BUILD_STR += -D LOAD_OPTION_ROMS=FALSE
 endif
 # PRINT_SOL_STRINGS             = FALSE
 ifeq ($(CONFIG_EDK2_PRINT_SOL_STRINGS),y)
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdPrintSolStrings=TRUE
+BUILD_STR += --pcd g$(PAYLOAD_NAME)TokenSpaceGuid.PcdPrintSolStrings=TRUE
 endif
 # CREATE_PREINSTALLED_BOOT_OPTIONS = FALSE
 ifeq ($(CONFIG_EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS),y)
@@ -373,7 +375,7 @@ ifneq ($(CONFIG_EDK2_CUSTOM_BUILD_PARAMS),)
 BUILD_STR += $(CONFIG_EDK2_CUSTOM_BUILD_PARAMS)
 endif
 
-all: UefiPayloadPkg
+all: $(PAYLOAD_NAME)
 
 $(WORKSPACE):
 	mkdir $(WORKSPACE)
@@ -401,8 +403,8 @@ $(EDK2_PATH): $(WORKSPACE)
 	fi
 	cd $(EDK2_PATH); \
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
-		if [ -e UefiPayloadPkg/ShimLayer/UniversalPayload.o ]; then \
-			rm UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
+		if [ -e $(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o ]; then \
+			rm $(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o; \
 		fi; \
 		echo "    Fetching new commits from $(CONFIG_EDK2_REPOSITORY)"; \
 		git fetch origin 2>/dev/null; \
@@ -431,27 +433,27 @@ logo: $(EDK2_PATH)
 gop_driver: $(EDK2_PATH)
 	if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
 		echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
-		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/UefiPayloadPkg/IntelGopDriver.efi; \
-		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/UefiPayloadPkg/vbt.bin; \
+		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/$(PAYLOAD_NAME)/IntelGopDriver.efi; \
+		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/$(PAYLOAD_NAME)/vbt.bin; \
 	fi; \
 
 lan_rom: $(EDK2_PATH)
 	case "$(CONFIG_EDK2_LAN_ROM_DRIVER)" in \
 		"") ;; \
-		/*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+		/*) mkdir -p $(EDK2_PATH)/$(PAYLOAD_NAME)/NetworkDrivers/; \
 		    cp $(CONFIG_EDK2_LAN_ROM_DRIVER) \
-				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
-		*) mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+				$(EDK2_PATH)/$(PAYLOAD_NAME)/NetworkDrivers/LanRom.efi;; \
+		*) mkdir -p $(EDK2_PATH)/$(PAYLOAD_NAME)/NetworkDrivers/; \
 		   cp $(top)/$(CONFIG_EDK2_LAN_ROM_DRIVER) \
-				$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/LanRom.efi;; \
+				$(EDK2_PATH)/$(PAYLOAD_NAME)/NetworkDrivers/LanRom.efi;; \
 	esac \
 
 ipxe_rom: $(EDK2_PATH)
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
-		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+		mkdir -p $(EDK2_PATH)/$(PAYLOAD_NAME)/NetworkDrivers/; \
 		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
-			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+			$(EDK2_PATH)/$(PAYLOAD_NAME)/NetworkDrivers/ipxe.efi; \
 	fi \
 
 checktools:
@@ -501,49 +503,49 @@ prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_r
 			cat ../tools_def.txt >> $(EDK2_PATH)/Conf/tools_def.txt; \
 		fi; \
 
-$(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd: \
+$(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd: \
 	prep print
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		echo -n "EDK2: Building... "; \
 		build -a IA32 -a X64 -b $(RELEASE_STR) $(BUILD_STR) \
-			-y $(WORKSPACE)/Build/UefiPayloadPkgX64/UEFIPAYLOAD.txt; \
+			-y $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/UEFIPAYLOAD.txt; \
 		if [ ! -f $@ ]; then \
 			echo "Failed!"; \
 			exit 1; \
 		fi
 		echo "Success!"; \
 
-$(WORKSPACE)/Build/UefiPayloadPkgX64/UniversalPayload.elf: \
+$(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/UniversalPayload.elf: \
 	prep print
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		echo -n "EDK2: Building... "; \
-		$(EDK2_PATH)/UefiPayloadPkg/UniversalPayloadBuild.sh -a IA32 -b $(RELEASE_STR) $(BUILD_STR)
+		$(EDK2_PATH)/$(PAYLOAD_NAME)/UniversalPayloadBuild.sh -a IA32 -b $(RELEASE_STR) $(BUILD_STR)
 		if [ ! -f $@ ]; then \
 			echo "Failed!"; \
 			exit 1; \
 		fi
 		echo "Success!"; \
 
-$(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/IA32/UefiPayloadPkg/ShimLayer/ShimLayer/DEBUG/ShimLayer.dll: \
-		$(WORKSPACE)/Build/UefiPayloadPkgX64/UniversalPayload.elf prep
-	cd $(WORKSPACE)/Build/UefiPayloadPkgX64 && \
+$(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_COREBOOT/IA32/$(PAYLOAD_NAME)/ShimLayer/ShimLayer/DEBUG/ShimLayer.dll: \
+		$(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/UniversalPayload.elf prep
+	cd $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64 && \
 		$(OBJCOPY) -I binary UniversalPayload.elf -O elf32-i386 -B i386 \
-			$(EDK2_PATH)/UefiPayloadPkg/ShimLayer/UniversalPayload.o; \
+			$(EDK2_PATH)/$(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o; \
 	cd $(WORKSPACE) && \
 		source $(EDK2_PATH)/edksetup.sh; \
-		build -p UefiPayloadPkg/UefiPayloadPkg.dsc -b $(RELEASE_STR) -a IA32 -a X64 \
-			-m UefiPayloadPkg/ShimLayer/ShimLayer.inf \
+		build -p $(PAYLOAD_NAME)/$(PAYLOAD_NAME).dsc -b $(RELEASE_STR) -a IA32 -a X64 \
+			-m $(PAYLOAD_NAME)/ShimLayer/ShimLayer.inf \
 			-t COREBOOT -D BOOTLOADER=COREBOOT -D SHIMLAYER=TRUE \
-			-y $(WORKSPACE)/Build/UefiPayloadPkgX64/ShimLayer.txt
+			-y $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/ShimLayer.txt
 
-UefiPayloadPkg: $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd
-	mv $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd \
+$(PAYLOAD_NAME): $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd
+	mv $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_COREBOOT/FV/UEFIPAYLOAD.fd \
 		../../../build/UEFIPAYLOAD.fd
 
-UniversalPayload: $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/IA32/UefiPayloadPkg/ShimLayer/ShimLayer/DEBUG/ShimLayer.dll
-	mv $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_COREBOOT/IA32/UefiPayloadPkg/ShimLayer/ShimLayer/DEBUG/ShimLayer.dll \
+UniversalPayload: $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_COREBOOT/IA32/$(PAYLOAD_NAME)/ShimLayer/ShimLayer/DEBUG/ShimLayer.dll
+	mv $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_COREBOOT/IA32/$(PAYLOAD_NAME)/ShimLayer/ShimLayer/DEBUG/ShimLayer.dll \
 		../../../build/ShimmedUniversalPayload.elf
 
 clean:
@@ -552,4 +554,4 @@ clean:
 distclean:
 	rm -rf $(WORKSPACE)
 
-.PHONY: $(EDK2_PATH) checktools logo UefiPayloadPkg UniversalPayload clean distclean
+.PHONY: $(EDK2_PATH) checktools logo $(PAYLOAD_NAME) UniversalPayload clean distclean
