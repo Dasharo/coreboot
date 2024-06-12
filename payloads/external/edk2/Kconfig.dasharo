@@ -203,6 +203,27 @@ config EDK2_DASHARO_SERIAL_REDIRECTION2_DEFAULT_ENABLE
 	  Enable serial port output on second UART in edk2 by default. Serial
 	  output limits the performance of edk2's FrontPage.
 
+config EDK2_DASHARO_CPU_CONFIG
+	bool "Enable EDK2 Dasharo CPU Configuration Menu"
+	default n
+	help
+	  Enables the EDK2 CPU configuration submenu in Dasharo System Features menu.
+
+config EDK2_CORE_DISABLE_OPTION
+	bool "Show CPU core disabling option in Dasharo CPU Configuration Menu"
+	depends on EDK2_DASHARO_CPU_CONFIG
+	help
+	  Shows the CPU core disabling option in EDK2 CPU configuration submenu in
+	  Dasharo System Features menu.
+
+config EDK2_HYPERTHREADING_OPTION
+	bool "Show CPU Hyper-Threading option in Dasharo CPU Configuration Menu"
+	depends on EDK2_DASHARO_CPU_CONFIG
+	default n
+	help
+	  Shows the CPU Hyper-Threading option in EDK2 CPU configuration submenu in
+	  Dasharo System Features menu.
+
 endif
 
 config EDK2_BOOT_MENU_KEY
