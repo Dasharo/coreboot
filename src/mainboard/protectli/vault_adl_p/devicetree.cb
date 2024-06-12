@@ -255,7 +255,7 @@ chip soc/intel/alderlake
 
 		device ref pcie_rp10 on
 			register "pch_pcie_rp[PCH_RP(10)]" = "{
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
+				.flags = PCIE_RP_LTR | PCIE_RP_CLK_REQ_UNUSED,
 				.pcie_rp_aspm = ASPM_L0S_L1,
 				.PcieRpL1Substates = L1_SS_DISABLED,
 				.clk_src = 4,
