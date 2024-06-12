@@ -25,6 +25,8 @@
 #define BATTERY_START_THRESHOLD_DEFAULT 95
 #define BATTERY_STOP_THRESHOLD_DEFAULT 98
 
+#define ALL_CORES_ACTIVE 0xff
+
 enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
 	ME_MODE_DISABLE_HECI = 1,
@@ -244,5 +246,33 @@ uint16_t dasharo_apu_watchdog_timeout(void);
  *  - false - CPU boost should not be enabled on boot
  */
 bool dasharo_apu_cpu_boost_enabled(void);
+
+/* Looks Dasharo/"CoreActiveCount" variable to check how many cores should be
+ * active.
+ *
+ *
+ * Result:
+ *  - Number of active cores
+ */
+uint8_t get_active_core_count_option(void);
+
+/* Looks Dasharo/"SmallCoreActiveCount" variable to check how many small cores
+ * should be active.
+ *
+ *
+ * Result:
+ *  - Number of active cores
+ */
+uint8_t get_active_small_core_count_option(void);
+
+/* Looks Dasharo/"HyperThreading" variable to check Hyper-Threading should be
+ * enabled.
+ *
+ *
+ * Result:
+ *  - true  - Hyper-Threading enabled
+ *  - false - Hyper-Threading disabled
+ */
+bool get_hyper_threading_option(void);
 
 #endif /* DASHARO_OPTIONS_H */
