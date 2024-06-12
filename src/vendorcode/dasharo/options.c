@@ -468,3 +468,36 @@ bool dasharo_apu_cpu_boost_enabled(void)
 {
 	return get_apu_config().CorePerfBoost;
 }
+
+
+uint8_t get_active_core_count_option(void)
+{
+	uint8_t count = ALL_CORES_ACTIVE;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("CoreActiveCount", &count);
+
+	return count;
+}
+
+uint8_t get_active_small_core_count_option(void)
+{
+	uint8_t count = ALL_CORES_ACTIVE;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("SmallCoreActiveCount", &count);
+
+	return count;
+}
+
+bool get_hyper_threading_option(void)
+{
+	bool ht_en;
+	
+	ht_en = get_uint_option("hyper_threading", CONFIG(FSP_HYPERTHREADING));
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("HyperThreading", &ht_en);
+
+	return ht_en;
+}
