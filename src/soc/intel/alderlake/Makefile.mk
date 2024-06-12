@@ -12,6 +12,7 @@ bootblock-y += bootblock/report_platform.c
 bootblock-y += p2sb.c
 bootblock-$(CONFIG_ALDERLAKE_CONFIGURE_DESCRIPTOR) += bootblock/update_descriptor.c
 
+romstage-y += cpu_util.c
 romstage-$(CONFIG_SOC_INTEL_CSE_PRE_CPU_RESET_TELEMETRY) += cse_telemetry.c
 romstage-y += meminit.c
 romstage-y += pcie_rp.c
