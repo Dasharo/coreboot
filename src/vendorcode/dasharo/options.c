@@ -483,7 +483,7 @@ uint8_t get_active_small_core_count_option(void)
 bool get_hyper_threading_option(void)
 {
 	bool ht_en;
-	
+
 	ht_en = get_uint_option("hyper_threading", CONFIG(FSP_HYPERTHREADING));
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
