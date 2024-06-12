@@ -347,13 +347,21 @@ endif
 ifeq ($(CONFIG_EDK2_SERIAL_ON_SUPERIO),y)
 BUILD_STR += -D UART_ON_SUPERIO=TRUE
 endif
-# CPU THROTTLING
-ifeq ($(CONFIG_EDK2_CPU_THROTTLING_THRESHOLD_OPTION),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuThrottlingThreshold=TRUE
+# PcdShowCpuMenu = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_CPU_CONFIG),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuMenu=TRUE
 endif
-# CPU MAX TEMPERATURE		= 100
-ifneq ($(CONFIG_CPU_MAX_TEMPERATURE),)
-BUILD_STR += -D CPU_MAX_TEMPERATURE=$(CONFIG_CPU_MAX_TEMPERATURE)
+# PcdShowCpuCoreDisable = FALSE
+ifeq ($(CONFIG_EDK2_CORE_DISABLE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuCoreDisable=TRUE
+endif
+# PcdShowCpuHyperThreading = FALSE
+ifeq ($(CONFIG_EDK2_HYPERTHREADING_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuHyperThreading=TRUE
+endif
+# PcdCpuHyperThreadingDefault = TRUE
+ifneq ($(CONFIG_EDK2_HYPERTHREADING_DEFAULT_STATE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuHyperThreadingDefault=FALSE
 endif
 
 endif
