@@ -16,6 +16,7 @@
 #include <intelblocks/cpulib.h>
 #include <intelblocks/pcie_rp.h>
 #include <option.h>
+#include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
@@ -169,6 +170,8 @@ static void fill_fspm_mrc_params(FSP_M_CONFIG *m_cfg,
 static void fill_fspm_cpu_params(FSP_M_CONFIG *m_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
+	uint8_t max_e_cores, max_p_cores;
+
 	m_cfg->TsegSize = CONFIG_SMM_TSEG_SIZE;
 	/* CpuRatio Settings */
 	if (config->cpu_ratio_override)
@@ -179,7 +182,28 @@ static void fill_fspm_cpu_params(FSP_M_CONFIG *m_cfg,
 
 	m_cfg->PrmrrSize = get_valid_prmrr_size();
 	m_cfg->EnableC6Dram = config->enable_c6dram;
-	m_cfg->HyperThreading = get_uint_option("hyper_threading", CONFIG(FSP_HYPERTHREADING));
+	m_cfg->HyperThreading = get_hyper_threading_option();
+
+	m_cfg->ActiveCoreCount = get_active_core_count_option();
+	m_cfg->ActiveSmallCoreCount = get_active_small_core_count_option();
+
+	get_num_core_types(&max_e_cores, &max_p_cores);
+
+	if (max_e_cores == 0 && max_p_cores == 0) {
+		/* Could not identify SKU, enable all cores */
+		m_cfg->ActiveCoreCount = ALL_CORES_ACTIVE;
+		m_cfg->ActiveSmallCoreCount = ALL_CORES_ACTIVE;
+	}
+
+	if (m_cfg->ActiveCoreCount == 0) {
+		/* Invalid setting, enable all P-cores */
+		m_cfg->ActiveCoreCount = ALL_CORES_ACTIVE;
+	}
+
+	if (max_p_cores == 0 && m_cfg->ActiveSmallCoreCount == 0) {
+		/* Invalid setting, enable all E-cores */
+		m_cfg->ActiveSmallCoreCount = ALL_CORES_ACTIVE;
+	}
 }
 
 static void fill_fspm_security_params(FSP_M_CONFIG *m_cfg,
