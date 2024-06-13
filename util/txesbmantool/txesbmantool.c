@@ -66,6 +66,8 @@ struct sb_manifest {
 	struct key_signature key_sig;
 } __attribute__((packed));
 
+_Static_assert(sizeof(struct sb_manifest) == SB_MANIFEST_SIZE, "Wrong size of SB Manifest structure");
+
 struct key_manifest {
 	struct manifest_header header;
 	uint32_t km_id;
@@ -74,6 +76,8 @@ struct key_manifest {
 	struct key_signature key_sig;
 	uint8_t pad[KEY_MANIFEST_PAD_SIZE];
 } __attribute__((packed));
+
+_Static_assert(sizeof(struct key_manifest) == KEY_MANIFEST_SIZE, "Wrong size of Key Manifest structure");
 
 typedef union {
 	struct sb_manifest sbm;
@@ -122,7 +126,7 @@ static void hexdump(const void *buffer, word32 len, byte cols, word32 indent)
 {
 	word32 i, j;
 
-	if (indent > 0 && len > 0) {
+	if (len > 0) {
 		for (j = 0; j < indent; j++)
 			printf("\t");
 	}
@@ -136,7 +140,7 @@ static void hexdump(const void *buffer, word32 len, byte cols, word32 indent)
 
 		if(i % cols == (word32)(cols - 1)) {
 			printf("\n");
-			if (indent > 0 && i != (len - 1)) {
+			if (i != (len - 1)) {
 				for (j = 0; j < indent; j++)
 					printf("\t");
 			}
@@ -336,7 +340,6 @@ static int create_manifest(secure_boot_manifest *man, enum manifest_type type,
 	}
 
 	if (type == KEY_MANIFEST) {
-		file_size += KEY_MANIFEST_SIZE;
 		memset((byte *)&man->km, 0, KEY_MANIFEST_SIZE);
 
 		man->km.header.magic = KEY_MANIFEST_MAGIC;
@@ -538,8 +541,7 @@ static int save_buffer_to_file(const char *filename, byte *buffer, word32 bufLen
 		goto exit;
 	}
 
-	ret = (int)fwrite(buffer, 1, bufLen, file);
-	if(ret != (int)bufLen) {
+	if(fwrite(buffer, 1, bufLen, file) != bufLen) {
 		ERROR("Error writing %s file! %d", filename, ret);
 		ret = EXIT_FAILURE;
 		goto exit;
@@ -574,8 +576,7 @@ static int load_file_to_buffer(const char *filename, byte **fileBuf, word32 *fil
 		goto exit;
 	}
 
-	ret = (int)fread(*fileBuf, 1, *fileLen, file);
-	if(ret != (int)*fileLen) {
+	if(fread(*fileBuf, 1, *fileLen, file) != *fileLen) {
 		ERROR("Error reading file! %d", ret);
 		ret = EXIT_FAILURE;
 		goto exit;
@@ -678,6 +679,8 @@ static int cmd_generate_sbm(void)
 	if (params.output) {
 		printf("Saving Secure Boot Manifest as %s\n", params.output);
 		ret = save_buffer_to_file(params.output, (byte *)&man.sbm, SB_MANIFEST_SIZE);
+	} else {
+		printf("Not saving Secure Boot Manifest as a file, not requested to\n");
 	}
 
 exit:
@@ -758,6 +761,8 @@ static int cmd_generate_km(void)
 	if (params.output) {
 		printf("Saving Key Manifest as %s\n", params.output);
 		ret = save_buffer_to_file(params.output, (byte *)&man.km, KEY_MANIFEST_SIZE);
+	} else {
+		printf("Not saving Key Manifest as a file, not requested to\n");
 	}
 
 exit:
@@ -889,21 +894,21 @@ exit:
 	return ret;
 }
 
-static int rsa_verify_manifest_signature(secure_boot_manifest *man, enum manifest_type type,
+static int rsa_verify_manifest_signature(const secure_boot_manifest *man, enum manifest_type type,
 					 const char *key_path)
 {
 	int ret;
 	RsaKey rsaKey;
-	struct key_signature *key_struct;
+	struct key_signature key_struct;
 	uint8_t modulus[256];
 	uint32_t exponent = 0;
 	word32 e_size = sizeof(exponent);
 	word32 n_size = sizeof(modulus);
 
-	if (type == KEY_MANIFEST) {
-		key_struct = &man->km.key_sig;
-	} else if (type == SB_MANIFEST)
-		key_struct = &man->sbm.key_sig;
+	if (type == KEY_MANIFEST)
+		memcpy(&key_struct, &man->km.key_sig, sizeof(key_struct));
+	else if (type == SB_MANIFEST)
+		memcpy(&key_struct, &man->sbm.key_sig, sizeof(key_struct));
 	else
 		return EXIT_FAILURE;
 
@@ -932,20 +937,20 @@ static int rsa_verify_manifest_signature(secure_boot_manifest *man, enum manifes
 		goto exit;
 	}
 
-	if (memcmp(modulus, key_struct->modulus, sizeof(modulus))) {
+	if (memcmp(modulus, key_struct.modulus, sizeof(modulus))) {
 		ERROR("RSA key modulus does not match the key used in manifest!\n");
 		ret = EXIT_FAILURE;
 		goto exit;
 	}
 
-	if (exponent != key_struct->exponent) {
+	if (exponent != key_struct.exponent) {
 		ERROR("RSA key exponent does not match the key used in manifest!\n");
-		ERROR("%x != %x\n", exponent, key_struct->exponent);
+		ERROR("%x != %x\n", exponent, key_struct.exponent);
 		ret = EXIT_FAILURE;
 		goto exit;
 	}
 
-	if (swap_bytes(key_struct->signature, sizeof(key_struct->signature))) {
+	if (swap_bytes(key_struct.signature, sizeof(key_struct.signature))) {
 		ERROR("Failed to change RSA Signature endianess!\n");
 		ret = EXIT_FAILURE;
 		goto exit;
@@ -954,15 +959,13 @@ static int rsa_verify_manifest_signature(secure_boot_manifest *man, enum manifes
 	ret = wc_SignatureVerify(WC_HASH_TYPE_SHA256, WC_SIGNATURE_TYPE_RSA_W_ENC,
 				 (byte *)man,
 				 MANIFEST_SIZE - sizeof(struct key_signature),
-				 key_struct->signature, sizeof(key_struct->signature),
+				 key_struct.signature, sizeof(key_struct.signature),
 				 &rsaKey, sizeof(rsaKey));
+
 	if (ret != 0) {
 		ERROR("Manifest signature verification failed!\n");
 		goto exit;
 	}
-
-	/* Return the endianess of its previous state */
-	swap_bytes(key_struct->signature, sizeof(key_struct->signature));
 
 exit:
 	wc_FreeRsaKey(&rsaKey);
@@ -1012,7 +1015,7 @@ static int print_key_hash_for_txe(const secure_boot_manifest *man, enum manifest
 {
 	int ret;
 	wc_Sha256 sha256;
-	struct key_signature *key_struct;
+	const struct key_signature *key_struct;
 	uint8_t key_hash[32];
 
 	if (type == KEY_MANIFEST) {
