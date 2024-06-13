@@ -106,7 +106,7 @@ static off_t get_file_size(FILE *f)
 	return fsize;
 }
 
-static bool mem_is_zero(byte *memory, word32 size)
+static bool mem_is_zero(const byte *memory, word32 size)
 {
 	for (word32 i = 0; i < size; i++) {
 		if (memory[i] == 0)
@@ -161,7 +161,7 @@ static void print_magic(uint32_t magic)
 		(unsigned char)((magic >> 24) & 0xff));
 }
 
-static int swap_bytes(byte* buffer, word32 len)
+static int swap_bytes(byte *buffer, word32 len)
 {
 	byte *tmp;
 
@@ -184,7 +184,7 @@ static int swap_bytes(byte* buffer, word32 len)
 	return 0;
 }
 
-static int rsa_load_key_file(const char* keyFile, RsaKey *rsaKey)
+static int rsa_load_key_file(const char *keyFile, RsaKey *rsaKey)
 {
 	int ret = EXIT_FAILURE;
 	FILE *file;
@@ -281,7 +281,7 @@ static int calculate_key_hash(RsaKey *rsaKey, byte *key_hash)
 	return ret;
 }
 
-static int calculate_ibb_hash(byte *buffer, byte *ibb_hash)
+static int calculate_ibb_hash(const byte *buffer, byte *ibb_hash)
 {
 	int ret;
 	wc_Sha256 sha256;
@@ -313,7 +313,7 @@ static int calculate_ibb_hash(byte *buffer, byte *ibb_hash)
 }
 
 static int create_manifest(secure_boot_manifest *man, enum manifest_type type,
-			   byte* romBuf, word32 romLen, byte* oemData, word32 oemDataLen,
+			   const byte *romBuf, word32 romLen, const byte *oemData, word32 oemDataLen,
 			   word32 manifestSVN)
 {
 	int ret;
@@ -526,7 +526,7 @@ exit:
 	return ret;
 }
 
-static int save_buffer_to_file(const char* filename, byte *buffer, word32 bufLen)
+static int save_buffer_to_file(const char *filename, byte *buffer, word32 bufLen)
 {
 	int ret = 0;
 	FILE* file = NULL;
@@ -553,10 +553,10 @@ exit:
 	return ret;
 }
 
-static int load_file_to_buffer(const char* filename, byte** fileBuf, word32* fileLen)
+static int load_file_to_buffer(const char *filename, byte **fileBuf, word32 *fileLen)
 {
 	int ret = 0;
-	FILE* file = NULL;
+	FILE *file = NULL;
 
 	file = fopen(filename, "rb");
 	if (file == NULL) {
@@ -589,7 +589,7 @@ exit:
 	return ret;
 }
 
-static int inject_manifest_to_binary(const char* filename, byte* fileBuf, word32 fileLen,
+static int inject_manifest_to_binary(const char *filename, byte *fileBuf, word32 fileLen,
 				     secure_boot_manifest *man, enum manifest_type type)
 {
 	word32 file_size;
@@ -623,9 +623,9 @@ static int cmd_generate_sbm(void)
 {
 	int ret = 0;
 	word32 fileLen;
-	byte* fileBuf = NULL;
+	byte *fileBuf = NULL;
 	word32 oemDataFileLen = 0;
-	byte* oemDataFileBuf = NULL;
+	byte *oemDataFileBuf = NULL;
 	word32 manifest_svn = params.override_svn ? params.svn : 2;
 	secure_boot_manifest man;
 
@@ -696,7 +696,7 @@ static int cmd_generate_km(void)
 {
 	int ret = 0;
 	word32 fileLen;
-	byte* fileBuf = NULL;
+	byte *fileBuf = NULL;
 	word32 manifest_svn = params.override_svn ? params.svn : 2;
 	secure_boot_manifest man;
 
@@ -769,7 +769,7 @@ exit:
 	return ret;
 }
 
-static void print_manifest_header(struct manifest_header *mh)
+static void print_manifest_header(const struct manifest_header *mh)
 {
 	printf("\tMagic: ");
 	print_magic(mh->magic);
@@ -779,7 +779,7 @@ static void print_manifest_header(struct manifest_header *mh)
 }
 
 
-static void print_key_signature(struct key_signature *ks)
+static void print_key_signature(const struct key_signature *ks)
 {
 	printf("\tKey modulus:\n");
 	hexdump(ks->modulus, sizeof(ks->modulus), 16, 2);
@@ -788,7 +788,7 @@ static void print_key_signature(struct key_signature *ks)
 	hexdump(ks->signature, sizeof(ks->signature), 16, 2);
 }
 
-static void print_key_manifest(struct key_manifest *km)
+static void print_key_manifest(const struct key_manifest *km)
 {
 	printf("Key Manifest:\n");
 	print_manifest_header(&km->header);
@@ -799,7 +799,7 @@ static void print_key_manifest(struct key_manifest *km)
 	printf("\n\n");
 }
 
-static void print_sb_manifest(struct sb_manifest *sbm)
+static void print_sb_manifest(const struct sb_manifest *sbm)
 {
 	printf("Secure Boot Manifest:\n");
 	print_manifest_header(&sbm->header);
@@ -815,7 +815,7 @@ static int cmd_print(void)
 {
 	int ret = 0;
 	word32 fileLen;
-	byte* fileBuf = NULL;
+	byte *fileBuf = NULL;
 	bool sbm_found = false;
 	bool km_found = false;
 	word32 offset;
@@ -970,7 +970,7 @@ exit:
 	return ret;
 }
 
-static int verify_sb_key_hash(secure_boot_manifest *man)
+static int verify_sb_key_hash(const secure_boot_manifest *man)
 {
 	int ret;
 	RsaKey rsaKey;
@@ -1008,7 +1008,7 @@ exit:
 	return ret;
 }
 
-static int print_key_hash_for_txe(secure_boot_manifest *man, enum manifest_type type)
+static int print_key_hash_for_txe(const secure_boot_manifest *man, enum manifest_type type)
 {
 	int ret;
 	wc_Sha256 sha256;
@@ -1058,7 +1058,7 @@ static int print_key_hash_for_txe(secure_boot_manifest *man, enum manifest_type 
 	return ret;
 }
 
-static int verify_ibb_hash(secure_boot_manifest *man, byte* fileBuf, int fileLen)
+static int verify_ibb_hash(const secure_boot_manifest *man, const byte *fileBuf, int fileLen)
 {
 	int ret;
 	uint8_t ibb_hash[32];
@@ -1082,10 +1082,10 @@ static int cmd_verify(void)
 {
 	int ret = 0;
 	word32 fileLen;
-	byte* fileBuf = NULL;
+	byte *fileBuf = NULL;
 	word32 offset;
-	secure_boot_manifest *km = NULL;
-	secure_boot_manifest *sbm = NULL;
+	const secure_boot_manifest *km = NULL;
+	const secure_boot_manifest *sbm = NULL;
 
 	if (params.file_name) {
 		ret = load_file_to_buffer(params.file_name, &fileBuf, &fileLen);
@@ -1446,7 +1446,7 @@ int main(int argc, char **argv)
 	}
 
 	if (i == ARRAY_SIZE(commands)) {
-		printf("No command match %s!\n", cmd);
+		printf("No command matches %s!\n", cmd);
 		usage(prog_name);
 		return 1;
 	}
