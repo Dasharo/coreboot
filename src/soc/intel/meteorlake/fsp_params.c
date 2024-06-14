@@ -442,6 +442,8 @@ static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
 		if (is_dev_enabled(tcss_port_arr[i]))
 			s_cfg->UsbTcPortEn |= BIT(i);
 	}
+
+	s_cfg->Usb4CmMode = CONFIG(SOFTWARE_CONNECTION_MANAGER);
 }
 
 static void fill_fsps_chipset_lockdown_params(FSP_S_CONFIG *s_cfg,
@@ -711,7 +713,7 @@ static void arch_silicon_init_params(FSPS_ARCH_UPD *s_arch_cfg)
 	s_arch_cfg->EnableMultiPhaseSiliconInit = 1;
 
 	/* Assign FspEventHandler arch Upd to use coreboot debug event handler */
-	if (CONFIG(FSP_USES_CB_DEBUG_EVENT_HANDLER) && CONFIG(CONSOLE_SERIAL) &&
+	if (CONFIG(FSP_USES_CB_DEBUG_EVENT_HANDLER) &&
 			 CONFIG(FSP_ENABLE_SERIAL_DEBUG))
 		s_arch_cfg->FspEventHandler = (FSP_EVENT_HANDLER)
 				fsp_debug_event_handler;

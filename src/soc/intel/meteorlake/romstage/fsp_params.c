@@ -6,6 +6,7 @@
 #include <cpu/intel/common/common.h>
 #include <cpu/intel/cpu_ids.h>
 #include <cpu/x86/msr.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <drivers/wifi/generic/wifi.h>
@@ -288,6 +289,7 @@ static void fill_fspm_audio_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->PchHdaIDispLinkTmode = config->pch_hda_idisp_link_tmode;
 	m_cfg->PchHdaIDispLinkFrequency = config->pch_hda_idisp_link_frequency;
 	m_cfg->PchHdaIDispCodecDisconnect = !config->pch_hda_idisp_codec_enable;
+	m_cfg->PchHdaAudioLinkHdaEnable = config->pch_hda_audio_link_hda_enable;
 
 	for (int i = 0; i < MAX_HD_AUDIO_SDI_LINKS; i++)
 		m_cfg->PchHdaSdiEnable[i] = config->pch_hda_sdi_enable[i];
@@ -298,7 +300,6 @@ static void fill_fspm_audio_params(FSP_M_CONFIG *m_cfg,
 	 * configuration in coreboot and hence these UPDs are set to 0 to skip FSP GPIO
 	 * configuration for audio pads.
 	 */
-	m_cfg->PchHdaAudioLinkHdaEnable = 0;
 	memset(m_cfg->PchHdaAudioLinkDmicEnable, 0, sizeof(m_cfg->PchHdaAudioLinkDmicEnable));
 	memset(m_cfg->PchHdaAudioLinkSspEnable, 0, sizeof(m_cfg->PchHdaAudioLinkSspEnable));
 	memset(m_cfg->PchHdaAudioLinkSndwEnable, 0, sizeof(m_cfg->PchHdaAudioLinkSndwEnable));
@@ -362,6 +363,8 @@ static void fill_fspm_vtd_params(FSP_M_CONFIG *m_cfg,
 
 	/* Change VmxEnable UPD value according to ENABLE_VMX Kconfig */
 	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
+
+	m_cfg->PreBootDmaMask = CONFIG(ENABLE_EARLY_DMA_PROTECTION) && dma_protection_enabled();
 }
 
 static void fill_fspm_trace_params(FSP_M_CONFIG *m_cfg,
@@ -460,7 +463,7 @@ static void fill_fspm_sign_of_life(FSP_M_CONFIG *m_cfg,
 		sol_type = ELOG_FW_EARLY_SOL_MRC;
 	}
 
-	if (is_cse_fw_update_required()) {
+	if (CONFIG(SOC_INTEL_CSE_LITE_SKU) && is_cse_fw_update_required()) {
 		vga_init_control = VGA_INIT_CONTROL_ENABLE;
 		sol_type = ELOG_FW_EARLY_SOL_CSE_SYNC;
 	}
@@ -498,7 +501,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	FSPM_ARCH_UPD *arch_upd = &mupd->FspmArchUpd;
 
 	if (CONFIG(FSP_USES_CB_DEBUG_EVENT_HANDLER)) {
-		if (CONFIG(CONSOLE_SERIAL) && CONFIG(FSP_ENABLE_SERIAL_DEBUG)) {
+		if (CONFIG(FSP_ENABLE_SERIAL_DEBUG)) {
 			enum fsp_log_level log_level = fsp_map_console_log_level();
 			arch_upd->FspEventHandler = (UINT32)((FSP_EVENT_HANDLER *)
 					fsp_debug_event_handler);

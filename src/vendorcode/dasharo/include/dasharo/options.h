@@ -25,6 +25,8 @@
 #define BATTERY_START_THRESHOLD_DEFAULT 95
 #define BATTERY_STOP_THRESHOLD_DEFAULT 98
 
+#define CPU_THROTTLING_THRESHOLD_DEFAULT 80
+
 enum cse_disable_mode {
 	ME_MODE_ENABLE = 0,
 	ME_MODE_DISABLE_HECI = 1,
@@ -244,5 +246,13 @@ uint16_t dasharo_apu_watchdog_timeout(void);
  *  - false - CPU boost should not be enabled on boot
  */
 bool dasharo_apu_cpu_boost_enabled(void);
+
+/* Looks up Dasharo/"CpuThrottlingThreshold" variable to return the CPU
+ * throttling threshold temperature.
+ *
+ * Result:
+ *  returns uint8 - cpu_throttling_threshold
+ */
+uint8_t get_cpu_throttling_threshold(void);
 
 #endif /* DASHARO_OPTIONS_H */

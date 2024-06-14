@@ -73,6 +73,7 @@ const char *soc_acpi_name(const struct device *dev)
 	switch (dev->path.pci.devfn) {
 	case PCI_DEVFN_ROOT:		return "MCHC";
 	case PCI_DEVFN_IGD:		return "GFX0";
+	case PCI_DEVFN_DPTF:		return "DPTF";
 	case PCI_DEVFN_TCSS_XHCI:	return "TXHC";
 	case PCI_DEVFN_TCSS_XDCI:	return "TXDC";
 	case PCI_DEVFN_TCSS_DMA0:	return "TDM0";
@@ -116,6 +117,8 @@ const char *soc_acpi_name(const struct device *dev)
 	case PCI_DEVFN_HDA:	return "HDAS";
 	case PCI_DEVFN_SMBUS:	return "SBUS";
 	case PCI_DEVFN_GBE:	return "GLAN";
+	case PCI_DEVFN_CSE:	return "HEC1";
+	case PCI_DEVFN_SRAM:	return "SRAM";
 	}
 	printk(BIOS_DEBUG, "Missing ACPI Name for PCI: 00:%02x.%01x\n",
 			PCI_SLOT(dev->path.pci.devfn), PCI_FUNC(dev->path.pci.devfn));

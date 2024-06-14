@@ -299,4 +299,10 @@ config EDK2_CUSTOM_BUILD_PARAMS
 
 	  This option can support both macros `-D` and Pcds `--pcd`.
 
+config EDK2_CPU_THROTTLING_THRESHOLD_OPTION
+	bool "Display CPU throttling threshold option"
+	default n
+	help
+	  Enables setting a custom CPU throttling threshold temperature
+
 endif

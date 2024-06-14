@@ -36,7 +36,6 @@ config SOC_INTEL_METEORLAKE
 	select INTEL_GMA_OPREGION_2_1
 	select INTEL_GMA_VERSION_2
 	select IOAPIC
-	select MICROCODE_BLOB_UNDISCLOSED
 	select MP_SERVICES_PPI_V2
 	select MRC_SETTINGS_PROTECT
 	select PARALLEL_MP_AP_WORK
@@ -80,6 +79,7 @@ config SOC_INTEL_METEORLAKE
 	select SOC_INTEL_COMMON_BLOCK_SMM_IO_TRAP
 	select SOC_INTEL_COMMON_BLOCK_SMM_TCO_ENABLE
 	select SOC_INTEL_COMMON_BLOCK_THERMAL_BEHIND_PMC
+	select SOC_INTEL_COMMON_BLOCK_VTD
 	select SOC_INTEL_COMMON_BLOCK_XHCI
 	select SOC_INTEL_COMMON_BLOCK_XHCI_ELOG
 	select SOC_INTEL_COMMON_BASECODE
@@ -457,7 +457,6 @@ config SOC_INTEL_COMMON_BLOCK_ACPI_SLP_S0_FREQ_HZ
 config SOC_INTEL_METEORLAKE_SIGN_OF_LIFE
 	bool
 	default y if !SOC_INTEL_METEORLAKE_PRE_PRODUCTION_SILICON
-	depends on MAINBOARD_HAS_CHROMEOS
 	select VBT_CBFS_COMPRESSION_DEFAULT_LZ4
 	help
 	  Enable the FSP-M Sign-of-Life feature to display a
@@ -467,5 +466,12 @@ config SOC_INTEL_METEORLAKE_SIGN_OF_LIFE
 config SOC_PHYSICAL_ADDRESS_WIDTH
 	int
 	default 42
+
+config CPU_MAX_TEMPERATURE
+	int "CPU maximum temperature (TjMax)"
+	default 110
+	help
+	  Maximum temperature allowed for the CPU family. If in doubt, check
+	  the datasheets.
 
 endif

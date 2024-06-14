@@ -60,5 +60,10 @@ smm-y += xhci.c
 CPPFLAGS_common += -I$(src)/soc/intel/meteorlake
 CPPFLAGS_common += -I$(src)/soc/intel/meteorlake/include
 
+# Include the missing MemInfoHob.h from vendorcode
+CPPFLAGS_common += -I$(src)/vendorcode/intel/fsp/fsp2_0/iot/meteorlake
+
 CFLAGS_common += -fshort-wchar
+
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-aa-04
 endif

@@ -345,6 +345,14 @@ endif
 ifeq ($(CONFIG_EDK2_SERIAL_ON_SUPERIO),y)
 BUILD_STR += -D UART_ON_SUPERIO=TRUE
 endif
+# CPU THROTTLING
+ifeq ($(CONFIG_EDK2_CPU_THROTTLING_THRESHOLD_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuThrottlingThreshold=TRUE
+endif
+# CPU MAX TEMPERATURE		= 100
+ifneq ($(CONFIG_CPU_MAX_TEMPERATURE),)
+BUILD_STR += -D CPU_MAX_TEMPERATURE=$(CONFIG_CPU_MAX_TEMPERATURE)
+endif
 
 endif
 
@@ -389,7 +397,7 @@ $(EDK2_PLATFORMS_PATH): $(WORKSPACE)
 
 $(EDK2_PATH): $(WORKSPACE)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
-		git clone --recurse-submodules $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
+		git clone $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \

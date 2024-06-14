@@ -314,4 +314,11 @@ config INTEL_GMA_BCLM_OFFSET
 config INTEL_GMA_BCLM_WIDTH
 	default 32
 
+config CPU_MAX_TEMPERATURE
+	int "CPU maximum temperature (TjMax)"
+	default 100
+	help
+	  Maximum temperature allowed for the CPU family. If in doubt, check
+	  the datasheets.
+
 endif
