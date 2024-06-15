@@ -1,0 +1,32 @@
+name: Dasharo Checks
+on:
+  push:
+
+jobs:
+  check-defconfigs:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Top commit is enough
+        fetch-depth: 1
+    - name: Verify defconfigs are up-to-date
+      run: |
+        # Start with the list of Dasharo boards that use EDK
+        boards=( $(grep -l 'Dasharo/edk2\(\.git\)\?"' configs/config.*) )
+        # Add non-EDK boards
+        boards+=( configs/config.dell_optiplex_9010_sff_txt )
+        boards+=( configs/config.protectli_vp46xx_txt_seabios )
+
+        # Update all of them before reporting anything
+        for c in $(printf "%s\n" "${boards[@]}" | sort); do
+          make savedefconfig DOTCONFIG="$c"
+          mv defconfig "$c"
+        done
+
+        # Print all the differences at once and fail or do nothing
+        git diff --exit-code
