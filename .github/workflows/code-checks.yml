@@ -3,6 +3,21 @@ on:
   push:
 
 jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # Top commit is enough
+        fetch-depth: 1
+    - name: Standard lint tests
+      run: util/lint/lint lint-stable
+    - name: Extended lint tests
+      run: util/lint/lint lint-extended
   check-defconfigs:
     runs-on: ubuntu-22.04
     steps:
