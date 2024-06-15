@@ -26,4 +26,3 @@ Scope (PCI0.LPCB.EC0)
 		}
 	}
 }
-
