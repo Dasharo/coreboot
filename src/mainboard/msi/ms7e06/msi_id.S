@@ -66,5 +66,3 @@ bpa_end:
 	.ascii	"NULL"
 	.ascii	"@@"
 	.fill	10, 1, 0
-
-
