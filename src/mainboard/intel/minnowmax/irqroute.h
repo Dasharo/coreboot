@@ -70,4 +70,3 @@
 	PIRQ_PIC(F, 12), \
 	PIRQ_PIC(G, 14), \
 	PIRQ_PIC(H, 15)
-
