@@ -1,6 +1,9 @@
 config BOARD_PROTECTLI_V1210
 	bool "V1210"
 
+config BOARD_PROTECTLI_V1211
+	bool "V1211"
+
 config BOARD_PROTECTLI_V1410
 	bool "V1410"
 
