@@ -3,6 +3,10 @@
 #ifndef _SOC_INTEL_COMMON_ME_SPEC_18_H_
 #define _SOC_INTEL_COMMON_ME_SPEC_18_H_
 
+#if CONFIG(SOC_INTEL_METEORLAKE_U_H)
+#define HAP_OFFSET			0x21E
+#endif
+
 /* ME Host Firmware Status register 1 */
 union me_hfsts1 {
 	uint32_t data;
