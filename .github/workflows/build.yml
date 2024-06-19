@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - dasharo
+      - dasharo-4.21
 
 jobs:
   build_novacustom:
