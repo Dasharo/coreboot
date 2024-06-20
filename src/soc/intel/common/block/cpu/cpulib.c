@@ -314,8 +314,8 @@ void configure_tcc_thermal_target(void)
 	msr = rdmsr(MSR_PLATFORM_INFO);
 	if ((msr.lo & BIT(30))) {
 		msr = rdmsr(MSR_TEMPERATURE_TARGET);
-		msr.lo &= ~(0xf << 24);
-		msr.lo |= (tcc_offset & 0xf) << 24;
+		msr.lo &= ~(0x3f << 24);
+		msr.lo |= (tcc_offset & 0x3f) << 24;
 		wrmsr(MSR_TEMPERATURE_TARGET, msr);
 	}
 
