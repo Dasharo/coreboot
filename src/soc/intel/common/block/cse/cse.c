@@ -278,6 +278,11 @@ bool cse_is_hfs1_com_secover_mei_msg(void)
 	return cse_check_hfs1_com(ME_HFS1_COM_SECOVER_MEI_MSG);
 }
 
+bool cse_is_hfs1_com_debug(void)
+{
+	return cse_check_hfs1_com(ME_HFS1_COM_DEBUG);
+}
+
 bool cse_is_hfs1_com_soft_temp_disable(void)
 {
 	return cse_check_hfs1_com(ME_HFS1_COM_SOFT_TEMP_DISABLE);
