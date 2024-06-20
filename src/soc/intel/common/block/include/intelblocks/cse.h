@@ -61,6 +61,7 @@ enum mkhi_group_id {
 
 /* ME Current Operation Modes */
 #define ME_HFS1_COM_NORMAL	0x0
+#define ME_HFS1_COM_DEBUG	0x2
 #define ME_HFS1_COM_SOFT_TEMP_DISABLE	0x3
 #define ME_HFS1_COM_SECOVER_MEI_MSG	0x5
 
@@ -465,6 +466,12 @@ bool cse_is_hfs1_com_normal(void);
  * Returns true if CSE's current operation mode is SECOVER_MEI_MSG, otherwise false.
  */
 bool cse_is_hfs1_com_secover_mei_msg(void);
+
+/*
+ * Checks CSE's current operation mode is Debug Mode or not.
+ * Returns true if CSE's current operation mode is Debug Mode, otherwise false.
+ */
+bool cse_is_hfs1_com_debug(void);
 
 /*
  * Checks CSE's current operation mode is Soft Disable Mode or not.
