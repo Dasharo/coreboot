@@ -55,4 +55,11 @@ config VBOOT_SLOTS_RW_A
 config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
 
+if PAYLOAD_EDK2
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	default 5
+
+endif
+
 endif # BOARD_PROTECTLI_VP2420
