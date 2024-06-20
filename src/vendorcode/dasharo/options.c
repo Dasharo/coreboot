@@ -501,3 +501,13 @@ bool get_hyper_threading_option(void)
 
 	return ht_en;
 }
+
+uint8_t get_cpu_throttling_offset(uint8_t tcc_offset)
+{
+	uint8_t offset = tcc_offset;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("CpuThrottlingOffset", &offset);
+
+	return offset;
+}
