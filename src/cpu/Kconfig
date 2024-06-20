@@ -192,3 +192,9 @@ config CPU_UCODE_BINARIES
 	  microcode binary files to include, separated by spaces.
 
 	  If unsure, leave this blank.
+
+config CPU_MAX_TEMPERATURE
+	int
+	default 100
+	help
+	  The maximum CPU temperature, aka TjMax. Processor-specific.

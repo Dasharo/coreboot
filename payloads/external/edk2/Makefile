@@ -339,6 +339,15 @@ endif
 ifneq ($(CONFIG_EDK2_HYPERTHREADING_DEFAULT_STATE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuHyperThreadingDefault=FALSE
 endif
+# PcdShowCpuThrottlingThreshold = FALSE
+ifeq ($(CONFIG_EDK2_CPU_THROTTLING_THRESHOLD_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuThrottlingThreshold=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuThrottlingOffsetDefault=$(CONFIG_EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT)
+# PcdCpuMaxTemperature = 100
+ifneq ($(CONFIG_CPU_MAX_TEMPERATURE),)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuMaxTemperature=$(CONFIG_CPU_MAX_TEMPERATURE)
+endif
+endif
 
 #
 # EDKII has the below PCDs that are relevant to coreboot:

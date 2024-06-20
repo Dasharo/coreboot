@@ -407,9 +407,25 @@ config EDK2_FAN_CURVE_OPTION
 config EDK2_BATTERY_CONFIG_OPTION
 	bool "Show Battery Threshold options in Dasharo Power Configuration Menu"
 	default n
+	depends on EDK2_DASHARO_POWER_CONFIG
 	help
 	  Enables battery threshold options in the EDK2 power management
 	  configuration submenu.
+
+config EDK2_CPU_THROTTLING_THRESHOLD_OPTION
+	bool "Display CPU throttling threshold option"
+	default n
+	depends on EDK2_DASHARO_POWER_CONFIG
+	help
+	  Enables setting a custom CPU throttling threshold temperature
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	int "CPU throttling threshold default value"
+	depends on EDK2_CPU_THROTTLING_THRESHOLD_OPTION
+	default 20
+	range 0 63
+	help
+	  Board-specific CPU throttling threshold temperature default value
 
 config EDK2_DASHARO_PCI_CONFIG
 	bool "Enable EDK2 Dasharo PCI/PCIe Configuration Menu"
