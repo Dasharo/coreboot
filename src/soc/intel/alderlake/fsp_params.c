@@ -812,7 +812,7 @@ static void fill_fsps_thermal_params(FSP_S_CONFIG *s_cfg,
 	s_cfg->Device4Enable = is_devfn_enabled(SA_DEVFN_DPTF);
 
 	/* Set TccActivationOffset */
-	s_cfg->TccActivationOffset = config->tcc_offset;
+	s_cfg->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 }
 
 static void fill_fsps_gna_params(FSP_S_CONFIG *s_cfg,

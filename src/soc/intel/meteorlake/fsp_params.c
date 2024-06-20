@@ -7,6 +7,7 @@
 #include <console/console.h>
 #include <cpu/intel/cpu_ids.h>
 #include <cpu/intel/microcode.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <fsp/api.h>
@@ -561,7 +562,7 @@ static void fill_fsps_thermal_params(FSP_S_CONFIG *s_cfg,
 	s_cfg->Device4Enable = is_devfn_enabled(PCI_DEVFN_DPTF);
 
 	/* Set TccActivationOffset */
-	s_cfg->TccActivationOffset = config->tcc_offset;
+	s_cfg->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 }
 
 static void fill_fsps_lan_params(FSP_S_CONFIG *s_cfg,
