@@ -131,7 +131,7 @@ static enum cse_cmd_result cse_send_eop(void)
 	 * 3) Only sent after DID (accomplished by compiling this into ramstage)
 	 */
 
-	if (cse_is_hfs1_com_soft_temp_disable()) {
+	if (cse_is_hfs1_com_soft_temp_disable() || cse_is_hfs1_com_debug()) {
 		printk(BIOS_ERR, "HECI: Prerequisites not met for sending EOP\n");
 		if (CONFIG(SOC_INTEL_CSE_LITE_SKU))
 			return CSE_CMD_RESULT_ERROR;
@@ -299,6 +299,11 @@ static bool is_cse_eop_supported(void)
 	if (cse_is_hfs1_com_soft_temp_disable()) {
 		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE in expected "
 		       "SOFT TEMP DISABLE state, skipping EOP\n");
+		return false;
+	}
+	if (cse_is_hfs1_com_debug()) {
+		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE in expected "
+		       "Debug Mode state, skipping EOP\n");
 		return false;
 	}
 
