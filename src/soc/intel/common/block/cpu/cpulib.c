@@ -8,6 +8,7 @@
 #include <cpu/intel/turbo.h>
 #include <cpu/x86/msr.h>
 #include <cpu/x86/mtrr.h>
+#include <dasharo/options.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/msr.h>
@@ -301,9 +302,12 @@ uint8_t cpu_get_max_non_turbo_ratio(void)
 void configure_tcc_thermal_target(void)
 {
 	const config_t *conf = config_of_soc();
+	uint32_t tcc_offset;
 	msr_t msr;
 
-	if (!conf->tcc_offset)
+	tcc_offset = get_cpu_throttling_offset(conf->tcc_offset);
+
+	if (!tcc_offset)
 		return;
 
 	/* Set TCC activation offset */
@@ -311,7 +315,7 @@ void configure_tcc_thermal_target(void)
 	if ((msr.lo & BIT(30))) {
 		msr = rdmsr(MSR_TEMPERATURE_TARGET);
 		msr.lo &= ~(0xf << 24);
-		msr.lo |= (conf->tcc_offset & 0xf) << 24;
+		msr.lo |= (tcc_offset & 0xf) << 24;
 		wrmsr(MSR_TEMPERATURE_TARGET, msr);
 	}
 

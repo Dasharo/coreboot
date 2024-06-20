@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <cbfs.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
@@ -446,7 +447,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	}
 
 	/* TccActivationOffset config */
-	params->TccActivationOffset = config->tcc_offset;
+	params->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 	params->TccOffsetClamp = config->tcc_offset_clamp;
 	params->TccOffsetLock = 0x1;	//lock Tcc Offset register
 

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 #include <assert.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <fsp/api.h>
 #include <fsp/ppi/mp_service_ppi.h>
@@ -179,7 +180,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->GnaEnable = is_devfn_enabled(SA_DEVFN_GNA);
 
 	/* Set TccActivationOffset */
-	params->TccActivationOffset = config->tcc_offset;
+	params->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 
 	/* eMMC configuration */
 	params->ScsEmmcEnabled = is_devfn_enabled(PCH_DEVFN_EMMC);

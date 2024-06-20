@@ -141,6 +141,10 @@ config MAX_CPUS
 	int
 	default 22
 
+config CPU_MAX_TEMPERATURE
+	int
+	default 110
+
 config DCACHE_RAM_BASE
 	default 0xfef00000
 

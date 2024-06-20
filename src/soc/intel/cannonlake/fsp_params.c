@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootsplash.h>
+#include <dasharo/options.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -631,7 +632,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 #endif
 
 	/* Set TccActivationOffset */
-	tconfig->TccActivationOffset = config->tcc_offset;
+	tconfig->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 	tconfig->TccOffsetClamp = config->tcc_offset > 0;
 
 	/* Unlock all GPIO pads */

@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <device/device.h>
+#include <dasharo/options.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/msr.h>
@@ -215,13 +216,16 @@ static void configure_thermal_target(struct device *dev)
 {
 	struct cpu_intel_model_206ax_config *conf = dev->bus->dev->chip_info;
 	msr_t msr;
+	uint32_t tcc_offset;
+
+	tcc_offset = get_cpu_throttling_offset(conf->tcc_offset);
 
 	/* Set TCC activation offset if supported */
 	msr = rdmsr(MSR_PLATFORM_INFO);
-	if ((msr.lo & (1 << 30)) && conf->tcc_offset) {
+	if ((msr.lo & (1 << 30)) && tcc_offset) {
 		msr = rdmsr(MSR_TEMPERATURE_TARGET);
 		msr.lo &= ~(0xf << 24); /* Bits 27:24 */
-		msr.lo |= (conf->tcc_offset & 0xf) << 24;
+		msr.lo |= (tcc_offset & 0xf) << 24;
 		wrmsr(MSR_TEMPERATURE_TARGET, msr);
 	}
 }
