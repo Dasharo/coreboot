@@ -58,4 +58,11 @@ config BEEP_ON_BOOT
 	  May serve as a useful indicator in headless mode that platform is
 	  properly booting.
 
+if PAYLOAD_EDK2
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	default 5
+
+endif
+
 endif # BOARD_PROTECTLI_VP2410
