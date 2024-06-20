@@ -275,4 +275,14 @@ uint8_t get_active_small_core_count_option(void);
  */
 bool get_hyper_threading_option(void);
 
+/* Looks up Dasharo/"CpuThrottlingOffset" variable to return the CPU
+ * TCC offset temperature.
+ *
+ * Arguments:
+ *  - tcc_offset - default platform value of TCC offset
+ * Result:
+ *  returns uint8 - TCC offset from Tjmax
+ */
+uint8_t get_cpu_throttling_offset(uint8_t tcc_offset);
+
 #endif /* DASHARO_OPTIONS_H */
