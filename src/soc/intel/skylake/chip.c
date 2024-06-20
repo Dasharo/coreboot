@@ -4,6 +4,7 @@
 #include <fsp/api.h>
 #include <acpi/acpi.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci_ids.h>
 #include <fsp/util.h>
@@ -500,7 +501,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	tconfig->Eist = config->eist_enable;
 
 	/* Set TccActivationOffset */
-	tconfig->TccActivationOffset = config->tcc_offset;
+	tconfig->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 
 	/* Already handled in coreboot code, so tell FSP to ignore UPDs */
 	params->PchIoApicBdfValid = 0;

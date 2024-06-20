@@ -488,7 +488,7 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->Device4Enable = is_devfn_enabled(SA_DEVFN_DPTF);
 
 	/* Set TccActivationOffset */
-	params->TccActivationOffset = config->tcc_offset;
+	params->TccActivationOffset = get_cpu_throttling_offset(config->tcc_offset);
 
 	/* LAN */
 	params->PchLanEnable = is_devfn_enabled(PCH_DEVFN_GBE);
