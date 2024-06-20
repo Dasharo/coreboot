@@ -45,4 +45,11 @@ config CBFS_SIZE
 config USE_PM_ACPI_TIMER
 	default n
 
+if PAYLOAD_EDK2
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	default 5
+
+endif
+
 endif
