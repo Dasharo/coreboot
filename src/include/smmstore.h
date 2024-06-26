@@ -21,6 +21,9 @@
 #define SMMSTORE_CMD_RAW_WRITE 6
 #define SMMSTORE_CMD_RAW_CLEAR 7
 
+/* Used by capsule updates as a standalone command or modifier to v2 commands */
+#define SMMSTORE_CMD_USE_FULL_FLASH 0x80
+
 /* Version 1 */
 struct smmstore_params_read {
 	void *buf;
@@ -117,6 +120,8 @@ int smmstore_get_info(struct smmstore_params_info *info);
 #endif
 struct region_device;
 int smmstore_lookup_region(struct region_device *rstore);
+/* Returns 0 if normal parsing should continue, 1 otherwise */
+int smmstore_preprocess_cmd(uint8_t *cmd);
 
 /* Advertise SMMSTORE v2 support */
 struct lb_header;

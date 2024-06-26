@@ -47,8 +47,34 @@ _Static_assert(SMM_BLOCK_SIZE <= FMAP_SECTION_SMMSTORE_SIZE,
  * crash/reboot could clear out all variables.
  */
 
+static int use_full_flash;
+
+int smmstore_preprocess_cmd(uint8_t *cmd)
+{
+	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES)) {
+		if (*cmd & SMMSTORE_CMD_USE_FULL_FLASH) {
+			use_full_flash = 1;
+			*cmd &= ~SMMSTORE_CMD_USE_FULL_FLASH;
+		} else {
+			use_full_flash = 0;
+		}
+	}
+
+	return 0;
+}
+
 static enum cb_err lookup_store_region(struct region *region)
 {
+	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) && use_full_flash) {
+		const struct region_device *rdev = boot_device_rw();
+
+		if (rdev == NULL)
+			return CB_ERR;
+
+		*region = *region_device_region(rdev);
+		return CB_SUCCESS;
+	}
+
 	if (fmap_locate_area(SMMSTORE_REGION, region)) {
 		printk(BIOS_WARNING,
 		       "smm store: Unable to find SMM store FMAP region '%s'\n",
