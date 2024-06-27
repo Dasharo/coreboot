@@ -48,11 +48,20 @@ _Static_assert(SMM_BLOCK_SIZE <= FMAP_SECTION_SMMSTORE_SIZE,
  */
 
 static int use_full_flash;
+static int has_capsules = -1;
 
-int smmstore_preprocess_cmd(uint8_t *cmd)
+int smmstore_preprocess_cmd(uint8_t *cmd, void *param)
 {
 	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES)) {
-		if (*cmd & SMMSTORE_CMD_USE_FULL_FLASH) {
+		if (has_capsules == -1 && *cmd == SMMSTORE_CMD_USE_FULL_FLASH) {
+			has_capsules = !!(uintptr_t)param;
+			/*
+			 * If we have capsules, return success, otherwise let smmstore_exec()
+			 * fail on !param check, which will be 0 in that case. This informs
+			 * the caller whether capsule handling was enabled or not.
+			 */
+			return has_capsules;
+		} else if (has_capsules == 1 && *cmd & SMMSTORE_CMD_USE_FULL_FLASH) {
 			use_full_flash = 1;
 			*cmd &= ~SMMSTORE_CMD_USE_FULL_FLASH;
 		} else {

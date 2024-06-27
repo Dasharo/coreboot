@@ -121,7 +121,7 @@ int smmstore_get_info(struct smmstore_params_info *info);
 struct region_device;
 int smmstore_lookup_region(struct region_device *rstore);
 /* Returns 0 if normal parsing should continue, 1 otherwise */
-int smmstore_preprocess_cmd(uint8_t *cmd);
+int smmstore_preprocess_cmd(uint8_t *cmd, void *param);
 
 /* Advertise SMMSTORE v2 support */
 struct lb_header;
