@@ -17,6 +17,7 @@ DefinitionBlock(
 
 	Device (\_SB.PCI0)
 	{
+		#include <soc/intel/common/block/acpi/acpi/gna.asl>
 		#include <soc/intel/common/block/acpi/acpi/northbridge.asl>
 		#include <soc/intel/meteorlake/acpi/southbridge.asl>
 		#include <soc/intel/meteorlake/acpi/tcss.asl>
