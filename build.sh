@@ -22,7 +22,7 @@ usage() {
   echo -e "\tapu6 - build Dasharo for PC Engines APU6"
 }
 
-SDKVER="2021-09-23_b0d87f753c"
+SDKVER="2024-02-18_732134932b"
 
 function build_msi {
   DEFCONFIG="configs/config.${BOARD}_$1"
