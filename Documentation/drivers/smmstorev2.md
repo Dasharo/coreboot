@@ -213,6 +213,31 @@ coreboot tables, there's no risk that a malicious application capable
 of issuing SMIs could extract arbitrary data or modify the currently
 running kernel.
 
+## Capsule update API
+
+To allow updating full flash content (except if locked at hardware
+level), few new calls were added. They reuse communication buffer, SMI
+command, return values and calling arguments of SMMSTORE commands listed
+above, with the exception of subcommand passed via `%ah`. If the
+subcommand is to operate on full flash size, it has the highest bit set,
+e.g. it is `0x85` for `SMMSTORE_CMD_RAW_READ` and `0x86` for
+`SMMSTORE_CMD_RAW_WRITE`. Every `block_id` describes block relative to
+beginning of a flash, maximum value depends on its size.
+
+In addition, there is one new subcommand that must be called before any
+other subcommands with highest bit set can be used.
+
+#### - SMMSTORE_CMD_USE_FULL_FLASH = 0x80
+
+This command can only be executed once and is done by the firmware.
+Calling this function at runtime has no effect. It takes one additional
+parameter that, contrary to other commands, isn't a pointer. Instead,
+`%ebx` indicates requested state of full flash access. If it equals 0,
+commands for accessing full flash are permanently disabled, otherwise
+they are permanently enabled until next boot. It is expected that the
+payload won't allow regular OS to boot if the handler is enabled without
+rebooting first.
+
 ## External links
 
 * [A Tour Beyond BIOS Implementing UEFI Authenticated Variables in SMM with EDKI](https://software.intel.com/sites/default/files/managed/cf/ea/a_tour_beyond_bios_implementing_uefi_authenticated_variables_in_smm_with_edkii.pdf)
