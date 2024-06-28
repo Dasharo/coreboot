@@ -74,6 +74,14 @@ config MAX_CPUS
 	int
 	default 16
 
+config MAX_HECI_DEVICES
+	int
+	default 5
+
+config MAX_MEI_DEVICES
+	int
+	default 3
+
 config PCR_BASE_ADDRESS
 	hex
 	default 0xfd000000
