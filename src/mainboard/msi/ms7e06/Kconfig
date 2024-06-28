@@ -74,6 +74,7 @@ config SOC_INTEL_CSE_SEND_EOP_EARLY
 
 config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
 
 # gen_test_hwid.sh script doesn't like parentheses in the MAINBOARD_PART_NUMBER
 # Override the GBB_HWID
