@@ -327,16 +327,6 @@ bool get_ps2_option(void)
 	return ps2_en;
 }
 
-uint8_t get_cpu_throttling_threshold(void)
-{
-	uint8_t cpu_throttling_threshold = CPU_THROTTLING_THRESHOLD_DEFAULT;
-
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
-		read_u8_var("CpuThrottlingThreshold", &cpu_throttling_threshold);
-
-	return cpu_throttling_threshold;
-}
-
 uint8_t get_sleep_type_option(void)
 {
 	uint8_t sleep_type = CONFIG(DASHARO_PREFER_S3_SLEEP) ? SLEEP_TYPE_OPTION_S3
@@ -493,7 +483,7 @@ uint8_t get_active_small_core_count_option(void)
 bool get_hyper_threading_option(void)
 {
 	bool ht_en;
-	
+
 	ht_en = get_uint_option("hyper_threading", CONFIG(FSP_HYPERTHREADING));
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))

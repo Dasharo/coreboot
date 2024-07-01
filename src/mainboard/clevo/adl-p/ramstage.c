@@ -86,26 +86,6 @@ static void set_battery_thresholds(void)
 	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
 }
 
-#if CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION)
-static void set_cpu_throttling_threshold(void)
-{
-	config_t *cfg = config_of_soc();
-
-	// read the CpuThrottlingThreshold efivar
-	uint8_t cpu_throttling_threshold;
-	cpu_throttling_threshold = get_cpu_throttling_threshold();
-	printk(BIOS_DEBUG, "CPU throttling threshold: %d\n", cpu_throttling_threshold);
-
-	// read tjmax from config
-	uint8_t tjmax;
-	tjmax = CONFIG_CPU_MAX_TEMPERATURE;
-	printk(BIOS_DEBUG, "CPU max. temperature (TjMax): %d\n", tjmax);
-
-	cfg->tcc_offset = tjmax - cpu_throttling_threshold;
-	printk(BIOS_DEBUG, "CPU tcc_offset set to: %d\n", cfg->tcc_offset);
-}
-#endif
-
 static void set_power_on_ac(void)
 {
 	struct smfi_option_get_cmd {
@@ -139,8 +119,6 @@ static void mainboard_init(void *chip_info)
 	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
 	mainboard_configure_gpios();
-	if (CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION))
-		set_cpu_throttling_threshold();
 	set_fan_curve();
 	set_camera_enablement();
 	set_battery_thresholds();

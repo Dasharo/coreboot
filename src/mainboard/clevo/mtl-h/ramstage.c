@@ -99,26 +99,6 @@ static void set_power_on_ac(void)
 	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 }
 
-#if CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION)
-static void set_cpu_throttling_threshold(void)
-{
-	config_t *cfg = config_of_soc();
-
-	// read the CpuThrottlingThreshold efivar
-	uint8_t cpu_throttling_threshold;
-	cpu_throttling_threshold = get_cpu_throttling_threshold();
-	printk(BIOS_DEBUG, "CPU throttling threshold: %d\n", cpu_throttling_threshold);
-
-	// read tjmax from config
-	uint8_t tjmax;
-	tjmax = CONFIG_CPU_MAX_TEMPERATURE;
-	printk(BIOS_DEBUG, "CPU max. temperature (TjMax): %d\n", tjmax);
-
-	cfg->tcc_offset = tjmax - cpu_throttling_threshold;
-	printk(BIOS_DEBUG, "CPU tcc_offset set to: %d\n", cfg->tcc_offset);
-}
-#endif
-
 static void mainboard_init(void *chip_info)
 {
 	config_t *cfg = config_of_soc();
@@ -142,9 +122,6 @@ static void mainboard_init(void *chip_info)
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
-	if (CONFIG(EDK2_CPU_THROTTLING_THRESHOLD_OPTION))
-		set_cpu_throttling_threshold();
-
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
