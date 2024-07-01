@@ -387,7 +387,7 @@ files_added:: $(obj)/coreboot.rom $(FUTILITY) $(CBFSTOOL)
 		--kernelkey "$(CONFIG_VBOOT_KERNEL_KEY)" \
 		--version $(CONFIG_VBOOT_KEYBLOCK_VERSION) \
 		--flags $(CONFIG_VBOOT_KEYBLOCK_PREAMBLE_FLAGS) \
-		$(obj)/coreboot.rom
+		$(obj)/coreboot.rom 2> /dev/null
 	if [ "$(CONFIG_VBOOT_SLOTS_RW_AB)" = 'y' ]; then \
 		printf "    FLASHMAP Layout generated for RO, A and B partition.\n"; \
 	elif [ "$(CONFIG_VBOOT_SLOTS_RW_A)" = 'y' ]; then \
