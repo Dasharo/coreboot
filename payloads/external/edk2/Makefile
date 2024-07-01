@@ -70,6 +70,7 @@ endif
 # SERIAL_TERMINAL	= TRUE
 ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
 BUILD_STR += -D SERIAL_TERMINAL=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSerialPortMenu=TRUE
 # PcdSerialRedirectionDefaultState	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
@@ -185,6 +186,7 @@ endif
 # IOMMU_ENABLE			= FALSE
 ifeq ($(CONFIG_IOMMU_ENABLE),y)
 BUILD_STR += -D IOMMU_ENABLE=TRUE
+BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdShowIommuOptions=TRUE
 endif
 # DASHARO_SYSTEM_FEATURES	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SYSTEM_FEATURES),y)
