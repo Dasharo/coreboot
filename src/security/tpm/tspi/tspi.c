@@ -265,9 +265,9 @@ tpm_result_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 	if (!rdev || !rname)
 		return TPM_CB_INVALID_ARG;
 
-	digest_len = vb2_digest_size(TPM_MEASURE_ALGO);
+	digest_len = vb2_digest_size(tpm_log_alg());
 	assert(digest_len <= sizeof(digest));
-	if (vb2_digest_init(&ctx, vboot_hwcrypto_allowed(), TPM_MEASURE_ALGO,
+	if (vb2_digest_init(&ctx, vboot_hwcrypto_allowed(), tpm_log_alg(),
 			    region_device_sz(rdev))) {
 		printk(BIOS_ERR, "TPM: Error initializing hash.\n");
 		return TPM_CB_HASH_ERROR;
@@ -293,6 +293,6 @@ tpm_result_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 		printk(BIOS_ERR, "TPM: Error finalizing hash.\n");
 		return TPM_CB_HASH_ERROR;
 	}
-	return tpm_extend_pcr(pcr, TPM_MEASURE_ALGO, digest, digest_len, rname);
+	return tpm_extend_pcr(pcr, tpm_log_alg(), digest, digest_len, rname);
 }
 #endif /* VBOOT_LIB */
