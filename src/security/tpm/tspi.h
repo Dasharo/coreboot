@@ -18,6 +18,31 @@
 #define MAX_PRERAM_TPM_LOG_ENTRIES 15
 
 /**
+ * Retrieves hash algorithm used by TPM event log or VB2_HASH_INVALID.
+ */
+static inline enum vb2_hash_algorithm tpm_log_alg(void)
+{
+	if (CONFIG(TPM_LOG_CB))
+		return (tlcl_get_family() == TPM_1 ? VB2_HASH_SHA1 : VB2_HASH_SHA256);
+
+	if (CONFIG(TPM_LOG_TPM1))
+		return VB2_HASH_SHA1;
+
+	if (CONFIG(TPM_LOG_TPM2)) {
+		if (CONFIG(TPM_HASH_SHA1))
+			return VB2_HASH_SHA1;
+		if (CONFIG(TPM_HASH_SHA256))
+			return VB2_HASH_SHA256;
+		if (CONFIG(TPM_HASH_SHA384))
+			return VB2_HASH_SHA384;
+		if (CONFIG(TPM_HASH_SHA512))
+			return VB2_HASH_SHA512;
+	}
+
+	return VB2_HASH_INVALID;
+}
+
+/**
  * Get the pointer to the single instance of global
  * TPM log data, and initialize it when necessary
  */
