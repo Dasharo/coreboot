@@ -71,8 +71,8 @@ void *tpm2_log_cbmem_init(void)
 		hdr->spec_errata = 0x00;
 		hdr->uintn_size = 0x02; // 64-bit UINT
 		hdr->num_of_algorithms = htole32(1);
-		hdr->digest_sizes[0].alg_id = htole16(tpmalg_from_vb2_hash(TPM_MEASURE_ALGO));
-		hdr->digest_sizes[0].digest_size = htole16(vb2_digest_size(TPM_MEASURE_ALGO));
+		hdr->digest_sizes[0].alg_id = htole16(tpmalg_from_vb2_hash(tpm_log_alg()));
+		hdr->digest_sizes[0].digest_size = htole16(vb2_digest_size(tpm_log_alg()));
 
 		tclt->vendor_info_size = sizeof(tclt->vendor);
 		tclt->vendor.reserved = 0;
@@ -98,8 +98,8 @@ void tpm2_log_dump(void)
 	if (!tclt)
 		return;
 
-	hash_size = vb2_digest_size(TPM_MEASURE_ALGO);
-	alg_name = vb2_get_hash_algorithm_name(TPM_MEASURE_ALGO);
+	hash_size = vb2_digest_size(tpm_log_alg());
+	alg_name = vb2_get_hash_algorithm_name(tpm_log_alg());
 
 	printk(BIOS_INFO, "coreboot TPM 2.0 measurements:\n\n");
 	for (i = 0; i < le16toh(tclt->vendor.num_entries); i++) {
@@ -134,13 +134,13 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 		return;
 	}
 
-	if (digest_algo != TPM_MEASURE_ALGO) {
+	if (digest_algo != tpm_log_alg()) {
 		printk(BIOS_WARNING, "TPM LOG: digest is of unsupported type: %s\n",
 		       vb2_get_hash_algorithm_name(digest_algo));
 		return;
 	}
 
-	if (digest_len != vb2_digest_size(TPM_MEASURE_ALGO)) {
+	if (digest_len != vb2_digest_size(tpm_log_alg())) {
 		printk(BIOS_WARNING, "TPM LOG: digest has invalid length: %d\n",
 		       (int)digest_len);
 		return;
@@ -158,8 +158,8 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 	tce->event_type = htole32(EV_ACTION);
 
 	tce->digest_count = htole32(1);
-	tce->digest_type = htole16(tpmalg_from_vb2_hash(TPM_MEASURE_ALGO));
-	memcpy(tce->digest, digest, vb2_digest_size(TPM_MEASURE_ALGO));
+	tce->digest_type = htole16(tpmalg_from_vb2_hash(tpm_log_alg()));
+	memcpy(tce->digest, digest, vb2_digest_size(tpm_log_alg()));
 
 	tce->data_length = htole32(sizeof(tce->data));
 	strncpy((char *)tce->data, name, sizeof(tce->data) - 1);
@@ -183,7 +183,7 @@ int tpm2_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
 
 	*pcr = le32toh(tce->pcr);
 	*digest_data = tce->digest;
-	*digest_algo = TPM_MEASURE_ALGO; /* We validate algorithm on addition */
+	*digest_algo = tpm_log_alg(); /* We validate algorithm on addition */
 	*event_name = (char *)tce->data;
 	return 0;
 }
