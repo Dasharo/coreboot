@@ -90,6 +90,7 @@ config TPM_MEASURED_BOOT
 choice
 	prompt "TPM event log format"
 	depends on TPM_MEASURED_BOOT
+	default TPM_LOG_TCG if TPM1 && TPM2
 	default TPM_LOG_TPM1 if TPM1
 	default TPM_LOG_TPM2 if TPM2
 
@@ -97,6 +98,10 @@ config TPM_LOG_CB
 	bool "coreboot's custom format"
 	help
 	  Custom coreboot-specific format of the log derived from TPM1 log format.
+config TPM_LOG_TCG
+	bool "TPM 1.2 or TPM 2.0 format (matches detected TPM)"
+	help
+	  Automatically select TCG log format depending on which TPM is present.
 config TPM_LOG_TPM1
 	bool "TPM 1.2 format"
 	depends on TPM1 && !TPM2
@@ -114,7 +119,7 @@ endchoice
 
 choice
 	prompt "TPM2 hashing algorithm"
-	depends on TPM_MEASURED_BOOT && TPM_LOG_TPM2
+	depends on TPM_MEASURED_BOOT && (TPM_LOG_TCG || TPM_LOG_TPM2)
 	default TPM_HASH_SHA1 if TPM1
 	default TPM_HASH_SHA256 if TPM2
 
