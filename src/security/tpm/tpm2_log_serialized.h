@@ -17,7 +17,7 @@
  * varying number of digests and their sizes. However, it works as long as
  * we're only using single kind of digests.
  */
-#if CONFIG(TPM_LOG_TPM2)
+#if CONFIG(TPM_LOG_TCG) || CONFIG(TPM_LOG_TPM2)
 #  if CONFIG(TPM_HASH_SHA1)
 #    define TPM_20_LOG_DIGEST_MAX_LENGTH SHA1_DIGEST_SIZE
 #  endif
