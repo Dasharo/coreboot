@@ -20,6 +20,7 @@
 #include <intelblocks/cse.h>
 #include <intelblocks/pcie_rp.h>
 #include <option.h>
+#include <security/vboot/vbnv.h>
 #include <soc/cpu.h>
 #include <soc/gpio_soc_defs.h>
 #include <soc/iomap.h>
@@ -184,7 +185,7 @@ static void fill_fspm_mrc_params(FSP_M_CONFIG *m_cfg,
 	m_cfg->RMC = 0;
 	m_cfg->MarginLimitCheck = 0;
 	/* Enable MRC Fast Boot */
-	m_cfg->MrcFastBoot = 1;
+	m_cfg->MrcFastBoot = !vbnv_cmos_failed();
 	m_cfg->LowerBasicMemTestSize = config->lower_basic_mem_test_size;
 }
 
