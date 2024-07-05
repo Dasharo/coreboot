@@ -1,0 +1,241 @@
+name: Deploy
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  deploy_protectli:
+    runs-on: ubuntu-22.04
+    if: contains(github.ref, 'refs/tags/protectli')
+    strategy:
+      matrix:
+        vendor: [ protectli ]
+        model: [ vp66xx, vp46xx, vp2420, vp2410, V1210, V1211, V1410, V1610 ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+
+      - name: Set up tag name
+        id: tag_name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Parse directories from tag
+        id: parse_directories
+        run: |
+          tag=${{ steps.tag_name.outputs.tag }}
+          base_dir="protectli"
+          model=$(echo "$tag" | cut -d'_' -f1-3)
+          release=$(echo "$tag" | cut -d'_' -f4)
+          echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      # Allows downloading artifacts from a different workflow
+      - name: Download workflow artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build.yml
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+          path: "./artifacts"
+
+      - name: Upload to Nextcloud
+        env:
+          CLOUD_URL: ${{ secrets.CLOUD_URL }}
+          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
+        run: |
+          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
+          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
+          base_dir="${{ steps.parse_directories.outputs.base_dir }}"
+          model="${{ steps.parse_directories.outputs.model }}"
+          release="${{ steps.parse_directories.outputs.release }}"
+          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+
+          new_name=$(echo "${{ matrix.vendor }}-${{ matrix.model }}.rom" | sed 's/-/_/g; s/.*/\L&/')
+
+          # Create release directory if it doesn't exist
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
+          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
+          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
+          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
+
+  deploy_novacustom:
+    runs-on: ubuntu-22.04
+    if: contains(github.ref, 'refs/tags/novacustom')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+
+      - name: Set up tag name
+        id: tag_name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Parse directories from tag
+        id: parse_directories
+        run: |
+          tag=${{ steps.tag_name.outputs.tag }}
+          base_dir="novacustom"
+          model=$(echo "$tag" | cut -d'_' -f1-3)
+          release=$(echo "$tag" | cut -d'_' -f4)
+          echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      - name: Parse artifact name
+        id: artifact_name
+        run: |
+          first_part=$(echo ${{ steps.tag_name.outputs.tag }} | cut -d "_" -f1)
+          second_part=$(echo ${{ steps.tag_name.outputs.tag }} | cut -d "_" -f2-3)
+          echo "artifact_name=dasharo-$first_part-$second_part" >> "$GITHUB_OUTPUT"
+
+      # Allows downloading artifacts from a different workflow
+      - name: Download workflow artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build.yml
+          name: ${{ steps.artifact_name.outputs.artifact_name }}
+          path: "./artifacts"
+
+      - name: Upload to Nextcloud
+        env:
+          CLOUD_URL: ${{ secrets.CLOUD_URL }}
+          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
+        run: |
+          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
+          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
+          base_dir="${{ steps.parse_directories.outputs.base_dir }}"
+          model="${{ steps.parse_directories.outputs.model }}"
+          release="${{ steps.parse_directories.outputs.release }}"
+          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+
+          new_name=$(echo "${model}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
+
+          # Create release directory if it doesn't exist
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
+          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
+          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
+          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
+  deploy_pcengines:
+    runs-on: ubuntu-22.04
+    if: contains(github.ref, 'refs/tags/pcengines')
+    strategy:
+      matrix:
+        vendor: [ pcengines ]
+        model: [ apu2, apu3, apu4, apu6 ]
+        payload: [ uefi ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+
+      - name: Set up tag name
+        id: tag_name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Parse directories from tag
+        id: parse_directories
+        run: |
+          tag=${{ steps.tag_name.outputs.tag }}
+          base_dir="pcengines"
+          release=$(echo "$tag" | cut -d'_' -f3)
+          echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      # Allows downloading artifacts from a different workflow
+      - name: Download workflow artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build.yml
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
+          path: "./artifacts"
+
+      - name: Upload to Nextcloud
+        env:
+          CLOUD_URL: ${{ secrets.CLOUD_URL }}
+          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
+        run: |
+          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
+          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
+          base_dir="${{ steps.parse_directories.outputs.base_dir }}"
+          release="${{ steps.parse_directories.outputs.release }}"
+          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+
+          new_name=$(echo "${{ matrix.vendor }}_${{ matrix.model }}_${{ matrix.payload }}_${release}.rom" | sed 's/.*/\L&/')
+
+          # Create release directory if it doesn't exist
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/pcengines_apu2/$release"
+          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/pcengines_apu2/$release/$new_name"
+          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
+          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/pcengines_apu2/$release/"
+
+  deploy_msi:
+    runs-on: ubuntu-22.04
+    if: contains(github.ref, 'refs/tags/msi')
+    strategy:
+      matrix:
+        type: [ ddr4, ddr5 ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+
+      - name: Set up tag name
+        id: tag_name
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Parse directories from tag
+        id: parse_directories
+        run: |
+          tag=${{ steps.tag_name.outputs.tag }}
+          base_dir="msi"
+          model=$(echo "$tag" | cut -d'_' -f1-2)
+          release=$(echo "$tag" | cut -d'_' -f3)
+          echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      - name: Parse artifact name
+        id: artifact_name
+        run: |
+          first_part=$(echo ${{ steps.tag_name.outputs.tag }} | cut -d "_" -f1)
+          second_part=$(echo ${{ steps.tag_name.outputs.tag }} | cut -d "_" -f2)
+          echo "artifact_name=dasharo-$first_part-${second_part}_${{ matrix.type }}" >> "$GITHUB_OUTPUT"
+
+      # Allows downloading artifacts from a different workflow
+      - name: Download workflow artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build.yml
+          name: ${{ steps.artifact_name.outputs.artifact_name }}
+          path: "./artifacts"
+
+      - name: Upload to Nextcloud
+        env:
+          CLOUD_URL: ${{ secrets.CLOUD_URL }}
+          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
+        run: |
+          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
+          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
+          base_dir="${{ steps.parse_directories.outputs.base_dir }}"
+          model="${{ steps.parse_directories.outputs.model }}"
+          release="${{ steps.parse_directories.outputs.release }}"
+          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+
+          new_name=$(echo "${model}_${{ matrix.type }}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
+
+          # Create release directory if it doesn't exist
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
+          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
+          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
+          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
