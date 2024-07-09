@@ -58,7 +58,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 			ECOK = Arg1
 
 			// Reset System76 Device
-			^^^^S76D.RSET()
+			^^^^DASH.RSET()
 		}
 	}
 
@@ -92,7 +92,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 			Notify(^^^^BAT0, 0)
 
 			// Reset System76 Device
-			^^^^S76D.RSET()
+			^^^^DASH.RSET()
 		}
 	}
 
@@ -120,7 +120,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 	{
 		Printf ("EC: Screen Toggle")
 #if CONFIG(EC_SYSTEM76_EC_OLED)
-		Notify (^^^^S76D, 0x85)
+		Notify (^^^^DASH, 0x85)
 #endif // CONFIG(EC_SYSTEM76_EC_OLED)
 	}
 
