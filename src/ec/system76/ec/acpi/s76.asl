@@ -7,18 +7,18 @@
 //   0x83 - backlight up
 //   0x84 - backlight color change
 //   0x85 - OLED screen toggle
-Device (S76D) {
-	Name (_HID, "DASHEC00")
+Device (DASH) {
+	Name (_HID, "DSHR4543")
 	Name (_UID, 0)
 	// Hide the device so that Windows does not warn about a missing driver.
 	Name (_STA, 0xB)
 
 	Method (RSET, 0, Serialized) {
-		Debug = "S76D: RSET"
+		Debug = "DASH: RSET"
 		SAPL(0)
 	}
 	Method (INIT, 0, Serialized) {
-		Printf ("S76D: INIT")
+		Printf ("DASH: INIT")
 		RSET()
 		If (^^PCI0.LPCB.EC0.ECOK) {
 			// Set flags to use software control
@@ -30,7 +30,7 @@ Device (S76D) {
 	}
 
 	Method (FINI, 0, Serialized) {
-		Printf ("S76D: FINI")
+		Printf ("DASH: FINI")
 		RSET()
 		If (^^PCI0.LPCB.EC0.ECOK) {
 			// Set flags to use hardware control

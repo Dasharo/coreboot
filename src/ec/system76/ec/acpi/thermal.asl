@@ -28,8 +28,8 @@ Scope (\_TZ)
 		Method (_FST, 0, Serialized,,PkgObj)
 		{
 			/* Fill in TFST with current control. */
-			TFST [1] = (\_SB.S76D.GFAN(0) & 0xFF) * 100 / 255
-			TFST [2] = \_SB.S76D.GFAN(0) >> 8
+			TFST [1] = (\_SB.DASH.GFAN(0) & 0xFF) * 100 / 255
+			TFST [2] = \_SB.DASH.GFAN(0) >> 8
 			Return (TFST)
 		}
 
@@ -108,8 +108,8 @@ Scope (\_TZ)
 		Method (_FST, 0, Serialized,,PkgObj)
 		{
 			/* Fill in TFST with current control. */
-			TFST [1] = (\_SB.S76D.GFAN(1) & 0xFF) * 100 / 255
-			TFST [2] = \_SB.S76D.GFAN(1) >> 8
+			TFST [1] = (\_SB.DASH.GFAN(1) & 0xFF) * 100 / 255
+			TFST [2] = \_SB.DASH.GFAN(1) >> 8
 			Return (TFST)
 		}
 
