@@ -137,4 +137,11 @@ config VBOOT_FWID_VERSION
 config EC_SYSTEM76_EC_FLASH_SIZE
 	default 0x40000
 
+if PAYLOAD_EDK2
+
+config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
+	default 30
+
+endif
+
 endif
