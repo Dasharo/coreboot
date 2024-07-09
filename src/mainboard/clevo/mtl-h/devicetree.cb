@@ -26,7 +26,15 @@ chip soc/intel/meteorlake
 	register "pch_pm_energy_report_enable" = "1"
 
 	# Thermal
-	register "tcc_offset" = "10" # TCC of 100C
+	register "tcc_offset" = "30" # TCC of 100C
+
+	# Power limits
+	# PsysPL2, PsysPL3, PL4 are configured by EC at runtime
+	register "power_limits_config[MTL_P_682_482_CORE]" = "{
+		.tdp_pl1_override = 35,
+		.tdp_pl2_override = 64,
+		.tdp_pl4 = 120,
+	}"
 
 	register "usb2_ports" = "{
 		[0] = USB2_PORT_LONG(OC_SKIP),	 /* USB Type-A Port 1 (Left) */
