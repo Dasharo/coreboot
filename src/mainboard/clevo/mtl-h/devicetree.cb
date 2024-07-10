@@ -65,25 +65,7 @@ chip soc/intel/meteorlake
 				[DDI_PORT_A] = DDI_ENABLE_HPD, 			/* eDP */
 				[DDI_PORT_2] = DDI_ENABLE_DDC | DDI_ENABLE_HPD,	/* HDMI 2.1 */
 			}"
-			chip drivers/gfx/generic
-				register "device_count" = "6"
-				# DDIA for eDP
-				register "device[0].name" = ""LCD0""
-				register "device[0].type" = "panel"
-				# DDIB unused
-				register "device[1].name" = ""DD01""
-				# TCP0 for Thunderbolt 4
-				register "device[2].name" = ""DD02""
-				register "device[2].use_pld" = "true"
-				register "device[2].pld" = "ACPI_PLD_TYPE_C(RIGHT, CENTER, ACPI_PLD_GROUP(1, 1))"
-				# TCP1 unused
-				register "device[3].name" = ""DD03""
-				# TCP2 for HDMI 2.1
-				register "device[4].name" = ""DD04""
-				# TCP3 unused
-				register "device[5].name" = ""DD05""
-				device generic 0 on end
-			end
+			register "gfx" = "GMA_DEFAULT_PANEL(0)"
 		end
 		device ref dtt on end
 		device ref pcie_rp10 on # M.2 2280 #2
