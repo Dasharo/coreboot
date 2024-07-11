@@ -186,7 +186,7 @@ endif
 # IOMMU_ENABLE			= FALSE
 ifeq ($(CONFIG_IOMMU_ENABLE),y)
 BUILD_STR += -D IOMMU_ENABLE=TRUE
-BUILD_STR += --pcd gUefiPayloadPkgTokenSpaceGuid.PcdShowIommuOptions=TRUE
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowIommuOptions=TRUE
 endif
 # DASHARO_SYSTEM_FEATURES	= FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SYSTEM_FEATURES),y)
