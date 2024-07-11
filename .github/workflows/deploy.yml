@@ -43,24 +43,13 @@ jobs:
           path: "./artifacts"
 
       - name: Upload to Nextcloud
-        env:
-          CLOUD_URL: ${{ secrets.CLOUD_URL }}
-          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
-        run: |
-          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
-          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
-          base_dir="${{ steps.parse_directories.outputs.base_dir }}"
-          model="${{ steps.parse_directories.outputs.model }}"
-          release="${{ steps.parse_directories.outputs.release }}"
-          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+        uses: ./.github/workflows/deploy-template.yml
+        with:
+          base_dir: ${{ steps.parse_directories.outputs.base_dir }}
+          model: ${{ steps.parse_directories.outputs.model }}
+          release: ${{ steps.parse_directories.outputs.release }}
+          new_name: $(echo "${{ matrix.vendor }}-${{ matrix.model }}.rom" | sed 's/-/_/g; s/.*/\L&/')
 
-          new_name=$(echo "${{ matrix.vendor }}-${{ matrix.model }}.rom" | sed 's/-/_/g; s/.*/\L&/')
-
-          # Create release directory if it doesn't exist
-          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
-          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
-          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
-          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
 
   deploy_novacustom:
     runs-on: ubuntu-22.04
@@ -104,24 +93,13 @@ jobs:
           path: "./artifacts"
 
       - name: Upload to Nextcloud
-        env:
-          CLOUD_URL: ${{ secrets.CLOUD_URL }}
-          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
-        run: |
-          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
-          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
-          base_dir="${{ steps.parse_directories.outputs.base_dir }}"
-          model="${{ steps.parse_directories.outputs.model }}"
-          release="${{ steps.parse_directories.outputs.release }}"
-          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+        uses: ./.github/workflows/deploy-template.yml
+        with:
+          base_dir: ${{ steps.parse_directories.outputs.base_dir }}
+          model: ${{ steps.parse_directories.outputs.model }}
+          release: ${{ steps.parse_directories.outputs.release }}
+          new_name: $(echo "${model}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
 
-          new_name=$(echo "${model}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
-
-          # Create release directory if it doesn't exist
-          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
-          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
-          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
-          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
   deploy_pcengines:
     runs-on: ubuntu-22.04
     if: contains(github.ref, 'refs/tags/pcengines')

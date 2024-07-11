@@ -1,0 +1,39 @@
+name: Reusable Deploy workflow
+on:
+  workflow_call:
+    inputs:
+      base_dir:
+        type: string
+      model:
+        type: string
+      release:
+        type: string
+      new_name:
+        type: string
+
+jobs:
+  upload_artifacts:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Upload to Nextcloud
+        env:
+          CLOUD_URL: ${{ secrets.CLOUD_URL }}
+          CLOUD_PASSWORD: ${{ secrets.CLOUD_PASSWORD }}
+        run: |
+          BASE_URL="https://cloud.3mdeb.com/public.php/webdav"
+          url_part=$(echo "$CLOUD_URL" | cut -d'/' -f6)
+          base_dir="${{ inputs.base_dir }}"
+          model="${{ inputs.model }}"
+          release="${{ inputs.release }}"
+          CURL_CMD="curl -u $url_part:$CLOUD_PASSWORD"
+
+          new_name= "${{ inputs.new_name }}"
+
+          # Create release directory if it doesn't exist
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
+          $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
+          sha256sum artifacts/coreboot.rom > ${new_name}.sha256
+          $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
