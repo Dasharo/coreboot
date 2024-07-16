@@ -20,7 +20,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpAdvancedErrorReporting[0] = 1;
 	params->PcieRpAdvancedErrorReporting[1] = 1;
 	params->PcieRpAdvancedErrorReporting[3] = 1;
-	params->PcieRpAdvancedErrorReporting[4] = 1;
+	params->PcieRpAdvancedErrorReporting[4] = 0; // Atheros WiFi cards don't like AER
 	params->PcieRpAdvancedErrorReporting[5] = 1;
 	params->PcieRpAdvancedErrorReporting[6] = 1;
 
