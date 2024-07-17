@@ -36,7 +36,7 @@ config MAINBOARD_PART_NUMBER
 
 config MAINBOARD_FAMILY
 	string
-	default "Vault"
+	default "Protectli Vault"
 
 config DIMM_MAX
 	default 2
