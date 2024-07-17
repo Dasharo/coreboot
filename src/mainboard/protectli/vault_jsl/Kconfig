@@ -33,6 +33,9 @@ config MAINBOARD_FAMILY
 	string
 	default "Vault"
 
+config OVERRIDE_DEVICETREE
+	default "overridetree_v1610.cb" if BOARD_PROTECTLI_V1610
+
 config DIMM_MAX
 	default 2
 

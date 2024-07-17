@@ -1,0 +1,25 @@
+chip soc/intel/jasperlake
+	device domain 0 on
+		device pci 1c.0 on	# PCI Express Root Port 1
+			device pci 00.0 on # ASMedia Switch PCIe x2
+
+				device pci 00.0 on  end # ASMedia DS port 1 - LAN
+				device pci 02.0 on  end # ASMedia DS port 2 - LAN
+				device pci 06.0 on  end # ASMedia DS port 3 - LAN
+				device pci 0e.0 on	# ASMedia DS port 4
+					smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther"
+						 "M.2/E 2230 (WIFI)" "SlotDataBusWidth1X"
+				end
+			end
+		end
+		device pci 1c.1 off end # PCI Express Root Port 2
+		device pci 1c.2 off end # PCI Express Root Port 3
+		device pci 1c.3 on	# PCI Express Root Port 4
+			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
+					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth1X"
+		end
+		device pci 1c.4 on  end # PCI Express Root Port 5 - LAN
+		device pci 1c.5 on  end # PCI Express Root Port 6 - LAN
+		device pci 1c.6 on  end # PCI Express Root Port 7 - LAN
+	end
+end
