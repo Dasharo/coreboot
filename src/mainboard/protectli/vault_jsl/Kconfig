@@ -31,7 +31,7 @@ config MAINBOARD_PART_NUMBER
 
 config MAINBOARD_FAMILY
 	string
-	default "Vault"
+	default "Protectli Vault"
 
 config OVERRIDE_DEVICETREE
 	default "overridetree_v1610.cb" if BOARD_PROTECTLI_V1610
