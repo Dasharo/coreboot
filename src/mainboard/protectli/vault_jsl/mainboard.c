@@ -6,6 +6,8 @@
 #include <soc/iomap.h>
 #include <soc/ramstage.h>
 
+#define FSP_PCH_PCIE_ASPM_L1 2
+
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
 	params->UsbPdoProgramming = 0;
@@ -30,6 +32,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpLtrEnable[4] = 1;
 	params->PcieRpLtrEnable[5] = 1;
 	params->PcieRpLtrEnable[6] = 1;
+
+	/*
+	 * Enable L1 only for WiFi, L0s doesn't work reliably for Atheros QCA6174.
+	 * On V1610, WiFi is connected to different root port through PCIe switch
+	 * (ASMedia ASM1806), but the switch doesn't support L0s on upstream port
+	 * so this workaround isn't needed there.
+	 */
+	if (!CONFIG(BOARD_PROTECTLI_V1610))
+		params->PcieRpAspm[4] = FSP_PCH_PCIE_ASPM_L1;
 
 	/* Set Max Payload to 256B */
 	params->PcieRpMaxPayload[0] = 1;
