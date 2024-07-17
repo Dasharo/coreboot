@@ -162,3 +162,8 @@ __weak u8 smbios_chassis_power_cords(void)
 {
 	return 1;
 }
+
+__weak const char *smbios_chassis_sku(void)
+{
+	return "";
+}

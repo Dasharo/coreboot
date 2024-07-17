@@ -498,6 +498,7 @@ static int smbios_write_type3(unsigned long *current, int handle)
 	t->asset_tag_number = smbios_add_string(t->eos, smbios_mainboard_asset_tag());
 	t->version = smbios_add_string(t->eos, smbios_chassis_version());
 	t->serial_number = smbios_add_string(t->eos, smbios_chassis_serial_number());
+	t->sku_number = smbios_add_string(t->eos, smbios_chassis_sku());
 	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;

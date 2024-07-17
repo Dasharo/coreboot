@@ -86,6 +86,7 @@ const char *smbios_chassis_version(void);
 const char *smbios_chassis_serial_number(void);
 const char *smbios_processor_serial_number(void);
 u8 smbios_chassis_power_cords(void);
+const char *smbios_chassis_sku(void);
 
 /* This string could be filled late in payload. */
 void smbios_type0_bios_version(uintptr_t address);
