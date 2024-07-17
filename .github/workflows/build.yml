@@ -6,6 +6,7 @@ on:
       - dasharo-24.02.1
   push:
     branches:
+      - test_gha
       - dasharo-24.02.1
 
 jobs:
@@ -88,10 +89,9 @@ jobs:
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
-        run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
-          make olddefconfig
-          make
+        uses: Dasharo/build-coreboot@v1
+        with:
+          defconfig: configs/config.${{ matrix.vendor }}_${{ matrix.model }}
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
