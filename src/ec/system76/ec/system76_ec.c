@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <cbfs.h>
 #include <console/system76_ec.h>
+#include <delay.h>
 #include <pc80/mc146818rtc.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/vboot_common.h>
@@ -469,7 +470,7 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 /* Read a sector into dest. Returns 0 on success and <0 on error. */
 static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 {
-	int rv;
+	int status, rv;
 	uint8_t buf[5] = {
 		[0] = 0x0B, /* SPI Read */
 		[1] = (addr >> 16) & 0xFF,
@@ -480,6 +481,10 @@ static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 
 	if ((rv = ec_spi_reset()))
 		return rv;
+
+	do {
+		status = ec_spi_cmd_status();
+	} while (status > 0 && (status & 1) != 0);
 
 	if ((rv = ec_spi_bus_write(buf, 5)))
 		return rv;
@@ -536,7 +541,7 @@ static void system76_ec_fw_sync(void *unused)
 	char cur_board_str[64];
 	char cur_version_str[64];
 	uint8_t smfi_cmd;
-	int rv;
+	int status, rv;
 
 	if (!CONFIG(EC_SYSTEM76_EC_UPDATE))
 		return;
@@ -657,6 +662,14 @@ static void system76_ec_fw_sync(void *unused)
 		printk(BIOS_ERR, "EC: failed to disable SPI bus!\n");
 		goto cleanup;
 	}
+
+	/* Wait for busy bit to clear */
+	do {
+		status = ec_spi_cmd_status();
+	} while (status > 0 && (status & 1) != 0);
+
+	/* Wait 5 seconds for good measure */
+	mdelay(5000);
 
 	smfi_cmd = 0;
 	if (system76_ec_smfi_cmd(CMD_RESET, 1, &smfi_cmd)) {
