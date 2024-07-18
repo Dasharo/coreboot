@@ -4,8 +4,6 @@
 #include <soc/gpio.h>
 
 static const struct pad_config early_gpio_table[] = {
-	PAD_CFG_NF(GPP_H08, NONE, DEEP, NF1), // UART0_RX
-	PAD_CFG_NF(GPP_H09, NONE, DEEP, NF1), // UART0_TX
 	/* GPP_C00 - SMBCLK */
 	/* DW0: 0x44000702, DW1: 0x0003f000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1) - IGNORED */

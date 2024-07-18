@@ -4,7 +4,7 @@
 # When updating, change the name both here and in payloads/external/iPXE/Kconfig
 
 # Temporarily Dasharo fork is used until i225/i226 native support is merged.
-STABLE_COMMIT_ID=86e3e5d9adf7c471739859d936f0e2bc8a3bb126
+STABLE_COMMIT_ID=35d84756c8fc55b55922a24a8cd9e7ea27f92edb
 
 TAG-$(CONFIG_IPXE_MASTER)=origin/master
 TAG-$(CONFIG_IPXE_STABLE)=$(STABLE_COMMIT_ID)
@@ -27,7 +27,7 @@ endif
 ifeq ($(CONFIG_IPXE_BUILD_EFI),y)
 IPXE_BUILD_TARGET := bin-x86_64-efi-sb/ipxe.efi
 # Workaround problems with unrecognized ipxe/util/elf2efi relocations
-PXE_MAKE_OPTS += EXTRA_CFLAGS="$(CFLAGS_x86_64) -fno-pic" DEBUG=intel:3
+PXE_MAKE_OPTS += EXTRA_CFLAGS="$(CFLAGS_x86_64) -fno-pic"
 else
 IPXE_BUILD_TARGET := bin/$(PXE_ROM_PCI_ID).rom
 endif
