@@ -118,6 +118,12 @@ endif
 #ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS), y)
 #BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdPcieResizableBarSupport=TRUE
 #endif
+# CAPSULE_SUPPORT		= FALSE
+# CAPSULE_MAIN_FW_GUID	=
+ifneq ($(CONFIG_DRIVERS_EFI_UPDATE_CAPSULES),)
+BUILD_STR += -D CAPSULE_SUPPORT=TRUE
+BUILD_STR += -D CAPSULE_MAIN_FW_GUID=$(CONFIG_DRIVERS_EFI_MAIN_FW_GUID)
+endif
 
 #
 # The MrChromebox repository has the following addition options:
