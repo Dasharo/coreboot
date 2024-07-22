@@ -202,6 +202,10 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	params->PcieRpDetectTimeoutMs[1] = 200;
 
+	/* On V1610 the NVMe disk sometimes do not appear in RP with default 0ms timeout*/
+	if (CONFIG(BOARD_PROTECTLI_V1610))
+		params->PcieRpDetectTimeoutMs[3] = 200;
+
 	/*
 	 * HWP is too aggressive in power savings and does not let using full
 	 * bandwidth of Ethernet controllers without additional stressing of
