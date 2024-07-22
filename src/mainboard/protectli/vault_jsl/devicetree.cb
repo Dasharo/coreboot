@@ -54,7 +54,6 @@ chip soc/intel/jasperlake
 	# Skip the CPU replacement check
 	register "SkipCpuReplacementCheck" = "1"
 
-	register "PchHdaDspEnable" = "1"
 	register "PchHdaAudioLinkHdaEnable" = "1"
 
 	# PCIe Root Port 1 and 2 for LAN3 and LAN4 on 4 port platform
@@ -68,7 +67,6 @@ chip soc/intel/jasperlake
 	register "PcieRpEnable[4]" = "1"
 	register "PcieRpEnable[5]" = "1"
 	register "PcieRpEnable[6]" = "1"
-
 
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE" # WiFi
 	register "PcieClkSrcUsage[1]" = "PCIE_CLK_FREE" # M.2 NVMe
