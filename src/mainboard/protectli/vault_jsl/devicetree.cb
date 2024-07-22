@@ -51,7 +51,6 @@ chip soc/intel/jasperlake
 	register "gen2_dec" = "LPC_IO(0x80, 0x10)"
 	register "gen3_dec" = "LPC_IO(0x200, 0x100)"
 
-	register "PchHdaDspEnable" = "1"
 	register "PchHdaAudioLinkHdaEnable" = "1"
 
 	register "PcieClkSrcUsage[0]" = "PCIE_CLK_FREE" # WiFi
