@@ -214,6 +214,12 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	 * intel_pstate by disabling HWP.
 	 */
 	params->Hwp = 0;
+
+	/*
+	 * Skip PCI Subsystem IDs programming to match proprietary FW.
+	 * It also makes some Windows default drivers to probe successfully, e.g. audio.
+	 */
+	params->SiSkipSsidProgramming = 1;
 }
 
 static void mainboard_final(void *unused)
