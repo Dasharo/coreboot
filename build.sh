@@ -14,6 +14,7 @@ usage() {
   echo -e "\tvp2420- build Dasharo for Protectli VP2420"
   echo -e "\tvp2410- build Dasharo for Protectli VP2410"
   echo -e "\tV1210- build Dasharo for Protectli V1210"
+  echo -e "\tV1211- build Dasharo for Protectli V1211"
   echo -e "\tV1410- build Dasharo for Protectli V1410"
   echo -e "\tV1610- build Dasharo for Protectli V1610"
   echo -e "\tapu2 - build Dasharo for PC Engines APU2"
