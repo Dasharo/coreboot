@@ -9,7 +9,7 @@ images.
 
 The txesbmantool supports the following commands:
 
-```bash
+```txt
 txesbmantool: Utility for generating TXE Secure Boot manifests
 USAGE:
  ./txesbmantool FILE COMMAND
@@ -40,8 +40,8 @@ OPTIONS:
 `print` - parses the input `FILE` and prints Key Manifest and Secure Boot
 Manifest if found. Example output:
 
-```bash
-txesbmantool coreboot.rom print
+```txt
+./txesbmantool coreboot.rom print
 Key Manifest:
     Magic: $SKM
     Version: 1
@@ -162,7 +162,7 @@ expected to have a Key Manifest, one must also pass the key used to sign Key
 Manifest. The tool will also print the expected TXE image configuration.
 Example output:
 
-```bash
+```txt
 ./txesbmantool coreboot.rom verify \
     --sbm-key-file sb_privkey_sample.pem \
     --km-key-file oem_privkey_sample.pem 
@@ -180,6 +180,11 @@ Secure Boot Manifest verification is successful!
 If the Key Manifest is found in the binary but the `--km-key-file` was not
 passed with a valid key, the tool will output an error:
 
+```txt
+ERROR: Key Manifest key file not given, but Key Manifest found in the input file
+ERROR: Can not verify Key Manifest!
+```
+
 ### `generate-km`
 
 `generate-km` - creates a signed Key Manifest and injects it into the input
@@ -190,7 +195,7 @@ Boot Manifests. One may optionally provide a custom Key Manifest ID
 (`--km-id`), SVN (`--svn`), and save the resulting Key Manifest as a separate
 file with `-o` parameter. Example:
 
-```bash
+```txt
 ./txesbmantool coreboot.rom generate-km \
     --sbm-key-file sb_privkey_sample.pem \
     --km-key-file oem_privkey_sample.pem \
@@ -209,7 +214,7 @@ parameter. The Secure Boot Manifest contains the hash of the IBB that is being
 verified by TXE. One may optionally provide a custom SVN (`--svn`) and save
 the resulting Key Manifest as a separate file with `-o` parameter. Example:
 
-```bash
+```txt
 ./txesbmantool coreboot.rom generate-sbm \
     --sbm-key-file sb_privkey_sample.pem \
     --svn 2
@@ -231,7 +236,7 @@ key modulus+exponent. It is useful when preparing the TXE image for Secure
 Boot, where one needs to provide the SHA256 of the key to be set in the
 fuses/emulated fuses. Example:
 
-```bash
+```txt
 ./txesbmantool oem_privkey_sample.pem keyhash
 SHA256 of RSA key 'oem_privkey_sample.pem':
 AE6491B401B639DB9FA6E86D22FACE37F846E506328FDBF4327802C271FFE6FF
