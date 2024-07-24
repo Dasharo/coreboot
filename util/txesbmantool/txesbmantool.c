@@ -55,39 +55,23 @@ struct key_signature {
 	uint8_t signature[256];
 } __attribute__((packed));
 
-struct sb_manifest {
+struct manifest {
 	struct manifest_header header;
-	uint32_t reserved1;
-	uint8_t ibb_hash[WC_SHA256_DIGEST_SIZE];
-	uint32_t reserved2;
-	uint32_t reserved3[8];
-	uint8_t oem_data[400];
-	uint8_t reserved4[20];
+	uint32_t km_id;				/* Only for Key Manifest */
+	uint8_t hash[WC_SHA256_DIGEST_SIZE];	/* IBB hash of SBM, Key hash for KM */
+	union {
+		struct {
+			uint32_t reserved1;
+			uint32_t reserved2[8];
+			uint8_t oem_data[400];
+			uint8_t reserved3[20];
+		} sb;
+		uint8_t reserved[KEY_MANIFEST_RESERVED_SIZE];
+	};
 	struct key_signature key_sig;
 } __attribute__((packed));
 
-_Static_assert(sizeof(struct sb_manifest) == SB_MANIFEST_SIZE, "Wrong size of SB Manifest structure");
-
-struct key_manifest {
-	struct manifest_header header;
-	uint32_t km_id;
-	uint8_t sb_key_hash[WC_SHA256_DIGEST_SIZE];
-	uint8_t reserved[KEY_MANIFEST_RESERVED_SIZE];
-	struct key_signature key_sig;
-	uint8_t pad[KEY_MANIFEST_PAD_SIZE];
-} __attribute__((packed));
-
-_Static_assert(sizeof(struct key_manifest) == KEY_MANIFEST_SIZE, "Wrong size of Key Manifest structure");
-
-typedef union {
-	struct sb_manifest sbm;
-	struct key_manifest km;
-} secure_boot_manifest;
-
-enum manifest_type {
-	KEY_MANIFEST,
-	SB_MANIFEST,
-};
+_Static_assert(sizeof(struct manifest) == MANIFEST_SIZE, "Wrong size of Manifest structure");
 
 static struct params {
 	const char *output;
@@ -202,7 +186,7 @@ static int rsa_load_key_file(const char *keyFile, RsaKey *rsaKey)
 	file = fopen(keyFile, "rb");
 	if (file) {
 		buffer = malloc(bufSize);
-		if(buffer) {
+		if (buffer) {
 			bytes = fread(buffer, 1, bufSize, file);
 		}
 		fclose(file);
@@ -210,7 +194,7 @@ static int rsa_load_key_file(const char *keyFile, RsaKey *rsaKey)
 
 	derBuffer = malloc(derBufSize);
 
-	if(buffer != NULL && bytes > 0 && derBuffer != NULL) {
+	if (buffer != NULL && bytes > 0 && derBuffer != NULL) {
 		ret = wc_KeyPemToDer(buffer, bytes, derBuffer, derBufSize, NULL);
 
 		if (ret < 0) {
@@ -224,7 +208,7 @@ static int rsa_load_key_file(const char *keyFile, RsaKey *rsaKey)
 		ret = wc_RsaPrivateKeyDecode(buffer, &idx, rsaKey, (word32)bytes);
 	}
 
-	if(buffer) {
+	if (buffer) {
 		free(buffer);
 	}
 
@@ -316,98 +300,107 @@ static int calculate_ibb_hash(const byte *buffer, byte *ibb_hash)
 	return ret;
 }
 
-static int create_manifest(secure_boot_manifest *man, enum manifest_type type,
-			   const byte *romBuf, word32 romLen, const byte *oemData, word32 oemDataLen,
-			   word32 manifestSVN)
+static int create_sb_manifest(struct manifest *man, byte* romBuf, word32 romLen, byte* oemData,
+			      word32 oemDataLen, word32 manifestSVN)
 {
 	int ret;
-	RsaKey sbmKey;
 	byte *sha256_buffer;
 	size_t file_size = IBB_SIZE + SB_MANIFEST_SIZE;
-
-	if (type == KEY_MANIFEST)
-		file_size += KEY_MANIFEST_SIZE;
 
 	if (romLen < file_size) {
 		ERROR("ROM file too small\n");
 		return EXIT_FAILURE;
 	}
 
-	/* Verify hash type is supported */
 	if (wc_HashGetDigestSize(WC_HASH_TYPE_SHA256) != 32) {
 		ERROR("Hash type SHA256 not supported!\n");
 		return EXIT_FAILURE;
 	}
 
-	if (type == KEY_MANIFEST) {
-		memset((byte *)&man->km, 0, KEY_MANIFEST_SIZE);
+	memset((byte *)man, 0, MANIFEST_SIZE);
 
-		man->km.header.magic = KEY_MANIFEST_MAGIC;
-		man->km.header.version = KEY_MANIFEST_VERSION;
-		man->km.header.svn = manifestSVN;
-		man->km.header.size = MANIFEST_SIZE;
+	man->header.magic = SB_MANIFEST_MAGIC;
+	man->header.version = SB_MANIFEST_VERSION;
+	man->header.svn = manifestSVN;
+	man->header.size = MANIFEST_SIZE;
 
-		if (params.override_km_id)
-			man->km.km_id = params.km_id;
+	if (oemData != NULL && oemDataLen > 0) {
+		if (oemDataLen <= sizeof(man->sb.oem_data))
+			memcpy((byte *)man->sb.oem_data, oemData, oemDataLen);
 		else
-			man->km.km_id = 1;
-
-		ret = wc_InitRsaKey(&sbmKey, NULL);
-		if (ret != 0) {
-			ERROR("Init RSA key failed! %d\n", ret);
-			return ret;
-		}
-
-		ret = rsa_load_key_file(params.sbm_key_file, &sbmKey);
-		if (ret != 0) {
-			ERROR("Failed to load Secure Boot Manifest Key!\n");
-			return ret;
-		}
-
-		ret = calculate_key_hash(&sbmKey, man->km.sb_key_hash);
-		if (ret != 0) {
-			ERROR("Failed to calcualte Secure Boot key hash!\n");
-			return ret;
-		}
-		wc_FreeRsaKey(&sbmKey);
-
-		sha256_buffer = man->km.sb_key_hash;
-		printf("SHA256 of the Secure Boot Manifest Key (Little Endian):\n");
-	} else if (type == SB_MANIFEST) {
-		memset((byte *)&man->sbm, 0, SB_MANIFEST_SIZE);
-
-		man->sbm.header.magic = SB_MANIFEST_MAGIC;
-		man->sbm.header.version = SB_MANIFEST_VERSION;
-		man->sbm.header.svn = manifestSVN;
-		man->sbm.header.size = MANIFEST_SIZE;
-
-		if (oemData != NULL && oemDataLen > 0) {
-			if (oemDataLen <= sizeof(man->sbm.oem_data))
-				memcpy((byte *)man->sbm.oem_data, oemData, oemDataLen);
-			else
-				WARN("OEM Data file length to big, ignoring it.\n");
-		}
-
-		ret = calculate_ibb_hash(&romBuf[romLen - IBB_SIZE], man->sbm.ibb_hash);
-		if (ret != 0) {
-			ERROR("Failed to calcualte IBB hash!\n");
-			return ret;
-		}
-		sha256_buffer = man->sbm.ibb_hash;
-		printf("SHA256 of the IBB (Little Endian):\n");
-	} else {
-		ERROR("Invalid manifest type\n");
-		return EXIT_FAILURE;
+			WARN("OEM Data file length to big, ignoring it.\n");
 	}
 
+	ret = calculate_ibb_hash(&romBuf[romLen - IBB_SIZE], man->hash);
+	if (ret != 0) {
+		ERROR("Failed to calcualte IBB hash!\n");
+		return ret;
+	}
+
+	sha256_buffer = man->hash;
+	printf("SHA256 of the IBB (Little Endian):\n");
 	print_sha256(sha256_buffer);
 	printf("\n");
 
 	return ret;
 }
 
-static int rsa_sign_manifest(secure_boot_manifest *man, enum manifest_type type,
-			     const char *key_path)
+static int create_key_manifest(struct manifest *man, word32 romLen, word32 manifestSVN)
+{
+	int ret;
+	RsaKey sbmKey;
+	size_t file_size = IBB_SIZE + SB_MANIFEST_SIZE + KEY_MANIFEST_SIZE;
+
+	if (romLen < file_size) {
+		ERROR("ROM file too small\n");
+		return EXIT_FAILURE;
+	}
+
+	if (wc_HashGetDigestSize(WC_HASH_TYPE_SHA256) != 32) {
+		ERROR("Hash type SHA256 not supported!\n");
+		return EXIT_FAILURE;
+	}
+
+	memset((byte *)man, 0, MANIFEST_SIZE);
+
+	man->header.magic = KEY_MANIFEST_MAGIC;
+	man->header.version = KEY_MANIFEST_VERSION;
+	man->header.svn = manifestSVN;
+	man->header.size = MANIFEST_SIZE;
+
+	if (params.override_km_id)
+		man->km_id = params.km_id;
+	else
+		man->km_id = 1;
+
+	ret = wc_InitRsaKey(&sbmKey, NULL);
+	if (ret != 0) {
+		ERROR("Init RSA key failed! %d\n", ret);
+		return ret;
+	}
+
+	ret = rsa_load_key_file(params.sbm_key_file, &sbmKey);
+	if (ret != 0) {
+		ERROR("Failed to load Secure Boot Manifest Key!\n");
+		return ret;
+	}
+
+	ret = calculate_key_hash(&sbmKey, man->hash);
+	if (ret != 0) {
+		ERROR("Failed to calcualte Secure Boot key hash!\n");
+		wc_FreeRsaKey(&sbmKey);
+		return ret;
+	}
+
+	printf("SHA256 of the Secure Boot Manifest Key (Little Endian):\n");
+	print_sha256(man->hash);
+	printf("\n");
+
+	wc_FreeRsaKey(&sbmKey);
+	return ret;
+}
+
+static int rsa_sign_manifest(struct manifest *man, const char *key_path)
 {
 	int ret;
 	RsaKey rsaKey;
@@ -415,14 +408,7 @@ static int rsa_sign_manifest(secure_boot_manifest *man, enum manifest_type type,
 	byte *sigBuf = NULL;
 	word32 sigLen;
 	word32 e_size, n_size;
-	struct key_signature *key_struct;
-
-	if (type == KEY_MANIFEST)
-		key_struct = &man->km.key_sig;
-	else if (type == SB_MANIFEST)
-		key_struct = &man->sbm.key_sig;
-	else
-		return EXIT_FAILURE;
+	struct key_signature *key_struct = &man->key_sig;
 
 	ret = wc_InitRng(&rng);
 	if (ret != 0) {
@@ -568,6 +554,20 @@ static int load_file_to_buffer(const char *filename, byte **fileBuf, word32 *fil
 	}
 
 	*fileLen = get_file_size(file);
+	/*
+	 * To avoid undefined behavior when reading from potentially unaligned
+	 * pointer, check that the file size is divisible by 4 bytes. Both manifests
+	 * have such sizes (see SB_MANIFEST_SIZE and KEY_MANIFEST_SIZE), so this
+	 * wouldn't fail for valid manifests. In case of coreboot.rom, the offsets are
+	 * calculated relatively to the end of file, so the result may be misaligned if
+	 * file size is misaligned. Instead of repeating checks for proper alignment in
+	 * cmd_verify() and cmd_print(), do it here.
+	 */
+	if (*fileLen % sizeof(uint32_t)) {
+		ERROR("File size isn't a multiple of 4 bytes!\n");
+		ret = EXIT_FAILURE;
+		goto exit;
+	}
 
 	*fileBuf = malloc(*fileLen);
 	if(!*fileBuf) {
@@ -591,31 +591,29 @@ exit:
 }
 
 static int inject_manifest_to_binary(const char *filename, byte *fileBuf, word32 fileLen,
-				     secure_boot_manifest *man, enum manifest_type type)
+				     struct manifest *man)
 {
-	word32 file_size;
-	word32 offset, man_size;
+	word32 file_size, offset;
 
 	file_size = IBB_SIZE + SB_MANIFEST_SIZE;
 	offset = fileLen - IBB_SIZE - SB_MANIFEST_SIZE;
 
-	if (type == KEY_MANIFEST) {
+	if (man->header.magic == KEY_MANIFEST_MAGIC) {
 		file_size += KEY_MANIFEST_SIZE;
 		offset -= KEY_MANIFEST_SIZE;
-		man_size = KEY_MANIFEST_SIZE;
-	} else if (type == SB_MANIFEST)	{
-		man_size = SB_MANIFEST_SIZE;
-	} else {
+		/* Key Manifest is 4K big with 3K padded with zeros after the manifest */
+		memset(&fileBuf[offset], 0, KEY_MANIFEST_SIZE);
+	} else if (man->header.magic != SB_MANIFEST_MAGIC) {
 		ERROR("Invalid manifest type\n");
 		return EXIT_FAILURE;
 	}
 
 	if (fileLen < file_size) {
-		ERROR("ROM file too small to fit IBB and manifest\n");
+		ERROR("ROM file too small to fit IBB and manifest(s)\n");
 		return EXIT_FAILURE;
 	}
 
-	memcpy(&fileBuf[offset], (byte *)man, man_size);
+	memcpy(&fileBuf[offset], (byte *)man, MANIFEST_SIZE);
 
 	return save_buffer_to_file(filename, fileBuf, fileLen);
 }
@@ -628,7 +626,7 @@ static int cmd_generate_sbm(void)
 	word32 oemDataFileLen = 0;
 	byte *oemDataFileBuf = NULL;
 	word32 manifest_svn = params.override_svn ? params.svn : 2;
-	secure_boot_manifest man;
+	struct manifest man;
 
 	if (params.oem_data_file) {
 		ret = load_file_to_buffer(params.oem_data_file, &oemDataFileBuf, &oemDataFileLen);
@@ -659,17 +657,17 @@ static int cmd_generate_sbm(void)
 		goto exit;
 	}
 
-	ret = create_manifest(&man, SB_MANIFEST, fileBuf, fileLen, oemDataFileBuf, oemDataFileLen, manifest_svn);
+	ret = create_sb_manifest(&man, fileBuf, fileLen, oemDataFileBuf, oemDataFileLen, manifest_svn);
 	if (ret < 0) {
 		goto exit;
 	}
 
-	ret = rsa_sign_manifest(&man, SB_MANIFEST, params.sbm_key_file);
+	ret = rsa_sign_manifest(&man, params.sbm_key_file);
 	if (ret < 0) {
 		goto exit;
 	}
 
-	ret = inject_manifest_to_binary(params.file_name, fileBuf, fileLen, &man, SB_MANIFEST);
+	ret = inject_manifest_to_binary(params.file_name, fileBuf, fileLen, &man);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -678,7 +676,7 @@ static int cmd_generate_sbm(void)
 
 	if (params.output) {
 		printf("Saving Secure Boot Manifest as %s\n", params.output);
-		ret = save_buffer_to_file(params.output, (byte *)&man.sbm, SB_MANIFEST_SIZE);
+		ret = save_buffer_to_file(params.output, (byte *)&man, MANIFEST_SIZE);
 	} else {
 		printf("Not saving Secure Boot Manifest as a file, not requested to\n");
 	}
@@ -701,7 +699,7 @@ static int cmd_generate_km(void)
 	word32 fileLen;
 	byte *fileBuf = NULL;
 	word32 manifest_svn = params.override_svn ? params.svn : 2;
-	secure_boot_manifest man;
+	struct manifest man;
 
 	if (params.file_name) {
 		ret = load_file_to_buffer(params.file_name, &fileBuf, &fileLen);
@@ -740,18 +738,17 @@ static int cmd_generate_km(void)
 		}
 	}
 
-	ret = create_manifest(&man, KEY_MANIFEST, fileBuf, fileLen, NULL, 0, manifest_svn);
+	ret = create_key_manifest(&man, fileLen, manifest_svn);
 	if (ret < 0) {
 		goto exit;
 	}
 
-	ret = rsa_sign_manifest(&man, KEY_MANIFEST, params.km_key_file);
+	ret = rsa_sign_manifest(&man, params.km_key_file);
 	if (ret < 0) {
 		goto exit;
 	}
 
-	ret = inject_manifest_to_binary(params.file_name, fileBuf, fileLen, &man,
-					KEY_MANIFEST);
+	ret = inject_manifest_to_binary(params.file_name, fileBuf, fileLen, &man);
 	if (ret < 0) {
 		goto exit;
 	}
@@ -760,7 +757,7 @@ static int cmd_generate_km(void)
 
 	if (params.output) {
 		printf("Saving Key Manifest as %s\n", params.output);
-		ret = save_buffer_to_file(params.output, (byte *)&man.km, KEY_MANIFEST_SIZE);
+		ret = save_buffer_to_file(params.output, (byte *)&man, MANIFEST_SIZE);
 	} else {
 		printf("Not saving Key Manifest as a file, not requested to\n");
 	}
@@ -793,25 +790,25 @@ static void print_key_signature(const struct key_signature *ks)
 	hexdump(ks->signature, sizeof(ks->signature), 16, 2);
 }
 
-static void print_key_manifest(const struct key_manifest *km)
+static void print_key_manifest(const struct manifest *km)
 {
 	printf("Key Manifest:\n");
 	print_manifest_header(&km->header);
 	printf("\tKey Manifest ID: 0x%02x\n", km->km_id);
 	printf("\tSB Key hash: ");
-	print_sha256(km->sb_key_hash);
+	print_sha256(km->hash);
 	print_key_signature(&km->key_sig);
 	printf("\n\n");
 }
 
-static void print_sb_manifest(const struct sb_manifest *sbm)
+static void print_sb_manifest(const struct manifest *sbm)
 {
 	printf("Secure Boot Manifest:\n");
 	print_manifest_header(&sbm->header);
 	printf("\tIBB hash: ");
-	print_sha256(sbm->ibb_hash);
+	print_sha256(sbm->hash);
 	printf("\tOEM Data:\n");
-	hexdump(sbm->oem_data, sizeof(sbm->oem_data), 16, 2);
+	hexdump(sbm->sb.oem_data, sizeof(sbm->sb.oem_data), 16, 2);
 	print_key_signature(&sbm->key_sig);
 	printf("\n\n");
 }
@@ -839,10 +836,10 @@ static int cmd_print(void)
 	if (fileLen == MANIFEST_SIZE || fileLen == (IBB_SIZE + SB_MANIFEST_SIZE)) {
 		if (*(uint32_t *)fileBuf == SB_MANIFEST_MAGIC) {
 			printf("Input file seems to be a Secure Boot Manifest\n\n");
-			print_sb_manifest((struct sb_manifest *)fileBuf);
+			print_sb_manifest((struct manifest *)fileBuf);
 		} else if (*(uint32_t *)fileBuf == KEY_MANIFEST_MAGIC) {
 			printf("Input file seems to be a Key Manifest\n\n");
-			print_key_manifest((struct key_manifest *)fileBuf);
+			print_key_manifest((struct manifest *)fileBuf);
 		} else {
 			ERROR("Input file invalid size\n");
 			ret = EXIT_FAILURE;
@@ -851,10 +848,10 @@ static int cmd_print(void)
 		   fileLen == (IBB_SIZE + SB_MANIFEST_SIZE + KEY_MANIFEST_SIZE)) {
 		if (*(uint32_t *)fileBuf == KEY_MANIFEST_MAGIC) {
 			printf("Input file seems to be a Key Manifest\n\n");
-			print_key_manifest((struct key_manifest *)fileBuf);
+			print_key_manifest((struct manifest *)fileBuf);
 			if (fileLen > KEY_MANIFEST_SIZE &&
 			    *(uint32_t *)&fileBuf[KEY_MANIFEST_SIZE] == SB_MANIFEST_MAGIC) {
-				print_sb_manifest((struct sb_manifest *)
+				print_sb_manifest((struct manifest *)
 						  &fileBuf[KEY_MANIFEST_SIZE]);
 			}
 		} else {
@@ -866,14 +863,14 @@ static int cmd_print(void)
 		offset = fileLen - IBB_SIZE - SB_MANIFEST_SIZE - KEY_MANIFEST_SIZE;
 
 		if (*(uint32_t *)&fileBuf[offset] == KEY_MANIFEST_MAGIC) {
-			print_key_manifest((struct key_manifest *)&fileBuf[offset]);
+			print_key_manifest((struct manifest *)&fileBuf[offset]);
 			km_found = true;
 		}
 
 		offset = fileLen - IBB_SIZE - SB_MANIFEST_SIZE;
 
 		if (*(uint32_t *)&fileBuf[offset] == SB_MANIFEST_MAGIC) {
-			print_sb_manifest((struct sb_manifest *)&fileBuf[offset]);
+			print_sb_manifest((struct manifest *)&fileBuf[offset]);
 			sbm_found = true;
 		}
 
@@ -894,8 +891,7 @@ exit:
 	return ret;
 }
 
-static int rsa_verify_manifest_signature(const secure_boot_manifest *man, enum manifest_type type,
-					 const char *key_path)
+static int rsa_verify_manifest_signature(const struct manifest *man, const char *key_path)
 {
 	int ret;
 	RsaKey rsaKey;
@@ -905,12 +901,7 @@ static int rsa_verify_manifest_signature(const secure_boot_manifest *man, enum m
 	word32 e_size = sizeof(exponent);
 	word32 n_size = sizeof(modulus);
 
-	if (type == KEY_MANIFEST)
-		memcpy(&key_struct, &man->km.key_sig, sizeof(key_struct));
-	else if (type == SB_MANIFEST)
-		memcpy(&key_struct, &man->sbm.key_sig, sizeof(key_struct));
-	else
-		return EXIT_FAILURE;
+	memcpy(&key_struct, &man->key_sig, sizeof(key_struct));
 
 	ret = wc_InitRsaKey(&rsaKey, NULL);
 	if (ret != 0) {
@@ -973,7 +964,7 @@ exit:
 	return ret;
 }
 
-static int verify_sb_key_hash(const secure_boot_manifest *man)
+static int verify_sb_key_hash(const struct manifest *man)
 {
 	int ret;
 	RsaKey rsaKey;
@@ -997,11 +988,11 @@ static int verify_sb_key_hash(const secure_boot_manifest *man)
 		goto exit;
 	}
 
-	if (memcmp(key_hash, man->km.sb_key_hash, WC_SHA256_DIGEST_SIZE)) {
+	if (memcmp(key_hash, man->hash, WC_SHA256_DIGEST_SIZE)) {
 		ERROR("Secure Boot Key SHA256 hash does not match the key hash in the Key"
 			" Manifest!\n");
 		print_sha256(key_hash);
-		print_sha256(man->km.sb_key_hash);
+		print_sha256(man->hash);
 		ret = EXIT_FAILURE;
 	}
 
@@ -1011,19 +1002,14 @@ exit:
 	return ret;
 }
 
-static int print_key_hash_for_txe(const secure_boot_manifest *man, enum manifest_type type)
+static int print_key_hash_for_txe(const struct manifest *man)
 {
 	int ret;
 	wc_Sha256 sha256;
 	const struct key_signature *key_struct;
 	uint8_t key_hash[32];
 
-	if (type == KEY_MANIFEST) {
-		key_struct = &man->km.key_sig;
-	} else if (type == SB_MANIFEST)
-		key_struct = &man->sbm.key_sig;
-	else
-		return EXIT_FAILURE;
+	key_struct = &man->key_sig;
 
 	ret = wc_InitSha256(&sha256);
 	if (ret != 0) {
@@ -1061,7 +1047,7 @@ static int print_key_hash_for_txe(const secure_boot_manifest *man, enum manifest
 	return ret;
 }
 
-static int verify_ibb_hash(const secure_boot_manifest *man, const byte *fileBuf, int fileLen)
+static int verify_ibb_hash(const struct manifest *man, const byte *fileBuf, int fileLen)
 {
 	int ret;
 	uint8_t ibb_hash[32];
@@ -1072,7 +1058,7 @@ static int verify_ibb_hash(const secure_boot_manifest *man, const byte *fileBuf,
 		return ret;
 	}
 
-	if (memcmp(ibb_hash, man->sbm.ibb_hash, WC_SHA256_DIGEST_SIZE)) {
+	if (memcmp(ibb_hash, man->hash, WC_SHA256_DIGEST_SIZE)) {
 		ERROR("Calculated IBB SHA256 hash does not match the IBB hash in Secure Boot"
 			" Manifest!\n");
 		ret = EXIT_FAILURE;
@@ -1087,8 +1073,8 @@ static int cmd_verify(void)
 	word32 fileLen;
 	byte *fileBuf = NULL;
 	word32 offset;
-	const secure_boot_manifest *km = NULL;
-	const secure_boot_manifest *sbm = NULL;
+	const struct manifest *km = NULL;
+	const struct manifest *sbm = NULL;
 
 	if (params.file_name) {
 		ret = load_file_to_buffer(params.file_name, &fileBuf, &fileLen);
@@ -1105,13 +1091,13 @@ static int cmd_verify(void)
 		offset = fileLen - IBB_SIZE - SB_MANIFEST_SIZE - KEY_MANIFEST_SIZE;
 
 		if (*(uint32_t *)&fileBuf[offset] == KEY_MANIFEST_MAGIC) {
-			km = (secure_boot_manifest *)&fileBuf[offset];
+			km = (struct manifest *)&fileBuf[offset];
 		}
 
 		offset = fileLen - IBB_SIZE - SB_MANIFEST_SIZE;
 
 		if (*(uint32_t *)&fileBuf[offset] == SB_MANIFEST_MAGIC) {
-			sbm = (secure_boot_manifest *)&fileBuf[offset];
+			sbm = (struct manifest *)&fileBuf[offset];
 		}
 
 		if (km == NULL && sbm == NULL) {
@@ -1123,7 +1109,7 @@ static int cmd_verify(void)
 		offset = fileLen - IBB_SIZE - SB_MANIFEST_SIZE;
 
 		if (*(uint32_t *)&fileBuf[offset] == SB_MANIFEST_MAGIC) {
-			sbm = (secure_boot_manifest *)&fileBuf[offset];
+			sbm = (struct manifest *)&fileBuf[offset];
 		}
 	} else {
 		ERROR("Input file invalid size\n");
@@ -1162,42 +1148,42 @@ static int cmd_verify(void)
 		printf("Verifying Key Manifest...\n");
 
 		ret = 0;
-		if (km->km.header.size != MANIFEST_SIZE) {
+		if (km->header.size != MANIFEST_SIZE) {
 			ERROR("Invalid Key Manifest size field! (%d != 1024)\n",
-			km->km.header.size);
+			km->header.size);
 			ret--;
 		}
 
-		if (km->km.km_id == 0 || km->km.km_id > 15) {
+		if (km->km_id == 0 || km->km_id > 15) {
 			ERROR("Invalid Key Manifest ID field! (%d %s)\n",
-				km->km.km_id, km->km.km_id == 0 ? "== 0" : "> 15");
+				km->km_id, km->km_id == 0 ? "== 0" : "> 15");
 			ret--;
 		}
 
-		if (km->km.key_sig.exponent != RSA_KEY_EXPONENT) {
+		if (km->key_sig.exponent != RSA_KEY_EXPONENT) {
 			ERROR("Incorrect RSA key exponent in the Key Manifest!"
-				" 0x%x != 0x10001\n", km->km.key_sig.exponent);
+				" 0x%x != 0x10001\n", km->key_sig.exponent);
 			ret--;
 		}
 
-		if (!mem_is_zero(km->km.reserved, sizeof(km->km.reserved))) {
-			ERROR("Key Manifest reserved space is not zeroed!");
+		if (!mem_is_zero(km->reserved, sizeof(km->reserved))) {
+			ERROR("Key Manifest reserved space is not zeroed!\n");
 			ret--;
 		}
 
-		if (!mem_is_zero(km->km.pad, sizeof(km->km.pad))) {
-			ERROR("Key Manifest is not zero-padded to 4KB!");
+		if (!mem_is_zero((byte *)(km + 1), KEY_MANIFEST_PAD_SIZE)) {
+			ERROR("Key Manifest is not zero-padded to 4KB!\n");
 			ret--;
 		}
 
 		ret -= verify_sb_key_hash(km);
-		ret -= rsa_verify_manifest_signature(km, KEY_MANIFEST, params.km_key_file);
+		ret -= rsa_verify_manifest_signature(km, params.km_key_file);
 
 		if (ret == 0) {
 			printf("Key Manifest verification successful!\n\n");
-			print_key_hash_for_txe(km, KEY_MANIFEST);
+			print_key_hash_for_txe(km);
 			printf("TXE should be provisioned with the following Key Manifest ID:"
-				" 0x%02x\n\n", km->km.km_id);
+				" 0x%02x\n\n", km->km_id);
 		} else {
 			printf("Key Manifest verification FAILED!\n\n");
 			goto exit;
@@ -1207,25 +1193,25 @@ static int cmd_verify(void)
 	printf("Verifying Secure Boot Manifest...\n");
 
 	ret = 0;
-	if (sbm->sbm.header.size != MANIFEST_SIZE) {
+	if (sbm->header.size != MANIFEST_SIZE) {
 		ERROR("Invalid Secure Boot Manifest size field! (%d != 1024)\n",
-			sbm->sbm.header.size);
+			sbm->header.size);
 		ret--;
 	}
 
-	if (sbm->sbm.key_sig.exponent != RSA_KEY_EXPONENT) {
+	if (sbm->key_sig.exponent != RSA_KEY_EXPONENT) {
 		ERROR("Incorrect RSA key exponent in the Secure Boot Manifest!"
-			" 0x%x != 0x10001\n", sbm->sbm.key_sig.exponent);
+			" 0x%x != 0x10001\n", sbm->key_sig.exponent);
 		ret--;
 	}
 
 	ret -= verify_ibb_hash(sbm, fileBuf, fileLen);
-	ret -= rsa_verify_manifest_signature(sbm, SB_MANIFEST, params.sbm_key_file);
+	ret -= rsa_verify_manifest_signature(sbm, params.sbm_key_file);
 
 	if (ret == 0) {
 		printf("Secure Boot Manifest verification successful!\n\n");
 		if (km == NULL)
-			print_key_hash_for_txe(sbm, SB_MANIFEST);
+			print_key_hash_for_txe(sbm);
 	} else {
 		printf("Secure Boot Manifest verification FAILED!\n\n");
 	}
@@ -1243,6 +1229,11 @@ static int cmd_keyhash(void)
 	int ret;
 	RsaKey key;
 	byte keyhash[WC_SHA256_DIGEST_SIZE];
+
+	if (!params.file_name) {
+		ERROR("Key file not given\n");
+		return EXIT_FAILURE;
+	}
 
 	if (wc_HashGetDigestSize(WC_HASH_TYPE_SHA256) != WC_SHA256_DIGEST_SIZE) {
 		ERROR("Hash type SHA256 not supported!\n");
@@ -1353,24 +1344,19 @@ static int no_file_cmd_args(int argc, char **argv)
 	int c;
 	int option_index;
 
-	while (1) {
-		c = getopt_long(argc, argv, "?hv", long_options, &option_index);
+	c = getopt_long(argc, argv, "?hv", long_options, &option_index);
 
-		if (c == -1)
-			break;
-
-		switch (c) {
-		case 'v':
-			printf("Version: %s\n", tool_version);
-			return 0;
-		case 'h':
-		case '?':
-			usage(argv[0]);
-			return 0;
-		default:
-			usage(argv[0]);
-			return 1;
-		}
+	switch (c) {
+	case 'v':
+		printf("Version: %s\n", tool_version);
+		return 0;
+	case 'h':
+	case '?':
+		usage(argv[0]);
+		return 0;
+	default:
+		usage(argv[0]);
+		return 1;
 	}
 
 	usage(argv[0]);
