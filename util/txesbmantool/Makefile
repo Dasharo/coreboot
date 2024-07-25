@@ -8,7 +8,7 @@ PREFIX  ?= /usr/local
 HOSTCC ?= $(CC)
 HOSTCFLAGS ?= $(CFLAGS)
 top := ../..
-objutil := ..
+objutil ?= ..
 
 ifneq ($(PKG_CONFIG),)
 HOSTPKGCONFIG ?= $(PKG_CONFIG)
