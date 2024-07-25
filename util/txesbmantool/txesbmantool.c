@@ -771,6 +771,50 @@ exit:
 	return ret;
 }
 
+static int print_key_hash_from_manifest(const struct manifest *man)
+{
+	int ret;
+	wc_Sha256 sha256;
+	const struct key_signature *key_struct;
+	uint8_t key_hash[32];
+
+	key_struct = &man->key_sig;
+
+	ret = wc_InitSha256(&sha256);
+	if (ret != 0) {
+		ERROR("Failed to initialize SHA256 context\n");
+		return ret;
+	}
+
+	ret = wc_Sha256Update(&sha256, key_struct->modulus, sizeof(key_struct->modulus));
+	if (ret != 0) {
+		ERROR("Failed to calculate SHA256\n");
+		return ret;
+	}
+
+	ret = wc_Sha256Update(&sha256, (byte *)&key_struct->exponent,
+			      sizeof(key_struct->exponent));
+	if (ret != 0) {
+		ERROR("Failed to calculate SHA256\n");
+		return ret;
+	}
+
+	ret = wc_Sha256Final(&sha256, key_hash);
+	if (ret != 0) {
+		ERROR("Failed to generate SHA256 hash\n");
+		return ret;
+	}
+
+	if (swap_bytes(key_hash, WC_SHA256_DIGEST_SIZE)) {
+		ERROR("Failed to change SHA256 hash endianess!\n");
+		return EXIT_FAILURE;
+	}
+
+	print_sha256(key_hash);
+
+	return ret;
+}
+
 static void print_manifest_header(const struct manifest_header *mh)
 {
 	printf("\tMagic: ");
@@ -798,6 +842,9 @@ static void print_key_manifest(const struct manifest *km)
 	printf("\tSB Key hash: ");
 	print_sha256(km->hash);
 	print_key_signature(&km->key_sig);
+	printf("\n");
+	printf("\tFYI: Secure Boot Key Manifest Key SHA256 hash:\n\n\t");
+	print_key_hash_from_manifest(km);
 	printf("\n\n");
 }
 
@@ -810,6 +857,9 @@ static void print_sb_manifest(const struct manifest *sbm)
 	printf("\tOEM Data:\n");
 	hexdump(sbm->sb.oem_data, sizeof(sbm->sb.oem_data), 16, 2);
 	print_key_signature(&sbm->key_sig);
+	printf("\n");
+	printf("\tFYI: Secure Boot Manifest Key SHA256 hash:\n\n\t");
+	print_key_hash_from_manifest(sbm);
 	printf("\n\n");
 }
 
@@ -1002,51 +1052,6 @@ exit:
 	return ret;
 }
 
-static int print_key_hash_for_txe(const struct manifest *man)
-{
-	int ret;
-	wc_Sha256 sha256;
-	const struct key_signature *key_struct;
-	uint8_t key_hash[32];
-
-	key_struct = &man->key_sig;
-
-	ret = wc_InitSha256(&sha256);
-	if (ret != 0) {
-		ERROR("Failed to initialize SHA256 context\n");
-		return ret;
-	}
-
-	ret = wc_Sha256Update(&sha256, key_struct->modulus, sizeof(key_struct->modulus));
-	if (ret != 0) {
-		ERROR("Failed to calculate SHA256\n");
-		return ret;
-	}
-
-	ret = wc_Sha256Update(&sha256, (byte *)&key_struct->exponent,
-			      sizeof(key_struct->exponent));
-	if (ret != 0) {
-		ERROR("Failed to calculate SHA256\n");
-		return ret;
-	}
-
-	ret = wc_Sha256Final(&sha256, key_hash);
-	if (ret != 0) {
-		ERROR("Failed to generate SHA256 hash\n");
-		return ret;
-	}
-
-	if (swap_bytes(key_hash, WC_SHA256_DIGEST_SIZE)) {
-		ERROR("Failed to change SHA256 hash endianess!\n");
-		return EXIT_FAILURE;
-	}
-
-	printf ("TXE image should be provisioned with the following key hash:\n");
-	print_sha256(key_hash);
-
-	return ret;
-}
-
 static int verify_ibb_hash(const struct manifest *man, const byte *fileBuf, int fileLen)
 {
 	int ret;
@@ -1181,7 +1186,8 @@ static int cmd_verify(void)
 
 		if (ret == 0) {
 			printf("Key Manifest verification successful!\n\n");
-			print_key_hash_for_txe(km);
+			printf("TXE should be provisioned with the following key hash:\n");
+			print_key_hash_from_manifest(km);
 			printf("TXE should be provisioned with the following Key Manifest ID:"
 				" 0x%02x\n\n", km->km_id);
 		} else {
@@ -1210,8 +1216,10 @@ static int cmd_verify(void)
 
 	if (ret == 0) {
 		printf("Secure Boot Manifest verification successful!\n\n");
-		if (km == NULL)
-			print_key_hash_for_txe(sbm);
+		if (km == NULL) {
+			printf("TXE should be provisioned with the following key hash:\n");
+			print_key_hash_from_manifest(sbm);
+		}
 	} else {
 		printf("Secure Boot Manifest verification FAILED!\n\n");
 	}
