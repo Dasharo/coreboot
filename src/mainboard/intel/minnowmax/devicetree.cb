@@ -67,6 +67,7 @@ chip soc/intel/baytrail
 		device pci 13.0 on end	# 8086 0F23 - SATA AHCI	Onboard & HSEC
 		device pci 14.0 on end	# 8086 0F35 - USB XHCI - Onboard & HSEC  - Enabling both EHCI and XHCI will default to EHCI if not changed at runtime
 		device pci 15.0 on end	# 8086 0F28 - LP Engine Audio	LSEC
+		device pci 16.0 on end	# 8086 0F37 - OTG Controller # Keep enabled to avoid hangs at perf_power_settings
 		device pci 17.0 off end	# 8086 0F50 - MMC Port
 		device pci 18.0 on end	# 8086 0F40 - SIO - DMA
 		device pci 18.1 off end	# 8086 0F41 -   I2C Port 1 (0)
