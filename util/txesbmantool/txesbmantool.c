@@ -115,14 +115,14 @@ static void hexdump(const void *buffer, word32 len, byte cols, word32 indent)
 			printf("\t");
 	}
 
-	for(i = 0; i < len + ((len % cols) ? (cols - len % cols) : 0); i++)
+	for (i = 0; i < len + ((len % cols) ? (cols - len % cols) : 0); i++)
 	{
 		/* print hex data */
-		if(i < len) {
+		if (i < len) {
 			printf("%02X ", ((byte*)buffer)[i] & 0xFF);
 		}
 
-		if(i % cols == (word32)(cols - 1)) {
+		if (i % cols == (word32)(cols - 1)) {
 			printf("\n");
 			if (i != (len - 1)) {
 				for (j = 0; j < indent; j++)
@@ -134,7 +134,7 @@ static void hexdump(const void *buffer, word32 len, byte cols, word32 indent)
 
 static void print_sha256(const byte *buffer)
 {
-	for(word32 i = 0; i < WC_SHA256_DIGEST_SIZE; i++)
+	for (word32 i = 0; i < WC_SHA256_DIGEST_SIZE; i++)
 		printf("%02X", buffer[i]);
 
 	printf("\n");
@@ -506,7 +506,7 @@ static int rsa_sign_manifest(struct manifest *man, const char *key_path)
 
 	memcpy(key_struct->signature, sigBuf, sigLen);
 exit:
-	if(sigBuf) {
+	if (sigBuf) {
 		free(sigBuf);
 	}
 	wc_FreeRsaKey(&rsaKey);
@@ -527,14 +527,14 @@ static int save_buffer_to_file(const char *filename, byte *buffer, word32 bufLen
 		goto exit;
 	}
 
-	if(fwrite(buffer, 1, bufLen, file) != bufLen) {
+	if (fwrite(buffer, 1, bufLen, file) != bufLen) {
 		ERROR("Error writing %s file! %d", filename, ret);
 		ret = EXIT_FAILURE;
 		goto exit;
 	}
 
 exit:
-	if(file) {
+	if (file) {
 		fclose(file);
 	}
 
@@ -570,20 +570,20 @@ static int load_file_to_buffer(const char *filename, byte **fileBuf, word32 *fil
 	}
 
 	*fileBuf = malloc(*fileLen);
-	if(!*fileBuf) {
+	if (!*fileBuf) {
 		ERROR("File buffer malloc failed!\n");
 		ret = EXIT_FAILURE;
 		goto exit;
 	}
 
-	if(fread(*fileBuf, 1, *fileLen, file) != *fileLen) {
+	if (fread(*fileBuf, 1, *fileLen, file) != *fileLen) {
 		ERROR("Error reading file! %d", ret);
 		ret = EXIT_FAILURE;
 		goto exit;
 	}
 
 exit:
-	if(file) {
+	if (file) {
 		fclose(file);
 	}
 
@@ -682,11 +682,11 @@ static int cmd_generate_sbm(void)
 	}
 
 exit:
-	if(fileBuf) {
+	if (fileBuf) {
 		free(fileBuf);
 	}
 
-	if(oemDataFileBuf) {
+	if (oemDataFileBuf) {
 		free(oemDataFileBuf);
 	}
 
@@ -764,7 +764,7 @@ static int cmd_generate_km(void)
 
 exit:
 	/* Free */
-	if(fileBuf) {
+	if (fileBuf) {
 		free(fileBuf);
 	}
 
@@ -934,7 +934,7 @@ static int cmd_print(void)
 	}
 
 exit:
-	if(fileBuf) {
+	if (fileBuf) {
 		free(fileBuf);
 	}
 
@@ -1225,7 +1225,7 @@ static int cmd_verify(void)
 	}
 
 exit:
-	if(fileBuf) {
+	if (fileBuf) {
 		free(fileBuf);
 	}
 
