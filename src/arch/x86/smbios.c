@@ -39,6 +39,8 @@ static int smbios_processor_name(u8 *start)
 			}
 			tmp[12] = 0;
 			str = (const char *)tmp;
+			/* Skip leading spaces. */
+			while (*str == ' ') str++;
 		}
 	}
 	return smbios_add_string(start, str);
