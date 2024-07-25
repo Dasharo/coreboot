@@ -40,7 +40,7 @@ chip soc/intel/baytrail
 	register "usb2_per_port_rcomp_hs_pullup3" = "0x0300401d"
 
 	# SD Card controller
-	register "sdcard_cap_low" = "0x036864b2"
+	register "sdcard_cap_low" = "0x076864b2"
 	register "sdcard_cap_high" = "0x0"
 
 	# VR PS2 control
@@ -57,6 +57,7 @@ chip soc/intel/baytrail
 	device cpu_cluster 0 on end
 
 	device domain 0 on
+		subsystemid 0x8086 0x7270 inherit
 		device pci 00.0 on end	# 8086 0F00 - SoC router
 		device pci 02.0 on end	# 8086 0F31 - GFX micro HDMI
 		device pci 03.0 off end # 8086 0F38 - MIPI
