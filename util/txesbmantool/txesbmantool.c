@@ -328,7 +328,7 @@ static int create_sb_manifest(struct manifest *man, byte* romBuf, word32 romLen,
 		if (oemDataLen <= sizeof(man->sb.oem_data))
 			memcpy((byte *)man->sb.oem_data, oemData, oemDataLen);
 		else
-			WARN("OEM Data file length to big, ignoring it.\n");
+			WARN("OEM Data file length too big, ignoring it.\n");
 	}
 
 	ret = calculate_ibb_hash(&romBuf[romLen - IBB_SIZE], man->hash);
