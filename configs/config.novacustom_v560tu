@@ -72,3 +72,4 @@ CONFIG_EDK2_PRINT_SOL_STRINGS=y
 CONFIG_EDK2_LAN_ROM_DRIVER="3rdparty/blobs/mainboard/clevo/mtl-h/LanRom.efi"
 CONFIG_EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS=y
 CONFIG_CHECK_GPIO_CONFIG_CHANGES=y
+CONFIG_GBE_BIN_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tu/gbe.bin"
