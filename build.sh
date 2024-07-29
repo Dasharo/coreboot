@@ -30,7 +30,7 @@ SDKVER="2023-11-24_2731fa619b"
 
 function build_optiplex_9010 {
   DEFCONFIG="configs/config.dell_optiplex_9010_sff_uefi_txt"
-  FW_VERSION=v0.1.0
+  FW_VERSION=v0.1.0-rc1
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
