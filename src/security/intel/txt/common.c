@@ -601,7 +601,7 @@ bool intel_txt_prepare_txt_env(void)
 			break;
 		}
 	}
-
+#if CONFIG(TPM2)
 	if (tlcl_get_family() == TPM_2) {
 		/*
 		 * We can't do SCHECK without the mandatory TPM indices present,
@@ -610,7 +610,7 @@ bool intel_txt_prepare_txt_env(void)
 		if (check_tpm2_indices())
 			return true;
 	}
-
+#endif
 	/* Need to park all APs. */
 	if (CONFIG(PARALLEL_MP_AP_WORK))
 		mp_park_aps();
