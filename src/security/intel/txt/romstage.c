@@ -12,6 +12,7 @@
 #endif
 #if CONFIG(SOUTHBRIDGE_INTEL_COMMON_PMBASE)
 #include <southbridge/intel/common/pmbase.h>
+#include <southbridge/intel/common/pmutil.h>
 #endif
 #include <timer.h>
 #include <types.h>
