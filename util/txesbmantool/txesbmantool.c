@@ -776,7 +776,7 @@ static int print_key_hash_from_manifest(const struct manifest *man)
 	int ret;
 	wc_Sha256 sha256;
 	const struct key_signature *key_struct;
-	uint8_t key_hash[32];
+	uint8_t key_hash[WC_SHA256_DIGEST_SIZE];
 
 	key_struct = &man->key_sig;
 
