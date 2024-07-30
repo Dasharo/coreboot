@@ -20,7 +20,7 @@ usage() {
   echo -e "\tapu3           - build Dasharo for PC Engines APU3"
   echo -e "\tapu4           - build Dasharo for PC Engines APU4"
   echo -e "\tapu6           - build Dasharo for PC Engines APU6"
-  echo -e "\toptiplex_9010  - build Dasharo for Dell OptiPlex 7010/9010"
+  echo -e "\toptiplex_9010  - build Dasharo compatible with Dell OptiPlex 7010/9010"
   echo -e "\tqemu           - build Dasharo for QEMU Q35"
   echo -e "\tqemu_full      - build Dasharo for QEMU Q35 with all menus available"
 }
