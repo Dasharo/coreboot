@@ -5,6 +5,7 @@
 #include <ec/acpi/ec.h>
 #include <ec/system76/ec/acpi.h>
 #include <fmap.h>
+#include <intelblocks/cse.h>
 #include <lib.h>
 #include <security/vboot/vboot_common.h>
 #include <smbios.h>
@@ -119,6 +120,8 @@ static void mainboard_init(void *chip_info)
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
+
+	cse_enable_ptt(false);
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
