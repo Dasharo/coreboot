@@ -242,7 +242,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_D00, 1, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_D01, 1, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_D02, 1, DEEP),	/* GPIO */
-	PAD_CFG_GPO(GPP_D03, 1, DEEP),	/* GPIO */
+	PAD_CFG_GPO(GPP_D03, 0, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_D04, 0, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_D05, 1, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_D06, 0, DEEP),	/* GPIO */
@@ -315,15 +315,15 @@ void mainboard_configure_gpios(void)
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
 	/* dGPU power on sequence */
-	mdelay(4);
-	gpio_set(DGPU_PWR_EN, 1);
-	result = wait_ms(200, gpio_get(DGPU_PWRGD) == 1);
-	if (result) {
-		printk(BIOS_INFO, "dGPU powered on\n");
-		gpio_set(DGPU_RST_N, 1);
-	} else {
-		printk(BIOS_ERR, "dGPU failed to power on, turning off\n");
-		gpio_set(DGPU_PWR_EN, 0);
-	}
-	mdelay(50);
+	//mdelay(4);
+	//gpio_set(DGPU_PWR_EN, 1);
+	//result = wait_ms(200, gpio_get(DGPU_PWRGD) == 1);
+	//if (result) {
+	//	printk(BIOS_INFO, "dGPU powered on\n");
+	//	gpio_set(DGPU_RST_N, 1);
+	//} else {
+	//	printk(BIOS_ERR, "dGPU failed to power on, turning off\n");
+	//	gpio_set(DGPU_PWR_EN, 0);
+	//}
+	//mdelay(50);
 }
