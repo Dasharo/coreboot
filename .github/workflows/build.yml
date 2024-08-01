@@ -77,7 +77,7 @@ jobs:
     strategy:
       matrix:
         vendor: [ dell ]
-        model: [ optiplex_9010_sff_uefi_txt ]
+        model: [ optiplex_9010_sff ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }}_uefi_txt .config
           make olddefconfig
           make
       - name: Save artifacts
