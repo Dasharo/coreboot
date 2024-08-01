@@ -1489,16 +1489,6 @@ unsigned long write_acpi_tables(const unsigned long start)
 		current = fw;
 		current = acpi_align_current(current);
 		if (rsdp->xsdt_address == 0) {
-			acpi_rsdt_t *existing_rsdt = (acpi_rsdt_t *)(uintptr_t)rsdp->rsdt_address;
-
-			/*
-			 * Qemu only provides a smaller ACPI 1.0 RSDP, thus
-			 * allocate a bigger ACPI 2.0 RSDP structure.
-			 */
-			rsdp = (acpi_rsdp_t *)current;
-			current += sizeof(acpi_rsdp_t);
-			coreboot_rsdp = (uintptr_t)rsdp;
-
 			xsdt = (acpi_xsdt_t *)current;
 			current += sizeof(acpi_xsdt_t);
 			current = acpi_align_current(current);
@@ -1507,6 +1497,7 @@ unsigned long write_acpi_tables(const unsigned long start)
 			 * Qemu only creates an RSDT.
 			 * Add an XSDT based on the existing RSDT entries.
 			 */
+			acpi_rsdt_t *existing_rsdt = (acpi_rsdt_t *)(uintptr_t)rsdp->rsdt_address;
 			acpi_write_rsdp(rsdp, existing_rsdt, xsdt, oem_id);
 			acpi_write_xsdt(xsdt, oem_id, oem_table_id);
 			/*
@@ -1515,6 +1506,11 @@ unsigned long write_acpi_tables(const unsigned long start)
 			 */
 			for (int i = 0; existing_rsdt->entry[i]; i++)
 				acpi_add_table(rsdp, (void *)(uintptr_t)existing_rsdt->entry[i]);
+		}
+		else
+		{
+			/* current += sizeof(acpi_header_t); */
+			return fw;
 		}
 
 		/* Add BOOT0000 for Linux google firmware driver */
