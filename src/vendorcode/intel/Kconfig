@@ -23,6 +23,41 @@ config UDK_202302_BINDING
 	def_bool n
 	select UDK_BASE
 
+# The version is user-configurable only if SOC didn't requests a specific one.
+# In that case, it can be useful to have these headers to enable EFI-specific
+# options when EDK2 payload is in use.
+if !UEFI_2_4_BINDING && \
+   !UDK_2017_BINDING && \
+   !UDK_202005_BINDING && \
+   !UDK_202111_BINDING && \
+   !UDK_202302_BINDING && \
+   PAYLOAD_EDK2
+
+choice
+	prompt "Set of UEFI headers to use"
+
+config USE_NO_UEFI_BINDING
+	bool "None"
+config USE_UEFI_2_4_BINDING
+	bool "UEFI 2.4"
+	select UDK_BASE
+config USE_UDK_2017_BINDING
+	bool "UDK 2017"
+	select UDK_BASE
+config USE_UDK_202005_BINDING
+	bool "UDK 202005"
+	select UDK_BASE
+config USE_UDK_202111_BINDING
+	bool "UDK 202111"
+	select UDK_BASE
+config USE_UDK_202302_BINDING
+	bool "UDK 202302"
+	select UDK_BASE
+
+endchoice
+
+endif
+
 if UDK_BASE
 config UDK_2013_VERSION
 	int
@@ -46,10 +81,10 @@ config UDK_202302_VERSION
 
 config UDK_VERSION
 	int
-	default 202302 if UDK_202302_BINDING
-	default 202111 if UDK_202111_BINDING
-	default 202005 if UDK_202005_BINDING
-	default 2017 if UDK_2017_BINDING
+	default 202302 if UDK_202302_BINDING || USE_UDK_202302_BINDING
+	default 202111 if UDK_202111_BINDING || USE_UDK_202111_BINDING
+	default 202005 if UDK_202005_BINDING || USE_UDK_202005_BINDING
+	default 2017 if UDK_2017_BINDING || USE_UDK_2017_BINDING
 	default 2013
 	help
 	  UEFI Development Kit version for Platform
