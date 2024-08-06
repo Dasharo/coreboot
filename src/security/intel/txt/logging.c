@@ -58,27 +58,29 @@ static void log_txt_error(const char *phase)
 void intel_txt_log_bios_acm_error(void)
 {
 	uint32_t bios_acm_error;
-	uint64_t acm_status;
 	uint64_t txt_error;
+	uint8_t type;
 
 	printk(BIOS_INFO, "TEE-TXT: State of ACM and ucode update:\n");
 
 	bios_acm_error = read32((void *)TXT_BIOSACM_ERRORCODE);
-	acm_status = read64((void *)TXT_SPAD);
 	txt_error = read64((void *)TXT_ERROR);
+	type = txt_error & ACMERROR_TXT_TYPE_CODE;
 
-	/* Errors by BIOS ACM or FIT */
 	if ((txt_error & ACMERROR_TXT_VALID) &&
-	    (acm_status & ACMERROR_TXT_VALID)) {
-		intel_txt_log_acm_error(bios_acm_error);
-		log_txt_error("FIT MICROCODE");
+	    ((txt_error & ACMERROR_SOURCE_MASK) == ACMERROR_SOURCE_ACM)) {
+		/* Errors by BIOS ACM or FIT */
+		if (type == ACMERROR_TXT_AC_MODULE_TYPE_BIOS) {
+			intel_txt_log_acm_error(bios_acm_error);
+			log_txt_error("FIT MICROCODE");
+		}
+		/* Errors by SINIT */
+		if (type == ACMERROR_TXT_AC_MODULE_TYPE_SINIT) {
+			intel_txt_log_acm_error(txt_error);
+			log_txt_error("SINIT");
+		}
 	}
-	/* Errors by SINIT */
-	if ((txt_error & ACMERROR_TXT_VALID) &&
-	    !(acm_status & ACMERROR_TXT_VALID)) {
-		intel_txt_log_acm_error(txt_error);
-		log_txt_error("SINIT");
-	}
+
 
 	/* Check for fatal ACM error and TXT reset */
 	uint8_t error = read8((void *)TXT_ESTS);
@@ -111,14 +113,14 @@ void txt_dump_acm_info(const struct acm_header_v0 *acm_header)
 		printk(BIOS_INFO, " Type:     Chipset ACM\n");
 
 	if (acm_header->module_sub_type == BIOS_ACM)
-		printk(BIOS_INFO, " Subtype:  BIOS\n");
-	else if (acm_header->module_sub_type == SINIT_ACM)
-		printk(BIOS_INFO, " Subtype:  SINIT\n");
+		printk(BIOS_INFO, " Subtype:  TXT BIOS ACM\n");
+	else if (acm_header->module_sub_type == STARTUP_ACM)
+		printk(BIOS_INFO, " Subtype:  STARTUP (S-ACM)\n");
 	else if (acm_header->module_sub_type == BOOTGUARD_ACM)
-		printk(BIOS_INFO, " Subtype:  BOOTGUARD\n");
+		printk(BIOS_INFO, " Subtype:  BOOTGUARD ACM\n");
 
-	printk(BIOS_INFO, " Header:   v%u.%u\n", acm_header->header_version[0],
-	       acm_header->header_version[1]);
+	printk(BIOS_INFO, " Header:   v%u.%u\n", acm_header->header_version[2],
+	       acm_header->header_version[3]);
 
 	printk(BIOS_INFO, " Chipset:  %x\n", acm_header->chipset_id);
 	printk(BIOS_INFO, " Size:     %zu\n", acm_size);

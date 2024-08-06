@@ -138,6 +138,13 @@ void soc_core_init(struct device *cpu)
 	/* Enable Turbo */
 	enable_turbo();
 
+	/* Enable VMX */
+	//set_feature_ctrl_vmx_arg(CONFIG(ENABLE_VMX));
+	/* Feature control lock configure */
+	//set_feature_ctrl_lock();
+
+	set_aesni_lock();
+
 	if (CONFIG(INTEL_TME) && is_tme_supported())
 		set_tme_core_activate();
 }

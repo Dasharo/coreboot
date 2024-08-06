@@ -41,15 +41,15 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	gpio_configure_pads(pads, num);
 
 	/* Debug */
-	memupd->FspmConfig.JtagC10PowerGateDisable = 1;
-	memupd->FspmConfig.DebugInterfaceEnable = 1;
-	memupd->FspmConfig.CpuCrashLogEnable = 1;
-	memupd->FspmConfig.PlatformDebugConsent = 2;
-	memupd->FspmConfig.DciEn = 1;
-	memupd->FspmConfig.DciDbcMode = 3;
-	memupd->FspmConfig.DciModphyPg = 0;
-	memupd->FspmConfig.PchTraceHubMode = 2;
-	memupd->FspmConfig.CpuTraceHubMode = 2;
+	//memupd->FspmConfig.JtagC10PowerGateDisable = 1;
+	//memupd->FspmConfig.DebugInterfaceEnable = 1;
+	//memupd->FspmConfig.CpuCrashLogEnable = 1;
+	//memupd->FspmConfig.PlatformDebugConsent = 2;
+	//memupd->FspmConfig.DciEn = 1;
+	//memupd->FspmConfig.DciDbcMode = 3;
+	//memupd->FspmConfig.DciModphyPg = 0;
+	//memupd->FspmConfig.PchTraceHubMode = 2;
+	//memupd->FspmConfig.CpuTraceHubMode = 2;
 
 	// Set primary display to internal graphics
 	memupd->FspmConfig.PrimaryDisplay = 0;
@@ -60,6 +60,15 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 	/* Limit the max speed for memory compatibility */
 	memupd->FspmConfig.DdrFreqLimit = 4200;
+
+	/*
+	 * IA32_DEBUG_INTERFACE_MSR has to be locked by coreboot,
+	 * because FSP does not do it unless DebugInterfaceEnable is 1.
+	 * But to use Intel TXT, the debug interface has to be disabled,
+	 * so let coreboot handle the IA32_DEBUG_INTERFACE_MSR programming.
+	 */
+	memupd->FspmConfig.DebugInterfaceEnable = 0;
+	memupd->FspmConfig.DebugInterfaceLockEnable = 0;
 
 /* Use pre-processor because CONFIG_INTEL_TXT_CBFS_BIOS_ACM is not defined otherwise */
 #if CONFIG(INTEL_TXT)

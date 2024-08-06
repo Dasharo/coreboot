@@ -153,6 +153,13 @@ static void init_intel_txt(void *unused)
 		txt_dump_chipset_info();
 	}
 
+	/*
+	 * The below flow can be skipped for CBnT, because SCHECK is deprecated in CBnT.
+	 * Unless we want to test ACM calling code.
+	 */
+	if (CONFIG(INTEL_CBNT_SUPPORT) && !CONFIG(INTEL_TXT_TEST_BIOS_ACM_CALLING_CODE))
+		return;
+
 	printk(BIOS_INFO, "TEE-TXT: Validate TEE...\n");
 
 	if (intel_txt_prepare_txt_env()) {
@@ -164,6 +171,7 @@ static void init_intel_txt(void *unused)
 	if (get_wake_error_status()) {
 		/* Can't run ACMs with TXT_ESTS_WAKE_ERROR_STS set */
 		printk(BIOS_ERR, "TEE-TXT: Fatal BIOS ACM error reported\n");
+		restart_aps();
 		return;
 	}
 
@@ -192,12 +200,10 @@ static void init_intel_txt(void *unused)
 	int s3resume = acpi_is_wakeup_s3();
 	if (!s3resume && !CONFIG(INTEL_CBNT_SUPPORT)) {
 		printk(BIOS_INFO, "TEE-TXT: Scheck...\n");
-		if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0) {
+		if (intel_txt_run_bios_acm(ACMINPUT_SCHECK) < 0)
 			printk(BIOS_ERR, "TEE-TXT: Error calling BIOS ACM.\n");
-			return;
-		} else {
-			restart_aps();
-		}
+
+		restart_aps();
 	} else {
 		/* Let coreboot sync MTRRs on APs */
 		restart_aps();
@@ -421,7 +427,7 @@ static void lockdown_intel_txt(void *unused)
 	if (!getsec_parameter(NULL, NULL, NULL, NULL, NULL, &txt_feature_flags))
 		return;
 
-	/* LockConfig only exists on Intel TXT for Servers and CBnT */
+	/* LockConfig only exists on Intel TXT for Servers (CRTM in CPU) and CBnT */
 	if ((txt_feature_flags & GETSEC_PARAMS_TXT_EXT_CRTM_SUPPORT) ||
 	     CONFIG(INTEL_CBNT_SUPPORT)) {
 		/*

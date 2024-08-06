@@ -12,7 +12,7 @@
 #include <string.h>
 #include <types.h>
 #include <security/tpm/tss.h>
-
+#include <security/intel/cbnt/cbnt.h>
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_SA)
 #include <soc/intel/common/reset.h>
 #else
@@ -45,7 +45,7 @@ void __noreturn txt_reset_platform(void)
  * @param  acm_error The status register to dump
  * @return -1 on error (register is not valid)
  *	  0 on error (Class > 0 and Major > 0)
- *	  1 on success (Class == 0 and Major == 0 and progress > 0)
+ *	  1 on success (Class == 0 and Major == 0)
  */
 int intel_txt_log_acm_error(const uint32_t acm_error)
 {
@@ -79,16 +79,14 @@ int intel_txt_log_acm_error(const uint32_t acm_error)
 							>> ACMERROR_TXT_MAJOR_SHIFT;
 	const uint32_t minor = (acm_error & ACMERROR_TXT_MINOR_CODE)
 							>> ACMERROR_TXT_MINOR_SHIFT;
-	const uint32_t progress = (acm_error & ACMERROR_TXT_PROGRESS_CODE)
-							>> ACMERROR_TXT_PROGRESS_SHIFT;
 
 	if (!minor) {
-		if (class == 0 && major == 0 && progress > 0) {
+		if (class == 0 && major == 0 && minor > 0) {
 			printk(BIOS_ERR, " Execution successful\n");
-			printk(BIOS_ERR, " Progress code 0x%x\n", progress);
+			printk(BIOS_ERR, " Progress code 0x%x\n", minor);
 		} else {
 			printk(BIOS_ERR, " Error Class: %x\n", class);
-			printk(BIOS_ERR, " Error: %x.%x\n", major, progress);
+			printk(BIOS_ERR, " Error: %x.%x\n", major, minor);
 		}
 	} else {
 		printk(BIOS_ERR, " ACM didn't start\n");
@@ -96,7 +94,7 @@ int intel_txt_log_acm_error(const uint32_t acm_error)
 		return -1;
 	}
 
-	return (acm_error & ACMERROR_TXT_EXTERNAL) && class == 0 && major == 0 && progress > 0;
+	return (acm_error & ACMERROR_TXT_EXTERNAL) && class == 0 && major == 0;
 }
 
 void intel_txt_log_spad(void)
@@ -342,6 +340,10 @@ void intel_txt_run_sclean(void)
 int intel_txt_run_bios_acm(const u8 input_params)
 {
 	size_t acm_len;
+	uint32_t txt_error;
+	uint32_t bios_acm_error;
+
+	int ret = 0;
 
 	void *acm_data = intel_txt_prepare_bios_acm(&acm_len);
 
@@ -354,18 +356,19 @@ int intel_txt_run_bios_acm(const u8 input_params)
 
 	cbfs_unmap(acm_data);
 
-	const uint64_t acm_status = read64((void *)TXT_SPAD);
-	if (acm_status & ACMERROR_TXT_VALID) {
-		printk(BIOS_ERR, "TEE-TXT: FATAL ACM launch error !\n");
-		/*
-		 * WARNING !
-		 * To clear TXT.BIOSACM.ERRORCODE you must issue a cold reboot!
-		 */
-		intel_txt_log_acm_error(read32((void *)TXT_BIOSACM_ERRORCODE));
-		return -1;
-	}
+	txt_error = read32((void *)TXT_ERROR);
+	bios_acm_error = read32((void *)TXT_BIOSACM_ERRORCODE);
+	printk(BIOS_DEBUG, "TXT.ERRORCODE (0x30): %08x\n", txt_error);
+	printk(BIOS_DEBUG, "TXT.BIOSACM_ERRORCODE (0x328): %08x\n", bios_acm_error);
 
-	return 0;
+	/*
+	 * CBnT platforms may end up with valid bits not set in the errorcode registers.
+	 * Thus check only for the class code and major code being not zero.
+	 */
+	ret -= (intel_txt_log_acm_error(txt_error) == 0);
+	ret -= (intel_txt_log_acm_error(bios_acm_error) == 0);
+
+	return ret;
 }
 
  /* Returns true if cond is not met */

@@ -104,8 +104,10 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
 
+	params->TxtEnable = CONFIG(INTEL_TXT);
+
 	/* Debug */
-	params->PmcDbgMsgEn = 1;
+	//params->PmcDbgMsgEn = 1;
 	/*
 	 * Workaround: poll for IOM ready before SiliconInit for 2 seconds.
 	 * ME seems to be too sluggish with its firmware initialization and IOM
@@ -120,8 +122,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	}
 
 	printk(BIOS_ERR, "TCSS IOM not ready, USB3.0 ports will not be functional\n");
-
-	params->TxtEnable = CONFIG(INTEL_TXT);
 }
 
 static void mainboard_final(void *chip_info)

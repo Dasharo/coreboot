@@ -560,4 +560,17 @@ config HSPHY_FW_MAX_SIZE
 	hex
 	default 0x8000
 
+if INTEL_TXT
+
+config INTEL_TXT_DPR_SIZE
+	default 4
+
+config INTEL_TXT_SINIT_SIZE
+	default 0x50000
+
+config INTEL_TXT_HEAP_SIZE
+	default 0xf0000
+
+endif
+
 endif

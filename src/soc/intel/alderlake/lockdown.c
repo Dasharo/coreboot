@@ -6,6 +6,7 @@
  * Chapter number: 4
  */
 
+#include <cpu/x86/msr.h>
 #include <device/mmio.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/pcr.h>
@@ -18,6 +19,23 @@
 /* PCR PSTH Control Register */
 #define PCR_PSTH_CTRLREG		0x1d00
 #define   PSTH_CTRLREG_IOSFPTCGE	(1 << 2)
+
+#define MSR_IA32_DEBUG_INTERFACE		0xc80
+#define   MSR_IA32_DEBUG_INTERFACE_EN		(1 << 0)
+#define   MSR_IA32_DEBUG_INTERFACE_LOCK		(1 << 30)
+
+static void cpu_lockdown_cfg(void)
+{
+	msr_t msr = rdmsr(MSR_IA32_DEBUG_INTERFACE);
+
+	if (!(msr.lo & MSR_IA32_DEBUG_INTERFACE_LOCK)) {
+		if (CONFIG(INTEL_TXT))
+			msr.lo &= ~MSR_IA32_DEBUG_INTERFACE_EN;
+
+		msr.lo |= MSR_IA32_DEBUG_INTERFACE_LOCK;
+		wrmsr(MSR_IA32_DEBUG_INTERFACE, msr);
+	}
+}
 
 static void pmc_lockdown_cfg(int chipset_lockdown)
 {
@@ -57,4 +75,5 @@ void soc_lockdown_config(int chipset_lockdown)
 	pmc_lockdown_cfg(chipset_lockdown);
 	/* PCH lock down configuration */
 	pch_lockdown_cfg();
+	cpu_lockdown_cfg();
 }

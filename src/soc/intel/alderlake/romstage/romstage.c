@@ -183,6 +183,8 @@ void mainboard_romstage_entry(void)
 	 */
 	if (!CONFIG(INTEL_TXT))
 		disable_intel_txt();
+	else
+		intel_txt_romstage_init();
 
 	if (CONFIG(SOC_INTEL_CSE_LITE_SYNC_IN_ROMSTAGE) && !s3wake)
 		cse_fw_sync();

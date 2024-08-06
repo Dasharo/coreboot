@@ -52,8 +52,10 @@ void set_feature_ctrl_vmx_arg(bool enable)
 	if (enable) {
 		msr.lo |= (1 << 2);
 		if (feature_flag & CPUID_SMX) {
+			printk(BIOS_DEBUG, "Enabling VMX in SMX\n");
 			msr.lo |= (1 << 1);
 			if (CONFIG(INTEL_TXT)) {
+				printk(BIOS_DEBUG, "Enabling GETSEC and all its leaves\n");
 				/* Enable GetSec and all GetSec leaves */
 				msr.lo |= (0xff << 8);
 			}
