@@ -36,6 +36,17 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	pads = board_gpio_table(&num);
 	gpio_configure_pads(pads, num);
 
+	/* Debug */
+	memupd->FspmConfig.JtagC10PowerGateDisable = 1;
+	memupd->FspmConfig.DebugInterfaceEnable = 1;
+	memupd->FspmConfig.CpuCrashLogEnable = 1;
+	memupd->FspmConfig.PlatformDebugConsent = 2;
+	memupd->FspmConfig.DciEn = 1;
+	memupd->FspmConfig.DciDbcMode = 3;
+	memupd->FspmConfig.DciModphyPg = 0;
+	memupd->FspmConfig.PchTraceHubMode = 2;
+	memupd->FspmConfig.CpuTraceHubMode = 2;
+
 	// Set primary display to internal graphics
 	memupd->FspmConfig.PrimaryDisplay = 0;
 	memupd->FspmConfig.DmiMaxLinkSpeed = 4;

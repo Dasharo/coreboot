@@ -104,6 +104,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
 
+	/* Debug */
+	params->PmcDbgMsgEn = 1;
 	/*
 	 * Workaround: poll for IOM ready before SiliconInit for 2 seconds.
 	 * ME seems to be too sluggish with its firmware initialization and IOM
