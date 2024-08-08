@@ -1,0 +1,66 @@
+if BOARD_HARDKERNEL_ODROID_H4
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_16384
+	select SOC_INTEL_ALDERLAKE_PCH_N
+	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
+	select SUPERIO_ITE_IT8613E
+	select CRB_TPM
+	select DRIVERS_UART_8250IO
+	select FSP_TYPE_IOT
+	select HAVE_ACPI_RESUME
+	select HAVE_ACPI_TABLES
+	select HAVE_INTEL_PTT
+	select INTEL_GMA_HAVE_VBT
+	select USE_DDR5
+
+config MAINBOARD_DIR
+	default "hardkernel/odroid_h4"
+
+config MAINBOARD_PART_NUMBER
+	default "ODROID-H4"
+
+config MAINBOARD_VENDOR
+	default "HARDKERNEL"
+
+config MAINBOARD_FAMILY
+	default "Default String"
+
+config DIMM_SPD_SIZE
+	default 1024
+
+config DIMM_MAX
+	default 2
+
+config UART_FOR_CONSOLE
+	default 0
+
+config USE_PM_ACPI_TIMER
+	default n
+
+config CBFS_SIZE
+	default 0xa00000
+
+config VBOOT
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select VBOOT_NO_BOARD_SUPPORT
+	select HAS_RECOVERY_MRC_CACHE
+	select VBOOT_NO_TPM
+	select VBOOT_ENABLE_CBFS_FALLBACK
+	select VBOOT_CLEAR_RECOVERY_IN_RAMSTAGE
+
+config VBOOT_SLOTS_RW_A
+	default y if VBOOT
+
+config SOC_INTEL_CSE_SEND_EOP_EARLY
+	default n
+
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+
+endif

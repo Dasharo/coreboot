@@ -1,0 +1,7 @@
+Category: sbc
+Board URL: https://www.hardkernel.com/shop/odroid-h4-plus/
+ROM IC: Winbond W25Q128FW
+ROM package: SOIC8-8
+ROM socketed: no
+Flashrom support: yes
+Release year: 2023

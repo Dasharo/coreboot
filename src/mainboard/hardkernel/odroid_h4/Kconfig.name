@@ -1,0 +1,2 @@
+config BOARD_HARDKERNEL_ODROID_H4
+	bool "ODROID H4"
