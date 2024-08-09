@@ -4,7 +4,7 @@ chip soc/intel/meteorlake
 			register "ddi_port_A_config" = "1"
 			register "ddi_ports_config" = "{
 				[DDI_PORT_A] = DDI_ENABLE_HPD, 			/* eDP */
-				[DDI_PORT_2] = DDI_ENABLE_DDC | DDI_ENABLE_HPD,	/* HDMI 2.1 */
+				[DDI_PORT_3] = DDI_ENABLE_DDC | DDI_ENABLE_HPD,	/* HDMI 2.1 */
 			}"
 		end
 		device ref i2c0 on # Touchpad
