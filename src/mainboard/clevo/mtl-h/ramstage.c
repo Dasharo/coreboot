@@ -6,7 +6,6 @@
 #include <ec/system76/ec/acpi.h>
 #include <fmap.h>
 #include <lib.h>
-#include <mainboard/gpio.h>
 #include <security/vboot/vboot_common.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
@@ -115,8 +114,6 @@ static void mainboard_init(void *chip_info)
 	cfg->usb2_ports[9].enable = radio_enable;
 
 	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
-
-	mainboard_configure_gpios();
 
 	set_fan_curve();
 	set_camera_enablement();

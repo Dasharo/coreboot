@@ -198,13 +198,13 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_C10, 0, DEEP),
 
-	/* GPP_C11 - SRCCLKREQ2# */
+	/* GPP_C11 - SRCCLKREQ2# (LAN) */
 	/* DW0: 0x44000702, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1) - IGNORED */
 	/* PAD_CFG_NF(GPP_C11, NONE, DEEP, NF1), */
 	_PAD_CFG_STRUCT(GPP_C11, PAD_FUNC(NF1) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1), 0),
 
-	/* GPP_C12 - SRCCLKREQ3# */
+	/* GPP_C12 - SRCCLKREQ3# (SDCARD) */
 	/* DW0: 0x44000702, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1) - IGNORED */
 	/* PAD_CFG_NF(GPP_C12, NONE, DEEP, NF1), */
@@ -324,17 +324,17 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_A10, 0, DEEP),
 
-	/* GPP_A11 - GPIO */
+	/* GPP_A11 - GPIO (ADDS_CODE) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_A11, 0, DEEP),
 
-	/* GPP_A12 - GPIO */
+	/* GPP_A12 - GPIO (WLAN_WAKEUP#) */
 	/* DW0: 0x44000102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_A12, NONE, DEEP, OFF, ACPI), */
 	_PAD_CFG_STRUCT(GPP_A12, PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_DISABLE) | (1 << 1), 0),
 
-	/* GPP_A13 - GPIO */
+	/* GPP_A13 - GPIO (M2_SSD2_RST#) */
 	/* DW0: 0x84000201, DW1: 0x00003000 */
 	PAD_CFG_TERM_GPO(GPP_A13, 1, UP_20K, PLTRST),
 
@@ -346,13 +346,13 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_A15, 0, DEEP),
 
-	/* GPP_A16 - RSVD */
+	/* GPP_A16 - RSVD/ESPI_ALERT0# */
 	/* DW0: 0x44000702, DW1: 0x0003f000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1) - IGNORED */
 	/* PAD_CFG_NF(GPP_A16, UP_20K, DEEP, NF1), */
 	_PAD_CFG_STRUCT(GPP_A16, PAD_FUNC(NF1) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1), PAD_PULL(UP_20K) | PAD_IOSSTATE(IGNORE)),
 
-	/* GPP_A17 - GPIO */
+	/* GPP_A17 - GPIO (TP_ATTN#_A17) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_A17, 0, DEEP),
 
@@ -394,17 +394,17 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_E00, 0, DEEP),
 
-	/* GPP_E01 - GPIO */
+	/* GPP_E01 - GPIO (TPM_PIRQ#) */
 	/* DW0: 0x40100102, DW1: 0x00003000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_APIC(GPP_E01, UP_20K, DEEP, LEVEL, NONE), */
 	_PAD_CFG_STRUCT(GPP_E01, PAD_RESET(DEEP) | PAD_IRQ_ROUTE(IOAPIC) | PAD_BUF(TX_DISABLE) | (1 << 1), PAD_PULL(UP_20K)),
 
-	/* GPP_E02 - GPIO */
+	/* GPP_E02 - GPIO (BOARD_ID4) */
 	/* DW0: 0x44000100, DW1: 0x00000000 */
 	PAD_CFG_GPI_TRIG_OWN(GPP_E02, NONE, DEEP, OFF, ACPI),
 
-	/* GPP_E03 - GPIO */
+	/* GPP_E03 - GPIO (CNVI_WAKE#) */
 	/* DW0: 0x44000102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_E03, NONE, DEEP, OFF, ACPI), */
@@ -440,7 +440,7 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_E10, 0, DEEP),
 
-	/* GPP_E11 - GPIO */
+	/* GPP_E11 - GPIO (BOARD_ID6) */
 	/* DW0: 0x44000102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_E11, NONE, DEEP, OFF, ACPI), */
@@ -470,7 +470,7 @@ static const struct pad_config gpio_table[] = {
 	/* PAD_CFG_NF(GPP_E16, NONE, DEEP, NF2), */
 	_PAD_CFG_STRUCT(GPP_E16, PAD_FUNC(NF2) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1), PAD_IOSSTATE(IGNORE)),
 
-	/* GPP_E17 - GPIO */
+	/* GPP_E17 - GPIO (BOARD_ID5) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_E17, 0, DEEP),
 
@@ -522,11 +522,11 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_H03, 0, DEEP),
 
-	/* GPP_H04 - GPIO */
+	/* GPP_H04 - GPIO (TODO: should be CNV_MFUART2_RXD - NF2) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_H04, 0, DEEP),
 
-	/* GPP_H05 - GPIO */
+	/* GPP_H05 - GPIO (TODO: should be CNV_MFUART2_TXD - NF2) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_H05, 0, DEEP),
 
@@ -664,7 +664,7 @@ static const struct pad_config gpio_table[] = {
 	/* PAD_CFG_NF(GPP_F05, NONE, DEEP, NF3), */
 	_PAD_CFG_STRUCT(GPP_F05, PAD_FUNC(NF3) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_DISABLE), PAD_IOSSTATE(IGNORE)),
 
-	/* GPP_F06 - GPIO */
+	/* GPP_F06 - GPIO (should be CNV_PA_BLANKING - NF1)*/
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F06, 0, DEEP),
 
@@ -676,7 +676,7 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F08, 0, DEEP),
 
-	/* GPP_F09 - GPIO */
+	/* GPP_F09 - GPIO (TPM_DET) */
 	/* DW0: 0x44000102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_F09, NONE, DEEP, OFF, ACPI), */
@@ -686,27 +686,27 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F10, 0, DEEP),
 
-	/* GPP_F11 - GPIO */
+	/* GPP_F11 - GPIO (BOARD_ID3) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F11, 0, DEEP),
 
-	/* GPP_F12 - GPIO */
+	/* GPP_F12 - GPIO (I2C5_SCL smart amp) */
 	/* DW0: 0x44002102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_F12, NONE, DEEP, OFF, ACPI), */
 	_PAD_CFG_STRUCT(GPP_F12, PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_DISABLE) | (1 << 1), 0),
 
-	/* GPP_F13 - GPIO */
+	/* GPP_F13 - GPIO (I2C5_SDA smart amp) */
 	/* DW0: 0x44002102, DW1: 0x00000000 */
 	/* DW0: (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_F13, NONE, DEEP, OFF, ACPI), */
 	_PAD_CFG_STRUCT(GPP_F13, PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_DISABLE) | (1 << 1), 0),
 
-	/* GPP_F14 - GPIO */
+	/* GPP_F14 - GPIO (BOARD_ID1) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F14, 0, DEEP),
 
-	/* GPP_F15 - GPIO */
+	/* GPP_F15 - GPIO (BOARD_ID2) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F15, 0, DEEP),
 
@@ -718,7 +718,7 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F17, 0, DEEP),
 
-	/* GPP_F18 - GPIO */
+	/* GPP_F18 - GPIO (CPU_CCD_WP#) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_F18, 0, DEEP),
 
@@ -866,7 +866,7 @@ static const struct pad_config gpio_table[] = {
 
 	/* ------- GPIO Group GPP_B ------- */
 
-	/* GPP_B00 - GPIO */
+	/* GPP_B00 - GPIO (TP_ATTN#) */
 	/* DW0: 0x80800102, DW1: 0x00000000 */
 	/* DW0: PAD_RX_POL(INVERT) | (1 << 1) - IGNORED */
 	/* PAD_CFG_GPI_TRIG_OWN(GPP_B00, NONE, PLTRST, LEVEL, ACPI), */
@@ -893,7 +893,7 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_B05, 0, DEEP),
 
-	/* GPP_B06 - GPIO */
+	/* GPP_B06 - GPIO (ROM_I2C_EN) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_B06, 0, DEEP),
 
@@ -951,11 +951,11 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_B17, 0, DEEP),
 
-	/* GPP_B18 - GPIO */
+	/* GPP_B18 - GPIO (PCH_BT_EN) */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_B18, 1, DEEP),
 
-	/* GPP_B19 - GPIO */
+	/* GPP_B19 - GPIO (WIFI_RF_EN) */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_B19, 1, DEEP),
 
@@ -963,9 +963,9 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_B20, 0, DEEP),
 
-	/* GPP_B21 - GPIO */
+	/* GPP_B21 - GPIO (TCP_RETIMER_FORCE_PWR) */
 	/* DW0: 0x84000200, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_B21, 0, PLTRST),
+	PAD_CFG_GPO(GPP_B21, 1, PLTRST),
 
 	/* GPP_B22 - GPIO */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
@@ -983,15 +983,15 @@ static const struct pad_config gpio_table[] = {
 
 	/* ------- GPIO Group GPP_D ------- */
 
-	/* GPP_D00 - GPIO */
+	/* GPP_D00 - GPIO (SB_BLON) */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D00, 1, DEEP),
 
-	/* GPP_D01 - GPIO */
+	/* GPP_D01 - GPIO (SSD2_PWR_EN) */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D01, 1, DEEP),
 
-	/* GPP_D02 - GPIO */
+	/* GPP_D02 - GPIO (M2_SSD1_RST#) */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D02, 1, DEEP),
 
@@ -1003,7 +1003,7 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D04, 0, DEEP),
 
-	/* GPP_D05 - GPIO */
+	/* GPP_D05 - GPIO (SSD1_PWR_EN) */
 	/* DW0: 0x44000201, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D05, 1, DEEP),
 
@@ -1055,7 +1055,7 @@ static const struct pad_config gpio_table[] = {
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D15, 0, DEEP),
 
-	/* GPP_D16 - GPIO */
+	/* GPP_D16 - GPIO (GPIO_SPK_MUTE) */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
 	PAD_CFG_GPO(GPP_D16, 0, DEEP),
 
@@ -1065,25 +1065,25 @@ static const struct pad_config gpio_table[] = {
 	/* PAD_CFG_NF(GPP_D17, NONE, DEEP, NF1), */
 	_PAD_CFG_STRUCT(GPP_D17, PAD_FUNC(NF1) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE), PAD_IOSSTATE(IGNORE)),
 
-	/* GPP_D18 - SRCCLKREQ6# */
+	/* GPP_D18 - SRCCLKREQ6# (NC?) */
 	/* DW0: 0x44000700, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) - IGNORED */
 	/* PAD_CFG_NF(GPP_D18, NONE, DEEP, NF1), */
 	_PAD_CFG_STRUCT(GPP_D18, PAD_FUNC(NF1) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE), 0),
 
-	/* GPP_D19 - SRCCLKREQ7# */
+	/* GPP_D19 - SRCCLKREQ7# (SSD1) */
 	/* DW0: 0x44000700, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) - IGNORED */
 	/* PAD_CFG_NF(GPP_D19, NONE, DEEP, NF1), */
 	_PAD_CFG_STRUCT(GPP_D19, PAD_FUNC(NF1) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE), 0),
 
-	/* GPP_D20 - SRCCLKREQ8# */
+	/* GPP_D20 - SRCCLKREQ8# (SSD2) */
 	/* DW0: 0x44000702, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1) - IGNORED */
 	/* PAD_CFG_NF(GPP_D20, NONE, DEEP, NF1), */
 	_PAD_CFG_STRUCT(GPP_D20, PAD_FUNC(NF1) | PAD_RESET(DEEP) | PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1), 0),
 
-	/* GPP_D21 - SRCCLKREQ5# */
+	/* GPP_D21 - SRCCLKREQ5# (WLAN) */
 	/* DW0: 0x44000b02, DW1: 0x00000000 */
 	/* DW0: PAD_TRIG(OFF) | PAD_BUF(TX_RX_DISABLE) | (1 << 1) - IGNORED */
 	/* PAD_CFG_NF(GPP_D21, NONE, DEEP, NF2), */

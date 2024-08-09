@@ -11,7 +11,6 @@
 		PAD_PULL(pull) | PAD_CFG_OWN_GPIO(own))
 #endif
 
-void mainboard_configure_early_gpios(void);
 void mainboard_configure_gpios(void);
 
 #endif
