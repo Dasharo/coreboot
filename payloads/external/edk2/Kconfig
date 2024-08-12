@@ -282,6 +282,14 @@ config EDK2_GOP_FILE
 	help
 	  The name of the GOP driver file passed to edk2.
 
+config EDK2_USE_LAPTOP_LID_LIB
+	bool "Use platform-specific library to tet lid state"
+	depends on EDK2_GOP_DRIVER
+	default n
+	help
+	  Select this option to have edk2 use a platform-specific library to get lid state.
+	  If not selected, the lid is always assumed to be open.
+
 config EDK2_DISABLE_TPM
 	bool "Disable TPM support in edk2"
 	default y if EDK2_REPO_MRCHROMEBOX && TPM_GOOGLE_CR50 && SOC_AMD_COMMON
