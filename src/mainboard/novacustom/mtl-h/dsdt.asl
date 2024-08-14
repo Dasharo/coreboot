@@ -31,8 +31,9 @@ DefinitionBlock(
 	}
 
 	#include "acpi/mainboard.asl"
+	#include "acpi/touchpad.asl"
 
-#if CONFIG(BOARD_NOVACUSTOM_V5X0TNX_BASE)
+#if CONFIG(INCLUDE_NVIDIA_GPU_ASL)
 	#include "acpi/dgpu/gpu_top.asl"
 #endif
 }
