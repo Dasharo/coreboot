@@ -28,6 +28,7 @@ config BOARD_NOVACUSTOM_MTLH_COMMON
 config BOARD_NOVACUSTOM_V5X0TNX_BASE
 	bool
 	select EC_DASHARO_EC_DGPU
+	select INCLUDE_NVIDIA_GPU_ASL
 	select BOARD_NOVACUSTOM_MTLH_COMMON
 	select DRIVERS_I2C_TAS5825M
 
@@ -138,6 +139,11 @@ config VBOOT_FWID_VERSION
 
 config EC_DASHARO_EC_FLASH_SIZE
 	default 0x40000
+
+config INCLUDE_NVIDIA_GPU_ASL
+	def_bool n
+	help
+	  Select this if the variant has an Nvidia GPU attached to RP12
 
 if PAYLOAD_EDK2
 

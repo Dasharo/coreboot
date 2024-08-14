@@ -27,6 +27,10 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 		},
 	};
 
+	mainboard_configure_gpios();
+	mupd->FspmConfig.PrimaryDisplay = 0x0; // iGPU
+
+	/* The values come from Clevo firmware. */
 	mupd->FspmConfig.AcLoadline[0] = 190;
 	mupd->FspmConfig.AcLoadline[1] = 310;
 	mupd->FspmConfig.AcLoadline[2] = 490;
