@@ -66,7 +66,6 @@ chip soc/intel/meteorlake
 
 	device cpu_cluster 0 on end
 	device domain 0 on
-		subsystemid 0x1558 0xa743 inherit
 		device ref system_agent on end
 		device ref igpu on
 			register "ddi_port_A_config" = "1"
