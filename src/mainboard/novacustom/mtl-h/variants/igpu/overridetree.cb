@@ -1,5 +1,6 @@
 chip soc/intel/meteorlake
 	device domain 0 on
+		subsystemid 0x1558 0xa743 inherit
 		device ref igpu on
 			register "ddi_ports_config" = "{
 				[DDI_PORT_A] = DDI_ENABLE_HPD, 			/* eDP */
