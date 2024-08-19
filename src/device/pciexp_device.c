@@ -587,15 +587,15 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 		lnkctl |= apmc;
 		pci_write_config16(endp, endp_cap + PCI_EXP_LNKCTL, lnkctl);
 	} else {
-		/* Disable ASPM in root port first */
-		lnkctl = pci_read_config16(root, root_cap + PCI_EXP_LNKCTL);
-		lnkctl &= ~3;
-		pci_write_config16(root, root_cap + PCI_EXP_LNKCTL, lnkctl);
-
-		/* Disable ASPM in endpoint device next */
+		/* Disable ASPM in endpoint device first */
 		lnkctl = pci_read_config16(endp, endp_cap + PCI_EXP_LNKCTL);
 		lnkctl &= ~3;
 		pci_write_config16(endp, endp_cap + PCI_EXP_LNKCTL, lnkctl);
+
+		/* Disable ASPM in root port next */
+		lnkctl = pci_read_config16(root, root_cap + PCI_EXP_LNKCTL);
+		lnkctl &= ~3;
+		pci_write_config16(root, root_cap + PCI_EXP_LNKCTL, lnkctl);
 	}
 
 	if (CONFIG(PCIEXP_ASPM))
