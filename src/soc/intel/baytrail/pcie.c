@@ -79,11 +79,13 @@ static void byt_pcie_init(struct device *dev)
 		REG_PCI_RMW32(LCAP, ~L1EXIT_MASK,
 			2 << (L1EXIT_SHIFT + pll_en_off)),
 		REG_SCRIPT_NEXT(init_static_after_exit_latency),
-#if !CONFIG(PCIEXP_HOTPLUG)
-		/* Disable hot plug, set power to 10W, set slot number. */
-		REG_PCI_RMW32(SLCAP, ~(HPC | HPS),
+		/* Set power to 10W, set slot number. */
+		REG_PCI_RMW32(SLCAP, 0xffffffff,
 			(1 << SLS_SHIFT) | (100 << SLV_SHIFT) |
 			(root_port_offset(dev) << SLN_SHIFT)),
+#if !CONFIG(PCIEXP_HOTPLUG)
+		/* Disable hot plug */
+		REG_PCI_RMW32(SLCAP, ~(HPC | HPS), 0),
 #endif
 		/* Dynamic clock gating. */
 		REG_PCI_OR32(RPPGEN, RPDLCGEN | RPDBCGEN | RPSCGEN),
