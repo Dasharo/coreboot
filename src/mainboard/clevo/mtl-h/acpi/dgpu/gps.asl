@@ -34,8 +34,7 @@ Method (GPS, 2, Serialized)
 				(1 << GPS_FUNC_SUPPORT) |
 				(1 << GPS_FUNC_GETCALLBACKS) |
 				(1 << GPS_FUNC_PSHARESTATUS) |
-				(1 << GPS_FUNC_PSHAREPARAMS) |
-				(1 << GPS_FUNC_REQUESTDXSTATE)))
+				(1 << GPS_FUNC_PSHAREPARAMS)))
 		}
 		Case (GPS_FUNC_GETCALLBACKS)
 		{
@@ -91,13 +90,6 @@ Method (GPS, 2, Serialized)
 					Return (GPSP)
 				}
 			}
-		}
-		Case (GPS_FUNC_REQUESTDXSTATE)
-		{
-			/* D-notifier: EC-assisted GPU power limits. Not implemented. */
-			Local0 = 0
-			\_SB.PCI0.RP12.PXSX.DNOT (Local0, 1)
-			Return (NV_ERROR_SUCCESS)
 		}
 	}
 

@@ -48,15 +48,29 @@ Method (NPCF, 2, Serialized)
 		{
 			Local0 = Buffer (0x31) {
 				/* Dynamic Params Table Header (1 controller entry, 0x1c bytes) */
-				0x22, 0x05, 0x10, 0x1c, 0x01 }
+				0x24, 0x05, 0x10, 0x1c, 0x01 }
 
-			CreateWordField (Local0, 0x1d, MAGA)
+			CreateWordField (Local0, 0x05, TGPA)
+			CreateWordField (Local0, 0x07, TGPD)
 			CreateWordField (Local0, 0x19, TPPA)
+			CreateWordField (Local0, 0x1B, TPPD)
+			CreateWordField (Local0, 0x1D, MAGA)
+			CreateWordField (Local0, 0x1F, MAGD)
+			CreateWordField (Local0, 0x21, MIGA)
+			CreateWordField (Local0, 0x23, MIGD)
 			CreateDWordField (Local0, 0x15, CEO0)
 
-			MAGA = 0x348	/* TGP on AC = 105W in 1/8-Watt increments */
-			TPPA = 0x348	/* TPPA = 105W in 1/8-Watt increments */
-			CEO0 = 0x200	/* [7:0] Controller index
+			/* Vendor firmware generates these in DXE or SMM, puts */
+			/* them in NVS and then ACPI copies it here. */
+			/* TODO: Dump vendor FW values for reference. */
+
+			TGPA = 0x280	/* TGP on AC = 80W in 1/8-Watt increments */
+			TGPD = 0x140	/* TGP on DC = 40W in 1/8-Watt increments */
+			TPPA = 0x1E0 	/* Total Processor Power on AC = 60W */
+			MAGA = 0x1E0	/* Max offset from TGP on AC = 60W */
+			MIGA = 0xC8	/* Min offset from TGP on AC = 25W */
+
+			CEO0 = 0x0000	/* [7:0] Controller index
 					   [8:8] Disable controller on AC
 					   [9:9] Disable controller on DC */
 			Return (Local0)
