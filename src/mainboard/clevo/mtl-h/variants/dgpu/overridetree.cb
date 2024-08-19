@@ -36,6 +36,13 @@ chip soc/intel/meteorlake
 				device i2c 38 on end
 			end
 		end
+		device ref i2c5 on # TAS5825M SmartAmp
+			register "serial_io_i2c_mode[PchSerialIoIndexI2C5]" = "PchSerialIoPci"
+			chip drivers/i2c/tas5825m
+				register "id" = "0"
+				device i2c 4e on end
+			end
+		end
 		device ref pcie_rp5 on # GLAN
 			register "pcie_rp[PCH_RP(5)]" = "{
 				.clk_src = 2,
