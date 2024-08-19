@@ -177,11 +177,8 @@ static void check_device_present(struct device *dev)
 {
 	struct reg_script hotplug_port[] = {
 		REG_PCI_RMW32(PCIEALC, ~(1 << 26), 0),
-		/* Configure hot plug, set power to 10W, set slot number. */
-		REG_PCI_RMW32(SLCAP, ~(HPC | HPS),
-			(1 << SLS_SHIFT) | (100 << SLV_SHIFT) |
-			(root_port_offset(dev) << SLN_SHIFT) |
-			(HPC | HPS)),
+		/* Configure hot plug */
+		REG_PCI_OR32(SLCAP, ~(HPC | HPS)),
 		REG_PCI_RMW32(SLCTL_SLSTS, ~HPE, 0),
 		REG_PCI_OR32(SLCTL_SLSTS, (ABE | PDE)),
 		REG_PCI_OR32(UEM, CT),
