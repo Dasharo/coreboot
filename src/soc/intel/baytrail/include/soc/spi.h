@@ -24,6 +24,7 @@
 #define UVSCC				0xc8
 #define SCS				0xf8
 # define SMIWPEN			(0x1 << 7)
+# define SMIWPST			(0x1 << 0)
 #define BCR				0xfc
 # define EISS				(0x1 << 5)
 # define SRC_MASK			(0x3 << 2)
