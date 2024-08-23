@@ -55,13 +55,7 @@ Method (GPS, 2, Serialized)
 		}
 		Case (GPS_FUNC_PSHARESTATUS)
 		{
-			Return (ITOB(
-				(0 << 0) |	/* GPS_FUNC_PSHAREPARAMS should not be called
-				                   again after initialization, i.e., its return
-						   value is not dynamically updated. */
-				(1 << 0) |	/* System uses both a GPIO and ACPI notification
-						   codes to set multiple GPU power limits. */
-				(0 << 21)))	/* EDPpeak limit is default */
+			Return (ITOB(0))
 		}
 		Case (GPS_FUNC_PSHAREPARAMS)
 		{
@@ -69,6 +63,8 @@ Method (GPS, 2, Serialized)
 
 			/* Version of return value */
 			VRV1 = 0x10000
+			RETN = QUTY
+
 			Switch (ToInteger (QUTY))
 			{
 				Case (QUERY_GET_STATUS)
@@ -77,16 +73,12 @@ Method (GPS, 2, Serialized)
 				}
 				Case (QUERY_GET_SUPPORTED_FIELDS)
 				{
-					/* Only GPU temperature is supported */
-					RETN = 0x100 | ToInteger (QUTY)
+					/* No fields are supported */
 					Return (GPSP)
 				}
 				Case (QUERY_GET_CURRENT_LIMITS)
 				{
-					/* Request a limit of '0' for the GPU temperature,
-					   meaning there is no limit. */
-					RETN = 0x102
-					TGPU = 0
+					/* No limits */
 					Return (GPSP)
 				}
 			}
