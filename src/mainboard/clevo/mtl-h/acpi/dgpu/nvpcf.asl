@@ -4,12 +4,26 @@
 #define NVPCF_FUNC_GET_STATIC_CONFIG_TABLES	1
 #define NVPCF_FUNC_UPDATE_DYNAMIC_PARAMS	2
 
+Name(_HID, "NVDA0820")
+Name(_UID, "NPCF")
+
+Method(_DSM, 4, Serialized) {
+	If (Arg0 == ToUUID (UUID_NVPCF))
+	{
+		Return (NPCF (Arg2, Arg3))
+	}
+
+	Return (NV_ERROR_UNSUPPORTED)
+}
+
 Method (NPCF, 2, Serialized)
 {
+	Printf("NPCF NPCF(): Func %o", Arg0)
 	Switch (ToInteger (Arg0))
 	{
 		Case (NVPCF_FUNC_SUPPORT)
 		{
+			Printf("NVPCF: Get supported subfunctions")
 			Return (ITOB(
 				(1 << NVPCF_FUNC_SUPPORT) |
 				(1 << NVPCF_FUNC_GET_STATIC_CONFIG_TABLES) |
@@ -17,6 +31,7 @@ Method (NPCF, 2, Serialized)
 		}
 		Case (NVPCF_FUNC_GET_STATIC_CONFIG_TABLES)
 		{
+			Printf("NVPCF: Get static config tables")
 			Return (Buffer () {
 				/* System Device Table Header (v2.0) */
 				0x20, 0x03, 0x01,
@@ -46,33 +61,38 @@ Method (NPCF, 2, Serialized)
 		}
 		Case (NVPCF_FUNC_UPDATE_DYNAMIC_PARAMS)
 		{
+			Printf("NVPCF: Update dynamic params")
+
+			CreateField(Arg1, 0x28, 2, ICMD)
+			Printf("NVPCF: ICMD = %o", ICMD)
+
 			Local0 = Buffer (0x31) {
 				/* Dynamic Params Table Header (1 controller entry, 0x1c bytes) */
-				0x24, 0x05, 0x10, 0x1c, 0x01 }
+				0x22, 0x05, 0x10, 0x1c, 0x01 }
 
-			CreateWordField (Local0, 0x05, TGPA)
-			CreateWordField (Local0, 0x07, TGPD)
 			CreateWordField (Local0, 0x19, TPPA)
-			CreateWordField (Local0, 0x1B, TPPD)
 			CreateWordField (Local0, 0x1D, MAGA)
-			CreateWordField (Local0, 0x1F, MAGD)
 			CreateWordField (Local0, 0x21, MIGA)
-			CreateWordField (Local0, 0x23, MIGD)
-			CreateDWordField (Local0, 0x15, CEO0)
 
-			/* Vendor firmware generates these in DXE or SMM, puts */
-			/* them in NVS and then ACPI copies it here. */
-			/* TODO: Dump vendor FW values for reference. */
+			Switch(ToInteger(ICMD)) {
+				Case(0) {
+					Printf("Get Controller Params")
+					/* Vendor firmware generates these in DXE or SMM, puts */
+					/* them in NVS and then ACPI copies it here. */
+					/* TODO: Dump vendor FW values for reference. */
 
-			TGPA = 0x280	/* TGP on AC = 80W in 1/8-Watt increments */
-			TGPD = 0x140	/* TGP on DC = 40W in 1/8-Watt increments */
-			TPPA = 0x1E0 	/* Total Processor Power on AC = 60W */
-			MAGA = 0x1E0	/* Max offset from TGP on AC = 60W */
-			MIGA = 0xC8	/* Min offset from TGP on AC = 25W */
+					TPPA = (105 << 3)	/* Total Platform Power ? */
+					MAGA = (60 << 3)	/* Max offset from TGP */
+					MIGA = (25 << 3)	/* Min offset from TGP */
 
-			CEO0 = 0x0000	/* [7:0] Controller index
-					   [8:8] Disable controller on AC
-					   [9:9] Disable controller on DC */
+					Return (Local0)
+				}
+				Case(1) {
+					Printf("Set Controller Status")
+					Return (Local0)
+				}
+			}
+
 			Return (Local0)
 		}
 	}

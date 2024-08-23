@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #define NVOP_FUNC_SUPPORT		0x00
-#define NVOP_FUNC_GET_OBJ_BY_TYPE	0x10
 #define NVOP_FUNC_OPTIMUS_CAPS		0x1a
 #define NVOP_FUNC_OPTIMUS_STATUS	0x1b
 
