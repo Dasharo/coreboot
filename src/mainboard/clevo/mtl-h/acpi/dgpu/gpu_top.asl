@@ -23,7 +23,6 @@ Scope (\_SB.PCI0.RP12)
 		#include "nvop.asl"
 		#include "nvjt.asl"
 		#include "nbci.asl"
-		#include "nvpcf.asl"
 		#include "gps.asl"
 
 		/* Convert D Notify from EC to GPU */
@@ -78,13 +77,6 @@ Scope (\_SB.PCI0.RP12)
 					Return (NBCI (Arg2, Arg3))
 				}
 			}
-			ElseIf (Arg0 == ToUUID (UUID_NVPCF))
-			{
-				If (ToInteger (Arg1) >= REVISION_MIN_NVPCF)
-				{
-					Return (NPCF (Arg2, Arg3))
-				}
-			}
 			ElseIf (Arg0 == ToUUID (UUID_GPS))
 			{
 				If (ToInteger (Arg1) >= REVISION_MIN_GPS)
@@ -95,5 +87,12 @@ Scope (\_SB.PCI0.RP12)
 
 			Return (NV_ERROR_UNSUPPORTED)
 		}
+	}
+}
+
+Scope (\_SB) {
+	Device(NPCF) {
+		#include "utility.asl"
+		#include "nvpcf.asl"
 	}
 }
