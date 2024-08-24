@@ -2,6 +2,10 @@
 
 set -e
 
+edk_workspace=payloads/external/edk2/workspace
+edk_tools=${edk_workspace}/Dasharo/BaseTools/BinWrappers/PosixLike
+edk_scripts=${edk_workspace}/Dasharo/BaseTools/Scripts
+
 function die() {
     echo error: "$@" 1>&2
     exit 1
@@ -109,6 +113,11 @@ EOF
     touch demoCA/index.txt
     echo 01 > demoCA/serial
 
+    openssl x509 -in root.pub.pem -out root.cer -outform DER
+    python "${OLDPWD}/${edk_scripts}/BinToPcd.py" \
+        -p gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr \
+        -i root.cer -x -o CapsuleRootKey.inc
+
     print_banner 'Making subroot certificate'
 
     # make subroot certificate
@@ -130,7 +139,11 @@ EOF
 
     print_banner 'Usage examples'
 
-    echo "$0 make -t $dir/root.pub.pem -o $dir/sub.pub.pem -s $dir/sign.p12"
+    echo "Installing root certificate (before build):"
+    echo "  cp $dir/CapsuleRootKey.inc ${edk_workspace}/Dasharo/DasharoPayloadPkg/"
+    echo
+    echo "Signing a capsule (after build):"
+    echo "  $0 make -t $dir/root.pub.pem -o $dir/sub.pub.pem -s $dir/sign.p12"
 }
 
 function check_cert() {
@@ -147,9 +160,6 @@ function check_cert() {
 }
 
 function make_subcommand() {
-    local edk_workspace=payloads/external/edk2/workspace
-    local edk_tools=${edk_workspace}/Dasharo/BaseTools/BinWrappers/PosixLike
-
     if [ ! -f .config ]; then
         die "no '.config' file in current directory"
     fi
