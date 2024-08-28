@@ -15,6 +15,7 @@ ifeq ($(CONFIG_CBFS_VERIFICATION),y)
 bootblock-$(CONFIG_TXE_SECURE_BOOT) += bootblock/microcode_asm.S
 endif
 bootblock-y += bootblock/bootblock.c
+bootblock-y += pmutil.c
 
 romstage-y += iosf.c
 romstage-y += memmap.c
@@ -23,6 +24,7 @@ romstage-y += txei.c
 
 postcar-y += iosf.c
 postcar-y += memmap.c
+postcar-y += pmutil.c
 
 ramstage-y += acpi.c
 ramstage-y += chip.c
