@@ -224,6 +224,38 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+  build_hardkernel_odroid_h4:
+    runs-on: ubuntu-22.04
+    container:
+      image: coreboot/coreboot-sdk:2024-02-18_732134932b
+      options: --user 1001
+    strategy:
+      matrix:
+        vendor: [ hardkernel ]
+        model: [ odroid_h4 ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+      - name: Build Dasharo
+        run: |
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
+          make olddefconfig
+          make
+      - name: Save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+          path: |
+            build/coreboot.rom
+          retention-days: 30
 
   deploy_protectli_adl:
     if: startsWith(github.ref, 'refs/tags/protectli_vault_adl')
@@ -323,3 +355,16 @@ jobs:
     strategy:
       matrix:
         type: [ ddr4, ddr5 ]
+  deploy_hardkernel_odroid:
+    if: startsWith(github.ref, 'refs/tags/hardkernel_odroid_h4')
+    needs: build_hardkernel_odroid_h4
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: hardkernel
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ hardkernel ]
+        model: [ odroid_h4 ]
