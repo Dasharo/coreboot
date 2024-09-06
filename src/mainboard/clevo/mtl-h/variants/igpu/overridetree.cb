@@ -2,7 +2,6 @@ chip soc/intel/meteorlake
 	device domain 0 on
 		subsystemid 0x1558 0xa743 inherit
 		device ref igpu on
-			register "ddi_port_A_config" = "1"
 			register "ddi_ports_config" = "{
 				[DDI_PORT_A] = DDI_ENABLE_HPD, 			/* eDP */
 				[DDI_PORT_3] = DDI_ENABLE_DDC | DDI_ENABLE_HPD,	/* HDMI 2.1 */
@@ -31,7 +30,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(5)]" = "{
 				.clk_src = 2,
 				.clk_req = 2,
-				.flags = PCIE_RP_LTR | PCIE_RP_CLK_SRC_UNUSED,
+				.flags = PCIE_RP_LTR,
 			}"
 			register "pcie_clk_config_flag[2]" = "PCIE_CLK_LAN"
 		end

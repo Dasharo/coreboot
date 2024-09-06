@@ -203,9 +203,20 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	// Enable reporting CPU C10 state over eSPI
 	params->PchEspiHostC10ReportEnable = 1;
 
+	params->PchSerialIoI2cSdaPinMux[3] = 0x1A45CA06; // GPP_H6
+	params->PchSerialIoI2cSclPinMux[3] = 0x1A45AA07; // GPP_H7
+
+	params->PchSerialIoI2cSdaPinMux[4] = 0x8A44CC0C; // GPP_E12
+	params->PchSerialIoI2cSclPinMux[4] = 0x8A44AC0D; // GPP_E13
+
+	params->PchSerialIoI2cSdaPinMux[5] = 0x8A46CE0D; // GPP_F13
+	params->PchSerialIoI2cSclPinMux[5] = 0x8A46AE0C; // GPP_F12
+
 	// Pinmux configuration
-	params->CnviRfResetPinMux = 0x194CE404; // GPP_F04
-	params->CnviClkreqPinMux = 0x394CE605;  // GPP_F05
+	params->CnviRfResetPinMux = 0x194CE404; // GPP_F4
+	params->CnviClkreqPinMux = 0x394CE605;  // GPP_F5
+
+	params->EnableTcssCovTypeA[1] = 1;
 
 	params->LidStatus = system76_ec_get_lid_state();
 }

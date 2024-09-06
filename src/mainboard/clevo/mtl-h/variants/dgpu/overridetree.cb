@@ -36,6 +36,9 @@ chip soc/intel/meteorlake
 				device i2c 38 on end
 			end
 		end
+		device ref i2c4 on # ANX7443 USB-C Retimer
+			register "serial_io_i2c_mode[PchSerialIoIndexI2C4]" = "PchSerialIoPci"
+		end
 		device ref i2c5 on # TAS5825M SmartAmp
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C5]" = "PchSerialIoPci"
 			chip drivers/i2c/tas5825m
@@ -47,10 +50,10 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(5)]" = "{
 				.clk_src = 2,
 				.clk_req = 2,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
-				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_B17)"
+				register "enable_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_HIGH(GPP_V11)"
 				register "reset_gpio" = "ACPI_GPIO_OUTPUT_ACTIVE_LOW(GPP_A20)"
 				register "srcclk_pin" = "2"
 				device generic 0 on end
