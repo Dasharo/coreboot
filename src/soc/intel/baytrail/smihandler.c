@@ -13,15 +13,12 @@
 #include <halt.h>
 #include <spi-generic.h>
 #include <smmstore.h>
-#include <soc/spi.h>
-#include <soc/iomap.h>
+
 #include <soc/iosf.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/nvs.h>
 #include <soc/device_nvs.h>
-#include <soc/lockdown.h>
-#include <dasharo/options.h>
 
 void southbridge_smi_set_eos(void)
 {
@@ -268,13 +265,6 @@ static void southbridge_smi_store(void)
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)reg_ebx);
 	io_smi->rax = ret;
-
-	printk(BIOS_DEBUG, "flash SMI triggered\n");
-
-	if (!wpd_status() && is_smm_bwp_permitted()) {
-		printk(BIOS_DEBUG, "enabling smm bwp again\n");
-		enable_smm_bwp();
-	}
 }
 
 static void southbridge_smi_apmc(void)

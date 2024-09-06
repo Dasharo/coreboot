@@ -53,7 +53,6 @@ ramstage-y += southcluster.c
 ramstage-y += txe.c
 ramstage-y += txei.c
 ramstage-y += xhci.c
-ramstage-y += lockdown.c
 ramstage-$(CONFIG_ELOG) += elog.c
 ramstage-$(CONFIG_VGA_ROM_RUN) += int15.c
 
@@ -66,7 +65,6 @@ endif
 smm-y += iosf.c
 smm-y += pmutil.c
 smm-y += smihandler.c
-smm-y += lockdown.c
 smm-y += tsc_freq.c
 
 # Remove as ramstage gets fleshed out
