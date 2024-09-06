@@ -26,53 +26,25 @@ chip soc/intel/meteorlake
 	register "pch_pm_energy_report_enable" = "1"
 
 	# Thermal
-	register "tcc_offset" = "30" # TCC of 100C
+	register "tcc_offset" = "30" # TCC of 80C
 
-	# Power limits
+	# Power limits,
 	# PsysPL2, PsysPL3, PL4 are configured by EC at runtime
 	register "power_limits_config[MTL_P_682_482_CORE]" = "{
 		.tdp_pl1_override = 35,
 		.tdp_pl2_override = 64,
 		.tdp_pl4 = 120,
+		.psys_pmax = 180,
 	}"
 
-	register "usb2_ports" = "{
-		[0] = USB2_PORT_LONG(OC_SKIP),	 /* USB Type-A Port 1 (Left) */
-		[1] = USB2_PORT_TYPE_C(OC_SKIP), /* USB Type-C Port 1 (Non-TBT) */
-		[2] = USB2_PORT_MID(OC_SKIP),	 /* USB Type-A Port 2 (Right) */
-		[5] = USB2_PORT_TYPE_C(OC_SKIP), /* USB Type-C Port 2 (TBT) */
-		[6] = USB2_PORT_LONG(OC_SKIP),	 /* Integrated Camera */
-		[9] = USB2_PORT_MID(OC_SKIP),	 /* Bluetooth on M.2 2230 */
-	}"
-
-	register "usb3_ports" = "{
-		[0] = USB3_PORT_DEFAULT(OC_SKIP), /* USB Type-A Port 1 (Left) */
-		[1] = USB3_PORT_DEFAULT(OC_SKIP), /* USB Type-A Port 2 (Right) */
-	}"
-
-	register "tcss_ports" = "{
-		[0] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 1 (TBT) */
-		[1] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 2 (Non-TBT) */
-	}"
-
-	# SOC Aux orientation override:
-	# This is a bitfield that corresponds to up to 4 TCSS ports.
-	# Bits (0,1) allocated for TCSS Port1 configuration and Bits (2,3)for TCSS Port2.
-	# Bits (4,5) allocated for TCSS Port3 configuration and Bits (6,7)for TCSS Port4.
-	# Bit0,Bit2,Bit4,Bit6 set to "1" indicates no retimer on USBC Ports
-	# Bit1,Bit3,Bit5,Bit7 set to "0" indicates Aux lines are not swapped on the
-	# motherboard to USBC connector
-	register "tcss_aux_ori" = "0x54"
+	# MTL SOC has additional setting for PsysPmax
+	register "psys_pmax_watts" = "180"
 
 	device cpu_cluster 0 on end
 	device domain 0 on
 		device ref system_agent on end
 		device ref igpu on
 			register "ddi_port_A_config" = "1"
-			register "ddi_ports_config" = "{
-				[DDI_PORT_A] = DDI_ENABLE_HPD, 			/* eDP */
-				[DDI_PORT_2] = DDI_ENABLE_DDC | DDI_ENABLE_HPD,	/* HDMI 2.1 */
-			}"
 			register "gfx" = "GMA_DEFAULT_PANEL(0)"
 		end
 		device ref dtt on end
@@ -80,7 +52,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(10)]" = "{
 				.clk_src = 8,
 				.clk_req = 8,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "is_storage" = "true"
@@ -95,7 +67,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(11)]" = "{
 				.clk_src = 7,
 				.clk_req = 7,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 			}"
 			chip soc/intel/common/block/pcie/rtd3
 				register "is_storage" = "true"
@@ -111,6 +83,21 @@ chip soc/intel/meteorlake
 		device ref crashlog on end
 		device ref vpu on end
 		device ref tcss_xhci on
+
+			# SOC Aux orientation override:
+			# This is a bitfield that corresponds to up to 4 TCSS ports.
+			# Bits (0,1) allocated for TCSS Port1 configuration and Bits (2,3)for TCSS Port2.
+			# Bits (4,5) allocated for TCSS Port3 configuration and Bits (6,7)for TCSS Port4.
+			# Bit0,Bit2,Bit4,Bit6 set to "1" indicates no retimer on USBC Ports
+			# Bit1,Bit3,Bit5,Bit7 set to "0" indicates Aux lines are not swapped on the
+			# motherboard to USBC connector
+			register "tcss_aux_ori" = "0x54"
+
+			register "tcss_ports" = "{
+				[0] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 1 (TBT) */
+				[1] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 2 (Non-TBT) */
+			}"
+
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
 					chip drivers/usb/acpi
@@ -139,6 +126,21 @@ chip soc/intel/meteorlake
 		end
 		device ref ioe_shared_sram on end
 		device ref xhci on
+
+			register "usb2_ports" = "{
+				[0] = USB2_PORT_LONG(OC_SKIP),	 /* USB Type-A Port 1 (Left) */
+				[1] = USB2_PORT_MID(OC_SKIP),	 /* USB Type-C Port 1 (Non-TBT) */
+				[2] = USB2_PORT_MID(OC_SKIP),	 /* USB Type-A Port 2 (Right) */
+				[5] = USB2_PORT_TYPE_C(OC_SKIP), /* USB Type-C Port 2 (TBT) */
+				[6] = USB2_PORT_LONG(OC_SKIP),	 /* Integrated Camera */
+				[9] = USB2_PORT_MID(OC_SKIP),	 /* Bluetooth on M.2 2230 */
+			}"
+
+			register "usb3_ports" = "{
+				[0] = USB3_PORT_DEFAULT(OC_SKIP), /* USB Type-A Port 1 (Left) */
+				[1] = USB3_PORT_DEFAULT(OC_SKIP), /* USB Type-A Port 2 (Right) */
+			}"
+
 			chip drivers/usb/acpi
 				device ref xhci_root_hub on
 					chip drivers/usb/acpi
@@ -208,38 +210,14 @@ chip soc/intel/meteorlake
 				device generic 0 on end
 			end
 		end
-		device ref i2c0 on # Touchpad
-			register "serial_io_i2c_mode[PchSerialIoIndexI2C0]" = "PchSerialIoPci"
-			chip drivers/i2c/hid
-				register "generic.hid" = ""ELAN0412""
-				register "generic.desc" = ""ELAN Touchpad""
-				register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_B00)"
-				register "generic.detect" = "1"
-				register "hid_desc_reg_offset" = "0x01"
-				device i2c 15 on end
-			end
-			chip drivers/i2c/hid
-				register "generic.hid" = ""FTCS1000""
-				register "generic.desc" = ""FocalTech Touchpad""
-				register "generic.irq_gpio" = "ACPI_GPIO_IRQ_LEVEL_LOW(GPP_B00)"
-				register "generic.detect" = "1"
-				register "hid_desc_reg_offset" = "0x01"
-				device i2c 38 on end
-			end
-		end
 		device ref i2c1 on # USB-PD EEPROM
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C1]" = "PchSerialIoPci"
 		end
 		device ref i2c3 on # Pantone ROM
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C3]" = "PchSerialIoPci"
 		end
-		device ref pcie_rp5 on # GLAN
-			register "pcie_rp[PCH_RP(5)]" = "{
-				.clk_src = 2,
-				.clk_req = 2,
-				.flags = PCIE_RP_LTR | PCIE_RP_CLK_SRC_UNUSED,
-			}"
-			register "pcie_clk_config_flag[2]" = "PCIE_CLK_LAN"
+		device ref i2c5 on # Smart AMP
+			register "serial_io_i2c_mode[PchSerialIoIndexI2C5]" = "PchSerialIoPci"
 		end
 		device ref pcie_rp6 on # SD Card Reader
 			register "pcie_rp[PCH_RP(6)]" = "{
@@ -287,12 +265,6 @@ chip soc/intel/meteorlake
 						use usb2_port6 as usb2_port
 						use tcss_usb3_port0 as usb3_port
 						device generic 0 alias conn0 on end
-					end
-					chip drivers/intel/pmc_mux/conn
-						# USB Type-C Port 2 (Non-TBT)
-						use usb2_port2 as usb2_port
-						use tcss_usb3_port1 as usb3_port
-						device generic 1 alias conn1 on end
 					end
 				end
 			end
