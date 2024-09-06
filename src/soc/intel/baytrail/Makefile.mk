@@ -62,6 +62,7 @@ else
 ramstage-y += modphy_table.c refcode_native.c
 endif
 
+smm-y += ../../../southbridge/intel/common/spi.c
 smm-y += iosf.c
 smm-y += pmutil.c
 smm-y += smihandler.c

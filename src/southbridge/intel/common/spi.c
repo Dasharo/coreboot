@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <stdint.h>
 #define __SIMPLE_DEVICE__
 
 /* This file is derived from the flashrom project. */
@@ -26,8 +27,6 @@
 #define HSFC_FDBC		(0x3f << HSFC_FDBC_OFF)
 
 static int spi_is_multichip(void);
-
-static void spi_set_smm_only_flashing(bool enable);
 
 struct ich7_spi_regs {
 	uint16_t spis;
@@ -1110,29 +1109,85 @@ __weak void intel_southbridge_override_spi(struct intel_swseq_spi_config *spi_co
 {
 }
 
-#define BIOS_CNTL		0xdc
-#define  BIOS_CNTL_BIOSWE	(1 << 0)
-#define  BIOS_CNTL_BLE		(1 << 1)
-#define  BIOS_CNTL_SMM_BWP	(1 << 5)
+#if CONFIG_SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
+#define SCS				0xf8
+# define SMIWPEN			(0x1 << 7)
+# define SMIWPST			(0x1 << 6)
 
-static void spi_set_smm_only_flashing(bool enable)
+#define BCS				0x6c
+# define BCS_SMIWPST		(0x1 << 0)
+# define BCS_SMIWPEN		(0x1 << 1)
+#endif
+
+#define BIOS_CNTL		(CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT) ? 0xfc : 0xdc)
+#define  BIOS_CNTL_BIOSWE	(1 << 0)  // BCR_WPD
+#define  BIOS_CNTL_BLE		(1 << 1)  // BCR_BLE
+#define  BIOS_CNTL_SMM_BWP	(1 << 5)  // EISS
+
+#define IBASE			0x50
+static void* get_ilb_bar(pci_devfn_t dev){
+	uintptr_t ibase;
+	ibase = pci_read_config32(dev, IBASE);
+	ibase &= ~0x1ff;
+	return (void *)ibase;
+}
+
+void spi_set_smm_only_flashing(bool enable)
 {
-	if (!(CONFIG(SOUTHBRIDGE_INTEL_I82801GX) || CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_ICH9)))
-		return;
-
 	const pci_devfn_t dev = PCI_DEV(0, 31, 0);
+
+	#if CONFIG_SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
+
+		const void* SPI_BASE_ADDRESS = get_spi_bar(dev);
+		const void* ILB_BASE_ADDRESS = get_ilb_bar(dev);
+
+		void *smi_cntl = (void *)(SPI_BASE_ADDRESS + SCS);
+		void *bios_cntl = (void *)(SPI_BASE_ADDRESS + BIOS_CNTL);
+		void *bios_status = (void *)(ILB_BASE_ADDRESS + BCS);
+
+		uint32_t smi_cntl_reg = read32(smi_cntl);
+		uint32_t bios_cntl_reg = read32(bios_cntl);
+		uint32_t bios_status_reg = read32(bios_status);
+
+		if(enable){
+			bios_cntl_reg |= BIOS_CNTL_SMM_BWP;
+			bios_cntl_reg |= BIOS_CNTL_BLE;
+
+			smi_cntl_reg |= SMIWPEN;
+			smi_cntl_reg |= SMIWPST;
+
+			bios_status_reg |= BCS_SMIWPEN;
+			bios_status_reg |= BCS_SMIWPST;
+		}
+		else{
+			bios_cntl_reg &= ~BIOS_CNTL_SMM_BWP;
+			bios_cntl_reg &= ~BIOS_CNTL_BLE;
+			bios_cntl_reg |= BIOS_CNTL_BIOSWE;
+
+			smi_cntl_reg &= ~SMIWPEN;
+			smi_cntl_reg |= SMIWPST;
+
+			bios_status_reg &= ~BCS_SMIWPEN;
+			bios_status_reg |= BCS_SMIWPST;
+		}
+		write32(smi_cntl, smi_cntl_reg);
+		write32(bios_cntl, bios_cntl_reg);
+		write32(bios_status, bios_status_reg);
+	# else
 
 	uint8_t bios_cntl = pci_read_config8(dev, BIOS_CNTL);
 
 	if (enable) {
 		bios_cntl &= ~BIOS_CNTL_BIOSWE;
 		bios_cntl |= BIOS_CNTL_BLE | BIOS_CNTL_SMM_BWP;
+
 	} else {
 		bios_cntl &= ~(BIOS_CNTL_BLE | BIOS_CNTL_SMM_BWP);
 		bios_cntl |= BIOS_CNTL_BIOSWE;
 	}
 
 	pci_write_config8(dev, BIOS_CNTL, bios_cntl);
+	#endif
 }
 
 static const struct spi_ctrlr spi_ctrlr = {

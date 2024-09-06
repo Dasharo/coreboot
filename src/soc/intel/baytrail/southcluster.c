@@ -28,6 +28,8 @@
 #include <soc/spi.h>
 #include "chip.h"
 #include <acpi/acpigen.h>
+#include <southbridge/intel/common/spi.h>
+#include <dasharo/options.h>
 
 static void sc_add_mmio_resources(struct device *dev)
 {
@@ -786,6 +788,7 @@ static void finalize_chipset(void *unused)
 	/*  Set the CF9 lock */
 	write32(etr, read32(etr) | CF9LOCK);
 
+	spi_finalize_ops();
 	if (mainboard_get_spi_config(&cfg) < 0) {
 		printk(BIOS_DEBUG, "No SPI lockdown configuration.\n");
 	} else {

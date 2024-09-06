@@ -13,12 +13,16 @@
 #include <halt.h>
 #include <spi-generic.h>
 #include <smmstore.h>
+#include <dasharo/options.h>
+#include <southbridge/intel/common/spi.h>
 
 #include <soc/iosf.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/nvs.h>
 #include <soc/device_nvs.h>
+#include <soc/spi.h>
+#include <soc/iomap.h>
 
 void southbridge_smi_set_eos(void)
 {
@@ -265,6 +269,13 @@ static void southbridge_smi_store(void)
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)reg_ebx);
 	io_smi->rax = ret;
+
+	if (is_smm_bwp_permitted()) {
+		spi_set_smm_only_flashing(true);
+	}
+	else{
+		spi_set_smm_only_flashing(false);
+	}
 }
 
 static void southbridge_smi_apmc(void)
@@ -394,6 +405,8 @@ void southbridge_smi_handler(void)
 			continue;
 
 		if (southbridge_smi[i] != NULL) {
+			printk(BIOS_DEBUG,
+					"SMI_STS[%d] occurred, calling corresponding handler\n", i);
 			southbridge_smi[i]();
 		} else {
 			printk(BIOS_DEBUG,

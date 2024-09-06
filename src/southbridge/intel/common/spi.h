@@ -22,6 +22,7 @@ struct intel_swseq_spi_config {
 };
 
 void spi_finalize_ops(void);
+void spi_set_smm_only_flashing(bool enable);
 void intel_southbridge_override_spi(struct intel_swseq_spi_config *spi_config);
 
 #endif
