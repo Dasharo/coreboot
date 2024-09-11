@@ -32,6 +32,7 @@ jobs:
           ${{ matrix.vendor }}_${{ matrix.model }}_ec.rom
         retention-days: 30
   build_novacustom:
+    environment: NovaCustom
     runs-on: ubuntu-22.04
     needs: build_novacustom_ec
     container:
@@ -56,6 +57,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-ec"
+      - name: Obtain blobs
+        uses: actions/checkout@v4
+        with:
+          repository: Dasharo/novacustom-blobs
+          ref: 480afdc3d15bb9ec5b72b100581badea11e779f8
+          path: 3rdparty/blobs/mainboard
+          token: ${{ secrets.NCM_BLOBS_TOKEN }}
       - name: Build Dasharo
         run: |
           mv ${{ matrix.vendor }}_${{ matrix.model }}_ec.rom ec.rom
