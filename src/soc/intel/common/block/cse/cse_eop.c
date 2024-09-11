@@ -291,19 +291,16 @@ static bool is_cse_eop_supported(void)
 	/* CSE Lite */
 	if ((CONFIG(SOC_INTEL_CSE_LITE_SKU) && vboot_recovery_mode_enabled()) &&
 		cse_is_hfs1_com_soft_temp_disable()) {
-		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE Lite in expected "
-		       "SOFT TEMP DISABLE state, skipping EOP\n");
+		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE Lite in expected SOFT TEMP DISABLE state, skipping EOP\n");
 		return false;
 	}
 	/* Other CSE Type */
 	if (cse_is_hfs1_com_soft_temp_disable()) {
-		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE in expected "
-		       "SOFT TEMP DISABLE state, skipping EOP\n");
+		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE in expected SOFT TEMP DISABLE state, skipping EOP\n");
 		return false;
 	}
 	if (cse_is_hfs1_com_debug()) {
-		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE in expected "
-		       "Debug Mode state, skipping EOP\n");
+		printk(BIOS_INFO, "HECI: coreboot in recovery mode; found CSE in expected Debug Mode state, skipping EOP\n");
 		return false;
 	}
 
