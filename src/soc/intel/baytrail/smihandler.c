@@ -266,16 +266,13 @@ static void southbridge_smi_store(void)
 	/* Parameter buffer in EBX */
 	reg_ebx = io_smi->rbx;
 
+	spi_set_wpd_state(true);
+
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)reg_ebx);
 	io_smi->rax = ret;
 
-	if (is_smm_bwp_permitted()) {
-		spi_set_smm_only_flashing(true);
-	}
-	else{
-		spi_set_smm_only_flashing(false);
-	}
+	spi_set_wpd_state(false);
 }
 
 static void southbridge_smi_apmc(void)
@@ -328,9 +325,13 @@ static void southbridge_smi_tco(void)
 {
 	uint32_t tco_sts = clear_tco_status();
 
+	printk(BIOS_DEBUG, "TCO SMI.\n");
+
 	/* Any TCO event? */
-	if (!tco_sts)
+	if (!tco_sts) {
+		printk(BIOS_DEBUG, "No TCO event.\n");
 		return;
+	}
 
 	if (tco_sts & TCO_TIMEOUT) { /* TIMEOUT */
 		/* Handle TCO timeout */

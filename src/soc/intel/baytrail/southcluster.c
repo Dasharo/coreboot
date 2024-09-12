@@ -9,6 +9,7 @@
 #include <acpi/acpi.h>
 #include <bootstate.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -769,15 +770,11 @@ int __weak mainboard_get_spi_config(struct spi_config *cfg)
 
 static void finalize_chipset(void *unused)
 {
-	void *bcr = (void *)(SPI_BASE_ADDRESS + BCR);
 	void *gcs = (void *)(RCBA_BASE_ADDRESS + GCS);
 	void *gen_pmcon2 = (void *)(PMC_BASE_ADDRESS + GEN_PMCON2);
 	void *etr = (void *)(PMC_BASE_ADDRESS + ETR);
 	uint8_t *spi = (uint8_t *)SPI_BASE_ADDRESS;
 	struct spi_config cfg;
-
-	/* Set the lock enable on the BIOS control register */
-	write32(bcr, read32(bcr) | BCR_LE);
 
 	/* Set BIOS lock down bit controlling boot block size and swapping */
 	write32(gcs, read32(gcs) | BILD);
@@ -788,18 +785,20 @@ static void finalize_chipset(void *unused)
 	/*  Set the CF9 lock */
 	write32(etr, read32(etr) | CF9LOCK);
 
-	spi_finalize_ops();
 	if (mainboard_get_spi_config(&cfg) < 0) {
-		printk(BIOS_DEBUG, "No SPI lockdown configuration.\n");
+		printk(BIOS_DEBUG, "No mainboard SPI lockdown configuration.\n");
+		write16(spi + HSFSTS, read16(spi + HSFSTS) | FLOCKDN);
 	} else {
 		write16(spi + PREOP, cfg.preop);
 		write16(spi + OPTYPE, cfg.optype);
 		write32(spi + OPMENU0, cfg.opmenu[0]);
 		write32(spi + OPMENU1, cfg.opmenu[1]);
-		write16(spi + HSFSTS, read16(spi + HSFSTS) | FLOCKDN);
 		write32(spi + UVSCC, cfg.uvscc);
 		write32(spi + LVSCC, cfg.lvscc | VCL);
+		write16(spi + HSFSTS, read16(spi + HSFSTS) | FLOCKDN);
 	}
+
+	spi_set_smm_only_flashing(CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted());
 
 	apm_control(APM_CNT_FINALIZE);
 }

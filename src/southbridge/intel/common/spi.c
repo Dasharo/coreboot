@@ -8,6 +8,7 @@
 #include <string.h>
 #include <bootstate.h>
 #include <commonlib/helpers.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -157,7 +158,7 @@ static u8 readb_(const void *addr)
 	u8 v = read8(addr);
 
 	printk(BIOS_DEBUG, "read %2.2x from %4.4lx\n",
-	       v, ((uintptr_t)addr & 0xffff) - 0xf020);
+	       v, ((uintptr_t)addr & 0xffff));
 	return v;
 }
 
@@ -166,7 +167,7 @@ static u16 readw_(const void *addr)
 	u16 v = read16(addr);
 
 	printk(BIOS_DEBUG, "read %4.4x from %4.4lx\n",
-	       v, ((uintptr_t)addr & 0xffff) - 0xf020);
+	       v, ((uintptr_t)addr & 0xffff));
 	return v;
 }
 
@@ -175,7 +176,7 @@ static u32 readl_(const void *addr)
 	u32 v = read32(addr);
 
 	printk(BIOS_DEBUG, "read %8.8x from %4.4lx\n",
-	       v, ((uintptr_t)addr & 0xffff) - 0xf020);
+	       v, ((uintptr_t)addr & 0xffff));
 	return v;
 }
 
@@ -183,21 +184,21 @@ static void writeb_(u8 b, void *addr)
 {
 	write8(addr, b);
 	printk(BIOS_DEBUG, "wrote %2.2x to %4.4lx\n",
-	       b, ((uintptr_t)addr & 0xffff) - 0xf020);
+	       b, ((uintptr_t)addr & 0xffff));
 }
 
 static void writew_(u16 b, void *addr)
 {
 	write16(addr, b);
 	printk(BIOS_DEBUG, "wrote %4.4x to %4.4lx\n",
-	       b, ((uintptr_t)addr & 0xffff) - 0xf020);
+	       b, ((uintptr_t)addr & 0xffff));
 }
 
 static void writel_(u32 b, void *addr)
 {
 	write32(addr, b);
 	printk(BIOS_DEBUG, "wrote %8.8x to %4.4lx\n",
-	       b, ((uintptr_t)addr & 0xffff) - 0xf020);
+	       b, ((uintptr_t)addr & 0xffff));
 }
 
 #else /* CONFIG_DEBUG_SPI_FLASH ^^^ enabled  vvv NOT enabled */
@@ -210,36 +211,6 @@ static void writel_(u32 b, void *addr)
 #define writel_(val, addr) write32(addr, val)
 
 #endif  /* CONFIG_DEBUG_SPI_FLASH ^^^ NOT enabled */
-
-static void write_reg(const void *value, void *dest, uint32_t size)
-{
-	const uint8_t *bvalue = value;
-	uint8_t *bdest = dest;
-
-	while (size >= 4) {
-		writel_(*(const uint32_t *)bvalue, bdest);
-		bdest += 4; bvalue += 4; size -= 4;
-	}
-	while (size) {
-		writeb_(*bvalue, bdest);
-		bdest++; bvalue++; size--;
-	}
-}
-
-static void read_reg(const void *src, void *value, uint32_t size)
-{
-	const uint8_t *bsrc = src;
-	uint8_t *bvalue = value;
-
-	while (size >= 4) {
-		*(uint32_t *)bvalue = readl_(bsrc);
-		bsrc += 4; bvalue += 4; size -= 4;
-	}
-	while (size) {
-		*bvalue = readb_(bsrc);
-		bsrc++; bvalue++; size--;
-	}
-}
 
 static void ich_set_bbar(uint32_t minaddr)
 {
@@ -333,7 +304,7 @@ void spi_init(void)
 	ich_set_bbar(0);
 
 	/* Disable the BIOS write protect so write commands are allowed. */
-	spi_set_smm_only_flashing(false);
+	spi_set_wpd_state(true);
 }
 
 static int spi_locked(void)
@@ -351,6 +322,38 @@ static void spi_init_cb(void *unused)
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_ENTRY, spi_init_cb, NULL);
+
+#if CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
+
+static void write_reg(const void *value, void *dest, uint32_t size)
+{
+	const uint8_t *bvalue = value;
+	uint8_t *bdest = dest;
+
+	while (size >= 4) {
+		writel_(*(const uint32_t *)bvalue, bdest);
+		bdest += 4; bvalue += 4; size -= 4;
+	}
+	while (size) {
+		writeb_(*bvalue, bdest);
+		bdest++; bvalue++; size--;
+	}
+}
+
+static void read_reg(const void *src, void *value, uint32_t size)
+{
+	const uint8_t *bsrc = src;
+	uint8_t *bvalue = value;
+
+	while (size >= 4) {
+		*(uint32_t *)bvalue = readl_(bsrc);
+		bsrc += 4; bvalue += 4; size -= 4;
+	}
+	while (size) {
+		*bvalue = readb_(bsrc);
+		bsrc++; bvalue++; size--;
+	}
+}
 
 typedef struct spi_transaction {
 	const uint8_t *out;
@@ -505,13 +508,6 @@ static int ich_status_poll(u16 bitmask, int wait_til_set)
 	printk(BIOS_DEBUG, "ICH SPI: SCIP timeout, read %x, bitmask %x\n",
 		status, bitmask);
 	return -1;
-}
-
-static int spi_is_multichip(void)
-{
-	if (!(cntlr.hsfs & HSFS_FDV))
-		return 0;
-	return !!((cntlr.flmap0 >> 8) & 3);
 }
 
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
@@ -672,6 +668,8 @@ spi_xfer_exit:
 
 	return 0;
 }
+
+#endif // CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 
 /* Sets FLA in FADDR to (addr & 0x01FFFFFF) without touching other bits. */
 static void ich_hwseq_set_addr(uint32_t addr)
@@ -909,6 +907,13 @@ static const struct spi_flash_ops spi_flash_ops = {
 	.erase = ich_hwseq_erase,
 };
 
+static int spi_is_multichip(void)
+{
+	if (!(cntlr.hsfs & HSFS_FDV))
+		return 0;
+	return !!((cntlr.flmap0 >> 8) & 3);
+}
+
 static int spi_flash_programmer_probe(const struct spi_slave *spi,
 					struct spi_flash *flash)
 {
@@ -949,11 +954,13 @@ static int spi_flash_programmer_probe(const struct spi_slave *spi,
 	return 0;
 }
 
+#if CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 static int xfer_vectors(const struct spi_slave *slave,
 			struct spi_op vectors[], size_t count)
 {
 	return spi_flash_vector_helper(slave, vectors, count, spi_ctrlr_xfer);
 }
+#endif
 
 #define SPI_FPR_SHIFT			12
 #define ICH7_SPI_FPR_MASK		0xfff
@@ -1102,22 +1109,20 @@ void spi_finalize_ops(void)
 	}
 	writew_(optype, cntlr.optype);
 
-	spi_set_smm_only_flashing(CONFIG(BOOTMEDIA_SMM_BWP));
+	spi_set_smm_only_flashing(CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted());
 }
 
 __weak void intel_southbridge_override_spi(struct intel_swseq_spi_config *spi_config)
 {
 }
 
-#if CONFIG_SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
-#define SCS				0xf8
-# define SMIWPEN			(0x1 << 7)
-# define SMIWPST			(0x1 << 6)
+#define SMI_CNTL_STS		0xf8
+# define SPI_SMIWPEN		(0x1 << 7)
+# define SPI_SMIWPST		(0x1 << 6)
 
-#define BCS				0x6c
-# define BCS_SMIWPST		(0x1 << 0)
-# define BCS_SMIWPEN		(0x1 << 1)
-#endif
+#define LPC_BIOS_CNTL		0x6c
+# define LPC_SMIWPST		(0x1 << 0)
+# define LPC_SMIWPEN		(0x1 << 1)
 
 #define BIOS_CNTL		(CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT) ? 0xfc : 0xdc)
 #define  BIOS_CNTL_BIOSWE	(1 << 0)  // BCR_WPD
@@ -1125,6 +1130,7 @@ __weak void intel_southbridge_override_spi(struct intel_swseq_spi_config *spi_co
 #define  BIOS_CNTL_SMM_BWP	(1 << 5)  // EISS
 
 #define IBASE			0x50
+
 static void* get_ilb_bar(pci_devfn_t dev){
 	uintptr_t ibase;
 	ibase = pci_read_config32(dev, IBASE);
@@ -1132,49 +1138,53 @@ static void* get_ilb_bar(pci_devfn_t dev){
 	return (void *)ibase;
 }
 
-void spi_set_smm_only_flashing(bool enable)
+static void silvermont_spi_set_smi_only_flashing(bool enable)
 {
 	const pci_devfn_t dev = PCI_DEV(0, 31, 0);
+	const uintptr_t spi_base = (uintptr_t)get_spi_bar(dev);
+	const uintptr_t ilb_base = (uintptr_t)get_ilb_bar(dev);
 
-	#if CONFIG_SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
+	uint32_t smi_cntl_reg = read32p(spi_base + SMI_CNTL_STS);
+	uint32_t bios_cntl_reg = read32p(spi_base + BIOS_CNTL);
+	uint32_t bios_status_reg = read32p(ilb_base + LPC_BIOS_CNTL);
 
-		const void* SPI_BASE_ADDRESS = get_spi_bar(dev);
-		const void* ILB_BASE_ADDRESS = get_ilb_bar(dev);
+	if (enable) {
+		bios_cntl_reg |= BIOS_CNTL_SMM_BWP;
+		bios_cntl_reg |= BIOS_CNTL_BLE;
 
-		void *smi_cntl = (void *)(SPI_BASE_ADDRESS + SCS);
-		void *bios_cntl = (void *)(SPI_BASE_ADDRESS + BIOS_CNTL);
-		void *bios_status = (void *)(ILB_BASE_ADDRESS + BCS);
+		smi_cntl_reg |= SPI_SMIWPEN;
+		smi_cntl_reg |= SPI_SMIWPST;
 
-		uint32_t smi_cntl_reg = read32(smi_cntl);
-		uint32_t bios_cntl_reg = read32(bios_cntl);
-		uint32_t bios_status_reg = read32(bios_status);
+		bios_status_reg |= LPC_SMIWPEN;
+		bios_status_reg |= LPC_SMIWPST;
+	} else {
+		bios_cntl_reg &= ~BIOS_CNTL_SMM_BWP;
+		bios_cntl_reg &= ~BIOS_CNTL_BLE;
+		bios_cntl_reg |= BIOS_CNTL_BIOSWE;
 
-		if(enable){
-			bios_cntl_reg |= BIOS_CNTL_SMM_BWP;
-			bios_cntl_reg |= BIOS_CNTL_BLE;
+		smi_cntl_reg &= ~SPI_SMIWPEN;
+		smi_cntl_reg |= SPI_SMIWPST;
 
-			smi_cntl_reg |= SMIWPEN;
-			smi_cntl_reg |= SMIWPST;
+		bios_status_reg &= ~LPC_SMIWPEN;
+		bios_status_reg |= LPC_SMIWPST;
+	}
 
-			bios_status_reg |= BCS_SMIWPEN;
-			bios_status_reg |= BCS_SMIWPST;
-		}
-		else{
-			bios_cntl_reg &= ~BIOS_CNTL_SMM_BWP;
-			bios_cntl_reg &= ~BIOS_CNTL_BLE;
-			bios_cntl_reg |= BIOS_CNTL_BIOSWE;
+	write32p(spi_base + SMI_CNTL_STS, smi_cntl_reg);
+	write32p(ilb_base + LPC_BIOS_CNTL, bios_status_reg);
+	write32p(spi_base + BIOS_CNTL, bios_cntl_reg);
+}
 
-			smi_cntl_reg &= ~SMIWPEN;
-			smi_cntl_reg |= SMIWPST;
+void spi_set_smm_only_flashing(bool enable)
+{
 
-			bios_status_reg &= ~BCS_SMIWPEN;
-			bios_status_reg |= BCS_SMIWPST;
-		}
-		write32(smi_cntl, smi_cntl_reg);
-		write32(bios_cntl, bios_cntl_reg);
-		write32(bios_status, bios_status_reg);
-	# else
+	printk(BIOS_DEBUG, "ICH SPI: %sabling SMM BWP\n", enable ? "En" : "Dis");
 
+	if (CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT)) {
+		silvermont_spi_set_smi_only_flashing(enable);
+		return;
+	}
+
+	const pci_devfn_t dev = PCI_DEV(0, 31, 0);
 	uint8_t bios_cntl = pci_read_config8(dev, BIOS_CNTL);
 
 	if (enable) {
@@ -1187,11 +1197,46 @@ void spi_set_smm_only_flashing(bool enable)
 	}
 
 	pci_write_config8(dev, BIOS_CNTL, bios_cntl);
-	#endif
+}
+
+void spi_set_wpd_state(bool enable)
+{
+	const pci_devfn_t dev = PCI_DEV(0, 31, 0);
+	uint8_t bios_cntl;
+
+	if (CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT))
+		bios_cntl = pci_read_config8(dev, BIOS_CNTL);
+	else
+		bios_cntl = read8(get_spi_bar(dev) + BIOS_CNTL);
+
+	if (enable)
+		bios_cntl |= BIOS_CNTL_BIOSWE;
+	else
+		bios_cntl &= ~BIOS_CNTL_BIOSWE;
+
+	if (CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT))
+		write8(get_spi_bar(dev) + BIOS_CNTL, bios_cntl);
+	else
+		pci_write_config8(dev, BIOS_CNTL, bios_cntl);
+}
+
+bool spi_get_wpd_state(void)
+{
+	const pci_devfn_t dev = PCI_DEV(0, 31, 0);
+	uint8_t bios_cntl;
+
+	if (CONFIG(SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT))
+		bios_cntl = read8(get_spi_bar(dev) + BIOS_CNTL);
+	else
+		bios_cntl = pci_read_config8(dev, BIOS_CNTL);
+
+	return bios_cntl & BIOS_CNTL_BIOSWE;
 }
 
 static const struct spi_ctrlr spi_ctrlr = {
+#if CONFIG(SOUTHBRIDGE_INTEL_I82801GX)
 	.xfer_vector = xfer_vectors,
+#endif
 	.max_xfer_size = member_size(struct ich9_spi_regs, fdata),
 	.flash_probe = spi_flash_programmer_probe,
 	.flash_protect = spi_flash_protect,
