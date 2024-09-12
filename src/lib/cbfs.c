@@ -189,9 +189,9 @@ static bool cbfs_file_hash_mismatch(const void *buffer, size_t size,
 		struct vb2_hash calculated_hash;
 
 		/* No need to re-hash file if we already have it from verification. */
-		if (!hash || hash->algo != TPM_MEASURE_ALGO) {
+		if (!hash || hash->algo != tpm_log_alg()) {
 			if (vb2_hash_calculate(vboot_hwcrypto_allowed(), buffer, size,
-					       TPM_MEASURE_ALGO, &calculated_hash))
+					       tpm_log_alg(), &calculated_hash))
 				hash = NULL;
 			else
 				hash = &calculated_hash;

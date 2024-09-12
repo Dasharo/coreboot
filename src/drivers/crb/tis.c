@@ -23,7 +23,7 @@ static const struct {
 	{0xa13a, 0x8086, "Intel iTPM"}
 };
 
-static const char *tis_get_dev_name(struct tpm2_info *info)
+static const char *tis_get_dev_name(struct crb_tpm_info *info)
 {
 	int i;
 
@@ -36,7 +36,7 @@ static const char *tis_get_dev_name(struct tpm2_info *info)
 static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, uint8_t *recvbuf,
 				     size_t *rbuf_len)
 {
-	int len = tpm2_process_command(sendbuf, sbuf_size, recvbuf, *rbuf_len);
+	int len = crb_tpm_process_command(sendbuf, sbuf_size, recvbuf, *rbuf_len);
 
 	if (len == 0)
 		return TPM_CB_FAIL;
@@ -46,18 +46,18 @@ static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, u
 	return TPM_SUCCESS;
 }
 
-static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
+tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 {
-	struct tpm2_info info;
+	struct crb_tpm_info info;
 
 	/* Wake TPM up (if necessary) */
-	if (tpm2_init())
+	if (crb_tpm_init())
 		return NULL;
 
 	/* CRB interface exists only in TPM2 */
 	*family = TPM_2;
 
-	tpm2_get_info(&info);
+	crb_tpm_get_info(&info);
 
 	printk(BIOS_INFO, "Initialized TPM device %s revision %d\n", tis_get_dev_name(&info),
 	       info.revision);
@@ -72,8 +72,6 @@ static tis_sendrecv_fn crb_tis_probe(enum tpm_family *family)
 
 	return &crb_tpm_sendrecv;
 }
-
-static const __tis_driver tis_probe_fn crb_tis_driver = crb_tis_probe;
 
 static void crb_tpm_fill_ssdt(const struct device *dev)
 {
@@ -138,7 +136,7 @@ static tpm_result_t tpm_get_cap(uint32_t property, uint32_t *value)
 
 static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned long *current)
 {
-	struct tpm2_info info;
+	struct crb_tpm_info info;
 	uint32_t tpm_manuf, tpm_family;
 	uint32_t fw_ver1, fw_ver2;
 	uint8_t major_spec_ver, minor_spec_ver;
@@ -146,7 +144,7 @@ static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned lon
 	if (tlcl_get_family() == TPM_1)
 		return 0;
 
-	tpm2_get_info(&info);
+	crb_tpm_get_info(&info);
 
 	/* If any of these have invalid values, assume TPM not present or disabled */
 	if (info.vendor_id == 0 || info.vendor_id == 0xFFFF ||

@@ -180,6 +180,19 @@ static void acpi_create_mcfg(acpi_header_t *header, void *unused)
 	header->length = current - (unsigned long)mcfg;
 }
 
+static bool should_publish_tpm_log(void)
+{
+	/*
+	 * EDK will publish its own version of the log after parsing and
+	 * importing coreboot's log discovered through CBMEM.
+	 *
+	 * Publishing is done by appending a table, so coreboot must avoid
+	 * adding corresponding log tables to let OS find a more complete one
+	 * from EDK.
+	 */
+	return !CONFIG(PAYLOAD_EDK2) || CONFIG(EDK2_DISABLE_TPM);
+}
+
 static void *get_tcpa_log(u32 *size)
 {
 	const struct cbmem_entry *ce;
@@ -207,7 +220,7 @@ static void *get_tcpa_log(u32 *size)
 
 static void acpi_create_tcpa(acpi_header_t *header, void *unused)
 {
-	if (tlcl_get_family() != TPM_1)
+	if (!should_publish_tpm_log() || tlcl_get_family() != TPM_1)
 		return;
 
 	acpi_tcpa_t *tcpa = (acpi_tcpa_t *)header;
@@ -253,7 +266,7 @@ static void *get_tpm2_log(u32 *size)
 
 static void acpi_create_tpm2(acpi_header_t *header, void *unused)
 {
-	if (tlcl_get_family() != TPM_2)
+	if (!should_publish_tpm_log() || tlcl_get_family() != TPM_2)
 		return;
 
 	acpi_tpm2_t *tpm2 = (acpi_tpm2_t *)header;
@@ -273,7 +286,7 @@ static void acpi_create_tpm2(acpi_header_t *header, void *unused)
 
 	/* Hard to detect for coreboot. Just set it to 0 */
 	tpm2->platform_class = 0;
-	if (CONFIG(CRB_TPM) && tpm2_has_crb_active()) {
+	if (CONFIG(CRB_TPM) && crb_tpm_is_active()) {
 		/* Must be set to 7 for CRB Support */
 		tpm2->control_area = CONFIG_CRB_TPM_BASE_ADDRESS + 0x40;
 		tpm2->start_method = 7;

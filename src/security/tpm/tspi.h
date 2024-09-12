@@ -18,6 +18,57 @@
 #define MAX_PRERAM_TPM_LOG_ENTRIES 15
 
 /**
+ * Checks whether TCG TPM1.2 log format should be used.
+ * When required, initializes TPM if it wasn't yet initialized.
+ */
+static inline bool tpm_log_use_tpm1_format(void)
+{
+	if (CONFIG(TPM_LOG_TPM1))
+		return true;
+	if (CONFIG(TPM_LOG_TCG))
+		return tlcl_lib_init() == TPM_SUCCESS && tlcl_get_family() == TPM_1;
+	return false;
+}
+
+/**
+ * Checks whether TCG TPM2.0 log format should be used.
+ * When required, initializes TPM if it wasn't yet initialized.
+ */
+static inline bool tpm_log_use_tpm2_format(void)
+{
+	if (CONFIG(TPM_LOG_TPM2))
+		return true;
+	if (CONFIG(TPM_LOG_TCG))
+		return tlcl_lib_init() == TPM_SUCCESS && tlcl_get_family() == TPM_2;
+	return false;
+}
+
+/**
+ * Retrieves hash algorithm used by TPM event log or VB2_HASH_INVALID.
+ */
+static inline enum vb2_hash_algorithm tpm_log_alg(void)
+{
+	if (CONFIG(TPM_LOG_CB))
+		return (tlcl_get_family() == TPM_1 ? VB2_HASH_SHA1 : VB2_HASH_SHA256);
+
+	if (tpm_log_use_tpm1_format())
+		return VB2_HASH_SHA1;
+
+	if (tpm_log_use_tpm2_format()) {
+		if (CONFIG(TPM_HASH_SHA1))
+			return VB2_HASH_SHA1;
+		if (CONFIG(TPM_HASH_SHA256))
+			return VB2_HASH_SHA256;
+		if (CONFIG(TPM_HASH_SHA384))
+			return VB2_HASH_SHA384;
+		if (CONFIG(TPM_HASH_SHA512))
+			return VB2_HASH_SHA512;
+	}
+
+	return VB2_HASH_INVALID;
+}
+
+/**
  * Get the pointer to the single instance of global
  * TPM log data, and initialize it when necessary
  */
@@ -31,9 +82,9 @@ static inline void *tpm_log_cbmem_init(void)
 {
 	if (CONFIG(TPM_LOG_CB))
 		return tpm_cb_log_cbmem_init();
-	if (CONFIG(TPM_LOG_TPM1))
+	if (tpm_log_use_tpm1_format())
 		return tpm1_log_cbmem_init();
-	if (CONFIG(TPM_LOG_TPM2))
+	if (tpm_log_use_tpm2_format())
 		return tpm2_log_cbmem_init();
 	return NULL;
 }
@@ -46,9 +97,9 @@ static inline void tpm_preram_log_clear(void)
 {
 	if (CONFIG(TPM_LOG_CB))
 		tpm_cb_preram_log_clear();
-	else if (CONFIG(TPM_LOG_TPM1))
+	else if (tpm_log_use_tpm1_format())
 		tpm1_preram_log_clear();
-	else if (CONFIG(TPM_LOG_TPM2))
+	else if (tpm_log_use_tpm2_format())
 		tpm2_preram_log_clear();
 }
 
@@ -59,9 +110,9 @@ static inline uint16_t tpm_log_get_size(const void *log_table)
 {
 	if (CONFIG(TPM_LOG_CB))
 		return tpm_cb_log_get_size(log_table);
-	if (CONFIG(TPM_LOG_TPM1))
+	if (tpm_log_use_tpm1_format())
 		return tpm1_log_get_size(log_table);
-	if (CONFIG(TPM_LOG_TPM2))
+	if (tpm_log_use_tpm2_format())
 		return tpm2_log_get_size(log_table);
 	return 0;
 }
@@ -73,9 +124,9 @@ static inline void tpm_log_copy_entries(const void *from, void *to)
 {
 	if (CONFIG(TPM_LOG_CB))
 		tpm_cb_log_copy_entries(from, to);
-	else if (CONFIG(TPM_LOG_TPM1))
+	else if (tpm_log_use_tpm1_format())
 		tpm1_log_copy_entries(from, to);
-	else if (CONFIG(TPM_LOG_TPM2))
+	else if (tpm_log_use_tpm2_format())
 		tpm2_log_copy_entries(from, to);
 }
 
@@ -87,9 +138,9 @@ static inline int tpm_log_get(int entry_idx, int *pcr, const uint8_t **digest_da
 {
 	if (CONFIG(TPM_LOG_CB))
 		return tpm_cb_log_get(entry_idx, pcr, digest_data, digest_algo, event_name);
-	if (CONFIG(TPM_LOG_TPM1))
+	if (tpm_log_use_tpm1_format())
 		return tpm1_log_get(entry_idx, pcr, digest_data, digest_algo, event_name);
-	if (CONFIG(TPM_LOG_TPM2))
+	if (tpm_log_use_tpm2_format())
 		return tpm2_log_get(entry_idx, pcr, digest_data, digest_algo, event_name);
 	return 1;
 }
@@ -109,9 +160,9 @@ static inline void tpm_log_add_table_entry(const char *name, const uint32_t pcr,
 {
 	if (CONFIG(TPM_LOG_CB))
 		tpm_cb_log_add_table_entry(name, pcr, digest_algo, digest, digest_len);
-	else if (CONFIG(TPM_LOG_TPM1))
+	else if (tpm_log_use_tpm1_format())
 		tpm1_log_add_table_entry(name, pcr, digest_algo, digest, digest_len);
-	else if (CONFIG(TPM_LOG_TPM2))
+	else if (tpm_log_use_tpm2_format())
 		tpm2_log_add_table_entry(name, pcr, digest_algo, digest, digest_len);
 }
 
@@ -122,9 +173,9 @@ static inline void tpm_log_dump(void *unused)
 {
 	if (CONFIG(TPM_LOG_CB))
 		tpm_cb_log_dump();
-	else if (CONFIG(TPM_LOG_TPM1))
+	else if (tpm_log_use_tpm1_format())
 		tpm1_log_dump();
-	else if (CONFIG(TPM_LOG_TPM2))
+	else if (tpm_log_use_tpm2_format())
 		tpm2_log_dump();
 }
 

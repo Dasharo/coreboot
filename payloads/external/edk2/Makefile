@@ -373,6 +373,22 @@ ifneq ($(CONFIG_CPU_MAX_TEMPERATURE),)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuMaxTemperature=$(CONFIG_CPU_MAX_TEMPERATURE)
 endif
 endif
+# gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask = 0x0000001f
+# The tested options are mutually exclusive (and there is no option for SM3
+# 256).  See https://ticket.coreboot.org/issues/421 for the discussion about
+# supporting multiple hashes simultaneously.
+ifeq ($(CONFIG_TPM_HASH_SHA1),y)
+BUILD_STR += --pcd gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask=0x00000001
+endif
+ifeq ($(CONFIG_TPM_HASH_SHA256),y)
+BUILD_STR += --pcd gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask=0x00000002
+endif
+ifeq ($(CONFIG_TPM_HASH_SHA384),y)
+BUILD_STR += --pcd gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask=0x00000004
+endif
+ifeq ($(CONFIG_TPM_HASH_SHA512),y)
+BUILD_STR += --pcd gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask=0x00000008
+endif
 
 endif
 

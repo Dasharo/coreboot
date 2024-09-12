@@ -12,6 +12,8 @@
 #include <timer.h>
 #include <types.h>
 
+#include "tpm.h"
+
 #define RECV_TIMEOUT            (1 * 1000)  /* 1 second */
 #define XMIT_TIMEOUT            (1 * 1000)  /* 1 second */
 #define SLEEP_DURATION          1000        /* microseconds */
@@ -107,7 +109,7 @@ static tpm_result_t i2c_tis_sendrecv(const uint8_t *sendbuf, size_t sbuf_size,
 	return TPM_SUCCESS;
 }
 
-static tis_sendrecv_fn atmel_i2c_tis_probe(enum tpm_family *family)
+tis_sendrecv_fn i2c_tis_probe(enum tpm_family *family)
 {
 	/* Can't query version or really anything as interface of the device doesn't support
 	 * much through this interface (can't specify address on accesses) */
@@ -115,5 +117,3 @@ static tis_sendrecv_fn atmel_i2c_tis_probe(enum tpm_family *family)
 
 	return &i2c_tis_sendrecv;
 }
-
-static const __tis_driver tis_probe_fn atmel_i2c_tis_driver = atmel_i2c_tis_probe;
