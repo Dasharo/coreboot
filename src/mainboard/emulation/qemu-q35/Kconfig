@@ -31,6 +31,7 @@ config VBOOT
 config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa-8M.fmd" if VBOOT_SLOTS_RW_A && !VBOOT_SLOTS_RW_AB
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwab-8M.fmd" if VBOOT_SLOTS_RW_AB
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
 
 if ARCH_BOOTBLOCK_X86_64
 # Need to install page tables in DRAM as the virtual MMU has problems translating paging
