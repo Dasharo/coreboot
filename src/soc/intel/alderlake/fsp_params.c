@@ -629,6 +629,9 @@ static void fill_fsps_cpu_params(FSP_S_CONFIG *s_cfg,
 		fill_fsps_microcode_params(s_cfg, config);
 	else
 		s_cfg->SkipMpInit = !CONFIG(USE_INTEL_FSP_MP_INIT);
+
+
+	s_cfg->TxtEnable = CONFIG(INTEL_TXT);
 }
 
 static void fill_fsps_igd_params(FSP_S_CONFIG *s_cfg,

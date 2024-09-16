@@ -60,47 +60,4 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 	/* Limit the max speed for memory compatibility */
 	memupd->FspmConfig.DdrFreqLimit = 4200;
-
-	/*
-	 * IA32_DEBUG_INTERFACE_MSR has to be locked by coreboot,
-	 * because FSP does not do it unless DebugInterfaceEnable is 1.
-	 * But to use Intel TXT, the debug interface has to be disabled,
-	 * so let coreboot handle the IA32_DEBUG_INTERFACE_MSR programming.
-	 */
-	memupd->FspmConfig.DebugInterfaceEnable = 0;
-	memupd->FspmConfig.DebugInterfaceLockEnable = 0;
-
-/* Use pre-processor because CONFIG_INTEL_TXT_CBFS_BIOS_ACM is not defined otherwise */
-#if CONFIG(INTEL_TXT)
-	size_t acm_size = 0;
-	uintptr_t acm_base;
-
-	if (CONFIG(INTEL_TXT)) {
-		intel_txt_log_spad();
-
-		if (CONFIG(INTEL_CBNT_LOGGING))
-			intel_cbnt_log_registers();
-
-		if (CONFIG(INTEL_TXT_LOGGING)) {
-			intel_txt_log_bios_acm_error();
-			txt_dump_chipset_info();
-		}
-	}
-
-	acm_base = (uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
-
-	msr_t msr = rdmsr(IA32_FEATURE_CONTROL);
-	printk(BIOS_DEBUG, "IA32_FEATURE_CONTROL: %08x %08x\n", msr.hi, msr.lo);
-
-	memupd->FspmConfig.VmxEnable = 1;
-	memupd->FspmConfig.TxtImplemented = 1;
-	memupd->FspmConfig.Txt = 1;
-	memupd->FspmConfig.SinitMemorySize = CONFIG_INTEL_TXT_SINIT_SIZE;
-	memupd->FspmConfig.TxtHeapMemorySize = CONFIG_INTEL_TXT_HEAP_SIZE;
-	memupd->FspmConfig.TxtDprMemorySize = CONFIG_INTEL_TXT_DPR_SIZE << 20;
-	memupd->FspmConfig.TxtDprMemoryBase = 1; // Set to non-zero, FSP will update it
-	memupd->FspmConfig.BiosAcmBase = acm_base;
-	memupd->FspmConfig.BiosAcmSize = acm_size;
-	memupd->FspmConfig.ApStartupBase = 1;  // Set to non-zero, FSP does NULL check
-#endif
 }

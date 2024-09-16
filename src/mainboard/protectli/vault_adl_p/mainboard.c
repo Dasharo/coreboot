@@ -104,7 +104,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
 
-	params->TxtEnable = CONFIG(INTEL_TXT);
 
 	/* Debug */
 	//params->PmcDbgMsgEn = 1;

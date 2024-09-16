@@ -15,6 +15,8 @@
 #include <intelblocks/cpulib.h>
 #include <intelblocks/pcie_rp.h>
 #include <option.h>
+#include <security/intel/cbnt/cbnt.h>
+#include <security/intel/txt/txt.h>
 #include <soc/cpu.h>
 #include <soc/iomap.h>
 #include <soc/msr.h>
@@ -401,6 +403,57 @@ static void fill_fspm_ibecc_params(FSP_M_CONFIG *m_cfg,
 	}
 }
 
+static void fill_fspm_txt_params(FSP_M_CONFIG *m_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	if (!CONFIG(INTEL_TXT))
+		return;
+	/*
+	 * IA32_DEBUG_INTERFACE_MSR has to be locked by coreboot,
+	 * because FSP does not do it unless DebugInterfaceEnable is 1.
+	 * But to use Intel TXT, the debug interface has to be disabled,
+	 * so let coreboot handle the IA32_DEBUG_INTERFACE_MSR programming.
+	 */
+	m_cfg->DebugInterfaceEnable = 0;
+	m_cfg->DebugInterfaceLockEnable = 0;
+
+	m_cfg->VmxEnable = 1;
+	m_cfg->TxtImplemented = 1;
+	m_cfg->Txt = 1;
+	m_cfg->TxtDprMemoryBase = 1; // Set to non-zero, FSP will update it
+	m_cfg->ApStartupBase = 1;  // Set to non-zero, FSP does NULL check
+
+/* Use pre-processor because CONFIG_INTEL_TXT_CBFS_BIOS_ACM is not defined otherwise */
+#if CONFIG(INTEL_TXT)
+	size_t acm_size = 0;
+	uintptr_t acm_base;
+
+	intel_txt_log_spad();
+
+	if (CONFIG(INTEL_CBNT_LOGGING))
+		intel_cbnt_log_registers();
+
+	if (CONFIG(INTEL_TXT_LOGGING)) {
+		intel_txt_log_bios_acm_error();
+		txt_dump_chipset_info();
+	}
+
+	acm_base = (uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
+
+	msr_t msr = rdmsr(IA32_FEATURE_CONTROL);
+	printk(BIOS_DEBUG, "IA32_FEATURE_CONTROL: %08x %08x\n", msr.hi, msr.lo);
+
+
+	m_cfg->SinitMemorySize = CONFIG_INTEL_TXT_SINIT_SIZE;
+	m_cfg->TxtHeapMemorySize = CONFIG_INTEL_TXT_HEAP_SIZE;
+	m_cfg->TxtDprMemorySize = CONFIG_INTEL_TXT_DPR_SIZE << 20;
+
+	m_cfg->BiosAcmBase = acm_base;
+	m_cfg->BiosAcmSize = acm_size;
+#endif
+}
+
+
 static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
@@ -422,6 +475,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		fill_fspm_vtd_params,
 		fill_fspm_trace_params,
 		fill_fspm_ibecc_params,
+		fill_fspm_txt_params,
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(fill_fspm_params); i++)
