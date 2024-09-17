@@ -14,15 +14,14 @@ Method (NVJT, 2, Serialized)
 			Return (ITOB(
 				(1 << JT_FUNC_SUPPORT) |
 				(1 << JT_FUNC_CAPS) |
-				(1 << JT_FUNC_POWERCONTROL) |
-				(1 << JT_FUNC_PLATPOLICY)))
+				(1 << JT_FUNC_POWERCONTROL)))
 		}
 		Case (JT_FUNC_CAPS)
 		{
 			Return (ITOB(
-				(0 << 0) |		/* JTE: G-Sync NVSR Power Features Enabled */
+				(1 << 0) |		/* JTE: G-Sync NVSR Power Features Enabled */
 				(1 << 0) |		/* NVSE: NVSR Disabled */
-				(0 << 3) |		/* PPR: Panel Power Rail */
+				(2 << 3) |		/* PPR: Panel Power Rail */
 				(0 << 5) |		/* SRPR: Self-Refresh Controller Power Rail */
 				(0 << 6) |		/* FBPR: FB Power Rail */
 				(0 << 8) |		/* GPR: GPU Power Rail */
@@ -30,8 +29,8 @@ Method (NVJT, 2, Serialized)
 				(1 << 11) |		/* PTH: No SMI Handler */
 				(0 << 12) |		/* NOT: Supports Notify on GC6 State done */
 				(1 << 13) |		/* MHYB: MS Hybrid Support (deferred GC6) */
-				(0 << 14) |		/* RPC: Root Port Control */
-				(0 << 15) |		/* GC6 Version (GC6-E) */
+				(1 << 14) |		/* RPC: Root Port Control */
+				(2 << 15) |		/* GC6 Version (GC6-E) */
 				(0 << 17) |		/* GEI: GC6 Exit ISR Support */
 				(0 << 18) |		/* GSW: GC6 Self Wakeup */
 				(0x200 << 20)))		/* MXRV: Highest Revision */

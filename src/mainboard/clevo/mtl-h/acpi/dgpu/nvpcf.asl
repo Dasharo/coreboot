@@ -41,7 +41,7 @@ Method (NPCF, 2, Serialized)
 							   [7:4] GPU type (0=Nvidia) */
 
 				/* System Controller Table Header (v2.2), 1 controller entry */
-				0x22, 0x04, 0x05, 0x01,
+				0x24, 0x04, 0x05, 0x01,
 
 				/* Controller #1 Flags */
 				0x01,			/* [3:0] Controller class
@@ -53,10 +53,10 @@ Method (NPCF, 2, Serialized)
 							   [0:0] DC support
 							      0=Not supported, 1=Supported
 							   [31:1] Reserved. Set to 0. */
-				0x00, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x00, 0x00,
 
 				/* Twos-complement checksum */
-				0xaf
+				0xac
 			})
 		}
 		Case (NVPCF_FUNC_UPDATE_DYNAMIC_PARAMS)
@@ -68,22 +68,21 @@ Method (NPCF, 2, Serialized)
 
 			Local0 = Buffer (0x31) {
 				/* Dynamic Params Table Header (1 controller entry, 0x1c bytes) */
-				0x22, 0x05, 0x10, 0x1c, 0x01 }
+				0x24, 0x05, 0x10, 0x1c, 0x01 }
 
-			CreateWordField (Local0, 0x19, TPPA)
+			CreateByteField (Local0, 0x15, PC01)
+			CreateByteField (Local0, 0x15, PC02)
 			CreateWordField (Local0, 0x1D, MAGA)
 			CreateWordField (Local0, 0x21, MIGA)
 
 			Switch(ToInteger(ICMD)) {
 				Case(0) {
 					Printf("Get Controller Params")
-					/* Vendor firmware generates these in DXE or SMM, puts */
-					/* them in NVS and then ACPI copies it here. */
-					/* TODO: Dump vendor FW values for reference. */
 
-					TPPA = (105 << 3)	/* Total Platform Power ? */
-					MAGA = (60 << 3)	/* Max offset from TGP */
-					MIGA = (25 << 3)	/* Min offset from TGP */
+					/* Values obtained by poking Clevo ACPI implementation */
+					PC02 = 0x03
+					MAGA = 0x50
+					MIGA = 0xffd8
 
 					Return (Local0)
 				}
