@@ -35,6 +35,21 @@
 #define CASE_DEV(name_) \
 	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
 
+static void store_acpi_nvs(struct device *dev, int nvs_index)
+{
+	struct resource *bar;
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
+
+	/* Save BAR0 and BAR1 to ACPI NVS */
+	bar = probe_resource(dev, PCI_BASE_ADDRESS_0);
+	if (bar)
+		dev_nvs->lpss_bar0[nvs_index] = (u32)bar->base;
+
+	bar = probe_resource(dev, PCI_BASE_ADDRESS_1);
+	if (bar)
+		dev_nvs->lpss_bar1[nvs_index] = (u32)bar->base;
+}
+
 static void dev_enable_acpi_mode(struct device *dev, int iosf_reg, int nvs_index)
 {
 	struct reg_script ops[] = {
@@ -367,6 +382,8 @@ static void lpss_init(struct device *dev)
 
 	if (config->lpss_acpi_mode)
 		dev_enable_acpi_mode(dev, iosf_reg, nvs_index);
+	else
+		store_acpi_nvs(dev, nvs_index);
 }
 
 static struct device_operations device_ops = {
