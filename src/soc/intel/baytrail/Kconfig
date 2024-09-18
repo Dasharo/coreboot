@@ -33,6 +33,7 @@ config SOC_INTEL_BAYTRAIL
 	select USE_DDR3
 	select UDK_2017_BINDING
 	select HAVE_CF9_RESET_PREPARE
+	select PARALLEL_MP_AP_WORK
 	help
 	  Bay Trail M/D part support.
 
