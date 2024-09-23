@@ -47,16 +47,16 @@ Method (NVOP, 2, Serialized)
 			Return (ITOB (
 				(1 << 0) |	/* Optimus Enabled */
 				(Local0 << 3) |	/* Current GPU Control Status */
-				(0 << 6) |	/* Shared Discrete GPU Hotplug Capabilities */
+				(1 << 6) |	/* Shared Discrete GPU Hotplug Capabilities */
 				(0 << 7) |	/* MUXed DDC/Aux Capabilities */
 				(PCIO << 8) |	/* PCIe Configuration Space Owner */
 				(1 << 24) |	/* Platform Optimus Power Capabilities */
-				(0 << 27)))	/* Optimus HD Audio Codec Capabilities */
+				(3 << 27)))	/* Optimus HD Audio Codec Capabilities */
 		}
 		Case (NVOP_FUNC_OPTIMUS_STATUS)
 		{
 			Return (ITOB (
-				(0 << 0) |	/* Optimus Audio Codec Control */
+				(1 << 0) |	/* Optimus Audio Codec Control */
 				(0 << 2) |	/* Request GPU Power State */
 				(0 << 4) |	/* Evaluate Requested GPU Power State */
 				(0 << 5) |	/* Request Optimus Adapter Policy */
