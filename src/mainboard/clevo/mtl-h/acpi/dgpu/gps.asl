@@ -4,16 +4,13 @@
 #define GPS_FUNC_GETCALLBACKS	0x13
 #define GPS_FUNC_PSHARESTATUS	0x20
 #define GPS_FUNC_PSHAREPARAMS	0x2a
-#define GPS_FUNC_REQUESTDXSTATE	0x12
 
 #define QUERY_GET_STATUS		0
 #define QUERY_GET_SUPPORTED_FIELDS	1
 #define QUERY_GET_CURRENT_LIMITS	2
 
-#define EC_D_NOTIFY_MASK	0x7
-
 /* GPS return Package */
-Name (GPSP, Buffer (0x28) {0x0})
+Name (GPSP, Buffer (0x24) {0x0})
 CreateDWordField (GPSP, 0, RETN)
 CreateDWordField (GPSP, 4, VRV1)
 CreateDWordField (GPSP, 8, TGPU)
@@ -73,7 +70,9 @@ Method (GPS, 2, Serialized)
 				}
 				Case (QUERY_GET_SUPPORTED_FIELDS)
 				{
-					/* No fields are supported */
+					RETN = 0x300 | ToInteger (QUTY)
+					CreateDWordField (GPSP, 0x0C, PDTS)
+					PDTS = 0x03e8
 					Return (GPSP)
 				}
 				Case (QUERY_GET_CURRENT_LIMITS)

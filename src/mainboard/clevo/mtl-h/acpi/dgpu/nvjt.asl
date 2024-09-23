@@ -30,7 +30,7 @@ Method (NVJT, 2, Serialized)
 				(0 << 12) |		/* NOT: Supports Notify on GC6 State done */
 				(1 << 13) |		/* MHYB: MS Hybrid Support (deferred GC6) */
 				(1 << 14) |		/* RPC: Root Port Control */
-				(2 << 15) |		/* GC6 Version (GC6-E) */
+				(2 << 15) |		/* GC6 Version (GC6-R) */
 				(0 << 17) |		/* GEI: GC6 Exit ISR Support */
 				(0 << 18) |		/* GSW: GC6 Self Wakeup */
 				(0x200 << 20)))		/* MXRV: Highest Revision */
