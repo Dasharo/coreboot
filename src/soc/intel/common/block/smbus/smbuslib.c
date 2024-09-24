@@ -15,7 +15,7 @@ static void update_spd_len(struct spd_block *blk)
 
 	/* If spd used is DDR5, then its length is 1024 byte. */
 	if (j == SPD_DRAM_DDR5)
-		blk->len = CONFIG_DIMM_SPD_SIZE;
+		blk->len = SPD_LEN_DDR5;
 	/* If spd used is DDR4, then its length is 512 byte. */
 	else if (j == SPD_DRAM_DDR4)
 		blk->len = SPD_PAGE_LEN_DDR4;
