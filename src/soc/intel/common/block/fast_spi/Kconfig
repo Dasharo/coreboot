@@ -52,6 +52,13 @@ config EXT_BIOS_WIN_SIZE
 	  region greater than 16MiB. The actual mapped window might be
 	  smaller depending upon the size of the BIOS region.
 
+config EXT_BIOS_FILL_UP
+	bool
+	default n
+	help
+	  Extend BIOS region to the beginning of the flash for the
+	  purposes of mapping.
+
 config FAST_SPI_GENERATE_SSDT
 	bool
 	default n
