@@ -42,14 +42,14 @@ static void smbus_read_spd(u8 *spd, u8 addr)
 
 static void switch_page(u8 spd_addr, u8 new_page)
 {
-	u32 offset;
+	u32 page_ptr;
 	/*
-	 *  By default,an SPD5 hub accepts 1 byte addressing pointing
+	 *  By default, an SPD5 hub accepts 1 byte addressing pointing
 	 *  to the first 128 bytes of memory. MR11[2:0] selects the page
 	 *  pointer to address the entire 1024 bytes of non-volatile memory.
 	 */
-	offset = SPD5_MEMREG_REG(SPD5_MR11);
-	smbus_write_byte(spd_addr, offset, new_page);
+	page_ptr = SPD5_MEMREG_REG(SPD5_MR11);
+	smbus_write_byte(spd_addr, page_ptr, new_page);
 }
 
 /*
