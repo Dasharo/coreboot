@@ -34,6 +34,7 @@ Device (LPCB)
 		})
 	}
 
+#if !CONFIG(DISABLE_HPET)
 	Device (HPET)
 	{
 		Name (_HID, EISAID("PNP0103"))
@@ -49,6 +50,7 @@ Device (LPCB)
 			Memory32Fixed(ReadOnly, HPET_BASE_ADDRESS, 0x400)
 		})
 	}
+#endif
 
 	Device(PIC)	/* 8259 Interrupt Controller */
 	{

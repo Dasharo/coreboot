@@ -747,7 +747,9 @@ static struct device_operations device_ops = {
 	.read_resources		= sc_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
+#if !CONFIG(DISABLE_HPET)
 	.write_acpi_tables	= acpi_write_hpet,
+#endif
 	.init			= sc_init,
 	.enable			= southcluster_enable_dev,
 	.scan_bus		= scan_static_bus,

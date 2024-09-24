@@ -61,6 +61,16 @@ config SMM_RESERVED_SIZE
 	hex
 	default 0x100000
 
+config DISABLE_HPET
+	bool "Disable the HPET device"
+	default n
+	help
+	 Enable this to disable the HPET support.
+	 On BayTrail and Braswell/Cherry Trail platforms HPET halts
+	 when CPU enters deep C states. Select this opton to prevent
+	 the OS from using HPET as timer source, as it may lead to
+	 soft CPU lockups.
+
 config HAVE_MRC
 	bool "Add a System Agent binary"
 	help
