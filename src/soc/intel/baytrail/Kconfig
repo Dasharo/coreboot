@@ -34,6 +34,7 @@ config SOC_INTEL_BAYTRAIL
 	select UDK_2017_BINDING
 	select HAVE_CF9_RESET_PREPARE
 	select PARALLEL_MP_AP_WORK
+	select ACPI_S1_NOT_SUPPORTED
 	help
 	  Bay Trail M/D part support.
 
