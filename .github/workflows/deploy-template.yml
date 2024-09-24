@@ -48,6 +48,10 @@ jobs:
             base_dir="msi"
             model=$(echo "$tag" | cut -d'_' -f1-2)
             release=$(echo "$tag" | cut -d'_' -f3)
+          elif [ "${{ inputs.platform }}" == "hardkernel" ]; then
+            base_dir="hardkernel"
+            model=$(echo "$tag" | cut -d'_' -f2-3)
+            release=$(echo "$tag" | cut -d'_' -f4)
           fi
           echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
@@ -68,6 +72,8 @@ jobs:
             first_part=$(echo ${{ steps.tag_name.outputs.tag }} | cut -d "_" -f1)
             second_part=$(echo ${{ steps.tag_name.outputs.tag }} | cut -d "_" -f2)
             echo "artifact_name=dasharo-$first_part-${second_part}_${{ inputs.type }}" >> "$GITHUB_OUTPUT"
+          elif  [ "${{ inputs.platform }}" == "hardkernel" ]; then
+            echo "artifact_name=dasharo-${{ inputs.vendor }}-${{ inputs.model }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Download workflow artifact
@@ -93,6 +99,8 @@ jobs:
             new_name=$(echo "${{ inputs.vendor }}_${{ inputs.model }}_${{ inputs.payload }}_${release}.rom" | sed 's/.*/\L&/')
           elif [ "${{ inputs.platform }}" == "msi" ]; then
             new_name=$(echo "${model}_${{ inputs.type }}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
+          elif [ "${{ inputs.platform }}" == "hardkernel" ]; then
+            new_name=$(echo "${{ inputs.vendor }}-${{ inputs.model }}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
           fi
 
           # Create release directory if it doesn't exist
