@@ -42,6 +42,7 @@ config DRIVERS_EFI_MAIN_FW_LSV
 config DRIVERS_EFI_UPDATE_CAPSULES
 	bool "Include EFI update capsules driver"
 	depends on DRIVERS_EFI_VARIABLE_STORE && SMMSTORE_V2 && DRIVERS_EFI_FW_INFO
+	select EXT_BIOS_FILL_UP if SOC_INTEL_COMMON_BLOCK
 	help
 	  Adds a driver that is able to parse CapsuleUpdateData* EFI variables
 	  to discover firmware updates and expose them for tianocore thorough
