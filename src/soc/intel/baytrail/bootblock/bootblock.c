@@ -69,10 +69,16 @@ static void byt_config_com1_and_enable(void)
 	uint32_t reg32;
 
 	/* Enable COM1 for debug message output. */
-	reg32 = read32((const volatile void *)(PMC_BASE_ADDRESS + GEN_PMCON1));
+	reg32 = read32p(PMC_BASE_ADDRESS + GEN_PMCON1);
 	reg32 &= ~(SUS_PWR_FLR | PWR_FLR);
 	reg32 |= UART_EN;
-	write32 ((volatile void *)(PMC_BASE_ADDRESS + GEN_PMCON1), reg32);
+	write32p(PMC_BASE_ADDRESS + GEN_PMCON1, reg32);
+
+	/* Enable IRQ3 or IRQ4 for the UART */
+	if (pci_read_config8(PCI_DEV(0, LPC_DEV, 0), REVID) >= RID_B_STEPPING_START)
+		write8p(ILB_BASE_ADDRESS + 0x88, read8p(ILB_BASE_ADDRESS + 0x88) | BIT(4));
+	else
+		write8p(ILB_BASE_ADDRESS + 0x88, read8p(ILB_BASE_ADDRESS + 0x88) | BIT(3));
 
 	/* Set up the pads to select the UART function */
 	ssus_enable_internal_pull(UART_RXD_PAD, PAD_PU_2K | PAD_PULL_UP);

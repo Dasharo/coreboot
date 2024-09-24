@@ -8,6 +8,16 @@ Device (LPCB)
 {
 	Name(_ADR, 0x001f0000)
 
+	OperationRegion(LPC0, PCI_Config, 0x00, 0xC0)
+	Field(LPC0, AnyAcc, NoLock, Preserve)
+	{
+		Offset(0x08),
+		SRID,	8,	// Revision ID
+		Offset(0x080),
+		C1EN,	1,	// COM1 Enable
+		,	31
+	}
+
 	#include "irqlinks.asl"
 
 	#include "acpi/ec.asl"
@@ -126,14 +136,61 @@ Device (LPCB)
 		Name (_UID, 1)
 
 		Method (_STA, 0, NotSerialized) {
-			Return (0x0F)
+			If (^^C1EN)
+			{
+				Return (0x0F)
+			}
+			Else
+			{
+				Return (0x00)
+			}
 		}
 
-		Name (_CRS, ResourceTemplate ()
+		Method(_DIS,0,Serialized)
 		{
-			IO (Decode16, 0x03F8, 0x3F8, 0x08, 0x08)
-			IRQNoFlags () {4}
+			^^C1EN = 0
+		}
+
+		Method(_SRS,1,Serialized)
+		{
+		}
+
+
+		Name(BUF0,ResourceTemplate()
+		{
+			IO (Decode16, 0x03F8, 0x03F8, 0x01, 0x08)
+			IRQNoFlags() {3}
 		})
+
+		Name(BUF1,ResourceTemplate()
+		{
+			IO (Decode16, 0x03F8, 0x03F8, 0x01, 0x08)
+			IRQNoFlags() {4}
+		})
+
+		Method(_PRS,0,Serialized)
+		{
+			If (^^SRID <= 0x04)
+			{
+				Return(BUF0)
+			}
+			Else
+			{
+				Return(BUF1)
+			}
+		}
+
+		Method(_CRS,0,Serialized)
+		{
+			If (^^SRID <= 0x04)
+			{
+				Return(BUF0)
+			}
+			Else
+			{
+				Return(BUF1)
+			}
+		}
 	}
 #endif
 
