@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <commonlib/region.h>
 
+#define SPD_PAGE_LEN		256
+#define SPD_PAGE_LEN_DDR4	512
+#define SPD_LEN_DDR5		1024
 #define SPD_PAGE_0		(0x6C >> 1)
 #define SPD_PAGE_1		(0x6E >> 1)
 #define SPD_DENSITY_BANKS	4
