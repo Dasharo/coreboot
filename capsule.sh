@@ -241,6 +241,9 @@ function make_subcommand() {
 {
     "EmbeddedDrivers": [
         {
+            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/CapsuleSplashDxe.efi"
+        },
+        {
             "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/FmpDxe.efi"
         }
     ],
