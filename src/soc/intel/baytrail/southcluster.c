@@ -144,10 +144,6 @@ static void com1_configure_resume(struct device *dev)
 
 static void sc_enable_ioapic(struct device *dev)
 {
-	int i;
-	u32 reg32;
-	volatile u32 *ioapic_index = (u32 *)(IO_APIC_ADDR);
-	volatile u32 *ioapic_data = (u32 *)(IO_APIC_ADDR + 0x10);
 	u8 *ilb_base = (u8 *)(pci_read_config32(dev, IBASE) & ~0x0f);
 
 	/*
@@ -155,34 +151,15 @@ static void sc_enable_ioapic(struct device *dev)
 	 * Set SCI IRQ to IRQ9
 	 */
 	write32(ilb_base + ILB_OIC, 0x100);  /* AEN */
-	reg32 = read32(ilb_base + ILB_OIC); /* Read back per BWG */
+	read32(ilb_base + ILB_OIC); /* Read back per BWG */
 	write32(ilb_base + ACTL, 0);  /* ACTL bit 2:0 SCIS IRQ9 */
 
-	*ioapic_index = 0;
-	*ioapic_data = (1 << 25);
-
 	/* affirm full set of redirection table entries ("write once") */
-	*ioapic_index = 1;
-	reg32 = *ioapic_data;
-	*ioapic_index = 1;
-	*ioapic_data = reg32;
+	ioapic_set_max_vectors(VIO_APIC_VADDR, 87);
+	setup_ioapic((void *)IO_APIC_ADDR, 2);
 
-	*ioapic_index = 0;
-	reg32 = *ioapic_data;
-	printk(BIOS_DEBUG, "Southbridge APIC ID = %x\n", (reg32 >> 24) & 0x0f);
-	if (reg32 != (1 << 25))
-		die("APIC Error\n");
-
-	printk(BIOS_SPEW, "Dumping IOAPIC registers\n");
-	for (i=0; i<3; i++) {
-		*ioapic_index = i;
-		printk(BIOS_SPEW, "  reg 0x%04x:", i);
-		reg32 = *ioapic_data;
-		printk(BIOS_SPEW, " 0x%08x\n", reg32);
-	}
-
-	*ioapic_index = 3; /* Select Boot Configuration register. */
-	*ioapic_data = 1; /* Use Processor System Bus to deliver interrupts. */
+	/* Use Processor System Bus to deliver interrupts. */
+	ioapic_set_boot_config((void *)IO_APIC_ADDR, true);
 }
 
 static void sc_enable_serial_irqs(struct device *dev)
