@@ -23,9 +23,9 @@ static const struct soc_gpio_map gpncore_gpio_map[] = {
 	GPIO_NC,			// GPIO_S0_NC[03] - No Connect
 	GPIO_NC,			// GPIO_S0_NC[04] - No Connect
 	GPIO_NC,			// GPIO_S0_NC[05] - No Connect
-	GPIO_NC,			// GPIO_S0_NC[06] - No Connect
+	GPIO_FUNC2,			// GPIO_S0_NC[06] - DDI1_HPD
 	GPIO_FUNC2,			// GPIO_S0_NC[07] - DDI1_DDCDAT
-	GPIO_NC,			// GPIO_S0_NC[08] - No Connect
+	GPIO_FUNC2,			// GPIO_S0_NC[08] - DDI1_DDCCLK
 	GPIO_NC,			// GPIO_S0_NC[09] - No Connect
 	GPIO_NC,			// GPIO_S0_NC[10] - No Connect
 	GPIO_NC,			// GPIO_S0_NC[11] - No Connect
@@ -103,7 +103,7 @@ static const struct soc_gpio_map gpscore_gpio_map[] = {
 	GPIO_FUNC1,			// GPIO_S0_SC[051] - PCU_SMB_DATA
 	GPIO_FUNC1,			// GPIO_S0_SC[052] - PCU_SMB_CLK
 	GPIO_FUNC1,			// GPIO_S0_SC[053] - PCU_SMB_ALERT
-	GPIO_FUNC1,			// GPIO_S0_SC[054] - ILB_8254_SPKR
+	GPIO_NC,			// GPIO_S0_SC[054] - ILB_8254_SPKR
 	GPIO_FUNC(0, PULL_UP, 20K),	// GPIO_S0_SC[055] - TP8 (GPIO_S0_SC_55)
 	GPIO_FUNC0,			// GPIO_S0_SC[056] - GPIO_S0_SC_56
 	GPIO_FUNC1,			// GPIO_S0_SC[057] - PCU_UART3_TXD
@@ -165,9 +165,9 @@ static const struct soc_gpio_map gpssus_gpio_map[] = {
 					// Memory: 0=1GB 1=2GB or 4GB
 	GPIO_INPUT,			// GPIO_S5[06] - BOM_OP2
 	GPIO_INPUT,			// GPIO_S5[07] - BOM_OP3
-	GPIO_OUT_HIGH_LEGACY,		// GPIO_S5[08] - SOC_USB_HOST_EN0
-	GPIO_OUT_HIGH_LEGACY,		// GPIO_S5[09] - SOC_USB_HOST_EN1
-	GPIO_OUT_HIGH_LEGACY,		// GPIO_S5[10] - GPIO_S5_10_UNLOCK
+	GPIO_OUT_LOW_LEGACY,		// GPIO_S5[08] - SOC_USB_HOST_EN0
+	GPIO_OUT_LOW_LEGACY,		// GPIO_S5[09] - SOC_USB_HOST_EN1
+	GPIO_OUT_LOW_LEGACY,		// GPIO_S5[10] - GPIO_S5_10_UNLOCK
 	GPIO_FUNC0,			// GPIO_S5[11] - SUSPWRDNACK (TP14)
 	GPIO_FUNC0,			// GPIO_S5[12] - PMC_SUSCLK0
 	GPIO_FUNC1,			// GPIO_S5[13] - PMC_SLP_S0IX (TP10)
