@@ -75,9 +75,12 @@ void scc_enable_acpi_mode(struct device *dev, int iosf_reg, int nvs_index)
 		/* Disable PCI interrupt, enable Memory and Bus Master */
 		REG_PCI_OR16(PCI_COMMAND,
 			     PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INT_DISABLE),
-		/* Enable ACPI mode */
-		REG_IOSF_OR(IOSF_PORT_SCC, iosf_reg,
+		/* Enable ACPI mode - skip it, let APM do the switch
+		 * so payloads can boot from SSC devices.
+		 */
+		/* REG_IOSF_OR(IOSF_PORT_SCC, iosf_reg,
 			    SCC_CTL_PCI_CFG_DIS | SCC_CTL_ACPI_INT_EN),
+		 */
 		REG_SCRIPT_END
 	};
 	struct resource *bar;

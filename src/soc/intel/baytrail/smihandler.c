@@ -248,6 +248,23 @@ static void soc_legacy(void)
 	LPSS_ACPI_MODE_DISABLE(SPI);
 }
 
+static void ssc_acpi_mode(void)
+{
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
+	u32 reg32;
+
+#define SCC_ACPI_MODE_ENABLE(name_) \
+	do { if (dev_nvs->scc_en[SCC_NVS_ ## name_]) { \
+		reg32 = iosf_scc_read(SCC_ ## name_ ## _CTL); \
+		reg32 |= SCC_CTL_PCI_CFG_DIS | SCC_CTL_ACPI_INT_EN; \
+		iosf_scc_write(SCC_ ## name_ ## _CTL, reg32); \
+	} } while (0)
+
+	SCC_ACPI_MODE_ENABLE(MMC);
+	SCC_ACPI_MODE_ENABLE(SD);
+	SCC_ACPI_MODE_ENABLE(SDIO);
+}
+
 static void southbridge_smi_store(void)
 {
 	u8 sub_command, ret;
@@ -277,6 +294,7 @@ static void southbridge_smi_apmc(void)
 		disable_pm1_control(SCI_EN);
 		break;
 	case APM_CNT_ACPI_ENABLE:
+		ssc_acpi_mode();
 		enable_pm1_control(SCI_EN);
 		break;
 	case APM_CNT_ELOG_GSMI:
