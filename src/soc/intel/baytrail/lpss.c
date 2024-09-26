@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <stdint.h>
+#include <acpi/acpi.h>
 #include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <device/device.h>
@@ -31,6 +32,17 @@
 #define UART_CLOCK_44P2368_MHZ			 ((0x3d09 << 16) | (0x1b00 << 1))
 /* Setting for SPI 50Mhz M/N = 0.5 (0x1/0x2) x 100 Mhz */
 #define SPI_CLOCK_50_MHZ			 ((0x2 << 16) | (0x1 << 1))
+
+/* CSRT constants */
+#define DMA1_GROUP_REVISION		2
+#define DMA2_GROUP_REVISION		3
+#define DMA1_NUM_CHANNELS		6
+#define DMA2_NUM_CHANNELS		8
+#define DMA1_BASE_REQ_LINE		0
+#define DMA2_BASE_REQ_LINE		16
+#define DMA_MAX_BLOCK_SIZE		0xfff
+#define DMA_ADDRESS_WIDTH		32
+#define DMA_NUM_HANDSHAKE_SIGNALS	16
 
 #define CASE_DEV(name_) \
 	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC)
@@ -254,11 +266,6 @@ static void dev_set_pins(struct device *dev)
 	}
 }
 
-#define INTA		1
-#define INTB		2
-#define INTC		3
-#define INTD		4
-
 static void dev_set_int_pin(struct device *dev, int iosf_reg)
 {
 	u32 val;
@@ -386,12 +393,79 @@ static void lpss_init(struct device *dev)
 		store_acpi_nvs(dev, nvs_index);
 }
 
+static void lpss_write_dma_group(struct device *dma, unsigned long *current, u16 revision,
+				 const char cntlr_uid[4], u32 gsi, u8 num_channels,
+				 u16 base_request_line)
+{
+	struct acpi_csrt_group *group = (struct acpi_csrt_group *)*current;
+
+	acpi_write_csrt_group_hdr(current, "INTL", "\0\0\0\0",
+				  0x9c60, 0, revision);
+
+	acpi_write_csrt_shared_info(current, group, dma, PCI_BASE_ADDRESS_0,
+				    1 /* major_ver */, 0 /* minor_ver */,
+				    gsi, ACPI_ACTIVE_BOTH,
+				    ACPI_LEVEL_SENSITIVE, num_channels,
+				    DMA_ADDRESS_WIDTH, base_request_line,
+				    DMA_NUM_HANDSHAKE_SIGNALS,
+				    DMA_MAX_BLOCK_SIZE);
+
+	acpi_write_csrt_descriptor(current, group, ACPI_CSRT_TYPE_DMA,
+				   ACPI_CSRT_DMA_CONTROLLER, cntlr_uid);
+
+	char uid[4] = "CHA";
+	for (unsigned int ch = 0; ch < num_channels; ch++) {
+		uid[3] = ch + 0x30;
+		acpi_write_csrt_descriptor(current, group, ACPI_CSRT_TYPE_DMA,
+					   ACPI_CSRT_DMA_CHANNEL, uid);
+	}
+}
+
+static unsigned long lpss_fill_csrt(acpi_csrt_t *csrt_struct, unsigned long current)
+{
+	struct device *dma1 = pcidev_on_root(SIO_DMA1_DEV, SIO_DMA1_FUNC);
+	struct device *dma2 = pcidev_on_root(SIO_DMA2_DEV, SIO_DMA2_FUNC);
+
+	if (dma1 && dma1->enabled) {
+		lpss_write_dma_group(dma1, &current, DMA1_GROUP_REVISION, "SPI ",
+				     LPSS_DMA1_IRQ, DMA1_NUM_CHANNELS, DMA1_BASE_REQ_LINE);
+	}
+	if (dma2 && dma2->enabled) {
+		lpss_write_dma_group(dma2, &current, DMA2_GROUP_REVISION, "I2C ",
+				     LPSS_DMA2_IRQ, DMA2_NUM_CHANNELS, DMA2_BASE_REQ_LINE);
+	}
+
+	return current;
+}
+
+static unsigned long lpss_write_csrt(const struct device *device, unsigned long current,
+				     acpi_rsdp_t *rsdp)
+{
+	acpi_csrt_t *csrt;
+	static bool csrt_written = false;
+
+	if (csrt_written)
+		return current;
+
+	printk(BIOS_DEBUG, "ACPI:    * CSRT\n");
+	current = ALIGN_UP(current, 16);
+	csrt = (acpi_csrt_t *)current;
+	acpi_create_csrt(csrt, lpss_fill_csrt);
+	acpi_add_table(rsdp, csrt);
+	csrt_written = true;
+
+	current += csrt->header.length;
+
+	return current;
+}
+
 static struct device_operations device_ops = {
 	.read_resources		= pci_dev_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= lpss_init,
 	.ops_pci		= &soc_pci_ops,
+	.write_acpi_tables	= lpss_write_csrt,
 };
 
 static const unsigned short pci_device_ids[] = {
