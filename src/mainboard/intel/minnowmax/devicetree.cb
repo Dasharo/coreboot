@@ -36,6 +36,8 @@ chip soc/intel/baytrail
 	# Allow PCIe devices to wake system from suspend
 	register "pcie_wake_enable" = "1"
 
+	register "lpss_acpi_mode" = "1"
+	register "scc_acpi_mode" = "1"
 
 	# Disable SLP_X stretching after SUS power well fail.
 	register "disable_slp_x_stretch_sus_fail" = "1"
