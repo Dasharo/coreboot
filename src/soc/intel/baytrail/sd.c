@@ -6,9 +6,11 @@
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
+#include <reg_script.h>
 
 #include <soc/device_nvs.h>
 #include <soc/iosf.h>
+#include <soc/irq.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include "chip.h"
@@ -36,12 +38,23 @@ static void sd_init(struct device *dev)
 {
 	struct soc_intel_baytrail_config *config = config_of(dev);
 
+	static const struct reg_script init_sd[] = {
+		/* Configure Maximum Timeout */
+		REG_RES_WRITE8(PCI_BASE_ADDRESS_0, 0x2e, 0xe),
+		/* Configure INTA for PCI mode */
+		REG_IOSF_RMW(IOSF_PORT_SCC, SCC_SD_CTL,
+			     ~SSC_CTL_INT_PIN_MASK, (INTA << SSC_CTL_INT_PIN_SHIFT)),
+		REG_SCRIPT_END,
+	};
+
 	if (config->sdcard_cap_low != 0 || config->sdcard_cap_high != 0) {
 		printk(BIOS_DEBUG, "Overriding SD Card controller caps.\n");
 		pci_write_config32(dev, CAP_OVERRIDE_LOW, config->sdcard_cap_low);
 		pci_write_config32(dev, CAP_OVERRIDE_HIGH, config->sdcard_cap_high |
 							   USE_CAP_OVERRIDES);
 	}
+
+	reg_script_run_on_dev(dev, init_sd);
 
 	if (config->scc_acpi_mode)
 		scc_enable_acpi_mode(dev, SCC_SD_CTL, SCC_NVS_SD);

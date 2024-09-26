@@ -9,6 +9,7 @@
 
 #include <soc/device_nvs.h>
 #include <soc/iosf.h>
+#include <soc/irq.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include "chip.h"
@@ -28,6 +29,9 @@ static const struct reg_script emmc_ops[] = {
 	REG_IOSF_RMW(IOSF_PORT_SCORE, 0x48c4, ~0x3c, 0x3c),
 	/* Max timeout */
 	REG_RES_WRITE8(PCI_BASE_ADDRESS_0, 0x002e, 0x0e),
+	/* Configure INTA for PCI mode */
+	REG_IOSF_RMW(IOSF_PORT_SCC, SCC_MMC45_CTL,
+		     ~SSC_CTL_INT_PIN_MASK, (INTA << SSC_CTL_INT_PIN_SHIFT)),
 	REG_SCRIPT_END,
 };
 
@@ -54,7 +58,7 @@ static void emmc_init(struct device *dev)
 	reg_script_run_on_dev(dev, emmc_ops);
 
 	if (config->scc_acpi_mode)
-		scc_enable_acpi_mode(dev, SCC_MMC_CTL, SCC_NVS_MMC);
+		scc_enable_acpi_mode(dev, SCC_MMC45_CTL, SCC_NVS_MMC);
 	else
 		acpi_store_nvs(dev, SCC_NVS_MMC);
 }

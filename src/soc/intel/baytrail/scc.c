@@ -43,6 +43,7 @@ static const struct reg_script scc_after_dll[] = {
 	 * iosf2ocp_private.GENREGRW1.cr_clock_enable_clk_ocp = 01
 	 * iosf2ocp_private.GENREGRW1.cr_clock_enable_clk_xin = 01
 	 */
+	REG_IOSF_RMW(IOSF_PORT_SCC, 0x600, ~0x380, 0x0),
 	REG_IOSF_RMW(IOSF_PORT_SCC, 0x600, ~0xf, 0x5),
 	/* Enable IOSF Snoop */
 	REG_IOSF_OR(IOSF_PORT_SCC, 0x00, (1 << 7)),
