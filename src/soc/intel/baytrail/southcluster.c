@@ -164,7 +164,7 @@ static void sc_enable_ioapic(struct device *dev)
 
 static void sc_enable_serial_irqs(struct device *dev)
 {
-#ifdef SETUPSERIQ /* NOT defined. Remove when the TODO is done. */
+	struct soc_intel_baytrail_config *config = config_of(dev);
 	/*
 	 * TODO: SERIRQ seems to have a number of problems on baytrail.
 	 * With it enabled, we get some spurious interrupts (ps2)
@@ -182,6 +182,11 @@ static void sc_enable_serial_irqs(struct device *dev)
 	reg8 |= (1 << 3); /* IOCHK# NMI  Disable for now */
 	outb(reg8, 0x61);
 
+	if (!config->serirq_enable) {
+		write32(ibase + ILB_OIC, read32(ibase + ILB_OIC) & ~SIRQEN);
+		return;
+	}
+
 	write32(ibase + ILB_OIC, read32(ibase + ILB_OIC) | SIRQEN);
 	write8(ibase + ILB_SERIRQ_CNTL, SCNT_CONTINUOUS_MODE);
 
@@ -194,7 +199,6 @@ static void sc_enable_serial_irqs(struct device *dev)
 		outb(0x00, 0xED); /* I/O Delay to get the 1 frame */
 		write8(ibase + ILB_SERIRQ_CNTL, SCNT_QUIET_MODE);
 	}
-#endif  /* DON'T SET UP IRQS */
 }
 
 /*
