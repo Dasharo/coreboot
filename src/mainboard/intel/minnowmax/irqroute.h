@@ -12,6 +12,7 @@
  *IR13h SATA     INT(A)     - PIRQ D
  *IR14h XHCI     INT(A)     - PIRQ E
  *IR15h LP Audio INT(A)     - PIRQ F
+ *IR15h OTG      INT(A)     - PIRQ G
  *IR17h MMC      INT(A)     - PIRQ F
  *IR18h SIO      INT(ABCD)  - PIRQ BADC
  *IR1Ah TXE      INT(A)     - PIRQ F
@@ -31,6 +32,7 @@
 	PCI_DEV_PIRQ_ROUTE(SATA_DEV,    D, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(XHCI_DEV,    E, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(LPE_DEV,     F, A, A, A), \
+	PCI_DEV_PIRQ_ROUTE(OTG_DEV,     G, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(MMC45_DEV,   F, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(SIO1_DEV,    B, A, D, C), \
 	PCI_DEV_PIRQ_ROUTE(TXE_DEV,     F, A, A, A), \
