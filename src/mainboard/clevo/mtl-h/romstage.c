@@ -40,6 +40,7 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	};
 
 	mainboard_configure_gpios();
+	mupd->FspmConfig.PrimaryDisplay = 0x0; // iGPU
 
 	memcfg_init(mupd, &mem_config, &dimm_module_spd_info, half_populated);
 }
