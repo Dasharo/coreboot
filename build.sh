@@ -28,7 +28,7 @@ usage() {
   echo -e "\todroid_h4      - build Dasharo compatible with Hardkernel ODROID H4"
 }
 
-SDKVER="2023-11-24_2731fa619b"
+SDKVER="2024-02-18_732134932b"
 
 
 function build_optiplex_9010 {
