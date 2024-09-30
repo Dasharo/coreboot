@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Dasharo/novacustom-blobs
-          ref: 480afdc3d15bb9ec5b72b100581badea11e779f8
+          ref: cf0998fd46b0177692bfd2e008ad2e299db7f1a3
           path: 3rdparty/blobs/mainboard
           token: ${{ secrets.NCM_BLOBS_TOKEN }}
       - name: Build Dasharo
