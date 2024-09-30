@@ -23,6 +23,7 @@ usage() {
   echo -e "\toptiplex_9010  - build Dasharo compatible with Dell OptiPlex 7010/9010"
   echo -e "\tqemu           - build Dasharo for QEMU Q35"
   echo -e "\tqemu_full      - build Dasharo for QEMU Q35 with all menus available"
+  echo -e "\todroid_h4      - build Dasharo compatible with Hardkernel ODROID H4"
 }
 
 SDKVER="2023-11-24_2731fa619b"
@@ -220,6 +221,39 @@ function build_qemu {
   fi
 }
 
+function build_odroid_h4 {
+  DEFCONFIG="configs/config.hardkernel_odroid_h4"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  # checkout several submodules needed by these boards (some others are checked
+  # out by coreboot's Makefile)
+  git submodule update --init --force --checkout \
+      3rdparty/dasharo-blobs
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    /bin/bash -c "make distclean"
+
+  cp $DEFCONFIG .config
+
+  echo "Building Dasharo compatbile with Hardkernel ODROID H4 (version $FW_VERSION)"
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+  cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/hardkernel_odroid_h4_${FW_VERSION}.rom"
+    sha256sum hardkernel_odroid_h4_${FW_VERSION}.rom > hardkernel_odroid_h4_${FW_VERSION}.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
 CMD="$1"
 
 case "$CMD" in
@@ -288,6 +322,9 @@ case "$CMD" in
         ;;
     "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" )
         build_qemu "_all_menus"
+        ;;
+    "odroid_h4" | "odroid_H4" | "ODROID_H4" )
+        build_odroid_h4
         ;;
     *)
         echo "Invalid command: \"$CMD\""
