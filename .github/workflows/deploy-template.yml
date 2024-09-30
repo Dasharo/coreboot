@@ -50,12 +50,12 @@ jobs:
             model="pcengines_apu2"
             release=$(echo "$tag" | cut -d'_' -f3)
           elif [ "${{ inputs.platform }}" == "msi" ]; then
-            base_dir="msi"
-            model=$(echo "$tag" | cut -d'_' -f1-2)
+            base_dir="3mdeb/msi_$(echo "$tag" | cut -d'_' -f1-2)"
+            model=""
             release=$(echo "$tag" | cut -d'_' -f3)
           elif [ "${{ inputs.platform }}" == "hardkernel" ]; then
-            base_dir="hardkernel"
-            model=$(echo "$tag" | cut -d'_' -f2-3)
+            base_dir="3mdeb/hardkernel_$(echo "$tag" | cut -d'_' -f2-3)"
+            model=""
             release=$(echo "$tag" | cut -d'_' -f4)
           fi
           echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
