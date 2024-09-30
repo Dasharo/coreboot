@@ -109,7 +109,11 @@ jobs:
           fi
 
           # Create release directory if it doesn't exist
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir"
+          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model"
           $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
+
+          # upload firmware and hash files
           $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
           sha256sum artifacts/coreboot.rom > ${new_name}.sha256
           $CURL_CMD -X PUT -T "${new_name}.sha256" "$BASE_URL/$base_dir/$model/$release/"
