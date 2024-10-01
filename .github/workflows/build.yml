@@ -272,6 +272,8 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+
     secrets: inherit
     strategy:
       matrix:
@@ -311,6 +313,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -324,6 +327,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -337,6 +341,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -350,18 +355,40 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
         vendor: [ protectli ]
         model: [ vp46xx ]
-  deploy_novacustom:
-    if: startsWith(github.ref, 'refs/tags/novacustom')
+  deploy_novacustom_adl:
+    if: startsWith(github.ref, 'refs/tags/novacustom') && contains(github.ref, 'adl')
     needs: build_novacustom
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: novacustom
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ novacustom ]
+        model: [ nv4x_adl, ns5x_adl ]
+  deploy_novacustom_tgl:
+    if: startsWith(github.ref, 'refs/tags/novacustom') && contains(github.ref, 'tgl')
+    needs: build_novacustom
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: novacustom
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ novacustom ]
+        model: [ nv4x_tgl, ns5x_tgl ]
   deploy_pcengines:
     if: startsWith(github.ref, 'refs/tags/pcengines')
     needs: build_pcengines
@@ -371,22 +398,42 @@ jobs:
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
       payload: ${{ matrix.payload }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
     secrets: inherit
     strategy:
       matrix:
         vendor: [ pcengines ]
         model: [ apu2, apu3, apu4, apu6 ]
         payload: [ uefi ]
-  deploy_msi:
-    if: startsWith(github.ref, 'refs/tags/msi')
+  deploy_msi_ms7d25:
+    if: startsWith(github.ref, 'refs/tags/msi_ms7d25')
     needs: build_msi
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: msi
+      vendor: ${{ matrix.vendor }}
+      model: "ms7d25"
       type: ${{ matrix.type }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-ms7d25_${{ matrix.type }}"
     secrets: inherit
     strategy:
       matrix:
+        vendor: [ msi ]
+        type: [ ddr4, ddr5 ]
+  deploy_msi_ms7e06:
+    if: startsWith(github.ref, 'refs/tags/msi_ms7e06')
+    needs: build_msi
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: msi
+      vendor: ${{ matrix.vendor }}
+      model: "ms7e06"
+      type: ${{ matrix.type }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-ms7e06_${{ matrix.type }}"
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ msi ]
         type: [ ddr4, ddr5 ]
   deploy_hardkernel_odroid:
     if: startsWith(github.ref, 'refs/tags/hardkernel_odroid_h4')
@@ -394,8 +441,9 @@ jobs:
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: hardkernel
-      vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      vendor: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
