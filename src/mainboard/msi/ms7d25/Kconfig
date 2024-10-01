@@ -20,6 +20,7 @@ config BOARD_MSI_MS7D25
 	select CRB_TPM
 	select HAVE_INTEL_PTT
 	select BOARD_HAS_MSI_ROMHOLE
+	select MEMORY_MAPPED_TPM
 
 if BOARD_MSI_MS7D25
 
@@ -53,6 +54,10 @@ config USE_LEGACY_8254_TIMER
 
 config CBFS_SIZE
 	default 0x1000000
+
+config TPM_PIRQ
+	hex
+	default 0x3f
 
 config VBOOT
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
