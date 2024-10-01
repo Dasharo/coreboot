@@ -31,33 +31,24 @@ jobs:
       - name: Parse directories
         id: parse_directories
         run: |
+
           tag=${{ steps.tag_name.outputs.tag }}
-          if [ "${{ inputs.platform }}" == "protectli" ]; then
-            base_dir="protectli"
-            if [ "${{ inputs.model }}" == "vp2430" ]; then
-              model="protectli_vp2430"
-              release=$(echo "$tag" | cut -d'_' -f3)
-            else
-              model=$(echo "$tag" | cut -d'_' -f1-3)
-              release=$(echo "$tag" | cut -d'_' -f4)
-            fi
-          elif [ "${{ inputs.platform }}" == "novacustom" ]; then
-            base_dir="novacustom"
-            model=$(echo "$tag" | cut -d'_' -f1-3)
-            release=$(echo "$tag" | cut -d'_' -f4)
-          elif [ "${{ inputs.platform }}" == "pcengines" ]; then
-            base_dir="pcengines"
-            model="pcengines_apu2"
-            release=$(echo "$tag" | cut -d'_' -f3)
-          elif [ "${{ inputs.platform }}" == "msi" ]; then
-            base_dir="3mdeb/msi_$(echo "$tag" | cut -d'_' -f1-2)"
-            model=""
-            release=$(echo "$tag" | cut -d'_' -f3)
-          elif [ "${{ inputs.platform }}" == "hardkernel" ]; then
-            base_dir="3mdeb/hardkernel_$(echo "$tag" | cut -d'_' -f2-3)"
-            model=""
-            release=$(echo "$tag" | cut -d'_' -f4)
-          fi
+          # Extract platform model string (everything before the last underscore in the tag)
+          model=$(echo "$tag" | awk -F'_' '{OFS="_"; $(NF)=""; print $0}' | sed 's/_$//')
+          # Extract version string (everything after the last underscore in the tag)
+          release=$(echo "$tag" | awk -F'_' '{print $NF}')
+
+          # Use 3mdeb directory for community / DPP releases
+          case "${{ inputs.platform }}" in
+            msi|hardkernel)
+              base_dir="3mdeb"
+              ;;
+            *)
+              # by default, use platform vendor name as a directory
+              base_dir="${{ inputs.platform }}"
+              ;;
+          esac
+
           echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
           echo "release=$release" >> "$GITHUB_OUTPUT"
