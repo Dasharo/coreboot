@@ -6,6 +6,7 @@
 #include <ec/system76/ec/acpi.h>
 #include <fmap.h>
 #include <lib.h>
+#include <mainboard/variants.h>
 #include <security/vboot/vboot_common.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
@@ -98,6 +99,11 @@ static void set_power_on_ac(void)
 	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd), (uint8_t *)&cmd);
 }
 
+void __weak variant_devtree_update(void)
+{
+	/* Override dev tree settings per board */
+}
+
 static void mainboard_init(void *chip_info)
 {
 	config_t *cfg = config_of_soc();
@@ -119,6 +125,8 @@ static void mainboard_init(void *chip_info)
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
+
+	variant_devtree_update();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
