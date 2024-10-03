@@ -27,10 +27,4 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
-
-	/* GPP_B8 is EMMC_DET#, active low */
-	gpio_input_pullup(GPP_B8);
-	params->ScsEmmcEnabled = !gpio_get(GPP_B8);
-
-
 }
