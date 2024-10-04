@@ -26,6 +26,7 @@ site-local
 *.pyc
 *.sw[po]
 /*.rom
+*.rom.sha256
 .test
 .dependencies
 
