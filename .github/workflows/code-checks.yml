@@ -45,3 +45,5 @@ jobs:
 
         # Print all the differences at once and fail or do nothing
         git diff --exit-code
+    - name: Verify update capsules support in defconfigs
+      run: .github/scripts/capsule-lint.sh
