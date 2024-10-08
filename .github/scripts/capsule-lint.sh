@@ -27,8 +27,8 @@ function hex_to_ver_str() {
     echo "$ver"
 }
 
-if [ -d .configs ]; then
-    echo "error: $0 should be run from the root of coreboot's tree"
+if [ ! -d configs ]; then
+    echo "error: $(basename "$0") should be run from the root of coreboot's tree"
     exit 1
 fi
 
