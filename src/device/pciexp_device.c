@@ -556,9 +556,6 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 	u16 lnkctl;
 	u32 devcap;
 
-	if (endp->disable_pcie_aspm)
-		return;
-
 	/* Get endpoint device capabilities for acceptable limits */
 	devcap = pci_read_config32(endp, endp_cap + PCI_EXP_DEVCAP);
 
@@ -576,7 +573,7 @@ static void pciexp_enable_aspm(struct device *root, unsigned int root_cap,
 	if (exit_latency >= 0 && exit_latency <= ok_latency)
 		apmc |= PCIE_ASPM_L1;
 
-	if (CONFIG(PCIEXP_ASPM) && apmc != PCIE_ASPM_NONE) {
+	if (CONFIG(PCIEXP_ASPM) && apmc != PCIE_ASPM_NONE && !endp->disable_pcie_aspm) {
 		/* Set APMC in root port first */
 		lnkctl = pci_read_config16(root, root_cap + PCI_EXP_LNKCTL);
 		lnkctl |= apmc;
