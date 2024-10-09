@@ -18,9 +18,6 @@ static const struct mem_spd dimm_module_spd_info = {
 	.topo = MEM_TOPO_DIMM_MODULE,
 	.smbus = {
 		[0] = {
-			.addr_dimm[0] = 0x50,
-		},
-		[1] = {
 			.addr_dimm[0] = 0x52,
 		},
 	},
