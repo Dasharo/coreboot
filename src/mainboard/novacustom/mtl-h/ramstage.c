@@ -58,4 +58,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	params->PortResetMessageEnable[1] = 1;
 	params->PortResetMessageEnable[5] = 1;
+
+	/* Disable S0i2.x due to wake issues */
+	params->PmcLpmS0ixSubStateEnableMask = BIT(0);
 }
