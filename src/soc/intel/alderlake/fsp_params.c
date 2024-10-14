@@ -539,6 +539,11 @@ static uint16_t get_vccin_aux_imon_iccmax(void)
 	case PCI_DID_INTEL_ADL_N_ID_2:
 	case PCI_DID_INTEL_ADL_N_ID_3:
 	case PCI_DID_INTEL_ADL_N_ID_4:
+	case PCI_DID_INTEL_ADL_N_ID_5:
+	case PCI_DID_INTEL_ADL_N_ID_6:
+	case PCI_DID_INTEL_ADL_N_ID_7:
+	case PCI_DID_INTEL_ADL_N_ID_8:
+	case PCI_DID_INTEL_ADL_N_ID_9:
 		return ICC_MAX_ID_ADL_N_MA;
 	case PCI_DID_INTEL_ADL_S_ID_1:
 	case PCI_DID_INTEL_ADL_S_ID_3:
@@ -930,7 +935,7 @@ static void fill_fsps_pcie_params(FSP_S_CONFIG *s_cfg,
 	}
 	s_cfg->PcieComplianceTestMode = CONFIG(SOC_INTEL_COMPLIANCE_TEST_MODE);
 
-#if CONFIG(FSP_TYPE_IOT) && !CONFIG(SOC_INTEL_RAPTORLAKE)
+#if CONFIG(FSP_TYPE_IOT) && !CONFIG(SOC_INTEL_RAPTORLAKE) && !CONFIG(SOC_INTEL_ALDERLAKE_PCH_N)
 	/*
 	 * Intel requires that all enabled PCH PCIe ports have a CLK_REQ signal connected.
 	 * The CLK_REQ is used to wake the silicon when link entered L1 link-state. L1
