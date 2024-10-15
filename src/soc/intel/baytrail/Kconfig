@@ -272,7 +272,7 @@ config TXE_SB_SBM_MANIFEST_SVN
 
 if TXE_SECURE_BOOT
 
-# This addresses will be used by BSP to locate microcode in bootblock before
+# This address will be used by BSP to locate microcode in bootblock before
 # setting up CAR. With CBFS verification we cannot use walkcbfs ASM routine, so
 # put the microcode copy in the BOOTBLOCK FMAP region right after SB manifest
 # for use by BSP. APs will load microcode from CBFS file in COREBOOT region when
