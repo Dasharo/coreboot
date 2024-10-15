@@ -86,7 +86,7 @@ jobs:
           CURL_CMD="curl -u $url_part:${{ secrets.CLOUD_PASSWORD }}"
 
           if [ "${{ inputs.platform }}" == "protectli" ]; then
-            new_name=$(echo "${{ inputs.vendor }}-${{ inputs.model }}.rom" | sed 's/-/_/g; s/.*/\L&/')
+            new_name=$(echo "${{ inputs.vendor }}-${{ inputs.model }}-${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
           elif [ "${{ inputs.platform }}" == "novacustom" ]; then
             new_name=$(echo "${model}_${release}.rom" | sed 's/-/_/g; s/.*/\L&/')
           elif [ "${{ inputs.platform }}" == "pcengines" ]; then
