@@ -27,6 +27,7 @@ usage() {
 }
 
 SDKVER="2023-11-24_2731fa619b"
+CONTAINER="ghcr.io/dasharo/dasharo-sdk:latest"
 
 
 function build_optiplex_9010 {
@@ -232,7 +233,7 @@ function build_odroid_h4 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${CONTAINER} \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -241,7 +242,7 @@ function build_odroid_h4 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${CONTAINER} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
