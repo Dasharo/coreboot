@@ -39,8 +39,7 @@ usage() {
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
 }
 
-SDKVER="2024-02-18_732134932b"
-
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
 
 function build_optiplex_9010 {
   DEFCONFIG=$1
@@ -59,7 +58,7 @@ function build_optiplex_9010 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make distclean"
 
   cp "${DEFCONFIG}" .config
@@ -70,7 +69,7 @@ function build_optiplex_9010 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom ${BOARD}_${FW_VERSION}.rom
@@ -89,7 +88,7 @@ function build_msi {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make distclean"
 
   cp "${DEFCONFIG}" .config
@@ -100,7 +99,7 @@ function build_msi {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom ${BOARD}_${FW_VERSION}_$1.rom
@@ -132,7 +131,7 @@ function build_protectli_vault {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
@@ -155,7 +154,7 @@ function build_v1x10 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -164,7 +163,7 @@ function build_v1x10 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom protectli_$1_${FW_VERSION}.rom
@@ -187,7 +186,7 @@ function build_novacustom {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -196,7 +195,7 @@ function build_novacustom {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   if [ $? -eq 0 ]; then
@@ -219,7 +218,7 @@ function build_novacustom_v5x0tu {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -232,7 +231,7 @@ function build_novacustom_v5x0tu {
   # Extract and transfer LAN ROM blob
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
     /bin/bash -c "make -C util/cbfstool && \
     util/cbfstool/cbfstool novacustom_v54x_mtl_v0.9.0.rom extract -r COREBOOT -f payload -n fallback/payload -m x86"
 
@@ -245,7 +244,7 @@ function build_novacustom_v5x0tu {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom novacustom_$1_${FW_VERSION}.rom
@@ -272,7 +271,7 @@ function build_pcengines {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -281,7 +280,7 @@ function build_pcengines {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom pcengines_${VARIANT}_${FW_VERSION}.rom
@@ -305,7 +304,7 @@ function build_qemu {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -314,7 +313,7 @@ function build_qemu {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom qemu_q35_${FW_VERSION}.rom
@@ -338,7 +337,7 @@ function build_odroid_h4 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make distclean"
 
   cp $DEFCONFIG .config
@@ -347,7 +346,7 @@ function build_odroid_h4 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
   cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
