@@ -2,14 +2,10 @@
 
 #include <arch/cpu.h>
 #include <console/console.h>
-#include <delay.h>
 #include <device/device.h>
-#include <intelblocks/systemagent.h>
 #include <pc80/i8254.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
-#include <soc/pcr_ids.h>
-#include <soc/tcss.h>
 
 #include <string.h>
 
