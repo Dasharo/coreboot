@@ -273,6 +273,8 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+
     secrets: inherit
     strategy:
       matrix:
@@ -286,6 +288,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -299,6 +302,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -312,6 +316,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -325,6 +330,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -336,7 +342,12 @@ jobs:
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: novacustom
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ novacustom ]
+        model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl ]
   deploy_pcengines:
     if: startsWith(github.ref, 'refs/tags/pcengines')
     needs: build_pcengines
@@ -346,6 +357,7 @@ jobs:
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
       payload: ${{ matrix.payload }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
     secrets: inherit
     strategy:
       matrix:
@@ -359,20 +371,22 @@ jobs:
     with:
       platform: msi
       type: ${{ matrix.type }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
+        vendor: [ msi ]
         type: [ ddr4, ddr5 ]
+        model: [ ms7d25_ddr4, ms7d25_ddr5, ms7e06_ddr4, ms7e06_ddr5 ]
   deploy_hardkernel_odroid:
     if: startsWith(github.ref, 'refs/tags/hardkernel_odroid_h4')
     needs: build_hardkernel_odroid_h4
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: hardkernel
-      vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
-        vendor: [ hardkernel ]
         model: [ odroid_h4 ]
