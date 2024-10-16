@@ -43,6 +43,7 @@ CONFIG_EDK2_PLATFORMS_TAG_OR_REV="3323ed481d35096fb6a7eae7b49f35eff00f86cf"
 CONFIG_EDK2_CBMEM_LOGGING=y
 CONFIG_EDK2_FOLLOW_BGRT_SPEC=y
 CONFIG_EDK2_SERIAL_SUPPORT=y
+CONFIG_EDK2_GOP_FILE="/3rdparty/blobs/mainboard/clevo/mtl-h/IntelGopDriver.efi"
 CONFIG_EDK2_USE_LAPTOP_LID_LIB=y
 CONFIG_EDK2_CUSTOM_BUILD_PARAMS="--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdVideoHorizontalResolution=1920 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdVideoVerticalResolution=1080"
 CONFIG_BUILD_IPXE=y
