@@ -296,7 +296,7 @@ Device (RP12)
 
 	Method (_PRT)
 	{
-		Return (IRQM (RPPN))
+		Return (IRQM (1))
 	}
 }
 
