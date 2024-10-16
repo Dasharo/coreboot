@@ -133,12 +133,18 @@ jobs:
           cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
           make olddefconfig
           make
+          pkcs7sign=payloads/external/edk2/workspace/Dasharo/BaseTools/Source/Python/Pkcs7Sign
+          ./capsule.sh make -t "$pkcs7sign"/TestRoot.pub.pem \
+                            -o "$pkcs7sign"/TestSub.pub.pem \
+                            -s "$pkcs7sign"/TestCert.pem
+          mv *.cap build/coreboot.cap
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
             build/coreboot.rom
+            build/coreboot.cap
           retention-days: 30
   build_protectli:
     runs-on: ubuntu-22.04
