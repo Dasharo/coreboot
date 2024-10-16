@@ -153,20 +153,17 @@ chip soc/intel/alderlake
 		# NVMe x1 link or ASMedia SATA Controller
 		device ref pcie_rp1 on
 			register "pch_pcie_rp[PCH_RP(1)]" = "{
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
-				.pcie_rp_aspm = ASPM_DISABLE,
-				.PcieRpL1Substates = L1_SS_DISABLED,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.clk_src = 4,
+				.clk_req = 4,
 			}"
 			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
-						"M.2/M 2280 (M2_NVME1X)" "SlotDataBusWidth4X"
+						"M.2/M 2280 (M2_NVME1X)" "SlotDataBusWidth1X"
 		end
 		# LAN1
 		device ref pcie_rp3 on
 			register "pch_pcie_rp[PCH_RP(3)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
-				.pcie_rp_aspm = ASPM_DISABLE,
-				.PcieRpL1Substates = L1_SS_DISABLED,
 				.clk_src = 2,
 				.clk_req = 2,
 			}"
@@ -175,17 +172,14 @@ chip soc/intel/alderlake
 		device ref pcie_rp4 on
 			register "pch_pcie_rp[PCH_RP(4)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
-				.pcie_rp_aspm = ASPM_DISABLE,
-				.PcieRpL1Substates = L1_SS_DISABLED,
 				.clk_src = 3,
+				.clk_req = 3,
 			}"
 		end
 		# LAN2
 		device ref pcie_rp7 on
 			register "pch_pcie_rp[PCH_RP(7)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
-				.pcie_rp_aspm = ASPM_DISABLE,
-				.PcieRpL1Substates = L1_SS_DISABLED,
 				.clk_src = 1,
 				.clk_req = 1,
 			}"
@@ -195,9 +189,8 @@ chip soc/intel/alderlake
 		device ref pcie_rp9 on
 			register "pch_pcie_rp[PCH_RP(9)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
-				.pcie_rp_aspm = ASPM_DISABLE,
-				.PcieRpL1Substates = L1_SS_DISABLED,
 				.clk_src = 0,
+				.clk_req = 0,
 				}"
 			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
 						"M.2/M 2280 (M2_NVME4X)" "SlotDataBusWidth4X"
