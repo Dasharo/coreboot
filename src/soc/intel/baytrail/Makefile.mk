@@ -107,8 +107,8 @@ ifeq ($(CONFIG_TXE_SB_INCLUDE_KEY_MANIFEST),y)
 ifneq ($(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH)),)
 
 $(call add_intermediate, add_txe_sb_km, $(obj)/fmap_config.h $(call strip_quotes,$(CONFIG_TXE_SB_KEY_MANIFEST_PATH)))
-	$(if $(filter 1,, $(call int-eq, $(call get_fmap_value,FMAP_SECTION_MANIFESTS_START) $(call int-subtract, $(CONFIG_ROM_SIZE) 0x21000)) \
-			  $(call int-eq, $(call get_fmap_value,FMAP_SECTION_MANIFESTS_START) 0xfffdf000)), , \
+	$(if $(filter 1, $(call int-eq, $(call get_fmap_value,FMAP_SECTION_MANIFESTS_START) $(call int-subtract, $(CONFIG_ROM_SIZE) 0x21000)) \
+			 $(call int-eq, $(call get_fmap_value,FMAP_SECTION_MANIFESTS_START) 0xfffdf000)), , \
 		$(error FMAP_SECTION_MANIFESTS_START must be at 0xfffdf000))
 	printf "    CBFSTOOL   Adding SB Key Manifest\n" \
 	$(CBFSTOOL) $(1) write -d -r MANIFESTS -f $(CONFIG_TXE_SB_KEY_MANIFEST_PATH)
