@@ -401,7 +401,7 @@ static size_t hdr_get_length(uint32_t hdr)
 /* get number of full 4-byte slots */
 static size_t bytes_to_slots(size_t bytes)
 {
-	return (bytes + (SLOT_SIZE - 1) + SLOT_SIZE) / SLOT_SIZE;
+	return ALIGN_UP(bytes, SLOT_SIZE) / SLOT_SIZE;
 }
 
 static int
@@ -419,8 +419,11 @@ send_one_message(uint32_t hdr, const void *buff)
 	pend_len = hdr_get_length(hdr);
 	pend_slots = bytes_to_slots(pend_len);
 
-	/* Write the body in whole slots */
-	for (i = 1; i < pend_slots; i++, *p++) {
+	/*
+	 * Write the body in whole slots starting from second slot
+	 * (1st slot is HECI header, not counted in message size).
+	 */
+	for (i = 1; i < pend_slots + 1; i++, *p++) {
 		write_slot(i, *p);
 	}
 
@@ -550,8 +553,11 @@ recv_one_message(uint32_t *hdr, void *buff, size_t maxlen, size_t *recv_len)
 		return TXE_RX_ERR_RESP_LEN_MISMATCH;
 	}
 
-	/* fetch whole slots first */
-	for (i = 1; i < recv_slots; i++, *p++) {
+	/*
+	 * Fetch whole slots starting from second slot
+	 * (1st slot is HECI header, to counted in message size).
+	 */
+	for (i = 1; i < recv_slots + 1; i++, *p++) {
 		*p = read_slot(i);
 	}
 
