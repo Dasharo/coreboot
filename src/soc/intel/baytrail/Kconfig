@@ -288,7 +288,7 @@ config EARLY_CPU_MICROCODE_LEN
 	default 0x19800
 
 # Ensure the bootblock does not overlap the microcode. We have 0x6400 bytes
-# of space after microcode till the ned of ROM. Make a small gap of 256 bytes
+# of space after microcode till the end of ROM. Make a small gap of 256 bytes
 # between the microcode and the bootblock just in case. Linker may add some
 # additional data in the beginning of the bootblock binary.
 
