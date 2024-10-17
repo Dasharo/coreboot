@@ -462,8 +462,7 @@ static bool heci_can_send(void)
 	case TXE_FWSTS0_COM_DEBUG:
 	case TXE_FWSTS0_COM_SOFT_TEMP_DISABLE:
 	case TXE_FWSTS0_COM_SECOVER_JMPR:
-		printk(BIOS_INFO, "Current TXE operation mode does not allow"
-				  " sending HECI messages\n");
+		printk(BIOS_INFO, "Current TXE operation mode does not allow sending HECI messages\n");
 		return false;
 	}
 
