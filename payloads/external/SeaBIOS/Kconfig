@@ -141,6 +141,10 @@ config SEABIOS_SERCON_PORT_ADDR
 
 	  By default primary console UART defined by TTYS0_BASE is used.
 
+config SEABIOS_CBFS_LOCATION
+	hex
+	default 0x0
+
 config PAYLOAD_VGABIOS_FILE
 	string
 	depends on SEABIOS_VGA_COREBOOT

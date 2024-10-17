@@ -1,22 +1,8 @@
-##
-## This file is part of the coreboot project.
-##
-## Copyright (C) 2013-2014 Sage Electronic Engineering, LLC.
-## Copyright (C) 2014 Intel Corporation
-##
-## This program is free software; you can redistribute it and/or modify
-## it under the terms of the GNU General Public License as published by
-## the Free Software Foundation; version 2 of the License.
-##
-## This program is distributed in the hope that it will be useful,
-## but WITHOUT ANY WARRANTY; without even the implied warranty of
-## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU General Public License for more details.
-##
+## SPDX-License-Identifier: GPL-2.0-only
 
 chip soc/intel/baytrail
 	# SATA port enable mask (2 ports)
-	register "sata_port_map" = "0x1"
+	register "sata_port_map" = "0x3"
 	register "sata_ahci" = "0x1"
 	register "ide_legacy_combined" = "0x0"
 
@@ -40,7 +26,7 @@ chip soc/intel/baytrail
 	register "usb2_per_port_rcomp_hs_pullup3" = "0x0300401d"
 
 	# SD Card controller
-	register "sdcard_cap_low" = "0x036864b2"
+	register "sdcard_cap_low" = "0x076864b2"
 	register "sdcard_cap_high" = "0x0"
 
 	# VR PS2 control
@@ -50,6 +36,8 @@ chip soc/intel/baytrail
 	# Allow PCIe devices to wake system from suspend
 	register "pcie_wake_enable" = "1"
 
+	register "lpss_acpi_mode" = "1"
+	register "scc_acpi_mode" = "1"
 
 	# Disable SLP_X stretching after SUS power well fail.
 	register "disable_slp_x_stretch_sus_fail" = "1"
@@ -57,6 +45,7 @@ chip soc/intel/baytrail
 	device cpu_cluster 0 on end
 
 	device domain 0 on
+		subsystemid 0x8086 0x7270 inherit
 		device pci 00.0 on end	# 8086 0F00 - SoC router
 		device pci 02.0 on end	# 8086 0F31 - GFX micro HDMI
 		device pci 03.0 off end # 8086 0F38 - MIPI
@@ -66,6 +55,7 @@ chip soc/intel/baytrail
 		device pci 13.0 on end	# 8086 0F23 - SATA AHCI	Onboard & HSEC
 		device pci 14.0 on end	# 8086 0F35 - USB XHCI - Onboard & HSEC  - Enabling both EHCI and XHCI will default to EHCI if not changed at runtime
 		device pci 15.0 on end	# 8086 0F28 - LP Engine Audio	LSEC
+		device pci 16.0 on end	# 8086 0F37 - OTG Controller # Keep enabled to avoid hangs at perf_power_settings
 		device pci 17.0 off end	# 8086 0F50 - MMC Port
 		device pci 18.0 on end	# 8086 0F40 - SIO - DMA
 		device pci 18.1 off end	# 8086 0F41 -   I2C Port 1 (0)
@@ -76,7 +66,7 @@ chip soc/intel/baytrail
 		device pci 18.6 on end	# 8086 0F46 -   I2C Port 6 (5)	LSEC
 		device pci 18.7 on end	# 8086 0F47 -   I2C Port 7 (6)	HSEC
 		device pci 1a.0 on end	# 8086 0F18 - TXE
-		device pci 1b.0 off end	# 8086 0F04 - HD Audio
+		device pci 1b.0 on end	# 8086 0F04 - HD Audio
 		device pci 1c.0 on end	# 8086 0F48 - PCIe Port 1 (0)	Must remain on
 		device pci 1c.1 on end	# 8086 0F4A - PCIe Port 2 (1)	Onboard GBE (some models)
 		device pci 1c.2 on end	# 8086 0F4C - PCIe Port 3 (2)	Onboard GBE

@@ -30,8 +30,7 @@ OBJ_ME_BIN := $(obj)/me.bin
 
 ifneq ($(CONFIG_STITCH_ME_BIN),y)
 
-$(OBJ_ME_BIN): $(call strip_quotes,$(CONFIG_ME_BIN_PATH))
-	cp $< $@
+OBJ_ME_BIN := $(call strip_quotes,$(CONFIG_ME_BIN_PATH))
 
 endif
 

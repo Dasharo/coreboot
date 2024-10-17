@@ -29,6 +29,9 @@
 # define HPS			(1 << 5)
 #define SLCTL_SLSTS		0x58
 # define PDS			(1 << 22)
+# define HPE			(1 << 5)
+# define PDE			(1 << 3)
+# define ABE			(1 << 0)
 #define DCAP2			0x64
 # define OBFFS			(0x3 << 18)
 # define LTRMS			(1 << 11)
@@ -67,6 +70,8 @@
 # define LANECFG_SHIFT		14
 # define LANECFG_MASK		(0x3 << LANECFG_SHIFT)
 #define AERCH			0x100
+#define UEM			0x108
+# define CT			(1 << 14)
 #define NFTS			0x314
 #define L0SC			0x318
 #define CFG2			0x320

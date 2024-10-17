@@ -1,18 +1,4 @@
-/*
- * This file is part of the coreboot project.
- *
- * Copyright (C) 2013 Google Inc.
- * Copyright (C) 2014 Sage Electronic Engineering, LLC.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; version 2 of the License.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- */
+/* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <soc/irq.h>
 #include <soc/pci_devs.h>
@@ -26,6 +12,7 @@
  *IR13h SATA     INT(A)     - PIRQ D
  *IR14h XHCI     INT(A)     - PIRQ E
  *IR15h LP Audio INT(A)     - PIRQ F
+ *IR15h OTG      INT(A)     - PIRQ G
  *IR17h MMC      INT(A)     - PIRQ F
  *IR18h SIO      INT(ABCD)  - PIRQ BADC
  *IR1Ah TXE      INT(A)     - PIRQ F
@@ -45,6 +32,7 @@
 	PCI_DEV_PIRQ_ROUTE(SATA_DEV,    D, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(XHCI_DEV,    E, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(LPE_DEV,     F, A, A, A), \
+	PCI_DEV_PIRQ_ROUTE(OTG_DEV,     G, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(MMC45_DEV,   F, A, A, A), \
 	PCI_DEV_PIRQ_ROUTE(SIO1_DEV,    B, A, D, C), \
 	PCI_DEV_PIRQ_ROUTE(TXE_DEV,     F, A, A, A), \

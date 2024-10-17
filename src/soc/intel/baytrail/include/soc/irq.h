@@ -3,6 +3,11 @@
 #ifndef _BAYTRAIL_IRQ_H_
 #define _BAYTRAIL_IRQ_H_
 
+#define INTA		1
+#define INTB		2
+#define INTC		3
+#define INTD		4
+
 #define PIRQA_APIC_IRQ			16
 #define PIRQB_APIC_IRQ			17
 #define PIRQC_APIC_IRQ			18

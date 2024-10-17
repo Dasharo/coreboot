@@ -15,6 +15,7 @@
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
 #include <soc/romstage.h>
+#include <soc/txe.h>
 
 static struct chipset_power_state power_state;
 
@@ -85,22 +86,13 @@ static int chipset_prev_sleep_state(const struct chipset_power_state *ps)
 	return prev_sleep_state;
 }
 
-static void print_txe_status(const char* timepoint)
-{
-	pci_devfn_t txe = PCI_DEV(0, TXE_DEV, TXE_FUNC);
-
-	printk(BIOS_DEBUG, "TXE status %s\n", timepoint);
-	printk(BIOS_DEBUG, "TXE SEC FWSTS0 %08x\n", pci_read_config32(txe, 0x40));
-	printk(BIOS_DEBUG, "TXE SEC FWSTS1 %08x\n", pci_read_config32(txe, 0x48));
-	printk(BIOS_DEBUG, "TXE SB STATUS %08x\n", pci_read_config32(txe, 0x50));
-}
-
 /* Entry from cpu/intel/car/romstage.c */
 void mainboard_romstage_entry(void)
 {
 	struct chipset_power_state *ps;
 	int prev_sleep_state;
 	struct mrc_params mp;
+	int uma_size;
 
 	set_max_freq();
 
@@ -108,8 +100,19 @@ void mainboard_romstage_entry(void)
 
 	gfx_init();
 
+	txe_early_init();
+
 	memset(&mp, 0, sizeof(mp));
+
+	/* Get the UMA size */
+	uma_size = txe_get_uma_size();
+	mp.txe_size_mb = uma_size;
+
 	mainboard_fill_mrc_params(&mp);
+
+	/* If mainboard requested 0MB UMA, treat it as TXE disable */
+	if (mp.txe_size_mb == 0)
+		txe_hide_device();
 
 	timestamp_add_now(TS_INITRAM_START);
 
@@ -122,12 +125,10 @@ void mainboard_romstage_entry(void)
 
 	elog_boot_notify(s3resume);
 
-	print_txe_status("before MRC");
-
 	/* Initialize RAM */
 	raminit(&mp, prev_sleep_state);
 
-	print_txe_status("after MRC");
+	txe_send_did((uintptr_t)mp.txe_base_address, mp.txe_size_mb, s3resume);
 
 	timestamp_add_now(TS_INITRAM_END);
 

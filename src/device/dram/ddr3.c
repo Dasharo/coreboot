@@ -544,6 +544,8 @@ enum cb_err spd_add_smbios17(const u8 channel, const u8 slot, const u16 selected
 		mem_info->dimm_cnt++;
 	}
 
+	mem_info->ecc_type = MEMORY_ARRAY_ECC_NONE;
+
 	return CB_SUCCESS;
 }
 

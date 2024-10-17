@@ -264,6 +264,39 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+  build_intel_minnowmax:
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/dasharo/dasharo-sdk:v1.5.0
+      options: --user 1001
+    strategy:
+      matrix:
+        vendor: [ intel ]
+        model: [ minnowmax ]
+        variant: [ no_sb, sb ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+      - name: Build Dasharo
+        run: |
+          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }}_${{ matrix.variant }} .config
+          make olddefconfig
+          make
+      - name: Save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.variant }}"
+          path: |
+            build/coreboot.rom
+          retention-days: 30
 
   deploy_protectli_adl:
     if: startsWith(github.ref, 'refs/tags/protectli_vault_adl')
@@ -376,3 +409,18 @@ jobs:
       matrix:
         vendor: [ hardkernel ]
         model: [ odroid_h4 ]
+  deploy_intel_minnowmax:
+    if: startsWith(github.ref, 'refs/tags/intel_minnowmax')
+    needs: build_intel_minnowmax
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: intel
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+      type: ${{ matrix.type }}
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ intel ]
+        model: [ minnowmax ]
+        type: [ no_sb, sb ]

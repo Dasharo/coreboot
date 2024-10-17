@@ -12,6 +12,7 @@
 #include <device/mmio.h>
 #include <device/pci.h>
 #include <device/pci_ops.h>
+#include <cf9_reset.h>
 #include <halt.h>
 
 #include <security/vboot/vbnv.h>
@@ -19,6 +20,7 @@
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
 #include <soc/pm.h>
+#include <soc/txe.h>
 
 uint16_t get_pmbase(void)
 {
@@ -367,4 +369,35 @@ void poweroff(void)
 	pm1_cnt = inl(ACPI_BASE_ADDRESS + PM1_CNT);
 	pm1_cnt |= (0xf << 10);
 	outl(pm1_cnt, ACPI_BASE_ADDRESS + PM1_CNT);
+}
+
+static void pmc_global_reset_enable(bool enable)
+{
+	uint32_t reg = read32p(PMC_BASE_ADDRESS + ETR);
+
+	if (enable)
+		reg |= CF9GR;
+	else
+		reg &= ~CF9GR;
+
+	write32p(PMC_BASE_ADDRESS + ETR, reg);
+}
+
+void cf9_reset_prepare(void)
+{
+	pmc_global_reset_enable(false);
+}
+
+void global_reset(void)
+{
+	printk(BIOS_INFO, "%s() called!\n", __func__);
+
+	pmc_global_reset_enable(false);
+
+	if (!txe_global_reset())
+		return;
+
+	pmc_global_reset_enable(true);
+	do_full_reset();
+	halt();
 }

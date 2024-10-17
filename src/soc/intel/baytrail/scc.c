@@ -43,6 +43,7 @@ static const struct reg_script scc_after_dll[] = {
 	 * iosf2ocp_private.GENREGRW1.cr_clock_enable_clk_ocp = 01
 	 * iosf2ocp_private.GENREGRW1.cr_clock_enable_clk_xin = 01
 	 */
+	REG_IOSF_RMW(IOSF_PORT_SCC, 0x600, ~0x380, 0x0),
 	REG_IOSF_RMW(IOSF_PORT_SCC, 0x600, ~0xf, 0x5),
 	/* Enable IOSF Snoop */
 	REG_IOSF_OR(IOSF_PORT_SCC, 0x00, (1 << 7)),
@@ -74,9 +75,12 @@ void scc_enable_acpi_mode(struct device *dev, int iosf_reg, int nvs_index)
 		/* Disable PCI interrupt, enable Memory and Bus Master */
 		REG_PCI_OR16(PCI_COMMAND,
 			     PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_INT_DISABLE),
-		/* Enable ACPI mode */
-		REG_IOSF_OR(IOSF_PORT_SCC, iosf_reg,
+		/* Enable ACPI mode - skip it, let APM do the switch
+		 * so payloads can boot from SSC devices.
+		 */
+		/* REG_IOSF_OR(IOSF_PORT_SCC, iosf_reg,
 			    SCC_CTL_PCI_CFG_DIS | SCC_CTL_ACPI_INT_EN),
+		 */
 		REG_SCRIPT_END
 	};
 	struct resource *bar;
