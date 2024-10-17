@@ -146,7 +146,7 @@ jobs:
     strategy:
       matrix:
         vendor: [ protectli ]
-        model: [ vp66xx, vp46xx, vp2420, vp2410, V1210, V1211, V1410, V1610 ]
+        model: [ vp66xx, vp46xx, vp32xx, vp2420, vp2410, V1210, V1211, V1410, V1610 ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -266,7 +266,7 @@ jobs:
           retention-days: 30
 
   deploy_protectli_adl:
-    if: startsWith(github.ref, 'refs/tags/protectli_vault_adl')
+    if: startsWith(github.ref, 'refs/tags/protectli_vault_adl_')
     needs: build_protectli
     uses: ./.github/workflows/deploy-template.yml
     with:
@@ -278,6 +278,19 @@ jobs:
       matrix:
         vendor: [ protectli ]
         model: [ vp66xx ]
+  deploy_protectli_adl_n:
+    if: startsWith(github.ref, 'refs/tags/protectli_vault_adln_')
+    needs: build_protectli
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: protectli
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ protectli ]
+        model: [ vp32xx ]
   deploy_protectli_jsl:
     if: startsWith(github.ref, 'refs/tags/protectli_vault_jsl')
     needs: build_protectli
