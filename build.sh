@@ -234,6 +234,7 @@ function build_odroid_h4 {
   # do not do distclean, because it removes all downloaded artifacts
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/edk2} \
     -w /home/coreboot/coreboot ${CONTAINER} \
     /bin/bash -c "make clean"
 
@@ -243,6 +244,7 @@ function build_odroid_h4 {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/edk2} \
     -w /home/coreboot/coreboot ${CONTAINER} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
@@ -268,6 +270,7 @@ function build_odroid_h4_btg {
   # do not do distclean, because it removes all downloaded artifacts
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/edk2} \
     -w /home/coreboot/coreboot ${CONTAINER} \
     /bin/bash -c "make clean"
 
@@ -277,6 +280,7 @@ function build_odroid_h4_btg {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/edk2} \
     -w /home/coreboot/coreboot ${CONTAINER} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
