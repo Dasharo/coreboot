@@ -231,10 +231,45 @@ function build_odroid_h4 {
   git submodule update --init --force --checkout \
       3rdparty/dasharo-blobs
 
+  # do not do distclean, because it removes all downloaded artifacts
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -w /home/coreboot/coreboot ${CONTAINER} \
-    /bin/bash -c "make distclean"
+    /bin/bash -c "make clean"
+
+  cp $DEFCONFIG .config
+
+  echo "Building Dasharo compatbile with Hardkernel ODROID H4 (version $FW_VERSION)"
+
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot ${CONTAINER} \
+    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+  cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/hardkernel_odroid_h4_${FW_VERSION}.rom"
+    sha256sum hardkernel_odroid_h4_${FW_VERSION}.rom > hardkernel_odroid_h4_${FW_VERSION}.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
+function build_odroid_h4_btg {
+  DEFCONFIG="configs/config.hardkernel_odroid_h4_btg"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  # checkout several submodules needed by these boards (some others are checked
+  # out by coreboot's Makefile)
+  git submodule update --init --force --checkout \
+      3rdparty/dasharo-blobs
+
+  # do not do distclean, because it removes all downloaded artifacts
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot ${CONTAINER} \
+    /bin/bash -c "make clean"
 
   cp $DEFCONFIG .config
 
@@ -326,6 +361,9 @@ case "$CMD" in
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
         build_odroid_h4
+        ;;
+    "odroid_h4_btg" )
+        build_odroid_h4_btg
         ;;
     *)
         echo "Invalid command: \"$CMD\""
