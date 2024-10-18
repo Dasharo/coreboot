@@ -24,6 +24,7 @@ Scope (\_SB.PCI0.RP12)
 		#include "nvjt.asl"
 		#include "nbci.asl"
 		#include "gps.asl"
+		#include "gpu_ec.asl"
 
 		/* Convert D Notify from EC to GPU */
 		Method (CNVD, 1, NotSerialized)
