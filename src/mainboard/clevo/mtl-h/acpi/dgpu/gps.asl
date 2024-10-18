@@ -4,6 +4,7 @@
 #define GPS_FUNC_GETCALLBACKS	0x13
 #define GPS_FUNC_PSHARESTATUS	0x20
 #define GPS_FUNC_PSHAREPARAMS	0x2a
+#define GPS_FUNC_REQUESTDXSTATE	0x12
 
 #define QUERY_GET_STATUS		0
 #define QUERY_GET_SUPPORTED_FIELDS	1
@@ -31,7 +32,8 @@ Method (GPS, 2, Serialized)
 				(1 << GPS_FUNC_SUPPORT) |
 				(1 << GPS_FUNC_GETCALLBACKS) |
 				(1 << GPS_FUNC_PSHARESTATUS) |
-				(1 << GPS_FUNC_PSHAREPARAMS)))
+				(1 << GPS_FUNC_PSHAREPARAMS) |
+				(1 << GPS_FUNC_REQUESTDXSTATE)))
 		}
 		Case (GPS_FUNC_GETCALLBACKS)
 		{
@@ -81,6 +83,12 @@ Method (GPS, 2, Serialized)
 					Return (GPSP)
 				}
 			}
+		}
+		Case (GPS_FUNC_REQUESTDXSTATE)
+		{
+			Local0 = ToInteger(\_SB.PCI0.LPCB.EC0.GPUD)
+			\_SB.PCI0.RP12.PXSX.DNOT (Local0, 1)
+			Return (NV_ERROR_SUCCESS)
 		}
 	}
 
