@@ -43,7 +43,8 @@ static void soc_finalize(void *unused)
 	printk(BIOS_DEBUG, "Finalizing chipset.\n");
 
 	pch_finalize();
-	apm_control(APM_CNT_FINALIZE);
+	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) || acpi_is_wakeup_s3())
+		apm_control(APM_CNT_FINALIZE);
 	if (CONFIG(USE_FSP_NOTIFY_PHASE_READY_TO_BOOT) &&
 		 CONFIG(USE_FSP_NOTIFY_PHASE_END_OF_FIRMWARE))
 		heci_finalize();

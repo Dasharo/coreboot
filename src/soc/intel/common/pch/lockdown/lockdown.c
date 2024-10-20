@@ -61,20 +61,23 @@ static void fast_spi_lockdown_cfg(int chipset_lockdown)
 	/* Set FAST_SPI opcode menu */
 	fast_spi_set_opcode_menu();
 
-	/* Discrete Lock Flash PR registers */
-	fast_spi_pr_dlock();
-
 	/* Check if SPI transaction is pending */
 	fast_spi_cycle_in_progress();
 
 	/* Clear any outstanding status bits like AEL, FCERR, FDONE, SAF etc. */
 	fast_spi_clear_outstanding_status();
 
-	/* Lock FAST_SPIBAR */
-	fast_spi_lock_bar();
-
 	/* Set Vendor Component Lock (VCL) */
 	fast_spi_vscc0_lock();
+
+	if (CONFIG(SOC_INTEL_COMMON_SPI_LOCKDOWN_SMM))
+		return;
+
+	/* Discrete Lock Flash PR registers */
+	fast_spi_pr_dlock();
+
+	/* Lock FAST_SPIBAR */
+	fast_spi_lock_bar();
 
 	/* Set BIOS Interface Lock, BIOS Lock */
 	if (chipset_lockdown == CHIPSET_LOCKDOWN_COREBOOT) {
@@ -92,24 +95,6 @@ static void fast_spi_lockdown_cfg(int chipset_lockdown)
 
 		/* EXT BIOS Lock */
 		fast_spi_set_ext_bios_lock_enable();
-	}
-}
-
-static void lpc_lockdown_config(int chipset_lockdown)
-{
-	/* Set BIOS Interface Lock, BIOS Lock */
-	if (chipset_lockdown == CHIPSET_LOCKDOWN_COREBOOT) {
-		/* BIOS Interface Lock */
-		lpc_set_bios_interface_lock_down();
-
-		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
-			lpc_set_eiss();
-			lpc_enable_wp();
-		}
-
-		/* BIOS Lock */
-		lpc_set_lock_enable();
 	}
 }
 

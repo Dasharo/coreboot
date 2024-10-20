@@ -59,7 +59,8 @@ static void soc_finalize(void *unused)
 	if (!CONFIG(USE_PM_ACPI_TIMER))
 		setbits8(pmc_mmio_regs() + PCH_PWRM_ACPI_TMR_CTL, ACPI_TIM_DIS);
 
-	apm_control(APM_CNT_FINALIZE);
+	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) || acpi_is_wakeup_s3())
+		apm_control(APM_CNT_FINALIZE);
 	lock_pam0123();
 
 	if (CONFIG_MAX_SOCKET > 1) {
