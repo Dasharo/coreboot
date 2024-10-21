@@ -29,10 +29,6 @@ chip soc/intel/baytrail
 	register "sdcard_cap_low" = "0x076864b2"
 	register "sdcard_cap_high" = "0x0"
 
-	# VR PS2 control
-	register "vnn_ps2_enable" = "1"
-	register "vcc_ps2_enable" = "1"
-
 	# Allow PCIe devices to wake system from suspend
 	register "pcie_wake_enable" = "1"
 
