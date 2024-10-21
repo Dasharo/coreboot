@@ -254,8 +254,20 @@ Device (IOSF)
 /* LPC Bridge 0:1f.0 */
 #include "lpc.asl"
 
+/* SATA 0:13.0 */
+#include "sata.asl"
+
 /* USB XHCI 0:14.0 */
 #include "xhci.asl"
+
+/* USB OTG 0:16.0 */
+#include "otg.asl"
+
+/* TXE 0:1a.0 */
+#include "txe.asl"
+
+/* HD Audio 0:1b.0 */
+#include "hda.asl"
 
 /* IRQ routing for each PCI device */
 #include "irqroute.asl"
