@@ -41,6 +41,7 @@ ramstage-y += lpe.c
 ramstage-y += lpss.c
 ramstage-y += memmap.c
 ramstage-y += northcluster.c
+ramstage-y += otg.c
 ramstage-y += pcie.c
 ramstage-y += perf_power.c
 ramstage-y += pmutil.c

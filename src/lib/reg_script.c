@@ -268,7 +268,7 @@ static uint32_t reg_script_read_iosf(struct reg_script_context *ctx)
 		return iosf_port55_read(step->reg);
 	case IOSF_PORT_0x58:
 		return iosf_port58_read(step->reg);
-	case IOSF_PORT_0x59:
+	case IOSF_PORT_OTG:
 		return iosf_port59_read(step->reg);
 	case IOSF_PORT_0x5a:
 		return iosf_port5a_read(step->reg);
@@ -336,7 +336,7 @@ static void reg_script_write_iosf(struct reg_script_context *ctx)
 	case IOSF_PORT_0x58:
 		iosf_port58_write(step->reg, step->value);
 		break;
-	case IOSF_PORT_0x59:
+	case IOSF_PORT_OTG:
 		iosf_port59_write(step->reg, step->value);
 		break;
 	case IOSF_PORT_0x5a:

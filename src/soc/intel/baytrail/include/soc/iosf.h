@@ -104,7 +104,7 @@ void iosf_ssus_write(int reg, uint32_t val);
 #define IOSF_PORT_SCORE		0x48 /* SCORE */
 #define IOSF_PORT_0x55		0x55
 #define IOSF_PORT_0x58		0x58
-#define IOSF_PORT_0x59		0x59
+#define IOSF_PORT_OTG		0x59
 #define IOSF_PORT_0x5a		0x5a
 #define IOSF_PORT_USHPHY	0x61 /* USB XHCI PHY */
 #define IOSF_PORT_SCC		0x63 /* Storage Control Cluster */
@@ -148,8 +148,8 @@ void iosf_ssus_write(int reg, uint32_t val);
 #define IOSF_OP_WRITE_0x55	(IOSF_OP_READ_0x55 | 1)
 #define IOSF_OP_READ_0x58	0x06
 #define IOSF_OP_WRITE_0x58	(IOSF_OP_READ_0x58 | 1)
-#define IOSF_OP_READ_0x59	0x06
-#define IOSF_OP_WRITE_0x59	(IOSF_OP_READ_0x59 | 1)
+#define IOSF_OP_READ_OTG	0x06
+#define IOSF_OP_WRITE_OTG	(IOSF_OP_READ_OTG | 1)
 #define IOSF_OP_READ_0x5a	0x04
 #define IOSF_OP_WRITE_0x5a	(IOSF_OP_READ_0x5a | 1)
 #define IOSF_OP_READ_USHPHY	0x06
@@ -335,6 +335,18 @@ void iosf_ssus_write(int reg, uint32_t val);
 #define USHPHY_VGA_GAIN_CONFIG_DIAG		0x8080
 #define USHPHY_REE_DAC_CONTROL			0x80b8
 #define USHPHY_CDN_U1_POWER_STATE_DEF		0x0000
+
+/*
+ * OTG Registers
+ */
+
+#define OTG_PCICFGCTR1			0x500
+# define OTG_PCICFGCTR1_INT_PIN_MASK	(0xf << 8)
+# define OTG_PCICFGCTR1_INT_PIN_SHIFT	8
+# define OTG_PCICFGCTR1_BAR1_DIS		(1 << 7)
+# define OTG_PCICFGCTR1_PME_SUPPORT		0x7C
+# define OTG_PCICFGCTR1_ACPI_INT_EN		(1 << 1)
+# define OTG_PCICFGCTR1_PCI_CFG_DIS		(1 << 0)
 
 /*
  * LPE Registers

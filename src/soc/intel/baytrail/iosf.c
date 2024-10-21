@@ -230,12 +230,12 @@ void iosf_port58_write(int reg, uint32_t val)
 
 uint32_t iosf_port59_read(int reg)
 {
-	return iosf_read_port(IOSF_READ(0x59), reg);
+	return iosf_read_port(IOSF_READ(OTG), reg);
 }
 
 void iosf_port59_write(int reg, uint32_t val)
 {
-	iosf_write_port(IOSF_WRITE(0x59), reg, val);
+	iosf_write_port(IOSF_WRITE(OTG), reg, val);
 }
 
 uint32_t iosf_port5a_read(int reg)
