@@ -212,12 +212,6 @@ E(CCU,  0x54,    MASK_VAL(13,   12,    0x0)),    //vlv.ccu.clkgate_en_3.cr_lpe_o
 E(CCU,  0x54,    MASK_VAL(15,   14,    0x0)),    //vlv.ccu.clkgate_en_3.cr_lpe_xtal_ip_clkgate_en
 E(CCU,  0x54,    MASK_VAL(26,   24,    0x0)),    //vlv.ccu.clkgate_en_3.psf_pri_clkgate_en
 E(CCU,  0x24,    MASK_VAL(24,   20,    0x0)),    //vlv.ccu.iclk_clkgate_ctrl.iopcibuffen_force_on
-E(0x59,  0x1e0,    MASK_VAL(4,    4,    0x1)),    //vlv.usb.xdci_otg.controller.pmctl.iosfprim_trunk_gate_en
-E(0x59,  0x1e0,    MASK_VAL(0,    0,    0x1)),    //vlv.usb.xdci_otg.controller.pmctl.iosfprimclk_gate_en
-E(0x59,  0x1e0,    MASK_VAL(5,    5,    0x1)),    //vlv.usb.xdci_otg.controller.pmctl.iosfsb_trunk_gate_en
-E(0x59,  0x1e0,    MASK_VAL(3,    3,    0x1)),    //vlv.usb.xdci_otg.controller.pmctl.iosfsbclk_gate_en
-E(0x59,  0x1e0,    MASK_VAL(1,    1,    0x1)),    //vlv.usb.xdci_otg.controller.pmctl.ocpclk_gate_en
-E(0x59,  0x1e0,    MASK_VAL(2,    2,    0x1)),    //vlv.usb.xdci_otg.controller.pmctl.ocpclk_trunk_gate_en
 E(0x5a,  0xd0,     MASK_VAL(8,    0,   0x3f)),    //vlv.usb.xhci.controller.usb2pr.usb2hcsel
 E(0x5a,  0x40,    MASK_VAL(21,   19,    0x6)),    //vlv.usb.xhci.controller.xhcc1.iil1e
 E(0x5a,  0x40,    MASK_VAL(10,    8,    0x1)),    //vlv.usb.xhci.controller.xhcc1.l23hrawc

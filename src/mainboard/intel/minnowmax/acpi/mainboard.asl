@@ -17,3 +17,13 @@ Scope (\_SB) {
 		Name(_HID, EisaId("PNP0C0C"))
 	}
 }
+
+Scope(\_GPE)
+{
+	/* PMC_WAKE_PCIE0 connected to LAN on RP3 */
+	Method (_L03)
+	{
+		PWS0 = 1
+		Notify (\_SB.PCI0.RP03, 0x02)
+	}
+}

@@ -44,7 +44,6 @@ Device (LPCB)
 		})
 	}
 
-#if !CONFIG(DISABLE_HPET)
 	Device (HPET)
 	{
 		Name (_HID, EISAID("PNP0103"))
@@ -60,7 +59,6 @@ Device (LPCB)
 			Memory32Fixed(ReadOnly, HPET_BASE_ADDRESS, 0x400)
 		})
 	}
-#endif
 
 	Device(PIC)	/* 8259 Interrupt Controller */
 	{
@@ -127,6 +125,16 @@ Device (LPCB)
 			IO (Decode16, 0x40, 0x40, 0x01, 0x04)
 			IO (Decode16, 0x50, 0x50, 0x10, 0x04)
 			IRQNoFlags() {0}
+		})
+	}
+
+	Device (FPU)	/* x87-compatible Floating Point Processing Unit */
+	{
+		Name (_HID, EisaId ("PNP0C04"))
+		Name (_CRS, ResourceTemplate ()
+		{
+			IO (Decode16, 0x00F0, 0x00F0, 0x01, 0x01)
+			IRQNoFlags () {13}
 		})
 	}
 

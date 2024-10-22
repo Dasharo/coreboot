@@ -4,14 +4,14 @@ if PAYLOAD_EDK2
 
 config PAYLOAD_FILE
 	string "edk2 binary"
-	default "$(obj)/UEFIPAYLOAD.fd" if EDK2_UEFIPAYLOAD
+	default "$(obj)/UEFIPAYLOAD.fd" if EDK2_UEFIPAYLOAD || EDK2_DASHAROPAYLOAD
 	default "$(obj)/ShimmedUniversalPayload.elf" if EDK2_UNIVERSAL_PAYLOAD
 	help
 	  The result of a UefiPayloadPkg build
 
 choice
 	prompt "EDK II build type"
-	default EDK2_UEFIPAYLOAD
+	default EDK2_DASHAROPAYLOAD
 	help
 	  Select the build type for edk2. UniversalPayload is recommended, as it is
 	  replacing UefiPayloadPkg. Whilst in the transition phase between the two,
@@ -21,6 +21,11 @@ config EDK2_UEFIPAYLOAD
 	bool "Build UefiPayloadPkg"
 	help
 	  Build the standard UefiPayloadPkg
+
+config EDK2_DASHAROPAYLOAD
+	bool "Build DasharoPayloadPkg"
+	help
+	  Build the DasharoPayloadPkg
 
 config EDK2_UNIVERSAL_PAYLOAD
 	bool "Build Universal Payload"

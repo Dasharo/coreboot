@@ -6,15 +6,33 @@ Device (XHCI)
 	Name (_PRW, Package () { 0x0d, 3 })
 	Name (_S3D, 3) /* Highest D state in S3 state */
 
+	Method(_PSW,1)
+	{
+		If (PMES & PMEE) {
+			PMEE = 0
+			PMES = 1
+		}
+	}
+
+	OperationRegion (PMEB, PCI_Config, 0x74, 0x04)
+	Field (PMEB, WordAcc, NoLock, Preserve)
+	{
+		,	8,
+		PMEE,	1,
+		,	6,
+		PMES,	1
+	}
+
 	Device (RHUB)
 	{
 		Name (_ADR, 0x00000000)
 
+		Name (PCKG, Package (0x01) {
+			Buffer (0x10) {}
+		})
+
 		// GPLD: Generate Port Location Data (PLD)
 		Method (GPLD, 1, Serialized) {
-			Name (PCKG, Package (0x01) {
-				Buffer (0x10) {}
-			})
 
 			// REV: Revision 0x02 for ACPI 5.0
 			CreateField (DerefOf (PCKG[0]), 0, 0x07, REV)

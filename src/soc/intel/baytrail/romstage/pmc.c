@@ -27,6 +27,7 @@ void punit_init(void)
 	reg = iosf_punit_read(SB_BIOS_CONFIG);
 	/* Write bits 17:16 of SB_BIOS_CONFIG in the PUNIT. */
 	reg |= SB_BIOS_CONFIG_PERF_MODE | SB_BIOS_CONFIG_PDM_MODE;
+	reg |= (1 << 6);
 	/* Configure VR low power mode for C0 and above. */
 	if (rid >= RID_C_STEPPING_START && cfg != NULL &&
 	    (cfg->vnn_ps2_enable || cfg->vcc_ps2_enable)) {

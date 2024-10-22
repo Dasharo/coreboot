@@ -5,6 +5,31 @@
 Device (RP01)
 {
 	Name (_ADR, 0x001c0000)
+	Name (_PRW, Package() {9, 3})
+
+	OperationRegion (PXCS, PCI_Config, 0x40, 0xC0)
+	Field (PXCS, AnyAcc, NoLock, Preserve)
+	{
+		Offset(0x12),
+		,	13,
+		LASX,	1,
+		Offset(0x1A),
+		ABPX,	1,
+		,	2,
+		PDCX,	1,
+		,	2,
+		PDSX,	1,
+		,	1,
+		Offset(0x20),
+		,	16,
+		PSPX,	1,
+	}
+
+	Device (PXSX)
+	{
+		Name (_ADR, 0x00000000)
+		Name (_PRW, Package() {9,3})
+	}
 
 	Method (_PRT)
 	{
@@ -27,6 +52,31 @@ Device (RP01)
 Device (RP02)
 {
 	Name (_ADR, 0x001c0001)
+	Name (_PRW, Package() {9, 3})
+
+	OperationRegion (PXCS, PCI_Config, 0x40, 0xC0)
+	Field (PXCS, AnyAcc, NoLock, Preserve)
+	{
+		Offset(0x12),
+		,	13,
+		LASX,	1,
+		Offset(0x1A),
+		ABPX,	1,
+		,	2,
+		PDCX,	1,
+		,	2,
+		PDSX,	1,
+		,	1,
+		Offset(0x20),
+		,	16,
+		PSPX,	1,
+	}
+
+	Device (PXSX)
+	{
+		Name (_ADR, 0x00000000)
+		Name (_PRW, Package() {9,3})
+	}
 
 	Method (_PRT)
 	{
@@ -49,6 +99,31 @@ Device (RP02)
 Device (RP03)
 {
 	Name (_ADR, 0x001c0002)
+	Name (_PRW, Package() {9, 3})
+
+	OperationRegion (PXCS, PCI_Config, 0x40, 0xC0)
+	Field (PXCS, AnyAcc, NoLock, Preserve)
+	{
+		Offset(0x12),
+		,	13,
+		LASX,	1,
+		Offset(0x1A),
+		ABPX,	1,
+		,	2,
+		PDCX,	1,
+		,	2,
+		PDSX,	1,
+		,	1,
+		Offset(0x20),
+		,	16,
+		PSPX,	1,
+	}
+
+	Device (PXSX)
+	{
+		Name (_ADR, 0x00000000)
+		Name (_PRW, Package() {9,3})
+	}
 
 	Method (_PRT)
 	{
@@ -71,6 +146,31 @@ Device (RP03)
 Device (RP04)
 {
 	Name (_ADR, 0x001c0003)
+	Name (_PRW, Package() {9, 3})
+
+	OperationRegion (PXCS, PCI_Config, 0x40, 0xC0)
+	Field (PXCS, AnyAcc, NoLock, Preserve)
+	{
+		Offset(0x12),
+		,	13,
+		LASX,	1,
+		Offset(0x1A),
+		ABPX,	1,
+		,	2,
+		PDCX,	1,
+		,	2,
+		PDSX,	1,
+		,	1,
+		Offset(0x20),
+		,	16,
+		PSPX,	1,
+	}
+
+	Device (PXSX)
+	{
+		Name (_ADR, 0x00000000)
+		Name (_PRW, Package() {9,3})
+	}
 
 	Method (_PRT)
 	{

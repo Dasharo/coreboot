@@ -156,8 +156,12 @@ static void generate_p_state_entries(int core)
 	vid_max = pattrs->iacore_vids[IACORE_MAX];
 	vid_min = pattrs->iacore_vids[IACORE_LFM];
 
-	/* Set P-states coordination type based on MSR disable bit */
-	coord_type = (pattrs->num_cpus > 2) ? SW_ALL : HW_ALL;
+	/*
+	 * Set P-states coordination type based on MSR disable bit.
+	 * We disable SINGLE_PCTL and INDP_AUTOCM in core_msr_script,
+	 * so we can only use HW_ALL(using MIN_CLIP) per BWG.
+	 */
+	coord_type = HW_ALL;
 
 	/* Max Non-Turbo Frequency */
 	clock_max = (ratio_max * pattrs->bclk_khz) / 1000;
@@ -175,7 +179,7 @@ static void generate_p_state_entries(int core)
 	acpigen_write_PPC_NVS();
 
 	/* Write PSD indicating configured coordination type */
-	acpigen_write_PSD_package(core, 1, coord_type);
+	acpigen_write_PSD_package(0, pattrs->num_cpus, coord_type);
 
 	/* Add P-state entries in _PSS table */
 	acpigen_write_name("_PSS");

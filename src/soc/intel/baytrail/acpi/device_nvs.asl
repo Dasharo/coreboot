@@ -22,6 +22,7 @@ Field (DNVS, ByteAcc, NoLock, Preserve)
 	C1EN,	8,	/* SDIO Enable */
 	C2EN,	8,	/* SD Card Enable */
 	LPEN,	8,	/* LPE Enable */
+	UOEN,	8,	/* USB OTG Enable */
 
 	/* BAR 0 */
 
@@ -43,6 +44,7 @@ Field (DNVS, ByteAcc, NoLock, Preserve)
 	C1B0,	32,	/* SDIO BAR0 */
 	C2B0,	32,	/* SD Card BAR0 */
 	LPB0,	32,	/* LPE BAR0 */
+	UOB0,	32,	/* USB OTG BAR0 */
 
 	/* BAR 1 */
 
@@ -64,6 +66,7 @@ Field (DNVS, ByteAcc, NoLock, Preserve)
 	C1B1,	32,	/* SDIO BAR1 */
 	C2B1,	32,	/* SD Card BAR1 */
 	LPB1,	32,	/* LPE BAR1 */
+	UOB1,	32,	/* USB OTG BAR1 */
 
 	/* Extra */
 

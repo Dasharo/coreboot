@@ -53,6 +53,7 @@ struct soc_intel_baytrail_config {
 	int lpss_acpi_mode;
 	int scc_acpi_mode;
 	int lpe_acpi_mode;
+	int otg_acpi_mode;
 
 	/* Allow PCIe devices to wake system from suspend. */
 	int pcie_wake_enable;
