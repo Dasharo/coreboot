@@ -6,6 +6,7 @@ romstage-y += variants/$(VARIANT_DIR)/gpio.c
 romstage-y += variants/$(VARIANT_DIR)/romstage_fsp_params.c
 
 ramstage-y += variants/$(VARIANT_DIR)/mainboard.c
+ramstage-y += variants/$(VARIANT_DIR)/hda_verb.c
 
 bootblock-y += die.c
 romstage-y += die.c

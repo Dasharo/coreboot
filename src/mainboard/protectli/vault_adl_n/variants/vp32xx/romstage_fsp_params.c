@@ -5,7 +5,7 @@
 #include <soc/meminit.h>
 #include <soc/gpio.h>
 
-#include "gpio.h"
+#include "../../gpio.h"
 
 static const struct mb_cfg ddr5_mem_config = {
 	.type = MEM_TYPE_DDR5,

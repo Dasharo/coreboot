@@ -2,7 +2,7 @@
 
 #include <gpio.h>
 
-#include "gpio.h"
+#include "../../gpio.h"
 
 #ifndef PAD_CFG_GPIO_BIDIRECT
 #define PAD_CFG_GPIO_BIDIRECT(pad, val, pull, rst, trig, own)		\
