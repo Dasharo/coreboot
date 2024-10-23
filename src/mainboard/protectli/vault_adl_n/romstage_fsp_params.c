@@ -4,8 +4,7 @@
 #include <soc/romstage.h>
 #include <soc/meminit.h>
 #include <soc/gpio.h>
-
-#include "gpio.h"
+#include <variant/gpio.h>
 
 static const struct mb_cfg ddr5_mem_config = {
 	.type = MEM_TYPE_DDR5,
