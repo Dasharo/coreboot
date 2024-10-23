@@ -27,6 +27,8 @@
 // When command register is 0, command is complete
 #define CMD_FINISHED 0
 
+#define SPI_TIMEOUT_1S	1000
+
 static inline uint8_t system76_ec_read(uint8_t addr)
 {
 	return inb(SYSTEM76_EC_BASE + (uint16_t)addr);
@@ -224,7 +226,7 @@ static uint8_t ec_spi_reset(void)
 {
 	uint8_t reset_cmd = CMD_SPI_FLAG_DISABLE | CMD_SPI_FLAG_SCRATCH;
 
-	return system76_ec_smfi_cmd(CMD_SPI, 1, &reset_cmd);
+	return system76_ec_smfi_cmd(CMD_SPI, sizeof(reset_cmd), &reset_cmd);
 }
 
 #define SPI_ACCESS_SIZE 252
@@ -290,7 +292,8 @@ static int ec_spi_bus_write(uint8_t *data, uint8_t len)
 		for (i = 0; i < write_cmd[1]; ++i)
 			system76_ec_write(REG_DATA + 2 + i, data[addr + i]);
 
-		if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(write_cmd), write_cmd)))
+		rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(write_cmd), write_cmd);
+		if (rv)
 			return -rv;
 
 		if (system76_ec_read(REG_DATA + 1) != write_cmd[1])
@@ -305,7 +308,8 @@ static int ec_spi_bus_write(uint8_t *data, uint8_t len)
 	for (i = 0; i < write_cmd[1]; i++)
 		system76_ec_write(REG_DATA + 2 + i, data[addr + i]);
 
-	if ((rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(write_cmd), write_cmd)))
+	rv = system76_ec_smfi_cmd(CMD_SPI, ARRAY_SIZE(write_cmd), write_cmd);
+	if (rv)
 		return -rv;
 
 	if (system76_ec_read(REG_DATA + 1) != write_cmd[1])
@@ -319,64 +323,83 @@ static int ec_spi_cmd_status(void)
 	int rv;
 	uint8_t cmd;
 
-	if ((rv = ec_spi_reset()))
+	rv = ec_spi_reset();
+	if (rv)
 		return rv;
 
 	cmd = 0x05; /* SPI Read Status */
 
-	if ((rv = ec_spi_bus_write(&cmd, 1)))
+	rv = ec_spi_bus_write(&cmd, sizeof(cmd));
+	if (rv)
 		return rv;
 
-	if ((rv = ec_spi_bus_read(&cmd, 1)))
+	rv = ec_spi_bus_read(&cmd, sizeof(cmd));
+	if (rv)
 		return rv;
 
 	return cmd;
 }
 
-static int ec_spi_cmd_write_enable(void)
+static int ec_spi_wait_status(uint8_t mask, uint8_t value)
 {
-	int status, rv;
-	uint8_t cmd;
+	struct stopwatch sw;
+	int status;
 
-	if ((rv = ec_spi_reset()))
-		return rv;
+	status = ec_spi_cmd_status();
+	stopwatch_init_msecs_expire(&sw, SPI_TIMEOUT_1S);
 
-	cmd = 0x06; /* SPI Write Enable */
+	while (status > 0 && (status & mask) != value) {
+		if (stopwatch_expired(&sw))
+			return -1;
 
-	if ((rv = ec_spi_bus_write(&cmd, 1)))
-		return rv;
+		mdelay(50);
 
-	do {
 		status = ec_spi_cmd_status();
-	} while (status > 0 && (status & 3) != 2);
+	}
 
 	return 0;
 }
 
-static int ec_spi_cmd_write_disable(void)
+static int ec_spi_cmd_write_enable(void)
 {
-	int status, rv;
+	int rv;
 	uint8_t cmd;
 
-	if ((rv = ec_spi_reset()))
+	rv = ec_spi_reset();
+	if (rv)
+		return rv;
+
+	cmd = 0x06; /* SPI Write Enable */
+
+	rv = ec_spi_bus_write(&cmd, sizeof(cmd));
+	if (rv)
+		return rv;
+
+	return ec_spi_wait_status(3, 2);
+}
+
+static int ec_spi_cmd_write_disable(void)
+{
+	int rv;
+	uint8_t cmd;
+
+	rv = ec_spi_reset();
+	if (rv)
 		return rv;
 
 	cmd = 0x04; /* SPI Write Disable */
 
-	if ((rv = ec_spi_bus_write(&cmd, 1)))
+	rv = ec_spi_bus_write(&cmd, sizeof(cmd));
+	if (rv)
 		return rv;
 
-	do {
-		status = ec_spi_cmd_status();
-	} while (status > 0 && (status & 3) != 0);
-
-	return 0;
+	return ec_spi_wait_status(3, 0);
 }
 
 /* Erase a sector at addr. Returns 0 on success <0 on error. */
 static int ec_spi_erase_sector(uint32_t addr)
 {
-	int status, rv;
+	int rv;
 	uint8_t buf[4] = {
 		[0] = 0xD7, /* SPI Sector Erase */
 		[1] = (addr >> 16) & 0xFF,
@@ -384,20 +407,24 @@ static int ec_spi_erase_sector(uint32_t addr)
 		[3] = addr & 0xFF,
 	};
 
-	if ((rv = ec_spi_cmd_write_enable()))
+	rv = ec_spi_cmd_write_enable();
+	if (rv)
 		return rv;
 
-	if ((rv = ec_spi_reset()))
+	rv = ec_spi_reset();
+	if (rv)
 		return rv;
 
-	if ((rv = ec_spi_bus_write(buf, 4)))
+	rv = ec_spi_bus_write(buf, ARRAY_SIZE(buf));
+	if (rv)
 		return rv;
 
-	do {
-		status = ec_spi_cmd_status();
-	} while (status > 0 && (status & 1) != 0);
+	rv = ec_spi_wait_status(1, 0);
+	if (rv)
+		return rv;
 
-	if ((rv = ec_spi_cmd_write_disable()))
+	rv = ec_spi_cmd_write_disable();
+	if (rv)
 		return rv;
 
 	return 0;
@@ -413,9 +440,11 @@ static int ec_spi_erase_chip(void)
 	int rv;
 	uint32_t addr;
 
-	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE; addr += SPI_SECTOR_SIZE)
-		if ((rv = ec_spi_erase_sector(addr)))
+	for (addr = 0; addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE; addr += SPI_SECTOR_SIZE) {
+		rv = ec_spi_erase_sector(addr);
+		if (rv)
 			return rv;
+	}
 
 	return addr;
 }
@@ -426,18 +455,20 @@ static int ec_spi_erase_chip(void)
  */
 static int ec_spi_image_write(uint8_t *image, ssize_t size)
 {
-	int status, rv;
+	int rv;
 	uint32_t addr;
 	uint8_t buf[6] = {0};
 
-	if ((rv = ec_spi_cmd_write_enable()))
+	rv = ec_spi_cmd_write_enable();
+	if (rv)
 		return rv;
 
 	/* SPI AAI Word Program */
 	buf[0] = 0xAD;
 
 	for (addr = 0; addr < size; addr += 2) {
-		if ((rv = ec_spi_reset()))
+		rv = ec_spi_reset();
+		if (rv)
 			return rv;
 
 		if (addr == 0) {
@@ -456,12 +487,13 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 		if (rv)
 			return rv;
 
-		do {
-			status = ec_spi_cmd_status();
-		} while (status > 0 && (status & 1) != 0);
+		rv = ec_spi_wait_status(1, 0);
+		if (rv)
+			return rv;
 	}
 
-	if ((rv = ec_spi_cmd_write_disable()))
+	rv = ec_spi_cmd_write_disable();
+	if (rv)
 		return rv;
 
 	return addr;
@@ -470,7 +502,7 @@ static int ec_spi_image_write(uint8_t *image, ssize_t size)
 /* Read a sector into dest. Returns 0 on success and <0 on error. */
 static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 {
-	int status, rv;
+	int rv;
 	uint8_t buf[5] = {
 		[0] = 0x0B, /* SPI Read */
 		[1] = (addr >> 16) & 0xFF,
@@ -479,17 +511,20 @@ static int ec_spi_read_sector(uint8_t *dest, uint32_t addr)
 		[4] = 0,
 	};
 
-	if ((rv = ec_spi_reset()))
+	rv = ec_spi_reset();
+	if (rv)
 		return rv;
 
-	do {
-		status = ec_spi_cmd_status();
-	} while (status > 0 && (status & 1) != 0);
+//	rv = ec_spi_wait_status(1, 0);
+//	if (rv)
+//		return rv;
 
-	if ((rv = ec_spi_bus_write(buf, 5)))
+	rv = ec_spi_bus_write(buf, ARRAY_SIZE(buf));
+	if (rv)
 		return rv;
 
-	if ((rv = ec_spi_bus_read(dest, SPI_SECTOR_SIZE)))
+	rv = ec_spi_bus_read(dest, SPI_SECTOR_SIZE);
+	if (rv)
 		return rv;
 
 	return 0;
@@ -506,24 +541,30 @@ static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 	if (!sector)
 		return -1;
 	rv = 0;
+	addr = 0;
 
-	for (addr = 0;
-	     addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE && addr + SPI_SECTOR_SIZE < image_sz;
-	     addr += SPI_SECTOR_SIZE) {
-		if ((rv = ec_spi_read_sector(sector, addr)))
+	while ((addr < CONFIG_EC_SYSTEM76_EC_FLASH_SIZE) &&
+	       ((addr + SPI_SECTOR_SIZE) < image_sz)) {
+		rv = ec_spi_read_sector(sector, addr);
+		if (rv)
 			goto exit;
 
-		if ((rv = -memcmp(sector, image + addr, SPI_SECTOR_SIZE)))
+		rv = -memcmp(sector, image + addr, SPI_SECTOR_SIZE);
+		if (rv)
 			goto exit;
+
+		addr += SPI_SECTOR_SIZE;
 	}
 
 	if (addr == image_sz)
 		goto exit;
 
-	if ((rv = ec_spi_read_sector(sector, addr)))
+	rv = ec_spi_read_sector(sector, addr);
+	if (rv)
 		goto exit;
 
-	if ((rv = -memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE)))
+	rv = -memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE);
+	if (rv)
 		goto exit;
 
 exit:
@@ -541,7 +582,7 @@ static void system76_ec_fw_sync(void *unused)
 	char cur_board_str[64];
 	char cur_version_str[64];
 	uint8_t smfi_cmd;
-	int status, rv;
+	int rv;
 
 	if (!CONFIG(EC_SYSTEM76_EC_UPDATE))
 		return;
@@ -557,7 +598,8 @@ static void system76_ec_fw_sync(void *unused)
 		return;
 	}
 
-	if (!(image_sz = cbfs_load("ec.rom", image, CONFIG_EC_SYSTEM76_EC_FLASH_SIZE))) {
+	image_sz = cbfs_load("ec.rom", image, CONFIG_EC_SYSTEM76_EC_FLASH_SIZE);
+	if (!image_sz) {
 		printk(BIOS_ERR, "EC: failed to load update from CBFS.");
 		goto cleanup;
 	}
@@ -565,7 +607,7 @@ static void system76_ec_fw_sync(void *unused)
 	printk(BIOS_DEBUG, "EC: update found (%ld bytes)\n", image_sz);
 
 	/* Sanity checks */
-	if (!image_sz || image_sz % 2 || image_sz > CONFIG_EC_SYSTEM76_EC_FLASH_SIZE) {
+	if (image_sz % 2 || image_sz > CONFIG_EC_SYSTEM76_EC_FLASH_SIZE) {
 		printk(BIOS_ERR, "EC: incorrect update size.\n");
 		goto cleanup;
 	}
@@ -650,12 +692,10 @@ static void system76_ec_fw_sync(void *unused)
 	}
 	printk(BIOS_DEBUG, "EC: wrote %d bytes\n", rv);
 
-	rv = ec_spi_image_verify((uint8_t *)image, image_sz);
-	if (rv < 0) {
+	if (ec_spi_image_verify((uint8_t *)image, image_sz))
 		printk(BIOS_ALERT, "EC: update verification failed!\n");
-	} else {
+	else
 		printk(BIOS_DEBUG, "EC: update verified.\n");
-	}
 
 	smfi_cmd = CMD_SPI_FLAG_DISABLE;
 	if (system76_ec_smfi_cmd(CMD_SPI, 1, &smfi_cmd)) {
@@ -663,19 +703,15 @@ static void system76_ec_fw_sync(void *unused)
 		goto cleanup;
 	}
 
-	/* Wait for busy bit to clear */
-	do {
-		status = ec_spi_cmd_status();
-	} while (status > 0 && (status & 1) != 0);
+	if (ec_spi_wait_status(1, 0))
+		goto cleanup;
 
 	/* Wait 5 seconds for good measure */
 	mdelay(5000);
 
 	smfi_cmd = 0;
-	if (system76_ec_smfi_cmd(CMD_RESET, 1, &smfi_cmd)) {
+	if (system76_ec_smfi_cmd(CMD_RESET, 1, &smfi_cmd))
 		printk(BIOS_ERR, "EC: failed to trigger reset!\n");
-		goto cleanup;
-	}
 
 cleanup:
 	free(image);
