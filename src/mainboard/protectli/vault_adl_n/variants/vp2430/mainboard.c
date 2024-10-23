@@ -11,34 +11,7 @@
 
 const char *smbios_mainboard_product_name(void)
 {
-	u32 tmp[13];
-	const char *str = "Unknown Processor Name";
-
-	if (cpu_have_cpuid()) {
-		int i;
-		struct cpuid_result res;
-		if (cpu_cpuid_extended_level() >= 0x80000004) {
-			int j = 0;
-			for (i = 0; i < 3; i++) {
-				res = cpuid(0x80000002 + i);
-				tmp[j++] = res.eax;
-				tmp[j++] = res.ebx;
-				tmp[j++] = res.ecx;
-				tmp[j++] = res.edx;
-			}
-			tmp[12] = 0;
-			str = (const char *)tmp;
-		}
-	}
-
-	if (strstr(str, "N100") != NULL)
-		return "VP3210";
-	else if (strstr(str, "N200") != NULL)
-		return "VP3220";
-	else if (strstr(str, "N305") != NULL)
-		return "VP3230";
-	else
-		return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
+	return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
 }
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
