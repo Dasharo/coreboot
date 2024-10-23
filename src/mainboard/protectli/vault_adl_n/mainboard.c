@@ -11,6 +11,10 @@
 
 const char *smbios_mainboard_product_name(void)
 {
+	if (CONFIG(BOARD_PROTECTLI_VP2430)) {
+		return "VP2430";
+	}
+
 	u32 tmp[13];
 	const char *str = "Unknown Processor Name";
 
@@ -52,13 +56,20 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	// Max payload 256B
 	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
 
-	// CLKREQs connected only to RP3 and RP7
-	params->PcieRpEnableCpm[2] = 1;
-	params->PcieRpEnableCpm[6] = 1;
+	if (CONFIG(BOARD_PROTECTLI_VP32XX)) {
+		// CLKREQs connected only to RP3 and RP7
+		params->PcieRpEnableCpm[2] = 1;
+		params->PcieRpEnableCpm[6] = 1;
+	}
 
 	// Enable port reset message on Type-C ports
 	params->PortResetMessageEnable[4] = 1;
 	params->PortResetMessageEnable[5] = 1;
+
+	if (CONFIG(BOARD_PROTECTLI_VP2430)) {
+		// PMC-PD controller
+		params->PmcPdEnable = 1;
+	}
 
 	// IOM USB config
 	params->PchUsbOverCurrentEnable = 0;
