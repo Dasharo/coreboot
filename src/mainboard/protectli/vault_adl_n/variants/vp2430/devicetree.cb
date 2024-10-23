@@ -151,6 +151,7 @@ chip soc/intel/alderlake
 		end
 
 		# NVMe x1 link or ASMedia SATA Controller
+		# TODO: not found in cb log, disable
 		device ref pcie_rp1 on
 			register "pch_pcie_rp[PCH_RP(1)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
@@ -186,6 +187,7 @@ chip soc/intel/alderlake
 		end
 
 		# NVMe x4 link
+		# TODO: not found in cb log, disable, locate the proper one
 		device ref pcie_rp9 on
 			register "pch_pcie_rp[PCH_RP(9)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
