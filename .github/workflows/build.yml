@@ -142,7 +142,7 @@ jobs:
     strategy:
       matrix:
         vendor: [ protectli ]
-        model: [ vp66xx, vp46xx, vp32xx, vp2420, vp2410, V1210, V1211, V1410, V1610 ]
+        model: [ vp66xx, vp46xx, vp32xx, vp2430, vp2420, vp2410, V1210, V1211, V1410, V1610 ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -288,6 +288,20 @@ jobs:
       matrix:
         vendor: [ protectli ]
         model: [ vp32xx ]
+  deploy_protectli_vp2430:
+    if: startsWith(github.ref, 'refs/tags/protectli_vp2430_')
+    needs: build_protectli
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: protectli
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ protectli ]
+        model: [ vp2430 ]
   deploy_protectli_jsl:
     if: startsWith(github.ref, 'refs/tags/protectli_vault_jsl')
     needs: build_protectli
