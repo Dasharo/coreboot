@@ -229,11 +229,7 @@ chip soc/intel/alderlake
 					irq 0x70 = 4
 					irq 0xf1 = 0x52 # IRQ low level
 				end
-				device pnp 2e.2 on	# COM 2
-					io 0x60 = 0x2f8
-					irq 0x70 = 3
-					irq 0xf1 = 0x52 # IRQ low level
-				end
+				device pnp 2e.2 off end	# COM 2
 				device pnp 2e.4 on	# Environment Controller
 					io 0x60 = 0xa20
 					io 0x62 = 0xa10
