@@ -5,13 +5,13 @@
 #include <superio/ite/common/ite.h>
 #include <superio/ite/it8659e/it8659e.h>
 
-#if CONFIG_UART_FOR_CONSOLE == 0
-#define UART_DEV PNP_DEV(0x2e, IT8659E_SP1)
-#elif CONFIG_UART_FOR_CONSOLE == 1
+//#if CONFIG_UART_FOR_CONSOLE == 0
+//#define UART_DEV PNP_DEV(0x2e, IT8659E_SP1)
+//#elif CONFIG_UART_FOR_CONSOLE == 1
 #define UART_DEV PNP_DEV(0x2e, IT8659E_SP2)
-#else
-#error "Wrong UART_FOR_CONSOLE setting"
-#endif
+//#else
+//#error "Wrong UART_FOR_CONSOLE setting"
+//#endif
 
 #define GPIO_DEV PNP_DEV(0x2e, IT8659E_GPIO)
 
