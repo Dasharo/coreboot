@@ -24,6 +24,13 @@ config MAINBOARD_PART_NUMBER
 	default "VP32XX" if BOARD_PROTECTLI_VP32XX
 	default "VP2430" if BOARD_PROTECTLI_VP2430
 
+config VARIANT_DIR
+	default "vp32xx" if BOARD_PROTECTLI_VP32XX
+	default "vp2430" if BOARD_PROTECTLI_VP2430
+
+config DEVICETREE
+	default "variants/\$(CONFIG_VARIANT_DIR)/devicetree.cb"
+
 config MAINBOARD_VENDOR
 	default "Protectli"
 

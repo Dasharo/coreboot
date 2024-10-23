@@ -1,11 +1,13 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
-bootblock-y += bootblock.c
+bootblock-y += variants/$(VARIANT_DIR)/bootblock.c
 
-romstage-y += gpio.c
-romstage-y += romstage_fsp_params.c
+romstage-y += variants/$(VARIANT_DIR)/gpio.c
+romstage-y += variants/$(VARIANT_DIR)/romstage_fsp_params.c
 
-ramstage-y += mainboard.c
+ramstage-y += variants/$(VARIANT_DIR)/mainboard.c
 
 bootblock-y += die.c
 romstage-y += die.c
+
+subdirs-y += variants/$(VARIANT_DIR)
