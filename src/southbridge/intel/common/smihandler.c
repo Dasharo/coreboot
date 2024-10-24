@@ -392,7 +392,8 @@ static void southbridge_smi_tco(void)
 
 		bios_cntl = pci_read_config8(PCI_DEV(0, 0x1f, 0), BIOS_CNTL);
 
-		if (bios_cntl & BIOS_CNTL_BIOSWE) {
+		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted() &&
+		    (bios_cntl & BIOS_CNTL_BIOSWE)) {
 			/* BWE is RW, so the SMI was caused by a
 			 * write to BWE, not by a write to the BIOS
 			 */
