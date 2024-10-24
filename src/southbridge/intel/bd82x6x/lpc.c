@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -159,8 +160,7 @@ static void pch_power_options(struct device *dev)
 	 *
 	 * If the option is not existent (Laptops), use Kconfig setting.
 	 */
-	const unsigned int pwr_on = get_uint_option("power_on_after_fail",
-					  CONFIG_MAINBOARD_POWER_FAILURE_STATE);
+	const unsigned int pwr_on = dasharo_get_power_on_after_fail();
 
 	reg16 = pci_read_config16(dev, GEN_PMCON_3);
 	reg16 &= 0xfffe;

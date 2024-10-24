@@ -2,6 +2,7 @@
 
 #include <bootstate.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci_ops.h>
 #include <drivers/intel/gma/int15.h>
@@ -149,6 +150,15 @@ static void mainboard_enable(struct device *dev)
 	}
 }
 
+static void mainboard_init(void *chip_info)
+{
+	struct device *ps2_dev = dev_find_slot_pnp(0x2e, SCH5545_LDN_KBC);
+	bool ps2_en = get_ps2_option();
+
+	ps2_dev->enabled = ps2_en & 1;
+	printk(BIOS_DEBUG, "PS2 Controller state: %d\n", ps2_en);
+}
+
 static void mainboard_final(void *chip_info)
 {
 	int pin_sts;
@@ -186,6 +196,7 @@ static void mainboard_final(void *chip_info)
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
+	.init = mainboard_init,
 };
 
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, sch5545_ec_hwm_init, NULL);
