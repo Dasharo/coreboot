@@ -6,6 +6,7 @@
 #include <acpi/acpi.h>
 #include <console/console.h>
 #include <cpu/x86/cache.h>
+#include <dasharo/options.h>
 #include <device/pci_def.h>
 #include <cpu/x86/smm.h>
 #include <cpu/intel/em64t101_save_state.h>
@@ -99,8 +100,7 @@ static int power_on_after_fail(void)
 	u8 tmp70, tmp72;
 	tmp70 = inb(0x70);
 	tmp72 = inb(0x72);
-	const unsigned int s5pwr = get_uint_option("power_on_after_fail",
-					 CONFIG_MAINBOARD_POWER_FAILURE_STATE);
+	const unsigned int s5pwr = dasharo_get_power_on_after_fail();
 	outb(tmp70, 0x70);
 	outb(tmp72, 0x72);
 
