@@ -249,12 +249,30 @@ static void southbridge_smi_gsmi(void)
 	*ret = gsmi_exec(sub_command, param);
 }
 
+static bool spi_get_wp(void)
+{
+	return !(pci_read_config8(PCI_DEV(0, 31, 0), 0xdc) & 1);
+}
+
+static void spi_set_wp(bool enable)
+{
+	uint8_t bios_cntl = pci_read_config8(PCI_DEV(0, 31, 0), 0xdc);
+
+	if (enable)
+		bios_cntl &= ~1;
+	else
+		bios_cntl |= 1;
+
+	pci_write_config8(PCI_DEV(0, 31, 0), 0xdc, bios_cntl);
+}
+
 static void southbridge_smi_store(void)
 {
 	u8 sub_command, ret;
 	em64t101_smm_state_save_area_t *io_smi =
 		smi_apmc_find_state_save(APM_CNT_SMMSTORE);
 	uintptr_t reg_rbx;
+	bool wp_enabled;
 
 	if (!io_smi)
 		return;
@@ -264,9 +282,16 @@ static void southbridge_smi_store(void)
 	/* Parameter buffer in EBX */
 	reg_rbx = (uintptr_t)io_smi->rbx;
 
+	wp_enabled = spi_get_wp();
+
+	spi_set_wp(false);
+
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)reg_rbx);
 	io_smi->rax = ret;
+
+	if (wp_enabled)
+		spi_set_wp(true);
 }
 
 static int mainboard_finalized = 0;
@@ -375,7 +400,7 @@ static void southbridge_smi_tco(void)
 
 		bios_cntl = pci_read_config8(PCI_DEV(0, 0x1f, 0), 0xdc);
 
-		if (bios_cntl & 1) {
+		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted() && (bios_cntl & 1)) {
 			/* BWE is RW, so the SMI was caused by a
 			 * write to BWE, not by a write to the BIOS
 			 */

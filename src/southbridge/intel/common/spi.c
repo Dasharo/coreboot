@@ -7,6 +7,7 @@
 #include <string.h>
 #include <bootstate.h>
 #include <commonlib/helpers.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -1103,7 +1104,7 @@ void spi_finalize_ops(void)
 	}
 	writew_(optype, cntlr.optype);
 
-	spi_set_smm_only_flashing(CONFIG(BOOTMEDIA_SMM_BWP));
+	spi_set_smm_only_flashing(is_smm_bwp_permitted());
 }
 
 __weak void intel_southbridge_override_spi(struct intel_swseq_spi_config *spi_config)
