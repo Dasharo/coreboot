@@ -97,6 +97,12 @@ static void bios_mmap_init(void)
 	/* Read the offset and size of BIOS region in the SPI flash address space. */
 	bios_start = fast_spi_get_bios_region(&bios_size);
 
+	/* Optionally extend BIOS region to the beginning of the flash. */
+	if (CONFIG(EXT_BIOS_FILL_UP)) {
+		bios_size += bios_start;
+		bios_start = 0;
+	}
+
 	/*
 	 * By default, fixed decode window (maximum size 16MiB) is mapped just below the 4G
 	 * boundary. This window maps the top part of the BIOS region in the SPI flash address
