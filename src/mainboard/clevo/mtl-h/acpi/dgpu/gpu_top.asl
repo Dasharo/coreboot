@@ -90,10 +90,3 @@ Scope (\_SB.PCI0.RP12)
 		}
 	}
 }
-
-Scope (\_SB) {
-	Device(NPCF) {
-		#include "utility.asl"
-		#include "nvpcf.asl"
-	}
-}
