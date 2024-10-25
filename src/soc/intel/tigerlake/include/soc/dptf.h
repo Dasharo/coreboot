@@ -10,5 +10,9 @@
 #define DPTF_GEN_DEVICE		"INTC1043"
 /* Fan ACPI Device ID */
 #define DPTF_FAN_DEVICE		"INTC1044"
+/* TPWR ACPI Device ID */
+#define DPTF_TPWR_DEVICE	"INTC1047"
+/* BAT1 ACPI Device ID */
+#define DPTF_BAT1_DEVICE	"INTC1050"
 
 #endif /* _SOC_DPTF_H_ */
