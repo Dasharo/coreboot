@@ -7,6 +7,7 @@ Scope (\_SB) {
 	#include "hid.asl"
 	#include "lid.asl"
 	#include "s76.asl"
+	#include "dtt.asl"
 }
 
 Device (\_SB.PCI0.LPCB.EC0)
@@ -185,6 +186,7 @@ Device (\_SB.PCI0.LPCB.EC0)
 		Printf ("EC: AC Detect")
 		^^^^AC.ACFG = ADP
 		Notify (AC, 0x80) // Status Change
+		Notify (TPWR, 0x81) // Power State Change
 		If (BAT0)
 		{
 			Notify (^^^^BAT0, 0x81) // Information Change

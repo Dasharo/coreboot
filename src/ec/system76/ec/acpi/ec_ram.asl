@@ -44,6 +44,7 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	RPM2, 16,	// Fan 2 RPM
 	Offset (0xD4),
 	GPUD, 8,	// GPU D-notify level
+	APWR, 32,	// AC adapter power
 	Offset (0xD9),
 	AIRP, 8,	// Airplane mode LED
 	WINF, 8,	// Enable ACPI brightness controls
