@@ -544,11 +544,13 @@ static const struct pad_config gpio_table[] = {
 
 	/* GPP_H08 - GPIO */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_H08, 0, DEEP),
+	/* PAD_CFG_GPO(GPP_H08, 0, DEEP), */
+	PAD_CFG_NF(GPP_H08, NONE, DEEP, NF1), /* UART0_RXD */
 
 	/* GPP_H09 - GPIO */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
-	PAD_CFG_GPO(GPP_H09, 0, DEEP),
+	/* PAD_CFG_GPO(GPP_H09, 0, DEEP), */
+	PAD_CFG_NF(GPP_H09, NONE, DEEP, NF1), /* UART0_TXD */
 
 	/* GPP_H10 - GPIO */
 	/* DW0: 0x44000200, DW1: 0x00000000 */
