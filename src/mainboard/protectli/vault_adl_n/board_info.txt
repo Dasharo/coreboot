@@ -1,5 +1,5 @@
 Category: sbc
-Board URL: TBD
+Board URL: https://eu.protectli.com/product/vp3230/
 ROM IC: Macronix KH25L12835F
 ROM package: SOIC8-8
 ROM socketed: no
