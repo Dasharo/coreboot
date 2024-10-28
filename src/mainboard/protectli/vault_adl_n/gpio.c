@@ -41,10 +41,8 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_B14 - SPKR */
 	PAD_CFG_NF(GPP_B14, NONE, PLTRST, NF1),
 	PAD_NC(GPP_B15, NONE),
-	/* GPP_B16 - I2C5_SDA */
-	PAD_CFG_NF(GPP_B16, NONE, DEEP, NF2),
-	/* GPP_B17 - I2C5_SCL */
-	PAD_CFG_NF(GPP_B17, NONE, DEEP, NF2),
+	PAD_NC(GPP_B16, NONE),
+	PAD_NC(GPP_B17, NONE),
 	/* GPP_B18 - GPIO */
 	PAD_CFG_GPO(GPP_B18, 0, DEEP),
 	PAD_NC(GPP_B19, NONE),
@@ -72,8 +70,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_A4, UP_20K, DEEP, NF1),
 	/* GPP_A5 - ESPI_ALERT0# */
 	PAD_CFG_NF(GPP_A5, UP_20K, DEEP, NF1),
-	/* GPP_A6 - ESPI_ALERT1# */
-	PAD_CFG_NF(GPP_A6, UP_20K, DEEP, NF1),
+	PAD_NC(GPP_A6, NONE),
 	PAD_NC(GPP_A7, NONE),
 	PAD_NC(GPP_A8, NONE),
 	/* GPP_A9 - ESPI_CLK */
@@ -167,6 +164,10 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_H5, NONE),
 	PAD_NC(GPP_H6, NONE),
 	PAD_NC(GPP_H7, NONE),
+	/* GPP_H8 - I2C4_SDA */
+	PAD_CFG_NF(GPP_H8, NONE, DEEP, NF1),
+	/* GPP_H9 - I2C4_SCL */
+	PAD_CFG_NF(GPP_H9, NONE, DEEP, NF1),
 	PAD_NC(GPP_H8, NONE),
 	PAD_NC(GPP_H9, NONE),
 	PAD_NC(GPP_H10, NONE),
@@ -367,6 +368,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_F13, NONE),
 	PAD_NC(GPP_F14, NONE),
 	PAD_NC(GPP_F15, NONE),
+	/* GPP_F15 - GPIO (5G Power_On_Off)*/
+	PAD_CFG_GPO(GPP_F15, 0, DEEP),
 	PAD_NC(GPP_F16, NONE),
 	PAD_NC(GPP_F17, NONE),
 	PAD_NC(GPP_F18, NONE),
