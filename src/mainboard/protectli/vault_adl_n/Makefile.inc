@@ -7,5 +7,5 @@ romstage-y += romstage_fsp_params.c
 
 ramstage-y += mainboard.c
 
-bootblock-y += die.c
-romstage-y += die.c
+all-y += die.c
+smm-y += die.c
