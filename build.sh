@@ -23,6 +23,8 @@ usage() {
   echo -e "\toptiplex_9010  - build Dasharo compatible with Dell OptiPlex 7010/9010"
   echo -e "\tqemu           - build Dasharo for QEMU Q35"
   echo -e "\tqemu_full      - build Dasharo for QEMU Q35 with all menus available"
+  echo -e "\tminnow_no_sb   - build Dasharo compatbile with Intel MinnowMax without TXE Secure Boot"
+  echo -e "\tminnow_sb      - build Dasharo compatbile with Intel MinnowMax with TXE Secure Boot"
 }
 
 SDKVER="2023-11-24_2731fa619b"
@@ -220,6 +222,41 @@ function build_qemu {
   fi
 }
 
+function build_minnowboard {
+  DEFCONFIG="configs/config.intel_minnowmax_$1"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+  SDKVER=v1.5.0
+
+  # checkout several submodules needed by these boards (some others are checked
+  # out by coreboot's Makefile)
+  git submodule update --init --force --checkout \
+      3rdparty/dasharo-blobs
+
+  docker run --rm -t -e USER_ID=$(id -u) -e GROUP=$(id -g) -e GROUP_ID=$(id -g) \
+    -v $PWD:/home/coreboot/coreboot -v $HOME/.ssh:/home/coreboot/.ssh \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot ghcr.io/dasharo/dasharo-sdk:$SDKVER \
+    /bin/bash -c "make distclean"
+
+  cp $DEFCONFIG .config
+
+  echo "Building Dasharo compatbile with Intel Minnowmax (version $FW_VERSION)"
+
+  docker run --rm -t -e USER_ID=$(id -u) -e GROUP=$(id -g) -e GROUP_ID=$(id -g) \
+    -v $PWD:/home/coreboot/coreboot -v $HOME/.ssh:/home/coreboot/.ssh \
+    -w /home/coreboot/coreboot ghcr.io/dasharo/dasharo-sdk:$SDKVER \
+    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+
+  cp build/coreboot.rom intel_minnowmax_${FW_VERSION}_$1.rom
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/intel_minnowmax_${FW_VERSION}_$1.rom"
+    sha256sum intel_minnowmax_${FW_VERSION}_$1.rom > intel_minnowmax_${FW_VERSION}_$1.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
 CMD="$1"
 
 case "$CMD" in
@@ -288,6 +325,12 @@ case "$CMD" in
         ;;
     "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" )
         build_qemu "_all_menus"
+        ;;
+    "minnow_no_sb" )
+        build_minnowboard "no_sb"
+        ;;
+    "minnow_sb" )
+        build_minnowboard "sb"
         ;;
     *)
         echo "Invalid command: \"$CMD\""

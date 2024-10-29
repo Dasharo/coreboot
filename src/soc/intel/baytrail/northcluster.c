@@ -84,8 +84,8 @@ static void nc_read_resources(struct device *dev)
 	smmrrl = (iosf_bunit_read(BUNIT_SMRRL) & 0xffff) * MiB;
 	smmrrh = ((iosf_bunit_read(BUNIT_SMRRH) & 0xffff) + 1) * MiB;
 
-	/* 0xc0000 -> smrrl - cacheable and usable */
-	ram_from_to(dev, index++, 0xc0000, smmrrl);
+	/* 1MB -> smrrl - cacheable and usable */
+	ram_from_to(dev, index++, 1 * MiB, smmrrl);
 
 	if (smmrrh > smmrrl)
 		reserved_ram_from_to(dev, index++, smmrrl, smmrrh);
@@ -123,6 +123,7 @@ static void nc_generate_ssdt(const struct device *dev)
 
 static struct device_operations nc_ops = {
 	.read_resources   = nc_read_resources,
+	.set_resources    = noop_set_resources,
 	.acpi_fill_ssdt   = nc_generate_ssdt,
 	.ops_pci          = &soc_pci_ops,
 };

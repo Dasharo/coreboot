@@ -25,6 +25,7 @@
 #include <device/device.h>
 #include <device/mmio.h>
 #include <device/pci.h>
+#include <device/resource.h>
 #include <drivers/crb/tpm.h>
 #include <drivers/uart/pl011.h>
 #include <security/tpm/tss.h>
@@ -1255,6 +1256,95 @@ static void acpi_create_wdat(acpi_header_t *header, void *unused)
 	header->length = current - (unsigned long)wdat;
 }
 
+void acpi_create_csrt(acpi_csrt_t *csrt,
+		      unsigned long (*acpi_fill_csrt)(acpi_csrt_t *csrt_struct,
+		      unsigned long current))
+{
+	acpi_header_t *header = &(csrt->header);
+	unsigned long current = (unsigned long)csrt + sizeof(acpi_csrt_t);
+
+	memset((void *)csrt, 0, sizeof(struct acpi_crat_header));
+
+	if (acpi_fill_header(header, "CSRT", CSRT, sizeof(acpi_csrt_t)) != CB_SUCCESS)
+		return;
+
+	current = acpi_fill_csrt(csrt, current);
+
+	/* (Re)calculate length and checksum. */
+	header->length = current - (unsigned long)csrt;
+	header->checksum = acpi_checksum((void *)csrt, header->length);
+}
+
+void acpi_write_csrt_group_hdr(unsigned long *current, const char vendor_id[4],
+					const char subvendor_id[4], u16 device_id,
+					u16 subdevice_id, u16 revision)
+{
+	struct acpi_csrt_group *group = (struct acpi_csrt_group *)*current;
+
+	memcpy(&group->vendor_id, vendor_id, 4);
+	memcpy(&group->subvendor_id, subvendor_id, 4);
+	group->device_id = device_id;
+	group->subdevice_id = subdevice_id;
+	group->revision = revision;
+	group->reserved = 0;
+	group->shared_info_length = 0;
+	group->length = sizeof(*group);
+
+	*current += sizeof(*group);
+}
+
+void acpi_write_csrt_shared_info(unsigned long *current, struct acpi_csrt_group *group,
+					  struct device *dev, unsigned int bar,
+					  u16 major_version, u16 minor_version,
+					  u32 gsi_interrupt, u8 interrupt_polarity,
+					  u8 interrupt_mode, u8 num_channels,
+					  u8 dma_address_width, u16 base_request_line,
+					  u16 num_handshake_signals, u32 max_block_size)
+
+{
+	struct acpi_csrt_shared_info *info = (struct acpi_csrt_shared_info *)*current;
+	struct resource *res = find_resource(dev, bar);
+
+	if (res) {
+		info->mmio_base_low = res->base;
+		info->mmio_base_high = res->base >> 32;
+	} else {
+		info->mmio_base_low = 0;
+		info->mmio_base_high = 0;
+	}
+
+	info->major_version = major_version;
+	info->minor_version = minor_version;
+	info->gsi_interrupt = gsi_interrupt;
+	info->interrupt_polarity = interrupt_polarity;
+	info->interrupt_mode = interrupt_mode;
+	info->num_channels = num_channels;
+	info->dma_address_width = dma_address_width;
+	info->base_request_line = base_request_line;
+	info->num_handshake_signals = num_handshake_signals;
+	info->max_block_size = max_block_size;
+
+	group->shared_info_length = sizeof(*info);
+	group->length += sizeof(*info);
+
+	*current += sizeof(*info);
+}
+
+void acpi_write_csrt_descriptor(unsigned long *current, struct acpi_csrt_group *group,
+					 u16 type, u16 subtype, const char uid[4])
+{
+	struct acpi_csrt_descriptor *desc = (struct acpi_csrt_descriptor *)*current;
+
+	desc->length = sizeof(*desc);
+	desc->type = type;
+	desc->subtype = subtype;
+	memcpy(&desc->uid, uid, 4);
+
+	group->length += sizeof(*desc);
+
+	*current += sizeof(*desc);
+}
+
 unsigned long acpi_create_lpi_desc_ncst(acpi_lpi_desc_ncst_t *lpi_desc, uint16_t uid)
 {
 	memset(lpi_desc, 0, sizeof(acpi_lpi_desc_ncst_t));
@@ -1811,6 +1901,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 1;
 	case CRAT:
 		return 1;
+	case CSRT:
+		return 0;
 	case LPIT: /* ACPI 5.1 up to 6.3: 0 */
 		return 0;
 	case SPCR:

@@ -14,7 +14,6 @@ config SOC_INTEL_BAYTRAIL
 	select SOUTHBRIDGE_INTEL_COMMON_RESET
 	select SOUTHBRIDGE_INTEL_COMMON_SMBUS
 	select SOUTHBRIDGE_INTEL_COMMON_SPI_SILVERMONT
-	select PCIEXP_ASPM
 	select PCIEXP_COMMON_CLOCK
 	select REG_SCRIPT
 	select RTC
@@ -33,6 +32,9 @@ config SOC_INTEL_BAYTRAIL
 	select TCO_SPACE_NOT_YET_SPLIT
 	select USE_DDR3
 	select UDK_2017_BINDING
+	select HAVE_CF9_RESET_PREPARE
+	select PARALLEL_MP_AP_WORK
+	select ACPI_S1_NOT_SUPPORTED
 	help
 	  Bay Trail M/D part support.
 
@@ -60,6 +62,16 @@ config SMM_TSEG_SIZE
 config SMM_RESERVED_SIZE
 	hex
 	default 0x100000
+
+config DISABLE_HPET
+	bool "Disable the HPET device"
+	default n
+	help
+	 Enable this to disable the HPET support.
+	 On BayTrail and Braswell/Cherry Trail platforms HPET halts
+	 when CPU enters deep C states. Select this opton to prevent
+	 the OS from using HPET as timer source, as it may lead to
+	 soft CPU lockups.
 
 config HAVE_MRC
 	bool "Add a System Agent binary"
@@ -161,9 +173,14 @@ config VGA_BIOS_ID
 	depends on VGA_BIOS
 	default "8086,0f31"
 
+config BAYTRAIL_FTPM
+	bool "Enable fTPM functionality in TXE"
+	default n
+
 config TXE_SECURE_BOOT
 	bool "Perform verified boot with TXE Secure Boot"
 	depends on !VBOOT
+	select FIXED_BOOTBLOCK_SIZE
 	default n
 	help
 	  The TXE on Baytrail SOC has Secure Boot capability. Choose this
@@ -255,16 +272,49 @@ config TXE_SB_SBM_MANIFEST_SVN
 
 if TXE_SECURE_BOOT
 
-# Put the microcode right after the manifest, so it will be verified by IBB
-# and accessible without walkcbfs ASM routine if CBFS_VERIFICATION is enabled.
-config CPU_MICROCODE_CBFS_LOC
-	hex
-	default 0xfffe1000
+# This address will be used by BSP to locate microcode in bootblock before
+# setting up CAR. With CBFS verification we cannot use walkcbfs ASM routine, so
+# put the microcode copy in the BOOTBLOCK FMAP region right after SB manifest
+# for use by BSP. APs will load microcode from CBFS file in COREBOOT region when
+# CBFS_VERIFICATION will be able to verify it already in ramstage. It is safe to
+# hardcode the address, because TXE will verify it together with IBB.
 
-config CPU_MICROCODE_CBFS_LEN
+config EARLY_CPU_MICROCODE_LOC
+	hex
+	default 0xfffe0400
+
+config EARLY_CPU_MICROCODE_LEN
 	hex
 	default 0x19800
 
-endif
+# Ensure the bootblock does not overlap the microcode. We have 0x6400 bytes
+# of space after microcode till the end of ROM. Make a small gap of 256 bytes
+# between the microcode and the bootblock just in case. Linker may add some
+# additional data in the beginning of the bootblock binary.
+
+config C_ENV_BOOTBLOCK_SIZE
+	default 0x6300
+
+# Make sure nothing gets in the IBB besides bootblock and microcode, because
+# if any CBFS file is put into IBB, it will not be available after
+# FW_SHADOW_DONE. Thus we put bootblock into the FMAP region.
+
+config BOOTBLOCK_IN_CBFS
+	bool
+	default n
+
+if PAYLOAD_SEABIOS
+
+# Need to override the end of CBFS region for SeaBIOS to work properly
+# 0xfffdf000 is the beginning address of Key Manifest. If no Key Manifest
+# is used, then it may be 0xfffe0000. Of course it also depends on FMAP
+# layout.
+config SEABIOS_CBFS_LOCATION
+	default 0xfffdf000 if TXE_SB_INCLUDE_KEY_MANIFEST
+	default 0xfffe0000
+
+endif # PAYLOAD_SEABIOS
+
+endif # TXE_SECURE_BOOT
 
 endif

@@ -106,6 +106,7 @@ enum acpi_tables {
 	XSDT,   /* Extended System Description Table */
 	/* Additional proprietary tables used by coreboot */
 	CRAT,   /* Component Resource Attribute Table */
+	CSRT,   /* Core System Resources Table */
 	IORT,   /* Input Output Remapping Table */
 	NHLT,   /* Non HD audio Link Table */
 	SPMI,   /* Server Platform Management Interface table */
@@ -1722,6 +1723,73 @@ typedef struct acpi_table_wdat {
 	u32 entries;
 } __packed acpi_wdat_t;
 
+/* ACPI CSRT */
+
+/* Resource Group subtable */
+struct acpi_csrt_group {
+	u32 length;
+	u32 vendor_id;
+	u32 subvendor_id;
+	u16 device_id;
+	u16 subdevice_id;
+	u16 revision;
+	u16 reserved;
+	u32 shared_info_length;
+} __packed;
+
+/* Shared Info subtable */
+struct acpi_csrt_shared_info {
+	u16 major_version;
+	u16 minor_version;
+	u32 mmio_base_low;
+	u32 mmio_base_high;
+	u32 gsi_interrupt;
+	u8 interrupt_polarity;
+	u8 interrupt_mode;
+	u8 num_channels;
+	u8 dma_address_width;
+	u16 base_request_line;
+	u16 num_handshake_signals;
+	u32 max_block_size;
+} __packed;
+
+/* Interrupt mode */
+
+#define ACPI_LEVEL_SENSITIVE            (u8) 0x00
+#define ACPI_EDGE_SENSITIVE             (u8) 0x01
+
+/* Interrupt Polarity */
+
+#define ACPI_ACTIVE_HIGH                (u8) 0x00
+#define ACPI_ACTIVE_LOW                 (u8) 0x01
+#define ACPI_ACTIVE_BOTH                (u8) 0x02
+
+/* Resource Descriptor subtable */
+struct acpi_csrt_descriptor {
+	u32 length;
+	u16 type;
+	u16 subtype;
+	u32 uid;
+} __packed;
+
+/* Resource Types and Subtypes */
+#define ACPI_CSRT_TYPE_INTERRUPT		0x0001
+#define   ACPI_CSRT_INTERRUPT_LINE		0x0000
+#define   ACPI_CSRT_INTERRUPT_CONTROLLER	0x0001
+#define ACPI_CSRT_TYPE_TIMER			0x0002
+#define   ACPI_CSRT_TIMER			0x0000
+#define ACPI_CSRT_TYPE_DMA			0x0003
+#define   ACPI_CSRT_DMA_CHANNEL			0x0000
+#define   ACPI_CSRT_DMA_CONTROLLER		0x0001
+
+typedef struct acpi_table_csrt {
+	acpi_header_t header;	/* Common ACPI table header */
+	/* struct acpi_csrt_group group_hdr; */
+	/* struct acpi_csrt_shared_info shared_info; */
+	/* struct acpi_csrt_descriptor descriptors[0]; */
+} __packed acpi_csrt_t;
+
+
 uintptr_t get_coreboot_rsdp(void);
 void acpi_create_einj(acpi_einj_t *einj, uintptr_t addr, u8 actions);
 
@@ -1912,6 +1980,25 @@ unsigned long acpi_gtdt_add_watchdog(unsigned long current, uint64_t refresh_fra
  * @return Position after last acpi_wdat_entry_t struct
  */
 unsigned long acpi_soc_fill_wdat(acpi_wdat_t *wdat, unsigned long current);
+
+void acpi_create_csrt(acpi_csrt_t *csrt,
+		      unsigned long (*acpi_fill_csrt)(acpi_csrt_t *csrt_struct,
+						      unsigned long current));
+
+void acpi_write_csrt_group_hdr(unsigned long *current, const char vendor_id[4],
+					const char subvendor_id[4], u16 device_id,
+					u16 subdevice_id, u16 revision);
+
+void acpi_write_csrt_shared_info(unsigned long *current, struct acpi_csrt_group *group,
+					  struct device *dev, unsigned int bar,
+					  u16 major_version, u16 minor_version,
+					  u32 gsi_interrupt, u8 interrupt_polarity,
+					  u8 interrupt_mode, u8 num_channels,
+					  u8 dma_address_width, u16 base_request_line,
+					  u16 num_handshake_signals, u32 max_block_size);
+
+void acpi_write_csrt_descriptor(unsigned long *current, struct acpi_csrt_group *group,
+					 u16 type, u16 subtype, const char uid[4]);
 
 /* For ACPI S3 support. */
 void __noreturn acpi_resume(void *wake_vec);

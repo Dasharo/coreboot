@@ -239,6 +239,12 @@ void iosf_ssus_write(int reg, uint32_t val);
 
 #define PUNIT_SOC_POWER_BUDGET		0x02
 #define PUNIT_SOC_ENERGY_CREDIT		0x03
+#define PUNIT_ISPSSPM0			0x39
+# define  PUNIT_ISPSSPM0_ISPSSC_MASK	(3 << 0)
+# define  PUNIT_ISPSSPM0_ISPSSC_SHIFT	0
+# define  PUNIT_ISPSSPM0_ISPSSS_MASK	(3 << 24)
+# define  PUNIT_ISPSSPM0_ISPSSS_SHIFT	24
+# define  PUNIT_ISPSSPM0_FUSEDIS	(1 << 26)
 #define PUNIT_PTMC			0x80
 #define PUNIT_GFXT			0x88
 #define PUNIT_VEDT			0x89
@@ -276,17 +282,21 @@ void iosf_ssus_write(int reg, uint32_t val);
 # define LPSS_CTL_PCI_CFG_DIS			(1 << 20)
 # define LPSS_CTL_SNOOP				(1 << 18)
 # define LPSS_CTL_NOSNOOP			(1 << 19)
+# define LPSS_CTL_INT_PIN_MASK			(0xf << 2)
+# define LPSS_CTL_INT_PIN_SHIFT			2
 # define LPSS_CTL_PM_CAP_PRSNT			(1 <<  1)
 
 /*
  * SCC Registers
  */
+#define SCC_MMC41_CTL			0x500
 #define SCC_SD_CTL			0x504
 #define SCC_SDIO_CTL			0x508
 #define SCC_MMC_CTL			0x50c
 # define SCC_CTL_PCI_CFG_DIS			(1 << 0)
 # define SCC_CTL_ACPI_INT_EN			(1 << 1)
-
+# define SSC_CTL_INT_PIN_MASK			(0xf << 8)
+# define SSC_CTL_INT_PIN_SHIFT			8
 /*
  * CCU Registers
  */

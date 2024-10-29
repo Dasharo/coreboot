@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi_gnvs.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -8,6 +9,7 @@
 
 #include <soc/device_nvs.h>
 #include <soc/iosf.h>
+#include <soc/irq.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include "chip.h"
@@ -27,8 +29,26 @@ static const struct reg_script emmc_ops[] = {
 	REG_IOSF_RMW(IOSF_PORT_SCORE, 0x48c4, ~0x3c, 0x3c),
 	/* Max timeout */
 	REG_RES_WRITE8(PCI_BASE_ADDRESS_0, 0x002e, 0x0e),
+	/* Configure INTA for PCI mode */
+	REG_IOSF_RMW(IOSF_PORT_SCC, SCC_MMC_CTL,
+		     ~SSC_CTL_INT_PIN_MASK, (INTA << SSC_CTL_INT_PIN_SHIFT)),
 	REG_SCRIPT_END,
 };
+
+static void acpi_store_nvs(struct device *dev, int nvs_index)
+{
+	struct resource *bar;
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
+
+	/* Save BAR0 and BAR1 to ACPI NVS */
+	bar = probe_resource(dev, PCI_BASE_ADDRESS_0);
+	if (bar)
+		dev_nvs->scc_bar0[nvs_index] = (u32)bar->base;
+
+	bar = probe_resource(dev, PCI_BASE_ADDRESS_1);
+	if (bar)
+		dev_nvs->scc_bar1[nvs_index] = (u32)bar->base;
+}
 
 static void emmc_init(struct device *dev)
 {
@@ -39,6 +59,8 @@ static void emmc_init(struct device *dev)
 
 	if (config->scc_acpi_mode)
 		scc_enable_acpi_mode(dev, SCC_MMC_CTL, SCC_NVS_MMC);
+	else
+		acpi_store_nvs(dev, SCC_NVS_MMC);
 }
 
 static struct device_operations device_ops = {

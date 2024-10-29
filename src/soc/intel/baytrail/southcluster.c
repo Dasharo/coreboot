@@ -19,6 +19,7 @@
 #include <drivers/uart/uart8250reg.h>
 
 #include <soc/iomap.h>
+#include <soc/iosf.h>
 #include <soc/irq.h>
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
@@ -143,10 +144,6 @@ static void com1_configure_resume(struct device *dev)
 
 static void sc_enable_ioapic(struct device *dev)
 {
-	int i;
-	u32 reg32;
-	volatile u32 *ioapic_index = (u32 *)(IO_APIC_ADDR);
-	volatile u32 *ioapic_data = (u32 *)(IO_APIC_ADDR + 0x10);
 	u8 *ilb_base = (u8 *)(pci_read_config32(dev, IBASE) & ~0x0f);
 
 	/*
@@ -154,39 +151,20 @@ static void sc_enable_ioapic(struct device *dev)
 	 * Set SCI IRQ to IRQ9
 	 */
 	write32(ilb_base + ILB_OIC, 0x100);  /* AEN */
-	reg32 = read32(ilb_base + ILB_OIC); /* Read back per BWG */
+	read32(ilb_base + ILB_OIC); /* Read back per BWG */
 	write32(ilb_base + ACTL, 0);  /* ACTL bit 2:0 SCIS IRQ9 */
 
-	*ioapic_index = 0;
-	*ioapic_data = (1 << 25);
-
 	/* affirm full set of redirection table entries ("write once") */
-	*ioapic_index = 1;
-	reg32 = *ioapic_data;
-	*ioapic_index = 1;
-	*ioapic_data = reg32;
+	ioapic_set_max_vectors(VIO_APIC_VADDR, 87);
+	setup_ioapic((void *)IO_APIC_ADDR, 2);
 
-	*ioapic_index = 0;
-	reg32 = *ioapic_data;
-	printk(BIOS_DEBUG, "Southbridge APIC ID = %x\n", (reg32 >> 24) & 0x0f);
-	if (reg32 != (1 << 25))
-		die("APIC Error\n");
-
-	printk(BIOS_SPEW, "Dumping IOAPIC registers\n");
-	for (i=0; i<3; i++) {
-		*ioapic_index = i;
-		printk(BIOS_SPEW, "  reg 0x%04x:", i);
-		reg32 = *ioapic_data;
-		printk(BIOS_SPEW, " 0x%08x\n", reg32);
-	}
-
-	*ioapic_index = 3; /* Select Boot Configuration register. */
-	*ioapic_data = 1; /* Use Processor System Bus to deliver interrupts. */
+	/* Use Processor System Bus to deliver interrupts. */
+	ioapic_set_boot_config((void *)IO_APIC_ADDR, true);
 }
 
 static void sc_enable_serial_irqs(struct device *dev)
 {
-#ifdef SETUPSERIQ /* NOT defined. Remove when the TODO is done. */
+	struct soc_intel_baytrail_config *config = config_of(dev);
 	/*
 	 * TODO: SERIRQ seems to have a number of problems on baytrail.
 	 * With it enabled, we get some spurious interrupts (ps2)
@@ -204,6 +182,11 @@ static void sc_enable_serial_irqs(struct device *dev)
 	reg8 |= (1 << 3); /* IOCHK# NMI  Disable for now */
 	outb(reg8, 0x61);
 
+	if (!config->serirq_enable) {
+		write32(ibase + ILB_OIC, read32(ibase + ILB_OIC) & ~SIRQEN);
+		return;
+	}
+
 	write32(ibase + ILB_OIC, read32(ibase + ILB_OIC) | SIRQEN);
 	write8(ibase + ILB_SERIRQ_CNTL, SCNT_CONTINUOUS_MODE);
 
@@ -216,7 +199,6 @@ static void sc_enable_serial_irqs(struct device *dev)
 		outb(0x00, 0xED); /* I/O Delay to get the 1 frame */
 		write8(ibase + ILB_SERIRQ_CNTL, SCNT_QUIET_MODE);
 	}
-#endif  /* DON'T SET UP IRQS */
 }
 
 /*
@@ -415,6 +397,42 @@ static void sc_init(struct device *dev)
  * Common code for the south cluster devices.
  */
 
+static void disable_mipi_dev(struct device *dev)
+{
+	u32 val;
+
+	/*
+	 * ISP/IUNIT PCI D3hot request via PCI PM_CAP is ignored by HW.
+	 * Requesting power state of ISP is done via P-unit.
+	 * Check ISP current state and disable it if needed.
+	 */
+	val = iosf_punit_read(PUNIT_ISPSSPM0);
+	if ((val & PUNIT_ISPSSPM0_ISPSSS_MASK) == 0) {
+		printk(BIOS_DEBUG, "ISP subsystem powered on, requesting power off\n");
+		iosf_punit_write(PUNIT_ISPSSPM0, val | PUNIT_ISPSSPM0_ISPSSC_MASK);
+		val = iosf_punit_read(PUNIT_ISPSSPM0);
+		if ((val & PUNIT_ISPSSPM0_ISPSSS_MASK) == 0) {
+			printk(BIOS_DEBUG, "ISP subsystem powered off\n");
+		}
+	} else if ((val & PUNIT_ISPSSPM0_ISPSSS_MASK) == PUNIT_ISPSSPM0_ISPSSS_MASK) {
+		printk(BIOS_DEBUG, "ISP subsystem already powered off\n");
+	} else {
+		printk(BIOS_WARNING, "ISP subsystem invalid power state\n");
+	}
+
+	/* Disable BARs */
+	pci_write_config16(dev, PCI_COMMAND, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_0, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_1, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_2, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_3, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_4, 0);
+	pci_write_config16(dev, PCI_BASE_ADDRESS_5, 0);
+
+	/* Disable DMA, MMIO access and PCICFG access */
+	pci_update_config32(dev, 0xfc, ~0, (3 << 30) | (1 << 4));
+}
+
 #define SET_DIS_MASK(name_) \
 	case PCI_DEVFN(name_ ## _DEV, name_ ## _FUNC): \
 		mask |= name_ ## _DIS
@@ -432,8 +450,9 @@ static void sc_disable_devfn(struct device *dev)
 	uint32_t mask2 = 0;
 
 	switch (dev->path.pci.devfn) {
-	SET_DIS_MASK(MIPI);
-		break;
+	case PCI_DEVFN(MIPI_DEV, MIPI_FUNC):
+		disable_mipi_dev(dev);
+		return;
 	SET_DIS_MASK(SDIO);
 		break;
 	SET_DIS_MASK(SD);
@@ -571,6 +590,9 @@ static int place_device_in_d3hot(struct device *dev)
 	 * Work around this by hard coding the offset.
 	 */
 	switch (dev->path.pci.devfn) {
+	case PCI_DEVFN(MIPI_DEV, MIPI_FUNC):
+		offset = 0x80;
+		break;
 	case PCI_DEVFN(MMC_DEV, MMC_FUNC):
 		offset = 0x80;
 		break;
@@ -584,6 +606,9 @@ static int place_device_in_d3hot(struct device *dev)
 		offset = 0x80;
 		break;
 	case PCI_DEVFN(LPE_DEV, LPE_FUNC):
+		offset = 0x80;
+		break;
+	case PCI_DEVFN(OTG_DEV, OTG_FUNC):
 		offset = 0x80;
 		break;
 	case PCI_DEVFN(SIO_DMA1_DEV, SIO_DMA1_FUNC):
@@ -702,7 +727,10 @@ void southcluster_enable_dev(struct device *dev)
 static struct device_operations device_ops = {
 	.read_resources		= sc_read_resources,
 	.set_resources		= pci_dev_set_resources,
+	.enable_resources	= pci_dev_enable_resources,
+#if !CONFIG(DISABLE_HPET)
 	.write_acpi_tables	= acpi_write_hpet,
+#endif
 	.init			= sc_init,
 	.enable			= southcluster_enable_dev,
 	.scan_bus		= scan_static_bus,

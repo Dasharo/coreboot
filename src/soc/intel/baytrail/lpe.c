@@ -39,6 +39,16 @@ static void assign_device_nvs(struct device *dev, u32 *field, unsigned int index
 		*field = res->base;
 }
 
+static void store_acpi_nvs(struct device *dev)
+{
+	struct device_nvs *dev_nvs = acpi_get_device_nvs();
+
+	/* Save BAR0, BAR1, and firmware base  to ACPI NVS */
+	assign_device_nvs(dev, &dev_nvs->lpe_bar0, PCI_BASE_ADDRESS_0);
+	assign_device_nvs(dev, &dev_nvs->lpe_bar1, PCI_BASE_ADDRESS_1);
+	assign_device_nvs(dev, &dev_nvs->lpe_fw, FIRMWARE_PCI_REG_BASE);
+}
+
 static void lpe_enable_acpi_mode(struct device *dev)
 {
 	static const struct reg_script ops[] = {
@@ -141,6 +151,8 @@ static void lpe_init(struct device *dev)
 
 	if (config->lpe_acpi_mode)
 		lpe_enable_acpi_mode(dev);
+	else
+		store_acpi_nvs(dev);
 }
 
 static void lpe_read_resources(struct device *dev)
