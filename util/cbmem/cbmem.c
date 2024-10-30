@@ -880,7 +880,7 @@ static void print_event_type(uint32_t event_type)
 		printf("%s", tpm_event_types[event_type]);
 }
 
-static void parse_tpm12_log(const struct tcpa_spec_entry *spec_log)
+static void parse_tpm12_log(const struct tcpa_spec_entry *spec_log, size_t size)
 {
 	const uint8_t zero_block[sizeof(struct tcpa_spec_entry)] = {0};
 
@@ -901,6 +901,13 @@ static void parse_tpm12_log(const struct tcpa_spec_entry *spec_log)
 		uint32_t len;
 		struct tcpa_log_entry *log_entry = (void *)current;
 		uint32_t event_type = le32toh(log_entry->event_type);
+		current += sizeof(struct tcpa_log_entry);
+		len = le32toh(log_entry->event_data_size);
+
+		if (current + len >= (uintptr_t)spec_log + size) {
+			fprintf(stderr, "Invalid TPM1.2 log entry overflowing cbmem area\n");
+			break;
+		}
 
 		printf("TCPA log entry %u:\n", ++counter);
 		printf("\tPCR: %d\n", le32toh(log_entry->pcr));
@@ -909,8 +916,6 @@ static void parse_tpm12_log(const struct tcpa_spec_entry *spec_log)
 		printf("\n");
 		printf("\tDigest: ");
 		print_hex_line(log_entry->digest, SHA1_DIGEST_SIZE);
-		current += sizeof(struct tcpa_log_entry);
-		len = le32toh(log_entry->event_data_size);
 		if (len != 0) {
 			current += len;
 			printf("\tEvent data: ");
@@ -965,7 +970,7 @@ static uint32_t print_tpm2_digests(struct tcg_pcr_event2_header *log_entry)
 	return current - (uintptr_t)&log_entry->digest_count;
 }
 
-static void parse_tpm2_log(const struct tcg_efi_spec_id_event *tpm2_log)
+static void parse_tpm2_log(const struct tcg_efi_spec_id_event *tpm2_log, size_t size)
 {
 	const uint8_t zero_block[12] = {0}; /* Only PCR index, event type and digest count */
 
@@ -1008,6 +1013,12 @@ static void parse_tpm2_log(const struct tcg_efi_spec_id_event *tpm2_log)
 		/* Now event size and event are left to be parsed */
 		len = le32toh(*(uint32_t *)current);
 		current += sizeof(uint32_t);
+
+		if (current + len >= (uintptr_t)tpm2_log + size) {
+			fprintf(stderr, "Invalid TPM2.0 log entry overflowing cbmem area\n");
+			break;
+		}
+
 		if (len != 0) {
 			printf("\tEvent data: %.*s\n", len, (const char *)current);
 			current += len;
@@ -1035,7 +1046,7 @@ static void dump_tpm_std_log(uint64_t addr, size_t size)
 		    tspec_entry->spec_version_minor == 2 &&
 		    tspec_entry->spec_errata >= 1 &&
 		    le32toh(tspec_entry->entry.event_type) == EV_NO_ACTION) {
-			parse_tpm12_log(tspec_entry);
+			parse_tpm12_log(tspec_entry, size);
 		} else {
 			fprintf(stderr, "Unknown TPM1.2 log specification\n");
 		}
@@ -1048,7 +1059,7 @@ static void dump_tpm_std_log(uint64_t addr, size_t size)
 		if (tcg_spec_entry->spec_version_major == 2 &&
 		    tcg_spec_entry->spec_version_minor == 0 &&
 		    le32toh(tcg_spec_entry->event_type) == EV_NO_ACTION) {
-			parse_tpm2_log(tcg_spec_entry);
+			parse_tpm2_log(tcg_spec_entry, size);
 		} else {
 			fprintf(stderr, "Unknown TPM2 log specification.\n");
 		}
