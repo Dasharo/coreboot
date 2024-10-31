@@ -100,7 +100,7 @@ static inline bool tpm_first_access_this_boot(void)
 	(CONFIG(VBOOT_SEPARATE_VERSTAGE) && ENV_SEPARATE_VERSTAGE) ||  \
 	(CONFIG(VBOOT_STARTS_IN_ROMSTAGE) && ENV_RAMINIT) ||           \
 	(CONFIG(TPM_MEASURED_BOOT_INIT_BOOTBLOCK) && ENV_BOOTBLOCK) || \
-	(CONFIG(TPM_MEASURED_BOOT) && (ENV_RAMINIT || ENV_RAMSTAGE))
+	(CONFIG(TPM_MEASURED_BOOT) && (ENV_RAMINIT || ENV_POSTCAR || ENV_RAMSTAGE))
 #define __tis_driver __attribute__((used, section(".rodata.tis_driver")))
 #else
 #define __tis_driver __always_unused
