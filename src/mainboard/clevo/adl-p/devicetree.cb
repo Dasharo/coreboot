@@ -77,6 +77,9 @@ chip soc/intel/alderlake
 				device generic 0 on end
 			end
 		end
+		device ref uart0 on # BIOS Debug Port
+			register "serial_io_uart_mode[PchSerialIoIndexUART0]" = "PchSerialIoPci"
+		end
 		device ref i2c0 on
 			# Touchpad I2C bus
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C0]" = "PchSerialIoPci"
