@@ -29,7 +29,7 @@ static void ite_gpio_setup(u8 gpio, u8 polarity, u8 pullup, u8 output, u8 enable
 	u8 pin = (gpio % 10);
 
 	/* There are only 6 configurable sets, 8 pins each */
-	if (gpio < 10 || set > 6 || pin > 7)
+	if (gpio < 10 || set > 5 || pin > 7)
 		return;
 
 	pnp_enter_conf_state(GPIO_DEV);
