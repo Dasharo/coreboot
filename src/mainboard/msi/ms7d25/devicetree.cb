@@ -74,16 +74,16 @@ chip soc/intel/alderlake
 			register "usb2_ports[14]" = "USB2_PORT_EMPTY" # USB Redirection port 1
 			register "usb2_ports[15]" = "USB2_PORT_EMPTY" # USB Redirection port 2
 
-			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC2)" # USB-C LAN_USB1
-			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC2)" # USB-A LAN_USB1
-			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC3)" # JUSB5
-			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC0)" # USB-A USB2
-			register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC7)" # USB-A USB2
-			register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC7)" # JUSB4
-			register "usb3_ports[6]" = "USB3_PORT_DEFAULT(OC2)" # JUSB4
-			register "usb3_ports[7]" = "USB3_PORT_DEFAULT(OC2)" # JUSB3
-			register "usb3_ports[8]" = "USB3_PORT_DEFAULT(OC0)" # JUSB3
-			register "usb3_ports[9]" = "USB3_PORT_EMPTY"
+			register "usb3_ports[0]" = "USB3_PORT_DEFAULT(OC2)" # USB-C Gen2x2 LAN_USB1
+			register "usb3_ports[1]" = "USB3_PORT_DEFAULT(OC2)" # USB-C Gen2x2 LAN_USB1
+			register "usb3_ports[2]" = "USB3_PORT_DEFAULT(OC2)" # USB-A LAN_USB1
+			register "usb3_ports[3]" = "USB3_PORT_DEFAULT(OC3)" # JUSB5
+			register "usb3_ports[4]" = "USB3_PORT_DEFAULT(OC0)" # USB-A USB2
+			register "usb3_ports[5]" = "USB3_PORT_DEFAULT(OC7)" # USB-A USB2
+			register "usb3_ports[6]" = "USB3_PORT_DEFAULT(OC7)" # JUSB4
+			register "usb3_ports[7]" = "USB3_PORT_DEFAULT(OC2)" # JUSB4
+			register "usb3_ports[8]" = "USB3_PORT_DEFAULT(OC2)" # JUSB3
+			register "usb3_ports[9]" = "USB3_PORT_DEFAULT(OC0)" # JUSB3
 		end
 		device ref cnvi_wifi on
 			# Enable CNVi BT
