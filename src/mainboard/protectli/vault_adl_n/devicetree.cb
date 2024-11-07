@@ -24,12 +24,11 @@ chip soc/intel/alderlake
 		subsystemid 0x8086 0x7270 inherit
 
 		device ref igpu on
-			subsystemid 0x8086 0x2212
 			register "ddi_portA_config" = "1" # HDMI on port A
 			register "ddi_portB_config" = "1" # DP on port B
 			register "ddi_ports_config" = "{
 				[DDI_PORT_A] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
-				[DDI_PORT_B] = DDI_ENABLE_HPD,
+				[DDI_PORT_B] = DDI_ENABLE_HPD | DDI_ENABLE_DDC,
 				[DDI_PORT_1] = DDI_ENABLE_HPD,
 				[DDI_PORT_2] = DDI_ENABLE_HPD,
 			}"
