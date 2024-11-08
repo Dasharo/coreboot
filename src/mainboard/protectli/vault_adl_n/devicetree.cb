@@ -10,6 +10,22 @@ chip soc/intel/alderlake
 
 	register "tcc_offset" = "20" # TCC of 80C
 
+	register "common_soc_config" = "{
+		// JNTP
+		.i2c[0] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 80,
+			.fall_time_ns = 110,
+		},
+		// USB-PD
+		.i2c[4] = {
+			.speed = I2C_SPEED_FAST,
+			.rise_time_ns = 80,
+			.fall_time_ns = 110,
+		},
+	}"
+
+
 	device cpu_cluster 0 on end
 	device domain 0 on
 		subsystemid 0x8086 0x7270 inherit
@@ -134,6 +150,14 @@ chip soc/intel/alderlake
 
 		device ref emmc on
 			register "emmc_enable_hs400_mode" = "true"
+		end
+
+		device ref i2c0 on
+			register "serial_io_i2c_mode[PchSerialIoIndexI2C0]" = "PchSerialIoPci"
+		end
+
+		device ref i2c4 on
+			register "serial_io_i2c_mode[PchSerialIoIndexI2C4]" = "PchSerialIoPci"
 		end
 
 		device ref pch_espi on
