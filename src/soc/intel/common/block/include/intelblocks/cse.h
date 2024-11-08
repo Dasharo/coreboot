@@ -572,4 +572,8 @@ void cse_enable_ptt(bool state);
  */
 enum cb_err cse_get_fw_feature_state(uint32_t *feature_state);
 
+unsigned int soc_get_heci_dev(unsigned int heci_idx);
+
+int cse_write_smbios_type14(int *handle, unsigned long *current);
+
 #endif // SOC_INTEL_COMMON_CSE_H
