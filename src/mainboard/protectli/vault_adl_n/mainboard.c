@@ -33,8 +33,6 @@ const char *smbios_mainboard_product_name(void)
 
 	if (strstr(str, "N100") != NULL)
 		return "VP3210";
-	else if (strstr(str, "N200") != NULL)
-		return "VP3220";
 	else if (strstr(str, "N305") != NULL)
 		return "VP3230";
 	else
