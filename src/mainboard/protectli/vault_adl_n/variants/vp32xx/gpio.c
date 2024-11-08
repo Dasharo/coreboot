@@ -160,8 +160,10 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_H2 - GPIO */
 	PAD_CFG_GPO(GPP_H2, 0, DEEP),
 	PAD_NC(GPP_H3, NONE),
-	PAD_NC(GPP_H4, NONE),
-	PAD_NC(GPP_H5, NONE),
+	/* GPP_H4 - I2C0_SDA */
+	PAD_CFG_NF(GPP_H4, NONE, DEEP, NF1),
+	/* GPP_H5 - I2C0_SCL */
+	PAD_CFG_NF(GPP_H5, NONE, DEEP, NF1),
 	PAD_NC(GPP_H6, NONE),
 	PAD_NC(GPP_H7, NONE),
 	/* GPP_H8 - I2C4_SDA */
