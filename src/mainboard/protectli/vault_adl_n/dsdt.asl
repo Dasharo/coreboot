@@ -28,4 +28,6 @@ DefinitionBlock(
 	}
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
+
+	#include "acpi/usb_pd.asl"
 }
