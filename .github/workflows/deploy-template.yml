@@ -34,7 +34,7 @@ jobs:
           tag=${{ steps.tag_name.outputs.tag }}
           if [ "${{ inputs.platform }}" == "protectli" ]; then
             base_dir="protectli"
-            if [ "${{ inputs.platform }}" == "vp2430" ]; then
+            if [ "${{ inputs.model }}" == "vp2430" ]; then
               model="vp2430"
               release=$(echo "$tag" | cut -d'_' -f3)
             else
