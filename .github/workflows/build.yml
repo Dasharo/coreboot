@@ -290,7 +290,20 @@ jobs:
     strategy:
       matrix:
         vendor: [ protectli ]
-        model: [ vp32xx, vp2430 ]
+        model: [ vp32xx ]
+  deploy_protectli_vp2430:
+    if: startsWith(github.ref, 'refs/tags/protectli_vp2430_')
+    needs: build_protectli
+    uses: ./.github/workflows/deploy-template.yml
+    with:
+      platform: protectli
+      vendor: ${{ matrix.vendor }}
+      model: ${{ matrix.model }}
+    secrets: inherit
+    strategy:
+      matrix:
+        vendor: [ protectli ]
+        model: [ vp2430 ]
   deploy_protectli_jsl:
     if: startsWith(github.ref, 'refs/tags/protectli_vault_jsl')
     needs: build_protectli
