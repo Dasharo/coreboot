@@ -27,7 +27,7 @@ chip soc/intel/alderlake
 		# WIFI
 		device ref pcie_rp4 on
 			register "pch_pcie_rp[PCH_RP(4)]" = "{
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.clk_src = 3,
 				.clk_req = 3,
 			}"
@@ -44,7 +44,7 @@ chip soc/intel/alderlake
 		# NVMe x4 link
 		device ref pcie_rp9 on
 			register "pch_pcie_rp[PCH_RP(9)]" = "{
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.clk_src = 0,
 				.clk_req = 0,
 				}"
