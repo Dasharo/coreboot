@@ -57,9 +57,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
 
 	if (CONFIG(BOARD_PROTECTLI_VP32XX)) {
-		// CLKREQs connected only to RP3 and RP7
+		/*
+		 * CLKREQs connected only to RP3 and RP7, but other CLKREQs are
+		 * pulled to GND, So it should be fine to enable CPM on all RPs.
+		 */
+		params->PcieRpEnableCpm[0] = 1;
 		params->PcieRpEnableCpm[2] = 1;
+		params->PcieRpEnableCpm[4] = 1;
 		params->PcieRpEnableCpm[6] = 1;
+		params->PcieRpEnableCpm[9] = 1;
 	}
 
 	// Enable port reset message on Type-C ports
