@@ -5,4 +5,5 @@
 
 void bootblock_mainboard_early_init(void)
 {
+	mainboard_configure_early_gpios();
 }
