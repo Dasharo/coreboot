@@ -32,7 +32,7 @@ static const struct pch_gpio_set1 pch_gpio_set1_mode = {
 	.gpio26 = GPIO_MODE_NATIVE,
 	.gpio27 = GPIO_MODE_GPIO,
 	.gpio28 = GPIO_MODE_GPIO,
-	.gpio29 = GPIO_MODE_GPIO,
+	.gpio29 = GPIO_MODE_NATIVE,
 	.gpio30 = GPIO_MODE_NATIVE,
 	.gpio31 = GPIO_MODE_GPIO,	/* Password Clear Jumper */
 };
@@ -59,7 +59,6 @@ static const struct pch_gpio_set1 pch_gpio_set1_direction = {
 	.gpio24 = GPIO_DIR_INPUT,
 	.gpio27 = GPIO_DIR_OUTPUT,
 	.gpio28 = GPIO_DIR_OUTPUT,
-	.gpio29 = GPIO_DIR_OUTPUT,
 	.gpio31 = GPIO_DIR_INPUT,
 };
 
@@ -69,7 +68,6 @@ static const struct pch_gpio_set1 pch_gpio_set1_level = {
 	.gpio15 = GPIO_LEVEL_LOW,
 	.gpio27 = GPIO_LEVEL_LOW,
 	.gpio28 = GPIO_LEVEL_LOW,
-	.gpio29 = GPIO_LEVEL_HIGH,
 };
 
 static const struct pch_gpio_set1 pch_gpio_set1_reset = {
