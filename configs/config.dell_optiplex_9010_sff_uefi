@@ -1,4 +1,4 @@
-CONFIG_LOCALVERSION="v0.1.0"
+CONFIG_LOCALVERSION="v0.1.1"
 CONFIG_OPTION_BACKEND_NONE=y
 CONFIG_VENDOR_DELL=y
 CONFIG_FMDFILE="src/mainboard/dell/snb_ivb_workstations/default.fmd"
