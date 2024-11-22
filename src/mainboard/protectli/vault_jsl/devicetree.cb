@@ -47,6 +47,9 @@ chip soc/intel/jasperlake
 	register "usb2_wake_enable_bitmap" = "0x0012"
 	register "usb3_wake_enable_bitmap" = "0x0003"
 
+	register "SataSalpSupport" = "1"
+	register "SataPortsEnable[1]" = "1"
+
 	register "gen1_dec" = "0x003c0a01"
 	register "gen2_dec" = "0x000c0081"
 	register "gen3_dec" = "0x00fc0201"
@@ -119,7 +122,7 @@ chip soc/intel/jasperlake
 		device pci 16.1 off end # HECI 2
 		device pci 16.4 off end # HECI 3
 		device pci 16.5 off end # HECI 4
-		device pci 17.0 off end # SATA
+		device pci 17.0 on  end # SATA
 		device pci 19.0 off end # I2C 4
 		device pci 19.1 off end # I2C 5
 		device pci 19.2 off end # UART 2
