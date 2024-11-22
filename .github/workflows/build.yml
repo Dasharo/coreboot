@@ -37,7 +37,7 @@ jobs:
           make olddefconfig
           make
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -69,7 +69,7 @@ jobs:
           make olddefconfig
           make
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -97,7 +97,7 @@ jobs:
         run: |
           ./build.sh ${{ matrix.model }}
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -130,7 +130,7 @@ jobs:
           make olddefconfig
           make
       - name: Save artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
           path: |
