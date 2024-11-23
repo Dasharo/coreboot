@@ -22,4 +22,7 @@ int get_lockdown_config(void);
  */
 void soc_lockdown_config(int chipset_lockdown);
 
+void fast_spi_lockdown_bios(int chipset_lockdown);
+void lpc_lockdown_config(int chipset_lockdown);
+
 #endif /* SOC_INTEL_COMMON_PCH_LOCKDOWN_H */
