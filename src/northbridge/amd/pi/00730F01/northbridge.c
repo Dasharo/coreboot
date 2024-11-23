@@ -128,7 +128,17 @@ static void iommu_disable_guest_avic(void)
 
 static void northbridge_init(struct device *dev)
 {
+	struct device *nb = pcidev_on_root(0, 0);
+
+	/* Enable GNB IOAPIC extended IDs */
+	pci_write_config32(nb, 0xF8, 0);
+	pci_or_config32(nb, 0xFC, 1 << 2);
+
 	register_new_ioapic((u8 *)IO_APIC2_ADDR);
+
+	/* Enable GNB IOAPIC */
+	pci_write_config32(nb, 0xF8, 0);
+	pci_or_config32(nb, 0xFC, 1);
 
 	/*
 	 * Guest AVIC seems not to be supported on this HW, but the IOMMU
@@ -563,10 +573,7 @@ struct device_operations amd_pi_northbridge_ops = {
 static void fam16_finalize(void *chip_info)
 {
 	struct device *dev;
-	dev = pcidev_on_root(0, 0); /* clear IoapicSbFeatureEn */
-
-	pci_write_config32(dev, 0xF8, 0);
-	pci_write_config32(dev, 0xFC, 5); /* TODO: move it to dsdt.asl */
+	dev = pcidev_on_root(0, 0);
 
 	/*
 	 * Currently it is impossible to enable ACS with AGESA by setting the
