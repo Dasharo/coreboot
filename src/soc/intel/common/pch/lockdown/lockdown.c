@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
-#include <dasharo/options.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/fast_spi.h>
 #include <intelblocks/lpc_lib.h>
@@ -61,56 +60,17 @@ static void fast_spi_lockdown_cfg(int chipset_lockdown)
 	/* Set FAST_SPI opcode menu */
 	fast_spi_set_opcode_menu();
 
-	/* Discrete Lock Flash PR registers */
-	fast_spi_pr_dlock();
-
 	/* Check if SPI transaction is pending */
 	fast_spi_cycle_in_progress();
 
 	/* Clear any outstanding status bits like AEL, FCERR, FDONE, SAF etc. */
 	fast_spi_clear_outstanding_status();
 
-	/* Lock FAST_SPIBAR */
-	fast_spi_lock_bar();
-
 	/* Set Vendor Component Lock (VCL) */
 	fast_spi_vscc0_lock();
 
-	/* Set BIOS Interface Lock, BIOS Lock */
-	if (chipset_lockdown == CHIPSET_LOCKDOWN_COREBOOT) {
-		/* BIOS Interface Lock */
-		fast_spi_set_bios_interface_lock_down();
-
-		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
-			fast_spi_set_eiss();
-			fast_spi_enable_wp();
-		}
-
-		/* BIOS Lock */
-		fast_spi_set_lock_enable();
-
-		/* EXT BIOS Lock */
-		fast_spi_set_ext_bios_lock_enable();
-	}
-}
-
-static void lpc_lockdown_config(int chipset_lockdown)
-{
-	/* Set BIOS Interface Lock, BIOS Lock */
-	if (chipset_lockdown == CHIPSET_LOCKDOWN_COREBOOT) {
-		/* BIOS Interface Lock */
-		lpc_set_bios_interface_lock_down();
-
-		/* Only allow writes in SMM */
-		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted()) {
-			lpc_set_eiss();
-			lpc_enable_wp();
-		}
-
-		/* BIOS Lock */
-		lpc_set_lock_enable();
-	}
+	if (!CONFIG(SOC_INTEL_COMMON_SPI_LOCKDOWN_SMM))
+		fast_spi_lockdown_bios(chipset_lockdown);
 }
 
 static void sa_lockdown_config(int chipset_lockdown)
@@ -136,8 +96,9 @@ static void platform_lockdown_config(void *unused)
 	/* SPI lock down configuration */
 	fast_spi_lockdown_cfg(chipset_lockdown);
 
-	/* LPC/eSPI lock down configuration */
-	lpc_lockdown_config(chipset_lockdown);
+	if (!CONFIG(SOC_INTEL_COMMON_SPI_LOCKDOWN_SMM))
+		/* LPC/eSPI lock down configuration */
+		lpc_lockdown_config(chipset_lockdown);
 
 	/* GPMR lock down configuration */
 	gpmr_lockdown_cfg();

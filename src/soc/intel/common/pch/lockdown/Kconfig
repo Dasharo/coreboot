@@ -3,7 +3,22 @@
 config SOC_INTEL_COMMON_PCH_LOCKDOWN
 	bool
 	default n
+	select HAVE_INTEL_CHIPSET_LOCKDOWN
 	help
 	  This option allows to have chipset lockdown for DMI, FAST_SPI and
 	  soc_lockdown_config() to implement any additional lockdown as PMC,
 	  LPC for supported PCH.
+
+config SOC_INTEL_COMMON_SPI_LOCKDOWN_SMM
+	bool "Lock down SPI controller in SMM"
+	default n
+	depends on HAVE_SMI_HANDLER && !INTEL_CHIPSET_LOCKDOWN
+	select SPI_FLASH_SMM
+	help
+	  This option allows to have chipset lockdown for FAST_SPI and LPC for
+	  supported PCH. If selected, coreboot will skip locking down the SPI
+	  and LPC controller. The payload or OS is responsible for locking it
+	  using APM_CNT_FINALIZE SMI. Used by heads to set and lock PR0 flash
+	  protection.
+
+	  If unsure, say N.
