@@ -3,7 +3,8 @@
 /* Routing is in System Bus scope */
 Name(PR0, Package(){
 	/* NB devices */
-	/* Bus 0, Dev 0 - F16 Host Controller */
+	/* Bus 0, Dev 0 - F0:F16 Host Controller/F2:IOMMU */
+	Package(){0x0000FFFF, 0, INTA, 0 },
 
 	/* Bus 0, Dev 1 - PCI Bridge for Internal Graphics(IGP) */
 	/* Bus 0, Dev 1, Func 1 - HDMI Audio Controller */
@@ -46,7 +47,8 @@ Name(PR0, Package(){
 
 Name(APR0, Package(){
 	/* NB devices in APIC mode */
-	/* Bus 0, Dev 0 - F15 Host Controller */
+	/* Bus 0, Dev 0 - F0:F16 Host Controller/F2:IOMMU */
+	Package(){0x0000FFFF, 0, 0, 16 },
 
 	/* Bus 0, Dev 1 - PCI Bridge for Internal Graphics(IGP) */
 	Package(){0x0001FFFF, 0, 0, 44 },
