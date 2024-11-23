@@ -169,6 +169,11 @@
 #define CAP_OFFSET_10_MSI_NUM_PPR_SHIFT		27
 #define CAP_OFFSET_10_MSI_NUM_PPR		(0x1f << CAP_OFFSET_10_MSI_NUM_PPR_SHIFT)
 
+#define PCI_DEVID(BUS, DEV, FN) ( \
+	(((BUS) & 0xFF) << 8) | \
+	(((DEV) & 0x1F) << 3) | \
+	(((FN)  & 0x07)))
+
 /* IVHD (I/O Virtualization Hardware Definition Block) 4-byte entry */
 typedef struct ivrs_ivhd_generic {
 	uint8_t type;
