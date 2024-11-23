@@ -15,6 +15,7 @@
 #include <option.h>
 #include <southbridge/intel/common/pmbase.h>
 #include <smmstore.h>
+#include <security/lockdown/lockdown.h>
 
 #include "pmutil.h"
 
@@ -402,7 +403,7 @@ static void southbridge_smi_tco(void)
 
 		bios_cntl = pci_read_config8(PCI_DEV(0, 0x1f, 0), 0xdc);
 
-		if (CONFIG(BOOTMEDIA_SMM_BWP) && is_smm_bwp_permitted() && (bios_cntl & 1)) {
+		if (enable_smm_bios_protection() && is_smm_bwp_permitted() && (bios_cntl & 1)) {
 			/* BWE is RW, so the SMI was caused by a
 			 * write to BWE, not by a write to the BIOS
 			 */
