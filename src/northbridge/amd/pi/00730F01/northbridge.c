@@ -50,6 +50,16 @@ static int get_dram_base_limit(resource_t *basek, resource_t *limitk)
 	return 1;
 }
 
+static void get_dram_limit_sys(resource_t *limitk)
+{
+	u32 temp = pci_read_config32(DEV_PTR(ht_1), 0x124); //[47:27] at [20:0]
+	/* BKDG address[47:0] <= {DramLimitAddr[47:27], 7FF_FFFFh} */
+	*limitk = (resource_t)(temp & 0x1fffff) << 27;
+	*limitk |= 0x7ffffff;
+	*limitk += 1; // round up last byte
+	*limitk = *limitk >> 10;
+}
+
 static void add_fixed_resources(struct device *dev, int index)
 {
 	/* Reserve everything between A segment and 1MB:
@@ -62,11 +72,11 @@ static void add_fixed_resources(struct device *dev, int index)
 
 	/* Check if CC6 save area is enabled (bit 18 CC6SaveEn)  */
 	if (pci_read_config32(DEV_PTR(ht_2), 0x118) & (1 << 18)) {
-		/* Add CC6 DRAM UC resource residing at DRAM Limit of size 16MB as per BKDG */
-		resource_t basek, limitk;
-		if (!get_dram_base_limit(&basek, &limitk))
-			return;
-		mmio_resource_kb(dev, index++, limitk, 16 * 1024);
+		/* Add CC6 DRAM UC resource residing at DRAM Sys Limit - 16MB as per BKDG */
+		resource_t limitk;
+		get_dram_limit_sys(&limitk);
+		fixed_mem_resource_kb(dev, index++, limitk - 16 * 1024, 16 * 1024,
+				      IORESOURCE_SOFT_RESERVE);
 	}
 }
 
