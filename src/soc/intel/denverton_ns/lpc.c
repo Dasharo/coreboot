@@ -536,7 +536,8 @@ static const struct pci_driver lpc_driver __pci_driver = {
 
 static void finalize_chipset(void *unused)
 {
-	apm_control(APM_CNT_FINALIZE);
+	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) || acpi_is_wakeup_s3())
+		apm_control(APM_CNT_FINALIZE);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, finalize_chipset, NULL);
