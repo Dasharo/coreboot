@@ -425,7 +425,7 @@ static void mainboard_final(void *chip_info)
 	 * doesn't work when these bits are set.
 	 */
 	val = pci_read_config32(D18F3, 0xB8);
-	val &= 0xF000003F;
+	val &= 0xF00003FF;
 	pci_write_config32(D18F3, 0xB8, val);
 
 	/* Disable ECC exclusion range */
