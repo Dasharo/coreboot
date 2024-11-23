@@ -31,6 +31,19 @@ Device(AMRT) {
 	Name(_ADR, 0x00000000)
 } /* end AMRT */
 
+Device(IOMU) {
+	Name(_ADR, 0x00000002)
+
+	Method(_PRT,0, NotSerialized)
+	{
+		If(PICM)
+		{
+			Return(APR0)	/* APIC mode */
+		}
+		Return (PR0)		/* PIC Mode */
+	}
+} /* end AMRT */
+
 /* Gpp 0 */
 Device(PBR4) {
 	Name(_ADR, 0x00020001)
