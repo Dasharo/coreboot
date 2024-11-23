@@ -76,7 +76,8 @@ static void soc_finalize(void *unused)
 	printk(BIOS_DEBUG, "Finalizing chipset.\n");
 
 	pch_finalize();
-	apm_control(APM_CNT_FINALIZE);
+	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) || acpi_is_wakeup_s3())
+		apm_control(APM_CNT_FINALIZE);
 
 	/* Indicate finalize step with post code */
 	post_code(POSTCODE_OS_BOOT);
