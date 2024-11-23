@@ -85,9 +85,59 @@ static void nb_read_resources(struct device *dev)
 	add_fixed_resources(dev, 0);
 }
 
+#define IOMMU_MMIO_CONTROL_REG			0x80
+#define   IOMMU_MMIO_CONTROL_GAM_SUP_MASK	(7 << 21)
+#define IOMMU_CONTROL_REG			0x18
+#define   IOMMU_CONTROL_GA_EN_MASK		(7 << 25)
+#define   IOMMU_CONTROL_GA_LOG_EN		(1 << 28)
+#define   IOMMU_CONTROL_GA_INT_EN		(1 << 29)
+#define   IOMMU_CONTROL_GA_MASK			( \
+		IOMMU_CONTROL_GA_EN_MASK | \
+		IOMMU_CONTROL_GA_LOG_EN  | \
+		IOMMU_CONTROL_GA_INT_EN    \
+	)
+#define IOMMU_MMIO32(x)			(*((volatile uint32_t *)(x)))
+#define EFR_SUPPORT			BIT(27)
+
+static void iommu_disable_guest_avic(void)
+{
+	struct device *iommu;
+	struct resource *res;
+	uint32_t iommu_control;
+
+	iommu = pcidev_on_root(0, 2);
+
+	if (!iommu || !iommu->enabled)
+		return;
+
+	printk(BIOS_DEBUG, "IOMMU: hiding Guest AVIC capability\n");
+	pci_and_config32(iommu, IOMMU_MMIO_CONTROL_REG, ~IOMMU_MMIO_CONTROL_GAM_SUP_MASK);
+
+	res = find_resource(iommu, 0x44);
+	if (!res)
+		return;
+
+	iommu_control = IOMMU_MMIO32((uintptr_t)res->base + IOMMU_CONTROL_REG);
+	if (!(iommu_control & IOMMU_CONTROL_GA_MASK))
+		return;
+
+	printk(BIOS_DEBUG, "IOMMU: disabling Guest AVIC feature\n");
+	iommu_control &= ~IOMMU_CONTROL_GA_MASK;
+	IOMMU_MMIO32((uintptr_t)res->base + IOMMU_CONTROL_REG) = iommu_control;
+}
+
 static void northbridge_init(struct device *dev)
 {
 	register_new_ioapic((u8 *)IO_APIC2_ADDR);
+
+	/*
+	 * Guest AVIC seems not to be supported on this HW, but the IOMMU
+	 * guest AVIC capability is exposed by default.
+	 * Also the CPUID reports AVIC as not supported by default.
+	 * Disable IOMMU gueast AVIC support so Linux won't complain.
+	 */
+	if (!(cpuid_edx(0x8000000A) & BIT(13)))
+		iommu_disable_guest_avic();
 }
 
 static unsigned long acpi_fill_hest(acpi_hest_t *hest)
@@ -260,9 +310,6 @@ static void add_ivhd_device_entries(struct device *parent, struct device *dev,
 
 	free(root_level);
 }
-
-#define IOMMU_MMIO32(x)			(*((volatile uint32_t *)(x)))
-#define EFR_SUPPORT			BIT(27)
 
 static unsigned long acpi_fill_ivrs11(unsigned long current, acpi_ivrs_t *ivrs_agesa)
 {
