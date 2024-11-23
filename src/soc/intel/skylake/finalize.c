@@ -106,7 +106,8 @@ static void soc_finalize(void *unused)
 	pch_finalize_script(dev);
 
 	soc_lockdown(dev);
-	apm_control(APM_CNT_FINALIZE);
+	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) || acpi_is_wakeup_s3())
+		apm_control(APM_CNT_FINALIZE);
 
 	/* Indicate finalize step with post code */
 	post_code(POSTCODE_OS_BOOT);
