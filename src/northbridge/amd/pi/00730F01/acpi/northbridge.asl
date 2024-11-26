@@ -6,6 +6,36 @@ External (TOM2)
 Name(_HID, EISAID("PNP0A08"))	/* PCI Express Root Bridge */
 Name(_CID, EISAID("PNP0A03"))	/* PCI Root Bridge */
 
+OperationRegion (NAPC, PCI_Config, 0xF8, 0x08)
+Field (NAPC, DWordAcc, NoLock, Preserve)
+{
+	NAPX,   32,	/* Northbridge IOAPIC Index */
+	NAPD,   32	/* Northbridge IOAPIC Data */
+}
+
+IndexField (NAPX, NAPD, DWordAcc, NoLock, Preserve)
+{
+	NAFC,   32	/* Northbridge IOAPIC Feature Control */
+}
+
+Mutex (NAPM, 0x00)
+Method (NAPE, 1, NotSerialized)
+{
+	Acquire (NAPM, 0xFFFF)
+
+	Local0 = NAFC
+	Local0 &= 0xFFFFFFEF /* Clear IoapicSbFeatureEn for APIC mode */
+
+	/* Set IoapicSbFeatureEn if OS chose to use PIC mode */
+	If (Arg0 == 0) {
+		Local0 |= (1 << 4)
+	}
+
+	NAFC = Local0
+
+	Release (NAPM)
+}
+
 /* Describe the Northbridge devices */
 
 Method(_BBN, 0, NotSerialized)	/* Bus number = 0 */
