@@ -3,6 +3,11 @@
 #ifndef _SOC_INTEL_COMMON_ME_SPEC_13_H_
 #define _SOC_INTEL_COMMON_ME_SPEC_13_H_
 
+/* HAP bit */
+#if CONFIG(SOC_INTEL_JASPERLAKE)
+#define HAP_OFFSET			0x16A
+#endif
+
 /* ME Host Firmware Status register 1 */
 union me_hfsts1 {
 	uint32_t data;
