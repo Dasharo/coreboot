@@ -22,6 +22,11 @@ Scope (\_SB.PCI0.I2C4)
 			{
 				GPP_F13_IRQ
 			}
+			/* Linux driver expects one interrupt resource per one I2C dev */
+			Interrupt (ResourceConsumer, Level, ActiveLow)
+			{
+				GPP_F13_IRQ
+			}
 		})
 	}
 }
