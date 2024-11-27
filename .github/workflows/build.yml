@@ -415,6 +415,7 @@ jobs:
       model: "ms7d25"
       type: ${{ matrix.type }}
       artifact_name: "dasharo-${{ matrix.vendor }}-ms7d25_${{ matrix.type }}"
+      released_by_3mdeb: true
     secrets: inherit
     strategy:
       matrix:
@@ -430,6 +431,7 @@ jobs:
       model: "ms7e06"
       type: ${{ matrix.type }}
       artifact_name: "dasharo-${{ matrix.vendor }}-ms7e06_${{ matrix.type }}"
+      released_by_3mdeb: true
     secrets: inherit
     strategy:
       matrix:
@@ -444,6 +446,7 @@ jobs:
       model: ${{ matrix.model }}
       vendor: ${{ matrix.model }}
       artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+      released_by_3mdeb: true
     secrets: inherit
     strategy:
       matrix:
