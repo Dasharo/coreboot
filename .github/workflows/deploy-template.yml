@@ -18,6 +18,9 @@ on:
         required: false
       artifact_name:
         type: string
+      # Set to true for DPP/community releases by 3mdeb
+      released_by_3mdeb:
+        type: boolean
 
 jobs:
   deploy:
@@ -41,15 +44,10 @@ jobs:
           release=$(echo "$tag" | awk -F'_' '{print $NF}')
 
           # Use 3mdeb directory for community / DPP releases
-          case "${{ inputs.platform }}" in
-            msi|hardkernel)
-              base_dir="3mdeb"
-              ;;
-            *)
-              # by default, use platform vendor name as a directory
-              base_dir="${{ inputs.platform }}"
-              ;;
-          esac
+          if [ ${{ inputs.released_by_3mdeb }} ]; then base_dir="3mdeb"; else
+            # by default, use platform vendor name as a directory
+            base_dir="${{ inputs.platform }}"
+          fi
 
           echo "base_dir=$base_dir" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
