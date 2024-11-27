@@ -62,5 +62,48 @@ chip soc/intel/alderlake
 				device generic 0 on end
 			end
 		end
+
+		device ref pch_espi on
+			chip superio/ite/it8659e
+				register "TMPIN1.mode"    = "THERMAL_PECI"
+				register "TMPIN1.offset"  = "0x56"
+				register "ec.vin_mask"    = "VIN0 | VIN2 | VIN3 | VIN7"
+
+				# FAN1 is CPU fan (connector on board)
+				register "FAN1.mode" = "FAN_SMART_AUTOMATIC"
+				register "FAN1.smart.tmpin"     = " 1"
+				register "FAN1.smart.tmp_off"   = "40"
+				register "FAN1.smart.tmp_start" = "50"
+				register "FAN1.smart.tmp_full"  = "85"
+				register "FAN1.smart.pwm_start" = "20"
+				register "FAN1.smart.slope"     = "32"
+
+				device pnp 2e.1 on	# COM 1
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+					irq 0xf1 = 0x52 # IRQ low level
+				end
+				device pnp 2e.2 on	# COM 2
+					io 0x60 = 0x2f8
+					irq 0x70 = 3
+					irq 0xf1 = 0x52 # IRQ low level
+				end
+				device pnp 2e.4 on	# Environment Controller
+					io 0x60 = 0xa20
+					io 0x62 = 0xa10
+					irq 0x70 = 0	# Don't use IRQ
+					irq 0xf0 = 0x80 # Clear 3VSB off status
+					irq 0xf4 = 0x20 # PSON_N is inverted SUSB_N
+					# irq 0xfa = 0x20 # Enable WDT output through PWRGD
+				end
+				device pnp 2e.5 off end	# Keyboard
+				device pnp 2e.6 off end	# Mouse
+				device pnp 2e.7 on	# GPIO
+					io 0x60 = 0xa08
+					io 0x62 = 0xa00
+				end
+				device pnp 2e.a off end	# CIR
+			end
+		end
 	end
 end
