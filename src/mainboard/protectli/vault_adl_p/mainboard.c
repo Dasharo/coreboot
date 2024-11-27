@@ -3,6 +3,7 @@
 #include <arch/cpu.h>
 #include <arch/io.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/device.h>
 #include <intelblocks/systemagent.h>
@@ -10,6 +11,8 @@
 #include <soc/ramstage.h>
 #include <soc/pcr_ids.h>
 #include <soc/tcss.h>
+#include <superio/ite/it8659e/chip.h>
+#include <superio/ite/it8659e/it8659e.h>
 
 #include <string.h>
 
@@ -126,6 +129,39 @@ static void mainboard_final(void *chip_info)
 		do_beep(1500, 100);
 }
 
+static void set_fan_curve(struct ite_ec_fan_config *fan, uint8_t fan_curve)
+{
+	switch (fan_curve) {
+	case FAN_CURVE_OPTION_OFF:
+		fan->mode = FAN_MODE_OFF;
+		break;
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		fan->smart.pwm_start += 20;
+		fan->smart.tmp_full -= 10;
+		fan->smart.tmp_off -= 10;
+		fan->smart.tmp_start -= 10;
+		break;
+	case FAN_CURVE_OPTION_SILENT:
+		/* Do nothing, it is the default */
+	default:
+		break;
+	}
+}
+
+static void mainboard_enable(struct device *dev)
+{
+	struct superio_ite_it8659e_config *ite_cfg;
+	struct device *ite_ec = dev_find_slot_pnp(0x2e, IT8659E_EC);
+	uint8_t fan_curve = get_fan_curve_option();
+
+	if (ite_ec && ite_ec->chip_info) {
+		ite_cfg = (struct superio_ite_it8659e_config *)ite_ec->chip_info;
+		set_fan_curve(&ite_cfg->ec.fan[0], fan_curve);
+		set_fan_curve(&ite_cfg->ec.fan[1], fan_curve);
+	}
+}
+
 struct chip_operations mainboard_ops = {
 	.final = mainboard_final,
+	.enable_dev = mainboard_enable
 };
