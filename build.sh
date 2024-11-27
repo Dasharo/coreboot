@@ -5,41 +5,40 @@ set -euo pipefail
 usage() {
   echo "${0} CMD"
   echo "Available CMDs:"
-  echo -e "\tz690a_ddr4     - build Dasharo image compatible with MSI PRO Z690-A (WIFI) DDR4"
-  echo -e "\tz690a_ddr5     - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
-  echo -e "\tz790p_ddr4     - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
-  echo -e "\tz790p_ddr5     - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
-  echo -e "\tvp66xx         - build Dasharo for Protectli VP66xx"
-  echo -e "\tvp46xx         - build Dasharo for Protectli VP46xx"
-  echo -e "\tvp32xx         - build Dasharo for Protectli VP32xx"
-  echo -e "\tvp2430         - build Dasharo for Protectli VP2430"
-  echo -e "\tvp2420         - build Dasharo for Protectli VP2420"
-  echo -e "\tvp2410         - build Dasharo for Protectli VP2410"
-  echo -e "\tV1210          - build Dasharo for Protectli V1210"
-  echo -e "\tV1410          - build Dasharo for Protectli V1410"
-  echo -e "\tV1610          - build Dasharo for Protectli V1610"
-  echo -e "\tapu2           - build Dasharo for PC Engines APU2"
-  echo -e "\tapu3           - build Dasharo for PC Engines APU3"
-  echo -e "\tapu4           - build Dasharo for PC Engines APU4"
-  echo -e "\tapu6           - build Dasharo for PC Engines APU6"
-  echo -e "\toptiplex_9010  - build Dasharo compatible with Dell OptiPlex 7010/9010"
-  echo -e "\tqemu           - build Dasharo for QEMU Q35"
-  echo -e "\tqemu_full      - build Dasharo for QEMU Q35 with all menus available"
+  echo -e "\tz690a_ddr4             - build Dasharo image compatible with MSI PRO Z690-A (WIFI) DDR4"
+  echo -e "\tz690a_ddr5             - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
+  echo -e "\tz790p_ddr4             - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
+  echo -e "\tz790p_ddr5             - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
+  echo -e "\tvp66xx                 - build Dasharo for Protectli VP66xx"
+  echo -e "\tvp46xx                 - build Dasharo for Protectli VP46xx"
+  echo -e "\tvp2420                 - build Dasharo for Protectli VP2420"
+  echo -e "\tvp2410                 - build Dasharo for Protectli VP2410"
+  echo -e "\tV1210                  - build Dasharo for Protectli V1210"
+  echo -e "\tV1410                  - build Dasharo for Protectli V1410"
+  echo -e "\tV1610                  - build Dasharo for Protectli V1610"
+  echo -e "\tapu2                   - build Dasharo for PC Engines APU2"
+  echo -e "\tapu3                   - build Dasharo for PC Engines APU3"
+  echo -e "\tapu4                   - build Dasharo for PC Engines APU4"
+  echo -e "\tapu6                   - build Dasharo for PC Engines APU6"
+  echo -e "\toptiplex_9010_uefi     - build Dasharo compatible with Dell OptiPlex 7010/9010 (UEFI)"
+  echo -e "\toptiplex_9010_seabios  - build Dasharo compatible with Dell OptiPlex 7010/9010 (SeaBIOS)"
+  echo -e "\tqemu                   - build Dasharo for QEMU Q35"
+  echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
 }
 
 SDKVER="2023-11-24_2731fa619b"
 
 
 function build_optiplex_9010 {
-  DEFCONFIG="configs/config.dell_optiplex_9010_sff_txt"
-  FW_VERSION=v0.1.0-rc1_seabios
+  local CONFIG=$1
+  local FW_VERSION=$2
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make distclean"
 
-  cp "${DEFCONFIG}" .config
+  cp "${CONFIG}" .config
 
   git submodule update --init --checkout
 
@@ -289,9 +288,13 @@ case "$CMD" in
     "apu6" | "APU6" )
         build_pcengines "apu6"
         ;;
-    "optiplex_9010" | "optiplex_7010" )
-        BOARD=optiplex_9010
-        build_optiplex_9010
+    "optiplex_9010_uefi")
+        BOARD="optiplex_9010"
+        build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_uefi_txt" "v0.1.1_uefi"
+        ;;
+    "optiplex_9010_seabios")
+        BOARD="optiplex_9010"
+        build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_txt" "v0.1.0-rc1_seabios"
         ;;
     "qemu" | "QEMU" | "q35" | "Q35" )
         build_qemu
