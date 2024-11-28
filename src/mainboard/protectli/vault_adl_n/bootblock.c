@@ -5,6 +5,8 @@
 #include <superio/ite/common/ite.h>
 #include <superio/ite/it8659e/it8659e.h>
 
+#if !CONFIG(BOARD_PROTECTLI_VP2430)
+
 #if CONFIG_UART_FOR_CONSOLE == 0
 #define UART_DEV PNP_DEV(0x2e, IT8659E_SP1)
 #elif CONFIG_UART_FOR_CONSOLE == 1
@@ -12,6 +14,21 @@
 #else
 #error "Wrong UART_FOR_CONSOLE setting"
 #endif
+
+#else /* CONFIG(BOARD_PROTECTLI_VP2430) */
+
+/*
+ * Allow only COM1 at 0x3f8, this is the only exposed port on the chassis.
+ * COM0 is available only on internal header. The I/O ports are swapped
+ * between COM0 and COM1 in devicetree.
+ */
+#if CONFIG_UART_FOR_CONSOLE == 0
+#define UART_DEV PNP_DEV(0x2e, IT8659E_SP2)
+#else
+#error "Wrong UART_FOR_CONSOLE setting"
+#endif
+
+#endif /* CONFIG(BOARD_PROTECTLI_VP2430) */
 
 #define GPIO_DEV PNP_DEV(0x2e, IT8659E_GPIO)
 
