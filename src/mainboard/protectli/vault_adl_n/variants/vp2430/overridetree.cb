@@ -66,7 +66,7 @@ chip soc/intel/alderlake
 		device ref pch_espi on
 			chip superio/ite/it8659e
 				register "TMPIN1.mode"    = "THERMAL_PECI"
-				register "TMPIN1.offset"  = "0x56"
+				register "TMPIN1.offset"  = "100"
 				register "ec.vin_mask"    = "VIN0 | VIN2 | VIN3 | VIN7"
 
 				# FAN1 is CPU fan (connector on board)
@@ -77,6 +77,7 @@ chip soc/intel/alderlake
 				register "FAN1.smart.tmp_full"  = "85"
 				register "FAN1.smart.pwm_start" = "20"
 				register "FAN1.smart.slope"     = "32"
+				register "FAN1.smart.tmp_delta" = "2"
 
 				# Swap I/O ports on COM ports, as COM2 is exposed
 				# as USB-C, while COM1 is only available on a header
@@ -95,8 +96,8 @@ chip soc/intel/alderlake
 					io 0x62 = 0xa10
 					irq 0x70 = 0	# Don't use IRQ
 					irq 0xf0 = 0x80 # Clear 3VSB off status
-					irq 0xf4 = 0x20 # PSON_N is inverted SUSB_N
-					# irq 0xfa = 0x20 # Enable WDT output through PWRGD
+					irq 0xf4 = 0x60 # Use SB to control AC power loss
+					irq 0xfa = 0x02 # Enable 5VSB_CTRL#
 				end
 				device pnp 2e.5 off end	# Keyboard
 				device pnp 2e.6 off end	# Mouse
