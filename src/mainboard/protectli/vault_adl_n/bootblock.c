@@ -65,7 +65,7 @@ static void ite_gpio_setup(u8 gpio, u8 polarity, u8 pullup, u8 output, u8 enable
 void bootblock_mainboard_early_init(void)
 {
 	/* Internal VCC_OK */
-	ite_reg_write(GPIO_DEV, 0x23, 0x40);
+	ite_reg_write(GPIO_DEV, 0x23, 0x00);
 	/* Set pin native functions */
 	ite_reg_write(GPIO_DEV, 0x26, 0xc0);
 	/* Pin28 as GP41 - PC speaker */
