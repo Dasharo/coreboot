@@ -41,8 +41,7 @@ config DIMM_MAX
 	default 2
 
 config UART_FOR_CONSOLE
-	default 0 if BOARD_PROTECTLI_VP32XX
-	default 1 if BOARD_PROTECTLI_VP2430
+	default 0
 
 config USE_PM_ACPI_TIMER
 	default n
