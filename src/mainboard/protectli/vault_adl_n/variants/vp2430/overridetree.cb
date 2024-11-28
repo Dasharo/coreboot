@@ -78,14 +78,16 @@ chip soc/intel/alderlake
 				register "FAN1.smart.pwm_start" = "20"
 				register "FAN1.smart.slope"     = "32"
 
+				# Swap I/O ports on COM ports, as COM2 is exposed
+				# as USB-C, while COM1 is only available on a header
 				device pnp 2e.1 on	# COM 1
-					io 0x60 = 0x3f8
-					irq 0x70 = 4
+					io 0x60 = 0x2f8
+					irq 0x70 = 3
 					irq 0xf1 = 0x52 # IRQ low level
 				end
 				device pnp 2e.2 on	# COM 2
-					io 0x60 = 0x2f8
-					irq 0x70 = 3
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
 					irq 0xf1 = 0x52 # IRQ low level
 				end
 				device pnp 2e.4 on	# Environment Controller
