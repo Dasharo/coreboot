@@ -76,7 +76,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PortResetMessageEnable[5] = 1;
 
 	// PMC-PD controller
-	params->PmcPdEnable = CONFIG(BOARD_PROTECTLI_VP2430);
+	params->PmcPdEnable = 1;
 
 #if CONFIG(BOARD_PROTECTLI_VP2430)
 	// Only available with custom FSP. W/A for unused CKLREQs.
