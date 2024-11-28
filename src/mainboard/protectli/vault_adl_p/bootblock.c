@@ -27,7 +27,7 @@ static void ite_set_gpio_iobase(u16 iobase)
 void bootblock_mainboard_early_init(void)
 {
 	/* Internal VCC_OK */
-	ite_reg_write(GPIO_DEV, 0x23, 0x40);
+	ite_reg_write(GPIO_DEV, 0x23, 0x00);
 	/* Set pin native functions */
 	ite_reg_write(GPIO_DEV, 0x26, 0xc0);
 	/* Pin28 as GP41 - PC speaker */
