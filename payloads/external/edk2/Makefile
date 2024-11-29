@@ -256,6 +256,9 @@ endif # CONFIG_EDK2_SLEEP_TYPE_OPTION
 
 ifeq ($(CONFIG_EDK2_FAN_CURVE_OPTION),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve=TRUE
+ifeq ($(CONFIG_EDK2_FAN_OFF_CURVE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurveOffOption=TRUE
+endif # CONFIG_EDK2_FAN_OFF_CURVE_OPTION
 endif # CONFIG_EDK2_FAN_CURVE_OPTION
 
 ifeq ($(CONFIG_EDK2_BATTERY_CONFIG_OPTION),y)
