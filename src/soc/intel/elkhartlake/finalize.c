@@ -33,8 +33,16 @@ static void pch_finalize(void)
 
 static void heci_finalize(void)
 {
+	bool heci_disable = false;
+
 	heci_set_to_d0i3();
-	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT))
+
+	if (is_cse_enabled()) {
+		heci_disable = cse_is_hfs1_com_debug() ||
+			       cse_is_hfs1_com_soft_temp_disable();
+	}
+
+	if (CONFIG(DISABLE_HECI1_AT_PRE_BOOT) || heci_disable)
 		heci1_disable();
 }
 
