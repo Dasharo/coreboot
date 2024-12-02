@@ -1,0 +1,20 @@
+chip soc/intel/jasperlake
+	device domain 0 on
+		device pci 1c.0 on  end # PCI Express Root Port 1 (LAN1)
+		device pci 1c.1 on  end # PCI Express Root Port 2 (LAN2)
+		# NVMe x1 link, making it x2 link with lane reversal
+		# would mess up the LAN port order
+		device pci 1c.2 on	# PCI Express Root Port 3
+			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
+					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth1X"
+		end
+		device pci 1c.3 off end # PCI Express Root Port 4
+		device pci 1c.4 on	# PCI Express Root Port 5
+			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther"
+					 "M.2/E 2230 (WIFI)" "SlotDataBusWidth1X"
+		end
+		device pci 1c.5 on  end # PCI Express Root Port 6 (LAN3)
+		device pci 1c.6 on  end # PCI Express Root Port 7 (LAN4)
+		device pci 1c.7 off end # PCI Express Root Port 8
+	end
+end
