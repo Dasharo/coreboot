@@ -112,21 +112,15 @@ chip soc/intel/jasperlake
 		device pci 19.0 off end # I2C 4
 		device pci 19.1 off end # I2C 5
 		device pci 19.2 off end # UART 2
-		device pci 1a.0 on  end # eMMC
-		device pci 1c.0 on  end # PCI Express Root Port 1
-		device pci 1c.1 on  end # PCI Express Root Port 2
+		device pci 1c.0 off end # PCI Express Root Port 1
+		device pci 1c.1 off end # PCI Express Root Port 2
 		device pci 1c.2 off end # PCI Express Root Port 3
-		device pci 1c.3 on	# PCI Express Root Port 4
-			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
-					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth1X"
-		end
-		device pci 1c.4 on	# PCI Express Root Port 5
-			smbios_slot_desc "SlotTypeM2Socket1_SD" "SlotLengthOther"
-					 "M.2/E 2230 (WIFI)" "SlotDataBusWidth1X"
-		end
-		device pci 1c.5 on  end # PCI Express Root Port 6
-		device pci 1c.6 on  end # PCI Express Root Port 7
+		device pci 1c.3 off end # PCI Express Root Port 4
+		device pci 1c.4 off end # PCI Express Root Port 5
+		device pci 1c.5 off end # PCI Express Root Port 6
+		device pci 1c.6 off end # PCI Express Root Port 7
 		device pci 1c.7 off end # PCI Express Root Port 8
+		device pci 1a.0 on  end # eMMC
 		device pci 1e.0 off end # UART 0
 		device pci 1e.1 off end # UART 1
 		device pci 1e.2 off end # GSPI 0
