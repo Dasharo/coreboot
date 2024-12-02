@@ -22,6 +22,11 @@ config MAINBOARD_DIR
 	string
 	default "protectli/vault_jsl"
 
+config OVERRIDE_DEVICETREE
+	default "override_v12xx.cb" if BOARD_PROTECTLI_V1210 || BOARD_PROTECTLI_V1211
+	default "override_v1410.cb" if BOARD_PROTECTLI_V1410
+	default "override_v1610.cb" if BOARD_PROTECTLI_V1610
+
 config MAINBOARD_PART_NUMBER
 	string
 	default "V1210" if BOARD_PROTECTLI_V1210
