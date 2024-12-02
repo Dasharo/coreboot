@@ -228,8 +228,8 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_C4, NONE),
 	/* GPP_C5 - GPIO */
 	PAD_NC(GPP_C5, NONE),
-	/* GPP_C6 - GPIO */
-	PAD_CFG_GPO(GPP_C6, 1, DEEP),
+	/* GPP_C6 - M2_PEDET (NVME=1, SATA=0) */
+	PAD_CFG_GPI(GPP_C6, UP_20K, DEEP),
 	/* GPP_C7 - GPIO */
 	PAD_NC(GPP_C7, NONE),
 	/* GPP_C8 - GPIO */
