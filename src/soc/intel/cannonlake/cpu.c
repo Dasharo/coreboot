@@ -8,6 +8,7 @@
 #include <cpu/intel/turbo.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/mp_init.h>
+#include <intelblocks/sgx.h>
 #include <soc/cpu.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
@@ -120,6 +121,10 @@ void soc_core_init(struct device *cpu)
 {
 	config_t *cfg = config_of_soc();
 
+	/* Configure Core PRMRR for SGX. */
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		prmrr_core_configure();
+
 	/* Clear out pending MCEs */
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
 	 * of these banks are core vs package scope. For now every CPU clears
@@ -148,16 +153,24 @@ void soc_core_init(struct device *cpu)
 		disable_turbo();
 	else
 		enable_turbo();
-
-	/* Enable Vmx */
-	set_feature_ctrl_vmx_arg(CONFIG(ENABLE_VMX) && !cfg->disable_vmx);
-	set_feature_ctrl_lock();
 }
 
 static void per_cpu_smm_trigger(void)
 {
 	/* Relocate the SMM handler. */
 	smm_relocate();
+}
+
+static void vmx_configure(void *unused)
+{
+	config_t *cfg = config_of_soc();
+	/* Enable Vmx */
+	set_feature_ctrl_vmx_arg(CONFIG(ENABLE_VMX) && !cfg->disable_vmx);
+}
+
+static void fc_lock_configure(void *unused)
+{
+	set_feature_ctrl_lock();
 }
 
 void smm_lock(void)
@@ -174,6 +187,8 @@ void smm_lock(void)
 
 static void post_mp_init(void)
 {
+	bool failure = false;
+
 	/* Set Max Ratio */
 	cpu_set_max_ratio();
 
@@ -185,6 +200,19 @@ static void post_mp_init(void)
 
 	/* Lock down the SMRAM space. */
 	smm_lock();
+
+	if (mp_run_on_all_cpus(vmx_configure, NULL) != CB_SUCCESS)
+		failure = true;
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE))
+		if (mp_run_on_all_cpus(sgx_configure, NULL) != CB_SUCCESS)
+			failure = true;
+
+	if (mp_run_on_all_cpus(fc_lock_configure, NULL) != CB_SUCCESS)
+		failure = true;
+
+	if (failure)
+		printk(BIOS_CRIT, "CRITICAL ERROR: MP post init failed\n");
 }
 
 static const struct mp_ops mp_ops = {
