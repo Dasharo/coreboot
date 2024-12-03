@@ -33,6 +33,7 @@ jobs:
         retention-days: 30
   build_novacustom:
     runs-on: ubuntu-22.04
+    needs: build_novacustom_ec
     container:
       image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
       options: --user 1001
@@ -51,6 +52,10 @@ jobs:
           fetch-depth: 0
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
+      - name: Obtain EC
+        uses: actions/download-artifact@v4
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-ec"
       - name: Obtain blobs
         uses: actions/checkout@v4
         with:
@@ -60,6 +65,7 @@ jobs:
           token: ${{ secrets.NCM_BLOBS_TOKEN }}
       - name: Build Dasharo
         run: |
+          mv ${{ matrix.vendor }}_${{ matrix.model }}_ec.rom ec.rom
           cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
           make olddefconfig
           make
