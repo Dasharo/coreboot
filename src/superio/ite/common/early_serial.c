@@ -131,6 +131,7 @@ void ite_delay_pwrgd3(pnp_devfn_t dev)
 void ite_kill_watchdog(pnp_devfn_t dev)
 {
 	pnp_enter_conf_state(dev);
+	pnp_set_logical_device(dev);
 	ite_sio_write(dev, ITE_CONFIG_REG_WATCHDOG, 0x00);
 	ite_sio_write(dev, ITE_CONFIG_REG_WDT_TIMEOUT_LSB, 0x00);
 	ite_sio_write(dev, ITE_CONFIG_REG_WDT_TIMEOUT_MSB, 0x00);
