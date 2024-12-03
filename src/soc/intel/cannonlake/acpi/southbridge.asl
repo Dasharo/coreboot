@@ -39,3 +39,6 @@
 
 /* GbE 0:1f.6 */
 #include <soc/intel/common/block/acpi/acpi/pch_glan.asl>
+
+/* SGX */
+#include <soc/intel/common/acpi/sgx.asl>
