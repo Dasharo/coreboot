@@ -58,6 +58,7 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	}
 	m_cfg->PcieRpEnableMask = mask;
 	m_cfg->PrmrrSize = get_valid_prmrr_size();
+	m_cfg->EnableSgx = CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE);
 	m_cfg->EnableC6Dram = config->enable_c6dram;
 #if CONFIG(SOC_INTEL_COMETLAKE)
 	m_cfg->SerialIoUartDebugControllerNumber = CONFIG_UART_FOR_CONSOLE;
