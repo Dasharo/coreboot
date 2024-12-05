@@ -185,6 +185,14 @@ config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
 	help
 	  Board-specific CPU throttling threshold temperature default value
 
+config EDK2_USB_PORT_POWER_OPTION
+	bool "Show USB Port Power option in Dasharo Power Configuration Menu"
+	default n
+	depends on EDK2_DASHARO_POWER_CONFIG
+	help
+	  Shows the USB Port Power option in EDK2 power configuration submenu in
+	  Dasharo System Features menu.
+
 config EDK2_DASHARO_PCI_CONFIG
 	bool "Enable EDK2 Dasharo PCI/PCIe Configuration Menu"
 	default n
