@@ -78,8 +78,14 @@
 
 // Persistent option definitions
 enum {
-        OPT_POWER_ON_AC = 0,
-        NUM_OPTIONS
+	OPT_POWER_ON_AC = 0,
+	OPT_KBLED_LEVEL_I,
+	OPT_KBLED_COLOR_I,
+	OPT_BAT_THRESHOLD_START,
+	OPT_BAT_THRESHOLD_STOP,
+	OPT_ALLOW_BAT_BOOST,
+	OPT_USB_POWER,
+	NUM_OPTIONS
 };
 
 uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data);
