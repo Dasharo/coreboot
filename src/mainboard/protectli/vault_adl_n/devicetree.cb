@@ -53,8 +53,10 @@ chip soc/intel/alderlake
 			# Bit1,Bit3,Bit5,Bit7 set to "0" indicates Aux lines are not swapped on the
 			# motherboard to USBC connector
 			register "tcss_aux_ori" = "0x05"
-			register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_A21, .pad_auxn_dc = GPP_A22}"
-			register "typec_aux_bias_pads[1]" = "{.pad_auxp_dc = GPP_A14, .pad_auxn_dc = GPP_A15}"
+			# Do not configure these pads in coreboot, otherwise Type-C display won't work
+			# It seems coreboot attempts to program it too late.
+			#register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_A21, .pad_auxn_dc = GPP_A22}"
+			#register "typec_aux_bias_pads[1]" = "{.pad_auxp_dc = GPP_A14, .pad_auxn_dc = GPP_A15}"
 
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
