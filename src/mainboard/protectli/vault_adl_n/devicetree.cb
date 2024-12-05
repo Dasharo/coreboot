@@ -53,14 +53,16 @@ chip soc/intel/alderlake
 			# Bit1,Bit3,Bit5,Bit7 set to "0" indicates Aux lines are not swapped on the
 			# motherboard to USBC connector
 			register "tcss_aux_ori" = "0x05"
-			register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_A21, .pad_auxn_dc = GPP_A22}"
-			register "typec_aux_bias_pads[1]" = "{.pad_auxp_dc = GPP_A14, .pad_auxn_dc = GPP_A15}"
+			# Do not configure these pads in coreboot, otherwise Type-C display won't work
+			# It seems coreboot attempts to program it too late.
+			#register "typec_aux_bias_pads[0]" = "{.pad_auxp_dc = GPP_A21, .pad_auxn_dc = GPP_A22}"
+			#register "typec_aux_bias_pads[1]" = "{.pad_auxp_dc = GPP_A14, .pad_auxn_dc = GPP_A15}"
 
 			chip drivers/usb/acpi
 				device ref tcss_root_hub on
 					chip drivers/usb/acpi
 						register "desc" = ""USB3 Type-A Port 1 (USB1)""
-						register "type" = "UPC_TYPE_USB3_A"
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "use_custom_pld" = "true"
 						register "custom_pld" = "ACPI_PLD_TYPE_A(FRONT, RIGHT, ACPI_PLD_GROUP(2, 1))"
 						register "custom_pld.vertical_position" = "PLD_VERTICAL_POSITION_UPPER"
@@ -120,14 +122,14 @@ chip soc/intel/alderlake
 
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-C Port""
-						register "type" = "UPC_TYPE_C_USB2_SS"
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "use_custom_pld" = "true"
 						register "custom_pld" = "ACPI_PLD_TYPE_C(FRONT, RIGHT, ACPI_PLD_GROUP(2, 1))"
 						device ref usb2_port5 on end
 					end
 					chip drivers/usb/acpi
 						register "desc" = ""USB2 Type-C Port""
-						register "type" = "UPC_TYPE_C_USB2_SS"
+						register "type" = "UPC_TYPE_C_USB2_SS_SWITCH"
 						register "use_custom_pld" = "true"
 						register "custom_pld" = "ACPI_PLD_TYPE_C(FRONT, RIGHT, ACPI_PLD_GROUP(3, 1))"
 						device ref usb2_port6 on end
@@ -208,6 +210,21 @@ chip soc/intel/alderlake
 			register "pmc_gpe0_dw0" = "PMC_GPP_A"
 			register "pmc_gpe0_dw1" = "PMC_GPP_R"
 			register "pmc_gpe0_dw2" = "PMC_GPD"
+
+			chip drivers/intel/pmc_mux
+				device generic 0 on
+					chip drivers/intel/pmc_mux/conn
+						use usb2_port5 as usb2_port
+						use tcss_usb3_port1 as usb3_port
+						device generic 0 alias conn0 on end
+					end
+					chip drivers/intel/pmc_mux/conn
+						use usb2_port6 as usb2_port
+						use tcss_usb3_port2 as usb3_port
+						device generic 1 alias conn1 on end
+					end
+				end
+			end
 		end
 		device ref hda on
 			register "pch_hda_audio_link_hda_enable" = "1"
