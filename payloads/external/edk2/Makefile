@@ -265,6 +265,10 @@ ifeq ($(CONFIG_EDK2_BATTERY_CONFIG_OPTION),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowBatteryThresholds=TRUE
 endif
 
+ifeq ($(CONFIG_EDK2_USB_PORT_POWER_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowUsbPowerOption=TRUE
+endif
+
 endif # CONFIG_EDK2_DASHARO_POWER_CONFIG
 # DASHARO_PCI_CONFIG            = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_PCI_CONFIG),y)
