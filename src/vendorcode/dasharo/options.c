@@ -137,6 +137,20 @@ uint8_t dasharo_get_power_on_after_fail(void)
 	return power_status;
 }
 
+uint8_t dasharo_get_usb_port_power(void)
+{
+	uint8_t usb_port_power = USB_PORT_ON_WHEN_POWERED;
+
+	/* When present, EFI variable has higher priority. */
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("UsbPortPower", &usb_port_power);
+
+	if (usb_port_power > USB_PORT_WHEN_ON_AC)
+		return USB_PORT_ON_WHEN_POWERED;
+
+	return usb_port_power;
+}
+
 bool dasharo_resizeable_bars_enabled(void)
 {
 	static bool enabled = false;
