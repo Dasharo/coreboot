@@ -75,6 +75,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PortResetMessageEnable[4] = 1;
 	params->PortResetMessageEnable[5] = 1;
 
+	/*
+	 * Configure AUX bias pads in FPS-S, becuase coreboot would do it too
+	 * late and cause the Type-C displays to not work.
+	 */
+	params->IomTypeCPortPadCfg[0] = 0x09020016; // GPP_A22
+	params->IomTypeCPortPadCfg[1] = 0x09020015; // GPP_A21
+	params->IomTypeCPortPadCfg[2] = 0x0902000F; // GPP_A15
+	params->IomTypeCPortPadCfg[3] = 0x0902000E; // GPP_A14
+
 	// PMC-PD controller
 	params->PmcPdEnable = 1;
 
