@@ -58,6 +58,9 @@ config USBDEBUG_HCD_INDEX
 config CBFS_SIZE
 	default 0x600000
 
+config FMDFILE
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/default.fmd"
+
 config INCLUDE_SMSC_SCH5545_EC_FW
 	bool "Include SMSC SCH5545 EC firmware binary"
 	default n
