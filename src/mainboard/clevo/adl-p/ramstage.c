@@ -101,6 +101,21 @@ static void set_power_on_ac(void)
 	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 }
 
+static void set_usb_charge_port(void)
+{
+	struct smfi_option_get_cmd {
+		uint8_t index;
+		uint8_t value;
+	} __packed cmd = {
+		OPT_USB_POWER,
+		0
+	};
+
+	cmd.value = dasharo_get_usb_port_power();
+
+	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+}
+
 static void mainboard_init(void *chip_info)
 {
 	config_t *cfg = config_of_soc();
@@ -123,6 +138,7 @@ static void mainboard_init(void *chip_info)
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
+	set_usb_charge_port();
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
