@@ -33,15 +33,16 @@ SDKVER="2024-02-18_732134932b"
 
 
 function build_optiplex_9010 {
-  local CONFIG=$1
-  local FW_VERSION=$2
+  DEFCONFIG=$1
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+  [[ ${DEFCONFIG} != *"uefi"* ]] && FW_VERSION="${FW_VERSION}_seabios"
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make distclean"
 
-  cp "${CONFIG}" .config
+  cp "${DEFCONFIG}" .config
 
   git submodule update --init --checkout
 
@@ -326,11 +327,11 @@ case "$CMD" in
         ;;
     "optiplex_9010_uefi")
         BOARD="optiplex_9010"
-        build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_uefi_txt" "v0.1.1_uefi"
+        build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_uefi_txt"
         ;;
     "optiplex_9010_seabios")
         BOARD="optiplex_9010"
-        build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_txt" "v0.1.0-rc1_seabios"
+        build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_txt"
         ;;
     "qemu" | "QEMU" | "q35" | "Q35" )
         build_qemu
