@@ -36,6 +36,13 @@ enum cse_disable_mode {
 	ME_MODE_DISABLE_HMRFPO = 10
 };
 
+enum usb_port_power_opt {
+	USB_PORT_ON_WHEN_POWERED = 0,
+	USB_PORT_ALWAYS_ON = 1,
+	USB_PORT_WHEN_ON_AC = 2,
+};
+
+
 struct watchdog_config {
 	bool wdt_enable;
 	uint16_t wdt_timeout;
@@ -76,6 +83,15 @@ enum cb_err dasharo_reset_options(void);
  *  - 2 - restore previous state
  */
 uint8_t dasharo_get_power_on_after_fail(void);
+
+/* Looks up Dasharo/"UsbPortPower" variable.
+ *
+ * Result:
+ *  - 0 - Only when powered on (default) 
+ *  - 1 - Always Enabled
+ *  - 2 - Enabled when on AC
+ */
+uint8_t dasharo_get_usb_port_power(void);
 
 /* Looks up Dasharo/"PCIeResizeableBarsEnabled" variable if resizable PCIe BARs
  * support was enabled at compile-time.
