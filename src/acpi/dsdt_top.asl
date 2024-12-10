@@ -7,6 +7,8 @@
 #include <vendorcode/google/chromeos/acpi/chromeos.asl>
 #endif
 
+External (\_SB.PCI0.NAPE, MethodObj)
+
 /* Operating system enumeration. */
 Name (OSYS, 0)
 
@@ -28,6 +30,11 @@ Method (_PIC, 1)
 {
 	/* Remember the OS' IRQ routing choice. */
 	PICM = Arg0
+
+	If (CondRefOf (\_SB.PCI0.NAPE))
+	{
+		\_SB.PCI0.NAPE(Arg0 & 1)
+	}
 }
 
 #if CONFIG(ECAM_MMCONF_SUPPORT)

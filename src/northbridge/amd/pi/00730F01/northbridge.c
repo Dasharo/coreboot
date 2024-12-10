@@ -50,6 +50,16 @@ static int get_dram_base_limit(resource_t *basek, resource_t *limitk)
 	return 1;
 }
 
+static void get_dram_limit_sys(resource_t *limitk)
+{
+	u32 temp = pci_read_config32(DEV_PTR(ht_1), 0x124); //[47:27] at [20:0]
+	/* BKDG address[47:0] <= {DramLimitAddr[47:27], 7FF_FFFFh} */
+	*limitk = (resource_t)(temp & 0x1fffff) << 27;
+	*limitk |= 0x7ffffff;
+	*limitk += 1; // round up last byte
+	*limitk = *limitk >> 10;
+}
+
 static void add_fixed_resources(struct device *dev, int index)
 {
 	/* Reserve everything between A segment and 1MB:
@@ -62,11 +72,11 @@ static void add_fixed_resources(struct device *dev, int index)
 
 	/* Check if CC6 save area is enabled (bit 18 CC6SaveEn)  */
 	if (pci_read_config32(DEV_PTR(ht_2), 0x118) & (1 << 18)) {
-		/* Add CC6 DRAM UC resource residing at DRAM Limit of size 16MB as per BKDG */
-		resource_t basek, limitk;
-		if (!get_dram_base_limit(&basek, &limitk))
-			return;
-		mmio_resource_kb(dev, index++, limitk, 16 * 1024);
+		/* Add CC6 DRAM UC resource residing at DRAM Sys Limit - 16MB as per BKDG */
+		resource_t limitk;
+		get_dram_limit_sys(&limitk);
+		fixed_mem_resource_kb(dev, index++, limitk - 16 * 1024, 16 * 1024,
+				      IORESOURCE_SOFT_RESERVE);
 	}
 }
 
@@ -85,9 +95,69 @@ static void nb_read_resources(struct device *dev)
 	add_fixed_resources(dev, 0);
 }
 
+#define IOMMU_MMIO_CONTROL_REG			0x80
+#define   IOMMU_MMIO_CONTROL_GAM_SUP_MASK	(7 << 21)
+#define IOMMU_CONTROL_REG			0x18
+#define   IOMMU_CONTROL_GA_EN_MASK		(7 << 25)
+#define   IOMMU_CONTROL_GA_LOG_EN		(1 << 28)
+#define   IOMMU_CONTROL_GA_INT_EN		(1 << 29)
+#define   IOMMU_CONTROL_GA_MASK			( \
+		IOMMU_CONTROL_GA_EN_MASK | \
+		IOMMU_CONTROL_GA_LOG_EN  | \
+		IOMMU_CONTROL_GA_INT_EN    \
+	)
+#define IOMMU_MMIO32(x)			(*((volatile uint32_t *)(x)))
+#define EFR_SUPPORT			BIT(27)
+
+static void iommu_disable_guest_avic(void)
+{
+	struct device *iommu;
+	struct resource *res;
+	uint32_t iommu_control;
+
+	iommu = pcidev_on_root(0, 2);
+
+	if (!iommu || !iommu->enabled)
+		return;
+
+	printk(BIOS_DEBUG, "IOMMU: hiding Guest AVIC capability\n");
+	pci_and_config32(iommu, IOMMU_MMIO_CONTROL_REG, ~IOMMU_MMIO_CONTROL_GAM_SUP_MASK);
+
+	res = find_resource(iommu, 0x44);
+	if (!res)
+		return;
+
+	iommu_control = IOMMU_MMIO32((uintptr_t)res->base + IOMMU_CONTROL_REG);
+	if (!(iommu_control & IOMMU_CONTROL_GA_MASK))
+		return;
+
+	printk(BIOS_DEBUG, "IOMMU: disabling Guest AVIC feature\n");
+	iommu_control &= ~IOMMU_CONTROL_GA_MASK;
+	IOMMU_MMIO32((uintptr_t)res->base + IOMMU_CONTROL_REG) = iommu_control;
+}
+
 static void northbridge_init(struct device *dev)
 {
+	struct device *nb = pcidev_on_root(0, 0);
+
+	/* Enable GNB IOAPIC extended IDs */
+	pci_write_config32(nb, 0xF8, 0);
+	pci_or_config32(nb, 0xFC, 1 << 2);
+
 	register_new_ioapic((u8 *)IO_APIC2_ADDR);
+
+	/* Enable GNB IOAPIC */
+	pci_write_config32(nb, 0xF8, 0);
+	pci_or_config32(nb, 0xFC, 1);
+
+	/*
+	 * Guest AVIC seems not to be supported on this HW, but the IOMMU
+	 * guest AVIC capability is exposed by default.
+	 * Also the CPUID reports AVIC as not supported by default.
+	 * Disable IOMMU gueast AVIC support so Linux won't complain.
+	 */
+	if (!(cpuid_edx(0x8000000A) & BIT(13)))
+		iommu_disable_guest_avic();
 }
 
 static unsigned long acpi_fill_hest(acpi_hest_t *hest)
@@ -120,7 +190,7 @@ static unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long curr
 				   IVHD_DTE_SYS_MGT_NO_TRANS | IVHD_DTE_NMI_PASS |
 				   IVHD_DTE_EXT_INT_PASS | IVHD_DTE_INIT_PASS;
 	ivhd_ioapic->handle = get_ioapic_id(VIO_APIC_VADDR);
-	ivhd_ioapic->source_dev_id = PCI_DEVFN(SMBUS_DEV, SMBUS_FUNC);
+	ivhd_ioapic->source_dev_id = PCI_DEVID(0, SMBUS_DEV, SMBUS_FUNC);
 	ivhd_ioapic->variety = IVHD_SPECIAL_DEV_IOAPIC;
 	current += sizeof(ivrs_ivhd_special_t);
 
@@ -129,7 +199,7 @@ static unsigned long acpi_fill_ivrs_ioapic(acpi_ivrs_t *ivrs, unsigned long curr
 	ivhd_ioapic->reserved = 0x0000;
 	ivhd_ioapic->dte_setting = 0x00;
 	ivhd_ioapic->handle = get_ioapic_id((u8 *)IO_APIC2_ADDR);
-	ivhd_ioapic->source_dev_id = PCI_DEVFN(0, 1);
+	ivhd_ioapic->source_dev_id = PCI_DEVID(0, 0, 1);
 	ivhd_ioapic->variety = IVHD_SPECIAL_DEV_IOAPIC;
 	current += sizeof(ivrs_ivhd_special_t);
 
@@ -146,7 +216,7 @@ static unsigned long ivhd_describe_hpet(unsigned long current)
 	ivhd_hpet->reserved = 0x0000;
 	ivhd_hpet->dte_setting = 0x00;
 	ivhd_hpet->handle = 0x00;
-	ivhd_hpet->source_dev_id = PCI_DEVFN(SMBUS_DEV, SMBUS_FUNC);
+	ivhd_hpet->source_dev_id = PCI_DEVID(0, SMBUS_DEV, SMBUS_FUNC);
 	ivhd_hpet->variety = IVHD_SPECIAL_DEV_HPET;
 	current += sizeof(ivrs_ivhd_special_t);
 
@@ -176,93 +246,33 @@ static unsigned long ivhd_dev_range(unsigned long current, uint16_t start_devid,
 	return current;
 }
 
-static unsigned long add_ivhd_dev_entry(struct device *parent, struct device *dev,
-					unsigned long *current, uint8_t type, uint8_t data)
+static unsigned long ivhd_dev_alias_range(unsigned long current, uint16_t start_devid,
+					  uint16_t end_devid, uint16_t source_devid,
+					  uint8_t setting)
 {
-	if (type == IVHD_DEV_4_BYTE_SELECT) {
-		/* 4-byte IVHD structures must be aligned to the 4-byte boundary. */
-		*current = ALIGN_UP(*current, 4);
-		ivrs_ivhd_generic_t *ivhd_entry = (ivrs_ivhd_generic_t *)*current;
+	/* 8-byte IVHD structures must be aligned to the 8-byte boundary. */
+	current = ALIGN_UP(current, 8);
+	ivrs_ivhd_alias_t *ivhd_range = (ivrs_ivhd_alias_t *)current;
+	ivrs_ivhd_generic_t *ivhd_range_end;
 
-		ivhd_entry->type = type;
-		ivhd_entry->dev_id = dev->path.pci.devfn | (dev->upstream->secondary << 8);
-		ivhd_entry->dte_setting = data;
-		*current += sizeof(ivrs_ivhd_generic_t);
-	} else if (type == IVHD_DEV_8_BYTE_ALIAS_SELECT) {
-		/* 8-byte IVHD structures must be aligned to the 8-byte boundary. */
-		*current = ALIGN_UP(*current, 8);
-		ivrs_ivhd_alias_t *ivhd_entry = (ivrs_ivhd_alias_t *)*current;
+	/* Create the start alias range IVHD entry */
+	ivhd_range->type = IVHD_DEV_8_BYTE_ALIAS_START_RANGE;
+	ivhd_range->dev_id = start_devid;
+	ivhd_range->dte_setting = setting;
+	ivhd_range->source_dev_id = source_devid;
+	ivhd_range->reserved1 = 0;
+	ivhd_range->reserved2 = 0;
+	current += sizeof(ivrs_ivhd_alias_t);
 
-		ivhd_entry->type = type;
-		ivhd_entry->dev_id = dev->path.pci.devfn | (dev->upstream->secondary << 8);
-		ivhd_entry->dte_setting = data;
-		ivhd_entry->reserved1 = 0;
-		ivhd_entry->reserved2 = 0;
-		ivhd_entry->source_dev_id = parent->path.pci.devfn |
-					    (parent->upstream->secondary << 8);
-		*current += sizeof(ivrs_ivhd_alias_t);
-	}
+	/* Create the end range IVHD entry */
+	ivhd_range_end = (ivrs_ivhd_generic_t *)current;
+	ivhd_range_end->type = IVHD_DEV_4_BYTE_END_RANGE;
+	ivhd_range_end->dev_id = end_devid;
+	ivhd_range_end->dte_setting = setting;
+	current += sizeof(ivrs_ivhd_generic_t);
 
-	return *current;
+	return current;
 }
-
-static void ivrs_add_device_or_bridge(struct device *parent, struct device *dev,
-				      unsigned long *current, uint16_t *ivhd_length)
-{
-	unsigned int header_type, is_pcie;
-	unsigned long current_backup;
-
-	header_type = dev->hdr_type & 0x7f;
-	is_pcie = pci_find_capability(dev, PCI_CAP_ID_PCIE);
-
-	if (((header_type == PCI_HEADER_TYPE_NORMAL) ||
-	     (header_type == PCI_HEADER_TYPE_BRIDGE)) && is_pcie) {
-		/* Device or Bridge is PCIe */
-		current_backup = *current;
-		add_ivhd_dev_entry(parent, dev, current, IVHD_DEV_4_BYTE_SELECT, 0x0);
-		*ivhd_length += (*current - current_backup);
-	} else if ((header_type == PCI_HEADER_TYPE_NORMAL) && !is_pcie) {
-		/* Device is legacy PCI or PCI-X */
-		current_backup = *current;
-		add_ivhd_dev_entry(parent, dev, current, IVHD_DEV_8_BYTE_ALIAS_SELECT, 0x0);
-		*ivhd_length += (*current - current_backup);
-	}
-}
-
-static void add_ivhd_device_entries(struct device *parent, struct device *dev,
-				    unsigned int depth, int linknum, int8_t *root_level,
-				    unsigned long *current, uint16_t *ivhd_length)
-{
-	struct device *sibling;
-
-	if (!root_level) {
-		root_level = malloc(sizeof(int8_t));
-		*root_level = -1;
-	}
-
-	if (dev->path.type == DEVICE_PATH_PCI) {
-
-		if ((dev->upstream->secondary == 0x0) &&
-		    (dev->path.pci.devfn == 0x0))
-			*root_level = depth;
-
-		if ((*root_level != -1) && (dev->enabled)) {
-			if (depth != *root_level)
-				ivrs_add_device_or_bridge(parent, dev, current, ivhd_length);
-		}
-	}
-
-	if (dev->downstream) {
-		for (sibling = dev->downstream->children; sibling; sibling = sibling->sibling)
-			add_ivhd_device_entries(dev, sibling, depth + 1, depth, root_level,
-						current, ivhd_length);
-	}
-
-	free(root_level);
-}
-
-#define IOMMU_MMIO32(x)			(*((volatile uint32_t *)(x)))
-#define EFR_SUPPORT			BIT(27)
 
 static unsigned long acpi_fill_ivrs11(unsigned long current, acpi_ivrs_t *ivrs_agesa)
 {
@@ -289,7 +299,7 @@ static unsigned long acpi_fill_ivrs11(unsigned long current, acpi_ivrs_t *ivrs_a
 	ivhd_11->flags = ivrs_agesa->ivhd.flags & 0x3f;
 	ivhd_11->length = sizeof(struct acpi_ivrs_ivhd_11);
 	/* BDF <bus>:00.2 */
-	ivhd_11->device_id = 0x02 | (nb_dev->upstream->secondary << 8);
+	ivhd_11->device_id = PCI_DEVID(nb_dev->upstream->secondary, 0, 2);
 	/* PCI Capability block 0x40 (type 0xf, "Secure device") */
 	ivhd_11->capability_offset = 0x40;
 	ivhd_11->iommu_base_low = ivrs_agesa->ivhd.iommu_base_low;
@@ -312,9 +322,13 @@ static unsigned long acpi_fill_ivrs11(unsigned long current, acpi_ivrs_t *ivrs_a
 
 	/* Now repeat all the device entries from type 10h */
 	current_backup = current;
-	current = ivhd_dev_range(current, PCI_DEVFN(1, 0), PCI_DEVFN(0x1f, 6), 0);
+	current = ivhd_dev_range(current, PCI_DEVID(0, 1, 0), PCI_DEVID(255, 31, 6), 0);
 	ivhd_11->length += (current - current_backup);
-	add_ivhd_device_entries(NULL, all_devices, 0, -1, NULL, &current, &ivhd_11->length);
+
+	current_backup = current;
+	current = ivhd_dev_alias_range(current, PCI_DEVID(255, 0, 0), PCI_DEVID(255, 31, 7),
+				       PCI_DEVID(0, 14, 4), 0);
+	ivhd_11->length += (current - current_backup);
 
 	/* Describe HPET */
 	current_backup = current;
@@ -357,7 +371,7 @@ static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 		ivrs->ivhd.flags = ivrs_agesa->ivhd.flags;
 		ivrs->ivhd.length = sizeof(struct acpi_ivrs_ivhd);
 		/* BDF <bus>:00.2 */
-		ivrs->ivhd.device_id = 0x02 | (nb_dev->upstream->secondary << 8);
+		ivrs->ivhd.device_id = PCI_DEVID(nb_dev->upstream->secondary, 0, 2);
 		/* PCI Capability block 0x40 (type 0xf, "Secure device") */
 		ivrs->ivhd.capability_offset = 0x40;
 		ivrs->ivhd.iommu_base_low = ivrs_agesa->ivhd.iommu_base_low;
@@ -380,9 +394,13 @@ static unsigned long acpi_fill_ivrs(acpi_ivrs_t *ivrs, unsigned long current)
 	 * translate transactions generated by itself.
 	 */
 	current_backup = current;
-	current = ivhd_dev_range(current, PCI_DEVFN(1, 0), PCI_DEVFN(0x1f, 6), 0);
+	current = ivhd_dev_range(current, PCI_DEVID(0, 1, 0), PCI_DEVID(255, 31, 6), 0);
 	ivrs->ivhd.length += (current - current_backup);
-	add_ivhd_device_entries(NULL, all_devices, 0, -1, NULL, &current, &ivrs->ivhd.length);
+
+	current_backup = current;
+	current = ivhd_dev_alias_range(current, PCI_DEVID(255, 0, 0), PCI_DEVID(255, 31, 7),
+				       PCI_DEVID(0, 14, 4), 0);
+	ivrs->ivhd.length += (current - current_backup);
 
 	/* Describe HPET */
 	current_backup = current;
@@ -516,10 +534,7 @@ struct device_operations amd_pi_northbridge_ops = {
 static void fam16_finalize(void *chip_info)
 {
 	struct device *dev;
-	dev = pcidev_on_root(0, 0); /* clear IoapicSbFeatureEn */
-
-	pci_write_config32(dev, 0xF8, 0);
-	pci_write_config32(dev, 0xFC, 5); /* TODO: move it to dsdt.asl */
+	dev = pcidev_on_root(0, 0);
 
 	/*
 	 * Currently it is impossible to enable ACS with AGESA by setting the
