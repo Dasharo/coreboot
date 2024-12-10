@@ -193,6 +193,14 @@ static void mainboard_enable(struct device *dev)
 #endif
 }
 
+void mainboard_update_soc_chip_config(struct soc_intel_meteorlake_config *config)
+{
+	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
+		config->s0ix_enable = 0;
+	else
+		config->s0ix_enable = 1;
+}
+
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 	.init = mainboard_init,
