@@ -17,6 +17,7 @@ CONFIG_TPM_MEASURED_BOOT=y
 CONFIG_POWER_STATE_OFF_AFTER_FAILURE=y
 CONFIG_FSP_HEADER_PATH="3rdparty/blobs/mainboard/clevo/mtl-h/FSP/MeteorLake/Include/"
 CONFIG_FSP_FD_PATH="3rdparty/blobs/mainboard/clevo/mtl-h/FSP/MeteorLake/Fsp.fd"
+# CONFIG_INTEL_TME is not set
 CONFIG_SOFTWARE_CONNECTION_MANAGER=y
 CONFIG_HAVE_ME_BIN=y
 CONFIG_NO_GFX_INIT=y
