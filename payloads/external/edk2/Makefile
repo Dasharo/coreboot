@@ -148,7 +148,11 @@ endif
 #
 # The Dasharo repository has the following additional options:
 #
-
+ifneq ($(CONFIG_EDK2_DISABLE_TPM),y)
+ifeq ($(CONFIG_EDK2_USE_UEFIVAR_BACKED_TPM_PPI),y)
+BUILD_STR += -D USE_UEFIVAR_BACKED_TPM_PPI=TRUE
+endif
+endif
 # ABOVE_4G_MEMORY		= TRUE
 ifneq ($(CONFIG_EDK2_ABOVE_4G_MEMORY),y)
 BUILD_STR += -D ABOVE_4G_MEMORY=FALSE
