@@ -352,4 +352,15 @@ config EDK2_CREATE_PREINSTALLED_BOOT_OPTIONS
 	  Tell UEFIPaylaod to scan available EFI System Partitions and create
 	  boot options from the bootloader binaries found on the disks.
 
+config EDK2_USE_UEFIVAR_BACKED_TPM_PPI
+	bool "Use UEFI variable-backed TPM PPI"
+	default n
+	depends on !EDK2_DISABLE_TPM
+	help
+	  Tell UEFIPayload to use TPM PPI buffer in UEFI variables. Workaround
+	  for platform-specific issues causing the RAM to not be preserved
+	  across reboots.
+
+	  If unsure, say N.
+
 endif
