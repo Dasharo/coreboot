@@ -273,7 +273,6 @@ jobs:
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
       artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
-
     secrets: inherit
     strategy:
       matrix:
@@ -287,6 +286,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
@@ -300,6 +300,7 @@ jobs:
       platform: protectli
       vendor: ${{ matrix.vendor }}
       model: ${{ matrix.model }}
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
     secrets: inherit
     strategy:
       matrix:
