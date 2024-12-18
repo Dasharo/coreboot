@@ -44,7 +44,9 @@ jobs:
           release=$(echo "$tag" | awk -F'_' '{print $NF}')
 
           # Use 3mdeb directory for community / DPP releases
-          if [ ${{ inputs.released_by_3mdeb }} ]; then base_dir="3mdeb"; else
+          if ${{ inputs.released_by_3mdeb }} ; then
+            base_dir="3mdeb"
+          else
             # by default, use platform vendor name as a directory
             base_dir="${{ inputs.platform }}"
           fi
