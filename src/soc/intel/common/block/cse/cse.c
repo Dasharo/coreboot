@@ -1438,6 +1438,16 @@ static void cse_set_state(struct device *dev)
 	printk(BIOS_DEBUG, "CMOS: me_state = %u\n", cmos_me_state);
 
 	/*
+	 * Skip action while ME is in debug (HAP) mode, as HECI will not work
+	 * in this state
+	 */
+
+	if (cse_is_hfs1_com_debug()) {
+		printk(BIOS_DEBUG, "ME is in HAP mode, skipping soft temp disable");
+		return;
+	}
+
+	/*
 	 * We only take action if the me_state doesn't match the CS(ME) working state
 	 */
 
