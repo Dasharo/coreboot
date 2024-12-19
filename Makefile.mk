@@ -227,9 +227,7 @@ ifeq ($(CONFIG_USE_BLOBS),y)
 # until expressly requested and enabled with --checkout
 forgetthis:=$(shell git submodule update --init --checkout 3rdparty/blobs $(quiet_errors))
 forgetthis:=$(shell git submodule update --init --checkout 3rdparty/intel-microcode $(quiet_errors))
-ifeq ($(CONFIG_FSP_USE_REPO),y)
 forgetthis:=$(shell git submodule update --init --checkout 3rdparty/fsp $(quiet_errors))
-endif
 ifeq ($(CONFIG_USE_AMD_BLOBS),y)
 forgetthis:=$(shell git submodule update --init --checkout 3rdparty/amd_blobs $(quiet_errors))
 endif
