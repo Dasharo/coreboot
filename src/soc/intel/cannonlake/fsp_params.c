@@ -3,6 +3,7 @@
 #include <bootsplash.h>
 #include <dasharo/options.h>
 #include <console/console.h>
+#include <cpu/intel/microcode.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <fsp/api.h>
@@ -334,6 +335,8 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	FSP_S_CONFIG *params = &supd->FspsConfig;
 	FSP_S_TEST_CONFIG *tconfig = &supd->FspsTestConfig;
 	struct device *dev;
+	const struct microcode *microcode_file;
+	size_t microcode_len;
 
 	config_t *config = config_of_soc();
 
@@ -694,6 +697,23 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	params->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(SA_DEVFN_IGD);
 
 	params->PavpEnable = CONFIG(PAVP);
+
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SGX_ENABLE)) {
+		/* Locate microcode and pass to FSP-S for 2nd microcode loading to properly enable SGX */
+		microcode_file = intel_microcode_find();
+
+		if (microcode_file != NULL) {
+			microcode_len = get_microcode_size(microcode_file);
+			if (microcode_len != 0) {
+				/* Update CPU Microcode patch base address/size */
+				params->MicrocodeRegionBase = (uint32_t)(uintptr_t)microcode_file;
+				params->MicrocodeRegionSize = (uint32_t)microcode_len;
+			}
+		}
+
+		params->SgxEpoch0 = 0x636f7265626f6f74UL; /* 'coreboot' in hex */
+		params->SgxEpoch1 = 0x636f7265626f6f74UL; /* 'coreboot' in hex */
+	}
 
 	/*
 	 * Prevent FSP from programming write-once subsystem IDs by providing
