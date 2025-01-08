@@ -278,6 +278,13 @@ static void graphics_dev_read_resources(struct device *dev)
 		pci_dev_set_resources(dev);
 		res_bar0->flags |= IORESOURCE_FIXED;
 	}
+
+	if (ENV_X86_32) {
+		/* Place framebuffer below 4G to allow drawing bootsplash */
+		struct resource *res_bar2 = find_resource(dev, PCI_BASE_ADDRESS_2);
+		res_bar2->limit = 0xffffffff;
+		res_bar2->flags &= ~(IORESOURCE_PCI64 | IORESOURCE_ABOVE_4G);
+	}
 }
 
 static void graphics_join_mbus(void)
