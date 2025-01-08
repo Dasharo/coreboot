@@ -299,6 +299,13 @@ static void graphics_dev_read_resources(struct device *dev)
 		res_bar0->flags |= IORESOURCE_FIXED;
 	}
 
+	if (ENV_X86_32) {
+		/* Place framebuffer below 4G to ensure coreboot can access it */
+		struct resource *res_bar2 = find_resource(dev, PCI_BASE_ADDRESS_2);
+		res_bar2->limit = 0xffffffff;
+		res_bar2->flags &= ~IORESOURCE_ABOVE_4G;
+	}
+
 	const struct hob_resource *res =
 		fsp_find_resource_hob_by_guid(memory_compression_guid);
 	if (res) {
