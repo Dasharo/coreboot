@@ -49,5 +49,7 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	mupd->FspmConfig.DcLoadline[1] = 310;
 	mupd->FspmConfig.DcLoadline[2] = 490;
 
+	mupd->FspmConfig.MmioSize = 2560;
+
 	memcfg_init(mupd, &mem_config, &dimm_module_spd_info, half_populated);
 }
