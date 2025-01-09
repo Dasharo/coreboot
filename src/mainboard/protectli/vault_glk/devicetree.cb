@@ -165,6 +165,7 @@ chip soc/intel/apollolake
 					irq 0x70 = 9
 					irq 0xf0 = 0x80 # Clear 3VSB
 					irq 0xf1 = 0x80 # Clear AVCC3
+					irq 0xf4 = 0x60 # Use SB to control AC power loss
 				end
 				device pnp 2e.5 off end # Keyboard
 				device pnp 2e.6 off end # Mouse
