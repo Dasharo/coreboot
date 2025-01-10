@@ -258,7 +258,7 @@ config PCR_BASE_ADDRESS
 
 config IOE_PCR_BASE_ADDRESS
 	hex
-	default 0x3fff0000000
+	default 0x60000000
 	help
 	  This option allows you to select MMIO Base Address of IOE sideband bus.
 
