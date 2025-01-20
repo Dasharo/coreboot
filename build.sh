@@ -358,6 +358,11 @@ function build_odroid_h4 {
   fi
 }
 
+if [ $# -lt 1 ]; then
+  usage
+  exit
+fi
+
 CMD="$1"
 
 case "$CMD" in
