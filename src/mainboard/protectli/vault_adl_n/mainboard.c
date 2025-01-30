@@ -11,6 +11,9 @@ const char *smbios_mainboard_product_name(void)
 {
 	char processor_name[49];
 
+	if (CONFIG(BOARD_PROTECTLI_VP2430))
+		return "VP2430";
+
 	fill_processor_name(processor_name);
 
 	if (strstr(processor_name, "N100") != NULL)
@@ -34,15 +37,17 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	/* Max payload 256B */
 	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
 
-	/*
-	 * CLKREQs connected only to RP3 and RP7, but other CLKREQs are
-	 * pulled to GND, So it should be fine to enable CPM on all RPs.
-	 */
-	params->PcieRpEnableCpm[0] = 1;
-	params->PcieRpEnableCpm[2] = 1;
-	params->PcieRpEnableCpm[4] = 1;
-	params->PcieRpEnableCpm[6] = 1;
-	params->PcieRpEnableCpm[9] = 1;
+	if (CONFIG(BOARD_PROTECTLI_VP32XX)) {
+		/*
+		 * CLKREQs connected only to RP3 and RP7, but other CLKREQs are
+		 * pulled to GND, So it should be fine to enable CPM on all RPs.
+		 */
+		params->PcieRpEnableCpm[0] = 1;
+		params->PcieRpEnableCpm[2] = 1;
+		params->PcieRpEnableCpm[4] = 1;
+		params->PcieRpEnableCpm[6] = 1;
+		params->PcieRpEnableCpm[9] = 1;
+	}
 
 	/* Enable port reset message on Type-C ports */
 	params->PortResetMessageEnable[4] = 1;
@@ -59,6 +64,13 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	/* PMC-PD controller */
 	params->PmcPdEnable = 1;
+
+	if (CONFIG(BOARD_PROTECTLI_VP2430)) {
+		/* Available since FSP MR6. W/A for missing CKLREQs. */
+		params->PchPcieClockGating = 0;
+		params->PchPciePowerGating = 0;
+	}
+
 	/* IOM USB config */
 	params->PchUsbOverCurrentEnable = 0;
 }
