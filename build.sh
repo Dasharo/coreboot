@@ -34,8 +34,18 @@ SDKVER="2024-02-18_732134932b"
 
 function build_optiplex_9010 {
   DEFCONFIG=$1
+  # Determine FW flavor first (uefi or seabios)
+  if [[ ${DEFCONFIG} == *"uefi"* ]]; then
+    FW_FLAVOR="uefi"
+  else
+    FW_FLAVOR="seabios"
+  fi
+
+  # Get FW version
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
-  [[ ${DEFCONFIG} != *"uefi"* ]] && FW_VERSION="${FW_VERSION}_seabios"
+  
+  # Combine FW flavor with version
+  FW_VERSION="${FW_FLAVOR}_${FW_VERSION}"
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
