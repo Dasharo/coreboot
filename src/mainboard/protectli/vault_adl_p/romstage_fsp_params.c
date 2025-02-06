@@ -7,6 +7,9 @@
 
 #include "gpio.h"
 
+#include <spd_bin.h>
+#include <lib.h>
+
 static const struct mb_cfg ddr5_mem_config = {
 	.type = MEM_TYPE_DDR5,
 	.ect = true, /* Early Command Training */
@@ -30,6 +33,19 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
 	const struct pad_config *pads;
 	size_t num;
+
+	struct spd_block blk = {
+		.addr_map = { 0x50, 0x52 },
+	};
+
+	get_spd_smbus(&blk);
+
+	for (int i = 0; i < ARRAY_SIZE(blk.addr_map); i++) {
+		if (blk.spd_array[i]) {
+			printk(BIOS_DEBUG, "DIMM @ 0x%02x:\n", blk.addr_map[i]);
+			hexdump(blk.spd_array[i], blk.len);
+		}
+	}
 
 	memcfg_init(memupd, &ddr5_mem_config, &dimm_module_spd_info, false);
 
