@@ -3,11 +3,11 @@ policies:
   - type: commit
     spec:
       header:
-        length: 80
+        length: 75
         imperative: false
         invalidLastCharacters: .
       body:
-        required: false
+        required: true
       dco: true
       gpg:
         required: true
