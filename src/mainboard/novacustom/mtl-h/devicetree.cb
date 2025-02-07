@@ -22,7 +22,11 @@ chip soc/intel/meteorlake
 	register "pch_pm_energy_report_enable" = "1"
 
 	# Thermal
+<<<<<<< HEAD
 	register "tcc_offset" = "10" # TCC of 100C
+=======
+	register "tcc_offset" = "30" # TCC of 80C
+>>>>>>> 41f4c30e4398 (mb/clevo/mtl-h: Add variant-specific power limits)
 
 	device cpu_cluster 0 on end
 	device domain 0 on
