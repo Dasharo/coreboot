@@ -1,4 +1,16 @@
 chip soc/intel/meteorlake
+	# Power limits,
+	# PsysPL2, PsysPL3, PL4 are configured by EC at runtime
+	register "power_limits_config[MTL_P_682_482_CORE]" = "{
+		.tdp_pl1_override = 35,
+		.tdp_pl2_override = 64,
+		.tdp_pl4 = 120,
+		.psys_pmax = 180,
+	}"
+
+	# MTL SOC has additional setting for PsysPmax
+	register "psys_pmax_watts" = "180"
+
 	device domain 0 on
 		subsystemid 0x1558 0xa741 inherit
 		device ref pcie_rp12 on # PEG
