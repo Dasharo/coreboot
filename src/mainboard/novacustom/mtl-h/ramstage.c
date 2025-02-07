@@ -98,6 +98,7 @@ static void mainboard_init(void *chip_info)
 	cnvi_dev->enabled = radio_enable;
 	cfg->cnvi_bt_core = radio_enable;
 	cfg->cnvi_bt_audio_offload = radio_enable;
+	cfg->cnvi_wifi_core = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
 	dasharo_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
