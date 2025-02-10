@@ -200,9 +200,6 @@ chip soc/intel/meteorlake
 		device ref i2c3 on # Pantone ROM
 			register "serial_io_i2c_mode[PchSerialIoIndexI2C3]" = "PchSerialIoPci"
 		end
-		device ref i2c5 on # Smart AMP
-			register "serial_io_i2c_mode[PchSerialIoIndexI2C5]" = "PchSerialIoPci"
-		end
 		device ref pcie_rp6 on # SD Card Reader
 			register "pcie_rp[PCH_RP(6)]" = "{
 				.clk_src = 3,
