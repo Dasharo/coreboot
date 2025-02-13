@@ -5,6 +5,8 @@
 #include <spd_bin.h>
 #include "gpio.h"
 
+#include <lib.h>
+
 static const struct mb_cfg ddr4_mem_config = {
 	.UserBd = BOARD_TYPE_MOBILE,
 	.dq_pins_interleaved = 0,
@@ -31,6 +33,9 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 	if (blk.spd_array[0] == NULL)
 		die("No memory detected. Insert DIMM module");
+
+	printk(BIOS_DEBUG, "DIMM @ 0x%02x:\n", blk.addr_map[0]);
+	hexdump(blk.spd_array[0], blk.len);
 
 	module_spd_info.spd_spec.spd_data_ptr_info.spd_data_ptr = (uintptr_t)blk.spd_array[0];
 	module_spd_info.spd_spec.spd_data_ptr_info.spd_data_len = (uintptr_t)blk.len;
