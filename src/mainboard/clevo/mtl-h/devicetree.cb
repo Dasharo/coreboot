@@ -33,8 +33,12 @@ chip soc/intel/meteorlake
 	register "power_limits_config[MTL_P_682_482_CORE]" = "{
 		.tdp_pl1_override = 35,
 		.tdp_pl2_override = 64,
-		.tdp_pl4 = 120,
+		.tdp_pl4 = 90,
+		.psys_pmax = 99,
 	}"
+
+	# MTL SOC has additional setting for PsysPmax
+	register "psys_pmax_watts" = "99"
 
 	register "usb2_ports" = "{
 		[0] = USB2_PORT_LONG(OC_SKIP),	 /* USB Type-A Port 1 (Left) */
