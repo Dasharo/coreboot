@@ -18,27 +18,11 @@ chip soc/intel/meteorlake
 	# SaGv configuration
 	register "sagv" = "SAGV_ENABLED"
 
-	# Disable C1 and Package C-state auto-demotion
-	register "disable_c1_state_auto_demotion" = "1"
-	register "disable_package_c_state_demotion" = "1"
-
 	# Enable Energy Reporting
 	register "pch_pm_energy_report_enable" = "1"
 
 	# Thermal
 	register "tcc_offset" = "30" # TCC of 100C
-
-	# Power limits
-	# PsysPL2, PsysPL3, PL4 are configured by EC at runtime
-	register "power_limits_config[MTL_P_682_482_CORE]" = "{
-		.tdp_pl1_override = 35,
-		.tdp_pl2_override = 64,
-		.tdp_pl4 = 90,
-		.psys_pmax = 99,
-	}"
-
-	# MTL SOC has additional setting for PsysPmax
-	register "psys_pmax_watts" = "99"
 
 	register "usb2_ports" = "{
 		[0] = USB2_PORT_LONG(OC_SKIP),	 /* USB Type-A Port 1 (Left) */
