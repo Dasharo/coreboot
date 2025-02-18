@@ -54,18 +54,6 @@ typedef tpm_result_t (*tis_sendrecv_fn)(const u8 *sendbuf, size_t send_size, u8 
 					size_t *recv_len);
 
 /*
- * Probe for the TPM device and set it up for use within locality 0.
- *
- * @family - pointer which is set to TPM family of the device
- *
- * Returns pointer to send-receive function on success or NULL on failure.
- *
- * Do not call this explicitly, it's meant to be used exclusively by TSS
- * implementation (tlcl_lib_init() function to be specific).
- */
-typedef tis_sendrecv_fn (*tis_probe_fn)(enum tpm_family *family);
-
-/*
  * tis_vendor_write()
  *
  * Vendor-specific function to send the requested data to the TPM.
