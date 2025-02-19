@@ -19,7 +19,8 @@ export PACKAGES_PATH := $(EDK2_PATH):\
 			$(EDK2_PLATFORMS_PATH)/Features/Intel/OutOfBandManagement:\
 			$(EDK2_PLATFORMS_PATH)/Features/Intel/PowerManagement:\
 			$(EDK2_PLATFORMS_PATH)/Features/Intel/SystemInformation:\
-			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface
+			$(EDK2_PLATFORMS_PATH)/Features/Intel/UserInterface: \
+			$(EDK2_PLATFORMS_PATH)/Drivers/
 else
 export PACKAGES_PATH := $(EDK2_PATH)
 endif
