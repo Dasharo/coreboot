@@ -4,6 +4,8 @@ on:
     branches:
       - dasharo
   push:
+    branches:
+      - dasharo-24.12
     tags:
       - '*'
 
