@@ -3,13 +3,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <console/console.h>
+#include <drivers/efi/efivars.h>
 
 #include <vendorcode/intel/edk2/UDK2017/MdePkg/Include/Uefi/UefiBaseType.h>
 #include <vendorcode/intel/edk2/UDK2017/MdePkg/Include/Uefi/UefiMultiPhase.h>
 #include <vendorcode/intel/edk2/UDK2017/MdePkg/Include/Pi/PiFirmwareVolume.h>
 #include <vendorcode/intel/edk2/UDK2017/MdeModulePkg/Include/Guid/VariableFormat.h>
-
-#include "efivars.h"
 
 #define PREFIX "EFIVARS: "
 
