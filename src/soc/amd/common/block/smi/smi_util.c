@@ -155,6 +155,8 @@ void clear_smi_sci_status(void)
 	smi_write32(SMI_SCI_STATUS, smi_read32(SMI_SCI_STATUS));
 }
 
+#if !CONFIG(HUDSON_PSP)
+
 static void clear_psp_smi(void)
 {
 	uint32_t reg32;
@@ -178,3 +180,5 @@ void configure_psp_smi(void)
 	reset_psp_smi();
 	configure_smi(SMITYPE_PSP, SMI_MODE_SMI);
 }
+
+#endif
