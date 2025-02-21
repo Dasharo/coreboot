@@ -39,7 +39,8 @@ static void soc_finalize(void *unused)
 
 		if (CONFIG(HAVE_SMI_HANDLER)) {
 			acpi_disable_sci();
-			fch_enable_power_button_smi();
+			if (!CONFIG(HUDSON_PSP))
+				fch_enable_power_button_smi();
 		} else {
 			acpi_enable_sci();
 		}

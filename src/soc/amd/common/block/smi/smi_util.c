@@ -30,6 +30,8 @@ void configure_smi(uint8_t smi_num, uint8_t mode)
 	smi_write32(SMI_REG_CONTROL0 + reg32_offset, reg32);
 }
 
+#if !CONFIG(HUDSON_PSP)
+
 void fch_enable_power_button_smi(void)
 {
 	acpi_write16(MMIO_ACPI_PM1_STS, PWRBTN_STS);
@@ -42,6 +44,8 @@ void fch_disable_power_button_smi(void)
 {
 	configure_smi(SMITYPE_PWRBUTTON_UP, SMI_MODE_DISABLE);
 }
+
+#endif // !CONFIG(HUDSON_PSP)
 
 /**
  * Configure generation of interrupts for given GEVENT pin
@@ -169,6 +173,8 @@ void clear_smi_sci_status(void)
 	smi_write32(SMI_SCI_STATUS, smi_read32(SMI_SCI_STATUS));
 }
 
+#if !CONFIG(HUDSON_PSP)
+
 static void clear_psp_smi(void)
 {
 	uint32_t reg32;
@@ -192,3 +198,5 @@ void configure_psp_smi(void)
 	reset_psp_smi();
 	configure_smi(SMITYPE_PSP, SMI_MODE_SMI);
 }
+
+#endif
