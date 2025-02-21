@@ -1,9 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <efi/efi_datatype.h>
 #include <option.h>
 #include <smmstore.h>
-
-#include <Uefi/UefiBaseType.h>
 
 #include "efivars.h"
 
