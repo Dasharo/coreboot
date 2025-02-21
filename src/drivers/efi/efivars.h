@@ -6,6 +6,12 @@
 #include <types.h>
 #include <commonlib/region.h>
 
+/*
+ * efi/efi_datatype.h must be included before other EFI headers because it
+ * provides entities that EDK's headers define when they are absent, leading to
+ * conflicting definitions for some orderings of includes.
+ */
+#include <efi/efi_datatype.h>
 #include <vendorcode/intel/edk2/UDK2017/MdePkg/Include/Uefi/UefiBaseType.h>
 
 /**
