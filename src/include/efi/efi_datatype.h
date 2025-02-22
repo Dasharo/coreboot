@@ -5,6 +5,12 @@
 #define __EFI_DATATYPE_H__
 
 /*
+ * Make sure NULL is defined before including EDK2 headers.  Otherwise, Base.h
+ * defines it causing <types.h> to fail on redefinition.
+ */
+#include <types.h>
+
+/*
  * EDK2 EFIAPI macro definition relies on compiler flags such as __GNUC__ which
  * is not working well when included by coreboot. While it has no side-effect on
  * i386 because the C calling convention used by coreboot and FSP are the same,
