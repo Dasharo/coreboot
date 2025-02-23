@@ -807,7 +807,7 @@ static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 			return rv;
 		}
 
-		rv = -memcmp(sector, image + addr, SPI_SECTOR_SIZE);
+		rv = memcmp(sector, image + addr, SPI_SECTOR_SIZE) ? -1 : 0;
 		if (rv) {
 			printk(BIOS_ERR, "%s: failed to verify sector, addr 0x%06x\n",
 			       __func__, addr);
@@ -827,7 +827,7 @@ static int ec_spi_image_verify(uint8_t *image, ssize_t image_sz)
 		goto exit;
 	}
 
-	rv = -memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE);
+	rv = memcmp(sector, image + addr, image_sz % SPI_SECTOR_SIZE) ? -1 : 0;
 	if (rv) {
 		printk(BIOS_ERR, "%s: failed to verify last sector, addr 0x%06x size 0x%lx\n",
 		       __func__, addr, image_sz % SPI_SECTOR_SIZE);
