@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <dasharo/options.h>
-#include <ec/system76/ec/commands.h>
+#include <ec/dasharo/ec/commands.h>
 #include <ec/acpi/ec.h>
-#include <ec/system76/ec/acpi.h>
+#include <ec/dasharo/ec/acpi.h>
 #include <fmap.h>
 #include <lib.h>
 #include <mainboard/gpio.h>
@@ -64,9 +64,9 @@ static void set_fan_curve(void)
 		break;
 	}
 
-	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
+	for (i = 0; i < (CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1); ++i) {
 		cmd.fan = i;
-		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+		dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 	}
 }
 
@@ -74,7 +74,7 @@ static void set_camera_enablement(void)
 {
 	bool enabled = get_camera_option();
 
-	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
+	dasharo_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
 static void set_battery_thresholds(void)
@@ -83,8 +83,8 @@ static void set_battery_thresholds(void)
 
 	get_battery_config(&bat_cfg);
 
-	system76_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
-	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
+	dasharo_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
+	dasharo_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
 }
 
 static void set_power_on_ac(void)
@@ -99,7 +99,7 @@ static void set_power_on_ac(void)
 
 	cmd.value = dasharo_get_power_on_after_fail();
 
-	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+	dasharo_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 }
 
 static void mainboard_init(void *chip_info)
@@ -117,7 +117,7 @@ static void mainboard_init(void *chip_info)
 	cfg->cnvi_bt_audio_offload = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
-	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
+	dasharo_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
 	mainboard_configure_gpios();
 	set_fan_curve();
@@ -164,7 +164,7 @@ static void mainboard_smbios_strings(struct device *dev, struct smbios_type11 *t
 	char ec_version[256];
 	uint8_t result;
 
-	result = system76_ec_read_version((uint8_t *)ec_version);
+	result = dasharo_ec_read_version((uint8_t *)ec_version);
 
 	/* If the command fails it mean we are running proprietary EC most likely */
 	if (result != 0) {
@@ -255,7 +255,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	// Enable reporting CPU C10 state over eSPI
 	params->PchEspiHostC10ReportEnable = 1;
 
-	params->LidStatus = system76_ec_get_lid_state();
+	params->LidStatus = dasharo_ec_get_lid_state();
 }
 
 void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
