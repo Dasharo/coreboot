@@ -3,8 +3,8 @@
 #include <dasharo/options.h>
 #include <device/device.h>
 #include <ec/acpi/ec.h>
-#include <ec/system76/ec/acpi.h>
-#include <ec/system76/ec/commands.h>
+#include <ec/dasharo/ec/acpi.h>
+#include <ec/dasharo/ec/commands.h>
 #include <fmap.h>
 #include <lib.h>
 #include <security/vboot/vboot_common.h>
@@ -78,9 +78,9 @@ static void set_fan_curve(void)
 		break;
 	}
 
-	for (i = 0; i < (CONFIG(EC_SYSTEM76_EC_DGPU) ? 2 : 1); ++i) {
+	for (i = 0; i < (CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1); ++i) {
 		cmd.fan = i;
-		system76_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+		dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 	}
 }
 
@@ -88,7 +88,7 @@ static void set_camera_enablement(void)
 {
 	bool enabled = get_camera_option();
 
-	system76_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
+	dasharo_ec_smfi_cmd(CMD_CAMERA_ENABLEMENT_SET, sizeof(enabled) / sizeof(uint8_t), (uint8_t *)&enabled);
 }
 
 static void set_battery_thresholds(void)
@@ -97,8 +97,8 @@ static void set_battery_thresholds(void)
 
 	get_battery_config(&bat_cfg);
 
-	system76_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
-	system76_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
+	dasharo_ec_set_bat_threshold(BAT_THRESHOLD_START, bat_cfg.start_threshold);
+	dasharo_ec_set_bat_threshold(BAT_THRESHOLD_STOP, bat_cfg.stop_threshold);
 }
 
 static void set_power_on_ac(void)
@@ -113,7 +113,7 @@ static void set_power_on_ac(void)
 
 	cmd.value = dasharo_get_power_on_after_fail();
 
-	system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+	dasharo_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 }
 
 static void init_mainboard(void *chip_info)
@@ -165,7 +165,7 @@ static void mainboard_smbios_strings(struct device *dev, struct smbios_type11 *t
 	char ec_version[256];
 	uint8_t result;
 
-	result = system76_ec_read_version((uint8_t *)ec_version);
+	result = dasharo_ec_read_version((uint8_t *)ec_version);
 
 	/* If the command fails it mean we are running proprietary EC most likely */
 	if (result != 0) {
