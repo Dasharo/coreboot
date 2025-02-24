@@ -10,7 +10,7 @@
 #include <static.h>
 #include <variant/ramstage.h>
 #include <device/device.h>
-#include <ec/system76/ec/commands.h>
+#include <ec/dasharo/ec/commands.h>
 
 #define DGPU_RST_N GPP_U4
 #define DGPU_PWR_EN GPP_U5
@@ -60,5 +60,5 @@ void variant_init(void) {
 	cnvi_dev->enabled = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
-	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
+	dasharo_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 }

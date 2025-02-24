@@ -4,7 +4,7 @@
 #define EC_GPE_SWI 0x6B
 #define CPU_CRIT_TEMP 100
 #define GPU_CRIT_TEMP 105
-#include <ec/system76/ec/acpi/ec.asl>
+#include <ec/dasharo/ec/acpi/ec.asl>
 
 Scope (\_SB) {
 	#include "sleep.asl"
