@@ -3,7 +3,7 @@ if PAYLOAD_EDK2
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
 	default n
-	depends on EC_SYSTEM76_EC
+	depends on EC_SYSTEM76_EC || EC_DASHARO_EC
 	help
 	  Select this option if you want to enable edk2 logging to S76 EC.
 
