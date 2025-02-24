@@ -4,7 +4,7 @@
 #include <soc/ramstage.h>
 #include <variant/ramstage.h>
 #include <device/device.h>
-#include <ec/system76/ec/commands.h>
+#include <ec/dasharo/ec/commands.h>
 #include <static.h>
 
 void variant_configure_fsps(FSP_S_CONFIG *params)
@@ -42,5 +42,5 @@ void variant_init(void)
 	cnvi_dev->enabled = radio_enable;
 	cfg->usb2_ports[9].enable = radio_enable;
 
-	system76_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
+	dasharo_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 }
