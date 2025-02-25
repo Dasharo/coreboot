@@ -393,6 +393,10 @@ endif
 ifeq ($(CONFIG_EDK2_SERIAL_ON_SUPERIO),y)
 BUILD_STR += -D UART_ON_SUPERIO=TRUE
 endif
+# FTDI_USB_UART_SUPPORT         = FALSE
+ifeq ($(CONFIG_EDK2_FTDI_USB_UART_SUPPORT),y)
+BUILD_STR += -D FTDI_USB_UART_SUPPORT=TRUE
+endif
 # PcdShowCpuMenu = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_CPU_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowCpuMenu=TRUE
