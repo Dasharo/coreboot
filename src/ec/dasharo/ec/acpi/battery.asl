@@ -193,22 +193,8 @@ Device (BAT0)
 	{
 		If (^^PCI0.LPCB.EC0.BAT0)
 		{
-			Local0 = 0
-			Local1 = 0
-			If (^^AC.ACFG)
-			{
-				If (((^^PCI0.LPCB.EC0.BST0 & 0x02) == 0x02))
-				{
-					Local0 |= 0x02
-					Local1 = (^^PCI0.LPCB.EC0.BPR0 & 0xFFFF)
-				}
-			}
-			Else
-			{
-				Local0 |= 1
-				Local1 = (^^PCI0.LPCB.EC0.BPR0 & 0xFFFF)
-			}
-
+			Local0 = ^^PCI0.LPCB.EC0.BST0
+			Local1 = (^^PCI0.LPCB.EC0.BPR0 & 0xFFFF)
 			Local7 = (Local1 & 0x8000)
 			If ((Local7 == 0x8000))
 			{
