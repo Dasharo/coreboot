@@ -273,6 +273,13 @@ config EDK2_SERIAL_SUPPORT
 	  Enable serial consule support in edk2. Serial output limits the performance of edk2's
 	  FrontPage. This option does not enable debugging output over serial. For that, use EDK2_DEBUG.
 
+config EDK2_FTDI_USB_UART_SUPPORT
+	bool "Support FTDI USB-UART converters"
+	default n
+	help
+	  Add support for using an FTDI USB-UART converter as a serial console redirection
+	  option. Useful for platforms without an easily accessible serial port.
+
 config EDK2_SECURE_BOOT_SUPPORT
 	bool "Enable UEFI Secure Boot support"
 	depends on !EDK2_REPO_OFFICIAL && SMMSTORE_V2
