@@ -310,7 +310,7 @@ static const struct pad_config gpio_table[] = {
 /* Pad configuration was generated automatically using intelp2m utility */
 void mainboard_configure_gpios(void)
 {
-	bool result;
+	//bool result;
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
@@ -324,6 +324,6 @@ void mainboard_configure_gpios(void)
 	} else {
 		printk(BIOS_ERR, "dGPU failed to power on, turning off\n");
 		gpio_set(DGPU_PWR_EN, 0);
-	}
-	mdelay(50);*/
+	}*/
+	mdelay(50);
 }
