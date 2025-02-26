@@ -72,7 +72,10 @@ endchoice
 
 config IPXE_SERIAL_CONSOLE
 	bool "Enable iPXE serial console"
-	def_bool y if CONSOLE_SERIAL
+	default n if PAYLOAD_EDK2 && EDK2_ENABLE_IPXE
+	default n if PAYLOAD_SEABIOS && SEABIOS_ADD_SERCON_PORT_FILE
+	default y if CONSOLE_SERIAL
+	default n
 	help
 	  Enable/disable iPXE serial console. Since SeaBIOS supports serial
 	  console this option might be helpful to avoid duplicated output.
