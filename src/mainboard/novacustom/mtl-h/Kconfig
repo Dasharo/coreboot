@@ -146,6 +146,10 @@ config INCLUDE_NVIDIA_GPU_ASL
 	help
 	  Select this if the variant has an Nvidia GPU attached to RP12
 
+config PXE_ROM_ID
+	string
+	default "8086,550a" if BOARD_NOVACUSTOM_V5X0TU_BASE
+
 if PAYLOAD_EDK2
 
 config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
