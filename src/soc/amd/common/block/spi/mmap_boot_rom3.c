@@ -78,6 +78,7 @@ static void bios_mmap_init(void)
 	static bool init_done;
 	size_t win_count = 0;
 	size_t map_win_size = 0;
+	uint8_t mapping = 0;
 
 	if (init_done)
 		return;
@@ -91,6 +92,16 @@ static void bios_mmap_init(void)
 	 * because the SPIBAR is no longer accessible.
 	 */
 	if (!rom_armor && fch_spi_rom_remapping() != 0)
+		die("Non default SPI ROM remapping is not supported!");
+
+	/*
+	 * The following code assumes that ROM2 is mapped at flash offset 0 and
+	 * that the ROM3 16MByte chunks are linear (0-1-2-3). This is the default
+	 * configuration currently enforced by soft-straps.
+	 * When ROM Armor is enabled, don't call fch_spi_rom_remapping()
+	 * because the SPIBAR is no longer accessible.
+	 */
+	if (!fch_spi_rom_remapping(&mapping) && mapping != 0)
 		die("Non default SPI ROM remapping is not supported!");
 
 	/*
