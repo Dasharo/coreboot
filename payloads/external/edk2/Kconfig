@@ -283,7 +283,7 @@ config EDK2_GOP_FILE
 	  The name of the GOP driver file passed to edk2.
 
 config EDK2_USE_LAPTOP_LID_LIB
-	bool "Use platform-specific library to tet lid state"
+	bool "Use platform-specific GOP policy library"
 	depends on EDK2_GOP_DRIVER
 	default n
 	help
