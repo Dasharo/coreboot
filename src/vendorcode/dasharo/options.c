@@ -145,7 +145,7 @@ uint8_t dasharo_get_usb_port_power(void)
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("UsbPortPower", &usb_port_power);
 
-	if (usb_port_power > USB_PORT_WHEN_ON_AC)
+	if (usb_port_power > USB_PORT_ALWAYS_ON)
 		return USB_PORT_ON_WHEN_POWERED;
 
 	return usb_port_power;

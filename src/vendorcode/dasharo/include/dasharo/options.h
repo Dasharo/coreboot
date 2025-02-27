@@ -39,7 +39,6 @@ enum cse_disable_mode {
 enum usb_port_power_opt {
 	USB_PORT_ON_WHEN_POWERED = 0,
 	USB_PORT_ALWAYS_ON = 1,
-	USB_PORT_WHEN_ON_AC = 2,
 };
 
 
@@ -87,9 +86,8 @@ uint8_t dasharo_get_power_on_after_fail(void);
 /* Looks up Dasharo/"UsbPortPower" variable.
  *
  * Result:
- *  - 0 - Only when powered on (default) 
+ *  - 0 - Only when powered on (default)
  *  - 1 - Always Enabled
- *  - 2 - Enabled when on AC
  */
 uint8_t dasharo_get_usb_port_power(void);
 
