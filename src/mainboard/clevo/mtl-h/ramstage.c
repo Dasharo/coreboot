@@ -105,7 +105,7 @@ static void set_usb_charge_port(void)
 		uint8_t index;
 		uint8_t value;
 	} __packed cmd = {
-		OPT_USB_POWER,
+		OPT_ALWAYS_ON_USB,
 		0
 	};
 
