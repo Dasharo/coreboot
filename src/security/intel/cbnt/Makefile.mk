@@ -91,7 +91,7 @@ $(obj)/bpm.bin: $(obj)/bpm_unsigned.bin $(CBNT_PROV) $(call strip_quotes, $(CONF
 $(call add_intermediate, add_bpm, $(obj)/bpm.bin)
 	printf "    CBNT       Adding BPM\n"
 	-$(CBFSTOOL) $< remove -n boot_policy_manifest.bin 2>/dev/null
-	$(CBFSTOOL) $< add -f $(obj)/bpm.bin -n boot_policy_manifest.bin -a 0x10 -t raw
+	$(CBFSTOOL) $< add -f $(obj)/bpm.bin -n boot_policy_manifest.bin -a 0x40 -t raw
 
 $(call add_intermediate, fit_bpm, set_fit_ptr add_bpm $(IFITTOOL))
 	printf "    IFITTOOL   Adding BPM\n"
@@ -102,10 +102,11 @@ endif # CONFIG_INTEL_CBNT_BPM_ONLY_UNSIGNED
 else # CONFIG_INTEL_CBNT_GENERATE_BPM
 
 ifneq ($(CONFIG_INTEL_CBNT_BOOT_POLICY_MANIFEST_BINARY),"")
+
 cbfs-files-y += boot_policy_manifest.bin
 boot_policy_manifest.bin-file := $(CONFIG_INTEL_CBNT_BOOT_POLICY_MANIFEST_BINARY)
 boot_policy_manifest.bin-type := raw
-boot_policy_manifest.bin-align := 0x10
+boot_policy_manifest.bin-align := 0x40
 
 $(call add_intermediate, add_bpm_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r COREBOOT -a -n boot_policy_manifest.bin -t 12 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
@@ -155,7 +156,7 @@ else
 cbfs-files-y += key_manifest.bin
 key_manifest.bin-file := $(KM_FILE)
 key_manifest.bin-type := raw
-key_manifest.bin-align := 0x10
+key_manifest.bin-align := 0x40
 
 $(call add_intermediate, add_km_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r COREBOOT -a -n key_manifest.bin -t 11 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
