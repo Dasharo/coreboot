@@ -11,6 +11,7 @@
 #include <intelblocks/thermal.h>
 #include <intelblocks/vtd.h>
 #include <memory_info.h>
+#include <security/intel/txt/txt.h>
 #include <soc/intel/common/smbios.h>
 #include <soc/iomap.h>
 #include <soc/pm.h>
@@ -33,6 +34,11 @@ void mainboard_romstage_entry(void)
 
 	/* Initialize HECI interface */
 	cse_init(HECI1_BASE_ADDRESS);
+
+	if (!CONFIG(INTEL_TXT))
+		disable_intel_txt();
+	else
+		intel_txt_romstage_init();
 
 	if (!s3wake && CONFIG(SOC_INTEL_CSE_LITE_SKU)) {
 		cse_fill_bp_info();
