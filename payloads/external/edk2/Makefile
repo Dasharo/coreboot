@@ -391,6 +391,13 @@ BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuMaxTemperature=$(C
 endif
 endif
 
+ifeq ($(CONFIG_EDK2_DISABLE_FAST_BOOT_FEATURE),y)
+BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdFastBootFeatureEnabled=FALSE
+endif
+ifeq ($(CONFIG_EDK2_DISABLE_QUIET_BOOT_FEATURE),y)
+BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdQuietBootFeatureEnabled=FALSE
+endif
+
 endif
 
 #
