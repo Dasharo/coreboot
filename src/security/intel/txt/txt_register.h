@@ -23,8 +23,11 @@
 #define  TXT_ESTS_WAKE_ERROR_STS (1 << 6)
 
 #define TXT_ERROR (TXT_BASE + 0x30)
-#define  ACMERROR_TXT_VALID	(1ul << 31)
-#define  ACMERROR_TXT_EXTERNAL	(1ul << 30)
+#define  ACMERROR_TXT_VALID		(1ul << 31)
+#define  ACMERROR_TXT_EXTERNAL		(1ul << 30)
+#define  ACMERROR_SOURCE_MASK		(1ul << 15)
+#define  ACMERROR_SOURCE_ACM		(0ul << 15)
+#define  ACMERROR_SOURCE_MLE		(1ul << 15)
 
 #define  ACMERROR_TXT_PROGRESS_SHIFT	16
 #define  ACMERROR_TXT_MINOR_SHIFT	15
@@ -33,7 +36,7 @@
 #define  ACMERROR_TXT_TYPE_SHIFT	0
 
 #define  ACMERROR_TXT_PROGRESS_CODE	(0x1ffull << ACMERROR_TXT_PROGRESS_SHIFT)
-#define  ACMERROR_TXT_MINOR_CODE	(0x01ull << ACMERROR_TXT_MINOR_SHIFT)
+#define  ACMERROR_TXT_MINOR_CODE	(0xfffull << ACMERROR_TXT_MINOR_SHIFT)
 #define  ACMERROR_TXT_MAJOR_CODE	(0x1full << ACMERROR_TXT_MAJOR_SHIFT)
 #define  ACMERROR_TXT_CLASS_CODE	(0x3full << ACMERROR_TXT_CLASS_SHIFT)
 #define  ACMERROR_TXT_TYPE_CODE		(0x0full << ACMERROR_TXT_TYPE_SHIFT)
@@ -54,6 +57,7 @@
 #define  ACMSTS_TXT_DISABLED		(1ull << 60)	/* disabled by FIT type 0xA record */
 #define  ACMSTS_BIOS_TRUSTED		(1ull << 59)
 #define  ACMSTS_MEM_CLEAR_POWER_DOWN	(1ull << 47)
+#define  ACMSTS_BTG_STARTUP_SUCCESS	(1ull << 31)
 #define  ACMSTS_TXT_STARTUP_SUCCESS	(1ull << 30)
 
 #define TXT_VER_FSBIF (TXT_BASE + 0x100)
@@ -186,7 +190,7 @@ typedef enum {
 
 typedef enum {
 	BIOS_ACM = 0,
-	SINIT_ACM = 1,
+	STARTUP_ACM = 1,
 	BOOTGUARD_ACM = 3,
 } acm_module_sub_type;
 
