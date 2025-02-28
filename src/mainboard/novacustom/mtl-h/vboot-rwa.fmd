@@ -1,14 +1,14 @@
 FLASH 32M {
-	SI_ALL 9M {
+	SI_ALL 10M {
 		SI_DESC 16K
 #if CONFIG_MAINBOARD_USES_IFD_GBE_REGION
 		SI_GBE 8K
 #endif
 		SI_ME
 	}
-	SI_BIOS {
-		RW_UNUSED 7M
+	RW_UNUSED 6M
 
+	SI_BIOS {
 		# This section starts at the 16M boundary in SPI flash.
 		# MTL does not support a region crossing this boundary,
 		# because the SPI flash is memory-mapped into two non-
