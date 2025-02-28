@@ -363,4 +363,16 @@ config EDK2_USE_UEFIVAR_BACKED_TPM_PPI
 
 	  If unsure, say N.
 
+config EDK2_ENABLE_FAST_BOOT_FEATURE
+	bool "Enable fast boot feature in EDK2 Payload"
+	default n
+	help
+	  Enables fast boot option in the TianoCore Payload.
+
+config EDK2_ENABLE_QUIET_BOOT_FEATURE
+	bool "Enable quiet boot feature in EDK2 Payload"
+	default n
+	help
+	  Enables quiet boot option in the TianoCore Payload.
+
 endif
