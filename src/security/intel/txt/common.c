@@ -367,14 +367,14 @@ int intel_txt_run_bios_acm(const u8 input_params)
 
 	cbfs_unmap(acm_data);
 
-	const uint64_t acm_status = read64p(TXT_SPAD);
-	if (acm_status & ACMERROR_TXT_VALID) {
+	const uint64_t acm_error = read64p(TXT_BIOSACM_ERRORCODE);
+	if (acm_error & ACMERROR_TXT_VALID) {
 		printk(BIOS_ERR, "TEE-TXT: FATAL ACM launch error !\n");
 		/*
 		 * WARNING !
 		 * To clear TXT.BIOSACM.ERRORCODE you must issue a cold reboot!
 		 */
-		intel_txt_log_acm_error(read32p(TXT_BIOSACM_ERRORCODE));
+		intel_txt_log_acm_error(acm_error);
 		return -1;
 	}
 
