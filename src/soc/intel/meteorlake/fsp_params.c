@@ -368,6 +368,8 @@ static void fill_fsps_cpu_params(FSP_S_CONFIG *s_cfg,
 	 */
 	if (CONFIG(USE_FSP_FEATURE_PROGRAM_ON_APS))
 		fill_fsps_microcode_params(s_cfg, config);
+
+	s_cfg->TxtEnable = CONFIG(INTEL_TXT);
 }
 
 
