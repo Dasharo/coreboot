@@ -390,12 +390,13 @@ ifneq ($(CONFIG_CPU_MAX_TEMPERATURE),)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdCpuMaxTemperature=$(CONFIG_CPU_MAX_TEMPERATURE)
 endif
 endif
-
-ifeq ($(CONFIG_EDK2_DISABLE_FAST_BOOT_FEATURE),y)
-BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdFastBootFeatureEnabled=FALSE
+# PcdFastBootFeatureEnabled = FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_FAST_BOOT_FEATURE),y)
+BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdFastBootFeatureEnabled=TRUE
 endif
-ifeq ($(CONFIG_EDK2_DISABLE_QUIET_BOOT_FEATURE),y)
-BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdQuietBootFeatureEnabled=FALSE
+# PcdQuietBootFeatureEnabled = FALSE
+ifeq ($(CONFIG_EDK2_ENABLE_QUIET_BOOT_FEATURE),y)
+BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdQuietBootFeatureEnabled=TRUE
 endif
 
 endif
