@@ -48,7 +48,6 @@ static void save_dimm_info(void)
 		printk(BIOS_ERR, "SMBIOS MEMORY_INFO_DATA_HOB not found\n");
 		return;
 	}
-
 	/*
 	 * Allocate CBMEM area for DIMM information used to populate SMBIOS
 	 * table 17
@@ -70,6 +69,10 @@ static void save_dimm_info(void)
 	dimm_max = ARRAY_SIZE(mem_info->dimm);
 	for (node = 0; node < MAX_NODE; node++) {
 		ctrlr_info = &meminfo_hob->Controller[node];
+
+		if (ctrlr_info->Status != CHANNEL_PRESENT)
+			continue;
+
 		for (channel = 0; channel < MAX_CH && index < dimm_max; channel++) {
 			channel_info = &ctrlr_info->ChannelInfo[channel];
 			if (channel_info->Status != CHANNEL_PRESENT)
@@ -92,6 +95,8 @@ static void save_dimm_info(void)
 				uint8_t memProfNum = meminfo_hob->MemoryProfile;
 				serial_num = src_dimm->SpdSave + SPD_SAVE_OFFSET_SERIAL;
 
+				printk(BIOS_DEBUG, "Filling DIMM info for Controller %d Channel %d DIMM %d\n",
+					node, channel, dimm);
 				/* Populate the DIMM information */
 				dimm_info_fill(dest_dimm,
 					src_dimm->DimmCapacity,
