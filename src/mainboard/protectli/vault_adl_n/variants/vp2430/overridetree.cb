@@ -62,22 +62,5 @@ chip soc/intel/alderlake
 				device generic 0 on end
 			end
 		end
-
-		device ref pch_espi on
-			chip superio/ite/it8659e
-				# Swap I/O ports on COM ports, as COM2 is exposed
-				# as USB-C, while COM1 is only available on a header
-				device pnp 2e.1 on	# COM 1
-					io 0x60 = 0x2f8
-					irq 0x70 = 3
-					irq 0xf1 = 0x52 # IRQ low level
-				end
-				device pnp 2e.2 on	# COM 2
-					io 0x60 = 0x3f8
-					irq 0x70 = 4
-					irq 0xf1 = 0x52 # IRQ low level
-				end
-			end
-		end
 	end
 end
