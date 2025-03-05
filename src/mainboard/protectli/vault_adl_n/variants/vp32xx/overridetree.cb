@@ -64,16 +64,9 @@ chip soc/intel/alderlake
 				register "FAN2.smart.slope"     = "32"
 				register "FAN2.smart.tmp_delta" = "2"
 
-				device pnp 2e.1 on	# COM 1
-					io 0x60 = 0x3f8
-					irq 0x70 = 4
-					irq 0xf1 = 0x52 # IRQ low level
-				end
-				device pnp 2e.2 on	# COM 2
-					io 0x60 = 0x2f8
-					irq 0x70 = 3
-					irq 0xf1 = 0x52 # IRQ low level
-				end
+				# Chip scope needs at least one device.
+				# Otherwise it doesn't compile.
+				device pnp 2e.a off end	# CIR
 			end
 		end
 	end
