@@ -281,6 +281,18 @@ uint8_t cse_get_me_disable_mode(void)
 
 	return var;
 }
+
+bool dasharo_is_dgpu_enabled(void)
+{
+	bool var = true;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+		read_bool_var("DGPUEnabled", &var);
+	}
+
+	return var;
+}
+
 #else
 uint8_t cse_get_me_disable_mode(void)
 {
