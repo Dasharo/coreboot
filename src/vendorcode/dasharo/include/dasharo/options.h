@@ -299,4 +299,14 @@ bool get_hyper_threading_option(void);
  */
 uint8_t get_cpu_throttling_offset(uint8_t tcc_offset);
 
+/*
+ * Disable DGPU for power savings.
+ *
+ *
+ * Result:
+ *  - true  - DGPU enabled
+ *  - false - DGPU disabled
+ */
+ bool dasharo_is_dgpu_enabled(void);
+
 #endif /* DASHARO_OPTIONS_H */
