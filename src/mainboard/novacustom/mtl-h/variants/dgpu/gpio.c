@@ -5,6 +5,7 @@
 #include <gpio.h>
 #include <timer.h>
 #include <delay.h>
+#include <dasharo/options.h>
 
 static const struct pad_config gpio_table[] = {
 
@@ -314,16 +315,21 @@ void variant_configure_gpios(void)
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
-	/* dGPU power on sequence */
-	mdelay(4);
-	gpio_set(DGPU_PWR_EN, 1);
-	result = wait_ms(200, gpio_get(DGPU_PWRGD) == 1);
-	if (result) {
-		printk(BIOS_INFO, "dGPU powered on\n");
-		gpio_set(DGPU_RST_N, 1);
+	if (dasharo_is_dgpu_enabled()) {
+		/* dGPU power on sequence */
+		mdelay(4);
+		gpio_set(DGPU_PWR_EN, 1);
+		result = wait_ms(200, gpio_get(DGPU_PWRGD) == 1);
+		if (result) {
+			printk(BIOS_INFO, "dGPU powered on\n");
+			gpio_set(DGPU_RST_N, 1);
+		} else {
+			printk(BIOS_ERR, "dGPU failed to power on, turning off\n");
+			gpio_set(DGPU_PWR_EN, 0);
+		}
 	} else {
-		printk(BIOS_ERR, "dGPU failed to power on, turning off\n");
-		gpio_set(DGPU_PWR_EN, 0);
+			gpio_set(DGPU_PWR_EN, 0);
 	}
+
 	mdelay(50);
 }
