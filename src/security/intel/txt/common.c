@@ -83,12 +83,13 @@ int intel_txt_log_acm_error(const uint32_t acm_error)
 							>> ACMERROR_TXT_PROGRESS_SHIFT;
 
 	if (!minor) {
-		if (class == 0 && major == 0 && progress > 0) {
+		if (class == 0 && major == 0 && minor == 0) {
 			printk(BIOS_ERR, " Execution successful\n");
 			printk(BIOS_ERR, " Progress code 0x%x\n", progress);
 		} else {
 			printk(BIOS_ERR, " Error Class: %x\n", class);
-			printk(BIOS_ERR, " Error: %x.%x\n", major, progress);
+			printk(BIOS_ERR, " Error: %x.%x\n", major, minor);
+			printk(BIOS_ERR, " Progress code 0x%x\n", progress);
 		}
 	} else {
 		printk(BIOS_ERR, " ACM didn't start\n");
