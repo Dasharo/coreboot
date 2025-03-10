@@ -5,7 +5,7 @@ on:
       - dasharo
   push:
     branches:
-      - dasharo-24.12
+      - dasharo-24.12*
     tags:
       - '*'
 
