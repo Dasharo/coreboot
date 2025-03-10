@@ -28,9 +28,13 @@ endif
 add_intel_firmware: $(call strip_quotes,$(CONFIG_IFD_BIN_PATH))
 ifeq ($(CONFIG_HAVE_ME_BIN),y)
 
-OBJ_ME_BIN := $(obj)/me.bin
-
 ifneq ($(CONFIG_STITCH_ME_BIN),y)
+
+OBJ_ME_BIN := $(call strip_quotes,$(CONFIG_ME_BIN_PATH))
+
+else
+
+OBJ_ME_BIN := $(obj)/me.bin
 
 $(OBJ_ME_BIN): $(call strip_quotes,$(CONFIG_ME_BIN_PATH))
 	cp $< $@
