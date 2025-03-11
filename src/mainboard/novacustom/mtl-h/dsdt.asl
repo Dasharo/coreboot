@@ -31,4 +31,8 @@ DefinitionBlock(
 	}
 
 	#include "acpi/mainboard.asl"
+
+#if CONFIG(INCLUDE_NVIDIA_GPU_ASL)
+	#include "acpi/dgpu/gpu_top.asl"
+#endif
 }
