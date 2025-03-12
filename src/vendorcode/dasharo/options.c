@@ -284,13 +284,18 @@ uint8_t cse_get_me_disable_mode(void)
 
 bool dasharo_is_dgpu_enabled(void)
 {
-	bool var = true;
+	bool dgpu_enabled = true;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
-		read_bool_var("DGPUEnabled", &var);
+	/* Functionally, it is a 0 or 1 value. For the desired UI however, the VFR 
+	 * requires it to be handled as a uint8.
+	 */
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
+		uint8_t tmp = 0;
+		read_u8_var("DGPUEnabled", &tmp);
+		dgpu_enabled = tmp != 0;
 	}
 
-	return var;
+	return dgpu_enabled;
 }
 
 #else
