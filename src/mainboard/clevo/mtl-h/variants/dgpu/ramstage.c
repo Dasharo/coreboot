@@ -11,5 +11,5 @@ void variant_devtree_update(void)
 	i2c_amp_dev->enabled = have_smartamp;
 
 	struct device *dgpu_dev = pcidev_on_root(0x01, 0);
-	dgpu_dev->enabled = dasharo_is_dgpu_enabled();
+	dgpu_dev->enabled = dasharo_is_dgpu_enabled() != 0;
 }
