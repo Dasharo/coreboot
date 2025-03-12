@@ -12,4 +12,5 @@ void variant_devtree_update(void)
 
 	struct device *dgpu_dev = pcidev_on_root(0x01, 0);
 	dgpu_dev->enabled = dasharo_is_dgpu_enabled() != 0;
+	printk(BIOS_DEBUG, "dgpu_dev->enabled: %d\n", dgpu_dev->enabled);
 }
