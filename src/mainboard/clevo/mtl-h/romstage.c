@@ -40,7 +40,8 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	};
 
 	mainboard_configure_gpios();
-	mupd->FspmConfig.PrimaryDisplay = 0x0; // iGPU
+	mupd->FspmConfig.PrimaryDisplay = 4;
+	mupd->FspmConfig.RootPortIndex = 11;
 
 	mupd->FspmConfig.AcLoadline[0] = 190;
 	mupd->FspmConfig.AcLoadline[1] = 310;
