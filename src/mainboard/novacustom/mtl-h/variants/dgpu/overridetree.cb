@@ -17,7 +17,7 @@ chip soc/intel/meteorlake
 			register "pcie_rp[PCH_RP(12)]" = "{
 				.clk_src = 6,
 				.clk_req = 6,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.flags = PCIE_RP_LTR | PCIE_RP_HOTPLUG,
 			}"
 			device pci 00.0 on
 				subsystemid 0x1558 0xa761
