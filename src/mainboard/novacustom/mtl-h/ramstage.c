@@ -208,9 +208,20 @@ void mainboard_update_soc_chip_config(struct soc_intel_meteorlake_config *config
 		config->s0ix_enable = 1;
 }
 
+void __weak variant_final(void)
+{
+
+}
+
+static void mainboard_final(void *chip_info)
+{
+	variant_final();
+}
+
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
 	.enable_dev = mainboard_enable,
+	.final = mainboard_final,
 };
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
