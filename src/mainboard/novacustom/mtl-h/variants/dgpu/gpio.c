@@ -307,6 +307,7 @@ static const struct pad_config gpio_table[] = {
 #define DGPU_RST_N GPP_B09
 #define DGPU_PWR_EN GPP_D03
 #define DGPU_PWRGD GPP_C15
+#define DGPU_NVVDD_EN GPP_F16
 
 /* Pad configuration was generated automatically using intelp2m utility */
 void variant_configure_gpios(void)
@@ -315,21 +316,24 @@ void variant_configure_gpios(void)
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
-	if (dasharo_is_dgpu_enabled()) {
-		/* dGPU power on sequence */
+	mdelay(50);
+	if (dasharo_is_dgpu_enabled() && !gpio_get(DGPU_PWRGD)) {
+		gpio_set(DGPU_RST_N, 0);
 		mdelay(4);
 		gpio_set(DGPU_PWR_EN, 1);
 		result = wait_ms(200, gpio_get(DGPU_PWRGD) == 1);
-		if (result) {
-			printk(BIOS_INFO, "dGPU powered on\n");
+		if (result)
 			gpio_set(DGPU_RST_N, 1);
-		} else {
-			printk(BIOS_ERR, "dGPU failed to power on, turning off\n");
+		else
 			gpio_set(DGPU_PWR_EN, 0);
-		}
 	} else {
-			gpio_set(DGPU_PWR_EN, 0);
+		gpio_set(DGPU_PWR_EN, 0);
 	}
+	printk(BIOS_ERR, "DGPU_PWRGD %d\n", gpio_get(DGPU_PWRGD));
+	printk(BIOS_ERR, "DGPU_RST_N %d\n", gpio_get(DGPU_RST_N));
+	printk(BIOS_ERR, "DGPU_PWR_EN %d\n", gpio_get(DGPU_PWR_EN));
+	printk(BIOS_ERR, "DGPU_NVVDD_EN %d\n", gpio_get(DGPU_NVVDD_EN));
+	printk(BIOS_ERR, "PEG_CLKREQ %d\n", gpio_get(GPP_D18));
 
 	mdelay(50);
 }
