@@ -2,6 +2,7 @@
 
 #include <console/console.h>
 #include <device/pci_ops.h>
+#include <intelblocks/smbus.h>
 #include <soc/lpc.h>
 #include <soc/pci_devs.h>
 #include <soc/romstage.h>
@@ -27,6 +28,8 @@ void mainboard_memory_init_params(struct romstage_params *params,
 	struct spd_block blk = {
 		.addr_map = { 0x50 },
 	};
+
+	smbus_common_init();
 
 	get_spd_smbus(&blk);
 	if (blk.spd_array[0][0] == 0)
