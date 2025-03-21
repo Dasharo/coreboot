@@ -1,7 +1,8 @@
-## SPDX-License-Identifier: GPL-2.0-only
-
 config BOARD_PROTECTLI_FW2B
 	bool "FW2B"
 
 config BOARD_PROTECTLI_FW4B
 	bool "FW4B"
+
+config BOARD_PROTECTLI_FW4C
+	bool "FW4C"

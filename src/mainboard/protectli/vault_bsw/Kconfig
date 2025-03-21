@@ -1,6 +1,4 @@
-## SPDX-License-Identifier: GPL-2.0-only
-
-if BOARD_PROTECTLI_FW2B || BOARD_PROTECTLI_FW4B
+if BOARD_PROTECTLI_FW2B || BOARD_PROTECTLI_FW4B || BOARD_PROTECTLI_FW4C
 
 config BOARD_SPECIFIC_OPTIONS
 	def_bool y
@@ -9,18 +7,22 @@ config BOARD_SPECIFIC_OPTIONS
 	select DISABLE_HPET
 	select HAVE_ACPI_RESUME
 	select HAVE_ACPI_TABLES
-	select PCIEXP_L1_SUB_STATE
 	select SEABIOS_ADD_SERCON_PORT_FILE if PAYLOAD_SEABIOS
 	select SOC_INTEL_BRASWELL
-	select SPI_FLASH_MACRONIX
+	select SPI_FLASH_MACRONIX if BOARD_PROTECTLI_FW2B || BOARD_PROTECTLI_FW4B
+	select SPI_FLASH_WINBOND if BOARD_PROTECTLI_FW4C
 	select SUPERIO_ITE_IT8613E
+	select INTEL_GMA_HAVE_VBT
 
 config MAINBOARD_DIR
+	string
 	default "protectli/vault_bsw"
 
 config VARIANT_DIR
+	string
 	default "fw2b" if BOARD_PROTECTLI_FW2B
 	default "fw4b" if BOARD_PROTECTLI_FW4B
+	default "fw4c" if BOARD_PROTECTLI_FW4C
 
 config OVERRIDE_DEVICETREE
 	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
@@ -28,6 +30,7 @@ config OVERRIDE_DEVICETREE
 config MAINBOARD_PART_NUMBER
 	default "FW2B" if BOARD_PROTECTLI_FW2B
 	default "FW4B" if BOARD_PROTECTLI_FW4B
+	default "FW4C" if BOARD_PROTECTLI_FW4C
 
 config MAINBOARD_VENDOR
 	string
@@ -40,27 +43,41 @@ config DIMM_SPD_SIZE
 	default 256
 
 config MAX_CPUS
-	int
 	default 2 if BOARD_PROTECTLI_FW2B
 	default 4 if BOARD_PROTECTLI_FW4B
+	default 4 if BOARD_PROTECTLI_FW4C
 
 config CBFS_SIZE
 	default 0x500000
 
 config PXE_ROM_ID
-	string
 	default "8086,1539" if BOARD_PROTECTLI_FW2B
 	default "8086,157b" if BOARD_PROTECTLI_FW4B
 
 if !RUN_FSP_GOP
+config VGA_BIOS_FILE
+	default "3rdparty/blobs/mainboard/protectli/vault_bsw/vgabios.bin"
+	help
+	  The C0 version of the video bios gets computed from this name
+	  so that they can both be added.  Only the correct one for the
+	  system will be run.
 
 config VGA_BIOS_ID
-	string
 	default "8086,22b0"
 	help
 	  The VGA_BIOS_ID for the C0 version of the video bios is hardcoded
-	  in soc/intel/braswell/Makefile.mk as 8086,22b1
+	  in soc/intel/braswell/Makefile.inc as 8086,22b1
 
 endif #RUN_FSP_GOP
+
+config FMD_FILE
+	string
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd"
+
+config USE_LEGACY_8254_TIMER
+	default y
+
+config USE_GENERIC_FSP_CAR_INC
+	default n
 
 endif # BOARD_PROTECTLI_FW2B

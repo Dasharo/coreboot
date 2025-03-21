@@ -4,9 +4,14 @@ chip soc/intel/braswell
 	# Set the parameters for MemoryInit
 	############################################################
 
+	register "PcdMrcInitTsegSize" = "8"	# SMM Region size in MiB
+
+	register "PcdMrcInitMmioSize" = "0x0800"
 	register "PcdMrcInitSpdAddr1" = "0xa0"
 	register "PcdMrcInitSpdAddr2" = "0xa2"
 	register "PcdIgdDvmt50PreAlloc" = "IGD_MEMSIZE_32MB"
+	register "PcdApertureSize" = "2"
+	register "PcdGttSize" = "1"
 	register "PcdDvfsEnable" = "0"
 	register "PcdCaMirrorEn" = "1"
 
@@ -32,36 +37,44 @@ chip soc/intel/braswell
 	register "PunitPwrConfigDisable" = "1"	# Disable SVID
 	register "ChvSvidConfig" = "SVID_PMIC_CONFIG"
 	register "PcdEmmcMode" = "PCH_DISABLED"
+	register "PcdUsb3ClkSsc" = "1"
+	register "PcdDispClkSsc" = "1"
+	register "PcdSataClkSsc" = "1"
 	register "PcdEnableSata" = "1"
-	register "Usb2Port0PerPortPeTxiSet" = "7"
-	register "Usb2Port0PerPortTxiSet" = "6"
-	register "Usb2Port0IUsbTxEmphasisEn" = "3"
-	register "Usb2Port0PerPortTxPeHalf" = "1"
-	register "Usb2Port1PerPortPeTxiSet" = "7"
-	register "Usb2Port1PerPortTxiSet" = "6"
-	register "Usb2Port1IUsbTxEmphasisEn" = "3"
-	register "Usb2Port1PerPortTxPeHalf" = "1"
-	register "Usb2Port2PerPortPeTxiSet" = "7"
-	register "Usb2Port2PerPortTxiSet" = "6"
-	register "Usb2Port2IUsbTxEmphasisEn" = "3"
-	register "Usb2Port2PerPortTxPeHalf" = "1"
-	register "Usb2Port3PerPortPeTxiSet" = "7"
-	register "Usb2Port3PerPortTxiSet" = "6"
+	register "Usb2Port0PerPortPeTxiSet" = "5"
+	register "Usb2Port0PerPortTxiSet" = "5"
+	register "Usb2Port0IUsbTxEmphasisEn" = "2"
+	register "Usb2Port0PerPortTxPeHalf" = "0"
+	register "Usb2Port1PerPortPeTxiSet" = "5"
+	register "Usb2Port1PerPortTxiSet" = "5"
+	register "Usb2Port1IUsbTxEmphasisEn" = "2"
+	register "Usb2Port1PerPortTxPeHalf" = "0"
+	register "Usb2Port2PerPortPeTxiSet" = "5"
+	register "Usb2Port2PerPortTxiSet" = "5"
+	register "Usb2Port2IUsbTxEmphasisEn" = "2"
+	register "Usb2Port2PerPortTxPeHalf" = "0"
+	register "Usb2Port3PerPortPeTxiSet" = "5"
+	register "Usb2Port3PerPortTxiSet" = "5"
 	register "Usb2Port3IUsbTxEmphasisEn" = "3"
-	register "Usb2Port3PerPortTxPeHalf" = "1"
-	register "Usb2Port4PerPortPeTxiSet" = "7"
-	register "Usb2Port4PerPortTxiSet" = "6"
-	register "Usb2Port4IUsbTxEmphasisEn" = "3"
-	register "Usb2Port4PerPortTxPeHalf" = "1"
-	register "Usb3Lane0Ow2tapgen2deemph3p5" = "0x3a"
-	register "Usb3Lane1Ow2tapgen2deemph3p5" = "0x64"
-	register "Usb3Lane2Ow2tapgen2deemph3p5" = "0x64"
+	register "Usb2Port3PerPortTxPeHalf" = "0"
+	register "Usb2Port4PerPortPeTxiSet" = "5"
+	register "Usb2Port4PerPortTxiSet" = "5"
+	register "Usb2Port4IUsbTxEmphasisEn" = "2"
+	register "Usb2Port4PerPortTxPeHalf" = "0"
+	register "Usb3Lane0Ow2tapgen2deemph3p5" = "0x64"
+	register "Usb3Lane1Ow2tapgen2deemph3p5" = "0x3a"
+	register "Usb3Lane2Ow2tapgen2deemph3p5" = "0x3a"
 	register "Usb3Lane3Ow2tapgen2deemph3p5" = "0x3a"
-	register "PcdPchSsicEnable" = "1"
+	register "PcdSataInterfaceSpeed" = "3"
+	register "PcdPchSsicEnable" = "0"
+	register "PcdPchUsbSsicPort" = "0"
+	register "PcdPchUsbHsicPort" = "0"
+	register "PcdRtcLock" = "0"	# Disable RTC access locking to NVRAM
 	register "PMIC_I2CBus" = "0"
-	register "ISPEnable" = "0"		# Disable IUNIT
+	register "ISPEnable" = "0"              # Disable IUNIT
 	register "ISPPciDevConfig" = "3"
 	register "PcdSdDetectChk" = "0" # Disable SD card detect
+	register "DptfDisable" = "1"
 
 	# Enable devices in PCI mode
 	register "lpss_acpi_mode" = "0"
@@ -78,7 +91,7 @@ chip soc/intel/braswell
 	# Enable SERIRQ continuous
 	register "serirq_mode" = "SERIRQ_CONTINUOUS"
 
-	device cpu_cluster 0 on end
+	device cpu_cluster 0 on	end
 	device domain 0 on
 		device pci 00.0 on  end	# 8086 2280 - SoC transaction router
 		device pci 02.0 on  end	# 8086 22b0/22b1 - B1/C0 stepping GFX

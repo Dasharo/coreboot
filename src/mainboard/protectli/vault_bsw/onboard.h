@@ -14,6 +14,7 @@
  * GPSE_SIZE = 86
  */
 
+
 /* Audio: Gpio index in SW bank */
 #define JACK_DETECT_GPIO_INDEX		77
 

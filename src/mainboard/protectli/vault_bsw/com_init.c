@@ -9,7 +9,15 @@
 
 void bootblock_mainboard_early_init(void)
 {
-	ite_reg_write(GPIO_DEV, 0x2c, 0x41); /* disable K8 power seq */
-	ite_reg_write(GPIO_DEV, 0x2d, 0x02); /* PCICLK 25MHz */
+
+	if (CONFIG(BOARD_PROTECTLI_FW4C)) {
+		ite_reg_write(GPIO_DEV, 0x23, 0x09);	/* External CLK */
+		ite_reg_write(GPIO_DEV, 0x71, 0x09);	/* PCICLK */
+		ite_reg_write(GPIO_DEV, 0x26, 0xf7);
+	} else {
+		ite_reg_write(GPIO_DEV, 0x2c, 0x41); /* disable K8 power seq */
+		ite_reg_write(GPIO_DEV, 0x2d, 0x02); /* PCICLK 25MHz */
+	}
+
 	ite_enable_serial(SERIAL1_DEV, CONFIG_TTYS0_BASE);
 }
