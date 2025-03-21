@@ -24,6 +24,12 @@ struct apu_config_t {
 	bool PciePwrMgmt;
 } __packed;
 
+enum {
+	iGPU_ONLY = 0,
+	NVIDIA_OPTIMUS,
+	DGPU_ONLY,
+};
+
 static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
 };
@@ -286,9 +292,11 @@ bool dasharo_is_dgpu_enabled(void)
 {
 	printk(BIOS_DEBUG, "dasharo_is_dgpu_enabled() called\n");
 	bool dgpu_enabled = true;
-
-	/* Functionally, it is a 0 or 1 value. For the desired UI however, the VFR 
-	 * requires it to be handled as a uint8.
+	/* 
+	 * 0 - iGPU_ONLY
+	 * 1 - NVIDIA_OPTIMUS (iGPU+dGPU)
+	 * 2 - DGPU_ONLY
+	 * Any non-zero value means that the dGPU does have to be enabled.
 	 */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
 		uint8_t tmp = 0;
@@ -299,6 +307,22 @@ bool dasharo_is_dgpu_enabled(void)
 
 	printk(BIOS_DEBUG, "dgpu_enabled value: %d\n", dgpu_enabled);
 	return dgpu_enabled;
+}
+
+bool dasharo_is_dgpu_only(void)
+{
+	printk(BIOS_DEBUG, "dasharo_is_dgpu_only() called\n");
+	bool dgpu_only = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
+		uint8_t tmp = 0;
+		read_u8_var("DGPUState", &tmp);
+		printk(BIOS_DEBUG, "DGPUState value: %d\n", tmp);
+		dgpu_only = tmp != 0;
+	}
+
+	printk(BIOS_DEBUG, "dgpu_only value: %d\n", dgpu_only);
+	return dgpu_only;
 }
 
 #else
