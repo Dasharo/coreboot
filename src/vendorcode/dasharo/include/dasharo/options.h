@@ -41,6 +41,11 @@ enum usb_port_power_opt {
 	USB_PORT_ALWAYS_ON = 1,
 };
 
+enum dgpu_states {
+	IGPU_ONLY = 0,
+	NVIDIA_OPTIMUS = 1,
+	DGPU_ONLY = 2,
+};
 
 struct watchdog_config {
 	bool wdt_enable;
@@ -301,13 +306,14 @@ bool get_hyper_threading_option(void);
 uint8_t get_cpu_throttling_offset(uint8_t tcc_offset);
 
 /*
- * Disable DGPU for power savings.
+ * Get dGPU mode option state
  *
  *
  * Result:
- *  - true  - DGPU enabled
- *  - false - DGPU disabled
+ *  - 0 - iGPU only
+ *  - 1 - NVIDIA Optimus (iGPU + dGPU)
+ *  - 2 - dGPU only
  */
- uint8_t dasharo_dgpu_state(void);
+ enum dgpu_states dasharo_dgpu_state(void);
 
 #endif /* DASHARO_OPTIONS_H */

@@ -24,12 +24,6 @@ struct apu_config_t {
 	bool PciePwrMgmt;
 } __packed;
 
-enum {
-	IGPU_ONLY = 0,
-	NVIDIA_OPTIMUS,
-	DGPU_ONLY,
-};
-
 static const EFI_GUID dasharo_system_features_guid = {
 	0xd15b327e, 0xff2d, 0x4fc1, { 0xab, 0xf6, 0xc1, 0x2b, 0xd0, 0x8c, 0x13, 0x59 }
 };
@@ -288,7 +282,7 @@ uint8_t cse_get_me_disable_mode(void)
 	return var;
 }
 
-uint8_t dasharo_dgpu_state(void)
+enum dgpu_states dasharo_dgpu_state(void)
 {
 	printk(BIOS_DEBUG, "dasharo_dgpu_state() called\n");
 	uint8_t dgpu_state = NVIDIA_OPTIMUS;
