@@ -3,6 +3,17 @@
 #ifndef _SOC_SMBUS_H_
 #define _SOC_SMBUS_H_
 
+#if CONFIG(TCO_SPACE_NOT_YET_SPLIT)
+/* Could get conflicting values. */
+#undef TCO_TMR
+#undef TCO1_CNT
+#undef TCO_RLD
+#endif
+
+#include <soc/intel/common/tco.h>
+
+#define SMBUS_SLAVE_ADDR		0x24
+
 /* PCI Configuration Space SMBus */
 #define HOSTC			0x40
 #define HOSTC_I2C_EN		(1 << 2)

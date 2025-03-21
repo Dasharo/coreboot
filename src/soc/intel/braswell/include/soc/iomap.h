@@ -55,6 +55,9 @@
 #define GPIO_BASE_ADDRESS		0x0500
 #define GPIO_BASE_SIZE			0x100
 
+#define TCO_BASE_ADDRESS		0x460
+#define TCO_BASE_SIZE			0x20
+
 #define SMBUS_BASE_ADDRESS		0xefa0
 
 #ifndef __ACPI__
