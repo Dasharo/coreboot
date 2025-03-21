@@ -292,8 +292,8 @@ bool dasharo_is_dgpu_enabled(void)
 	 */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
 		uint8_t tmp = 0;
-		read_u8_var("DGPUEnabled", &tmp);
-		printk(BIOS_DEBUG, "DGPUEnabled value: %d\n", tmp);
+		read_u8_var("DGPUState", &tmp);
+		printk(BIOS_DEBUG, "DGPUState value: %d\n", tmp);
 		dgpu_enabled = tmp != 0;
 	}
 
