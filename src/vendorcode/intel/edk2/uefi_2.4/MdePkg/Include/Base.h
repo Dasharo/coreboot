@@ -115,6 +115,21 @@ typedef struct {
   UINT8   Data4[8];
 } GUID;
 
+///
+/// 4-byte buffer. An IPv4 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[4];
+} IPv4_ADDRESS;
+
+///
+/// 16-byte buffer. An IPv6 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[16];
+} IPv6_ADDRESS;
+
+
 //
 // 8-bytes unsigned value that represents a physical system address.
 //
