@@ -189,7 +189,9 @@ bool is_vboot_locking_permitted(void)
 	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
 		return false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_OPTION_CFR))
+		lock = get_uint_option("lock_bios", false);
+	else if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("LockBios", &lock);
 
 	return lock;
@@ -265,7 +267,9 @@ uint8_t cse_get_me_disable_mode(void)
 	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
 	bool fum = false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+	if (CONFIG(DRIVERS_OPTION_CFR)) {
+		var = get_uint_option("me_mode", CONFIG_INTEL_ME_DEFAULT_STATE);
+	} else if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
 		read_bool_var("FirmwareUpdateMode", &fum);
 		read_u8_var("MeMode", &var);
 	}
@@ -320,7 +324,9 @@ bool is_smm_bwp_permitted(void)
 	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
 		return false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_OPTION_CFR))
+		smm_bwp = get_uint_option("smm_bwp", false);
+	else if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("SmmBwp", &smm_bwp);
 	else
 		return CONFIG(BOOTMEDIA_SMM_BWP);
@@ -341,9 +347,14 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 		return;
 
 	size = sizeof(*wdt_cfg);
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_OPTION_CFR)) {
+		wdt_cfg->wdt_enable = get_uint_option("watchdog_enable", CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE));
+		wdt_cfg->wdt_timeout = get_uint_option("watchdog_timeout", CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS);
+		ret = CB_SUCCESS;
+	} else if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
 					wdt_cfg, &size);
+	}
 
 	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
 		wdt_cfg->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
@@ -355,7 +366,9 @@ bool get_ps2_option(void)
 {
 	bool ps2_en = true;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_OPTION_CFR))
+		ps2_en = get_uint_option("ps2_enable", true);
+	else if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("Ps2Controller", &ps2_en);
 
 	return ps2_en;
@@ -530,7 +543,9 @@ uint8_t get_cpu_throttling_offset(uint8_t tcc_offset)
 {
 	uint8_t offset = tcc_offset;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_OPTION_CFR))
+		offset = get_uint_option("throttle_offset", tcc_offset);
+	else if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("CpuThrottlingOffset", &offset);
 
 	return offset;
