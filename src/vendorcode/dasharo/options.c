@@ -25,7 +25,7 @@ struct apu_config_t {
 } __packed;
 
 enum {
-	iGPU_ONLY = 0,
+	IGPU_ONLY = 0,
 	NVIDIA_OPTIMUS,
 	DGPU_ONLY,
 };
@@ -291,7 +291,7 @@ uint8_t cse_get_me_disable_mode(void)
 uint8_t dasharo_dgpu_state(void)
 {
 	printk(BIOS_DEBUG, "dasharo_dgpu_state() called\n");
-	uint8_t dgpu_state = 1;
+	uint8_t dgpu_state = NVIDIA_OPTIMUS;
 	/* 
 	 * 0 - iGPU_ONLY
 	 * 1 - NVIDIA_OPTIMUS (iGPU+dGPU)
