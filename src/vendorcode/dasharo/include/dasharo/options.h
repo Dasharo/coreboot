@@ -308,6 +308,6 @@ uint8_t get_cpu_throttling_offset(uint8_t tcc_offset);
  *  - true  - DGPU enabled
  *  - false - DGPU disabled
  */
- bool dasharo_is_dgpu_enabled(void);
+ uint8_t dasharo_dgpu_state(void);
 
 #endif /* DASHARO_OPTIONS_H */

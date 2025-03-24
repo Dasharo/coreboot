@@ -288,41 +288,21 @@ uint8_t cse_get_me_disable_mode(void)
 	return var;
 }
 
-bool dasharo_is_dgpu_enabled(void)
+uint8_t dasharo_dgpu_state(void)
 {
-	printk(BIOS_DEBUG, "dasharo_is_dgpu_enabled() called\n");
-	bool dgpu_enabled = true;
+	printk(BIOS_DEBUG, "dasharo_dgpu_state() called\n");
+	uint8_t dgpu_state = 1;
 	/* 
 	 * 0 - iGPU_ONLY
 	 * 1 - NVIDIA_OPTIMUS (iGPU+dGPU)
 	 * 2 - DGPU_ONLY
-	 * Any non-zero value means that the dGPU does have to be enabled.
 	 */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
-		uint8_t tmp = 0;
-		read_u8_var("DGPUState", &tmp);
-		printk(BIOS_DEBUG, "DGPUState value: %d\n", tmp);
-		dgpu_enabled = tmp != 0;
+		read_u8_var("DGPUState", &dgpu_state);
+		printk(BIOS_DEBUG, "DGPUState value: %d\n", dgpu_state);
 	}
 
-	printk(BIOS_DEBUG, "dgpu_enabled value: %d\n", dgpu_enabled);
-	return dgpu_enabled;
-}
-
-bool dasharo_is_dgpu_only(void)
-{
-	printk(BIOS_DEBUG, "dasharo_is_dgpu_only() called\n");
-	bool dgpu_only = false;
-
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
-		uint8_t tmp = 0;
-		read_u8_var("DGPUState", &tmp);
-		printk(BIOS_DEBUG, "DGPUState value: %d\n", tmp);
-		dgpu_only = tmp != 0;
-	}
-
-	printk(BIOS_DEBUG, "dgpu_only value: %d\n", dgpu_only);
-	return dgpu_only;
+	return dgpu_state;
 }
 
 #else
