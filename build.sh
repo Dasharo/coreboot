@@ -39,6 +39,7 @@ usage() {
 
 SDKVER="2024-02-18_732134932b"
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:latest"}
+BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 
 function build_optiplex_9010 {
   DEFCONFIG=$1
@@ -304,6 +305,7 @@ function build_pcengines {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
@@ -337,6 +339,7 @@ function build_qemu {
 
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -w /home/coreboot/coreboot ${DASHARO_SDK} \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
@@ -359,19 +362,52 @@ function build_odroid_h4 {
   git submodule update --init --force --checkout \
       3rdparty/dasharo-blobs
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
+  if [ "${AIRGAP}" -eq 1 ]; then
+    docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+      -v $HOME/.ssh:/home/coreboot/.ssh \
+      -w /home/coreboot/coreboot ${DASHARO_SDK} \
+      /bin/bash -c "make clean"
+  else
+    docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+      -v $HOME/.ssh:/home/coreboot/.ssh \
+      -w /home/coreboot/coreboot ${DASHARO_SDK} \
+      /bin/bash -c "make distclean"
+  fi
 
   cp $DEFCONFIG .config
 
   echo "Building Dasharo compatbile with Hardkernel ODROID H4 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  if [ "${AIRGAP}" -eq 1 ]; then
+
+    # In this situation we assume that provided repository is ready to be used
+    # and nothing should be downloaded during build process.
+
+    if [ -d "${EDK2_REPO_PATH}" ]; then
+      # Without following sequence workspce would be created by docker with root
+      # privilidges and build will fail.
+      # Target directory
+      TARGET_DIR="payloads/external/edk2/workspace/Dasharo"
+      mkdir -p "$TARGET_DIR"
+      chown -R $(id -u):$(id -g) "$TARGET_DIR"
+      chmod -R 755 "$TARGET_DIR"
+      docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+        -v $HOME/.ssh:/home/coreboot/.ssh \
+        --network none \
+        ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/coreboot/payloads/external/edk2/workspace/Dasharo} \
+        -e BUILD_TIMELESS=${BUILD_TIMELESS} \
+        -w /home/coreboot/coreboot ${DASHARO_SDK} \
+        /bin/bash -c "make olddefconfig && make -j$(nproc)"
+    else
+      echo "EDK2_REPO_PATH is not defined in AIRGAP!"
+      exit 1
+    fi
+  else
+    docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+      -v $HOME/.ssh:/home/coreboot/.ssh \
+      -w /home/coreboot/coreboot ${DASHARO_SDK} \
+      /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  fi
 
   cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
