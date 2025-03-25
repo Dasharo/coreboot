@@ -40,6 +40,54 @@ usage() {
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
+BUILD_TIMELESS=${BUILD_TIMELESS:-0}
+AIRGAP=${AIRGAP:-0}
+
+function sdk_run {
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+    -v $HOME/.ssh:/home/coreboot/.ssh \
+    -e BUILD_TIMELESS=${BUILD_TIMELESS} \
+    -w /home/coreboot/coreboot ${DASHARO_SDK} \
+    "$@"
+}
+
+function build_prep {
+  if [ "${AIRGAP}" -eq 1 ]; then
+    sdk_run /bin/bash -c "make clean"
+  else
+    sdk_run /bin/bash -c "make distclean"
+  fi
+
+  cp "${DEFCONFIG}" .config
+
+  git submodule update --init --checkout $@
+}
+
+function build_start {
+  if [ "${AIRGAP}" -eq 1 ]; then
+
+    # In this situation we assume that provided repository is ready to be used
+    # and nothing should be downloaded during build process.
+
+    if [ -d "${EDK2_REPO_PATH}" ]; then
+      # Without following sequence workspce would be created by docker with root
+      # privilidges and build will fail.
+      # Target directory
+      TARGET_DIR="payloads/external/edk2/workspace/Dasharo"
+      mkdir -p "$TARGET_DIR"
+      chown -R $(id -u):$(id -g) "$TARGET_DIR"
+      chmod -R 755 "$TARGET_DIR"
+      sdk_run --network none \
+        ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/coreboot/${TARGET_DIR}} \
+        /bin/bash -c "make olddefconfig && make -j$(nproc)"
+    else
+      echo "EDK2_REPO_PATH is not defined in AIRGAP!"
+      exit 1
+    fi
+  else
+    sdk_run /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  fi
+}
 
 function build_optiplex_9010 {
   DEFCONFIG=$1
@@ -56,21 +104,11 @@ function build_optiplex_9010 {
   # Combine FW flavor with version
   FW_VERSION="${FW_FLAVOR}_${FW_VERSION}"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
-
-  cp "${DEFCONFIG}" .config
-
-  git submodule update --init --checkout
+  build_prep
 
   echo "Building Dasharo compatible with Dell OptiPlex 7010/9010 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom ${BOARD}_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
@@ -86,21 +124,11 @@ function build_msi {
   DEFCONFIG="configs/config.${BOARD}_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
-
-  cp "${DEFCONFIG}" .config
-
-  git submodule update --init --checkout
+  build_prep
 
   echo "Building Dasharo compatible with MSI PRO $2(WIFI) (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom ${BOARD}_${FW_VERSION}_$1.rom
   if [ $? -eq 0 ]; then
@@ -116,23 +144,11 @@ function build_protectli_vault {
   DEFCONFIG="configs/config.protectli_${BOARD}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  if [ ! -d 3rdparty/dasharo-blobs/protectli ]; then
-    git submodule update --init --checkout
-  fi
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot coreboot/coreboot-sdk:2021-09-23_b0d87f753c \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep
 
   echo "Building Dasharo for Protectli $BOARD (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
@@ -148,23 +164,11 @@ function build_v1x10 {
   DEFCONFIG="configs/config.protectli_vault_jsl_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  if [ ! -d 3rdparty/dasharo-blobs/protectli ]; then
-    git submodule update --init --checkout
-  fi
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep
 
   echo "Building Dasharo for Protectli $1 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom protectli_$1_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
@@ -180,23 +184,13 @@ function build_novacustom {
   DEFCONFIG="configs/config.novacustom_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  if [ ! -d 3rdparty/dasharo-blobs/novacustom ]; then
-    git submodule update --init --checkout
-  fi
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep
 
   echo "Building Dasharo for Novacustom $1 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
+
+  cp build/coreboot.rom novacustom_$1_${FW_VERSION}.rom
 
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/novacustom_$1_${FW_VERSION}.rom"
@@ -212,16 +206,7 @@ function build_novacustom_v5x0tu {
   DEFCONFIG="configs/config.novacustom_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
-  if [ ! -d 3rdparty/dasharo-blobs/novacustom ]; then
-    git submodule update --init --checkout
-  fi
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep
 
   # Obtain LAN ROM blob from release binary
   wget -O UEFIExtract_NE_A68_x64_linux.zip https://github.com/LongSoft/UEFITool/releases/download/A68/UEFIExtract_NE_A68_x64_linux.zip
@@ -242,10 +227,7 @@ function build_novacustom_v5x0tu {
 
   echo "Building Dasharo for Novacustom $1 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom novacustom_$1_${FW_VERSION}.rom
 
@@ -265,23 +247,11 @@ function build_pcengines {
 
   # checkout several submodules needed by these boards (some others are checked
   # out by coreboot's Makefile)
-  git submodule update --init --force --checkout \
-      3rdparty/dasharo-blobs \
-      3rdparty/vboot
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep 3rdparty/dasharo-blobs 3rdparty/vboot
 
   echo "Building Dasharo for PC Engines ${VARIANT^^*} (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom pcengines_${VARIANT}_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
@@ -299,22 +269,11 @@ function build_qemu {
 
   # checkout several submodules needed by these boards (some others are checked
   # out by coreboot's Makefile)
-  git submodule update --init --force --checkout \
-      3rdparty/dasharo-blobs
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep 3rdparty/dasharo-blobs
 
   echo "Building Dasharo for QEMU Q35 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom qemu_q35_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
@@ -332,22 +291,11 @@ function build_odroid_h4 {
 
   # checkout several submodules needed by these boards (some others are checked
   # out by coreboot's Makefile)
-  git submodule update --init --force --checkout \
-      3rdparty/dasharo-blobs
-
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make distclean"
-
-  cp $DEFCONFIG .config
+  build_prep 3rdparty/dasharo-blobs
 
   echo "Building Dasharo compatbile with Hardkernel ODROID H4 (version $FW_VERSION)"
 
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    /bin/bash -c "make olddefconfig && make -j$(nproc)"
+  build_start
 
   cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
