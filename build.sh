@@ -354,7 +354,7 @@ function build_qemu {
 }
 
 function build_odroid_h4 {
-  DEFCONFIG="configs/config.hardkernel_odroid_h4"
+  DEFCONFIG=$1
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   # checkout several submodules needed by these boards (some others are checked
@@ -538,7 +538,12 @@ case "$CMD" in
         build_qemu "_all_menus"
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
-        build_odroid_h4
+        BOARD="odroid_h4"
+        build_odroid_h4 "configs/config.hardkernel_odroid_h4"
+        ;;
+    "odroid_h4_btg" )
+        BOARD="odroid_h4"
+        build_odroid_h4 "configs/config.hardkernel_odroid_h4_btg"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
