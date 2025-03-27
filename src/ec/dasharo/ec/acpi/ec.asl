@@ -6,7 +6,7 @@ Scope (\_SB) {
 	#include "buttons.asl"
 	#include "hid.asl"
 	#include "lid.asl"
-	#include "dasharo.asl"
+	#include "dshr.asl"
 	#include "dtt.asl"
 }
 
