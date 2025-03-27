@@ -29,4 +29,22 @@ config EC_DASHARO_EC_FLASH_SIZE
 	hex
 	default 0x20000
 
-endif # EC_DASHARO_EC
+if EC_DASHARO_EC_DGPU
+
+config EC_DASHARO_EC_CPU_FAN_COUNT
+	int
+	range 1 1
+	default 1
+
+endif
+
+if !EC_DASHARO_EC_DGPU
+
+config EC_DASHARO_EC_CPU_FAN_COUNT
+	int
+	range 1 2
+	default 1
+
+endif
+
+endif
