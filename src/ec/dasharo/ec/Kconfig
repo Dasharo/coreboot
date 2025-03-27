@@ -29,3 +29,7 @@ config EC_DASHARO_EC_UPDATE_FILE
 config EC_DASHARO_EC_FLASH_SIZE
 	hex
 	default 0x20000
+
+config EC_DASHARO_EC_CPU_FAN_COUNT
+	int
+	default 1
