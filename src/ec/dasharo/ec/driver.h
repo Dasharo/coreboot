@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+/* ID of each feature supported by the ACPI interface. */
+#define DASHARO_FEATURE_TEMPERATURE 0
+#define DASHARO_FEATURE_FAN_PWM 1
+#define DASHARO_FEATURE_FAN_TACH 2
+#define DASHARO_FEATURE_FAN_POINTS 3
+
+/* Temperature sensor type. */
+#define DASHARO_TEMPERATURE_CPU_PACKAGE 0
+#define DASHARO_TEMPERATURE_CPU_CORE 1
+#define DASHARO_TEMPERATURE_GPU 2
+#define DASHARO_TEMPERATURE_BOARD 3
+#define DASHARO_TEMPERATURE_CHASSIS 4
+
+/* Fan type */
+#define DASHARO_FAN_CPU 0
+#define DASHARO_FAN_GPU 1
+#define DASHARO_FAN_CHASSIS 2
+
+/* Fan PWM mode */
+#define DASHARO_FAN_PWM_MODE_AUTO 0
+#define DASHARO_FAN_PWM_MODE_MANUAL 1
