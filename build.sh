@@ -134,18 +134,18 @@ function build_protectli_vault {
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-  cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
-
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "./build/cbfstool \
-    protectli_${BOARD}_${FW_VERSION}.rom add \
+    ./build/coreboot.rom add \
     -r BOOTSPLASH \
     -f "$LOGO" \
     -n logo.bmp \
     -t raw \
     -c lzma"
+
+  cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
 
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/protectli_${BOARD}_${FW_VERSION}.rom"
@@ -179,18 +179,18 @@ function build_v1x10 {
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-  cp build/coreboot.rom protectli_$1_${FW_VERSION}.rom
-
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "./build/cbfstool \
-    ./protectli_${1}_${FW_VERSION}.rom add \
+    ./build/coreboot.rom add \
     -r BOOTSPLASH \
     -f "$LOGO" \
     -n logo.bmp \
     -t raw \
     -c lzma"
+
+  cp build/coreboot.rom protectli_$1_${FW_VERSION}.rom
 
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/protectli_$1_${FW_VERSION}.rom"
