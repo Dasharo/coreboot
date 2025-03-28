@@ -102,4 +102,29 @@ struct sm_object throttle_temp = SM_DECLARE_NUMBER({
 	.ui_name	= "Current thermal throttling temperature",
 }, WITH_CALLBACK(update_throttling_temp));
 
+
+struct sm_object network_boot = SM_DECLARE_BOOL({
+	.flags		= CFR_OPTFLAG_RUNTIME,
+	.opt_name	= "network_boot",
+	.ui_name	= "Network Boot",
+	.ui_helptext	= "Enable or disable network boot functionality",
+	.default_value	= CONFIG(EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),
+});
+
+struct sm_object uefi_usb_stack = SM_DECLARE_BOOL({
+	.flags		= CFR_OPTFLAG_RUNTIME,
+	.opt_name	= "uefi_usb_stack",
+	.ui_name	= "UEFI USB stack",
+	.ui_helptext	= "Enable or disable UEFI USB Stack",
+	.default_value 	= true,
+});
+
+struct sm_object uefi_usb_msc = SM_DECLARE_BOOL({
+	.flags		= CFR_OPTFLAG_RUNTIME,
+	.opt_name	= "uefi_usb_msc",
+	.ui_name	= "UEFI USB Mass Storage driver",
+	.ui_helptext	= "Enable or disable UEFI USB Mass Storage driver",
+	.default_value	= true,
+}, WITH_DEP(&uefi_usb_stack));
+
 #endif // DASHARO_CFG_H

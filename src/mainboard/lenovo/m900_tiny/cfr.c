@@ -64,11 +64,22 @@ static struct sm_obj_form processor = {
 	},
 };
 
+static struct sm_obj_form bootloader = {
+	.ui_name	= "Bootloader",
+	.obj_list	= (const struct sm_object *[]) {
+		&network_boot,
+		&uefi_usb_stack,
+		&uefi_usb_msc,
+		NULL
+	},
+};
+
 static struct sm_obj_form *sm_root[] = {
 	&security,
 	&processor,
 	&chipset,
 	&devices,
+	&bootloader,
 	NULL
 };
 
