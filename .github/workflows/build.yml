@@ -3,9 +3,10 @@ on:
   pull_request:
     branches:
       - dasharo
+      - dasharo-24.12
   push:
     branches:
-      - dasharo-24.12*
+      - dasharo-24.12
     tags:
       - '*'
 
