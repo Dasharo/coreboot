@@ -40,6 +40,7 @@ static struct sm_obj_form devices = {
 static struct sm_obj_form security = {
 	.ui_name	= "Security",
 	.obj_list	= (const struct sm_object *[]) {
+		&lock_bios,
 		&smm_bwp,
 		NULL
 	},
@@ -50,6 +51,7 @@ static struct sm_obj_form chipset = {
 	.obj_list	= (const struct sm_object *[]) {
 		&me_mode,
 		&ps2_enable,
+		&power_on_after_fail,
 		NULL
 	},
 };
@@ -70,6 +72,7 @@ static struct sm_obj_form bootloader = {
 		&network_boot,
 		&uefi_usb_stack,
 		&uefi_usb_msc,
+		&com0_redirection,
 		NULL
 	},
 };

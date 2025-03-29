@@ -45,6 +45,19 @@ struct sm_object watchdog_timeout = SM_DECLARE_NUMBER({
 	.default_value	= CONFIG_SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS,
 }, WITH_DEP(&watchdog_enable));
 
+struct sm_object power_on_after_fail = SM_DECLARE_ENUM({
+	.flags		= CFR_OPTFLAG_RUNTIME,
+	.opt_name	= "power_on_after_fail",
+	.ui_name	= "Power state after fail",
+	.ui_helptext	= "State of the platform after external power is restored",
+	.default_value	= CONFIG_MAINBOARD_POWER_FAILURE_STATE,
+	.values		= (const struct sm_enum_value[]) {
+				{ "Off",	0 },
+				{ "On",		1 },
+				{ "Previous",	2 },
+				SM_ENUM_VALUE_END },
+});
+
 struct sm_object me_mode = SM_DECLARE_ENUM({
 	.flags		= CFR_OPTFLAG_RUNTIME,
 	.opt_name	= "me_mode",
@@ -126,5 +139,13 @@ struct sm_object uefi_usb_msc = SM_DECLARE_BOOL({
 	.ui_helptext	= "Enable or disable UEFI USB Mass Storage driver",
 	.default_value	= true,
 }, WITH_DEP(&uefi_usb_stack));
+
+struct sm_object com0_redirection = SM_DECLARE_BOOL({
+	.flags		= CFR_OPTFLAG_RUNTIME,
+	.opt_name	= "com0_redirection",
+	.ui_name	= "COM0 Console Redirection",
+	.ui_helptext	= "Enable or disable console on COM0 serial port",
+	.default_value	= true,
+});
 
 #endif // DASHARO_CFG_H
