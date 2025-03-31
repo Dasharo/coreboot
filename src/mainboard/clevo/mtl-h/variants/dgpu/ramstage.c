@@ -30,6 +30,15 @@ void variant_devtree_update(void)
 
 static void set_dgpu_only(void)
 {
+	uint8_t option_state = 99;
+	system76_read_option(OPT_GPU_MUX_CTRL, &option_state);
+	printk(BIOS_ERR, "MUX_CTRL_BIOS state in coreboot: %d", option_state);
+	
+	/*
+	 * If the MUX_CTRL_BIOS option needs to be changed to match the settings, we need a
+	 * global reset
+	 */
+
 	struct smfi_option_get_cmd {
 		uint8_t index;
 		uint8_t value;
@@ -37,11 +46,6 @@ static void set_dgpu_only(void)
 		OPT_GPU_MUX_CTRL,
 		1
 	};
-
-	/*
-	 * If the MUX_CTRL_BIOS option needs to be changed to match the settings, we need a
-	 * global reset
-	 */
 
 	if (dasharo_dgpu_state() == DGPU_ONLY) {
 		printk(BIOS_ERR, "dgpu_state = dgpu_only, index = %d, value = %d; calling global reset \n", cmd.index, cmd.value);

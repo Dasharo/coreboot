@@ -109,6 +109,15 @@ uint8_t system76_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 	return (system76_ec_read(REG_RESULT));
 }
 
+uint8_t system76_read_option(uint8_t option, uint8_t *value)
+{
+	system76_ec_smfi_cmd(CMD_OPTION_GET, 1, (uint8_t *)&option);
+	*value = system76_ec_read(REG_DATA);
+
+	return (system76_ec_read(REG_RESULT));
+	
+}
+
 uint8_t system76_ec_read_version(uint8_t *data)
 {
 	int i;
