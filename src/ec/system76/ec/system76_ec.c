@@ -115,7 +115,7 @@ uint8_t system76_read_option(uint8_t option, uint8_t *value)
 	*value = system76_ec_read(REG_DATA);
 
 	return (system76_ec_read(REG_RESULT));
-	
+
 }
 
 uint8_t system76_ec_read_version(uint8_t *data)
