@@ -732,8 +732,8 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_E12 - GPIO */
 	PAD_NC(GPP_E12, NONE),
 
-	/* GPP_E13 - GPIO */
-	PAD_CFG_GPI_APIC_LOW(GPP_E13, NONE, PLTRST),
+	/* GPP_E13 - TPM_PIRQ */
+	PAD_CFG_GPI_APIC_LOCK(GPP_E13, NONE, LEVEL, INVERT, LOCK_CONFIG),
 
 	/* GPP_E14 - DDSP_HPDA */
 	PAD_CFG_NF(GPP_E14, NONE, DEEP, NF1),
