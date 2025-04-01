@@ -32,7 +32,7 @@ static void set_dgpu_only(void)
 {
 	uint8_t initial_option_state = 99;
 	system76_read_option(OPT_GPU_MUX_CTRL, &initial_option_state);
-	printk(BIOS_ERR, "MUX_CTRL_BIOS state in coreboot: %d", initial_option_state);
+	printk(BIOS_DEBUG, "MUX_CTRL_BIOS state in coreboot: %d", initial_option_state);
 
 	/*
 	 * If the MUX_CTRL_BIOS option needs to be changed to match the settings, we need a
@@ -50,19 +50,19 @@ static void set_dgpu_only(void)
 	if (dasharo_dgpu_state() == DGPU_ONLY) {
 		system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 		if (initial_option_state == 0) {
-			printk(BIOS_ERR, "dgpu_state = dgpu_only, index = %d, value = %d; calling global reset \n", cmd.index, initial_option_state);
+			printk(BIOS_INFO, "dGPU Only mode selected - calling global reset to toggle EC display mux\n");
 			do_global_reset();
 		}
 	} else {
 		cmd.value = 0;
 		system76_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 		if (initial_option_state == 1) {
-			printk(BIOS_ERR, "dgpu_state = dgpu_only, index = %d, value = %d; calling global reset \n", cmd.index, initial_option_state);
+			printk(BIOS_INFO, "dGPU Only mode disabled - calling global reset to toggle EC display mux\n");
 			do_global_reset();
 		}
 	}
 
-	printk(BIOS_ERR, "dgpu_state = %d, index = %d, value = %d; global reset not called \n", dasharo_dgpu_state(), cmd.index, initial_option_state);
+	printk(BIOS_DEBUG, "dgpu_state = %d, option_index = %d, option_value = %d; global reset not called \n", dasharo_dgpu_state(), cmd.index, initial_option_state);
 }
 
 void variant_final(void)
