@@ -85,9 +85,11 @@ enum {
 	OPT_BAT_THRESHOLD_STOP,
 	OPT_ALLOW_BAT_BOOST,
 	OPT_ALWAYS_ON_USB,
+	OPT_GPU_MUX_CTRL,
 	NUM_OPTIONS
 };
 
 uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data);
+uint8_t dasharo_read_option(uint8_t option, uint8_t *value);
 uint8_t dasharo_ec_read_version(uint8_t *data);
 uint8_t dasharo_ec_read_board(uint8_t *data);
