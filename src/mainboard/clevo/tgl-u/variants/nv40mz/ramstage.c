@@ -43,7 +43,7 @@ static void dgpu_power_enable(int onoff) {
 }
 
 static void mainboard_pre_device(void *unused) {
-	dgpu_power_enable(dasharo_is_dgpu_enabled());
+	dgpu_power_enable(dasharo_dgpu_state() != 0);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, mainboard_pre_device, NULL);
