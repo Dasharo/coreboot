@@ -41,7 +41,7 @@ enum usb_port_power_opt {
 	USB_PORT_ALWAYS_ON = 1,
 };
 
-enum dgpu_states {
+enum dgpu_state {
 	IGPU_ONLY = 0,
 	NVIDIA_OPTIMUS = 1,
 	DGPU_ONLY = 2,

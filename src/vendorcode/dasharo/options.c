@@ -284,7 +284,6 @@ uint8_t cse_get_me_disable_mode(void)
 
 enum dgpu_states dasharo_dgpu_state(void)
 {
-	printk(BIOS_DEBUG, "dasharo_dgpu_state() called\n");
 	uint8_t dgpu_state = NVIDIA_OPTIMUS;
 	/* 
 	 * 0 - iGPU_ONLY
@@ -293,7 +292,6 @@ enum dgpu_states dasharo_dgpu_state(void)
 	 */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
 		read_u8_var("DGPUState", &dgpu_state);
-		printk(BIOS_DEBUG, "DGPUState value: %d\n", dgpu_state);
 	}
 
 	return dgpu_state;
