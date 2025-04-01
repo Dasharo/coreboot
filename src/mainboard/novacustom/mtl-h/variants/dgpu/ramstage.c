@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include <mainboard/variants.h>
+#include <ec/dasharo/ec/commands.h>
+#include <ec/acpi/ec.h>
+#include <ec/dasharo/ec/acpi.h>
 #include <gpio.h>
 #include <dasharo/options.h>
 #include <device/pci_ids.h>
@@ -18,9 +21,48 @@ void variant_devtree_update(void)
 
 	struct device *dgpu_dev = pcidev_on_root(0x01, 0);
 	if (dgpu_dev) {
-	        dgpu_dev->enabled = dasharo_is_dgpu_enabled() != 0;
+	        dgpu_dev->enabled = dasharo_dgpu_state() != IGPU_ONLY;
 	        printk(BIOS_DEBUG, "dgpu_dev->enabled: %d\n", dgpu_dev->enabled);
 	}
+}
+
+#define REG_DATA 2
+
+static void set_dgpu_only(void)
+{
+	uint8_t initial_option_state = 99;
+	dasharo_read_option(OPT_GPU_MUX_CTRL, &initial_option_state);
+	printk(BIOS_DEBUG, "MUX_CTRL_BIOS state in coreboot: %d", initial_option_state);
+
+	/*
+	 * If the MUX_CTRL_BIOS option needs to be changed to match the settings, we need a
+	 * global reset
+	 */
+
+	struct smfi_option_get_cmd {
+		uint8_t index;
+		uint8_t value;
+	} __packed cmd = {
+		OPT_GPU_MUX_CTRL,
+		1
+	};
+
+	if (dasharo_dgpu_state() == DGPU_ONLY) {
+		dasharo_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+		if (initial_option_state == 0) {
+			printk(BIOS_INFO, "dGPU Only mode selected - calling global reset to toggle EC display mux\n");
+			do_global_reset();
+		}
+	} else {
+		cmd.value = 0;
+		dasharo_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
+		if (initial_option_state == 1) {
+			printk(BIOS_INFO, "dGPU Only mode disabled - calling global reset to toggle EC display mux\n");
+			do_global_reset();
+		}
+	}
+
+	printk(BIOS_DEBUG, "dgpu_state = %d, option_index = %d, option_value = %d; global reset not called \n", dasharo_dgpu_state(), cmd.index, initial_option_state);
 }
 
 void variant_final(void)
@@ -36,11 +78,13 @@ void variant_final(void)
 	 * The dGPU may fail to come up after changing from iGPU mode to dGPU
 	 * mode. If that happens, we need to kick the platform via global reset.
 	 */
-	if (!dgpu_dev && dasharo_is_dgpu_enabled()) {
+	if (!dgpu_dev && dasharo_dgpu_state() != IGPU_ONLY) {
 		printk(BIOS_DEBUG, "dGPU did not come up! Kicking the platform to work around it\n");
 		do_global_reset();
 	} else {
 		printk(BIOS_DEBUG, "dGPU is up.\n");
 	}
+
+	set_dgpu_only();
 
 }
