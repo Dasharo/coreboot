@@ -197,6 +197,7 @@ config EDK2_DGPU_POWER_OPTION
 	bool "Show DGPU power option in Dasharo Power Configuration Menu"
 	default n
 	depends on EDK2_DASHARO_POWER_CONFIG
+	depends on !EDK2_DISABLE_OPTION_ROMS
 	help
 	  Shows the DGPU power option in EDK2 power configuration submenu in
 	  Dasharo System Features menu.

@@ -122,6 +122,14 @@ void dasharo_ec_set_bat_threshold(enum bat_threshold_type type, uint8_t value)
 	}
 }
 
+uint8_t dasharo_read_option(uint8_t option, uint8_t *value)
+{
+	dasharo_ec_smfi_cmd(CMD_OPTION_GET, 1, (uint8_t *)&option);
+	*value = dasharo_ec_read(REG_DATA);
+
+	return (dasharo_ec_read(REG_RESULT));
+}
+
 uint8_t dasharo_ec_read_version(uint8_t *data)
 {
 	int i;
