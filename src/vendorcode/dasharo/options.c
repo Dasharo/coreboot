@@ -282,23 +282,18 @@ uint8_t cse_get_me_disable_mode(void)
 	return var;
 }
 
-bool dasharo_is_dgpu_enabled(void)
+enum dgpu_state dasharo_dgpu_state(void)
 {
-	printk(BIOS_DEBUG, "dasharo_is_dgpu_enabled() called\n");
-	bool dgpu_enabled = true;
-
-	/* Functionally, it is a 0 or 1 value. For the desired UI however, the VFR 
-	 * requires it to be handled as a uint8.
+	uint8_t dgpu_state = NVIDIA_OPTIMUS;
+	/* 
+	 * 0 - IGPU_ONLY
+	 * 1 - NVIDIA_OPTIMUS (iGPU+dGPU)
+	 * 2 - DGPU_ONLY
 	 */
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)){
-		uint8_t tmp = 0;
-		read_u8_var("DGPUEnabled", &tmp);
-		printk(BIOS_DEBUG, "DGPUEnabled value: %d\n", tmp);
-		dgpu_enabled = tmp != 0;
-	}
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_u8_var("DGPUState", &dgpu_state);
 
-	printk(BIOS_DEBUG, "dgpu_enabled value: %d\n", dgpu_enabled);
-	return dgpu_enabled;
+	return dgpu_state;
 }
 
 #else
