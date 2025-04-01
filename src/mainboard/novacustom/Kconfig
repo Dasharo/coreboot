@@ -15,4 +15,9 @@ source "src/mainboard/clevo/*/Kconfig"
 config MAINBOARD_VENDOR
 	default "NovaCustom"
 
+config DGPU_ONLY_AVAILABLE
+	bool "dGPU Only mux pin is available"
+	default n
+	depends on EDK2_DGPU_POWER_OPTION
+
 endif # VENDOR_NOVACUSTOM
