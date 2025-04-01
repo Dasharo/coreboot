@@ -355,6 +355,11 @@ endif
 ifneq ($(CONFIG_INTEL_ME_DEFAULT_STATE),)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeDefaultState=$(CONFIG_INTEL_ME_DEFAULT_STATE)
 endif
+ifeq ($(CONFIG_EDK2_DGPU_POWER_OPTION),y)
+ifneq ($(CONFIG_DGPU_ONLY_AVAILABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDgpuOnlyAvailable=FALSE
+endif
+endif
 # RAM_DISK_ENABLE               = FALSE
 ifeq ($(CONFIG_EDK2_RAM_DISK_ENABLE),y)
 BUILD_STR += -D RAM_DISK_ENABLE=TRUE
