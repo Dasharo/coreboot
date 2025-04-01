@@ -314,6 +314,6 @@ uint8_t get_cpu_throttling_offset(uint8_t tcc_offset);
  *  - 1 - NVIDIA Optimus (iGPU + dGPU)
  *  - 2 - dGPU only
  */
- enum dgpu_states dasharo_dgpu_state(void);
+ enum dgpu_state dasharo_dgpu_state(void);
 
 #endif /* DASHARO_OPTIONS_H */

@@ -282,7 +282,7 @@ uint8_t cse_get_me_disable_mode(void)
 	return var;
 }
 
-enum dgpu_states dasharo_dgpu_state(void)
+enum dgpu_state dasharo_dgpu_state(void)
 {
 	uint8_t dgpu_state = NVIDIA_OPTIMUS;
 	/* 
