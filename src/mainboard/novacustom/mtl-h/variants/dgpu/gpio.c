@@ -317,7 +317,7 @@ void variant_configure_gpios(void)
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
 	mdelay(50);
-	if (dasharo_is_dgpu_enabled() && !gpio_get(DGPU_PWRGD)) {
+	if (dasharo_dgpu_state() != 0 && !gpio_get(DGPU_PWRGD)) {
 		gpio_set(DGPU_RST_N, 0);
 		mdelay(4);
 		gpio_set(DGPU_PWR_EN, 1);
