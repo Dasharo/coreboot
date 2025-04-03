@@ -14,9 +14,11 @@
 
 const char *smbios_mainboard_product_name(void)
 {
-	if (CONFIG(BOARD_PROTECTLI_VP2430)) {
+	if (CONFIG(BOARD_PROTECTLI_VP2430))
 		return "VP2430";
-	}
+
+	if (CONFIG(BOARD_PROTECTLI_VP2440))
+		return "VP2440";
 
 	u32 tmp[13];
 	const char *str = "Unknown Processor Name";
@@ -71,24 +73,50 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		params->PcieRpEnableCpm[9] = 1;
 	}
 
+	if (CONFIG(BOARD_PROTECTLI_VP2440)) {
+		/*
+		 * All PCIe ports have an exclusive CLKREQ.
+		 */
+		params->PcieRpEnableCpm[0] = 1;
+		params->PcieRpEnableCpm[6] = 1;
+		params->PcieRpEnableCpm[8] = 1;
+		/*
+		 * Some WiFi cards do not get detected if CPM is enabled.
+		 * params->PcieRpEnableCpm[10] = 1;
+		 */
+		params->PcieRpEnableCpm[11] = 1;
+	}
+
 	// Enable port reset message on Type-C ports
 	params->PortResetMessageEnable[4] = 1;
 	params->PortResetMessageEnable[5] = 1;
 
 	/*
-	 * Configure AUX bias pads in FPS-S, becuase coreboot would do it too
+	 * Configure AUX bias pads in FPS-S, because coreboot would do it too
 	 * late and cause the Type-C displays to not work.
 	 */
 	params->IomTypeCPortPadCfg[0] = 0x09020016; // GPP_A22
 	params->IomTypeCPortPadCfg[1] = 0x09020015; // GPP_A21
-	params->IomTypeCPortPadCfg[2] = 0x0902000F; // GPP_A15
-	params->IomTypeCPortPadCfg[3] = 0x0902000E; // GPP_A14
+
+	if (!CONFIG(BOARD_PROTECTLI_VP2440)) {
+		params->IomTypeCPortPadCfg[2] = 0x0902000F; // GPP_A15
+		params->IomTypeCPortPadCfg[3] = 0x0902000E; // GPP_A14
+	}
 
 	// PMC-PD controller
 	params->PmcPdEnable = 1;
 
 	// IOM USB config
 	params->PchUsbOverCurrentEnable = 0;
+
+	if (CONFIG(BOARD_PROTECTLI_VP2440)) {
+		/*
+		 * Second Type-C port used as regular USB3.x for LTE.
+		 * Remap it to PCH xHCI first port.
+		 */
+		params->EnableTcssCovTypeA[1] = 1;
+		params->MappingPchXhciUsbA[1] = 1;
+	}
 }
 
 static void mainboard_final(void *chip_info)
