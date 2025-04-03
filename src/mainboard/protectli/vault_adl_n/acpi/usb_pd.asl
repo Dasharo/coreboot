@@ -15,6 +15,8 @@ Scope (\_SB.PCI0.I2C4)
 			I2cSerialBusV2 (0x0023, ControllerInitiated, 0x00061A80,
 					AddressingMode7Bit, "\\_SB.PCI0.I2C4",
 					0x00, ResourceConsumer, , Exclusive, )
+/* Only one port on VP2440 */
+#if !CONFIG(BOARD_PROTECTLI_VP2440)
 			I2cSerialBusV2 (0x0027, ControllerInitiated, 0x00061A80,
 					AddressingMode7Bit, "\\_SB.PCI0.I2C4",
 					0x00, ResourceConsumer, , Exclusive)
@@ -22,6 +24,7 @@ Scope (\_SB.PCI0.I2C4)
 			{
 				GPP_F13_IRQ
 			}
+#endif
 			/* Linux driver expects one interrupt resource per one I2C dev */
 			Interrupt (ResourceConsumer, Level, ActiveLow)
 			{
