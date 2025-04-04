@@ -12,6 +12,7 @@ usage() {
   echo -e "\tvp66xx                 - build Dasharo for Protectli VP66xx"
   echo -e "\tvp46xx                 - build Dasharo for Protectli VP46xx"
   echo -e "\tvp32xx                 - build Dasharo for Protectli VP32xx"
+  echo -e "\tvp2440                 - build Dasharo for Protectli VP2440"
   echo -e "\tvp2430                 - build Dasharo for Protectli VP2430"
   echo -e "\tvp2420                 - build Dasharo for Protectli VP2420"
   echo -e "\tvp2410                 - build Dasharo for Protectli VP2410"
@@ -398,6 +399,10 @@ case "$CMD" in
         ;;
     "vp2430" | "VP2430")
         BOARD="vp2430"
+        build_protectli_vault
+        ;;
+    "vp2440" | "VP2440")
+        BOARD="vp2440"
         build_protectli_vault
         ;;
     "v1210" | "V1210" )
