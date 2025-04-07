@@ -80,6 +80,8 @@ chip soc/intel/alderlake
 		end
 
 		device ref xhci on
+			register "usb2_wake_enable_bitmap" = "0x7e"
+
 			register "usb2_ports[0]" = "USB2_PORT_SHORT(OC_SKIP)" # 5G
 			register "usb2_ports[1]" = "USB2_PORT_SHORT(OC_SKIP)" # USB-A 2.0 USB2
 			register "usb2_ports[2]" = "USB2_PORT_SHORT(OC_SKIP)" # FUSB1
