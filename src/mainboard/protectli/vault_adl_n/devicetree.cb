@@ -144,6 +144,11 @@ chip soc/intel/alderlake
 						register "type" = "UPC_TYPE_INTERNAL"
 						device ref usb2_port8 on end
 					end
+					chip drivers/usb/acpi
+						register "desc" = ""USB3 LTE/5G (KEY_B_5G)""
+						register "type" = "UPC_TYPE_INTERNAL"
+						device ref usb3_port2 on end
+					end
 				end
 			end
 		end
