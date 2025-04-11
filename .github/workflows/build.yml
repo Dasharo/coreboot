@@ -84,9 +84,7 @@ jobs:
           cp payloads/external/edk2/workspace/Dasharo/BaseTools/Source/Python/Pkcs7Sign/Test* keys/
       - name: Generate capsule
         run: |
-          ./capsule.sh make -t keys/TestRoot.pub.pem \                                                           130
-                  -o keys/TestSub.pub.pem \
-                  -s keys/TestCert.pem
+          ./capsule.sh make -t keys/TestRoot.pub.pem -o keys/TestSub.pub.pem -s keys/TestCert.pem
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
