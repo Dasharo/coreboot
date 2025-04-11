@@ -50,6 +50,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Obtain EC
@@ -86,6 +95,14 @@ jobs:
             build/coreboot.rom
             *.cap
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
   build_optiplex:
     runs-on: ubuntu-22.04
     container:
@@ -104,6 +121,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
@@ -118,6 +144,14 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
   build_msi:
     runs-on: ubuntu-22.04
     container:
@@ -136,6 +170,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
@@ -156,6 +199,14 @@ jobs:
             build/coreboot.rom
             build/coreboot.cap
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
   build_protectli:
     runs-on: ubuntu-22.04
     strategy:
@@ -171,6 +222,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
@@ -183,6 +243,14 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
   build_pcengines:
     runs-on: ubuntu-22.04
     container:
@@ -202,6 +270,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
@@ -212,10 +289,18 @@ jobs:
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
+          name: "dasharo-${{ matrix.vendor }}"
           path: |
             build/coreboot.rom
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
   build_q35:
     runs-on: ubuntu-22.04
     container:
@@ -235,6 +320,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Build Dasharo
         run: |
           cp configs/config.${{ matrix.vendor }}_${{ matrix.model }}_${{ matrix.payload }} .config
@@ -247,6 +341,14 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
   build_hardkernel_odroid_h4:
     runs-on: ubuntu-22.04
     container:
@@ -265,6 +367,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           # Fetch complete history
           fetch-depth: 0
+      - name: Restore cached dependencies
+        id: cache-submodules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
@@ -279,6 +390,14 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+      - name: Save dependencies to cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            payloads/external/iPXE/ipxe
+            payloads/external/edk2/workspace/Dasharo
+            payloads/external/edk2/workspace/edk2-platforms
+          key: coreboot_deps_${{ matrix.vendor }}
 
   deploy_protectli_adl:
     if: startsWith(github.ref, 'refs/tags/protectli_vault_adl_')
