@@ -39,6 +39,7 @@ function print_usage() {
     echo '          -t root-certificate-file'
     echo '          -o subroot-certificate-file'
     echo '          -s signing-certificate-file'
+    echo '          -b (the flag adds battery check DXE into the capsule)'
 }
 
 function help_subcommand() {
@@ -201,12 +202,13 @@ function make_subcommand() {
     #  * t - trusted
     #  * o - other
     #  * s - signer
-    local root_cert sub_cert sign_cert
-    while getopts "t:o:s:" OPTION; do
+    local root_cert sub_cert sign_cert include_battery_check
+    while getopts "t:o:s:b" OPTION; do
         case $OPTION in
             t) root_cert="$OPTARG" ;;
             o) sub_cert="$OPTARG" ;;
             s) sign_cert="$OPTARG" ;;
+            b) include_battery_check=1 ;;
             *) exit 1 ;;
         esac
     done
@@ -240,6 +242,18 @@ function make_subcommand() {
     cat > "$json_file" << EOF
 {
     "EmbeddedDrivers": [
+EOF
+
+    # Ensure the charger check driver module is first
+    if [ "$include_battery_check" = 1 ]; then
+      cat >> "$json_file" << EOF
+        {
+            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/CapsuleChargerCheckDxe.efi"
+        },
+EOF
+    fi
+
+    cat >> "$json_file" << EOF
         {
             "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/CapsuleSplashDxe.efi"
         },
