@@ -7,8 +7,8 @@ CONFIG_CBFS_SIZE=0x800000
 # CONFIG_CONSOLE_SERIAL is not set
 # CONFIG_POST_IO is not set
 CONFIG_BOARD_NOVACUSTOM_NUC_BOX=y
-CONFIG_FSP_HEADER_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tu/MeteorLakeFspBinPkg/Include/"
-CONFIG_FSP_FD_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tu/MeteorLakeFspBinPkg/Fsp.fd"
+CONFIG_FSP_HEADER_PATH="MeteorLakeFspBinPkg/Include/"
+CONFIG_FSP_FD_PATH="MeteorLakeFspBinPkg/Fsp.fd"
 CONFIG_CPU_MICROCODE_CBFS_EXTERNAL_BINS=y
 CONFIG_CPU_UCODE_BINARIES="microcode.rom"
 CONFIG_VALIDATE_INTEL_DESCRIPTOR=y
