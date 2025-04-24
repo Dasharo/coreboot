@@ -663,6 +663,9 @@ static void __calc_var_mtrrs(struct memranges *addr_space,
 static int calc_var_mtrrs(struct memranges *addr_space,
 			  int above4gb, int address_bits)
 {
+	printk(BIOS_DEBUG, "MTRR: Forcing UC default for safety.\n");
+	return MTRR_TYPE_UNCACHEABLE;
+
 	int wb_deftype_count = 0;
 	int uc_deftype_count = 0;
 
