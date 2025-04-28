@@ -2,6 +2,7 @@
 
 config EC_SYSTEM76_EC
 	bool
+	default y
 	help
 	  System76 EC
 
