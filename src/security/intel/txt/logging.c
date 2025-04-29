@@ -40,11 +40,12 @@ static void log_txt_error(const char *phase)
 	if (txt_error & ACMERROR_TXT_VALID) {
 		printk(BIOS_ERR, "%s: Error occurred\n", phase);
 
-		if (txt_error & ACMERROR_TXT_EXTERNAL)
+		if (txt_error & ACMERROR_TXT_EXTERNAL) {
 			printk(BIOS_ERR, " Caused by: External\n");
-		else
-			printk(BIOS_ERR, " Caused by: Processor\n");
+			return;
+		}
 
+		printk(BIOS_ERR, " Caused by: Processor\n");
 		printk(BIOS_ERR, " Type: %s\n",
 		       intel_txt_processor_error_type(txt_error & TXT_ERROR_MASK));
 	}
@@ -58,33 +59,45 @@ static void log_txt_error(const char *phase)
 void intel_txt_log_bios_acm_error(void)
 {
 	uint32_t bios_acm_error;
-	uint64_t acm_status;
+	uint64_t boot_status;
 	uint64_t txt_error;
+	bool btg_error;
 
 	printk(BIOS_INFO, "TEE-TXT: State of ACM and ucode update:\n");
 
 	bios_acm_error = read32p(TXT_BIOSACM_ERRORCODE);
-	acm_status = read64p(TXT_SPAD);
+	boot_status = read64p(TXT_SPAD);
 	txt_error = read64p(TXT_ERROR);
 
+	btg_error = !!(boot_status & ACMSTS_BTG_FAILED) ||
+		     !(boot_status & ACMSTS_VERIFICATION_ERROR) ||
+		      (boot_status & ACMSTS_TXT_DISABLED);
+
 	/* Errors by BIOS ACM or FIT */
-	if ((txt_error & ACMERROR_TXT_VALID) &&
-	    (acm_status & ACMERROR_TXT_VALID)) {
-		intel_txt_log_acm_error(bios_acm_error);
-		log_txt_error("FIT MICROCODE");
+	if (!(txt_error & ACMERROR_TXT_VALID) &&
+	    (bios_acm_error & ACMERROR_TXT_VALID)) {
+		intel_txt_log_acm_error(bios_acm_error, btg_error);
+		log_txt_error("FIT/MICROCODE/BIOSACM");
 	}
 	/* Errors by SINIT */
 	if ((txt_error & ACMERROR_TXT_VALID) &&
-	    !(acm_status & ACMERROR_TXT_VALID)) {
-		intel_txt_log_acm_error(txt_error);
+	    !(bios_acm_error & ACMERROR_TXT_VALID)) {
+		intel_txt_log_acm_error(txt_error, false);
 		log_txt_error("SINIT");
+	}
+
+	/* Errors by both BIOS ACM and SINIT. Is it possible? */
+	if ((txt_error & ACMERROR_TXT_VALID) &&
+	    (bios_acm_error & ACMERROR_TXT_VALID)) {
+		intel_txt_log_acm_error(bios_acm_error, btg_error);
+		intel_txt_log_acm_error(txt_error, false);
 	}
 
 	/* Check for fatal ACM error and TXT reset */
 	uint8_t error = read8p(TXT_ESTS);
 	if (error & TXT_ESTS_TXT_RESET_STS) {
 		printk(BIOS_CRIT, "TXT-STS: Intel TXT reset detected\n");
-		intel_txt_log_acm_error(read32p(TXT_ERROR));
+		intel_txt_log_acm_error(read32p(TXT_ERROR), false);
 	}
 }
 

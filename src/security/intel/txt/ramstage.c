@@ -117,7 +117,7 @@ static void check_secrets_txt(void *unused)
 		intel_txt_run_bios_acm(ACMINPUT_CLEAR_SECRETS);
 
 		/* Should never reach this point ... */
-		intel_txt_log_acm_error(read32p(TXT_BIOSACM_ERRORCODE));
+		intel_txt_log_acm_error(read32p(TXT_BIOSACM_ERRORCODE), false);
 		die("Waiting for platform reset...\n");
 	} else {
 		printk(BIOS_INFO, "TEE-TXT: No secrets in memory\n");

@@ -20,7 +20,7 @@
 void intel_txt_romstage_init(void);
 void __noreturn txt_reset_platform(void);
 void intel_txt_log_bios_acm_error(void);
-int intel_txt_log_acm_error(const uint32_t acm_error);
+int intel_txt_log_acm_error(const uint32_t acm_error, bool btg_error);
 void intel_txt_log_spad(void);
 bool intel_txt_memory_has_secrets(void);
 bool intel_txt_chipset_is_production_fused(void);

@@ -43,35 +43,28 @@ void __noreturn txt_reset_platform(void)
  * Dump the ACM error status bits.
  *
  * @param  acm_error The status register to dump
+ * @param  btg_error Control flag to treat the error as Boot Guard error.
  * @return -1 on error (register is not valid)
  *	  0 on error (Class > 0 and Major > 0)
- *	  1 on success (Class == 0 and Major == 0 and progress > 0)
+ *	  1 on success (Class == 0 and Major == 0)
  */
-int intel_txt_log_acm_error(const uint32_t acm_error)
+int intel_txt_log_acm_error(const uint32_t acm_error, bool btg_error)
 {
 	if (!(acm_error & ACMERROR_TXT_VALID))
 		return -1;
 
-	const uint8_t type = (acm_error & ACMERROR_TXT_TYPE_CODE)
-			      >> ACMERROR_TXT_TYPE_SHIFT;
+	printk(BIOS_ERR, " Error code valid\n");
 
-	switch (type) {
-	case ACMERROR_TXT_AC_MODULE_TYPE_BIOS:
-		printk(BIOS_ERR, "BIOSACM");
-		break;
-	case ACMERROR_TXT_AC_MODULE_TYPE_SINIT:
-		printk(BIOS_ERR, "SINIT");
-		break;
-	default:
-		printk(BIOS_ERR, "ACM");
-		break;
-	}
-	printk(BIOS_ERR, ": Error code valid\n");
+	if (acm_error & ACMERROR_TXT_EXTERNAL) {
+		printk(BIOS_ERR, " Caused by: External software\n");
+	} else {
+		const uint32_t cpu_error = (acm_error & ACMERROR_CPU_TYPE_CODE);
 
-	if (acm_error & ACMERROR_TXT_EXTERNAL)
-		printk(BIOS_ERR, " Caused by: External\n");
-	else
 		printk(BIOS_ERR, " Caused by: Processor\n");
+		printk(BIOS_ERR, " Error: 0x%x\n", cpu_error);
+
+		return 0;
+	}
 
 	const uint32_t class = (acm_error & ACMERROR_TXT_CLASS_CODE)
 							>> ACMERROR_TXT_CLASS_SHIFT;
@@ -79,55 +72,76 @@ int intel_txt_log_acm_error(const uint32_t acm_error)
 							>> ACMERROR_TXT_MAJOR_SHIFT;
 	const uint32_t minor = (acm_error & ACMERROR_TXT_MINOR_CODE)
 							>> ACMERROR_TXT_MINOR_SHIFT;
-	const uint32_t progress = (acm_error & ACMERROR_TXT_PROGRESS_CODE)
-							>> ACMERROR_TXT_PROGRESS_SHIFT;
+	const uint8_t type = (acm_error & ACMERROR_TXT_TYPE_CODE)
+							>> ACMERROR_TXT_TYPE_SHIFT;
 
-	if (!minor) {
-		if (class == 0 && major == 0 && minor == 0) {
-			printk(BIOS_ERR, " Execution successful\n");
-			printk(BIOS_ERR, " Progress code 0x%x\n", progress);
-		} else {
-			printk(BIOS_ERR, " Error Class: %x\n", class);
-			printk(BIOS_ERR, " Error: %x.%x\n", major, minor);
-			printk(BIOS_ERR, " Progress code 0x%x\n", progress);
-		}
-	} else {
-		printk(BIOS_ERR, " ACM didn't start\n");
+	if (!btg_error && (acm_error & ACMERROR_SOURCE_MLE)) {
+		printk(BIOS_ERR, " Error source: MLE\n");
 		printk(BIOS_ERR, " Error Type: 0x%x\n", acm_error & 0xffffff);
-		return -1;
+		return 0;
 	}
 
-	return (acm_error & ACMERROR_TXT_EXTERNAL) && class == 0 && major == 0 && progress > 0;
+	if (btg_error && !(acm_error & ACMERROR_SOURCE_MLE)) {
+		printk(BIOS_ERR, "ACM did not start!\n");
+		return (class == 0) && (major == 0);
+	}
+
+	printk(BIOS_ERR, " Error source: ");
+	switch (type) {
+	case ACMERROR_TXT_AC_MODULE_TYPE_BIOS:
+		printk(BIOS_ERR, "BIOS ACM\n");
+		break;
+	case ACMERROR_TXT_AC_MODULE_TYPE_SINIT:
+		printk(BIOS_ERR, "SINIT ACM\n");
+		break;
+	case ACMERROR_TXT_AC_MODULE_TYPE_BOOTGUARD:
+		printk(BIOS_ERR, "Boot Guard\n");
+		break;
+	default:
+		printk(BIOS_ERR, "Reserved (%x)\n", type);
+		break;
+	}
+
+	if (class == 0 && major == 0) {
+		printk(BIOS_INFO, " ACM Execution successful\n");
+		printk(BIOS_INFO, " Progress code 0x%x\n", minor);
+		return 1;
+	} else {
+		printk(BIOS_ERR, " Error Class: 0x%x\n", class);
+		printk(BIOS_ERR, " Error: 0x%x.0x%x\n", major, minor);
+	}
+
+	return 0;
 }
 
 void intel_txt_log_spad(void)
 {
-	const uint64_t acm_status = read64p(TXT_SPAD);
+	const uint64_t boot_status = read64p(TXT_SPAD);
 
 	printk(BIOS_INFO, "TXT-STS: ACM verification ");
 
-	if (acm_status & ACMSTS_VERIFICATION_ERROR)
+	if (boot_status & ACMSTS_VERIFICATION_ERROR)
 		printk(BIOS_INFO, "error\n");
 	else
 		printk(BIOS_INFO, "successful\n");
 
 	printk(BIOS_INFO, "TXT-STS: IBB ");
 
-	if (acm_status & ACMSTS_IBB_MEASURED)
+	if (boot_status & ACMSTS_IBB_MEASURED)
 		printk(BIOS_INFO, "measured\n");
 	else
 		printk(BIOS_INFO, "not measured\n");
 
 	printk(BIOS_INFO, "TXT-STS: TXT is ");
 
-	if (acm_status & ACMSTS_TXT_DISABLED)
+	if (boot_status & ACMSTS_TXT_DISABLED)
 		printk(BIOS_INFO, "disabled\n");
 	else
 		printk(BIOS_INFO, "not disabled\n");
 
 	printk(BIOS_INFO, "TXT-STS: BIOS is ");
 
-	if (acm_status & ACMSTS_BIOS_TRUSTED)
+	if (boot_status & ACMSTS_BIOS_TRUSTED)
 		printk(BIOS_INFO, "trusted\n");
 	else
 		printk(BIOS_INFO, "not trusted\n");
@@ -355,6 +369,7 @@ void intel_txt_run_sclean(void)
 int intel_txt_run_bios_acm(const u8 input_params)
 {
 	size_t acm_len;
+	int ret = 0;
 
 	void *acm_data = intel_txt_prepare_bios_acm(&acm_len);
 
@@ -367,18 +382,10 @@ int intel_txt_run_bios_acm(const u8 input_params)
 
 	cbfs_unmap(acm_data);
 
-	const uint64_t acm_error = read64p(TXT_BIOSACM_ERRORCODE);
-	if (acm_error & ACMERROR_TXT_VALID) {
-		printk(BIOS_ERR, "TEE-TXT: FATAL ACM launch error !\n");
-		/*
-		 * WARNING !
-		 * To clear TXT.BIOSACM.ERRORCODE you must issue a cold reboot!
-		 */
-		intel_txt_log_acm_error(acm_error);
-		return -1;
-	}
+	ret -= (intel_txt_log_acm_error(read64p(TXT_BIOSACM_ERRORCODE), false) == 0);
+	ret -= (intel_txt_log_acm_error(read64p(TXT_ERROR), false) == 0);
 
-	return 0;
+	return ret;
 }
 
  /* Returns true if cond is not met */

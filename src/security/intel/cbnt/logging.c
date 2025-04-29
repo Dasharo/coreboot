@@ -198,10 +198,10 @@ void intel_cbnt_log_registers(void)
 		.raw = read64p(CBNT_BOOTSTATUS),
 	};
 	LOG("BOOTSTATUS (0xA0) raw: 0x%016llx\n", btsts.raw);
-	LOG("  TXT startup success:     %u\n", btsts.bios_trusted);
-	LOG("  BtG startup success:     %u\n", btsts.bios_trusted);
+	LOG("  TXT startup success:     %u\n", btsts.txt_startup_success);
+	LOG("  BtG startup success:     %u\n", btsts.btg_startup_success);
 	LOG("  Block boot:              %s\n", btsts.block_boot_en ? "enabled" : "disabled");
-	LOG("  PFR startup success:     %u\n", btsts.bios_trusted);
+	LOG("  PFR startup success:     %u\n", btsts.pfr_startup_success);
 	LOG("  Memory power down:       %sexecuted\n", btsts.mem_pwr_down ? "" : "not ");
 	LOG("  BtG failed:              %s\n", btsts.btg_failed ? "yes" : "no");
 	LOG("  Bios trusted:            %u\n", btsts.bios_trusted);
@@ -272,7 +272,10 @@ void intel_cbnt_log_registers(void)
 	LOG("  PFR supported:           %s\n", biosacm_sts.status.pfr ? "yes" : "no");
 	LOG("  Backup action:           %s\n", backup_actions[biosacm_sts.status.bckup_act]);
 
-	if (biosacm_sts.status.txt_profile == 1)
+	if (biosacm_sts.status.txt_profile == 0)
+		LOG("  TXT Profile:             "
+		    "A - The ACM will detect client or server hardware\n");
+	else if (biosacm_sts.status.txt_profile == 1)
 		LOG("  TXT Profile:             "
 		    "B - BIOS is trusted to create alias-free memory topology\n");
 	else if (biosacm_sts.status.txt_profile == 2)
@@ -289,7 +292,7 @@ void intel_cbnt_log_registers(void)
 	LOG("  CPU Co-signing:          %s\n", biosacm_sts.status.cpu_co_signing ?
 					       "enabled" : "disabled");
 	LOG("  TPM Startup locality:    %d\n",
-	    biosacm_sts.status.tpm_startup_locality ? 3 : 0);
+	    biosacm_sts.status.tpm_startup_locality ? 0 : 3);
 
 
 }
