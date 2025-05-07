@@ -1,0 +1,62 @@
+name: Refresh Intel µcode submodule
+
+on:
+  schedule:
+    # At 23:35 on every day-of-week from Sunday through Saturday
+    # https://crontab.guru/#35_23_*_*_0-6
+    - cron: '35 23 * * 0-6'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Check if µcode submodule is up to date
+      run: |
+        git submodule update --init --checkout 3rdparty/intel-microcode
+        pushd 3rdparty/intel-microcode
+        current=$(git log -1 --pretty=format:"%H")
+        git checkout main
+        new=$(git log -1 --pretty=format:"%H")
+        popd
+        if [[ $current == $new ]]; then
+          echo "Intel µcode submodule is up-to-date."
+        else
+          echo "Intel µcode submodule is out of date!"
+          exit 1
+        fi
+
+  update:
+    runs-on: ubuntu-latest
+    needs: check
+    if: |
+      always() && needs.check.result == 'failure'
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Update µcode submodule
+      run: |
+        git submodule update --init --checkout 3rdparty/intel-microcode
+        pushd 3rdparty/intel-microcode
+        git checkout main
+        popd
+
+    - name: Set current date
+      run: |
+        pushd 3rdparty/intel-microcode
+        echo "RELEASE_DATE=$(git log -1 --pretty='format:%cs')" >> ${GITHUB_ENV}
+        popd
+
+    - name: Submit pull request
+      uses: peter-evans/create-pull-request@v7.0.7
+      with:
+        base: dasharo
+        branch: update_ucode_${{ env.RELEASE_DATE }}
+        title: Update µcode ${{ env.RELEASE_DATE }}
+        commit-message: "[automated change] Update µcode ${{ env.RELEASE_DATE }}\n\nUpstream-Status: Inappropriate (Dasharo automation)"
