@@ -77,7 +77,7 @@ chip soc/intel/meteorlake
 			# Bit0,Bit2,Bit4,Bit6 set to "1" indicates no retimer on USBC Ports
 			# Bit1,Bit3,Bit5,Bit7 set to "0" indicates Aux lines are not swapped on the
 			# motherboard to USBC connector
-			register "tcss_aux_ori" = "0x54"
+			register "tcss_aux_ori" = "0x00"
 
 			register "tcss_ports" = "{
 				[0] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 1 (TBT) */
