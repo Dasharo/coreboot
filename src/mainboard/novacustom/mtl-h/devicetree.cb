@@ -67,9 +67,9 @@ chip soc/intel/meteorlake
 		device ref tcss_xhci on
 			register "tcss_ports" = "{
 				[0] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 1 (TBT) */
-				[1] = TCSS_PORT_CC1(OC_SKIP), /* USB Type-C Port 2 (Non-TBT) */
-				[2] = TCSS_PORT_EMPTY_CC1,
-				[3] = TCSS_PORT_EMPTY_CC1,
+				[1] = TCSS_PORT_DEFAULT(OC_SKIP), /* USB Type-C Port 2 (Non-TBT) */
+				[2] = TCSS_PORT_EMPTY,
+				[3] = TCSS_PORT_EMPTY,
 			}"
 
 			chip drivers/usb/acpi
