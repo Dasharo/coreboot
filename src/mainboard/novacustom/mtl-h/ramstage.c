@@ -242,7 +242,13 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CnviRfResetPinMux = 0x194CE404; // GPP_F04
 	params->CnviClkreqPinMux = 0x394CE605;  // GPP_F05
 
-	params->EnableTcssCovTypeA[1] = 1;
+	/*
+	 * [3:0] MappingPchXhciUsbA (1-based USB2 port numbering)
+	 * [5:4] Reserved
+	 * [6]   Orientation - TCSS port uses TX0/RX0 pairs or TX1/RX1 pairs
+	 * [7]   Enable
+	 */
+	params->EnableTcssCovTypeA[1] = 0x82;
 
 	params->LidStatus = dasharo_ec_get_lid_state();
 
