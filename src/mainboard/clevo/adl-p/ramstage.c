@@ -281,3 +281,19 @@ void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
 	else
 		config->s0ix_enable = 1;
 }
+
+void smbios_fill_dimm_locator(const struct dimm_info *dimm,
+	struct smbios_type17 *t)
+{
+	switch (dimm->ctrlr_num) {
+	case 0:
+		t->device_locator = smbios_add_string(t->eos, "RAM1");
+		break;
+	case 1:
+		t->device_locator = smbios_add_string(t->eos, "RAM2");
+		break;
+	default:
+		t->device_locator = smbios_add_string(t->eos, "UNKNOWN");
+		break;
+	}
+}
