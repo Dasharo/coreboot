@@ -5,6 +5,7 @@
 #include <ec/acpi/ec.h>
 #include <ec/dasharo/ec/acpi.h>
 #include <fmap.h>
+#include <gpio.h>
 #include <lib.h>
 #include <mainboard/gpio.h>
 #include <mainboard/variants.h>
@@ -216,6 +217,12 @@ void __weak variant_final(void)
 static void mainboard_final(void *chip_info)
 {
 	variant_final();
+
+	/*
+	 * De-assert TBT force power to allow RTD3.
+	 * It is asserted by default in gpio tables.
+	 */
+	gpio_set(GPP_B21, 0);
 }
 
 struct chip_operations mainboard_ops = {
