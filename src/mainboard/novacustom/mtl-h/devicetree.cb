@@ -22,11 +22,7 @@ chip soc/intel/meteorlake
 	register "pch_pm_energy_report_enable" = "1"
 
 	# Thermal
-<<<<<<< HEAD
-	register "tcc_offset" = "10" # TCC of 100C
-=======
 	register "tcc_offset" = "30" # TCC of 80C
->>>>>>> 41f4c30e4398 (mb/clevo/mtl-h: Add variant-specific power limits)
 
 	device cpu_cluster 0 on end
 	device domain 0 on
@@ -112,6 +108,9 @@ chip soc/intel/meteorlake
 		end
 		device ref ioe_shared_sram on end
 		device ref xhci on
+			register "usb2_wake_enable_bitmap" = "0x27"
+			register "usb3_wake_enable_bitmap" = "0x3"
+
 			register "usb2_ports" = "{
 				[0] = USB2_PORT_LONG(OC_SKIP),   /* USB Type-A Port 1 (Left) */
 				[1] = USB2_PORT_TYPE_C(OC_SKIP),    /* USB Type-C Port 1 (Non-TBT) */
