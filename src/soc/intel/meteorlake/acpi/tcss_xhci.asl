@@ -111,10 +111,61 @@ Device (RHUB)
 {
 	Name (_ADR, 0)
 
+	Method (_DSM, 4, Serialized)
+	{
+		If (Arg0 == ToUUID("CE2EE385-00E6-48CB-9F05-2EDB927C4899")) {
+			If (Arg2 == 0) {
+				/*
+				 * Function index: 0
+				 * Standard query - A bitmask of functions supported
+				 */
+				Return (0x81)
+			} ElseIf (Arg2 == 7) {
+				/*
+				 * Function index: 7
+				 * Query if _UPC supports USB-C port capabilities
+				 */
+				Return (0x1)
+			}
+		}
+		Return (Buffer() { 0x0 })
+	}
+
+	Method (_PS0,0,Serialized) { }
+	Method (_PS2,0,Serialized) { }
+	Method (_PS3,0,Serialized) { }
+
 	/* High Speed Ports */
 	Device (HS01)
 	{
 		Name (_ADR, 0x01)
+
+		/*
+		 * HS01 port is not functional
+		 * Report as not visible and not connectable
+		 */
+		Method(_UPC, 0 , Serialized) {
+			Name (UPCP, Package (4) { 0, 0, 0, 0 })
+
+			Return (UPCP)
+		}
+
+		Method(_PLD, 0 , Serialized) {
+			/* Fill with Type-C values */
+			Name (PLDP, Package (1) {
+				Buffer (20) {
+					2,   /* [7:0] Revision 2 */
+					0,0,0, /* [31:8] */
+					8,0,   /* [47:32] Width 8.34mm */
+					3,0,   /* [63:48] Height 2.56mm */
+					0,     /* [71:64] */
+					4,     /* [79:72] Shape oval */
+					0,0,0,0,0,0,0,0,0,0 /* [159:80] */
+				}
+			})
+
+			Return (PLDP)
+		}
 	}
 
 	/* Super Speed Ports */
