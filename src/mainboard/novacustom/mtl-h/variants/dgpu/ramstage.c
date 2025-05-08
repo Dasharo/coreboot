@@ -9,6 +9,7 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/pci_def.h>
+#include <smbios.h>
 #include <soc/intel/common/reset.h>
 
 void variant_devtree_update(void)
@@ -87,4 +88,20 @@ void variant_final(void)
 
 	set_dgpu_only();
 
+}
+
+void smbios_fill_dimm_locator(const struct dimm_info *dimm,
+	struct smbios_type17 *t)
+{
+	switch (dimm->ctrlr_num) {
+	case 0:
+		t->device_locator = smbios_add_string(t->eos, "RAM1");
+		break;
+	case 1:
+		t->device_locator = smbios_add_string(t->eos, "RAM2");
+		break;
+	default:
+		t->device_locator = smbios_add_string(t->eos, "UNKNOWN");
+		break;
+	}
 }
