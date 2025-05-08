@@ -112,9 +112,9 @@ chip soc/intel/meteorlake
 			register "usb3_wake_enable_bitmap" = "0x3"
 
 			register "usb2_ports" = "{
-				[0] = USB2_PORT_LONG(OC_SKIP),   /* USB Type-A Port 1 (Left) */
-				[1] = USB2_PORT_TYPE_C(OC_SKIP),    /* USB Type-C Port 1 (Non-TBT) */
-				[2] = USB2_PORT_MID(OC_SKIP),    /* USB Type-A Port 2 (Right) */
+				[0] = USB2_PORT_LONG(OC_SKIP),	 /* USB Type-A Port 1 (Left) */
+				[1] = USB2_PORT_TYPE_C(OC_SKIP), /* USB Type-C Port 1 (Non-TBT) */
+				[2] = USB2_PORT_MID(OC_SKIP),	 /* USB Type-A Port 2 (Right) */
 				[5] = USB2_PORT_TYPE_C(OC_SKIP), /* USB Type-C Port 2 (TBT) */
 				[6] = USB2_PORT_LONG(OC_SKIP),   /* Integrated Camera */
 				[9] = USB2_PORT_MID(OC_SKIP),    /* Bluetooth on M.2 2230 */
