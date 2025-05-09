@@ -5,81 +5,81 @@
 
 #include <device/pci_def.h>
 
-#define _SA_DEVFN(slot)		PCI_DEVFN(SA_DEV_SLOT_ ## slot, 0)
+#define _SA_DEVFN(slot, func)	PCI_DEVFN(SA_DEV_SLOT_ ## slot, func)
 #define _PCH_DEVFN(slot, func)	PCI_DEVFN(PCH_DEV_SLOT_ ## slot, func)
 
 #if !defined(__SIMPLE_DEVICE__)
 #include <device/device.h>
-#define _SA_DEV(slot)		pcidev_path_on_root(_SA_DEVFN(slot))
+#define _SA_DEV(slot, func)	pcidev_path_on_root(_SA_DEVFN(slot, func))
 #define _PCH_DEV(slot, func)	pcidev_path_on_root_debug(_PCH_DEVFN(slot, func), __func__)
 #else
-#define _SA_DEV(slot)		PCI_DEV(0, SA_DEV_SLOT_ ## slot, 0)
+#define _SA_DEV(slot, func)	PCI_DEV(0, SA_DEV_SLOT_ ## slot, func)
 #define _PCH_DEV(slot, func)	PCI_DEV(0, PCH_DEV_SLOT_ ## slot, func)
 #endif
 
 /* System Agent Devices */
 
 #define SA_DEV_SLOT_ROOT	0x00
-#define  SA_DEVFN_ROOT		PCI_DEVFN(SA_DEV_SLOT_ROOT, 0)
+#define  SA_DEVFN_ROOT		_SA_DEVFN(ROOT, 0)
 #if defined(__SIMPLE_DEVICE__)
-#define  SA_DEV_ROOT		PCI_DEV(0, SA_DEV_SLOT_ROOT, 0)
+#define  SA_DEV_ROOT		_SA_DEV(ROOT, 0)
 #endif
 
 #define SA_DEV_SLOT_CPU_1	0x01
-#define  SA_DEVFN_CPU_PCIE1_0	PCI_DEVFN(SA_DEV_SLOT_CPU_1, 0)
-#define  SA_DEVFN_CPU_PCIE1_1	PCI_DEVFN(SA_DEV_SLOT_CPU_1, 1)
+#define  SA_DEVFN_CPU_PCIE1_0	_SA_DEVFN(CPU_1, 0)
+#define  SA_DEVFN_CPU_PCIE1_1	_SA_DEVFN(CPU_1, 1)
 
 #define SA_DEV_SLOT_IGD		0x02
-#define  SA_DEVFN_IGD		PCI_DEVFN(SA_DEV_SLOT_IGD, 0)
-#define  SA_DEV_IGD		PCI_DEV(0, SA_DEV_SLOT_IGD, 0)
+#define  SA_DEVFN_IGD		_SA_DEVFN(IGD, 0)
+#define  SA_DEV_IGD		_SA_DEV(IGD, 0)
 
 #define SA_DEV_SLOT_DPTF	0x04
-#define  SA_DEVFN_DPTF		PCI_DEVFN(SA_DEV_SLOT_DPTF, 0)
-#define  SA_DEV_DPTF		PCI_DEV(0, SA_DEV_SLOT_DPTF, 0)
+#define  SA_DEVFN_DPTF		_SA_DEVFN(DPTF, 0)
+#define  SA_DEV_DPTF		_SA_DEV(DPTF, 0)
 
 #define SA_DEV_SLOT_IPU		0x05
-#define  SA_DEVFN_IPU		PCI_DEVFN(SA_DEV_SLOT_IPU, 0)
-#define  SA_DEV_IPU		PCI_DEV(0, SA_DEV_SLOT_IPU, 0)
+#define  SA_DEVFN_IPU		_SA_DEVFN(IPU, 0)
+#define  SA_DEV_IPU		_SA_DEV(IPU, 0)
 
 #define SA_DEV_SLOT_CPU_6	0x06
-#define  SA_DEVFN_CPU_PCIE6_0	PCI_DEVFN(SA_DEV_SLOT_CPU_6, 0)
-#define  SA_DEVFN_CPU_PCIE6_2	PCI_DEVFN(SA_DEV_SLOT_CPU_6, 2)
+#define  SA_DEVFN_CPU_PCIE6_0	_SA_DEVFN(CPU_6, 0)
+#define  SA_DEVFN_CPU_PCIE6_2	_SA_DEVFN(CPU_6, 2)
 
 #define SA_DEV_SLOT_TBT		0x07
-#define SA_DEVFN_TBT(x)		PCI_DEVFN(SA_DEV_SLOT_TBT, (x))
+#define SA_DEVFN_TBT(x)		_SA_DEVFN(TBT, (x))
 #define NUM_TBT_FUNCTIONS	4
-#define  SA_DEVFN_TBT0		PCI_DEVFN(SA_DEV_SLOT_TBT, 0)
-#define  SA_DEVFN_TBT1		PCI_DEVFN(SA_DEV_SLOT_TBT, 1)
-#define  SA_DEVFN_TBT2		PCI_DEVFN(SA_DEV_SLOT_TBT, 2)
-#define  SA_DEVFN_TBT3		PCI_DEVFN(SA_DEV_SLOT_TBT, 3)
-#define  SA_DEV_TBT0		PCI_DEV(0, SA_DEV_SLOT_TBT, 0)
-#define  SA_DEV_TBT1		PCI_DEV(0, SA_DEV_SLOT_TBT, 1)
-#define  SA_DEV_TBT2		PCI_DEV(0, SA_DEV_SLOT_TBT, 2)
-#define  SA_DEV_TBT3		PCI_DEV(0, SA_DEV_SLOT_TBT, 3)
+#define  SA_DEVFN_TBT0		_SA_DEVFN(TBT, 0)
+#define  SA_DEVFN_TBT1		_SA_DEVFN(TBT, 1)
+#define  SA_DEVFN_TBT2		_SA_DEVFN(TBT, 2)
+#define  SA_DEVFN_TBT3		_SA_DEVFN(TBT, 3)
+#define  SA_DEV_TBT0		_SA_DEV(TBT, 0)
+#define  SA_DEV_TBT1		_SA_DEV(TBT, 1)
+#define  SA_DEV_TBT2		_SA_DEV(TBT, 2)
+#define  SA_DEV_TBT3		_SA_DEV(TBT, 3)
 
 #define SA_DEV_SLOT_GNA		0x08
-#define  SA_DEVFN_GNA		PCI_DEVFN(SA_DEV_SLOT_GNA, 0)
-#define  SA_DEV_GNA		PCI_DEV(0, SA_DEV_SLOT_GNA, 0)
+#define  SA_DEVFN_GNA		_SA_DEVFN(GNA, 0)
+#define  SA_DEV_GNA		_SA_DEV(GNA, 0)
 
 #define SA_DEV_SLOT_TMT		0x0A
-#define SA_DEVFN_TMT		_SA_DEVFN(TMT)
-#define SA_DEV_TMT		_SA_DEV(TMT)
+#define SA_DEVFN_TMT		_SA_DEVFN(TMT, 0)
+#define SA_DEV_TMT		_SA_DEV(TMT, 0)
 
 #define SA_DEV_SLOT_TCSS	0x0d
 #define NUM_TCSS_DMA_FUNCTIONS	2
-#define SA_DEVFN_TCSS_DMA(x)	PCI_DEVFN(SA_DEV_SLOT_TCSS, ((x) + 2))
-#define  SA_DEVFN_TCSS_XHCI	PCI_DEVFN(SA_DEV_SLOT_TCSS, 0)
-#define  SA_DEVFN_TCSS_XDCI	PCI_DEVFN(SA_DEV_SLOT_TCSS, 1)
-#define  SA_DEVFN_TCSS_DMA0	PCI_DEVFN(SA_DEV_SLOT_TCSS, 2)
-#define  SA_DEVFN_TCSS_DMA1	PCI_DEVFN(SA_DEV_SLOT_TCSS, 3)
-#define  SA_DEV_TCSS_XHCI	PCI_DEV(0, SA_DEV_SLOT_TCSS, 0)
-#define  SA_DEV_TCSS_XDCI	PCI_DEV(0, SA_DEV_SLOT_TCSS, 1)
-#define  SA_DEV_TCSS_DMA0	PCI_DEV(0, SA_DEV_SLOT_TCSS, 2)
-#define  SA_DEV_TCSS_DMA1	PCI_DEV(0, SA_DEV_SLOT_TCSS, 3)
+#define SA_DEVFN_TCSS_DMA(x)	_SA_DEVFN(TCSS, ((x) + 2))
+#define  SA_DEVFN_TCSS_XHCI	_SA_DEVFN(TCSS, 0)
+#define  SA_DEVFN_TCSS_XDCI	_SA_DEVFN(TCSS, 1)
+#define  SA_DEVFN_TCSS_DMA0	_SA_DEVFN(TCSS, 2)
+#define  SA_DEVFN_TCSS_DMA1	_SA_DEVFN(TCSS, 3)
+#define  SA_DEV_TCSS_XHCI	_SA_DEV(TCSS, 0)
+#define  SA_DEV_TCSS_XDCI	_SA_DEV(TCSS, 1)
+#define  SA_DEV_TCSS_DMA0	_SA_DEV(TCSS, 2)
+#define  SA_DEV_TCSS_DMA1	_SA_DEV(TCSS, 3)
 
 #define SA_DEV_SLOT_VMD		0x0e
-#define  SA_DEVFN_VMD		PCI_DEVFN(SA_DEV_SLOT_VMD, 0)
-#define  SA_DEV_VMD		PCI_DEV(0, SA_DEV_SLOT_VMD, 0)
+#define  SA_DEVFN_VMD		_SA_DEVFN(VMD, 0)
+#define  SA_DEV_VMD		_SA_DEV(VMD, 0)
 
 /* PCH Devices */
 #define MIN_PCH_SLOT		PCH_DEV_SLOT_SIO0
