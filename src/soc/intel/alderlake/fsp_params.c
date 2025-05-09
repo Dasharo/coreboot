@@ -1341,7 +1341,7 @@ static void wait_for_panel_power_cycle_done(const struct soc_intel_alderlake_con
 	if (!CONFIG(RUN_FSP_GOP))
 		return;
 
-	bar0 = pci_s_read_config32(SA_DEV_IGD, PCI_BASE_ADDRESS_0);
+	bar0 = pci_read_config32(SA_DEV_IGD, PCI_BASE_ADDRESS_0);
 	mmio = (void *)(bar0 & ~PCI_BASE_ADDRESS_MEM_ATTR_MASK);
 	if (!mmio)
 		return;
