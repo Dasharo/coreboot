@@ -283,4 +283,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	params->PortResetMessageEnable[1] = 1;
 	params->PortResetMessageEnable[5] = 1;
+
+	params->PmcPdEnable = 1;
+	params->TcCstateLimit = 10;
 }
