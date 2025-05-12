@@ -264,4 +264,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	/* Disable S0i2.x due to wake issues */
 	params->PmcLpmS0ixSubStateEnableMask = BIT(0);
+
+	params->PmcPdEnable = 1;
+	params->TcCstateLimit = 10;
 }
