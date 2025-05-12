@@ -345,3 +345,14 @@ Method (HPME, 0, Serialized)
 	}
 	Return (0x00)
 }
+
+Name (AR01, Package () {
+	Package () {0x0000FFFF, 0, 0, 16 },
+	Package () {0x0000FFFF, 1, 0, 17 },
+	Package () {0x0000FFFF, 2, 0, 18 },
+	Package () {0x0000FFFF, 3, 0, 19 },
+})
+
+Method (_PRT, 0, NotSerialized) {
+	Return (AR01)
+}
