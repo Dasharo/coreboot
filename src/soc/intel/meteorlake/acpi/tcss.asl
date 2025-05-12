@@ -309,6 +309,8 @@ Scope (_GPE)
 		\_SB.PCI0.TRP2.HPME()
 		\_SB.PCI0.TRP3.HPME()
 	}
+
+	Method (_L73, 0 , Serialized) { }
 }
 
 Scope (\_SB.PCI0)
