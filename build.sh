@@ -445,9 +445,9 @@ case "$CMD" in
         BOARD="v560tu"
         build_novacustom_v5x0tu "v560tu"
         ;;
-    "v540tu " | "V540TU " )
+    "v540tu" | "V540TU" )
         BOARD="v540tu"
-        build_novacustom_v5x0tu "v540tu "
+        build_novacustom_v5x0tu "v540tu"
         ;;
     "apu2" | "APU2" )
         build_pcengines "apu2"
