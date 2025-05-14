@@ -28,6 +28,7 @@ usage() {
   echo -e "\tv540tu                 - build Dasharo for Novacustom V540TU"
   echo -e "\tv560tnx                - build Dasharo for Novacustom V560TNx"
   echo -e "\tv560tu                 - build Dasharo for Novacustom V560TU"
+  echo -e "\tnuc_box                - build Dasharo for Novacustom NUC BOX"
   echo -e "\tapu2                   - build Dasharo for PC Engines APU2"
   echo -e "\tapu3                   - build Dasharo for PC Engines APU3"
   echo -e "\tapu4                   - build Dasharo for PC Engines APU4"
@@ -398,6 +399,10 @@ case "$CMD" in
     "v560tu" | "V560TU" )
         BOARD="v560tu"
         build_novacustom_v5x0tu "v560tu"
+        ;;
+    "nuc_box" | "nucbox" )
+        BOARD="nuc_box"
+        build_novacustom "nuc_box"
         ;;
     "v540tu" | "V540TU" )
         BOARD="v540tu"
