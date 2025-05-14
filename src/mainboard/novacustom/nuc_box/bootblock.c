@@ -3,6 +3,7 @@
 #include <bootblock_common.h>
 #include <device/pnp_ops.h>
 #include <mainboard/gpio.h>
+#include <dasharo/options.h>
 
 // nuvoton_pnp_enter_conf_state
 static void pnp_enter_conf_state(pnp_devfn_t dev)
@@ -118,69 +119,68 @@ static void hm_write(uint8_t reg, uint8_t value)
 	outb(value, 0x296);
 }
 
-static void hm_init(void)
+static void hm_init(uint8_t fan_curve)
 {
-	// Bank 2
+	// --- Generic setup ---
+	// Bank 2: PECI settings
 	hm_write(0x4E, 0x82);
+	hm_write(0x00, 0x85);  // Enable PECI 3.0
+	hm_write(0x02, 0x10);  // Enable PECI agent 30
+	hm_write(0x04, 110);   // Tbase0 = 110C
 
-	// Enable PECI 3.0 with routine function
-	hm_write(0x00, 0x85);
-
-	// Enable PECI agent 30
-	hm_write(0x02, 0x10);
-
-	// PECI Tbase0 = 110C
-	hm_write(0x04, 110);
-
-	// Bank 3
+	// Bank 3: PECI agent mode
 	hm_write(0x4E, 0x83);
+	hm_write(0x90, 0x01);  // Enable PECI agent 0
 
-	// Enable PECI agent 0 mode
-	hm_write(0x90, 0x01);
-
-	// Bank 1
+	// Bank 1: Smart FAN IV setup
 	hm_write(0x4E, 0x81);
 
-	// CPUFAN T1 = 50C
-	hm_write(0x70, 50);
-	// CPUFAN FD1 = 25% = 0x3F
-	hm_write(0x74, 0x3F);
+	// CPUFAN: Enable Smart Fan IV mode
+	hm_write(0x23, 0x40);  // Mode select: Smart FAN IV
 
-	// CPUFAN T2 = 75C
-	hm_write(0x71, 75);
-	// CPUFAN FD2 = 50% = 0x7F
-	hm_write(0x75, 0x7F);
+	// Set PECI agent 0 as CPUFAN temperature source
+	hm_write(0x20, 0x0C);  // Source = PECI agent 0
 
-	// CPUFAN T3 = 90C
-	hm_write(0x72, 90);
-	// CPUFAN FD3 = 65% = 0xA5
-	hm_write(0x76, 0xA5);
+	// Set fan ramp timings
+	hm_write(0x24, 10); // Step up = 1s
+	hm_write(0x25, 5);  // Step down = 0.5s
 
-	// CPUFAN T4 = 99C
-	hm_write(0x73, 99);
-	// CPUFAN FD4 = 100% = 0xFF
-	hm_write(0x77, 0xFF);
+	// Set critical temperature
+	hm_write(0x2A, 105); // Trip point to force 100% duty
 
-	// CPUFAN critical temperature = 105C
-	hm_write(0x2A, 105);
-	// By default critical duty is 0xFF
+	// --- Curve-specific thresholds ---
+	switch (fan_curve) {
+	case FAN_CURVE_OPTION_OFF:
+		// Fan off curve (only reacts at critical temp)
+		hm_write(0x70, 90); hm_write(0x74, 0x00); // T1
+		hm_write(0x71, 95); hm_write(0x75, 0x00); // T2
+		hm_write(0x72,100); hm_write(0x76, 0x00); // T3
+		hm_write(0x73,105); hm_write(0x77, 0x00); // T4
+		break;
 
-	// CPUFAN step up time = 1s
-	hm_write(0x24, 10);
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		// Aggressive response
+		hm_write(0x70, 40); hm_write(0x74, 0x40); // 25%
+		hm_write(0x71, 60); hm_write(0x75, 0x80); // 50%
+		hm_write(0x72, 75); hm_write(0x76, 0xC0); // 75%
+		hm_write(0x73, 85); hm_write(0x77, 0xFF); // 100%
+		break;
 
-	// CPUFAN step down time = 0.5s
-	hm_write(0x25, 5);
-
-	// Use PECI agent 0 as CPUFAN monitoring source
-	hm_write(0x20, 0b01100);
-
-	// CPUFAN Smart Fan IV mode
-	hm_write(0x23, 0x40);
+	case FAN_CURVE_OPTION_SILENT:
+	default:
+		// Quiet, conservative curve
+		hm_write(0x70, 60); hm_write(0x74, 0x2A); // ~16%
+		hm_write(0x71, 75); hm_write(0x75, 0x50); // ~31%
+		hm_write(0x72, 85); hm_write(0x76, 0x80); // ~50%
+		hm_write(0x73, 95); hm_write(0x77, 0xC0); // ~75%
+		break;
+	}
 }
 
 void bootblock_mainboard_early_init(void)
 {
+	uint8_t fan_curve = get_fan_curve_option();
 	mainboard_configure_early_gpios();
 	superio_init();
-	hm_init();
+	hm_init(fan_curve);
 }
