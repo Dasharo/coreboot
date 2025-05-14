@@ -6,7 +6,6 @@ CONFIG_FMDFILE="src/mainboard/novacustom/mtl-h/vboot-rwab.fmd"
 # CONFIG_CONSOLE_SERIAL is not set
 # CONFIG_POST_IO is not set
 CONFIG_VBOOT=y
-CONFIG_EC_DASHARO_EC_UPDATE=y
 # CONFIG_CONSOLE_POST is not set
 CONFIG_IFD_BIN_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tnx/descriptor.bin"
 CONFIG_ME_BIN_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tnx/me.bin"
@@ -20,6 +19,7 @@ CONFIG_POWER_STATE_OFF_AFTER_FAILURE=y
 CONFIG_FSP_HEADER_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tu/MeteorLakeFspBinPkg/Include/"
 CONFIG_FSP_FD_PATH="3rdparty/dasharo-blobs/novacustom/v5x0tu/MeteorLakeFspBinPkg/Fsp.fd"
 CONFIG_SOFTWARE_CONNECTION_MANAGER=y
+CONFIG_EC_DASHARO_EC_UPDATE=y
 CONFIG_HAVE_ME_BIN=y
 CONFIG_NO_GFX_INIT=y
 CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS=y
