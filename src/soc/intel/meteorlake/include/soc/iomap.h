@@ -66,10 +66,9 @@
 #define IOE_P2SB_BAR		IOE_PCR_ABOVE_4G_BASE_ADDR
 #define IOE_P2SB_SIZE		(256 * MiB)
 
-/* IOE_P2SB_BAR + 0xaa0000, but iasl refuses to perform arithmetics  */
-#define IOM_BASE_ADDR		0x60aa0000
+#define IOM_BASE_ADDR		0x3fff0aa0000
 #define IOM_BASE_SIZE		0x1600
-#define IOM_BASE_ADDR_MAX	0x60aa15ff
+#define IOM_BASE_ADDR_MAX	0x3fff0aa15ff
 
 /*
  * I/O port address space
