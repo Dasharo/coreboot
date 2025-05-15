@@ -7,6 +7,7 @@
 #include <ec/dasharo/ec/acpi/ec.asl>
 
 Scope (\_SB) {
+	#include "sleep.asl"
 	Scope (PCI0) {
 		#include "backlight.asl"
 	}
