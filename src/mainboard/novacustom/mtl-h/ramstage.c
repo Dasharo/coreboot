@@ -267,4 +267,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	params->PmcPdEnable = 1;
 	params->TcCstateLimit = 10;
+	params->TcNotifyIgd = 1;
+	params->PsOnEnable = 0;
 }
