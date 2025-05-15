@@ -125,6 +125,23 @@ Scope (\_SB)
 		Return (0)
 	}
 
+	Method (TCWK, 1, NotSerialized) {
+		If (Arg0 == 3 || Arg0 == 4) {
+			If (LNotEqual (\_SB.PCI0.TRP0.VDID,0xFFFFFFFF)) {
+				Notify (\_SB.PCI0.TRP0, 0)
+			}
+			If (LNotEqual (\_SB.PCI0.TRP1.VDID,0xFFFFFFFF)) {
+				Notify (\_SB.PCI0.TRP1, 0)
+			}
+			If (LNotEqual (\_SB.PCI0.TRP2.VDID,0xFFFFFFFF)) {
+				Notify (\_SB.PCI0.TRP2, 0)
+			}
+			If (LNotEqual (\_SB.PCI0.TRP3.VDID,0xFFFFFFFF)) {
+				Notify (\_SB.PCI0.TRP3, 0)
+			}
+		}
+	}
+
 	Method (_OSC, 4, Serialized)
 	{
 		CreateDWordField (Arg3, 0, CDW1)
@@ -310,6 +327,11 @@ Scope (_GPE)
 		\_SB.PCI0.TRP3.HPME()
 	}
 
+	Method (_L71, 0, Serialized)
+	{
+		\_SB.PCI0.IMNG (0x71)
+	}
+
 	Method (_L73, 0 , Serialized) { }
 }
 
@@ -402,9 +424,64 @@ Scope (\_SB.PCI0)
 		TACK, 1,          /* [16:16] IOM Acknowledge bit */
 		DPOF, 1,          /* [17:17] Set 1 to indicate IOM, all the */
 				  /* display is OFF, clear otherwise */
+		Offset (0x44),    /* SW_CONFIG_2 */
+		DPHD, 1,          /* [0:0] DP_ALT and DP Tunneling HPD assertion. */
+		Offset (0x48),    /* SW_CONFIG_3 */
+		,     12,
+		INDP, 1,          /* [12:12] The capability of monitoring the DP_ALT and DP tunneling. */
 		Offset(0x70),     /* Physical addr is offset 0x70. */
 		IMCD, 32,         /* R_SA_IOM_BIOS_MAIL_BOX_CMD */
 		IMDA, 32          /* R_SA_IOM_BIOS_MAIL_BOX_DATA */
+	}
+
+	Name (IGFG, 0) /* Internal Monitor On/Off Flag. 1 - Off, 0 - On */
+	/* Notify iGfx when HPD_ASSERT with DP_ALT/DP tunneling. */
+	Method (IMNG, 1)
+	{
+		Switch (ToInteger (Arg0)) {
+			Case (0) {
+				/* Clear IOM_TYPEC_SW_CONFIGURATION_2 BIT0 to 0 while BIOS detect BIT0 is 1 */
+				If (INDP == 1) {
+					/*
+					 * Set Internal Monitor off flag for skipping notification
+					 * to iGfx after PEP Fun#3 Display off notification.
+					 */
+					IGFG = 1
+				}
+				If (DPHD == 1) {
+					DPHD = 0 /* Clear IOM HPD indication. */
+				}
+			}
+			Case (1) {
+				/* Clear IOM_TYPEC_SW_CONFIGURATION_2 BIT0 to 0 and notify IGD for device scan */
+				If (INDP == 1) {
+					/*
+					 * Clear the internal monitor off flag for enabling
+					 * _L71 notification to iGfx when iGfx is in D3 hot.
+					 */
+					IGFG = 0
+				}
+				If (DPHD == 1) {
+					DPHD = 0 /* Clear IOM HPD indication. */
+				}
+			}
+			/* _L71 using condition */
+			Case (0x71) {
+				Local0 = 0xF
+				If (CondRefOf (\_SB.PCI0.GFX0.GFPS)) {
+					Local0 = \_SB.PCI0.GFX0.GFPS ()
+				}
+				If (IGFG == 0) {
+					/*
+					 * Notify iGfx when the capability bit of monitoring DP_ALT and
+					 * DP tunneling is set and iGfx is in D3 hot.
+					 */
+					If (INDP == 1 && Local0 == 3) {
+						Notify (\_SB.PCI0.GFX0, 0)
+					}
+				}
+			}
+		}
 	}
 
 	/*
@@ -813,5 +890,19 @@ Scope (\_SB.PCI0)
 			LNSL = 0x88C8
 		}
 		#include "tcss_pcierp.asl"
+	}
+}
+
+Scope (\_SB.PCI0.GFX0)
+{
+	OperationRegion (PXCS, PCI_Config, 0xd4, 4)
+	Field (PXCS, AnyAcc, NoLock, Preserve) {
+		D3HT, 2,       // PowerState
+	}
+
+	Method (GFPS,0,Serialized)
+	{
+
+		Return (D3HT)
 	}
 }
