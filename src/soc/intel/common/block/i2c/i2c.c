@@ -134,19 +134,6 @@ uintptr_t dw_i2c_base_address(unsigned int bus)
 	return (uintptr_t)ALIGN_DOWN(pci_read_config32(dev, PCI_BASE_ADDRESS_0), 16);
 }
 
-static void dw_i2c_read_resources(struct device *dev)
-{
-	/* Read standard PCI resources. */
-	pci_dev_read_resources(dev);
-
-	if (ENV_X86_32) {
-		/* Put resource below 4G to ensure coreboot can access it */
-		struct resource *res = find_resource(dev, PCI_BASE_ADDRESS_0);
-		res->limit = 0xffffffff;
-		res->flags &= ~IORESOURCE_ABOVE_4G;
-	}
-}
-
 /*
  * This function ensures that the device is actually out of reset and
  * its ready for initialization sequence.
@@ -174,7 +161,7 @@ static void dw_i2c_device_init(struct device *dev)
 }
 
 struct device_operations i2c_dev_ops = {
-	.read_resources		= dw_i2c_read_resources,
+	.read_resources		= pci_dev_read_resources,
 	.set_resources		= pci_dev_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.scan_bus		= scan_static_bus,
