@@ -1,0 +1,57 @@
+name: q35 testing workflow
+on:
+  workflow_call:
+    inputs:
+      artifact_name:
+        type: string
+
+jobs:
+  test_in_qemu:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout OSFV repository and submodules
+        uses: actions/checkout@v4
+        with:
+          repository: 'Dasharo/open-source-firmware-validation'
+          ref: 'develop'
+          submodules: 'recursive'
+
+      - name: Download workflow artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+
+      - name: Set up QEMU
+        run: |
+           sudo apt-get update
+           sudo apt-get install qemu-system-x86-64 swtpm
+
+      - name: Enable KVM group perms
+        run: |
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+
+      # OSFV scripts/ci/qemu-run.sh expects QEMU_FW_FILE="./qemu_q35.rom"
+      - name: Start QEMU in background
+        run: |
+          mv coreboot.rom qemu_q35.rom
+          ./scripts/ci/qemu-run.sh nographic firmware &
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start custom-boot-menu-key.robot, test case CBK001.001 and CBK002.001
+        run: |
+          robot -b command_log_CBK001.001.txt -v fw_file:qemu_q35.rom -v snipeit:no -L TRACE -v config:qemu -v rte_ip:127.0.0.1 -t "CBK001.001*" dasharo-compatibility/custom-boot-menu-key.robot
+          robot -b command_log_CBK002.001.txt -v fw_file:qemu_q35.rom -v snipeit:no -L TRACE -v config:qemu -v rte_ip:127.0.0.1 -t "CBK002.001*" dasharo-compatibility/custom-boot-menu-key.robot
