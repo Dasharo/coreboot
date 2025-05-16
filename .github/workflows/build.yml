@@ -244,6 +244,16 @@ jobs:
           path: |
             build/coreboot.rom
           retention-days: 30
+  test_q35:
+    needs: build_q35
+    uses: ./.github/workflows/test.yml
+    strategy:
+      matrix:
+        vendor: [ emulation_qemu ]
+        model: [ x86_q35 ]
+        payload: [ uefi, uefi_all_menus ]
+    with:
+      artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
   build_hardkernel_odroid_h4:
     runs-on: ubuntu-22.04
     container:
