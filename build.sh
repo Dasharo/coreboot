@@ -198,12 +198,6 @@ function build_novacustom {
     -w /home/coreboot/coreboot coreboot/coreboot-sdk:$SDKVER \
     /bin/bash -c "make olddefconfig && make -j$(nproc)"
 
-  # Obtain LAN ROM blob from release binary
-  wget -O UEFIExtract_NE_A68_x64_linux.zip https://github.com/LongSoft/UEFITool/releases/download/A68/UEFIExtract_NE_A68_x64_linux.zip
-  unzip -o UEFIExtract_NE_A68_x64_linux.zip
-  wget -O novacustom_v54x_mtl_v0.9.0.rom https://dl.3mdeb.com/open-source-firmware/Dasharo/novacustom_v54x_mtl/v0.9.0/novacustom_v54x_mtl_v0.9.0.rom
-  cp build/coreboot.rom novacustom_$1_${FW_VERSION}.rom
-
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/novacustom_$1_${FW_VERSION}.rom"
     sha256sum novacustom_$1_${FW_VERSION}.rom > novacustom_$1_${FW_VERSION}.rom.sha256
