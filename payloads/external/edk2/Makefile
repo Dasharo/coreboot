@@ -131,6 +131,10 @@ ifeq ($(CONFIG_DRIVERS_EFI_UPDATE_CAPSULES),y)
 BUILD_STR += -D CAPSULE_SUPPORT=TRUE
 BUILD_STR += -D CAPSULE_MAIN_FW_GUID=$(CONFIG_DRIVERS_EFI_MAIN_FW_GUID)
 endif
+# QEMU_PLATFORM			= FALSE
+ifneq ($(CONFIG_QEMU_PLATFORM),)
+BUILD_STR += -D QEMU_PLATFORM=TRUE
+endif
 
 #
 # One or more downstream edk2 repositories support the following additional options:
