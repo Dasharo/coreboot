@@ -198,6 +198,11 @@ define EDK2_ENSURE_FMP_CERT_INC
 	fi;
 endef
 
+# QEMU_PLATFORM			= FALSE
+ifneq ($(CONFIG_QEMU_PLATFORM),)
+BUILD_STR += -D QEMU_PLATFORM=TRUE
+endif
+
 #
 # One or more downstream edk2 repositories support the following additional options:
 #
