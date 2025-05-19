@@ -147,6 +147,10 @@ endif
 ifeq ($(CONFIG_DRIVERS_EFI_CAPSULE_EMBED_FMP_DXE),y)
 BUILD_STR += -D CAPSULE_EMBED_FMP_DXE=TRUE
 endif
+# QEMU_PLATFORM			= FALSE
+ifneq ($(CONFIG_QEMU_PLATFORM),)
+BUILD_STR += -D QEMU_PLATFORM=TRUE
+endif
 
 CAPSULE_PCD_INC_REL := BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
 CAPSULE_PCD_INC := $(EDK2_PATH)/$(CAPSULE_PCD_INC_REL)
