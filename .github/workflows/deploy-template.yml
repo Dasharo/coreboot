@@ -86,9 +86,21 @@ jobs:
           fi
 
           # Create release directory if it doesn't exist
-          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir"
-          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model"
-          $CURL_CMD -X MKCOL "$BASE_URL/$base_dir/$model/$release"
+          
+          if [[ "$model" == *adln* ]]; then
+            # Insert extra folder for 'adln' platforms
+            path="$base_dir/$model/$extra_precision/$release"
+          else
+            path="$base_dir/$model/$release"
+          fi
+
+          # Create directories recursively
+          IFS='/' read -ra DIRS <<< "$path"
+          current=""
+          for part in "${DIRS[@]}"; do
+            current="${current:+$current/}$part"
+            $CURL_CMD -X MKCOL "$BASE_URL/$current" || true
+          done
 
           # upload firmware and hash files
           $CURL_CMD -X PUT -T "artifacts/coreboot.rom" "$BASE_URL/$base_dir/$model/$release/$new_name"
