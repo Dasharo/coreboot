@@ -70,6 +70,16 @@ jobs:
           release="${{ steps.parse_directories.outputs.release }}"
           CURL_CMD="curl -u $url_part:${{ secrets.CLOUD_PASSWORD }}"
 
+          case "$model" in
+            *vp2430*|*vp2440*|*vp3230*|*3210*)
+              extra_precision="$model"
+              model="protectli_adln"
+              ;;
+            *)
+              extra_precision=""
+              ;;
+          esac
+
           if [ "${{ inputs.platform }}" == "pcengines" ]; then
             new_name="pcengines_${{ inputs.model }}_${release}.rom"
           else
@@ -84,17 +94,20 @@ jobs:
               new_name=$(echo "${new_name%.rom}_${{ inputs.type }}.rom")
             fi
           fi
-
-          # Create release directory if it doesn't exist
           
+          # Prepare cloud path
+
           if [[ "$model" == *adln* ]]; then
-            # Insert extra folder for 'adln' platforms
+            # If extra_precision is empty, assign default
+            if [[ -z "$extra_precision" ]]; then
+              extra_precision="protectli_vp32xx"
+            fi
             path="$base_dir/$model/$extra_precision/$release"
           else
             path="$base_dir/$model/$release"
           fi
 
-          # Create directories recursively
+          # Create release directory if it doesn't exist recursively
           IFS='/' read -ra DIRS <<< "$path"
           current=""
           for part in "${DIRS[@]}"; do
