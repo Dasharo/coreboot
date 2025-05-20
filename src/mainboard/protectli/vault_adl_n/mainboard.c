@@ -158,6 +158,14 @@ static void mainboard_enable(struct device *dev)
 	}
 }
 
+void mainboard_update_soc_chip_config(struct soc_intel_alderlake_config *config)
+{
+	if (get_sleep_type_option() == SLEEP_TYPE_OPTION_S3)
+		config->s0ix_enable = 0;
+	else
+		config->s0ix_enable = 1;
+}
+
 struct chip_operations mainboard_ops = {
 	.final = mainboard_final,
 	.enable_dev = mainboard_enable

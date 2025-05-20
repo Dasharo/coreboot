@@ -37,6 +37,10 @@ void bootblock_mainboard_early_init(void)
 	ite_reg_write(GPIO_DEV, 0x29, 0xc0);
 	/* Sets a reserved bit6 to reflect original FW configuration */
 	ite_reg_write(GPIO_DEV, 0x2c, 0xc9);
+	/* Enable 3VSB during Suspend-to-RAM */
+	ite_enable_3vsbsw(GPIO_DEV);
+	/* Delay PWROK2 after 3VSBSW# during resume from Suspend-to-RAM */
+	ite_delay_pwrgd3(GPIO_DEV);
 	ite_kill_watchdog(GPIO_DEV);
 	/* GP41 - PC Speaker configuration */
 	ite_gpio_setup(GPIO_DEV, 41,
