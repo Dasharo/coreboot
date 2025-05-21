@@ -1,0 +1,39 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/intel/alderlake
+	device domain 0 on
+		register "pcie_clk_config_flag[0]" = "PCIE_CLK_FREE_RUNNING"
+		# M.2 M NVMe (x4) bifurcated as 4x1 for netcard
+		device ref pcie_rp9 on
+			register "pch_pcie_rp[PCH_RP(9)]" = "{
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED | PCIE_RP_CLK_SRC_UNUSED,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2/M 2280 (M2_SSD1)" "SlotDataBusWidth4X"
+		end
+		device ref pcie_rp10 on
+			register "pch_pcie_rp[PCH_RP(10)]" = "{
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED | PCIE_RP_CLK_SRC_UNUSED,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+		end
+		device ref pcie_rp11 on
+			register "pch_pcie_rp[PCH_RP(11)]" = "{
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED | PCIE_RP_CLK_SRC_UNUSED,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+		end
+		device ref pcie_rp12 on
+			register "pch_pcie_rp[PCH_RP(12)]" = "{
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED | PCIE_RP_CLK_SRC_UNUSED,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+		end
+	end
+end
