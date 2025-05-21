@@ -80,4 +80,21 @@ config ODROID_H4_ENABLE_SAGV
 	  If unsure, keep enabled. If reflashing often, disabling this
 	  option can be useful to reduce memory training time.
 
+config ODROID_H4_NETCARD_SUPPORT
+	bool "Enable 4x1 PCIe for Net Card 2 support in M.2 NVME slot"
+	default n
+	help
+	  Enables 4x1 PCIe for Net Card 2 support in the project. Enable
+	  this option when the M.2 NVMe slot is bifurcated as 4x1 to
+	  support the Net Card 2. The option alone does not guarantee
+	  that the bifurcation is enabled in the Intel Flash Descriptor.
+	  Use proper flash desriptor when enabling this option.
+
+	  By default the slot is bifurcated as 1x4 for NVMe.
+
+config OVERRIDE_DEVICETREE
+	string
+	default "overridetree_netcard.cb" if ODROID_H4_NETCARD_SUPPORT
+	default "overridetree_nvme.cb"
+
 endif #BOARD_HARDKERNEL_ODROID_H4
