@@ -1,0 +1,15 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/intel/alderlake
+	device domain 0 on
+		device ref pcie_rp9 on	# M.2 M NVMe (x4)
+			register "pch_pcie_rp[PCH_RP(9)]" = "{
+				.clk_src = 0,
+				.clk_req = 0,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2/M 2280 (M2_SSD1)" "SlotDataBusWidth4X"
+		end
+	end
+end
