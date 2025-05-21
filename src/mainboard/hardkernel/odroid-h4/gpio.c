@@ -133,8 +133,13 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_NF(GPP_A10, NONE, DEEP, NF1),
 	/* GPP_A11 - GPIO */
 	PAD_NC(GPP_A11, NONE),
+#if CONFIG(ODROID_H4_NETCARD_SUPPORT)
+	/* GPP_A12 - GPIO - unused with netcard support */
+	PAD_NC(GPP_A12, NONE),
+#else
 	/* GPP_A12 - SATAXPCIE1 */
 	PAD_CFG_NF(GPP_A12, NONE, DEEP, NF1),
+#endif
 	/* GPP_A13 - GPIO */
 	PAD_NC(GPP_A13, NONE),
 	/* GPP_A14 - GPIO */
@@ -273,8 +278,14 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_D3, NONE),
 	/* GPP_D4 - GPIO */
 	PAD_NC(GPP_D4, NONE),
+#if CONFIG(ODROID_H4_NETCARD_SUPPORT)
+	/* GPP_D5 - GPIO */
+	/* Do not use SRCCLKREQ0# to PCIE RP 9 (NVMe), as the clock becomes shared */
+	PAD_NC(GPP_D5, NONE),
+#else
 	/* GPP_D5 - SRCCLKREQ0# to PCIE RP 9 (NVMe) */
 	PAD_CFG_NF(GPP_D5, NONE, DEEP, NF1),
+#endif
 	/* GPP_D6 - SRCCLKREQ1# to PCIE RP 3 (LAN1) */
 	PAD_CFG_NF(GPP_D6, NONE, DEEP, NF1),
 	/* GPP_D7 - SRCCLKREQ2# to PCIE RP 4 (LAN2) */
