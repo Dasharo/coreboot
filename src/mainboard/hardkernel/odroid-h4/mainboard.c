@@ -14,7 +14,8 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpEnableCpm[2] = 1; // LAN1
 	params->PcieRpEnableCpm[3] = 1; // LAN2
 	params->PcieRpEnableCpm[6] = 1; // ASMedia PCIe to SATA
-	params->PcieRpEnableCpm[8] = 1; // NVMe
+	if (!CONFIG(ODROID_H4_NETCARD_SUPPORT))
+		params->PcieRpEnableCpm[8] = 1; // NVMe
 
 	// Max payload 256B
 	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
