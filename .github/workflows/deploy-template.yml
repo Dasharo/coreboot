@@ -72,11 +72,11 @@ jobs:
 
           case "$model" in
             *vp2430*|*vp2440*|*vp3230*|*3210*)
-              extra_precision="$model"
+              subdir="$model"
               model="protectli_adln"
               ;;
             *)
-              extra_precision=""
+              subdir=""
               ;;
           esac
 
@@ -98,11 +98,11 @@ jobs:
           # Prepare cloud path
 
           if [[ "$model" == *adln* ]]; then
-            # If extra_precision is empty, assign default
-            if [[ -z "$extra_precision" ]]; then
-              extra_precision="protectli_vp32xx"
+            # If subdir is empty, assign default
+            if [[ -z "$subdir" ]]; then
+              subdir="protectli_vp32xx"
             fi
-            path="$base_dir/$model/$extra_precision/$release"
+            path="$base_dir/$model/$subdir/$release"
           else
             path="$base_dir/$model/$release"
           fi
