@@ -71,7 +71,7 @@ static void configure_rp_clocks(FSP_M_CONFIG *m_cfg,
 	 */
 	if (m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] == FSP_CLK_NOTUSED)
 		m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] = index;
-	
+
 }
 
 static void pcie_rp_init(FSP_M_CONFIG *m_cfg, uint32_t en_mask,
@@ -408,7 +408,7 @@ static void fill_fspm_ibecc_params(FSP_M_CONFIG *m_cfg,
 		const struct soc_intel_meteorlake_config *config)
 {
 	/* In-Band ECC configuration */
-	if (get_uint_option("ibecc_enable", config->ibecc.enable)) {
+	if (get_ibecc_option(get_uint_option("ibecc_enable", config->ibecc.enable))) {
 		m_cfg->Ibecc = true;
 		m_cfg->IbeccParity = config->ibecc.parity_en;
 		m_cfg->IbeccOperationMode = config->ibecc.mode;
