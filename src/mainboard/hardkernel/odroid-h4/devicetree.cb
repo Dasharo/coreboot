@@ -15,6 +15,11 @@ chip soc/intel/alderlake
 
 	register "tcc_offset" = "10" # TCC of 90C
 
+	register "ibecc" = "{
+		.enable = false,
+		.mode = IBECC_MODE_ALL
+	}"
+
 	device domain 0 on
 		subsystemid 0x8086 0x7270 inherit
 		device ref igpu on
