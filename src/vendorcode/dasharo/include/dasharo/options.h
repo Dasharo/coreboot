@@ -314,6 +314,17 @@ uint8_t get_cpu_throttling_offset(uint8_t tcc_offset);
  *  - 1 - NVIDIA Optimus (iGPU + dGPU)
  *  - 2 - dGPU only
  */
- enum dgpu_state dasharo_dgpu_state(void);
+enum dgpu_state dasharo_dgpu_state(void);
+
+/* Looks Dasharo/"IBECC" variable to check In-Band ECC should be
+ * enabled.
+ *
+ * Arguments:
+ *  - default - default platform value of IBECC
+ * Result:
+ *  - true  - In-Band ECC enabled
+ *  - false - In-Band ECC disabled
+ */
+bool get_ibecc_option(bool ibecc_default);
 
 #endif /* DASHARO_OPTIONS_H */

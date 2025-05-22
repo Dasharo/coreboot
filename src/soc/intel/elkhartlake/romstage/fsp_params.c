@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <fsp/util.h>
 #include <intelblocks/cpulib.h>
@@ -99,9 +100,9 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	/* Processor Early Power On Configuration FCLK setting */
 	m_cfg->FClkFrequency = 0x1;
 
-	/* Ib-Band ECC configuration */
-	if (config->ibecc.enable) {
-		m_cfg->Ibecc = !!config->ibecc.enable;
+	/* In-Band ECC configuration */
+	if (get_ibecc_option(config->ibecc.enable)) {
+		m_cfg->Ibecc = 1;
 		m_cfg->IbeccParity = !!config->ibecc.parity_en;
 		m_cfg->IbeccOperationMode = config->ibecc.mode;
 		if (m_cfg->IbeccOperationMode == IBECC_PER_REGION) {

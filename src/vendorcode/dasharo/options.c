@@ -530,3 +530,13 @@ uint8_t get_cpu_throttling_offset(uint8_t tcc_offset)
 
 	return offset;
 }
+
+bool get_ibecc_option(bool ibecc_default)
+{
+	bool ibecc_en = ibecc_default;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("IBECC", &ibecc_en);
+
+	return ibecc_en;
+}
