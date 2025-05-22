@@ -228,6 +228,22 @@ config EDK2_DASHARO_MEMORY_CONFIG
 	help
 	  Enables the EDK2 Memory configuration submenu in Dasharo System Features menu.
 
+config EDK2_DASHARO_SPD_PROFILE_OPTION
+	bool "Show Memory SPD profile in Dasharo Memory Configuration Menu"
+	depends on EDK2_DASHARO_MEMORY_CONFIG
+	default n
+	help
+	  Shows the Memory SPD profile option in EDK2 Memory configuration
+	  submenu in Dasharo System Features menu.
+
+config EDK2_DASHARO_IBECC_OPTION
+	bool "Show In-band ECC in Dasharo Memory Configuration Menu"
+	depends on EDK2_DASHARO_MEMORY_CONFIG
+	default n
+	help
+	  Shows the In-band ECC option in EDK2 Memory configuration submenu in
+	  Dasharo System Features menu.
+
 config EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE
 	bool "Enable EDK2 network boot option by default"
 	default n
