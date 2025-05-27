@@ -27,6 +27,7 @@ usage() {
   echo -e "\tqemu                   - build Dasharo for QEMU Q35"
   echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
+  echo -e "\todroid_h4_btg          - build Dasharo compatible with Hardkernel ODROID H4 with Boot Guard support"
 }
 
 SDKVER="2024-02-18_732134932b"
@@ -236,7 +237,7 @@ function build_qemu {
 }
 
 function build_odroid_h4 {
-  DEFCONFIG="configs/config.hardkernel_odroid_h4"
+  DEFCONFIG="configs/config.hardkernel_odroid_h4$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   # checkout several submodules needed by these boards (some others are checked
@@ -350,7 +351,10 @@ case "$CMD" in
         build_qemu "_all_menus"
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
-        build_odroid_h4
+        build_odroid_h4 ""
+        ;;
+    "odroid_h4_btg" )
+        build_odroid_h4 "_btg"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
