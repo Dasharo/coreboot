@@ -181,6 +181,7 @@ void bootblock_mainboard_early_init(void)
 {
 	uint8_t fan_curve = get_fan_curve_option();
 	mainboard_configure_early_gpios();
+	mainboard_configure_gpios();
 	superio_init();
 	hm_init(fan_curve);
 }
