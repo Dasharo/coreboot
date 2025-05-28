@@ -4,6 +4,9 @@ chip soc/intel/meteorlake
 		#subsystemid 0x1849 TODO inherit
 
 		device ref tbt_pcie_rp0 on end
+		device ref tbt_pcie_rp1 on end
+		device ref tbt_pcie_rp2 on end
+		device ref tbt_pcie_rp3 on end
 		device ref tcss_xhci on
 			register "tcss_ports[0]" = "TCSS_PORT_DEFAULT(OC_SKIP)" # TBT
 			register "tcss_ports[1]" = "TCSS_PORT_DEFAULT(OC_SKIP)" # Type-C
