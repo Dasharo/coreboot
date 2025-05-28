@@ -19,7 +19,6 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	const bool half_populated = false;
 
 	mupd->FspmConfig.DmiMaxLinkSpeed = 4;
-	mupd->FspmConfig.GpioOverride = 0;
 
 	memcfg_init(mupd, &board_cfg, &spd_info, half_populated);
 }
