@@ -4,6 +4,7 @@ CPPFLAGS_common += -I$(src)/mainboard/$(MAINBOARDDIR)/include
 
 bootblock-y += bootblock.c
 bootblock-y += variants/$(VARIANT_DIR)/gpio_early.c
+bootblock-y += variants/$(VARIANT_DIR)/gpio.c
 
 romstage-y += variants/$(VARIANT_DIR)/romstage.c
 
