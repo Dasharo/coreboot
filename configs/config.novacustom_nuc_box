@@ -4,6 +4,7 @@ CONFIG_USE_OPTION_TABLE=y
 CONFIG_VENDOR_NOVACUSTOM=y
 CONFIG_MAINBOARD_VENDOR="NovaCustom"
 CONFIG_VBOOT=y
+CONFIG_CONSOLE_SPI_FLASH=y
 # CONFIG_POST_IO is not set
 CONFIG_IFD_BIN_PATH="3rdparty/dasharo-blobs/novacustom/nuc_box/ifd.bin"
 CONFIG_ME_BIN_PATH="3rdparty/dasharo-blobs/novacustom/nuc_box/me.bin"
