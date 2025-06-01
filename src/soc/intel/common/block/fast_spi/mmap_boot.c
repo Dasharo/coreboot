@@ -19,15 +19,23 @@ enum window_type {
 	FIXED_DECODE_WINDOW,
 	/* Additional decode window for mapping BIOS region greater than 16MiB */
 	EXT_BIOS_DECODE_WINDOW,
+
+	/* Number of memory-backed regions for reading flash */
+	TOTAL_MMAP_DECODE_WINDOWS,
+
+	/* An optional extra window for part of the flash before IFD BIOS region */
+	PRE_BIOS_DECODE_WINDOW = TOTAL_MMAP_DECODE_WINDOWS,
+
+	/* Maximum number of decode windows */
 	TOTAL_DECODE_WINDOWS,
 };
 
 static struct xlate_region_device real_dev;
-static struct mem_region_device shadow_devs[TOTAL_DECODE_WINDOWS];
+static struct mem_region_device shadow_devs[TOTAL_MMAP_DECODE_WINDOWS];
 static struct xlate_window real_dev_windows[TOTAL_DECODE_WINDOWS];
 
-static void initialize_window(enum window_type type, uintptr_t host_base,
-			      uintptr_t flash_base, size_t size)
+static void initialize_mmap_window(enum window_type type, uintptr_t host_base,
+				   uintptr_t flash_base, size_t size)
 {
 	mem_region_device_ro_init(&shadow_devs[type], (void *)host_base, size);
 	xlate_window_init(&real_dev_windows[type], &shadow_devs[type].rdev,
@@ -101,12 +109,6 @@ static void bios_mmap_init(void)
 	/* Read the offset and size of BIOS region in the SPI flash address space. */
 	bios_start = fast_spi_get_bios_region(&bios_size);
 
-	/* Optionally extend BIOS region to the beginning of the flash. */
-	if (CONFIG(EXT_BIOS_FILL_UP)) {
-		bios_size += bios_start;
-		bios_start = 0;
-	}
-
 	/*
 	 * By default, fixed decode window (maximum size 16MiB) is mapped just below the 4G
 	 * boundary. This window maps the top part of the BIOS region in the SPI flash address
@@ -116,8 +118,8 @@ static void bios_mmap_init(void)
 	fixed_win_host_base = 4ULL * GiB - fixed_win_size;
 	fixed_win_flash_base = bios_start + bios_size - fixed_win_size;
 
-	initialize_window(FIXED_DECODE_WINDOW, fixed_win_host_base, fixed_win_flash_base,
-			  fixed_win_size);
+	initialize_mmap_window(FIXED_DECODE_WINDOW, fixed_win_host_base, fixed_win_flash_base,
+			       fixed_win_size);
 	win_count++;
 
 	_Static_assert(CONFIG_EXT_BIOS_WIN_BASE != 0, "Extended BIOS window base cannot be 0!");
@@ -136,9 +138,27 @@ static void bios_mmap_init(void)
 		ext_win_host_base = CONFIG_EXT_BIOS_WIN_BASE + CONFIG_EXT_BIOS_WIN_SIZE -
 			ext_win_size;
 		ext_win_flash_base = fixed_win_flash_base - ext_win_size;
-		initialize_window(EXT_BIOS_DECODE_WINDOW, ext_win_host_base,
-				  ext_win_flash_base, ext_win_size);
+		initialize_mmap_window(EXT_BIOS_DECODE_WINDOW, ext_win_host_base,
+				       ext_win_flash_base, ext_win_size);
 		win_count++;
+	}
+
+	/*
+	 * While it's possible to include everything to the start of the flash into extended
+	 * BIOS region, reads of that area always produce 0xFF.  Some part of the hardware
+	 * seems to ignore flash's contents outside of IFD BIOS region.
+	 *
+	 * Instead, use RW device as yet another window to allow reading whole flash via
+	 * result of boot_device_ro().
+	 */
+	if (CONFIG(FAST_SPI_FULL_RO_BOOTMEDIA)) {
+		const struct region_device *rw_device = boot_device_rw();
+		xlate_window_init(&real_dev_windows[PRE_BIOS_DECODE_WINDOW], rw_device,
+				  0, bios_start);
+		win_count++;
+
+		printk(BIOS_INFO, "Fast SPI Decode Window: SPI flash base=0x0, Size=0x%zx\n",
+		       bios_start);
 	}
 
 	xlate_region_device_ro_init(&real_dev, win_count, real_dev_windows, CONFIG_ROM_SIZE);
@@ -182,7 +202,7 @@ uint32_t spi_flash_get_mmap_windows(struct flash_mmap_window *table)
 
 	bios_mmap_init();
 
-	for (i = 0; i < TOTAL_DECODE_WINDOWS; i++) {
+	for (i = 0; i < TOTAL_MMAP_DECODE_WINDOWS; i++) {
 		if (region_sz(&real_dev_windows[i].sub_region) == 0)
 			continue;
 
