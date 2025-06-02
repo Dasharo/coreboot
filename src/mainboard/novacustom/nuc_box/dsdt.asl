@@ -1,8 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-//TODO: HACK FOR MISSING MISCCFG_GPIO_PM_CONFIG_BITS
-#include <soc/gpio.h>
-
 #include <acpi/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
