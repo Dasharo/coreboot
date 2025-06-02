@@ -289,7 +289,7 @@ void intel_cbnt_log_registers(void)
 	LOG("  CPU Co-signing:          %s\n", biosacm_sts.status.cpu_co_signing ?
 					       "enabled" : "disabled");
 	LOG("  TPM Startup locality:    %d\n",
-	    biosacm_sts.status.tpm_startup_locality ? 3 : 0);
+	    biosacm_sts.status.tpm_startup_locality ? 0 : 3);
 
 
 }
