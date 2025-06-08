@@ -3,6 +3,7 @@
 #ifndef LOGS_H_
 #define LOGS_H_
 
+#include <commonlib/bsd/tpm_log_defs.h>
 #include <stdint.h>
 #include <vb2_api.h>
 
@@ -50,5 +51,22 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 			      const uint8_t *digest,
 			      const size_t digest_len);
 void tpm2_log_dump(void);
+
+static inline uint16_t tpm2_alg_from_vb2_hash(enum vb2_hash_algorithm hash_type)
+{
+	switch (hash_type) {
+	case VB2_HASH_SHA1:
+		return TPM2_ALG_SHA1;
+	case VB2_HASH_SHA256:
+		return TPM2_ALG_SHA256;
+	case VB2_HASH_SHA384:
+		return TPM2_ALG_SHA384;
+	case VB2_HASH_SHA512:
+		return TPM2_ALG_SHA512;
+
+	default:
+		return 0xFF;
+	}
+}
 
 #endif /* LOGS_H_ */
