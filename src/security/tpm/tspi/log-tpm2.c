@@ -22,23 +22,6 @@
 #include <cbmem.h>
 #include <vb2_sha.h>
 
-static uint16_t tpmalg_from_vb2_hash(enum vb2_hash_algorithm hash_type)
-{
-	switch (hash_type) {
-	case VB2_HASH_SHA1:
-		return TPM2_ALG_SHA1;
-	case VB2_HASH_SHA256:
-		return TPM2_ALG_SHA256;
-	case VB2_HASH_SHA384:
-		return TPM2_ALG_SHA384;
-	case VB2_HASH_SHA512:
-		return TPM2_ALG_SHA512;
-
-	default:
-		return 0xFF;
-	}
-}
-
 void *tpm2_log_cbmem_init(void)
 {
 	static struct tpm_2_log_table *tclt;
@@ -71,7 +54,7 @@ void *tpm2_log_cbmem_init(void)
 		hdr->spec_errata = 0x00;
 		hdr->uintn_size = 0x02; // 64-bit UINT
 		hdr->num_of_algorithms = htole32(1);
-		hdr->digest_sizes[0].alg_id = htole16(tpmalg_from_vb2_hash(tpm_log_alg()));
+		hdr->digest_sizes[0].alg_id = htole16(tpm2_alg_from_vb2_hash(tpm_log_alg()));
 		hdr->digest_sizes[0].digest_size = htole16(vb2_digest_size(tpm_log_alg()));
 
 		tclt->vendor_info_size = sizeof(tclt->vendor);
@@ -158,7 +141,7 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 	tce->event_type = htole32(EV_ACTION);
 
 	tce->digest_count = htole32(1);
-	tce->digest_type = htole16(tpmalg_from_vb2_hash(tpm_log_alg()));
+	tce->digest_type = htole16(tpm2_alg_from_vb2_hash(tpm_log_alg()));
 	memcpy(tce->digest, digest, vb2_digest_size(tpm_log_alg()));
 
 	tce->data_length = htole32(sizeof(tce->data));
