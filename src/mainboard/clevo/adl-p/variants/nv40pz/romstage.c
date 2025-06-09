@@ -30,16 +30,14 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	size_t acm_size = 0;
 	uintptr_t acm_base;
 
-	if (CONFIG(INTEL_TXT)) {
-		intel_txt_log_spad();
+	intel_txt_log_spad();
 
-		if (CONFIG(INTEL_CBNT_LOGGING))
-			intel_cbnt_log_registers();
+	if (CONFIG(INTEL_CBNT_LOGGING))
+		intel_cbnt_log_registers();
 
-		if (CONFIG(INTEL_TXT_LOGGING)) {
-			intel_txt_log_bios_acm_error();
-			txt_dump_chipset_info();
-		}
+	if (CONFIG(INTEL_TXT_LOGGING)) {
+		intel_txt_log_bios_acm_error();
+		txt_dump_chipset_info();
 	}
 
 	acm_base = (uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
