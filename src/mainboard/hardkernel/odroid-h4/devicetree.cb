@@ -207,7 +207,6 @@ chip soc/intel/alderlake
 		end
 		device ref p2sb hidden end
 		device ref hda on
-			register "pch_hda_dsp_enable"			= "true"
 			register "pch_hda_sdi_enable[0]"		= "true"
 			register "pch_hda_audio_link_hda_enable"	= "true"
 			register "pch_hda_idisp_codec_enable"		= "true"
