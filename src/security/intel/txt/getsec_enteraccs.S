@@ -237,12 +237,12 @@ cond_clear_var_mtrrs:
 
 #if CONFIG(INTEL_CBNT_SUPPORT)
 	/* Clean all MCi_STATUS MSR registers */
-	movl	$(IA32_MCG_CAP), %ecx		/* MCG_CAP */
+	movl	$(IA32_MCG_CAP), %ecx
 	rdmsr
 	movzx	%al, %ebx		/* ebx = MCR bank count */
 	xorl	%eax, %eax		/* Write 0 into all MCi_STATUS registers */
 	xorl	%edx, %edx
-	movl	$(IA32_MC0_STATUS), %ecx		/* MC0_STATUS */
+	movl	$(IA32_MC0_STATUS), %ecx
 
 mca_clean_loop:
 	wrmsr
