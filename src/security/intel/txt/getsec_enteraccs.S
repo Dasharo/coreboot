@@ -6,6 +6,8 @@
 #include <cpu/x86/msr.h>
 #include <cpu/x86/gdt.h>
 
+#include <security/intel/txt/txt_register.h>
+
 #include "getsec_mtrr_setup.inc"
 
 .macro PUSH_MSR x
@@ -112,11 +114,11 @@ cond_push_var_mtrrs:
 
 	/* Check how the cache should be invalidated */
 	movl	8(%ebp), %eax		/* ACM function in eax */
-	cmp	$0, %eax		/* SCLEAN? */
+	cmp	$(ACMINPUT_SCLEAN), %eax
 	je	invalidate_cache
-	cmp	$5, %eax		/* CLEAR_SECRETS? */
+	cmp	$(ACMINPUT_CLEAR_SECRETS), %eax
 	je	invalidate_cache
-	cmp	$7, %eax		/* ACHECK? */
+	cmp	$(ACMINPUT_ACHECK), %eax
 	je	invalidate_cache
 
 	wbinvd				/* writeback is necessary */
@@ -307,11 +309,11 @@ mca_clean_done:
 
 	/* Check if we need a reset */
 	movl	8(%ebp), %eax		/* ACM function in eax */
-	cmp	$0, %eax 		/* SCLEAN? */
+	cmp	$(ACMINPUT_SCLEAN), %eax
 	je	reset_system
-	cmp	$5, %eax 		/* CLEAR_SECRETS? */
+	cmp	$(ACMINPUT_CLEAR_SECRETS), %eax
 	je	reset_system
-	cmp	$7, %eax		/* ACHECK? */
+	cmp	$(ACMINPUT_ACHECK), %eax
 	je	reset_system
 
 	/* Disable cache */
