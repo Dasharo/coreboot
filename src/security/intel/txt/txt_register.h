@@ -3,8 +3,6 @@
 #ifndef SECURITY_INTEL_TXT_REGISTER_H_
 #define SECURITY_INTEL_TXT_REGISTER_H_
 
-#include <types.h>
-
 /*
  * Document: 315168-016
  * Intel Trusted Execution Technology (Intel TXT)
@@ -170,6 +168,10 @@
 /* MSRs */
 #define IA32_MCG_STATUS 0x17a
 
+#ifndef __ASSEMBLER__
+
+#include <types.h>
+
 /* DPR register layout, either in PCI config space or TXT MMIO space */
 union dpr_register {
 	struct {
@@ -303,5 +305,7 @@ void txt_dump_regions(void);
 void txt_dump_chipset_info(void);
 void txt_dump_acm_info(const struct acm_header_v0 *acm_header);
 void txt_dump_getsec_parameters(void);
+
+#endif /*__ASSEMBLER__*/
 
 #endif /* SECURITY_INTEL_TXT_REGISTER_H_ */
