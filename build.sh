@@ -38,7 +38,7 @@ usage() {
 }
 
 SDKVER="2024-02-18_732134932b"
-DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:latest"}
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 
 function build_optiplex_9010 {
