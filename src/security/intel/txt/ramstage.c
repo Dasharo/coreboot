@@ -259,7 +259,7 @@ static void txt_heap_fill_common_bdr(struct txt_biosdataregion *bdr)
 			bdr->platform_type = 1;
 		}
 	} else {
-		/* Legacy / auto - auto-decect based on platform segment */
+		/* Legacy / auto - auto-detect based on platform segment */
 		bdr->platform_type = 0;
 	}
 }
