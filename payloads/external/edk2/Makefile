@@ -432,6 +432,10 @@ endif
 ifeq ($(CONFIG_EDK2_ENABLE_QUIET_BOOT_FEATURE),y)
 BUILD_STR += --pcd gEfiMdePkgTokenSpaceGuid.PcdQuietBootFeatureEnabled=TRUE
 endif
+# PcdIntelMeMenuShowCbntStatus = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_INTEL_ME_CBNT_STATUS),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeMenuShowCbntStatus=TRUE
+endif
 
 endif
 

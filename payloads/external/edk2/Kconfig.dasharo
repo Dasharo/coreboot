@@ -105,6 +105,17 @@ config EDK2_DASHARO_INTEL_ME_OPTIONS
 	help
 	  Enables the Intel ME configuration submenu in Dasharo System Features.
 
+if EDK2_DASHARO_INTEL_ME_OPTIONS
+
+config EDK2_DASHARO_INTEL_ME_CBNT_STATUS
+	bool "Enable CBnT status on the Intel ME configuration page"
+	default n
+	help
+	  Enables printing of CBnT related registers on the Intel Management Engine
+	  status page in Dasharo System Features
+
+endif
+
 config EDK2_DASHARO_USB_CONFIG
 	bool "Enable EDK2 Dasharo USB Configuration Menu"
 	default n
