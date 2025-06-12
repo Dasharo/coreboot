@@ -47,7 +47,7 @@ function sdk_run {
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -w /home/coreboot/coreboot ${DASHARO_SDK} \
-    $@
+    "$@"
 }
 
 function build_prep {
