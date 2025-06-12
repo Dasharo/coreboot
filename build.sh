@@ -315,19 +315,19 @@ fi
 CMD="$1"
 
 case "$CMD" in
-    "ddr4" | "z690a_ddr4")
+    "ddr4" | "z690a_ddr4" | "ms7d25_ddr4")
         BOARD="msi_ms7d25"
         build_msi ddr4 "Z690-A DDR4 "
         ;;
-    "ddr5" | "z690a_ddr5")
+    "ddr5" | "z690a_ddr5" | "ms7d25_ddr5")
         BOARD="msi_ms7d25"
         build_msi ddr5 "Z690-A DDR5 "
         ;;
-    "z790p_ddr4")
+    "z790p_ddr4" | "ms7e06_ddr4")
         BOARD="msi_ms7e06"
         build_msi ddr4 "Z790-P DDR4 "
         ;;
-    "z790p_ddr5")
+    "z790p_ddr5" | "ms7e06_ddr5")
         BOARD="msi_ms7e06"
         build_msi ddr5 "Z790-P DDR5 "
         ;;
@@ -415,18 +415,18 @@ case "$CMD" in
     "apu6" | "APU6" )
         build_pcengines "apu6"
         ;;
-    "optiplex_9010_uefi")
+    "optiplex_9010_uefi" | "optiplex_9010_sff_uefi")
         BOARD="optiplex_9010"
         build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_uefi_txt"
         ;;
-    "optiplex_9010_seabios")
+    "optiplex_9010_seabios" | "optiplex_9010_sff")
         BOARD="optiplex_9010"
         build_optiplex_9010 "configs/config.dell_optiplex_9010_sff_txt"
         ;;
-    "qemu" | "QEMU" | "q35" | "Q35" )
+    "qemu" | "QEMU" | "q35" | "Q35" | "x86_q35_uefi" )
         build_qemu
         ;;
-    "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" )
+    "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" | "x86_q35_uefi_all_menus" )
         build_qemu "_all_menus"
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
