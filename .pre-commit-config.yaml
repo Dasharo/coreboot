@@ -44,3 +44,12 @@ repos:
         entry: util/lint/lint lint-stable
         language: script
         types: [file]
+
+  - repo: https://github.com/3mdeb/hooks
+    rev: v0.1.6
+    # Can be triggered manually with command:
+    # pre-commit run --hook-stage pre-push check-upstream-status
+    hooks:
+      - id: check-upstream-status
+        args: [--base, origin/dasharo]
+        stages: [pre-push]
