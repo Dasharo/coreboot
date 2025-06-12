@@ -78,9 +78,6 @@ jobs:
           retention-days: 30
   build_optiplex:
     runs-on: ubuntu-22.04
-    container:
-      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
-      options: --user 1001
     strategy:
       matrix:
         vendor: [ dell ]
@@ -98,9 +95,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }}_txt .config
-          make olddefconfig
-          make
+          ./build.sh ${{ matrix.model }}
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -110,9 +105,6 @@ jobs:
           retention-days: 30
   build_msi:
     runs-on: ubuntu-22.04
-    container:
-      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
-      options: --user 1001
     strategy:
       matrix:
         vendor: [ msi ]
@@ -130,9 +122,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
-          make olddefconfig
-          make
+          ./build.sh ${{ matrix.model }}
           pkcs7sign=payloads/external/edk2/workspace/Dasharo/BaseTools/Source/Python/Pkcs7Sign
           ./capsule.sh make -t "$pkcs7sign"/TestRoot.pub.pem \
                             -o "$pkcs7sign"/TestSub.pub.pem \
@@ -175,9 +165,6 @@ jobs:
           retention-days: 30
   build_pcengines:
     runs-on: ubuntu-22.04
-    container:
-      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
-      options: --user 1001
     strategy:
       matrix:
         vendor: [ pcengines ]
@@ -196,9 +183,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.payload }}_${{ matrix.model }} .config
-          make olddefconfig
-          make
+          ./build.sh ${{ matrix.model }}
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -208,9 +193,6 @@ jobs:
           retention-days: 30
   build_q35:
     runs-on: ubuntu-22.04
-    container:
-      image: coreboot/coreboot-sdk:2023-11-24_2731fa619b
-      options: --user 1001
     strategy:
       matrix:
         vendor: [ emulation_qemu ]
@@ -227,9 +209,7 @@ jobs:
           fetch-depth: 0
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }}_${{ matrix.payload }} .config
-          make olddefconfig
-          make
+          ./build.sh ${{ matrix.model }}_${{ matrix.payload }}
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -239,9 +219,6 @@ jobs:
           retention-days: 30
   build_hardkernel_odroid_h4:
     runs-on: ubuntu-22.04
-    container:
-      image: coreboot/coreboot-sdk:2024-02-18_732134932b
-      options: --user 1001
     strategy:
       matrix:
         vendor: [ hardkernel ]
@@ -259,9 +236,7 @@ jobs:
         run: git submodule update --init --recursive --checkout
       - name: Build Dasharo
         run: |
-          cp configs/config.${{ matrix.vendor }}_${{ matrix.model }} .config
-          make olddefconfig
-          make
+          ./build.sh ${{ matrix.model }}
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
