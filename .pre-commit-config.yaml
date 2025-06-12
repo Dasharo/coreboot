@@ -46,7 +46,7 @@ repos:
         types: [file]
 
   - repo: https://github.com/3mdeb/hooks
-    rev: v0.1.6
+    rev: v0.1.7
     # Can be triggered manually with command:
     # pre-commit run --hook-stage pre-push check-upstream-status
     hooks:
