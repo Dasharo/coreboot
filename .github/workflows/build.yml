@@ -12,7 +12,7 @@ on:
 
 jobs:
   build_novacustom_ec:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ novacustom ]
@@ -32,7 +32,7 @@ jobs:
           ${{ matrix.vendor }}_${{ matrix.model }}_ec.rom
         retention-days: 30
   build_novacustom:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs: build_novacustom_ec
     strategy:
       matrix:
@@ -80,7 +80,7 @@ jobs:
             *.cap
           retention-days: 30
   build_optiplex:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ dell ]
@@ -107,7 +107,7 @@ jobs:
             build/coreboot.rom
           retention-days: 30
   build_msi:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ msi ]
@@ -140,7 +140,7 @@ jobs:
             build/coreboot.cap
           retention-days: 30
   build_protectli:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ protectli ]
@@ -167,7 +167,7 @@ jobs:
             build/coreboot.rom
           retention-days: 30
   build_pcengines:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ pcengines ]
@@ -195,7 +195,7 @@ jobs:
             build/coreboot.rom
           retention-days: 30
   build_q35:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ emulation_qemu ]
@@ -231,7 +231,7 @@ jobs:
     with:
       artifact_name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
   build_hardkernel_odroid_h4:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         vendor: [ hardkernel ]
