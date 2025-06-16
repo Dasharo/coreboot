@@ -38,6 +38,7 @@ usage() {
   echo -e "\tqemu                   - build Dasharo for QEMU Q35"
   echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
+  echo -e "\todroid_h4_netcard      - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
@@ -287,7 +288,8 @@ function build_qemu {
 }
 
 function build_odroid_h4 {
-  DEFCONFIG="configs/config.hardkernel_odroid_h4"
+  VARIANT=$1
+  DEFCONFIG="configs/config.hardkernel_${VARIANT}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   # checkout several submodules needed by these boards (some others are checked
@@ -298,10 +300,10 @@ function build_odroid_h4 {
 
   build_start
 
-  cp build/coreboot.rom hardkernel_odroid_h4_${FW_VERSION}.rom
+  cp build/coreboot.rom hardkernel_${VARIANT}_${FW_VERSION}.rom
   if [ $? -eq 0 ]; then
-    echo "Result binary placed in $PWD/hardkernel_odroid_h4_${FW_VERSION}.rom"
-    sha256sum hardkernel_odroid_h4_${FW_VERSION}.rom > hardkernel_odroid_h4_${FW_VERSION}.rom.sha256
+    echo "Result binary placed in $PWD/hardkernel_${VARIANT}_${FW_VERSION}.rom"
+    sha256sum hardkernel_${VARIANT}_${FW_VERSION}.rom > hardkernel_${VARIANT}_${FW_VERSION}.rom.sha256
   else
     echo "Build failed!"
     exit 1
@@ -435,7 +437,10 @@ case "$CMD" in
         build_qemu "_all_menus"
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
-        build_odroid_h4
+        build_odroid_h4 "odroid_h4"
+        ;;
+    "odroid_h4_netcard" | "odroid_H4_netcard" | "ODROID_H4_NETCARD" )
+        build_odroid_h4 "odroid_h4_netcard"
         ;;
     *)
         echo "Invalid command: \"$CMD\""
