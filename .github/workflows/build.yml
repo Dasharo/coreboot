@@ -242,7 +242,7 @@ jobs:
     strategy:
       matrix:
         vendor: [ hardkernel ]
-        model: [ odroid_h4 ]
+        model: [ odroid_h4, odroid_h4_netcard ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
