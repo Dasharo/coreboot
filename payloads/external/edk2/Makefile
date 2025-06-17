@@ -136,6 +136,12 @@ ifneq ($(CONFIG_QEMU_PLATFORM),)
 BUILD_STR += -D QEMU_PLATFORM=TRUE
 endif
 
+# GRAPHICAL_CAPSULE_PROGRESS	= TRUE
+# Decides if capsule update progress bar should use Graphics or Text based lib
+ifneq ($(CONFIG_EDK2_GRAPHICAL_CAPSULE_PROGRESS),y)
+BUILD_STR += -D GRAPHICAL_CAPSULE_PROGRESS=FALSE
+endif
+
 #
 # One or more downstream edk2 repositories support the following additional options:
 #
