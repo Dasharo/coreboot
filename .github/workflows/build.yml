@@ -158,12 +158,20 @@ jobs:
       - name: Build Dasharo
         run: |
           ./build.sh ${{ matrix.model }}
+          if grep -q CONFIG_DRIVERS_EFI_UPDATE_CAPSULES=y .config; then
+            pkcs7sign=payloads/external/edk2/workspace/Dasharo/BaseTools/Source/Python/Pkcs7Sign
+            ./capsule.sh make -t "$pkcs7sign"/TestRoot.pub.pem \
+                              -o "$pkcs7sign"/TestSub.pub.pem \
+                              -s "$pkcs7sign"/TestCert.pem
+            mv *.cap build/coreboot.cap
+          fi
       - name: Save artifacts
         uses: actions/upload-artifact@v4
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
             build/coreboot.rom
+            build/coreboot.cap
           retention-days: 30
   build_pcengines:
     runs-on: ubuntu-24.04
