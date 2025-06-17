@@ -406,4 +406,11 @@ config EDK2_ENABLE_QUIET_BOOT_FEATURE
 	help
 	  Enables quiet boot option in the TianoCore Payload.
 
+config EDK2_GRAPHICAL_CAPSULE_PROGRESS
+	bool "Enable graphical capsule update progress"
+	default y
+	help
+	  An alternative is a textual one which also appears on serial, the default
+	  is graphical.
+
 endif
