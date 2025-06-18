@@ -8,6 +8,7 @@
 #include "crtm.h"
 #include <stdio.h>
 #include <string.h>
+#include <security/intel/cbnt/cbnt.h>
 
 static int tpm_log_initialized;
 static inline int tpm_log_available(void)
@@ -44,6 +45,14 @@ static tpm_result_t tspi_init_crtm(void)
 	} else {
 		printk(BIOS_WARNING, "TSPI: CRTM already initialized!\n");
 		return TPM_SUCCESS;
+	}
+
+	if (CONFIG(INTEL_CBNT_SUPPORT)) {
+		/* No need to create Startup Locality Event without CBnT as Locality 0 should be
+		   in use in that case and reporting it is optional. */
+		tpm_log_startup_locality(intel_cbnt_get_locality());
+
+		intel_cbnt_inject_ibg_measurements();
 	}
 
 	struct region_device fmap;
@@ -196,6 +205,20 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 	printk(BIOS_DEBUG, "TPM: Write digests cached in TPM log to PCR\n");
 	i = 0;
 	while (!tpm_log_get(i++, &pcr, &digest_data, &digest_algo, &event_name)) {
+		/*
+		 * Skip log entries that coreboot synthesized to account for PCR extends
+		 * performed by hardware S-CRTM.
+		 *
+		 * With CONFIG(INTEL_CBNT_SUPPORT) implying
+		 * CONFIG(TPM_MEASURED_BOOT_INIT_BOOTBLOCK) tpm_setup() (and thus
+		 * tspi_measure_cache_to_pcr()) should be invoked before CBNT measurements are
+		 * created, in fact we shouldn't even reach here because the log is likely
+		 * empty, but it seems more robust to have the check here.
+		 */
+		if (CONFIG(INTEL_CBNT_SUPPORT) &&
+		    strcmp(event_name, CBNT_EVENT_LOG_MESSAGE) == 0)
+			continue;
+
 		printk(BIOS_DEBUG, "TPM: Write digest for %s into PCR %d\n", event_name, pcr);
 		tpm_result_t rc = tlcl_extend(pcr, digest_data, digest_algo);
 		if (rc != TPM_SUCCESS) {
