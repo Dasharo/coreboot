@@ -5,6 +5,8 @@ ifeq ($(CONFIG_INTEL_CBNT_SUPPORT),y)
 all-y += logging.c
 ramstage-y += cmos.c
 
+bootblock-$(CONFIG_TPM_MEASURED_BOOT) += measurement.c
+
 # As specified in Intel Trusted Execution Technology and Boot Guard Server BIOS
 # Specification, document number # 558294
 PK_HASH_ALG_SHA1:=4

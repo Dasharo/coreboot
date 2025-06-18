@@ -167,6 +167,16 @@ static inline void tpm_log_add_table_entry(const char *name, const uint32_t pcr,
 }
 
 /**
+ * Record startup locality in the event log.
+ */
+static inline void tpm_log_startup_locality(int locality)
+{
+	/* Locality 0 is the default and doesn't need to be logged. */
+	if (locality != 0 && tpm_log_use_tpm2_format())
+		tpm2_log_startup_locality(locality);
+}
+
+/**
  * Dump TPM log entries on console
  */
 static inline void tpm_log_dump(void *unused)
