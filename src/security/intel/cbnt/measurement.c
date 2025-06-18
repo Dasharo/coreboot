@@ -1,0 +1,518 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+
+#include <arch/fit_table.h>
+#include <commonlib/iobuf.h>
+#include <console/console.h>
+#include <device/mmio.h>
+#include <security/intel/cbnt/cbnt.h>
+#include <security/tpm/tspi/crtm.h>
+#include <security/vboot/misc.h>
+
+#define TPM_ALG_RSA     0x0001
+#define TPM_ALG_ECC     0x0023
+
+#define TPM_ALG_RSASSA  0x0014
+#define TPM_ALG_RSAPSS  0x0016
+#define TPM_ALG_ECDSA   0x0018
+#define TPM_ALG_SM2     0x001b
+
+/* Bits of `struct bpm_ibbs::flags`. */
+#define BPM_IBBS_FLAG_RESERVED1             (1 << 0) /* must be set to 1 */
+#define BPM_IBBS_FLAG_RESERVED2             (1 << 1) /* must be set to 1 */
+#define BPM_IBBS_FLAG_AUTH_MEASURE          (1 << 2) /* extend PCR-7 */
+#define BPM_IBBS_FLAG_CAP_PCRS_ON_TPM_FAIL  (1 << 3)
+#define BPM_IBBS_FLAG_TOP_SWAP_SUPPORTED    (1 << 4)
+#define BPM_IBBS_FLAG_FORCE_TME             (1 << 5)
+#define BPM_IBBS_FLAG_FORCE_IGN             (1 << 6)
+#define BPM_IBBS_FLAG_SRTM_AC               (1 << 7)
+
+/*
+ * Definitions of the structures come from Intel document #575623 CBnT BWG v1.2.5 ("Intel
+ * Converged Boot Guard and Intel Trusted Execution Technology (Intel TXT) BIOS Specification").
+ *
+ * Versions in structures could be different for other revisions of the document.
+ */
+
+/* Header of the Boot Policy Manifest. */
+struct bpm_header {
+	char structure_id[8];     /* "__ACBP__" */
+	uint8_t struct_ver;       /* 0x24 */
+	uint8_t hdr_struct_ver;   /* 0x20 */
+	uint16_t hdr_size;
+	uint16_t key_sig_offset;  /* offset to KeySignature field of Policy Manifest Signature
+				     Element (PMSE) */
+	uint8_t bpm_revision;
+	uint8_t bpm_svn;
+	uint8_t acmsvn_auth;
+	uint8_t reserved;
+	uint16_t nem_data_stack;  /* in 4 KiB pages */
+	uint8_t se_element[];
+} __packed;
+
+/* Deprecated uses must be initialized as { .alg = TPM_ALG_NULL (0x10), .size = 0 } */
+struct hash_struct {
+	uint16_t alg;
+	uint16_t size;
+	uint8_t data[];
+} __packed;
+
+struct bpm_hash_list {
+	uint16_t size;
+	uint16_t count;
+	struct hash_struct hashes[];
+} __packed;
+
+/* IBB Segment Element (upper part) */
+struct bpm_ibbs {
+	char structure_id[8];  /* "__IBBS__" */
+	uint8_t struct_ver;    /* 0x21 */
+	uint8_t reserved1;
+	uint16_t element_size;
+	uint8_t reserved2;
+	uint8_t set_number;    /* 0 */
+	uint8_t reserved3;
+	uint8_t pbet_value;
+	uint32_t flags;        /* see BPM_IBBS_FLAG_* constants for values */
+	uint64_t iommu_bar0;
+	uint64_t iommu_bar1;
+	uint32_t dma_prot_base0;
+	uint32_t dma_prot_limit0;
+	uint64_t dma_prot_base1;
+	uint64_t dma_prot_limit1;
+	struct hash_struct post_ibb_hash; /* deprecated since v1.2.0 of CBnT BWG */
+	uint32_t ibb_entry_point;
+	struct bpm_hash_list digest_list; /* each entries is of variable size */
+	/* struct bpm_ibbs_bottom bottom; */
+} __packed;
+
+/* IBB Segment Element (lower part) */
+struct bpm_ibbs_bottom {
+	struct hash_struct obb_hash; /* deprecated since v1.2.0 of CBnT BWG */
+	uint8_t reserved4[3];
+	uint8_t segment_count;
+	/* ibb_segments[segment_count]; */
+} __packed;
+
+/* KMHASH_STRUCT */
+struct km_hash {
+	uint64_t usage;           /* see KM_HASH_USAGE_* constants for values */
+	struct hash_struct hash;
+} __packed;
+
+/* Key Manifest */
+struct km_header {
+	char structure_id[8];       /* "__KEYM__" */
+	uint8_t struct_ver;         /* 0x21 */
+	uint8_t reserved1[3];
+	uint16_t key_sig_offset;
+	uint8_t reserved2[3];
+	uint8_t km_revision;
+	uint8_t km_svn;
+	uint8_t km_id;
+	uint16_t km_pub_key_hash_alg;
+	uint16_t key_count;
+	struct km_hash key_hash[];  /* of variable size */
+	/* key_sig_offset points here where Key Manifest Signature data is one
+	   of 2 Key Signature Structure formats: RSA or ECC / SM2. */
+} __packed;
+
+static const void *find_in_fit(uint8_t type, size_t *size)
+{
+	struct fit_entry *entry = fit_table_search(type);
+	if (entry == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find FIT entry: %#02x\n", type);
+		return NULL;
+	}
+
+	void *addr = (void *)(uintptr_t)entry->address.u64;
+
+	const struct acm_header_v0 *acm;
+	switch (type) {
+	case FIT_ENTRY_TYPE_SACM:
+		if (fit_entry_type(&entry[1]) == FIT_ENTRY_TYPE_SACM) {
+			/* A BIOS image can include more than Startup ACM, but this function
+			   always returns the first one which might be wrong. */
+			printk(BIOS_WARNING, "CBnT: picking SACM from FIT at random!\n");
+		}
+
+		/* All known versions of the header (up to v5.4) have compatible version and
+		   size fields. */
+		acm = (const struct acm_header_v0 *)addr;
+		if (acm->header_version[1] > 5 || acm->header_version[0] > 4) {
+			printk(BIOS_ERR, "CBnT: unsupported version of SACM: %d.%d\n",
+			       acm->header_version[1], acm->header_version[0]);
+			return NULL;
+		}
+
+		*size = acm->size * 4;
+		break;
+	case FIT_ENTRY_TYPE_KM:
+		if (fit_entry_type(&entry[1]) == FIT_ENTRY_TYPE_KM) {
+			/* A BIOS image can include more than one manifest, but this function
+			   always returns the first one which might be wrong. */
+			printk(BIOS_WARNING,
+			       "CBnT: picking Key Manifest from FIT at random!\n");
+		}
+		*size = fit_entry_size(entry);
+		break;
+	case FIT_ENTRY_TYPE_BPM:
+		*size = fit_entry_size(entry);
+		break;
+
+	default:
+		printk(BIOS_ERR, "CBnT: unexpected FIT entry type: %#02x\n", type);
+		return NULL;
+	}
+
+	return addr;
+}
+
+static enum cb_err fill_pcr0_acm_fields(struct obuf *ob)
+{
+	/* Not running any checks on the ACM like TXT code does, it must be correct if we got
+	   here. */
+	size_t acm_len;
+	const struct acm_header_v3 *acm = find_in_fit(FIT_ENTRY_TYPE_SACM, &acm_len);
+	if (acm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find SACM\n");
+		return CB_ERR;
+	}
+
+	/*
+	 * ACM.Header.SVN (won't run out of space on this one).
+	 * All known versions of the header (up to v5.4) have compatible txt_svn field.
+	 */
+	(void)obuf_write_le16(ob, acm->txt_svn);
+
+	/* Versions v3.0 through v5.4 support CBnT and have this field in the same place. */
+	int err = obuf_write(ob, acm->rsa3072_sig, sizeof(acm->rsa3072_sig));
+	if (err)
+		printk(BIOS_ERR, "CBnT: failed to write ACM signature\n");
+
+	return err ? CB_ERR : CB_SUCCESS;
+}
+
+static enum cb_err skip_signature_key(struct ibuf *ib, uint16_t *key_alg)
+{
+	if (ibuf_read_le16(ib, key_alg)) {
+		printk(BIOS_ERR, "CBnT: failed to read key algorithm\n");
+		return CB_ERR;
+	}
+	if (*key_alg != TPM_ALG_RSA && *key_alg != TPM_ALG_ECC) {
+		printk(BIOS_ERR, "CBnT: unexpected public key algorithm: %#04x\n", *key_alg);
+		return CB_ERR;
+	}
+
+	uint8_t key_version;
+	if (ibuf_read_le8(ib, &key_version)) {
+		printk(BIOS_ERR, "CBnT: failed to read public key version\n");
+		return CB_ERR;
+	}
+	if (key_version != 0x10) {
+		printk(BIOS_ERR, "CBnT: unexpected version of public key: %#02x\n",
+		       key_version);
+		return CB_ERR;
+	}
+
+	uint16_t key_size;
+	if (ibuf_read_le16(ib, &key_size)) {
+		printk(BIOS_ERR, "CBnT: failed to read public key size\n");
+		return CB_ERR;
+	}
+
+	if (*key_alg == TPM_ALG_RSA) {
+		(void)ibuf_oob_drain(ib, 4);            /* public exponent */
+		(void)ibuf_oob_drain(ib, key_size / 8); /* the public key */
+	} else if (*key_alg == TPM_ALG_ECC) {
+		(void)ibuf_oob_drain(ib, key_size / 8); /* Qx */
+		(void)ibuf_oob_drain(ib, key_size / 8); /* Qy */
+	}
+
+	return CB_SUCCESS;
+}
+
+/* Copies a signature after parsing "RSA Key Signature Structure Format" or
+   "ECC / SM2 Key Signature Structure Format". */
+static enum cb_err copy_signature(struct ibuf ib, struct obuf *ob)
+{
+	uint8_t key_version;
+	if (ibuf_read_le8(&ib, &key_version)) {
+		printk(BIOS_ERR, "CBnT: failed to read key signature version\n");
+		return CB_ERR;
+	}
+	if (key_version != 0x10) {
+		printk(BIOS_ERR, "CBnT: unexpected key signature version: %#02x\n",
+		       key_version);
+		return CB_ERR;
+	}
+
+	uint16_t key_alg;
+	if (skip_signature_key(&ib, &key_alg) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to skip signature key\n");
+		return CB_ERR;
+	}
+
+	uint16_t sig_scheme;
+	if (ibuf_read_le16(&ib, &sig_scheme)) {
+		printk(BIOS_ERR, "CBnT: failed to read signature scheme\n");
+		return CB_ERR;
+	}
+	if (key_alg == TPM_ALG_RSA) {
+		if (sig_scheme != TPM_ALG_RSASSA && sig_scheme != TPM_ALG_RSAPSS) {
+			printk(BIOS_ERR, "CBnT: unexpected public signature scheme: %#04x\n",
+			       sig_scheme);
+			return CB_ERR;
+		}
+	} else if (key_alg == TPM_ALG_ECC) {
+		if (sig_scheme != TPM_ALG_ECDSA && sig_scheme != TPM_ALG_SM2) {
+			printk(BIOS_ERR, "CBnT: unexpected public signature scheme: %#04x\n",
+			       sig_scheme);
+			return CB_ERR;
+		}
+	}
+
+	uint8_t version;
+	if (ibuf_read_le8(&ib, &version)) {
+		printk(BIOS_ERR, "CBnT: failed to read signature version\n");
+		return CB_ERR;
+	}
+	if (version != 0x10) {
+		printk(BIOS_ERR, "CBnT: unexpected signature version: %#02x\n", version);
+		return CB_ERR;
+	}
+
+	uint16_t size;
+	if (ibuf_read_le16(&ib, &size)) {
+		printk(BIOS_ERR, "CBnT: failed to read signature size\n");
+		return CB_ERR;
+	}
+
+	uint16_t hash_alg;
+	if (ibuf_read_le16(&ib, &hash_alg)) {
+		printk(BIOS_ERR, "CBnT: failed to read hash algorithm of signature\n");
+		return CB_ERR;
+	}
+
+	size_t sig_size = 0;
+	if (key_alg == TPM_ALG_RSA) {
+		sig_size += size / 8; /* the signature */
+	} else if (key_alg == TPM_ALG_ECC) {
+		sig_size += size / 8; /* R */
+		sig_size += size / 8; /* S */
+	}
+
+	const void *sig_data = ibuf_oob_drain(&ib, sig_size);
+	if (sig_data == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to read signature\n");
+		return CB_ERR;
+	}
+
+	if (obuf_write(ob, sig_data, sig_size)) {
+		printk(BIOS_ERR, "CBnT: failed to write signature\n");
+		return CB_ERR;
+	}
+
+	return CB_SUCCESS;
+}
+
+static enum cb_err fill_pcr0_km_fields(struct obuf *ob)
+{
+	size_t km_len;
+	const struct km_header *km = find_in_fit(FIT_ENTRY_TYPE_KM, &km_len);
+	if (km == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find KM\n");
+		return CB_ERR;
+	}
+
+	struct ibuf km_sig_ib;
+	ibuf_init(&km_sig_ib, (const uint8_t *)km + km->key_sig_offset,
+		  km_len - km->key_sig_offset);
+
+	/* KM.Signature[KM signature size] */
+	enum cb_err err = copy_signature(km_sig_ib, ob);
+	if (err != CB_SUCCESS)
+		printk(BIOS_ERR, "CBnT: failed to copy KM signature\n");
+
+	return err;
+}
+
+static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
+{
+	size_t bpm_len;
+	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
+	if (bpm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find BPM\n");
+		return CB_ERR;
+	}
+
+	struct ibuf bpm_sig_ib;
+	ibuf_init(&bpm_sig_ib, (const uint8_t *)bpm + bpm->key_sig_offset,
+		  bpm_len - bpm->key_sig_offset);
+
+	/* BPM.Signature[BPM signature size] */
+	if (copy_signature(bpm_sig_ib, ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy BPM signature\n");
+		return CB_ERR;
+	}
+
+	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
+
+	unsigned int i;
+	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
+	for (i = 0; i < ibbs->digest_list.count; ++i) {
+		if (ibb_hash->alg == tpm2_alg_from_vb2_hash(tpm_log_alg()))
+			break;
+		ibb_hash = (const void *)&ibb_hash->data[ibb_hash->size];
+	}
+
+	if (i == ibbs->digest_list.count) {
+		printk(BIOS_ERR, "CBnT: failed to find matching IBB signature\n");
+		return CB_ERR;
+	}
+
+	/* IBB.Digest[IBB digest size] */
+	if (obuf_write(ob, ibb_hash->data, ibb_hash->size)) {
+		printk(BIOS_ERR, "CBnT: failed to write IBB signature\n");
+		return CB_ERR;
+	}
+
+	return CB_SUCCESS;
+}
+
+int intel_cbnt_get_locality(void)
+{
+	union cbnt_biosacm_policy biosacm_sts = {
+		.raw = read64p(CBNT_BIOSACM_POLICY_STS),
+	};
+
+	/* It's 0 without active CBnT. */
+	if (biosacm_sts.status.scrtm_status == 0)
+		return 0;
+
+	return biosacm_sts.status.tpm_startup_locality == 0 ? 3 : 0;
+}
+
+static enum cb_err cap_pcrs(union cbnt_biosacm_policy biosacm_sts)
+{
+	/* TODO: when adding support of all active PCR banks to Measured Boot, implement
+	         capping those PCRs for which there is no corresponding IBB digest in BPM. */
+
+	/* Nothing to do if there was no TPM failure. */
+	if (biosacm_sts.status.tpm_success)
+		return CB_SUCCESS;
+
+	size_t bpm_len;
+	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
+	if (bpm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find BPM\n");
+		return CB_ERR;
+	}
+
+	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
+
+	/* Alternative to capping is disabling the TPM which requires no event log entries. */
+	if (!(ibbs->flags & BPM_IBBS_FLAG_CAP_PCRS_ON_TPM_FAIL))
+		return CB_SUCCESS;
+
+	const uint32_t separator = 0x00000001;
+	struct vb2_hash hash;
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), &separator, sizeof(separator),
+			       tpm_log_alg(), &hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash PCR separator\n");
+		return CB_ERR;
+	}
+
+	for (int pcr = 0; pcr < 8; pcr++) {
+		tpm_log_add_table_entry("CBnT hit TPM failure during boot", pcr, hash.algo,
+					hash.raw, vb2_digest_size(hash.algo));
+		printk(BIOS_INFO, "CBnT: capped PCR-%d\n", pcr);
+	}
+	return CB_SUCCESS;
+}
+
+void intel_cbnt_inject_ibg_measurements(void)
+{
+	const union cbnt_biosacm_policy biosacm_sts = {
+		.raw = read64p(CBNT_BIOSACM_POLICY_STS),
+	};
+
+	/* Do nothing if BootGuard wasn't involved in the boot process. */
+	if (biosacm_sts.status.scrtm_status == 0)
+		return;
+
+	/* Do nothing if BootGuard doesn't measure anything. */
+	if (!(biosacm_sts.status.bp & CBNT_BP_TYPE_M))
+		return;
+
+	if (cap_pcrs(biosacm_sts) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to cap PCRs\n");
+		return;
+	}
+
+	/* cap_pcrs() must have logged that PCRs were capped, nothing else to do on TPM error. */
+	if (!biosacm_sts.status.tpm_success) {
+		printk(BIOS_ERR, "CBnT: TPM failure detected\n");
+		return;
+	}
+
+	/*
+	 * Making and hashing PCR-7 data.
+	 *
+	 * Pseudo-code of the data to be measured into PCR-0 for TigerLake and newer (older
+	 * hardware isn't supported yet):
+	 *
+	 *     struct {
+	 *          uint64_t ACM_POLICY_STATUS;
+	 *          uint16_t ACM.Header.SVN;
+	 *          uint8_t  ACM.Signature[ACM signature size];
+	 *          uint8_t  KM.Signature[KM signature size];
+	 *          uint8_t  BPM.Signature[BPM signature size];
+	 *          uint8_t  IBB.Digest[IBB digest size];
+	 *     } PCR0_DATA;
+	 */
+
+	/*
+	 * Allow for 4 8192-bit digests in PCR-0 measurements which is an unlikely situation,
+	 * so this buffer should be enough to not run out of space (data measured into PCR-7 is
+	 * smaller).
+	 */
+	char data[sizeof(uint64_t) + sizeof(uint16_t) + 4 * KiB];
+	struct obuf data_ob;
+	obuf_init(&data_ob, data, sizeof(data));
+
+	/* ACM_POLICY_STATUS (won't run out of space on this one) */
+	(void)obuf_write_le64(&data_ob, biosacm_sts.raw);
+
+	if (fill_pcr0_acm_fields(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to fill ACM fields of PCR-0 measurement data\n");
+		return;
+	}
+
+	if (fill_pcr0_km_fields(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to fill KM fields of PCR-0 measurement data\n");
+		return;
+	}
+
+	if (fill_pcr0_bpm_fields(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to fill BPM fields of PCR-0 measurement data\n");
+		return;
+	}
+
+	struct vb2_hash pcr0_hash;
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, obuf_nr_written(&data_ob),
+			       tpm_log_alg(), &pcr0_hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
+		return;
+	}
+
+	/*
+	 * BWG suggests to Perform reconstruction at this point, but we are likely to continue
+	 * the boot anyway as Measured Boot failures generally aren't fatal and incorrect hash
+	 * will be caught later during the boot process.  So not bothering.
+	 */
+
+	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
+	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_hash.algo, pcr0_hash.raw,
+				vb2_digest_size(pcr0_hash.algo));
+	printk(BIOS_INFO, "CBnT: reconstructed PCR-0 measurement\n");
+}
