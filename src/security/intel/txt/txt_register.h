@@ -229,6 +229,40 @@ struct __packed acm_header_v0 {
 	uint8_t user_area[];
 };
 
+/*
+ * ACM Header v3.0 without dynamic part
+ * Chapter A.1.1
+ * Intel TXT Software Development Guide (Document: 315168-017.4)
+ *
+ * This version adds support for CBnT.
+ */
+struct __packed acm_header_v3 {
+	uint16_t module_type;
+	uint16_t module_sub_type;
+	uint32_t header_len;
+	uint16_t header_version[2];
+	uint16_t chipset_id;
+	uint16_t flags;
+	uint32_t module_vendor;
+	uint32_t date;
+	uint32_t size;
+	uint16_t txt_svn;
+	uint16_t se_svn;
+	uint32_t code_control;
+	uint32_t error_entry_point;
+	uint32_t gdt_limit;
+	uint32_t gdt_ptr;
+	uint32_t seg_sel;
+	uint32_t entry_point;
+	uint8_t reserved2[64];
+	uint32_t key_size;
+	uint32_t scratch_size;
+	uint8_t rsa3072_pubkey[384];
+	uint8_t rsa3072_sig[384];
+	uint32_t scratch[208];
+	uint8_t user_area[];
+};
+
 struct __packed acm_info_table {
 	uint8_t uuid[16];
 	uint8_t chipset_acm_type;
