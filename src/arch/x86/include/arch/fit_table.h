@@ -3,7 +3,10 @@
 #ifndef _FIT_TABLE_H_
 #define _FIT_TABLE_H_
 
+#include <stddef.h>
 #include <stdint.h>
+
+#define FIT_POINTER_ADDRESS      0xffffffc0
 
 #define FIT_ENTRY_HAS_CHECKSUM   0x80
 
@@ -52,5 +55,38 @@ struct fit_entry {
 	uint8_t  type_checksum_valid;
 	uint8_t  checksum;
 } __packed;
+
+static inline uint32_t fit_entry_size(const struct fit_entry *entry)
+{
+	return entry->size_reserved & 0xffffff;
+}
+
+static inline uint8_t fit_entry_type(const struct fit_entry *entry)
+{
+	return entry->type_checksum_valid & 0x7f;
+}
+
+static inline struct fit_entry *fit_table_search(uint8_t entry_type)
+{
+	struct fit_entry *fit = *(struct fit_entry **)(uintptr_t)FIT_POINTER_ADDRESS;
+
+	union {
+		uint8_t bytes[sizeof(uint64_t)];
+		uint64_t u64;
+	} signature = { .bytes = {'_', 'F', 'I', 'T', '_', ' ', ' ', ' '} };
+
+	/* A quick sanity check that we're in fact dealing with FIT. */
+	if (fit->address.u64 != signature.u64)
+		return NULL;
+
+	int entry_count = fit_entry_size(fit) * 16 / sizeof(struct fit_entry);
+
+	for (int i = 0; i < entry_count; i++) {
+		if (fit_entry_type(&fit[i]) == entry_type)
+			return &fit[i];
+	}
+
+	return NULL;
+}
 
 #endif /* _FIT_TABLE_H_ */
