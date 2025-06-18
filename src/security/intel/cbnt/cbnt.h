@@ -12,6 +12,26 @@
 #define CBNT_BIOSACM_ERRORCODE (CBNT_BASE_ADDRESS + 0x328)
 #define CBNT_BIOSACM_POLICY_STS (CBNT_BASE_ADDRESS + 0x378)
 
+/* Measured Boot, if set Boot Guard ACM mesures IBB to TPM. */
+#define CBNT_BP_TYPE_M     (1 << 0)
+/* Verified Boot, Boot Guard ACM verifies IBB. */
+#define CBNT_BP_TYPE_V     (1 << 1)
+/* High Assurance Platform, the bit that is used to instruct ME to halt right after paltform
+   initialization. */
+#define CBNT_BP_TYPE_HAP   (1 << 2)
+/* TXT Supported. */
+#define CBNT_BP_TYPE_T     (1 << 3)
+#define CBNT_BP_RESERVED1  (1 << 4)
+/* Disable CPU debugging, if set DCI JTAG that would tamper with ACM execution is disabled. */
+#define CBNT_BP_RSTR_DCD   (1 << 5)
+/* Disable BSP #INIT, means to block INIT signals to mitigate code refetch. */
+#define CBNT_BP_RSTR_DBI   (1 << 6)
+/* Protect BIOS Environment, means Boot Guard ACM copies IBB to cache. */
+#define CBNT_BP_RSTR_PBE   (1 << 6)
+#define CBNT_BP_RESERVED2  (1 << 8)
+
+#define CBNT_EVENT_LOG_MESSAGE  "Boot Guard Measured S-CRTM"
+
 union cbnt_biosacm_policy {
 	struct {
 		uint64_t km_id : 4;
@@ -37,5 +57,9 @@ _Static_assert(sizeof(union cbnt_biosacm_policy) == sizeof(uint64_t),
 	       "Wrong size of cbnt_biosacm_policy");
 
 void intel_cbnt_log_registers(void);
+
+int intel_cbnt_get_locality(void);
+
+void intel_cbnt_inject_ibg_measurements(void);
 
 #endif
