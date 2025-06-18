@@ -3,6 +3,8 @@
 #include <arch/fit_table.h>
 #include <commonlib/iobuf.h>
 #include <console/console.h>
+#include <cpu/intel/msr.h>
+#include <cpu/x86/msr.h>
 #include <device/mmio.h>
 #include <security/intel/cbnt/cbnt.h>
 #include <security/tpm/tspi/crtm.h>
@@ -25,6 +27,13 @@
 #define BPM_IBBS_FLAG_FORCE_TME             (1 << 5)
 #define BPM_IBBS_FLAG_FORCE_IGN             (1 << 6)
 #define BPM_IBBS_FLAG_SRTM_AC               (1 << 7)
+
+/* Bits of `struct km_hash::usage` indicating to which public key the hash corresponds. */
+#define KM_HASH_USAGE_BPM       (1 << 0)
+#define KM_HASH_USAGE_FIT       (1 << 1)
+#define KM_HASH_USAGE_ACM       (1 << 2)
+#define KM_HASH_USAGE_SDEV      (1 << 3)
+#define KM_HASH_USAGE_PFR_CPLD  (1 << 4)
 
 /*
  * Definitions of the structures come from Intel document #575623 CBnT BWG v1.2.5 ("Intel
@@ -336,7 +345,83 @@ static enum cb_err fill_pcr0_km_fields(struct obuf *ob)
 	return err;
 }
 
-static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
+/* Finds public key used to sign Key Manifest and hashes it with the algorithm specified in the
+   header. */
+static enum cb_err hash_signature_key(const struct km_header *km, size_t km_len,
+				      struct vb2_hash *hash)
+{
+	/* All safety checks are in skip_signature_key() which is always run for PCR-0, so not
+	   bothering here for optional PCR-7 which is also computed after PCR-0. */
+	struct ibuf sig_ib;
+	ibuf_init(&sig_ib, (uint8_t *)km + km->key_sig_offset, km_len - km->key_sig_offset);
+
+	uint16_t key_alg;
+	(void)ibuf_read_le16(&sig_ib, &key_alg);
+
+	(void)ibuf_oob_drain(&sig_ib, 1); /* key signature version */
+	(void)ibuf_oob_drain(&sig_ib, 2); /* key algorithm */
+	(void)ibuf_oob_drain(&sig_ib, 1); /* key version */
+
+	uint16_t key_size;
+	(void)ibuf_read_le16(&sig_ib, &key_size);
+
+	size_t key_data_size = 0;
+	if (key_alg == TPM_ALG_RSA)
+		key_data_size = 4 + key_size / 8;   /* public exponent and public key */
+	else if (key_alg == TPM_ALG_ECC)
+		key_data_size = (key_size / 8) * 2; /* Qx + Qy */
+
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), ibuf_oob_drain(&sig_ib, key_data_size),
+			       key_data_size, tpm2_alg_to_vb2_hash(km->km_pub_key_hash_alg),
+			       hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
+		return CB_ERR;
+	}
+
+	return CB_SUCCESS;
+}
+
+static enum cb_err fill_pcr7_km_fields(struct obuf *ob)
+{
+	size_t km_len;
+	const struct km_header *km = find_in_fit(FIT_ENTRY_TYPE_KM, &km_len);
+
+	struct vb2_hash km_pubkey_hash;
+	if (hash_signature_key(km, km_len, &km_pubkey_hash) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to hash Key Manifest's signature key\n");
+		return CB_ERR;
+	}
+
+	/* BP.KEY (hash of public part of the key used to sign Key Manifest) */
+	if (obuf_write(ob, km_pubkey_hash.raw, vb2_digest_size(km_pubkey_hash.algo))) {
+		printk(BIOS_ERR,
+		       "CBnT: failed to write hash of Key Manifest's signature key\n");
+		return CB_ERR;
+	}
+
+	/* Find hash that corresponds to BPM. */
+	const struct km_hash *key_hash = km->key_hash;
+	unsigned int i;
+	for (i = 0; i < km->key_count; ++i) {
+		if (key_hash->usage & KM_HASH_USAGE_BPM)
+			break;
+		key_hash = (const struct km_hash *)&key_hash->hash.data[key_hash->hash.size];
+	}
+	if (i == km->key_count) {
+		printk(BIOS_ERR, "CBnT: failed to find hash of BPM pubkey in KM\n");
+		return CB_ERR;
+	}
+
+	/* KM.BPKey.hashBuffer[BPM pubkey digest size] */
+	if (obuf_write(ob, key_hash->hash.data, key_hash->hash.size)) {
+		printk(BIOS_ERR, "CBnT: failed to write ACM signature\n");
+		return CB_ERR;
+	}
+
+	return CB_SUCCESS;
+}
+
+static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob, bool *auth_measure)
 {
 	size_t bpm_len;
 	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
@@ -356,6 +441,11 @@ static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
 	}
 
 	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
+	*auth_measure = (ibbs->flags & BPM_IBBS_FLAG_AUTH_MEASURE) != 0;
+
+	/* Auth data is measured only for TPM2. */
+	if (*auth_measure && tlcl_get_family() != TPM_2)
+		*auth_measure = false;
 
 	unsigned int i;
 	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
@@ -377,6 +467,51 @@ static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
 	}
 
 	return CB_SUCCESS;
+}
+
+/*
+ * Pseudo-code of the data to be measured into PCR-7 for TigerLake and newer (older hardware
+ * isn't supported):
+ *
+ *     struct {
+ *         uint64_t ACM_POLICY_STATUS;
+ *         uint16_t ACM.Header.SVN;
+ *         uint8_t  ACM.KeyHash[32];
+ *         uint8_t  BP.KEY[32 or 48];  // Hash of the public key from Key Manifest's signature.
+ *         uint8_t  KM.BPKey.hashBuffer[BPM pubkey digest size];
+ *     } PCR7_DATA
+ *
+ * Applies only for TPM2.0.
+ *
+ * Returns true and initializes *hash on success.
+ */
+static bool make_pcr7_hash(struct obuf *ob, struct vb2_hash *hash)
+{
+	/*
+	 * ACM.KeyHash[32]
+	 *
+	 * BTG BWG says to use TXT.PUBLIC.KEY, but TXT SDG (#315168-017.4) and CBnT BWG say
+	 * that it doesn't contain anything useful on modern platforms utilizing SGX and
+	 * suggests to use MSRs 0x20::0x23.
+	 */
+	(void)obuf_write_le64(ob, rdmsr(MSR_ACM_CPU_KEY_HASH_0).raw);
+	(void)obuf_write_le64(ob, rdmsr(MSR_ACM_CPU_KEY_HASH_1).raw);
+	(void)obuf_write_le64(ob, rdmsr(MSR_ACM_CPU_KEY_HASH_2).raw);
+	(void)obuf_write_le64(ob, rdmsr(MSR_ACM_CPU_KEY_HASH_3).raw);
+
+	if (fill_pcr7_km_fields(ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to fill KM fields of PCR-7 measurement data\n");
+		return false;
+	}
+
+	size_t size;
+	const void *data = obuf_contents(ob, &size);
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, size, tpm_log_alg(), hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash PCR-7 measurement data\n");
+		return false;
+	}
+
+	return true;
 }
 
 int intel_cbnt_get_locality(void)
@@ -493,7 +628,8 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
-	if (fill_pcr0_bpm_fields(&data_ob) != CB_SUCCESS) {
+	bool auth_measure;
+	if (fill_pcr0_bpm_fields(&data_ob, &auth_measure) != CB_SUCCESS) {
 		printk(BIOS_ERR, "CBnT: failed to fill BPM fields of PCR-0 measurement data\n");
 		return;
 	}
@@ -505,6 +641,20 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
+	/* Making and hashing PCR-7 data. */
+	struct vb2_hash pcr7_hash;
+	if (auth_measure) {
+		/* Reuse the first 2 fields of PCR-0 data which are identical in both cases. */
+		obuf_init(&data_ob, data, sizeof(data));
+		(void)obuf_oob_fill(&data_ob, sizeof(uint64_t) + sizeof(uint16_t));
+
+		if (!make_pcr7_hash(&data_ob, &pcr7_hash)) {
+			printk(BIOS_ERR,
+			       "CBnT: failed to build and hash PCR-7 measurement data\n");
+			return;
+		}
+	}
+
 	/*
 	 * BWG suggests to Perform reconstruction at this point, but we are likely to continue
 	 * the boot anyway as Measured Boot failures generally aren't fatal and incorrect hash
@@ -514,5 +664,11 @@ void intel_cbnt_inject_ibg_measurements(void)
 	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
 	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_hash.algo, pcr0_hash.raw,
 				vb2_digest_size(pcr0_hash.algo));
-	printk(BIOS_INFO, "CBnT: reconstructed PCR-0 measurement\n");
+	if (auth_measure) {
+		/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type and
+		   event name should be a Unicode string. */
+		tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_hash.algo,
+					pcr7_hash.raw, vb2_digest_size(pcr7_hash.algo));
+		printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
+	}
 }
