@@ -10,6 +10,12 @@
 #define MSR_PIC_MSG_CONTROL	0x2e
 #define  TPR_UPDATES_DISABLE	(1 << 10)
 
+/* Public key hash of ACM signing key. */
+#define MSR_ACM_CPU_KEY_HASH_0	0x20
+#define MSR_ACM_CPU_KEY_HASH_1	0x21
+#define MSR_ACM_CPU_KEY_HASH_2	0x22
+#define MSR_ACM_CPU_KEY_HASH_3	0x23
+
 #define MSR_PLATFORM_INFO	0xce
 
 #define MSR_BC_PBEC		0x139
