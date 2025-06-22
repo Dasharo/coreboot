@@ -8,6 +8,7 @@
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/x86/pae.h>
+#include <delay.h>
 #include <drivers/efi/efivars.h>
 #include <drivers/efi/capsules.h>
 #include <memrange.h>
@@ -839,8 +840,21 @@ static void enable_capsule_smi(void *unused)
 {
 	uint32_t ret;
 	const bool supported = get_boot_mode() == LB_BOOT_MODE_FLASH_UPDATE;
-	ret = call_smm(APM_CNT_SMMSTORE, SMMSTORE_CMD_USE_FULL_FLASH,
-		       (void *)(uintptr_t)supported);
+
+	/* SMI can occasionally be ignored, so retry several times on failure. */
+	uint8_t retries_left = 10;
+	while (1) {
+		ret = call_smm(APM_CNT_SMMSTORE, SMMSTORE_CMD_USE_FULL_FLASH,
+			       (void *)(uintptr_t)supported);
+		if (ret == SMMSTORE_RET_SUCCESS)
+			break;
+
+		if (retries_left-- == 0)
+			break;
+
+		/* Add a tiny delay before making another try. */
+		udelay(100);
+	}
 
 	printk(BIOS_INFO, "%sabled capsule update SMI handler\n",
 	       ret == SMMSTORE_RET_SUCCESS ? "En" : "Dis");
