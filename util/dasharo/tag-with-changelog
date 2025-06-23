@@ -18,20 +18,15 @@ then
 	exit 1
 fi
 
-# Try to verify that the repo is clean before losing state.
-if ! git diff-index --quiet --cached HEAD 2>/dev/null || \
-	[ "$(git diff origin/main --shortstat 2>/dev/null | tail -n1)" != "" ]; then
-	echo "ERROR: repo is not clean.  Exiting." >&2
-	exit 1
-fi
-
 # Verify the command line arguments
 if [ "$1" == "--help" ] || [ -z "$1" ] || [ -z "$2" ]; then
 	echo
 	echo "Usage: $0 <old_version> <new_version> [release notes file]"
 	echo "Old version should be a tag (4.1), a branch (origin/4.1), or a commit id"
-	echo "New version can be a branch (origin/main) a tag (4.2), or a commit id"
-	echo "Logfile can be a new file or an existing file to update"
+	echo "New version must be a name of a new tag, this script fails if it exists"
+	echo "Logfile can be omitted or it can be a new file name. In the latter case"
+	echo "a copy of the full logfile (not the final tag description) with comments"
+	echo "removed is preserved."
 	echo "Example: \"$0 origin/4.1 4.2 rnotes.txt\""
 	echo
 	echo "Note that the script starts at the commit AFTER the old version."
@@ -39,12 +34,28 @@ if [ "$1" == "--help" ] || [ -z "$1" ] || [ -z "$2" ]; then
 	exit 1
 else
 	OLD_GIT_VERSION="$1"
-	NEW_GIT_VERSION="$2"
-	if [[ "$OLD_GIT_VERSION" = "HEAD" || "$NEW_GIT_VERSION" = "HEAD" ]]; then
+	# This avoids detached HEAD after this script is run. If the tree is
+	# already in such state, the command below returns HEAD, which is tested
+	# below.
+	NEW_GIT_VERSION="$(git rev-parse --abbrev-ref HEAD)"
+	NEW_TAG_NAME="$2"
+	if [[ "$OLD_GIT_VERSION" = "HEAD" ]]; then
 		echo "Error: using HEAD as a reference doesn't work" >&2
 		echo
 		exit 1
 	fi
+	if [[ "$NEW_GIT_VERSION" = "HEAD" ]]; then
+		echo "Error: tree is in detached HEAD state" >&2
+		echo
+		exit 1
+	fi
+
+	# Try to verify that the repo is clean before losing state.
+	if ! git diff --quiet HEAD; then
+		echo "ERROR: repo is not clean.  Exiting." >&2
+		exit 1
+	fi
+
 	TOTAL_COMMITS=$(git log --pretty=oneline \
 		"${OLD_GIT_VERSION}..${NEW_GIT_VERSION}" 2>/dev/null | wc -l)
 fi
@@ -52,28 +63,17 @@ fi
 TOP=$(pwd)
 
 if [ -n "$3" ]; then
-	MAIN_LOGFILE="${TOP}/$3"
+	LOGFILE="${TOP}/$3"
 else
-	MAIN_LOGFILE="${TOP}/relnotes.txt"
-fi
-
-# Figure out which logfile we're writing to.  If the specified logfile exists,
-# we need to write to a temporary logfile, then append changes to the main
-# logfile.
-if [ -f "$MAIN_LOGFILE" ]; then
-	LOGFILE="$(mktemp "LOGFILE.XXXX")"
-	LOGFILE="${TOP}/$LOGFILE"
-	UPDATE_MAIN_LOGFILE=1
-else
-	LOGFILE="$MAIN_LOGFILE"
+	LOGFILE="${TOP}/relnotes.txt"
 fi
 
 # Print and log the versions
 log_versions() {
 	echo "Log of commit $1 to commit $2"
-	echo "Log of commit $1 to commit $2" >> "$LOGFILE"
+	echo "# Log of commit $1 to commit $2" >> "$LOGFILE"
 	echo "Total commits: ${TOTAL_COMMITS}"
-	echo "Total commits: ${TOTAL_COMMITS}" >> "$LOGFILE"
+	echo "# Total commits: ${TOTAL_COMMITS}" >> "$LOGFILE"
 	echo
 }
 
@@ -97,12 +97,12 @@ _get_log() {
 	# shellcheck disable=SC2086
 	{ \
 		if [ -n "$paths" ]; then \
-			git log --abbrev-commit --pretty=oneline \
+			git log --abbrev-commit --pretty=tformat:"- %s" \
 				"${oldver}..${newver}" -- ${paths} \
 				2>/dev/null; \
 		fi; \
 		if [ -n "$keywords" ]; then \
-			git log --abbrev-commit --pretty=oneline \
+			git log --abbrev-commit --pretty=tformat:"- %s" \
 			"${oldver}..${newver}" 2>/dev/null \
 			| grep -i "$keywords"; \
 		fi \
@@ -130,7 +130,7 @@ get_log_dedupe() {
 
 	if [ -n "$log" ]; then
 		#echo "$title: $paths $keywords" >> "$LOGFILE"
-		printf "%s\n%s\n\n" "##### $title ($commits commits) #####" \
+		printf "%s\n%s\n#\n" "##### $title ($commits commits) #####" \
 			"$log" >> "$LOGFILE"
 	fi
 
@@ -154,7 +154,7 @@ get_log_submodule() {
 	commits=$(echo "$log" | wc -l)
 
 	if [ -n "$log" ]; then
-		printf "* %s: Update from commit id %s to %s (%s commits)\n" "${submodule_dir}" "${old_version:0:10}" "${new_version:0:10}" "${commits}" >> "$LOGFILE"
+		printf -- "- %s: Update from commit id %s to %s (%s commits)\n" "${submodule_dir}" "${old_version:0:10}" "${new_version:0:10}" "${commits}" >> "$LOGFILE"
 	fi
 	); then
 	version_ctrl_c
@@ -166,7 +166,7 @@ get_log_submodule() {
 # up manually.
 version_ctrl_c() {
 	printf "\n Cleaning up and exiting.\n" >&2
-	git checkout origin/main > /dev/null 2>&1
+	git checkout "$NEW_GIT_VERSION" > /dev/null 2>&1
 	git submodule update --init --checkout  > /dev/null 2>&1
 	rm "$LOGFILE"
 	exit 1;
@@ -200,7 +200,7 @@ for module in $(git submodule --quiet foreach pwd); do
 	declare "$version"="$(get_latest_commit_id "$module")"
 done
 
-git checkout origin/main  > /dev/null 2>&1
+git checkout "$NEW_GIT_VERSION"  > /dev/null 2>&1
 git submodule update --init --checkout  > /dev/null 2>&1
 trap "" SIGINT
 
@@ -209,13 +209,18 @@ trap "" SIGINT
 # Start outputting to logfile
 echo "Generating release notes from version ${OLD_GIT_VERSION} to ${NEW_GIT_VERSION}"
 echo; echo "Main repo"
-echo "Main repo" >> "$LOGFILE"
-echo "------------------" >> "$LOGFILE"
+echo "# This is full changelog based on commit subjects. Entries that are not" > "$LOGFILE"
+echo "# related to the release can be removed. Lines starting with # are comments" >> "$LOGFILE"
+echo "# and will not be included in the tag description." >> "$LOGFILE"
+echo "#" >> "$LOGFILE"
+echo "###################" >> "$LOGFILE"
+echo "#### Main repo ####" >> "$LOGFILE"
+echo "###################" >> "$LOGFILE"
 log_versions "$(git log --pretty=%H \
 	"${OLD_GIT_VERSION}..${NEW_GIT_VERSION}" 2>/dev/null | tail -1)" \
 	"$(git log --pretty=%H \
 	"${OLD_GIT_VERSION}..${NEW_GIT_VERSION}" 2>/dev/null | head -1 )"
-echo "" >> "$LOGFILE"
+echo "#" >> "$LOGFILE"
 
 ### SPECIFIC AREAS FOR RELEASE ###
 get_log_dedupe "Documentation"	"Documentation README"
@@ -384,7 +389,9 @@ get_log_dedupe "Maintainers" "MAINTAINERS" ""
 get_log_dedupe "MISC" "."
 
 # Log submodules
-printf "Submodules\n----------\n" >> "$LOGFILE"
+echo "####################" >> "$LOGFILE"
+echo "#### Submodules ####" >> "$LOGFILE"
+echo "####################" >> "$LOGFILE"
 for module in $(git submodule --quiet foreach pwd); do
 	name=$(basename "$module")
 	module="$(realpath "${module}")"
@@ -396,13 +403,17 @@ for module in $(git submodule --quiet foreach pwd); do
 	get_log_submodule "${!old_version}" "${!new_version}" "${path}"
 done
 
-# Add the collected data to the top of the existing logfile for parsing
-if [ -n "$UPDATE_MAIN_LOGFILE" ]; then
-	tmpfile="$(mktemp "LOGFILE.XXXX")"
-	grep -Fxv -f "$MAIN_LOGFILE" "$LOGFILE" > "$tmpfile"
-	printf "\n\n" >> "$tmpfile"
-	cat "$MAIN_LOGFILE" >> "$tmpfile"
-	mv "$tmpfile" "$MAIN_LOGFILE"
+# Create signed tag, use LOGFILE as message, open editor, or fail if tag exists
+git tag -s -F "$LOGFILE" -e "$NEW_TAG_NAME" || version_ctrl_c
+echo "New tag has been created. To push it:"
+echo
+echo "     git push origin tag $NEW_TAG_NAME"
+echo
+
+# If log file name was given, strip comments, otherwise remove temporary file
+if [ -n "$3" ]; then
+	sed -i "/^#/d" "$LOGFILE"
+else
 	rm -f "$LOGFILE"
 fi
 
