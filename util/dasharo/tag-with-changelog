@@ -12,14 +12,6 @@
 
 # set -x # uncomment for debug
 
-# Check for tools
-
-if ! ( git --version && cloc --version && rename --version ) > /dev/null 2>&1
-then
-	echo "ERROR: cloc, git or rename is not installed.  Exiting" >&2
-	exit 1
-fi
-
 if ! { cdup="$(git rev-parse --show-cdup 2>/dev/null)" && [ -z "${cdup}" ]; }
 then
 	echo "ERROR: This is not the top directory of a git repo.  Exiting." >&2
@@ -75,10 +67,6 @@ if [ -f "$MAIN_LOGFILE" ]; then
 else
 	LOGFILE="$MAIN_LOGFILE"
 fi
-
-get_author_commit_count() {
-	git log "${NEW_GIT_VERSION}" 2>/dev/null | grep -c "^Author: $1"
-}
 
 # Print and log the versions
 log_versions() {
@@ -173,13 +161,6 @@ get_log_submodule() {
 	fi
 }
 
-find_areas() {
-	local directory="$1"
-	local filename="$2"
-	local skip="$3"
-	find "$directory" -name "$filename" | sed "s|/$filename||" | sed "s|/$directory||" | grep -v "$skip" | sort
-}
-
 # Make sure things get cleaned up if ctl-c is pressed while the old version
 # is checked out and files are renamed.  This can be a real mess to clean
 # up manually.
@@ -189,55 +170,6 @@ version_ctrl_c() {
 	git submodule update --init --checkout  > /dev/null 2>&1
 	rm "$LOGFILE"
 	exit 1;
-}
-
-# Calculate areas that have been added or removed based on file lists
-show_diff () {
-	local new
-	local old
-
-	new="$(comm -13 <(echo "$2") <(echo "$3"))"
-	old="$(comm -23 <(echo "$2") <(echo "$3"))"
-
-	# Allow running a postprocessor, given as 4th argument over the
-	# resulting diff, provide context if it's old or new data
-	if [ -n "$4" ]; then
-		new=$(echo "$new" | $4 new | sort)
-		old=$(echo "$old" | $4 old | sort)
-	fi
-	new="$(printf "%s" "$new" | sed 's/^/* /')"
-	old="$(printf "%s" "$old" | sed 's/^/* /')"
-
-	if [ -n "$new" ]; then
-		printf "Added %s $1:\n-------------------\n%s\n\n" \
-			"$(echo "$new" | wc -l)" "$new"  >> "$LOGFILE"
-	fi
-	if [ -n "$old" ]; then
-		printf "Removed %s $1:\n-------------------\n%s\n\n" \
-			"$(echo "$old" | wc -l)" "$old"  >> "$LOGFILE"
-	fi
-}
-
-get_sloc () {
-	local base
-	base=$(mktemp)
-
-	cloc --progress-rate=0 --quiet \
-		--script-lang="Bourne Shell",bash --exclude-ext=inc \
-		--exclude-dir=vendorcode "--out=${base}" src
-	cloc --progress-rate=0 --quiet \
-		"--exclude-list-file=${base}.mk" --force-lang=c,inc \
-		--exclude-dir=vendorcode "--out=${base}.c" src
-	cloc --progress-rate=0 --quiet \
-		"--list-file=${base}.mk" --force-lang=make,inc \
-		--exclude-dir=vendorcode "--out=${base}.m" src
-	cloc --progress-rate=0 --quiet --sum-reports \
-		"${base}" "${base}.c" "${base}.m" --out "${base}.result"
-
-	echo
-	cat "${base}.result.lang"
-
-	rm -f "${base}"*
 }
 
 # Start collecting data from the old and new revisions.
@@ -256,17 +188,6 @@ for module in $(git submodule --quiet foreach pwd); do
 	declare "$version"="$(get_latest_commit_id "$module")"
 done
 
-printf "Logging directories in the old tree\n" >&2
-mainboard_list_old=$(grep -h "^[[:space:]]*config\>[[:space:]]*\<BOARD_" src/mainboard/*/*/Kconfig.name 2>/dev/null | sed "s,^.*\<BOARD_\([A-Z0-9_]*\)\>.*$,\1," | sort)
-cpu_list_old=$(find_areas "src/cpu" "Kconfig" "intel/common")
-soc_list_old=$(find_areas "src/soc" "Makefile.mk" "intel/common\|amd/common\|romstage")
-northbridge_list_old=$(find_areas "src/northbridge" "Kconfig" "")
-sio_list_old=$(find_areas "src/superio" "Makefile.mk" "")
-southbridge_list_old=$(find_areas "src/southbridge" "Kconfig" "")
-
-echo "Calculating old SLOC"
-OLD_SLOC=$(get_sloc)
-
 #check out new version and get information
 printf -- "\nFinding new submodule versions...\n" >&2
 git checkout "$NEW_GIT_VERSION"  > /dev/null 2>&1
@@ -278,17 +199,6 @@ for module in $(git submodule --quiet foreach pwd); do
 	version="${name^^}_NEW_VERSION"
 	declare "$version"="$(get_latest_commit_id "$module")"
 done
-
-echo "Logging directories in the new tree." >&2
-mainboard_list_new=$(grep -h "^[[:space:]]*config\>[[:space:]]*\<BOARD_" src/mainboard/*/*/Kconfig.name 2>/dev/null | sed "s,^.*\<BOARD_\([A-Z0-9_]*\)\>.*$,\1," | sort)
-cpu_list_new=$(find_areas "src/cpu" "Kconfig" "intel/common")
-soc_list_new=$(find_areas "src/soc" "Makefile.mk" "intel/common\|amd/common\|romstage")
-northbridge_list_new=$(find_areas "src/northbridge" "Kconfig" "")
-sio_list_new=$(find_areas "src/superio" "Makefile.mk" "")
-southbridge_list_new=$(find_areas "src/southbridge" "Kconfig" "")
-
-printf "Calculating new SLOC\n"
-NEW_SLOC=$(get_sloc)
 
 git checkout origin/main  > /dev/null 2>&1
 git submodule update --init --checkout  > /dev/null 2>&1
@@ -473,34 +383,6 @@ get_log_dedupe "Maintainers" "MAINTAINERS" ""
 # Finally, get anything that was missed above
 get_log_dedupe "MISC" "."
 
-# Replace VENDOR_DEVICE from stdin with their nice names on stdout
-real_mainboard_names() {
-	local tree_version=$1 # "old" or "new"
-	local git_version_var=${tree_version^^}_GIT_VERSION
-	local git_version=${!git_version_var}
-	local line
-	local file
-	local vendor
-
-	while read -r line; do
-		file="$(git grep -l "^[[:space:]]*config\>[[:space:]]*\<BOARD_${line}\$" "${git_version}" -- src/mainboard/\*/\*/Kconfig.name | sed "s,^${git_version}:,,")"
-		if [ -z "$file" ]; then
-			echo "This shouldn't happen: couldn't find Kconfig for $line"
-			exit 1
-		fi
-		vendor="$(git grep \" "${git_version}" -- "$(echo "${file}" | cut -d/ -f1-3,5)" | cut -d\" -f2)"
-		git grep -h -A1 "^[[:space:]]*config\>[[:space:]]*\<BOARD_${line}\$" "${git_version}" -- "${file}" | grep \" |cut -d\" -f2 |sed "s,^,${vendor} ,"
-	done
-}
-
-# Show areas that have been added or removed
-show_diff "mainboards"   "$mainboard_list_old"   "$mainboard_list_new"    real_mainboard_names
-show_diff "processors"   "$cpu_list_old"         "$cpu_list_new"
-show_diff "socs"         "$soc_list_old"         "$soc_list_new"
-show_diff "northbridges" "$northbridge_list_old" "$northbridge_list_new"
-show_diff "southbridges" "$southbridge_list_old" "$southbridge_list_new"
-show_diff "sios"         "$sio_list_old"         "$sio_list_new"
-
 # Log submodules
 printf "Submodules\n----------\n" >> "$LOGFILE"
 for module in $(git submodule --quiet foreach pwd); do
@@ -513,41 +395,6 @@ for module in $(git submodule --quiet foreach pwd); do
 	new_version=$(echo "${name^^}_NEW_VERSION" | sed 's/-/_/g')
 	get_log_submodule "${!old_version}" "${!new_version}" "${path}"
 done
-
-printf "\nrepo statistics\n-------------------\n" >> "$LOGFILE"
-before_names="$(mktemp "OLDNAMES.XXXX")"
-after_names="$(mktemp "NEWNAMES.XXXX")"
-NEW_AUTHORS=$(git log --pretty=%an "${OLD_GIT_VERSION}" 2>/dev/null | sort | \
-	uniq > "$before_names" && \
-	git log --pretty=%an "${NEW_GIT_VERSION}" 2>/dev/null | \
-	sort | uniq > "$after_names" && \
-	grep -Fxv -c -f "$before_names" "$after_names")
-NEW_AUTHOR_LIST=$( grep -Fxv -f "$before_names" "$after_names")
-rm -f "$before_names" "$after_names"
-{
-	printf -- "* Total commits: %s\n" "$TOTAL_COMMITS"
-	printf -- "* Total authors: %s\n" \
-		"$(git log "${OLD_GIT_VERSION}..${NEW_GIT_VERSION}" 2>/dev/null | \
-		grep -e '^Author:' | sed 's/.*Author: //' | sed 's/ <.*.>//' | \
-		sort | uniq | wc -l)"
-	printf -- "* New authors: %s\n\nNew Authors:\n%s\n" "$NEW_AUTHORS" \
-		"$NEW_AUTHOR_LIST"
-} >> "$LOGFILE"
-
-printf "Getting developer list\n"
-printf "\n%-40s:  %5s\n" "Developer" "Commits" >> "$LOGFILE"
-git log "${OLD_GIT_VERSION}..${NEW_GIT_VERSION}" 2>/dev/null | grep '^Author: ' | \
-	sed 's|Author: ||' | sed 's|\s<.*||' | sort | uniq | \
-	while read -r line; do
-		 printf "* %-40s:  %5s %5s\n" "$line" \
-		 	"$(git log "${OLD_GIT_VERSION}" 2>/dev/null | \
-		 	grep -c "^Author: ${line} <")" \
-		 	"$(git log "${NEW_GIT_VERSION}" 2>/dev/null | \
-		 	grep -c "^Author: ${line} <")" >> "$LOGFILE";
-	 done
-
-printf "\nOld SLOC (%s)\n%s" "$NOW" "$OLD_SLOC" >> "$LOGFILE"
-printf "\nNew SLOC (%s)\n%s" "$NOW" "$NEW_SLOC" >> "$LOGFILE"
 
 # Add the collected data to the top of the existing logfile for parsing
 if [ -n "$UPDATE_MAIN_LOGFILE" ]; then
