@@ -21,8 +21,6 @@ FLASH 32M {
 			}
 			RW_NVRAM(PRESERVE) 24K
 
-			CONSOLE(PRESERVE) 128K  # <== SPI flash console region here
-
 			BOOTSPLASH(CBFS) 1M
 		}
 
