@@ -254,6 +254,16 @@ size_t fast_spi_get_bios_region(size_t *bios_size)
 	bios_end = (((val & SPIBAR_BFPREG_PRL_MASK) >>
 		     SPIBAR_BFPREG_PRL_SHIFT) + 1) * 4 * KiB;
 	*bios_size = bios_end - bios_start;
+
+	/*
+	 * Optionally extend BIOS region size up to 16 MiB which is the size of fixed map
+	 * window.
+	 */
+	if (CONFIG(FAST_SPI_FULL_RO_BOOTMEDIA) && *bios_size < 16 * MiB) {
+		*bios_size = MIN(16 * MiB, CONFIG_ROM_SIZE);
+		bios_start = bios_end - *bios_size;
+	}
+
 	return bios_start;
 }
 
