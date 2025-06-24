@@ -151,7 +151,7 @@ static void bios_mmap_init(void)
 	 * Instead, use RW device as yet another window to allow reading whole flash via
 	 * result of boot_device_ro().
 	 */
-	if (CONFIG(FAST_SPI_FULL_RO_BOOTMEDIA)) {
+	if (CONFIG(FAST_SPI_FULL_RO_BOOTMEDIA) && bios_start) {
 		const struct region_device *rw_device = boot_device_rw();
 		xlate_window_init(&real_dev_windows[PRE_BIOS_DECODE_WINDOW], rw_device,
 				  0, bios_start);
