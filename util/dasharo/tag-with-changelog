@@ -229,6 +229,13 @@ get_log_dedupe "cleanup" "" "add missing\|fix typo\|clean up\|spelling\|Use tabs
 
 get_log_dedupe "ACPI Changes" "" "ASL 2.0 syntax"
 
+get_log_dedupe "Dasharo Hardkernel Odroid H4" "src/mainboard/hardkernel/odroid-h4"
+get_log_dedupe "Dasharo MSI PRO Z690-A" "src/mainboard/msi/ms7d25"
+get_log_dedupe "Dasharo MSI PRO Z790-P" "src/mainboard/msi/ms7e06"
+get_log_dedupe "Dasharo NovaCustom" "src/mainboard/novacustom" "novacustom"
+get_log_dedupe "Dasharo PC Engines" "src/mainboard/pcengines/apu2" "apu2"
+get_log_dedupe "Dasharo Protectli" "src/mainboard/protectli" "protectli"
+
 get_log_dedupe "Google Kahlee / AMD Gardenia" "src/mainboard/google/kahlee src/mainboard/amd/gardenia" "kahlee\|gardenia"
 get_log_dedupe "AMD Stoney Ridge" "src/soc/amd/stoneyridge" "stoney"
 
@@ -379,7 +386,7 @@ get_log_dedupe "Vendorcode"	"src/vendorcode"
 
 # Then look at areas that are usually outside the mainboards and architectures
 get_log_dedupe "Build system" \
-	"Makefile Makefile.mk toolchain.mk src/Kconfig src/cpu/Makefile.mk"
+	"Makefile Makefile.mk toolchain.mk src/Kconfig src/cpu/Makefile.mk build.sh"
 
 get_log_dedupe "Submodules" "3rdparty util/nvidia/cbootimage"
 
