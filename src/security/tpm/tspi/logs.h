@@ -50,6 +50,7 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 			      enum vb2_hash_algorithm digest_algo,
 			      const uint8_t *digest,
 			      const size_t digest_len);
+void tpm2_log_startup_locality(int locality);
 void tpm2_log_dump(void);
 
 static inline uint16_t tpm2_alg_from_vb2_hash(enum vb2_hash_algorithm hash_type)
