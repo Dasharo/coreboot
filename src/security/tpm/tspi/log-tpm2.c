@@ -22,6 +22,11 @@
 #include <cbmem.h>
 #include <vb2_sha.h>
 
+struct startup_locality_event {
+	char signature[16];       /* "StartupLocality" (NUL-terminated) */
+	uint8_t startup_locality; /* 0 or 3 */
+} __packed;
+
 void *tpm2_log_cbmem_init(void)
 {
 	static struct tpm_2_log_table *tclt;
@@ -147,6 +152,47 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 	tce->data_length = htole32(sizeof(tce->data));
 	strncpy((char *)tce->data, name, sizeof(tce->data) - 1);
 	tce->data[sizeof(tce->data) - 1] = '\0';
+}
+
+void tpm2_log_startup_locality(int locality)
+{
+	_Static_assert(sizeof(struct startup_locality_event) <= TPM_20_LOG_DATA_MAX_LENGTH,
+		       "Data field of TCG log for TPM2 is too short for Startup Locality.\n");
+
+	struct tpm_2_log_table *tclt;
+	struct tpm_2_log_entry *tce;
+	struct startup_locality_event locality_event;
+
+	tclt = tpm_log_init();
+	if (!tclt) {
+		printk(BIOS_WARNING, "TPM LOG: non-existent!\n");
+		return;
+	}
+
+	if (le16toh(tclt->vendor.num_entries) >= le16toh(tclt->vendor.max_entries)) {
+		printk(BIOS_WARNING, "TPM LOG: log table is full\n");
+		return;
+	}
+
+	tce = &tclt->entries[le16toh(tclt->vendor.num_entries)];
+	tclt->vendor.num_entries = htole16(le16toh(tclt->vendor.num_entries) + 1);
+
+	/* EV_NO_ACTION events use PCR-0 by default. */
+	tce->pcr = htole32(0);
+	tce->event_type = htole32(EV_NO_ACTION);
+
+	/* EV_NO_ACTION events use zeroes for digest(s). */
+	tce->digest_count = htole32(1);
+	tce->digest_type = htole16(tpm2_alg_from_vb2_hash(tpm_log_alg()));
+	memset(tce->digest, 0, vb2_digest_size(tpm_log_alg()));
+
+	tce->data_length = htole32(sizeof(tce->data));
+
+	strcpy(locality_event.signature, "StartupLocality");
+	locality_event.startup_locality = locality;
+
+	memset(tce->data, 0, sizeof(tce->data));
+	memcpy(tce->data, &locality_event, sizeof(locality_event));
 }
 
 int tpm2_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
