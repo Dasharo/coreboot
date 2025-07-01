@@ -1,4 +1,4 @@
-if PAYLOAD_EDK2
+if PAYLOAD_EDK2 && DASHARO
 
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
