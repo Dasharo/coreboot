@@ -58,6 +58,10 @@ endchoice
 
 source "payloads/external/*/Kconfig"
 
+config DASHARO
+	bool "Enable Dasharo specific payload options"
+	default n
+
 menu "Dasharo specific payload options"
 source "payloads/external/*/Kconfig.dasharo"
 endmenu
