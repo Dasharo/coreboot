@@ -155,6 +155,12 @@ get_log_submodule() {
 
 	if [ -n "$log" ]; then
 		printf -- "- %s: Update from commit id %s to %s (%s commits)\n" "${submodule_dir}" "${old_version:0:10}" "${new_version:0:10}" "${commits}" >> "$LOGFILE"
+		(
+			IFS=$'\n'
+			for l in $log; do
+				printf -- "  %s\n" "$l" >> "$LOGFILE"
+			done
+		)
 	fi
 	); then
 	version_ctrl_c
@@ -187,6 +193,9 @@ for module in $(git submodule --quiet foreach pwd); do
 	version="${name^^}_OLD_VERSION"
 	declare "$version"="$(get_latest_commit_id "$module")"
 done
+OLD_EDK2_GIT_VERSION=$(grep -A1 EDK2_TAG_OR_REV payloads/external/edk2/Kconfig.dasharo | tail -n1)
+OLD_EDK2_GIT_VERSION=${OLD_EDK2_GIT_VERSION#*\"}
+OLD_EDK2_GIT_VERSION=${OLD_EDK2_GIT_VERSION%\"}
 
 #check out new version and get information
 printf -- "\nFinding new submodule versions...\n" >&2
@@ -199,6 +208,9 @@ for module in $(git submodule --quiet foreach pwd); do
 	version="${name^^}_NEW_VERSION"
 	declare "$version"="$(get_latest_commit_id "$module")"
 done
+NEW_EDK2_GIT_VERSION=$(grep -A1 EDK2_TAG_OR_REV payloads/external/edk2/Kconfig.dasharo | tail -n1)
+NEW_EDK2_GIT_VERSION=${NEW_EDK2_GIT_VERSION#*\"}
+NEW_EDK2_GIT_VERSION=${NEW_EDK2_GIT_VERSION%\"}
 
 git checkout "$NEW_GIT_VERSION"  > /dev/null 2>&1
 git submodule update --init --checkout  > /dev/null 2>&1
@@ -409,6 +421,26 @@ for module in $(git submodule --quiet foreach pwd); do
 	new_version=$(echo "${name^^}_NEW_VERSION" | sed 's/-/_/g')
 	get_log_submodule "${!old_version}" "${!new_version}" "${path}"
 done
+
+echo "##############" >> "$LOGFILE"
+echo "#### EDK2 ####" >> "$LOGFILE"
+echo "##############" >> "$LOGFILE"
+# Hardcoded, probably won't ever change
+URL="https://github.com/Dasharo/edk2"
+# This is the first digest from common Kconfig option. While it could be pointed
+# to by previous release (in which case the changelog would be complete), it
+# isn't trivial to differentiate between such case and use as placeholder value.
+PREHISTORY="f0459dff1425c0c02d0736de5737eb23a1b671ec"
+
+if [ -z "$OLD_EDK2_GIT_VERSION" ]; then
+	echo "# Old EDK2 version couldn't be obtained, changelog may be incomplete!" >> "$LOGFILE"
+	echo "# Commits older than ${PREHISTORY:0:10} won't be shown" >> "$LOGFILE"
+	OLD_EDK2_GIT_VERSION="$PREHISTORY"
+fi
+
+git clone "$URL" || version_ctrl_c
+get_log_submodule "$OLD_EDK2_GIT_VERSION" "$NEW_EDK2_GIT_VERSION" "edk2"
+rm -rf edk2
 
 # Create signed tag, use LOGFILE as message, open editor, or fail if tag exists
 git tag -s -F "$LOGFILE" -e "$NEW_TAG_NAME" || version_ctrl_c
