@@ -22,3 +22,4 @@ CONFIG_PXE=y
 CONFIG_BUILD_IPXE=y
 CONFIG_IPXE_ADD_SCRIPT=y
 CONFIG_IPXE_SCRIPT="3rdparty/dasharo-blobs/dasharo/dasharo.ipxe"
+CONFIG_DASHARO=y
