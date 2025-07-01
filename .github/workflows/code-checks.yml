@@ -31,11 +31,8 @@ jobs:
         fetch-depth: 1
     - name: Verify defconfigs are up-to-date
       run: |
-        # Start with the list of Dasharo boards that use EDK
-        boards=( $(grep -l 'Dasharo/edk2\(\.git\)\?"' configs/config.*) )
-        # Add non-EDK boards
-        boards+=( configs/config.dell_optiplex_9010_sff_txt )
-        boards+=( configs/config.protectli_vp46xx_txt_seabios )
+        # Start with the list of Dasharo boards, indicated by CONFIG_DASHARO
+        boards=( $(grep -l 'CONFIG_DASHARO=y' configs/config.*) )
 
         # Update all of them before reporting anything
         for c in $(printf "%s\n" "${boards[@]}" | sort); do
