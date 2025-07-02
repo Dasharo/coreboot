@@ -10,6 +10,8 @@
 #include <soc/iomap.h>
 #include <soc/ramstage.h>
 
+#define FSP_PCH_PCIE_ASPM_L1 2
+
 #define IFD_FIA_COMBO_PORT0	0x189
 #define  FIA_PCIE		5
 #define  FIA_SATA		7
@@ -128,6 +130,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		 */
 		descriptor_patch_pcie8_lane(gpio_get(GPP_C6));
 	}
+
+	/*
+	 * Enable only L1 for WiFi, L0s doesn't work reliably for Atheros QCA6174.
+	 * On V1610, WiFi is connected to different root port through PCIe switch
+	 * (ASMedia ASM1806), but the switch doesn't support L0s on upstream port
+	 * so this workaround isn't needed there.
+	 */
+	if (!CONFIG(BOARD_PROTECTLI_V1610))
+		params->PcieRpAspm[4] = FSP_PCH_PCIE_ASPM_L1;
 
 	/*
 	 * HWP is too aggressive in power savings and does not let using full
