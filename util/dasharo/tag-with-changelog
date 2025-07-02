@@ -438,7 +438,7 @@ if [ -z "$OLD_EDK2_GIT_VERSION" ]; then
 	OLD_EDK2_GIT_VERSION="$PREHISTORY"
 fi
 
-git clone "$URL" || version_ctrl_c
+git clone --reference-if-able payloads/external/edk2/workspace/Dasharo/ --bare "$URL" edk2 || version_ctrl_c
 get_log_submodule "$OLD_EDK2_GIT_VERSION" "$NEW_EDK2_GIT_VERSION" "edk2"
 rm -rf edk2
 
