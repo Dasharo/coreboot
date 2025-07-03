@@ -41,8 +41,8 @@ chip soc/intel/jasperlake
 		[5] = USB3_PORT_DEFAULT(OC_SKIP),	// M.2 LTE
 	}"
 
-	register "usb2_wake_enable_bitmap" = "0x0012"
-	register "usb3_wake_enable_bitmap" = "0x0003"
+	register "usb2_wake_enable_bitmap" = "0x0002"
+	register "usb3_wake_enable_bitmap" = "0x0001"
 
 	register "SataSalpSupport" = "1"
 	register "SataPortsEnable[1]" = "1"
