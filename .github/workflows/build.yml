@@ -208,7 +208,7 @@ jobs:
       matrix:
         vendor: [ emulation_qemu ]
         model: [ x86_q35 ]
-        payload: [ uefi, uefi_all_menus ]
+        payload: [ uefi, uefi_all_menus, uefi_svboot ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
