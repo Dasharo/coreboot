@@ -413,4 +413,12 @@ config EDK2_GRAPHICAL_CAPSULE_PROGRESS
 	  An alternative is a textual one which also appears on serial, the default
 	  is graphical.
 
+config EDK2_FUM_AUTO_IPXE_BOOT
+	bool "Launch the auto-update sequence in Firmware Update Mode"
+	default y
+	help
+	  By default FUM results in automatic booting into DTS via iPXE, the
+	  alternative provides a way to disable all flash locks on the next boot
+	  but otherwise boot the platform as usual.
+
 endif
