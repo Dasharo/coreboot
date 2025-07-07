@@ -39,6 +39,11 @@ chip soc/intel/meteorlake
 			register "gen1_dec" = "0x007c0281" # Port 0x280 to 0x2FF (hardware monitor)
 			register "gen2_dec" = "0x000c0081" # Port 0x80 to 0x8F (debug)
 		end
+		device ref pmc hidden
+			register "pmc_gpe0_dw0" = "PMC_GPP_A"
+			register "pmc_gpe0_dw1" = "PMC_GPP_E"
+			register "pmc_gpe0_dw2" = "PMC_GPP_H"
+		end
 		device ref p2sb on end
 		device ref hda on
 			register "pch_hda_sdi_enable[0]" = "1"
