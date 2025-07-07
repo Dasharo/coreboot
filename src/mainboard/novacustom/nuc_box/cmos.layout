@@ -17,6 +17,9 @@ entries
 416	1	e	2	me_state
 417	3	h	0	me_state_counter
 
+# Vboot non-volatile data
+432	128	r	0	vbnv
+
 # CMOS_VSTART_ramtop
 800	80	r	0	ramtop
 
@@ -49,4 +52,4 @@ enumerations
 
 checksums
 
-checksum 408 799 984
+checksum 408 431 984
