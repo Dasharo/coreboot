@@ -444,6 +444,10 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_INTEL_ME_CBNT_STATUS),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIntelMeMenuShowCbntStatus=TRUE
 endif
+# PcdFumAutoIpxeBoot = TRUE
+ifneq ($(CONFIG_EDK2_FUM_AUTO_IPXE_BOOT),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdFumAutoIpxeBoot=FALSE
+endif
 
 endif # !CONFIG_EDK2_REPO_OFFICIAL
 
