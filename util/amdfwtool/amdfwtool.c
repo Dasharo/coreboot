@@ -141,10 +141,10 @@ static uint32_t fletcher32(const void *data, int length)
 }
 
 amd_fw_entry amd_psp_fw_table[] = {
-	{ .type = AMD_FW_PSP_PUBKEY, .level = PSP_BOTH | PSP_LVL2_AB, .skip_hashing = true },
+	{ .type = AMD_FW_PSP_PUBKEY, .level = PSP_LVL1 | PSP_LVL2_AB, .skip_hashing = true },
 	{ .type = AMD_FW_PSP_BOOTLOADER, .level = PSP_BOTH | PSP_LVL2_AB,
 		.generate_manifest = true },
-	{ .type = AMD_FW_PSP_SECURED_OS, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_SECURED_OS, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_RECOVERY, .level = PSP_LVL1 },
 	{ .type = AMD_FW_PSP_NVRAM, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_RTM_PUBKEY, .level = PSP_BOTH },
@@ -154,8 +154,6 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_SMU_FIRMWARE, .subprog = 2, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SECURED_DEBUG, .level = PSP_LVL2 | PSP_LVL2_AB,
 	  .skip_hashing = true },
-	{ .type = AMD_FW_PSP_TEEIPKEY, .subprog = 0, .level = PSP_LVL2 | PSP_LVL2_AB,
-	  .skip_hashing = true },
 	{ .type = AMD_FW_PSP_ABL_PUBKEY, .level = PSP_BOTH | PSP_BOTH_AB },
 	{ .type = AMD_FW_PSP_FUSE_CHAIN, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_TRUSTLETS, .level = PSP_LVL2 | PSP_LVL2_AB },
@@ -163,16 +161,18 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_SMU_FIRMWARE2, .subprog = 0, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SMU_FIRMWARE2, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SMU_FIRMWARE2, .subprog = 2, .level = PSP_BOTH | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_DEBUG_UNLOCK, .level = PSP_BOTH | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_TEEIPKEY, .subprog = 0, .level = PSP_BOTH | PSP_LVL2_AB,
+	  .skip_hashing = true },
 	{ .type = AMD_FW_PSP_SEV_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_BOOT_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SOC_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_DEBUG_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_INTERFACE_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_DEBUG_UNLOCK, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_HW_IPCFG, .subprog = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_HW_IPCFG, .subprog = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_HW_IPCFG, .subprog = 2, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_WRAPPED_IKEK, .level = PSP_BOTH | PSP_LVL2_AB, .skip_hashing = true },
+	{ .type = AMD_FW_PSP_WRAPPED_IKEK, .level = PSP_LVL1 | PSP_LVL2_AB, .skip_hashing = true },
 	{ .type = AMD_FW_PSP_TOKEN_UNLOCK, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SEC_GASKET, .subprog = 0, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SEC_GASKET, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -180,12 +180,12 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_MP2_FW, .subprog = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MP2_FW, .subprog = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MP2_FW, .subprog = 2, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_DRIVER_ENTRIES, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_DRIVER_ENTRIES, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_KVM_IMAGE, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MP5, .subprog = 0, .level = PSP_BOTH | PSP_BOTH_AB },
 	{ .type = AMD_FW_PSP_MP5, .subprog = 1, .level = PSP_BOTH | PSP_BOTH_AB },
 	{ .type = AMD_FW_PSP_MP5, .subprog = 2, .level = PSP_BOTH | PSP_BOTH_AB },
-	{ .type = AMD_FW_PSP_S0I3_DRIVER, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_S0I3_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_ABL0, .level = PSP_BOTH | PSP_LVL2_AB,
 		.generate_manifest = true },
 	{ .type = AMD_FW_PSP_ABL1, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -199,25 +199,26 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_SEV_CODE, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_WHITELIST, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_VBIOS_BTLOADER, .level = PSP_BOTH | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_L2_PTR, .level = PSP_LVL1 | PSP_LVL1_AB },
 	{ .type = AMD_FW_PSP_DXIO, .level = PSP_BOTH | PSP_BOTH_AB },
-	{ .type = AMD_FW_PSP_USB_PHY, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_USB_PHY, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_TOS_SEC_POLICY, .subprog = 0, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_TOS_SEC_POLICY, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_TOS_SEC_POLICY, .subprog = 2, .level = PSP_BOTH | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_DRTM_TA, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_DRTM_TA, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_BIOS_TABLE, .level = PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_KEYDB_BL, .level = PSP_BOTH | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_KEYDB_TOS, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_KEYDB_TOS, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_VERSTAGE, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_VERSTAGE_SIG, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_RPMC_NVRAM, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_SPL, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_SPL, .level = PSP_LVL1 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_DMCU_ERAM, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_DMCU_ISR, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MSMU, .subprog = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MSMU, .subprog = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SPIROM_CFG, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_MPIO, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_MPIO, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SMUSCS, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_RAS_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_RAS_TA, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -226,31 +227,31 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_DPE_DRIVER, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_DMCUB, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AB_NVRAM, .level = PSP_LVL1_AB },
-	{ .type = AMD_FW_PSP_BOOTLOADER_AB, .level = PSP_LVL2 | PSP_LVL2_AB,
+	{ .type = AMD_FW_PSP_BOOTLOADER_AB, .level = PSP_BOTH | PSP_LVL2_AB,
 		.generate_manifest = true },
-	{ .type = AMD_FW_PSP_RIB, .subprog = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_RIB, .subprog = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_RIB, .subprog = 2, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_MPDMA_TF, .level = PSP_BOTH | PSP_BOTH_AB },
-	{ .type = AMD_FW_PSP_TA_IKEK, .level = PSP_BOTH | PSP_LVL2_AB, .skip_hashing = true },
-	{ .type = AMD_FW_PSP_SFDR, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_GMI3_PHY, .level = PSP_BOTH | PSP_BOTH_AB },
-	{ .type = AMD_FW_PSP_MPDMA_PM, .level = PSP_BOTH | PSP_BOTH_AB },
+	{ .type = AMD_FW_PSP_RIB, .subprog = 0, .level = PSP_BOTH | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_RIB, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_RIB, .subprog = 2, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_SRAM, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_DRAM, .inst = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_DRAM, .inst = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MFD_MPM, .inst = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MFD_MPM, .inst = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_FCFG_TABLE, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_WLAN, .inst = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_WLAN, .inst = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_WLAN, .inst = 2, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_WLAN, .inst = 3, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_AMF_MFD, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_MPDMA_TF, .level = PSP_BOTH | PSP_BOTH_AB },
+	{ .type = AMD_FW_PSP_TA_IKEK, .level = PSP_BOTH | PSP_LVL2_AB, .skip_hashing = true },
+	{ .type = AMD_FW_PSP_SFDR, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MPCCX, .subprog = 0, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MPCCX, .subprog = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_GMI3_PHY, .level = PSP_BOTH | PSP_BOTH_AB },
+	{ .type = AMD_FW_PSP_MPDMA_PM, .level = PSP_BOTH | PSP_BOTH_AB },
 	{ .type = AMD_FW_PSP_LSDMA, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_C20_MP, .level = PSP_BOTH | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_FCFG_TABLE, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MINIMSMU, .inst = 0, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MINIMSMU, .inst = 1, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_MINIMSMU, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -258,7 +259,8 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_GFXIMU_0, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_GFXIMU_1, .subprog = 0, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_GFXIMU_1, .subprog = 1, .level = PSP_BOTH | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_SRAM_FW_EXT, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_SRAM_FW_EXT, .level = PSP_LVL1 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_TOS_WHITELIST, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_S3IMG, .inst = 0, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_S3IMG, .inst = 1, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_S3IMG, .inst = 2, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -283,22 +285,6 @@ amd_fw_entry amd_fw_table[] = {
 amd_bios_entry amd_bios_table[] = {
 	{ .type = AMD_BIOS_RTM_PUBKEY, .inst = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_SIG, .inst = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 2, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 3, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 5, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 6, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 7, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 8, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 9, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 10, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 11, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 12, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 13, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 14, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_APCB, .inst = 15, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APCB_BK, .inst = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APCB_BK, .inst = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APCB_BK, .inst = 2, .level = BDT_BOTH },
@@ -315,82 +301,98 @@ amd_bios_entry amd_bios_table[] = {
 	{ .type = AMD_BIOS_APCB_BK, .inst = 13, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APCB_BK, .inst = 14, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APCB_BK, .inst = 15, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 2, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 3, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 5, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 6, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 7, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 8, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 9, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 10, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 11, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 12, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 13, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 14, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_APCB, .inst = 15, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APOB, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_BIN,
 			.reset = 1, .copy = 1, .zlib = 1, .inst = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_APOB_NV, .level = BDT_LVL2 },
 	{ .type = AMD_BIOS_NV_ST, .level = BDT_LVL2 },
 	{ .type = AMD_BIOS_PMUI, .inst = 1, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 1, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 2, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 2, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 3, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 3, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 4, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 4, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 5, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 5, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 6, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 6, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 7, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 7, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 9, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 9, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 10, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 10, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 11, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 11, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 12, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 12, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 13, .subpr = 0, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 13, .subpr = 0, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 1, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 1, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 2, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 2, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 3, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 3, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 4, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 4, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 5, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 5, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 6, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 6, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 7, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 7, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 9, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 9, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 10, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 10, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 11, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 11, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 12, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 12, .subpr = 1, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 13, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 13, .subpr = 1, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 1, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 1, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 2, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 2, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 3, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 3, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 4, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 4, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 5, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 5, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 6, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 6, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 7, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 7, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUI, .inst = 9, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 9, .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 1,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 2,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 3,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 4,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 5,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 6,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 7,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUI, .inst = 9,  .subpr = 4, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 10, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 10, .subpr = 4, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 11, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 11, .subpr = 4, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 12, .subpr = 4, .level = BDT_BOTH },
-	{ .type = AMD_BIOS_PMUD, .inst = 12, .subpr = 4, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUI, .inst = 13, .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 1, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 2, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 3, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 4, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 5, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 6, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 7, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 9, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 10, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 11, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 12, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 13, .subpr = 0, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 1, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 2, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 3, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 4, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 5, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 6, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 7, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 9, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 10, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 11, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 12, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 13, .subpr = 1, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 1,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 2,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 3,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 4,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 5,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 6,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 7,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 9,  .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 10, .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 11, .subpr = 4, .level = BDT_BOTH },
+	{ .type = AMD_BIOS_PMUD, .inst = 12, .subpr = 4, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_PMUD, .inst = 13, .subpr = 4, .level = BDT_BOTH },
 	{ .type = AMD_BIOS_UCODE, .inst = 0, .level = BDT_LVL2 },
 	{ .type = AMD_BIOS_UCODE, .inst = 1, .level = BDT_LVL2 },
@@ -960,6 +962,18 @@ static void integrate_psp_ab(context *ctx, psp_directory_table *pspdir,
 	ctx->current_table = current_table_save;
 }
 
+static unsigned int locate_psp_l2_entry(psp_directory_table *pspdir)
+{
+	unsigned int idx;
+
+	for (idx = 0; idx < pspdir->header.num_entries; idx++) {
+		if (pspdir->entries[idx].type == AMD_FW_PSP_L2_PTR)
+			return (int)idx;
+	}
+
+	return 0;
+}
+
 static void integrate_psp_level2(context *ctx, amd_cb_config *cb_config)
 {
 	uint32_t current_table_save;
@@ -971,6 +985,7 @@ static void integrate_psp_level2(context *ctx, amd_cb_config *cb_config)
 	assert(ctx->pspdir);
 	/* PSP L2 must exist */
 	assert(ctx->pspdir2);
+	unsigned int l2_entry;
 
 	pspdir = ctx->pspdir;
 	pspdir2 = ctx->pspdir2;
@@ -997,19 +1012,26 @@ static void integrate_psp_level2(context *ctx, amd_cb_config *cb_config)
 		if (ctx->pspdir_bak != NULL)
 			copy_psp_header(ctx->pspdir_bak, ctx->pspdir);
 	} else if (pspdir2 != NULL) {
-		assert_fw_entry(count, MAX_PSP_ENTRIES, ctx);
-		pspdir->entries[count].type = AMD_FW_PSP_L2_PTR;
-		pspdir->entries[count].subprog = 0;
-		pspdir->entries[count].rsvd = 0;
-		pspdir->entries[count].size = sizeof(pspdir2->header)
+		l2_entry = locate_psp_l2_entry(pspdir);
+		if (l2_entry == 0)
+			l2_entry = count;
+
+		assert_fw_entry(l2_entry, MAX_PSP_ENTRIES, ctx);
+		pspdir->entries[l2_entry].type = AMD_FW_PSP_L2_PTR;
+		pspdir->entries[l2_entry].subprog = 0;
+		pspdir->entries[l2_entry].rsvd = 0;
+		pspdir->entries[l2_entry].size = sizeof(pspdir2->header)
 					+ pspdir2->header.num_entries
 					* sizeof(psp_directory_entry);
 
-		pspdir->entries[count].addr =
+		pspdir->entries[l2_entry].addr =
 				BUFF_TO_RUN_MODE(*ctx, pspdir2, AMD_ADDR_REL_BIOS);
-		pspdir->entries[count].address_mode =
+		pspdir->entries[l2_entry].address_mode =
 				SET_ADDR_MODE(pspdir, AMD_ADDR_REL_BIOS);
-		count++;
+
+		if (l2_entry == pspdir->header.num_entries)
+			count++;
+
 		fill_dir_header(pspdir, count, ctx);
 	}
 	ctx->current_table = current_table_save;
@@ -1062,7 +1084,15 @@ static psp_directory_table *integrate_psp_firmwares(context *ctx,
 
 		assert_fw_entry(count, MAX_PSP_ENTRIES, ctx);
 
-		if (fw_table[i].type == AMD_FW_PSP_TOKEN_UNLOCK) {
+		/*
+		 * Pre-allocate entry for L2 pointer, so that all entries in directory
+		 * are sorted. It will be patched in integrate_psp_level2 to point to
+		 * the second level directory.
+		 */
+		if (fw_table[i].type == AMD_FW_PSP_L2_PTR && platform_is_multi_level(cb_config->soc_id)) {
+			pspdir->entries[count].type = fw_table[i].type;
+			count++;
+		} else if (fw_table[i].type == AMD_FW_PSP_TOKEN_UNLOCK) {
 			if (!fw_table[i].other)
 				continue;
 			adjust_current_pointer(ctx, 0, ERASE_ALIGNMENT);
