@@ -29,7 +29,7 @@ CPPFLAGS_common += -I$(src)/soc/amd/turin_poc/acpi
 CPPFLAGS_common += -I$(src)/soc/amd/turin_poc/include
 
 ifeq ($(call int-gt, $(CONFIG_ROM_SIZE) 0x1000000), 1)
-CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0:0xff000000:0x1000000
+CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0x1000000:0xff000000:0x1000000
 endif
 
 ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
@@ -94,6 +94,10 @@ set-bit=$(call int-shift-left, 1 $(call _toint,$1))
 PSP_SOFTFUSE=$(shell A=$(call int-add, \
 		$(foreach bit,$(sort $(PSP_SOFTFUSE_BITS)),$(call set-bit,$(bit)))); printf "0x%x" $$A)
 
+ifeq ($(CONFIG_PSP_INIT_ESPI),y)
+PSP_SOFTFUSE_BITS += 15
+endif
+
 #
 # Build the arguments to amdfwtool (order is unimportant).  Missing file names
 # result in empty OPT_ variables, i.e. the argument is not passed to amdfwtool.
@@ -116,6 +120,11 @@ OPT_PSP_BIOSBIN_SIZE=$(call add_opt_prefix, $(PSP_BIOSBIN_SIZE), --bios-uncomp-s
 OPT_APOB_NV_SIZE=$(call add_opt_prefix, $(APOB_NV_SIZE), --apob-nv-size)
 OPT_APOB_NV_BASE=$(call add_opt_prefix, $(APOB_NV_BASE), --apob-nv-base)
 
+OPT_EFS_ESPI_CONFIG=$(call add_opt_prefix, $(CONFIG_EFS_ESPI0_CONFIG), --espi0-config)
+OPT_EFS_ESPI_CONFIG+=$(call add_opt_prefix, $(CONFIG_EFS_ESPI1_CONFIG), --espi1-config)
+OPT_EFS_ESPI_CONFIG+=$(call add_opt_prefix, $(CONFIG_EFS_ESPI0_CONFIG1), --espi0-config1)
+OPT_EFS_ESPI_CONFIG+=$(call add_opt_prefix, $(CONFIG_EFS_ESPI1_CONFIG1), --espi1-config1)
+
 OPT_EFS_SPI_READ_MODE=$(call add_opt_prefix, $(CONFIG_EFS_SPI_READ_MODE), --spi-read-mode)
 OPT_EFS_SPI_SPEED=$(call add_opt_prefix, $(CONFIG_EFS_SPI_SPEED), --spi-speed)
 OPT_EFS_SPI_MICRON_FLAG=$(call add_opt_prefix, $(CONFIG_EFS_SPI_MICRON_FLAG), --spi-micron-flag)
@@ -124,9 +133,14 @@ OPT_PSP_SOFTFUSE=$(call add_opt_prefix, $(PSP_SOFTFUSE), --soft-fuse)
 OPT_WHITELIST_FILE=$(call add_opt_prefix, $(PSP_WHITELIST_FILE), --whitelist)
 OPT_SPL_TABLE_FILE=$(call add_opt_prefix, $(SPL_TABLE_FILE), --spl-table)
 
-OPT_UCODE_FILES=$(foreach i, $(shell seq $(words $(amd_microcode_bins))), \
-	$(call add_opt_prefix, $(word $(i), $(amd_microcode_bins)), \
+microcode_bins=$(wildcard ${FIRMWARE_LOCATION}/*U?odePatch_BRH_*.bin)
+microcode_bins+=$(wildcard ${FIRMWARE_LOCATION}/*U?odePatch_BRHD_*.bin)
+
+OPT_UCODE_FILES=$(foreach i, $(shell seq $(words $(microcode_bins))), \
+	$(call add_opt_prefix, $(word $(i), $(microcode_bins)), \
 	--instance $(shell printf "%x" $$(($(i)-1))) --ucode))
+
+OPT_VGA_IMAGE=$(call add_opt_prefix, $(CONFIG_PSP_EARLY_VGA_IMAGE), --early-vga-image)
 
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
@@ -146,6 +160,8 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_EFS_SPI_READ_MODE) \
 		$(OPT_EFS_SPI_SPEED) \
 		$(OPT_EFS_SPI_MICRON_FLAG) \
+		$(OPT_EFS_ESPI_CONFIG) \
+		$(OPT_VGA_IMAGE) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--flashsize $(call strip_quotes, $(CONFIG_ROM_SIZE))
 
