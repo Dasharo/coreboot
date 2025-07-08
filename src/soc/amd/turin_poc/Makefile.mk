@@ -116,6 +116,11 @@ OPT_PSP_BIOSBIN_SIZE=$(call add_opt_prefix, $(PSP_BIOSBIN_SIZE), --bios-uncomp-s
 OPT_APOB_NV_SIZE=$(call add_opt_prefix, $(APOB_NV_SIZE), --apob-nv-size)
 OPT_APOB_NV_BASE=$(call add_opt_prefix, $(APOB_NV_BASE), --apob-nv-base)
 
+OPT_EFS_ESPI_CONFIG=$(call add_opt_prefix, $(CONFIG_EFS_ESPI0_CONFIG), --espi0-config)
+OPT_EFS_ESPI_CONFIG+=$(call add_opt_prefix, $(CONFIG_EFS_ESPI0_CONFIG1), --espi0-config1)
+OPT_EFS_ESPI_CONFIG+=$(call add_opt_prefix, $(CONFIG_EFS_ESPI1_CONFIG), --espi1-config)
+OPT_EFS_ESPI_CONFIG+=$(call add_opt_prefix, $(CONFIG_EFS_ESPI1_CONFIG1), --espi1-config1)
+
 OPT_EFS_SPI_READ_MODE=$(call add_opt_prefix, $(CONFIG_EFS_SPI_READ_MODE), --spi-read-mode)
 OPT_EFS_SPI_SPEED=$(call add_opt_prefix, $(CONFIG_EFS_SPI_SPEED), --spi-speed)
 OPT_EFS_SPI_MICRON_FLAG=$(call add_opt_prefix, $(CONFIG_EFS_SPI_MICRON_FLAG), --spi-micron-flag)
@@ -146,6 +151,7 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_EFS_SPI_READ_MODE) \
 		$(OPT_EFS_SPI_SPEED) \
 		$(OPT_EFS_SPI_MICRON_FLAG) \
+		$(OPT_EFS_ESPI_CONFIG) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--flashsize $(call strip_quotes, $(CONFIG_ROM_SIZE))
 

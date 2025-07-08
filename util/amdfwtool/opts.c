@@ -51,6 +51,7 @@ enum {
 	AMDFW_OPT_UCODE,
 	AMDFW_OPT_APOB_NVBASE,
 	AMDFW_OPT_APOB_NVSIZE,
+	AMDFW_OPT_EARLY_VGA_IMAGE,
 
 	AMDFW_OPT_OUTPUT,
 	AMDFW_OPT_FLASHSIZE,
@@ -70,6 +71,10 @@ enum {
 	LONGOPT_NVRAM_SIZE	= 261,
 	LONGOPT_RPMC_NVRAM_BASE	= 262,
 	LONGOPT_RPMC_NVRAM_SIZE	= 263,
+	LONGOPT_ESPI0_CONFIG	= 264,
+	LONGOPT_ESPI0_CONFIG1	= 265,
+	LONGOPT_ESPI1_CONFIG	= 266,
+	LONGOPT_ESPI1_CONFIG1	= 267,
 };
 
 static const char optstring[] = {AMDFW_OPT_CONFIG, ':',
@@ -115,11 +120,16 @@ static struct option long_options[] = {
 	{"ucode",            required_argument, 0, AMDFW_OPT_UCODE },
 	{"apob-nv-base",     required_argument, 0, AMDFW_OPT_APOB_NVBASE },
 	{"apob-nv-size",     required_argument, 0, AMDFW_OPT_APOB_NVSIZE },
+	{"early-vga-image",  required_argument, 0, AMDFW_OPT_EARLY_VGA_IMAGE },
 	/* Embedded Firmware Structure items*/
 	{"spi-read-mode",    required_argument, 0, LONGOPT_SPI_READ_MODE },
 	{"spi-speed",        required_argument, 0, LONGOPT_SPI_SPEED },
 	{"spi-micron-flag",  required_argument, 0, LONGOPT_SPI_MICRON_FLAG },
 	{"body-location",     required_argument, 0, AMDFW_OPT_BODY_LOCATION },
+	{"espi0-config",     required_argument, 0, LONGOPT_ESPI0_CONFIG },
+	{"espi0-config1",    required_argument, 0, LONGOPT_ESPI0_CONFIG1 },
+	{"espi1-config",     required_argument, 0, LONGOPT_ESPI1_CONFIG },
+	{"espi1-config1",    required_argument, 0, LONGOPT_ESPI1_CONFIG1 },
 	/* other */
 	{"output",           required_argument, 0, AMDFW_OPT_OUTPUT },
 	{"flashsize",        required_argument, 0, AMDFW_OPT_FLASHSIZE },
@@ -495,6 +505,11 @@ int amdfwtool_getopt(int argc, char *argv[], amd_cb_config *cb_config, context *
 				instance, optarg);
 			sub = instance = 0;
 			break;
+		case AMDFW_OPT_EARLY_VGA_IMAGE:
+			register_bdt_data(AMD_BIOS_EARLY_VGA, sub,
+				instance, optarg);
+			sub = instance = 0;
+			break;
 		case AMDFW_OPT_LOAD_S0I3:
 			cb_config->s0i3 = true;
 			break;
@@ -537,6 +552,22 @@ int amdfwtool_getopt(int argc, char *argv[], amd_cb_config *cb_config, context *
 			break;
 		case LONGOPT_SPI_MICRON_FLAG:
 			cb_config->efs_spi_micron_flag = strtoull(optarg, NULL, 16);
+			sub = instance = 0;
+			break;
+		case LONGOPT_ESPI0_CONFIG:
+			cb_config->efs_espi0_config = strtoull(optarg, NULL, 16);
+			sub = instance = 0;
+			break;
+		case LONGOPT_ESPI0_CONFIG1:
+			cb_config->efs_espi0_config1 = strtoull(optarg, NULL, 16);
+			sub = instance = 0;
+			break;
+		case LONGOPT_ESPI1_CONFIG:
+			cb_config->efs_espi1_config = strtoull(optarg, NULL, 16);
+			sub = instance = 0;
+			break;
+		case LONGOPT_ESPI1_CONFIG1:
+			cb_config->efs_espi1_config1 = strtoull(optarg, NULL, 16);
 			sub = instance = 0;
 			break;
 		case AMDFW_OPT_OUTPUT:

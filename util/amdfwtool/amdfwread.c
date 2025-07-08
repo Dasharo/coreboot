@@ -312,7 +312,7 @@ static int amdfw_bios_dir_walk(FILE *fw, uint32_t bios_offset, uint32_t cookie, 
 		uint64_t mode = current_entries[i].address_mode;
 		uint64_t addr = current_entries[i].source;
 
-		if (dir_mode < 2)
+		if (dir_mode < AMD_ADDR_REL_TAB)
 			mode = dir_mode;
 
 		if (type == AMD_BIOS_APOB || type == AMD_BIOS_PSP_SHARED_MEM)
@@ -371,7 +371,7 @@ static int amdfw_psp_dir_walk(FILE *fw, uint32_t psp_offset, uint32_t cookie, ui
 		uint64_t mode = current_entries[i].address_mode;
 		uint64_t addr = current_entries[i].addr;
 
-		if (dir_mode < 2)
+		if (dir_mode < AMD_ADDR_REL_TAB)
 			mode = dir_mode;
 
 		if (type == AMD_PSP_FUSE_CHAIN)

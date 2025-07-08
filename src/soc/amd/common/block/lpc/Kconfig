@@ -65,3 +65,27 @@ config SOC_AMD_COMMON_BLOCK_ESPI_RETAIN_PORT80_EN
 	  SMU will lock up at times if the port80h enable bit is cleared. Select
 	  this option to retain the port80 enable bit while clearing other enable
 	  bits in the ESPI Decode register.
+
+config EFS_ESPI0_CONFIG
+	hex
+	default 0xff
+	help
+	  eSPI0 configuration to be programmed by the PSP.
+
+config EFS_ESPI0_CONFIG1
+	hex
+	default 0xff
+	help
+	  eSPI0 configuration to be programmed by the PSP.
+
+config EFS_ESPI1_CONFIG
+	hex
+	default 0xff
+	help
+	  eSPI1 configuration to be programmed by the PSP.
+
+config EFS_ESPI1_CONFIG1
+	hex
+	default 0xff
+	help
+	  eSPI1 configuration to be programmed by the PSP.
