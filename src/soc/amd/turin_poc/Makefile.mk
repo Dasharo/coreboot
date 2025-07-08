@@ -27,7 +27,7 @@ CPPFLAGS_common += -I$(src)/soc/amd/turin_poc/acpi
 CPPFLAGS_common += -I$(src)/soc/amd/turin_poc/include
 
 ifeq ($(call int-gt, $(CONFIG_ROM_SIZE) 0x1000000), 1)
-CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0:0xff000000:0x1000000
+CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0x1000000:0xff000000:0x1000000
 endif
 
 ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
@@ -95,6 +95,10 @@ endif # !CONFIG_SOC_AMD_COMMON_BLOCK_APOB_NV_DISABLE
 set-bit=$(call int-shift-left, 1 $(call _toint,$1))
 PSP_SOFTFUSE=$(shell A=$(call int-add, \
 		$(foreach bit,$(sort $(PSP_SOFTFUSE_BITS)),$(call set-bit,$(bit)))); printf "0x%x" $$A)
+
+ifeq ($(CONFIG_PSP_INIT_ESPI),y)
+PSP_SOFTFUSE_BITS += 15
+endif
 
 #
 # Build the arguments to amdfwtool (order is unimportant).  Missing file names
