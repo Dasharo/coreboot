@@ -48,11 +48,15 @@ static void turin_domain_set_resources(struct device *domain)
 static const char *turin_domain_acpi_name(const struct device *domain)
 {
 	const unsigned int domain_id = dev_get_domain_id(domain);
-	const char *domain_acpi_names[4] = {
+	const char *domain_acpi_names[8] = {
 		"S0B0",
 		"S0B1",
 		"S0B2",
 		"S0B3",
+		"S0B4",
+		"S0B5",
+		"S0B6",
+		"S0B7",
 	};
 
 	if (domain_id < ARRAY_SIZE(domain_acpi_names))

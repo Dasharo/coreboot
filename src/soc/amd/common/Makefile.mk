@@ -11,7 +11,7 @@ ifneq ($(V),)
 OPT_DEBUG_AMDFWTOOL = --debug
 endif
 
-ifneq ($(CONFIG_AMDFW_CONFIG_FILE), )
+ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
 FIRMWARE_LOCATION=$(shell grep -e FIRMWARE_LOCATION $(CONFIG_AMDFW_CONFIG_FILE) | awk '{print $$2}')
 
 # Add all the files listed in the config file to the dependency list
