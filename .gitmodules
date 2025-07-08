@@ -74,3 +74,7 @@
 	path = 3rdparty/amd_firmwares
 	url = https://github.com/openSIL/amd_firmwares.git
 	branch = turin_poc
+[submodule "src/vendorcode/amd/opensil/turin_poc/opensil"]
+	path = src/vendorcode/amd/opensil/turin_poc/opensil
+	url = https://github.com/openSIL/openSIL.git
+	branch = turin_poc
