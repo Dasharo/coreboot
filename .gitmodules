@@ -70,3 +70,7 @@
 [submodule "3rdparty/open-power-signing-utils"]
 	path = 3rdparty/open-power-signing-utils
 	url = https://review.coreboot.org/open-power-signing-utils.git
+[submodule "3rdparty/amd_firmwares"]
+	path = 3rdparty/amd_firmwares
+	url = https://github.com/openSIL/amd_firmwares.git
+	branch = turin_poc
