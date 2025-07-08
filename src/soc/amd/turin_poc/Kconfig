@@ -176,7 +176,7 @@ menu "PSP Configuration Options"
 
 config AMDFW_CONFIG_FILE
 	string "AMD FW configuration file"
-	default ""
+	default "src/soc/amd/turin_poc/fw.cfg"
 	help
 	  Specify the path the fw.cfg file describing the PSP blobs to be
 	  integrated in the build.
