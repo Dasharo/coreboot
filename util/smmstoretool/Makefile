@@ -54,6 +54,9 @@ clean:
 $(PRG): $(OBJ)
 	$(HOSTCC) -o $@ $^ $(HOSTLDFLAGS)
 
+smmstore_debug: smmstore_debug.o
+	$(HOSTCC) -o $@ $^ $(HOSTLDFLAGS)
+
 %.o: %.c
 	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ -MF $@.d $<
 
