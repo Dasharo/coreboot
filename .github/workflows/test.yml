@@ -7,7 +7,7 @@ on:
 
 jobs:
   test_in_qemu:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,16 +18,27 @@ jobs:
           repository: 'Dasharo/open-source-firmware-validation'
           ref: 'develop'
           submodules: 'recursive'
+          fetch-depth: 0
 
       - name: Download workflow artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ inputs.artifact_name }}
 
-      - name: Set up QEMU
+      - name: Set up required tools
         run: |
            sudo apt-get update
-           sudo apt-get install qemu-system-x86-64 swtpm
+           sudo apt-get install qemu-system-x86-64 swtpm git-annex
+
+      # Pulling secure-boot/sb_test_data.img fails, carry on anyway
+      - name: Set up osfv-test-data
+        run: |
+          pushd osfv-test-data
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git annex pull || true
+          ./setup.sh
+          popd
 
       - name: Enable KVM group perms
         run: |
@@ -36,6 +47,8 @@ jobs:
             sudo udevadm trigger --name-match=kvm
 
       # OSFV scripts/ci/qemu-run.sh expects QEMU_FW_FILE="./qemu_q35.rom"
+      # VirtIO disks will be mounted dynamically later with esp-scanning.robot,
+      # no need to create and attach one here with `os` instead of `firmware`
       - name: Start QEMU in background
         run: |
           mv coreboot.rom qemu_q35.rom
@@ -55,3 +68,7 @@ jobs:
         run: |
           robot -b command_log_CBK001.001.txt -v fw_file:qemu_q35.rom -v snipeit:no -L TRACE -v config:qemu -v rte_ip:127.0.0.1 -t "CBK001.001*" dasharo-compatibility/custom-boot-menu-key.robot
           robot -b command_log_CBK002.001.txt -v fw_file:qemu_q35.rom -v snipeit:no -L TRACE -v config:qemu -v rte_ip:127.0.0.1 -t "CBK002.001*" dasharo-compatibility/custom-boot-menu-key.robot
+
+      - name: Start esp-scanning.robot
+        run: |
+          robot -d ./logs/$(date +%Y.%m.%d_%H.%M.%S)/self-tests -v fw_file:qemu_q35.rom -v snipeit:no -L TRACE -v config:qemu -v rte_ip:127.0.0.1 dasharo-compatibility/esp-scanning.robot
