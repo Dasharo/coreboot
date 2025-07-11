@@ -116,6 +116,7 @@ void *make_data(const char source[], size_t *data_size, enum data_type type)
 	bool boolean;
 	uint64_t uint;
 	bool failed;
+	FILE *f;
 
 	case DATA_TYPE_BOOL:
 		if (str_eq(source, "true")) {
@@ -174,8 +175,22 @@ void *make_data(const char source[], size_t *data_size, enum data_type type)
 	case DATA_TYPE_UNICODE:
 		return to_uchars(source, data_size);
 	case DATA_TYPE_RAW:
-		fprintf(stderr, "Raw data type is output only\n");
-		return NULL;
+		f = fopen(source, "rb");
+		if (!f) {
+			perror(source);
+			return NULL;
+		}
+		fseek(f, 0, SEEK_END);
+		*data_size = ftell(f);
+		fseek(f, 0, SEEK_SET);
+		data = xmalloc(*data_size);
+		if (fread(data, 1, *data_size, f) != *data_size) {
+			fprintf(stderr, "Error reading data from '%s', aborting\n", source);
+			free(data);
+			data = NULL;
+		}
+		fclose(f);
+		return data;
 	}
 
 	return NULL;
