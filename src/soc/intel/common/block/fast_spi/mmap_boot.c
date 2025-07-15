@@ -23,28 +23,55 @@ enum window_type {
 	/* Number of memory-backed regions for reading flash */
 	TOTAL_MMAP_DECODE_WINDOWS,
 
-	/* An optional extra window for part of the flash before IFD BIOS region */
-	PRE_BIOS_DECODE_WINDOW = TOTAL_MMAP_DECODE_WINDOWS,
-
-	/* Maximum number of decode windows */
+	/*
+	 * Maximum number of decode windows.
+	 *
+	 * There is an optional RW window to cover part of the flash preceding IFD BIOS region,
+	 * so `TOTAL_DECODE_WINDOWS` is `TOTAL_MMAP_DECODE_WINDOWS + 1`.
+	 */
 	TOTAL_DECODE_WINDOWS,
 };
 
+static struct mem_region_device mmap_shadow_devs[TOTAL_MMAP_DECODE_WINDOWS];
+static struct xlate_window mmap_windows[TOTAL_MMAP_DECODE_WINDOWS];
+
+static struct xlate_window rw_window;
+
 static struct xlate_region_device real_dev;
-static struct mem_region_device shadow_devs[TOTAL_MMAP_DECODE_WINDOWS];
 static struct xlate_window real_dev_windows[TOTAL_DECODE_WINDOWS];
+static size_t real_dev_win_count;
+
+static void append_real_dev_window(const struct xlate_window *w)
+{
+	if (real_dev_win_count < ARRAY_SIZE(real_dev_windows))
+		real_dev_windows[real_dev_win_count++] = *w;
+	else
+		printk(BIOS_CRIT, "Fast SPI BUG: no room to add a window, ignoring it\n");
+}
 
 static void initialize_mmap_window(enum window_type type, uintptr_t host_base,
 				   uintptr_t flash_base, size_t size)
 {
-	mem_region_device_ro_init(&shadow_devs[type], (void *)host_base, size);
-	xlate_window_init(&real_dev_windows[type], &shadow_devs[type].rdev,
-			  flash_base, size);
+	mem_region_device_ro_init(&mmap_shadow_devs[type], (void *)host_base, size);
+	xlate_window_init(&mmap_windows[type], &mmap_shadow_devs[type].rdev, flash_base, size);
 	printk(BIOS_INFO, "%s: ",
 		(type == FIXED_DECODE_WINDOW) ?
 		 "Fixed Decode Window" : "Extended Decode Window");
 	printk(BIOS_INFO, "SPI flash base=0x%lx, Host base=0x%lx, Size=0x%zx\n",
 	       flash_base, host_base, size);
+
+	append_real_dev_window(&mmap_windows[type]);
+}
+
+static void initialize_rw_window(uintptr_t flash_base, size_t size)
+{
+	const struct region_device *rw_device = boot_device_rw();
+
+	xlate_window_init(&rw_window, rw_device, flash_base, size);
+	printk(BIOS_INFO, "Fast SPI RW Decode Window: SPI flash base=0x%lx, Size=0x%zx\n",
+	       flash_base, size);
+
+	append_real_dev_window(&rw_window);
 }
 
 /*
@@ -101,8 +128,6 @@ static void bios_mmap_init(void)
 	uintptr_t ext_win_host_base, ext_win_flash_base;
 	size_t fixed_win_size, ext_win_size;
 
-	size_t win_count = 0;
-
 	if (init_done)
 		return;
 
@@ -120,7 +145,6 @@ static void bios_mmap_init(void)
 
 	initialize_mmap_window(FIXED_DECODE_WINDOW, fixed_win_host_base, fixed_win_flash_base,
 			       fixed_win_size);
-	win_count++;
 
 	_Static_assert(CONFIG_EXT_BIOS_WIN_BASE != 0, "Extended BIOS window base cannot be 0!");
 	_Static_assert(CONFIG_EXT_BIOS_WIN_SIZE != 0, "Extended BIOS window size cannot be 0!");
@@ -140,7 +164,6 @@ static void bios_mmap_init(void)
 		ext_win_flash_base = fixed_win_flash_base - ext_win_size;
 		initialize_mmap_window(EXT_BIOS_DECODE_WINDOW, ext_win_host_base,
 				       ext_win_flash_base, ext_win_size);
-		win_count++;
 	}
 
 	/*
@@ -151,17 +174,11 @@ static void bios_mmap_init(void)
 	 * Instead, use RW device as yet another window to allow reading whole flash via
 	 * result of boot_device_ro().
 	 */
-	if (CONFIG(FAST_SPI_FULL_RO_BOOTMEDIA) && bios_start) {
-		const struct region_device *rw_device = boot_device_rw();
-		xlate_window_init(&real_dev_windows[PRE_BIOS_DECODE_WINDOW], rw_device,
-				  0, bios_start);
-		win_count++;
+	if (CONFIG(FAST_SPI_FULL_RO_BOOTMEDIA) && bios_start)
+		initialize_rw_window(0, bios_start);
 
-		printk(BIOS_INFO, "Fast SPI Decode Window: SPI flash base=0x0, Size=0x%zx\n",
-		       bios_start);
-	}
-
-	xlate_region_device_ro_init(&real_dev, win_count, real_dev_windows, CONFIG_ROM_SIZE);
+	xlate_region_device_ro_init(&real_dev, real_dev_win_count, real_dev_windows,
+				    CONFIG_ROM_SIZE);
 
 	init_done = true;
 }
@@ -178,7 +195,7 @@ const struct region_device *boot_device_ro(void)
 
 void fast_spi_get_ext_bios_window(uintptr_t *base, size_t *size)
 {
-	const struct region_device *rd = &shadow_devs[EXT_BIOS_DECODE_WINDOW].rdev;
+	const struct region_device *rd = &mmap_shadow_devs[EXT_BIOS_DECODE_WINDOW].rdev;
 
 	bios_mmap_init();
 
@@ -203,13 +220,13 @@ uint32_t spi_flash_get_mmap_windows(struct flash_mmap_window *table)
 	bios_mmap_init();
 
 	for (i = 0; i < TOTAL_MMAP_DECODE_WINDOWS; i++) {
-		if (region_sz(&real_dev_windows[i].sub_region) == 0)
+		if (region_sz(&mmap_windows[i].sub_region) == 0)
 			continue;
 
 		count++;
-		table->flash_base = region_offset(&real_dev_windows[i].sub_region);
-		table->host_base = (uintptr_t)rdev_mmap_full(&shadow_devs[i].rdev);
-		table->size = region_sz(&real_dev_windows[i].sub_region);
+		table->flash_base = region_offset(&mmap_windows[i].sub_region);
+		table->host_base = (uintptr_t)rdev_mmap_full(&mmap_shadow_devs[i].rdev);
+		table->size = region_sz(&mmap_windows[i].sub_region);
 
 		table++;
 	}
