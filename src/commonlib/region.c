@@ -21,12 +21,14 @@ int region_is_subregion(const struct region *p, const struct region *c)
 
 static int normalize_and_ok(const struct region *outer, struct region *inner)
 {
+	printk(BIOS_SPEW, "normalize_and_ok entered, outer: %p, inner: %p\n", outer, inner);
 	inner->offset += region_offset(outer);
 	return region_is_subregion(outer, inner);
 }
 
 static const struct region_device *rdev_root(const struct region_device *rdev)
 {
+	printk(BIOS_SPEW, "rdev_root entered, rdev: %p\n", rdev);
 	if (rdev->root == NULL)
 		return rdev;
 	return rdev->root;
@@ -75,6 +77,7 @@ int rdev_munmap(const struct region_device *rd, void *mapping)
 	return rdev->ops->munmap(rdev, mapping);
 }
 
+// ---
 ssize_t rdev_readat(const struct region_device *rd, void *b, size_t offset,
 			size_t size)
 {
@@ -84,11 +87,14 @@ ssize_t rdev_readat(const struct region_device *rd, void *b, size_t offset,
 		.size = size,
 	};
 
+// --- print added
 	if (!normalize_and_ok(&rd->region, &req))
 		return -1;
 
+// --- print added
 	rdev = rdev_root(rd);
 
+	printk(BIOS_SPEW, "calling rdev->ops->readat (0x%zx, size=0x%zx)\n", req.offset, req.size);
 	return rdev->ops->readat(rdev, b, req.offset, req.size);
 }
 
@@ -483,6 +489,7 @@ static ssize_t incoherent_readat(const struct region_device *rd, void *b,
 {
 	const struct incoherent_rdev *irdev;
 
+	printk(BIOS_DEBUG, "incoherent_readat: offset=0x%zx size=0x%zx\n", offset, size);
 	irdev = container_of(rd, const struct incoherent_rdev, rdev);
 
 	return rdev_readat(irdev->read, b, offset, size);

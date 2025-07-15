@@ -31,6 +31,7 @@ static ssize_t spi_dma_readat_mmap(const struct region_device *rd, void *b, size
 				   size_t size)
 {
 	const struct mem_region_device *mdev;
+	printk(BIOS_DEBUG, "FLASH READ: offset=0x%zx, size=0x%zx\n", offset, size);
 
 	mdev = container_of(rd, __typeof__(*mdev), rdev);
 

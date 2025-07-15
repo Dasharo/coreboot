@@ -11,6 +11,7 @@ static bool sfg_init_done;
 static ssize_t spi_readat(const struct region_device *rd, void *b,
 				size_t offset, size_t size)
 {
+	printk(BIOS_DEBUG, "FLASH READ: offset=0x%zx, size=0x%zx\n", offset, size);
 	if (spi_flash_read(&sfg, offset, size, b))
 		return -1;
 
