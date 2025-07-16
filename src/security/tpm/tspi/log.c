@@ -9,6 +9,8 @@
 #include <cbmem.h>
 #include <vb2_sha.h>
 
+#define MAX_TPM_LOG_ENTRIES  50
+
 void *tpm_cb_log_cbmem_init(void)
 {
 	static struct tpm_cb_log_table *tclt;
