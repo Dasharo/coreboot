@@ -14,6 +14,10 @@
 #include <cbmem.h>
 #include <vb2_sha.h>
 
+#define TPM_LOG_SIZE         (64 * KiB)
+#define MAX_TPM_LOG_ENTRIES  ((TPM_LOG_SIZE - sizeof(struct tpm_1_log_table)) /  \
+			      sizeof(struct tpm_1_log_entry))
+
 void *tpm1_log_cbmem_init(void)
 {
 	static struct tpm_1_log_table *tclt;
@@ -21,19 +25,17 @@ void *tpm1_log_cbmem_init(void)
 		return tclt;
 
 	if (ENV_HAS_CBMEM) {
-		size_t tpm_log_len;
 		struct spec_id_event_data *hdr;
 
 		tclt = cbmem_find(CBMEM_ID_TCPA_TCG_LOG);
 		if (tclt)
 			return tclt;
 
-		tpm_log_len = sizeof(*tclt) + MAX_TPM_LOG_ENTRIES * sizeof(tclt->entries[0]);
-		tclt = cbmem_add(CBMEM_ID_TCPA_TCG_LOG, tpm_log_len);
+		tclt = cbmem_add(CBMEM_ID_TCPA_TCG_LOG, TPM_LOG_SIZE);
 		if (!tclt)
 			return NULL;
 
-		memset(tclt, 0, tpm_log_len);
+		memset(tclt, 0, TPM_LOG_SIZE);
 		hdr = &tclt->spec_id;
 
 		/* Fill in first "header" entry. */
