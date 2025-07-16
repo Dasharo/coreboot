@@ -22,6 +22,10 @@
 #include <cbmem.h>
 #include <vb2_sha.h>
 
+#define TPM_LOG_SIZE         (64 * KiB)
+#define MAX_TPM_LOG_ENTRIES  ((TPM_LOG_SIZE - sizeof(struct tpm_2_log_table)) /  \
+			      sizeof(struct tpm_2_log_entry))
+
 struct startup_locality_event {
 	char signature[16];       /* "StartupLocality" (NUL-terminated) */
 	uint8_t startup_locality; /* 0 or 3 */
@@ -34,20 +38,17 @@ void *tpm2_log_cbmem_init(void)
 		return tclt;
 
 	if (ENV_HAS_CBMEM) {
-		size_t tpm_log_len;
 		struct tcg_efi_spec_id_event *hdr;
 
 		tclt = cbmem_find(CBMEM_ID_TPM2_TCG_LOG);
 		if (tclt)
 			return tclt;
 
-		tpm_log_len = sizeof(struct tpm_2_log_table) +
-			MAX_TPM_LOG_ENTRIES * sizeof(struct tpm_2_log_entry);
-		tclt = cbmem_add(CBMEM_ID_TPM2_TCG_LOG, tpm_log_len);
+		tclt = cbmem_add(CBMEM_ID_TPM2_TCG_LOG, TPM_LOG_SIZE);
 		if (!tclt)
 			return NULL;
 
-		memset(tclt, 0, tpm_log_len);
+		memset(tclt, 0, TPM_LOG_SIZE);
 		hdr = &tclt->header;
 
 		hdr->event_type = htole32(EV_NO_ACTION);
