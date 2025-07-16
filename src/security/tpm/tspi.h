@@ -13,7 +13,6 @@
 
 #define TPM_PCR_MAX_LEN 64
 #define HASH_DATA_CHUNK_SIZE 1024
-#define MAX_TPM_LOG_ENTRIES 50
 /* Assumption of 2K TCPA log size reserved for CAR/SRAM */
 #define MAX_PRERAM_TPM_LOG_ENTRIES 15
 
