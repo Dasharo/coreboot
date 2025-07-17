@@ -8,7 +8,10 @@
 #include <cpu/x86/msr.h>
 #include <device/mmio.h>
 #include <halt.h>
+#include <smp/atomic.h>
 #include <stdint.h>
+
+extern atomic_t parked_ap_count;
 
 static __always_inline uint32_t xapic_read(unsigned int reg)
 {
