@@ -55,6 +55,13 @@ void stop_this_cpu(void)
 
 	printk(BIOS_DEBUG, "CPU %ld going down...\n", id);
 
+	/*
+	 * Increment the parked AP count after the printf (which has a spinlock that
+	 * may delay the parking if console debugging is enabled), but before
+	 * sending INIT to self, after which code may not be executed.
+	 */
+	atomic_inc(&parked_ap_count);
+
 	/* send an LAPIC INIT to myself */
 	lapic_send_ipi_self(LAPIC_INT_LEVELTRIG | LAPIC_INT_ASSERT | LAPIC_MT_INIT);
 	wait_for_ipi_completion_without_printk(timeout_100ms);
