@@ -56,12 +56,12 @@ choice
 	default IPXE_MASTER
 
 config IPXE_STABLE
-	bool "2023.8"
+	bool "2025.03"
 	help
 	  iPXE uses a rolling release with no stable version, for
 	  reproducibility, use the last commit of a given month as the
 	  'stable' version.
-	  This is iPXE from the end of August, 2023.
+	  This is iPXE from the end of March, 2025.
 
 config IPXE_MASTER
 	bool "master"
