@@ -36,6 +36,7 @@ struct mp_callback {
 };
 
 static char processor_name[49];
+atomic_t parked_ap_count;
 
 /*
  * A mp_flight_record details a sequence of calls for the APs to perform
@@ -503,6 +504,8 @@ static enum cb_err start_aps(struct bus *cpu_bus, int ap_count, atomic_t *num_ap
 		       atomic_read(num_aps), ap_count);
 		return CB_ERR;
 	}
+
+	atomic_set(&parked_ap_count, 0);
 
 	return CB_SUCCESS;
 }
@@ -1054,8 +1057,21 @@ enum cb_err mp_park_aps(void)
 
 	stopwatch_init(&sw);
 
+	atomic_set(&parked_ap_count, 0);
+
 	ret = mp_run_on_aps(park_this_cpu, NULL, MP_RUN_ON_ALL_CPUS,
 				1000 * USECS_PER_MSEC);
+
+	while (atomic_read(&parked_ap_count) < global_num_aps) {
+		if ((duration_msecs = stopwatch_duration_msecs(&sw)) > 500) {
+			printk(BIOS_DEBUG, "%s failed, %d / %d CPUs parked after %ld msecs\n",
+				   __func__, atomic_read(&parked_ap_count), global_num_aps, duration_msecs);
+			return CB_ERR;
+
+		}
+
+		udelay(10);
+	}
 
 	duration_msecs = stopwatch_duration_msecs(&sw);
 
