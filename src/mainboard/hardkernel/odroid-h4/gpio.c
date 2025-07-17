@@ -126,7 +126,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_A7 - GPIO */
 	PAD_NC(GPP_A7, NONE),
 	/* GPP_A8 - LAN_DISABLE# */
-	PAD_CFG_GPO(GPP_VGPIO_0, 1, DEEP),
+	PAD_CFG_GPO(GPP_A8, 1, DEEP),
 	/* GPP_A9 - ESPI_CLK */
 	PAD_CFG_NF(GPP_A9, DN_20K, DEEP, NF1),
 	/* GPP_A10 - ESPI_RESET# */
