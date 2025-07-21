@@ -415,6 +415,7 @@ config EDK2_GRAPHICAL_CAPSULE_PROGRESS
 
 config EDK2_FUM_AUTO_IPXE_BOOT
 	bool "Launch the auto-update sequence in Firmware Update Mode"
+	depends on DASHARO_FIRMWARE_UPDATE_MODE
 	default y
 	help
 	  By default FUM results in automatic booting into DTS via iPXE, the
