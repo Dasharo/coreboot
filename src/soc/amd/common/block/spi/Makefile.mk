@@ -40,4 +40,9 @@ all_x86-y += rom_armor_boot_device_rw_nommap.c
 smm-y += rom_armor_boot_device_rw_nommap.c
 endif
 
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_SPI_BACKUP_SPI_FLASH),y)
+all_x86-y += backup_boot_device_rw_nommap.c
+smm-$(CONFIG_SPI_FLASH_SMM) += backup_boot_device_rw_nommap.c
+endif # CONFIG_SOC_AMD_COMMON_BLOCK_SPI_BACKUP_SPI_FLASH
+
 endif # CONFIG_SOC_AMD_COMMON_BLOCK_SPI
