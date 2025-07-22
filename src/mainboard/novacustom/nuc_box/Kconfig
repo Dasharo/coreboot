@@ -46,6 +46,10 @@ config MAINBOARD_SMBIOS_PRODUCT_NAME
 config MAINBOARD_VERSION
 	default "nuc_box" if BOARD_NOVACUSTOM_NUC_BOX
 
+config MAINBOARD_FAMILY
+	string
+	default "Not Applicable" # Match Insyde firmware
+
 config CMOS_DEFAULT_FILE
 	default "src/mainboard/\$(MAINBOARDDIR)/cmos.default"
 
