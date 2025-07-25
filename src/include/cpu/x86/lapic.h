@@ -175,6 +175,7 @@ static __always_inline void lapic_send_ipi_others(uint32_t icrlow)
  */
 static __always_inline void stop_this_cpu(void)
 {
+	atomic_inc(&parked_ap_count);
 	/* Called by an AP when it is ready to halt and wait for a new task */
 	halt();
 }
