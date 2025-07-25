@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <drivers/intel/gma/int15.h>
@@ -51,7 +52,7 @@ static void devtree_update(void)
 	struct device *ssd_dev = DEV_PTR(pcie_rp17);
 	struct device *ps2_dev = dev_find_slot_pnp(0x2e, NCT6687D_KBC);
 
-	if (get_uint_option("wifi_slot_enable", 1) == 0) {
+	if (get_uint_option("wifi_slot_enable", get_wireless_option()) == 0) {
 		cfg->usb2_ports[8].enable = 0;
 		wifi_dev->enabled = 0;
 	}
@@ -66,7 +67,7 @@ static void devtree_update(void)
 		cfg->SataPortsEnable[1] = 0;
 	}
 
-	if (get_uint_option("ps2_enable", 1) == 0)
+	if (get_uint_option("ps2_enable", get_ps2_option()) == 0)
 		ps2_dev->enabled = 0;
 }
 
