@@ -1055,17 +1055,17 @@ enum cb_err mp_park_aps(void)
 	enum cb_err ret;
 	long duration_msecs;
 
-	stopwatch_init(&sw);
-
 	atomic_set(&parked_ap_count, 0);
 
 	ret = mp_run_on_aps(park_this_cpu, NULL, MP_RUN_ON_ALL_CPUS,
 				1000 * USECS_PER_MSEC);
 
+	stopwatch_init_msecs_expire(&sw, 500);
+
 	while (atomic_read(&parked_ap_count) < global_num_aps) {
-		if ((duration_msecs = stopwatch_duration_msecs(&sw)) > 500) {
-			printk(BIOS_DEBUG, "%s failed, %d / %d CPUs parked after %ld msecs\n",
-				   __func__, atomic_read(&parked_ap_count), global_num_aps, duration_msecs);
+		if (stopwatch_expired(&sw)) {
+			printk(BIOS_DEBUG, "%s failed, %d / %d CPUs parked after 500 msecs\n",
+				   __func__, atomic_read(&parked_ap_count), global_num_aps);
 			return CB_ERR;
 
 		}
