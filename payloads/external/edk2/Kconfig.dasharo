@@ -4,7 +4,7 @@ config EDK2_REPOSITORY
 	default "https://github.com/Dasharo/edk2"
 
 config EDK2_TAG_OR_REV
-	default "22333c9e249641293ce4415e726354f396a0d8d3"
+	default "202e1e78acf328eaa1a561454646539191c7cb2d"
 
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
