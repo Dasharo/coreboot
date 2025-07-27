@@ -3,8 +3,9 @@
 set -e
 
 edk_workspace=payloads/external/edk2/workspace
-edk_tools=${edk_workspace}/Dasharo/BaseTools/BinWrappers/PosixLike
-edk_scripts=${edk_workspace}/Dasharo/BaseTools/Scripts
+edk_basetools=${edk_workspace}/Dasharo/BaseTools
+edk_tools=${edk_basetools}/BinWrappers/PosixLike
+edk_scripts=${edk_basetools}/Scripts
 
 function die() {
     echo error: "$@" 1>&2
@@ -28,10 +29,15 @@ function print_banner() {
     echo
 }
 
+function info() {
+    echo info: "$@"
+}
+
 function print_usage() {
     echo "Usage: $(basename "$0") subcommand [subcommand-args...]"
     echo
     echo 'Subcommands:'
+    echo '  box     export standalone GenerateCapsule out of EDK2'
     echo '  help    print this message'
     echo '  keygen  use OpenSSL to auto-generate test keys suitable for signing'
     echo '          positional argument: directory-path'
@@ -288,6 +294,55 @@ EOF
     echo "Created the capsule at '$cap_file'"
 }
 
+function box_subcommand() {
+    local src=${edk_basetools}/Source/Python
+    local dst=gencap
+
+    local keys=${src}/Pkcs7Sign
+
+    if [ -e "$dst" ]; then
+        confirm "Overwrite already existing '$dst'?"
+        rm -r "${dst}"
+    fi
+
+    info "using '${src}'"
+    info "constructing a standalone version in '${dst}'"
+
+    mkdir -p "${dst}"/{Common,keys}
+
+    cp "${src}/Capsule/GenerateCapsule.py" "${dst}"
+    cp -r "${src}/Common/Edk2" "${dst}/Common"
+    cp -r "${src}/Common/Uefi" "${dst}/Common"
+
+    info "using keys from '${keys}'"
+    cp "$keys"/TestRoot.pub.pem "${dst}/keys/root.pub.pem"
+    cp "$keys"/TestSub.pub.pem "${dst}/keys/sub.pub.pem"
+    cp "$keys"/TestCert.pem "${dst}/keys/sign.crt"
+
+    cat > "${dst}/GenerateCapsule" <<'EOF'
+#!/usr/bin/env bash
+
+python=python
+if command -v python3 >/dev/null; then
+    python=python3
+elif command -v python2 >/dev/null; then
+    python=python2
+fi
+
+dir=$(dirname "${BASH_SOURCE:-$0}")
+exec "${python}" "${dir}/GenerateCapsule.py" "$@"
+EOF
+    chmod +x "${dst}/GenerateCapsule"
+
+    print_banner 'Help'
+    echo "Location of capsule signing keys:"
+    echo "  ${dst}/keys/"
+    echo
+    echo "Usage examples:"
+    echo "  ${dst}/GenerateCapsule --help"
+    echo "  ${dst}/GenerateCapsule --output decoded --decode coreboot.cap"
+}
+
 if [ $# -eq 0 ]; then
     print_usage
     exit 1
@@ -297,7 +352,7 @@ subcommand=$1
 shift
 
 case "$subcommand" in
-    help|keygen|make)
+    box|help|keygen|make)
         "$subcommand"_subcommand "$@" ;;
 
     *)
