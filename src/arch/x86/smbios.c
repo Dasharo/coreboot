@@ -265,7 +265,20 @@ int smbios_write_type7_cache_parameters(unsigned long *current,
 		const u8 level = info.level;
 		const size_t assoc = info.num_ways;
 		const size_t cache_share = info.num_cores_shared;
-		const size_t cache_size = info.size * get_number_of_caches(cache_share);
+
+		/*
+		 * In the case of unified L3 cache, the info_size is already the correct
+		 * total size. Multiplying by number of cores is unnecessary and might result
+		 * in the cache displaying as zero.
+		 */
+		size_t tmp_cache_size;
+		if (level < 3) {
+			tmp_cache_size = info.size * get_number_of_caches(cache_share);
+		}
+		else {
+			tmp_cache_size = info.size;
+		}
+		const size_t cache_size = tmp_cache_size;
 
 		if (!cache_type)
 			/* No more caches in the system */
