@@ -3,6 +3,22 @@ on:
   push:
 
 jobs:
+
+  check-upstream-status:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        # Checkout pull request HEAD commit instead of merge commit
+        # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+        ref: ${{ github.event.pull_request.head.sha }}
+        # This should be enough, no need to have ~60000 commits
+        fetch-depth: 2000
+    - uses: actions/setup-python@v3
+    - uses: pre-commit/action@v3.0.1
+      with:
+        extra_args: check-upstream-status --hook-stage pre-push
+
   lint:
     runs-on: ubuntu-22.04
     steps:
@@ -18,6 +34,7 @@ jobs:
       run: util/lint/lint lint-stable
     - name: Extended lint tests
       run: util/lint/lint lint-extended
+
   check-defconfigs:
     runs-on: ubuntu-22.04
     steps:
