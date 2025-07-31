@@ -36,6 +36,7 @@ usage() {
   echo -e "\toptiplex_9010_seabios  - build Dasharo compatible with Dell OptiPlex 7010/9010 (SeaBIOS)"
   echo -e "\tqemu                   - build Dasharo for QEMU Q35"
   echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
+  echo -e "\tqemu_svboot            - build Dasharo for QEMU Q35 with Sovereign Boot Wizard"
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
 }
 
@@ -428,6 +429,9 @@ case "$CMD" in
         ;;
     "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" | "x86_q35_uefi_all_menus" )
         build_qemu "_all_menus"
+        ;;
+    "qemu_svboot" )
+        build_qemu "_svboot"
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
         build_odroid_h4
