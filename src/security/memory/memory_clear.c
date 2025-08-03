@@ -62,7 +62,9 @@ static void clear_memory(void *unused)
 		return;
 
 	/* Process capsules before clearing memory and only if not waking up from S3. */
-	efi_parse_capsules();
+	uintptr_t capsules_base;
+	size_t capsules_size;
+	efi_parse_capsules(&capsules_base, &capsules_size);
 
 	if (!security_clear_dram_request())
 		return;
@@ -81,7 +83,9 @@ static void clear_memory(void *unused)
 	void *baseptr;
 	size_t size;
 
-	/* Only skip CBMEM, stage program, stack and heap are included there. */
+	/* Only skip capsules and CBMEM.  The latter includes stage program, stack and heap. */
+
+	memranges_insert(&mem, capsules_base, capsules_size, BM_MEM_RESERVED);
 
 	if (cbmem_get_region(&baseptr, &size))
 		die("Could not find cbmem region");
