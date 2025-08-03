@@ -690,17 +690,23 @@ static void coalesce_capsules(struct block_descr block_chain, uint8_t *target)
 	printk(BIOS_INFO, "capsules: found %d capsule(s).\n", uefi_capsule_count);
 }
 
-void efi_parse_capsules(void)
+void efi_parse_capsules(uintptr_t *base, size_t *size)
 {
 	/* EDK2 starts with 20 items and then grows the list, but it's unlikely
 	   to be necessary in practice. */
 	enum { MAX_CAPSULE_BLOCKS = MAX_CAPSULES };
+
+	/* Assume no capsules at the start. */
+	*base = 0;
+	*size = 0;
 
 	static bool once;
 	if (!once) {
 		once = true;
 	} else {
 		printk(BIOS_DEBUG, "capsules: already parsed, skipping.\n");
+		*base = coalesce_buffer.base;
+		*size = coalesce_buffer.len;
 		return;
 	}
 
@@ -775,13 +781,18 @@ void efi_parse_capsules(void)
 		printk(BIOS_ERR,
 		       "capsules: failed to find a buffer (%#llx bytes) for coalesced UEFI capsules.\n",
 		       total_data_size);
-	} else {
-		printk(BIOS_DEBUG, "capsules: coalescing capsules data @ %#010x.\n",
-		       coalesce_buffer.base);
-		coalesce_capsules(block_chain, (void *)(uintptr_t)coalesce_buffer.base);
+		goto exit;
 	}
+
+	printk(BIOS_DEBUG, "capsules: coalescing capsules data @ %#010x-%#010x.\n",
+	       coalesce_buffer.base, coalesce_buffer.base + coalesce_buffer.len);
+	coalesce_capsules(block_chain, (void *)(uintptr_t)coalesce_buffer.base);
+
 	if (uefi_capsule_count > 0)
 		set_boot_mode(LB_BOOT_MODE_FLASH_UPDATE);
+
+	*base = coalesce_buffer.base;
+	*size = coalesce_buffer.len;
 
 exit:
 	if (ENV_X86_32)
@@ -828,8 +839,11 @@ void efi_add_capsules_to_bootmem(void)
 
 static void parse_capsules(void *unused)
 {
+	uintptr_t capsules_base;
+	size_t capsules_size;
+
 	if (!acpi_is_wakeup_s3())
-		efi_parse_capsules();
+		efi_parse_capsules(&capsules_base, &capsules_size);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, parse_capsules, NULL);

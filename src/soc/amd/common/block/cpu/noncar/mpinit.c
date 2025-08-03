@@ -15,6 +15,9 @@
 
 void mp_init_cpus(struct bus *cpu_bus)
 {
+	uintptr_t capsules_base;
+	size_t capsules_size;
+
 	extern const struct mp_ops amd_mp_ops_with_smm;
 	if (mp_init_with_smm(cpu_bus, &amd_mp_ops_with_smm) != CB_SUCCESS)
 		die_with_post_code(POSTCODE_HW_INIT_FAILURE,
@@ -36,7 +39,7 @@ void mp_init_cpus(struct bus *cpu_bus)
 	}
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3)) {
-		efi_parse_capsules();
+		efi_parse_capsules(&capsules_base, &capsules_size);
 		psp_rom_armor_init(get_boot_mode() == LB_BOOT_MODE_FLASH_UPDATE);
 	}
 	/* SMMINFO only needs to be set up when booting from S5 */
