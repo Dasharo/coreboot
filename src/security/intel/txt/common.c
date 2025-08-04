@@ -140,8 +140,13 @@ bool intel_txt_memory_has_secrets(void)
 	if (!CONFIG(INTEL_TXT))
 		return false;
 
-	ret = (read8p(TXT_ESTS) & TXT_ESTS_WAKE_ERROR_STS) ||
-	      (read64p(TXT_E2STS) & TXT_E2STS_SECRET_STS);
+	if (!(cpuid_ecx(1) & CPUID_SMX)) {
+		printk(BIOS_CRIT, "TXT-STS: assuming no secrets as CPU doesn't support SMX\n");
+		ret = false;
+	} else {
+		ret = (read8p(TXT_ESTS) & TXT_ESTS_WAKE_ERROR_STS) ||
+		      (read64p(TXT_E2STS) & TXT_E2STS_SECRET_STS);
+	}
 
 	if (ret)
 		printk(BIOS_CRIT, "TXT-STS: Secrets in memory!\n");
