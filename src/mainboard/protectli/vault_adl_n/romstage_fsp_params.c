@@ -38,4 +38,11 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[0] = 0;
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[1] = 0;
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[2] = 0;
+	memupd->FspmConfig.VtdItbtEnable = 0;
+	memupd->FspmConfig.VtdIpuEnable = 0;
+	memupd->FspmConfig.SaIpuEnable = 0;
+	memupd->FspmConfig.VtdBaseAddress[3] = 0;
+	memupd->FspmConfig.TcssDma0En = 0;
+	memupd->FspmConfig.TcssItbtPcie0En = 0;
+	memupd->FspmConfig.TcssXdciEn = 0;
 }
