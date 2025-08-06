@@ -329,11 +329,11 @@ void variant_configure_gpios(void)
 	} else {
 		gpio_set(DGPU_PWR_EN, 0);
 	}
-	printk(BIOS_ERR, "DGPU_PWRGD %d\n", gpio_get(DGPU_PWRGD));
-	printk(BIOS_ERR, "DGPU_RST_N %d\n", gpio_get(DGPU_RST_N));
-	printk(BIOS_ERR, "DGPU_PWR_EN %d\n", gpio_get(DGPU_PWR_EN));
-	printk(BIOS_ERR, "DGPU_NVVDD_EN %d\n", gpio_get(DGPU_NVVDD_EN));
-	printk(BIOS_ERR, "PEG_CLKREQ %d\n", gpio_get(GPP_D18));
+	printk(BIOS_DEBUG, "DGPU_PWRGD %d\n", gpio_get(DGPU_PWRGD));
+	printk(BIOS_DEBUG, "DGPU_RST_N %d\n", gpio_get(DGPU_RST_N));
+	printk(BIOS_DEBUG, "DGPU_PWR_EN %d\n", gpio_get(DGPU_PWR_EN));
+	printk(BIOS_DEBUG, "DGPU_NVVDD_EN %d\n", gpio_get(DGPU_NVVDD_EN));
+	printk(BIOS_DEBUG, "PEG_CLKREQ %d\n", gpio_get(GPP_D18));
 
 	mdelay(50);
 }
