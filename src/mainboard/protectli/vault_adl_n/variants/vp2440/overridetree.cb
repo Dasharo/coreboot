@@ -86,6 +86,7 @@ chip soc/intel/alderlake
 			register "pch_pcie_rp[PCH_RP(11)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
 				.clk_src = 4,
+				.pcie_rp_aspm = ASPM_DISABLE,
 			}"
 			smbios_slot_desc	"SlotTypeM2Socket1_SD" "SlotLengthOther"
 						"M.2/M 2242 (KEY_E_WIFI)" "SlotDataBusWidth1X"
