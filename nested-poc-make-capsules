@@ -1,0 +1,84 @@
+#!/bin/bash
+
+set -eu
+
+edk_workspace=payloads/external/edk2/workspace
+edk_basetools=$edk_workspace/Dasharo/BaseTools
+edk_tools=$edk_basetools/BinWrappers/PosixLike
+
+if grep -Fq CONFIG_EDK2_RELEASE=y .config; then
+    build_type=RELEASE
+else
+    build_type=DEBUG
+fi
+
+function make_cap() {
+    local capsule=$1
+    local root=$2
+    local sub=$3
+    local sign=$4
+
+    # this still needs to be signed for FmpDxe to be happy
+    cat > sign.json << EOF
+    {
+      "EmbeddedDrivers": [
+        {
+          "Driver": "$edk_workspace/Build/UefiPayloadPkgX64/${build_type}_GCC/X64/FmpDxe.efi"
+        }
+      ],
+      "Payloads": [
+        {
+          "Payload": "build/coreboot.rom",
+          "Guid": "20651b14-8653-4d9b-a75a-67fa76e0ada5",
+          "FwVersion": "0x00020102",
+          "LowestSupportedVersion": "0x00020101",
+
+          "OpenSslSignerPrivateCertFile": "$edk_basetools/Source/Python/Pkcs7Sign/TestCert.pem",
+          "OpenSslOtherPublicCertFile": "$edk_basetools/Source/Python/Pkcs7Sign/TestSub.pub.pem",
+          "OpenSslTrustedPublicCertFile": "$edk_basetools/Source/Python/Pkcs7Sign/TestRoot.pub.pem"
+        }
+      ]
+    }
+EOF
+
+    "$edk_tools/GenerateCapsule" --encode \
+                                 --capflag PersistAcrossReset \
+                                 --json-file sign.json \
+                                 --output inner.cap
+
+    cat > sign.json << EOF
+    {
+      "EmbeddedDrivers": [],
+      "Payloads": [
+        {
+          "Payload": "inner.cap",
+          "Guid": "00112233-4455-6677-8899-aabbccddeeff",
+          "FwVersion": "0x00000001",
+          "LowestSupportedVersion": "0x00000000",
+
+          "OpenSslSignerPrivateCertFile": "$sign",
+          "OpenSslOtherPublicCertFile": "$sub",
+          "OpenSslTrustedPublicCertFile": "$root"
+        }
+      ]
+    }
+EOF
+
+    "$edk_tools/GenerateCapsule" --encode \
+                                 --capflag PersistAcrossReset \
+                                 --json-file sign.json \
+                                 --output "$capsule"
+
+    rm inner.cap
+    rm sign.json
+}
+
+make_cap qemu-disk/good.cap \
+         "$edk_basetools/Source/Python/Pkcs7Sign/TestRoot.pub.pem" \
+         "$edk_basetools/Source/Python/Pkcs7Sign/TestSub.pub.pem" \
+         "$edk_basetools/Source/Python/Pkcs7Sign/TestCert.pem"
+
+make_cap qemu-disk/bad.cap \
+         other-keys/root.pub.pem \
+         other-keys/sub.pub.pem \
+         other-keys/sign.p12

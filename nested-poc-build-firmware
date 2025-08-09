@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -eu
+
+git submodule update --init 3rdparty/vboot
+
+rm -rf build
+cp config.q35-nested-poc .config
+make olddefconfig
+make -j$(nproc)

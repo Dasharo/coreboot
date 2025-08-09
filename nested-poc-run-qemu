@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -eu
+
+qemu-system-x86_64 -M q35,smm=on \
+                   -enable-kvm \
+                   -m 512 \
+                   -drive if=pflash,format=raw,unit=0,file=build/coreboot.rom \
+                   -drive file=fat:rw:qemu-disk,format=raw \
+                   -serial stdio \
+                   -display none
