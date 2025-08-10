@@ -584,14 +584,15 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
-	/* cap_pcrs() must have logged that PCRs were capped, nothing else to do on TPM error. */
+	/* cap_pcrs() must have logged that PCRs were capped, nothing else to do on TPM
+	   error. */
 	if (!biosacm_sts.status.tpm_success) {
 		printk(BIOS_ERR, "CBnT: TPM failure detected\n");
 		return;
 	}
 
 	/*
-	 * Making and hashing PCR-7 data.
+	 * Making and hashing PCR-0 data.
 	 *
 	 * Pseudo-code of the data to be measured into PCR-0 for TigerLake and newer (older
 	 * hardware isn't supported yet):
