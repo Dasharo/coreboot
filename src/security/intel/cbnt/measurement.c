@@ -90,7 +90,7 @@ struct bpm_ibbs {
 	uint64_t dma_prot_limit1;
 	struct hash_struct post_ibb_hash; /* deprecated since v1.2.0 of CBnT BWG */
 	uint32_t ibb_entry_point;
-	struct bpm_hash_list digest_list; /* each entries is of variable size */
+	struct bpm_hash_list digest_list; /* each entry is of variable size */
 	/* struct bpm_ibbs_bottom bottom; */
 } __packed;
 
@@ -584,14 +584,15 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
-	/* cap_pcrs() must have logged that PCRs were capped, nothing else to do on TPM error. */
+	/* cap_pcrs() must have logged that PCRs were capped, nothing else to do on TPM
+	   error. */
 	if (!biosacm_sts.status.tpm_success) {
 		printk(BIOS_ERR, "CBnT: TPM failure detected\n");
 		return;
 	}
 
 	/*
-	 * Making and hashing PCR-7 data.
+	 * Making and hashing PCR-0 data.
 	 *
 	 * Pseudo-code of the data to be measured into PCR-0 for TigerLake and newer (older
 	 * hardware isn't supported yet):
