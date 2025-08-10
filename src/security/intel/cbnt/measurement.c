@@ -26,7 +26,10 @@
 #define BPM_IBBS_FLAG_TOP_SWAP_SUPPORTED    (1 << 4)
 #define BPM_IBBS_FLAG_FORCE_TME             (1 << 5)
 #define BPM_IBBS_FLAG_FORCE_IGN             (1 << 6)
-#define BPM_IBBS_FLAG_SRTM_AC               (1 << 7)
+#define BPM_IBBS_FLAG_SRTM_AC               (1 << 7) /* attestation control */
+
+/* Mask applied to ACM_POLICY_STATUS when BPM_IBBS_FLAG_SRTM_AC is set. */
+#define SRTM_AC_MASK  0x20FFF
 
 /* Bits of `struct km_hash::usage` indicating to which public key the hash corresponds. */
 #define KM_HASH_USAGE_BPM       (1 << 0)
@@ -174,6 +177,27 @@ static const void *find_in_fit(uint8_t type, size_t *size)
 	}
 
 	return addr;
+}
+
+static enum cb_err get_ibbs_flags(bool *auth_measure, uint64_t *biosacm_sts_mask)
+{
+	size_t bpm_len;
+	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
+	if (bpm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find BPM\n");
+		return CB_ERR;
+	}
+
+	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
+	*auth_measure = (ibbs->flags & BPM_IBBS_FLAG_AUTH_MEASURE) != 0;
+	*biosacm_sts_mask =
+		(ibbs->flags & BPM_IBBS_FLAG_SRTM_AC) != 0 ? SRTM_AC_MASK : ~(uint64_t)0;
+
+	/* Auth data is measured only for TPM2. */
+	if (*auth_measure && tlcl_get_family() != TPM_2)
+		*auth_measure = false;
+
+	return CB_SUCCESS;
 }
 
 static enum cb_err fill_pcr0_acm_fields(struct obuf *ob)
@@ -421,7 +445,7 @@ static enum cb_err fill_pcr7_km_fields(struct obuf *ob)
 	return CB_SUCCESS;
 }
 
-static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob, bool *auth_measure)
+static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
 {
 	size_t bpm_len;
 	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
@@ -440,14 +464,8 @@ static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob, bool *auth_measure)
 		return CB_ERR;
 	}
 
-	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
-	*auth_measure = (ibbs->flags & BPM_IBBS_FLAG_AUTH_MEASURE) != 0;
-
-	/* Auth data is measured only for TPM2. */
-	if (*auth_measure && tlcl_get_family() != TPM_2)
-		*auth_measure = false;
-
 	unsigned int i;
+	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
 	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
 	for (i = 0; i < ibbs->digest_list.count; ++i) {
 		if (ibb_hash->alg == tpm2_alg_from_vb2_hash(tpm_log_alg()))
@@ -607,6 +625,13 @@ void intel_cbnt_inject_ibg_measurements(void)
 	 *     } PCR0_DATA;
 	 */
 
+	bool auth_measure;
+	uint64_t biosacm_sts_mask;
+	if (get_ibbs_flags(&auth_measure, &biosacm_sts_mask) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to obtain IBBS flags from BPM\n");
+		return;
+	}
+
 	/*
 	 * Allow for 4 8192-bit digests in PCR-0 measurements which is an unlikely situation,
 	 * so this buffer should be enough to not run out of space (data measured into PCR-7 is
@@ -617,7 +642,7 @@ void intel_cbnt_inject_ibg_measurements(void)
 	obuf_init(&data_ob, data, sizeof(data));
 
 	/* ACM_POLICY_STATUS (won't run out of space on this one) */
-	(void)obuf_write_le64(&data_ob, biosacm_sts.raw);
+	(void)obuf_write_le64(&data_ob, biosacm_sts.raw & biosacm_sts_mask);
 
 	if (fill_pcr0_acm_fields(&data_ob) != CB_SUCCESS) {
 		printk(BIOS_ERR, "CBnT: failed to fill ACM fields of PCR-0 measurement data\n");
@@ -629,8 +654,7 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
-	bool auth_measure;
-	if (fill_pcr0_bpm_fields(&data_ob, &auth_measure) != CB_SUCCESS) {
+	if (fill_pcr0_bpm_fields(&data_ob) != CB_SUCCESS) {
 		printk(BIOS_ERR, "CBnT: failed to fill BPM fields of PCR-0 measurement data\n");
 		return;
 	}
