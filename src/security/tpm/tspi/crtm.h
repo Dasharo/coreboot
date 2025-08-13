@@ -10,6 +10,25 @@
 #include <vb2_sha.h>
 
 /**
+ * Checks whether TPM log was already initialized.
+ */
+bool tspi_tpm_log_available(void);
+
+/**
+ * Initializes the Core Root of Trust for Measurements in coreboot.  The initial code in a
+ * chain of trust must measure itself.
+ *
+ * Summary:
+ *  - measures the FMAP FMAP partition
+ *  - measures bootblock in CBFS or BOOTBLOCK FMAP partition
+ *  - if vboot starts in romstage, it measures the romstage in CBFS
+ *  - measures the verstage if it is compiled as a separate stage
+ *
+ * On success returns TPM_SUCCESS, otherwise returns a TPM error.
+ */
+tpm_result_t tspi_init_crtm(void);
+
+/**
  * Measure digests cached in TPM log entries into PCRs
  */
 tpm_result_t tspi_measure_cache_to_pcr(void);
