@@ -227,6 +227,16 @@ tpm_result_t tpm_extend_pcr(int pcr, enum vb2_hash_algorithm digest_algo,
 	if (!digest)
 		return TPM_IOERROR;
 
+	if (!tspi_tpm_log_available()) {
+		rc = tspi_init_crtm();
+		if (rc) {
+			printk(BIOS_WARNING, "Initializing CRTM failed!\n");
+			return rc;
+		}
+
+		printk(BIOS_DEBUG, "CRTM initialized.\n");
+	}
+
 	if (tspi_tpm_is_setup()) {
 		rc = tlcl_lib_init();
 		if (rc != TPM_SUCCESS) {
