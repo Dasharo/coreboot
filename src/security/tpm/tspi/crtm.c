@@ -11,35 +11,19 @@
 #include <security/intel/cbnt/cbnt.h>
 
 static int tpm_log_initialized;
-static inline int tpm_log_available(void)
+bool tspi_tpm_log_available(void)
 {
 	if (ENV_BOOTBLOCK)
-		return tpm_log_initialized;
+		return tpm_log_initialized != 0;
 
-	return 1;
+	return true;
 }
 
-/*
- * Initializes the Core Root of Trust for Measurements
- * in coreboot. The initial code in a chain of trust must measure
- * itself.
- *
- * Summary:
- *  + Measures the FMAP FMAP partition.
- *  + Measures bootblock in CBFS or BOOTBLOCK FMAP partition.
- *  + If vboot starts in romstage, it measures the romstage
- *    in CBFS.
- *  + Measure the verstage if it is compiled as separate
- *    stage.
- *
- * Takes the current vboot context as parameter for s3 checks.
- * returns on success TPM_SUCCESS, else a TPM error.
- */
-static tpm_result_t tspi_init_crtm(void)
+tpm_result_t tspi_init_crtm(void)
 {
 	tpm_result_t rc = TPM_SUCCESS;
 	/* Initialize TPM PRERAM log. */
-	if (!tpm_log_available()) {
+	if (!tspi_tpm_log_available()) {
 		tpm_preram_log_clear();
 		tpm_log_initialized = 1;
 	} else {
@@ -124,18 +108,7 @@ static bool is_runtime_data(const char *name)
 tpm_result_t tspi_cbfs_measurement(const char *name, uint32_t type, const struct vb2_hash *hash)
 {
 	uint32_t pcr_index;
-	tpm_result_t rc = TPM_SUCCESS;
 	char tpm_log_metadata[TPM_CB_LOG_PCR_HASH_NAME];
-
-	if (!tpm_log_available()) {
-		rc = tspi_init_crtm();
-		if (rc) {
-			printk(BIOS_WARNING,
-			       "Initializing CRTM failed!\n");
-			return rc;
-		}
-		printk(BIOS_DEBUG, "CRTM initialized.\n");
-	}
 
 	switch (type) {
 	case CBFS_TYPE_MRC_CACHE:
@@ -194,7 +167,7 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 	enum vb2_hash_algorithm digest_algo;
 
 	/* This means the table is empty. */
-	if (!tpm_log_available())
+	if (!tspi_tpm_log_available())
 		return TPM_SUCCESS;
 
 	if (tpm_log_init() == NULL) {
