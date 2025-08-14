@@ -44,6 +44,5 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.VtdBaseAddress[3] = 0;
 	memupd->FspmConfig.TcssDma0En = 0;
 	memupd->FspmConfig.TcssItbtPcie0En = 0;
-	memupd->FspmConfig.TcssXhciEn = 0;
 	memupd->FspmConfig.TcssXdciEn = 0;
 }
