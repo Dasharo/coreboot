@@ -76,6 +76,15 @@ static void superio_init(void)
 	// User-defined resume state after power loss
 	pnp_write_config(dev, 0xE4, 0x60); // Default is 0x00
 
+	// Set the user-defined resume state based on the Dasharo option
+	u8 cre6 = pnp_read_config(dev, 0xE6);
+	if (dasharo_get_power_on_after_fail()) {
+		cre6 &= ~(1 << 4);
+	} else {
+		cre6 |= (1 << 4);
+	}
+	pnp_write_config(dev, 0xE6, cre6);
+
 	printk(BIOS_DEBUG, "configure hardware monitor (logical device B)\n");
 	dev = PNP_DEV(0x2E, 0x0B);
 	pnp_set_logical_device(dev);
