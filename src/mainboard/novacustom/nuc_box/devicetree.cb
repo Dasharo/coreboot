@@ -54,7 +54,6 @@ chip soc/intel/meteorlake
 		end
 		device ref smbus on end
 		device ref fast_spi on end
-		device ref ipu on end
 	end
 	chip drivers/crb
 		device mmio 0xfed40000 on end
