@@ -534,6 +534,10 @@ static bool make_pcr7_hash(struct obuf *ob, struct vb2_hash *hash)
 
 int intel_cbnt_get_locality(void)
 {
+	/* Startup locality is always 0 for TPM 1.2. */
+	if (tlcl_get_family() == TPM_1)
+		return 0;
+
 	union cbnt_biosacm_policy biosacm_sts = {
 		.raw = read64p(CBNT_BIOSACM_POLICY_STS),
 	};
