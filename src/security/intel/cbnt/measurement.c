@@ -200,6 +200,25 @@ static enum cb_err get_ibbs_flags(bool *auth_measure, uint64_t *biosacm_sts_mask
 	return CB_SUCCESS;
 }
 
+static enum cb_err copy_acm_signature(struct obuf *ob)
+{
+	/* Not running any checks on the ACM like TXT code does, it must be correct if we got
+	   here. */
+	size_t acm_len;
+	const struct acm_header_v3 *acm = find_in_fit(FIT_ENTRY_TYPE_SACM, &acm_len);
+	if (acm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find SACM\n");
+		return CB_ERR;
+	}
+
+	/* Versions v3.0 through v5.4 support CBnT and have this field in the same place. */
+	int err = obuf_write(ob, acm->rsa3072_sig, sizeof(acm->rsa3072_sig));
+	if (err)
+		printk(BIOS_ERR, "CBnT: failed to write ACM signature\n");
+
+	return err ? CB_ERR : CB_SUCCESS;
+}
+
 static enum cb_err fill_pcr0_acm_fields(struct obuf *ob)
 {
 	/* Not running any checks on the ACM like TXT code does, it must be correct if we got
@@ -217,12 +236,7 @@ static enum cb_err fill_pcr0_acm_fields(struct obuf *ob)
 	 */
 	(void)obuf_write_le16(ob, acm->txt_svn);
 
-	/* Versions v3.0 through v5.4 support CBnT and have this field in the same place. */
-	int err = obuf_write(ob, acm->rsa3072_sig, sizeof(acm->rsa3072_sig));
-	if (err)
-		printk(BIOS_ERR, "CBnT: failed to write ACM signature\n");
-
-	return err ? CB_ERR : CB_SUCCESS;
+	return copy_acm_signature(ob);
 }
 
 static enum cb_err skip_signature_key(struct ibuf *ib, uint16_t *key_alg)
@@ -348,7 +362,7 @@ static enum cb_err copy_signature(struct ibuf ib, struct obuf *ob)
 	return CB_SUCCESS;
 }
 
-static enum cb_err fill_pcr0_km_fields(struct obuf *ob)
+static enum cb_err copy_km_signature(struct obuf *ob)
 {
 	size_t km_len;
 	const struct km_header *km = find_in_fit(FIT_ENTRY_TYPE_KM, &km_len);
@@ -445,7 +459,39 @@ static enum cb_err fill_pcr7_km_fields(struct obuf *ob)
 	return CB_SUCCESS;
 }
 
-static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
+static enum cb_err copy_ibb_hash(struct obuf *ob, uint16_t tpm2_alg)
+{
+	size_t bpm_len;
+	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
+	if (bpm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find BPM\n");
+		return CB_ERR;
+	}
+
+	unsigned int i;
+	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
+	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
+	for (i = 0; i < ibbs->digest_list.count; ++i) {
+		if (ibb_hash->alg == tpm2_alg)
+			break;
+		ibb_hash = (const void *)&ibb_hash->data[ibb_hash->size];
+	}
+
+	if (i == ibbs->digest_list.count) {
+		printk(BIOS_ERR, "CBnT: failed to find matching IBB digest\n");
+		return CB_ERR;
+	}
+
+	/* IBB.Digest[IBB digest size] */
+	if (obuf_write(ob, ibb_hash->data, ibb_hash->size)) {
+		printk(BIOS_ERR, "CBnT: failed to write IBB digest\n");
+		return CB_ERR;
+	}
+
+	return CB_SUCCESS;
+}
+
+static enum cb_err copy_bpm_signature(struct obuf *ob)
 {
 	size_t bpm_len;
 	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
@@ -464,27 +510,7 @@ static enum cb_err fill_pcr0_bpm_fields(struct obuf *ob)
 		return CB_ERR;
 	}
 
-	unsigned int i;
-	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
-	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
-	for (i = 0; i < ibbs->digest_list.count; ++i) {
-		if (ibb_hash->alg == tpm2_alg_from_vb2_hash(tpm_log_alg()))
-			break;
-		ibb_hash = (const void *)&ibb_hash->data[ibb_hash->size];
-	}
-
-	if (i == ibbs->digest_list.count) {
-		printk(BIOS_ERR, "CBnT: failed to find matching IBB signature\n");
-		return CB_ERR;
-	}
-
-	/* IBB.Digest[IBB digest size] */
-	if (obuf_write(ob, ibb_hash->data, ibb_hash->size)) {
-		printk(BIOS_ERR, "CBnT: failed to write IBB signature\n");
-		return CB_ERR;
-	}
-
-	return CB_SUCCESS;
+	return copy_ibb_hash(ob, tpm2_alg_from_vb2_hash(tpm_log_alg()));
 }
 
 /*
@@ -641,7 +667,7 @@ void intel_cbnt_inject_ibg_measurements(void)
 	 * so this buffer should be enough to not run out of space (data measured into PCR-7 is
 	 * smaller).
 	 */
-	char data[sizeof(uint64_t) + sizeof(uint16_t) + 4 * KiB];
+	uint8_t data[sizeof(uint64_t) + sizeof(uint16_t) + 4 * KiB];
 	struct obuf data_ob;
 	obuf_init(&data_ob, data, sizeof(data));
 
@@ -653,35 +679,44 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
-	if (fill_pcr0_km_fields(&data_ob) != CB_SUCCESS) {
-		printk(BIOS_ERR, "CBnT: failed to fill KM fields of PCR-0 measurement data\n");
+	if (copy_km_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy KM signature for PCR-0 measurement\n");
 		return;
 	}
 
-	if (fill_pcr0_bpm_fields(&data_ob) != CB_SUCCESS) {
-		printk(BIOS_ERR, "CBnT: failed to fill BPM fields of PCR-0 measurement data\n");
+	if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
 		return;
 	}
 
-	struct vb2_hash pcr0_hash;
+	struct vb2_hash hash;
 	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, obuf_nr_written(&data_ob),
-			       tpm_log_alg(), &pcr0_hash)) {
+			       tpm_log_alg(), &hash)) {
 		printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
 		return;
 	}
 
+	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
+	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, hash.algo, hash.raw,
+				vb2_digest_size(hash.algo));
+
 	/* Making and hashing PCR-7 data. */
-	struct vb2_hash pcr7_hash;
 	if (auth_measure) {
 		/* Reuse the first 2 fields of PCR-0 data which are identical in both cases. */
 		obuf_init(&data_ob, data, sizeof(data));
 		(void)obuf_oob_fill(&data_ob, sizeof(uint64_t) + sizeof(uint16_t));
 
-		if (!make_pcr7_hash(&data_ob, &pcr7_hash)) {
+		if (!make_pcr7_hash(&data_ob, &hash)) {
 			printk(BIOS_ERR,
 			       "CBnT: failed to build and hash PCR-7 measurement data\n");
 			return;
 		}
+
+		/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type and
+		   event name should be a Unicode string. */
+		tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, hash.algo, hash.raw,
+					vb2_digest_size(hash.algo));
+		printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
 	}
 
 	/*
@@ -689,15 +724,4 @@ void intel_cbnt_inject_ibg_measurements(void)
 	 * the boot anyway as Measured Boot failures generally aren't fatal and incorrect hash
 	 * will be caught later during the boot process.  So not bothering.
 	 */
-
-	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
-	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_hash.algo, pcr0_hash.raw,
-				vb2_digest_size(pcr0_hash.algo));
-	if (auth_measure) {
-		/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type and
-		   event name should be a Unicode string. */
-		tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_hash.algo,
-					pcr7_hash.raw, vb2_digest_size(pcr7_hash.algo));
-		printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
-	}
 }
