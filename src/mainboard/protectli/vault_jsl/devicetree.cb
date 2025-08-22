@@ -90,7 +90,7 @@ chip soc/intel/jasperlake
 		device pci 04.0 off end # SA Thermal device
 		device pci 05.0 off end # IPU
 		device pci 08.0 off end # GNA
-		device pci 09.0 off end # Intel Trace Hub
+		device pci 09.0 on end # Intel Trace Hub
 		device pci 12.0 off end # Thermal Subsystem
 		device pci 12.5 off end # UFS SCS
 		device pci 12.6 off end # GSPI 2
@@ -146,7 +146,7 @@ chip soc/intel/jasperlake
 		device pci 1f.3 on  end # Intel HDA/cAVS
 		device pci 1f.4 on  end # SMBus
 		device pci 1f.5 on  end # PCH SPI
-		device pci 1f.7 off end # Intel Trace Hub
+		device pci 1f.7 on end # Intel Trace Hub
 
 		chip drivers/crb
 			device mmio 0xfed40000 on end

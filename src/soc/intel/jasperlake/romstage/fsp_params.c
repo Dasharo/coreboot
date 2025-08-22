@@ -99,6 +99,22 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 	/* Set debug probe type */
 	m_cfg->PlatformDebugConsent = CONFIG_SOC_INTEL_COMMON_DEBUG_CONSENT;
 
+	if (m_cfg->PlatformDebugConsent) {
+		m_cfg->JtagC10PowerGateDisable = 0;
+		m_cfg->DciEn = 1;
+		m_cfg->DciDbcMode = 4; // no change
+		m_cfg->DciModphyPg = 0;
+		m_cfg->DciUsb3TypecUfpDbg = 2; //no change1
+		m_cfg->PchTraceHubMode = 2; // host debugger
+		m_cfg->PchTraceHubMemReg0Size = 2; // 8MB
+		m_cfg->PchTraceHubMemReg1Size = 2; // 8MB
+		m_cfg->CpuTraceHubMode = 2; // host debugger
+		m_cfg->CpuTraceHubMemReg0Size = 2; // 8MB
+		m_cfg->CpuTraceHubMemReg1Size = 2; // 8MB
+		m_cfg->DebugInterfaceEnable = 1;
+		m_cfg->DebugInterfaceLockEnable = 1;
+	}
+
 	/* VT-d config */
 	m_cfg->VtdDisable = 0;
 	m_cfg->VtdIopEnable = 0x1;

@@ -254,6 +254,10 @@ void platform_fsp_silicon_init_params_cb(FSPS_UPD *supd)
 	 */
 	params->CdClock = config->cd_clock ? config->cd_clock - 1 : 0xff;
 
+	if (CONFIG_SOC_INTEL_COMMON_DEBUG_CONSENT != 0) {
+		params->PmcDbgMsgEn = 1;
+	}
+
 	/* Override/Fill FSP Silicon Param for mainboard */
 	mainboard_silicon_init_params(params);
 }
