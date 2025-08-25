@@ -223,11 +223,11 @@ function make_subcommand() {
     check_cert sub "$sub_cert"
     check_cert sign "$sign_cert"
 
-    local cap_file=${CONFIG_MAINBOARD_DIR/\//-}
+    local cap_file=${CONFIG_MAINBOARD_DIR//[\/-]/_}
     if [[ ${CONFIG_MAINBOARD_PART_NUMBER} =~ DDR4 ]]; then
-        cap_file+=-ddr4
+        cap_file+=_ddr4
     fi
-    cap_file+=-${CONFIG_LOCALVERSION}
+    cap_file+=_${CONFIG_LOCALVERSION}
     cap_file+=.cap
 
     if [ -e "$cap_file" ]; then
