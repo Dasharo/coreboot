@@ -306,6 +306,14 @@ static void graphics_dev_read_resources(struct device *dev)
 		       "Memory Compression HOB found: base=0x%08llx length=0x%08llx\n",
 		       res->addr, res->length);
 		reserved_ram_range(dev, 0, res->addr, res->length);
+
+	}
+
+	if (ENV_X86_32 && !CONFIG(BOARD_NOVACUSTOM_NUC_BOX)) {
+		/* Place framebuffer below 4G to ensure coreboot can access it */
+		struct resource *res_bar2 = find_resource(dev, PCI_BASE_ADDRESS_2);
+		res_bar2->limit = 0xffffffff;
+		res_bar2->flags &= ~IORESOURCE_ABOVE_4G;
 	}
 }
 
