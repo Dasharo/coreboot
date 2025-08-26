@@ -1651,9 +1651,28 @@ static void cse_final(struct device *dev)
 		cse_final_end_of_firmware();
 }
 
+#if ENV_RAMSTAGE && !CONFIG(BOARD_NOVACUSTOM_NUC_BOX)
+static void heci_read_resources(struct device *dev)
+{
+	/* Read standard PCI resources. */
+	pci_dev_read_resources(dev);
+
+	if (ENV_X86_32) {
+		/* Put resource below 4G to ensure coreboot can access it */
+		struct resource *res = find_resource(dev, PCI_BASE_ADDRESS_0);
+		res->limit = 0xffffffff;
+		res->flags &= ~IORESOURCE_ABOVE_4G;
+	}
+}
+#endif
+
 struct device_operations cse_ops = {
 	.set_resources		= pci_dev_set_resources,
+#if !CONFIG(BOARD_NOVACUSTOM_NUC_BOX)
+	.read_resources		= heci_read_resources,
+#else
 	.read_resources		= pci_dev_read_resources,
+#endif
 	.enable_resources	= pci_dev_enable_resources,
 	.init			= pci_dev_init,
 	.ops_pci		= &pci_dev_ops_pci,
