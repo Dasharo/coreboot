@@ -46,6 +46,9 @@ function print_usage() {
     echo '          -o subroot-certificate-file'
     echo '          -s signing-certificate-file'
     echo '          -b (the flag adds battery check DXE into the capsule)'
+    echo '  cab     build capsule cabinet file, options:'
+    echo '          -k path to private key file used for signing'
+    echo '          -c path to certificate file used for signing'
 }
 
 function help_subcommand() {
@@ -70,7 +73,7 @@ function keygen_subcommand() {
 
     # this is needed to make `openssl req` work non-interactively
     cat > "openssl.cnf" << 'EOF'
-.include /etc/ssl/openssl.cnf
+.include /nix/store/0ww3ms7cac306639f5sqqcjanbzkhrqa-openssl-3.4.1/etc/ssl/openssl.cnf
 
 [ CA_default ]
 dir           = ./test-ca
@@ -343,6 +346,154 @@ EOF
     echo "  ${dst}/GenerateCapsule --output decoded --decode coreboot.cap"
 }
 
+function cab_subcommand() {
+    if [ ! -f .config ]; then
+        die "no '.config' file in current directory"
+    fi
+
+    if [ ! build/coreboot.rom -nt .config ]; then
+        die "'build/coreboot.rom' is not newer than .config'; need a re-build?"
+    fi
+
+    # import coreboot's config file replacing $(...) with ${...}
+    while read -r line; do
+        if ! eval "$line"; then
+            die "failed to source '.config'"
+        fi
+    done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' .config)"
+
+    local key_file cert_file
+    while getopts "k:c:" OPTION; do
+        case $OPTION in
+            k) key_file="$OPTARG" ;;
+            c) cert_file="$OPTARG" ;;
+            *) exit 1;;
+        esac
+    done
+
+    [ -n "$key_file" ] && [ -z "$cert_file" ] && die "-k option requires -c"
+    [ -n "$cert_file" ] && [ -z "$key_file" ] && die "-c option requires -k"
+
+    local key_file_abs cert_file_abs
+    [ -n "$key_file" ] && key_file_abs="$(readlink -f "$key_file")"
+    [ -n "$cert_file" ] && cert_file_abs="$(readlink -f "$cert_file")"
+
+    local prefix=${CONFIG_MAINBOARD_DIR/\//-}
+    if [[ ${CONFIG_MAINBOARD_PART_NUMBER} =~ DDR4 ]]; then
+        prefix+=-ddr4
+    fi
+    prefix+=-${CONFIG_LOCALVERSION}
+
+    local cap_file="${prefix}.cap"
+    local cab_file="${prefix}.cab"
+
+    if [ ! -e "$cap_file" ]; then
+        die "no '$cap_file'; the firmware wasn't built?"
+    fi
+
+    if [ ! "$cap_file" -nt .config ]; then
+        die "'$cap_file' is not newer than .config; need a re-build?"
+    fi
+
+    if [ -e "$cab_file" ]; then
+        confirm "Overwrite already existing '$cab_file'?"
+    fi
+
+    # import coreboot's config file replacing $(...) with ${...}
+    while read -r line; do
+        if ! eval "$line"; then
+            die "failed to source '.config'"
+        fi
+    done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' .config)"
+
+    if [ "$CONFIG_DRIVERS_EFI_UPDATE_CAPSULES" != y ]; then
+        die "Current board configuration lacks support of update capsules"
+    fi
+
+    local do_sign jcat_cmd
+    do_sign=0
+    if [ -n "$key_file" ]; then
+        do_sign=1
+
+        jcat_cmd="$(which jcat-tool 2>/dev/null || true)"
+        if [ -z "$jcat_cmd" ]; then
+            die "cabinet signing requires 'jcat-tool' from 'libjcat'"
+        fi
+    fi
+
+    date=$(stat -c %w "$cap_file" | cut -d ' ' -f 1)
+    vendor=$(cat .config | grep -e "CONFIG_VENDOR_.*=y" | cut -d '=' -f 1 | cut -d '_' -f 3- | awk '{ print tolower($0) }')
+    version=$(echo $CONFIG_LOCALVERSION | tr -d 'v' | cut -d '-' -f 1)
+
+    archive_dir="$(mktemp --tmpdir -d XXXXXXXX)"
+    trap "rm -rf $archive_dir" EXIT
+
+    sha1sum="$(sha1sum "$cap_file" | awk '{ print $1 }')"
+    sha256sum="$(sha256sum "$cap_file" | awk '{ print $1 }')"
+
+    cat > "${archive_dir}/firmware.metainfo.xml" << EOF
+<?xml version='1.0' encoding='utf-8'?>
+<component type="firmware">
+  <id>com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware</id>
+  <name>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}</name>
+  <summary>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</summary>
+  <description>
+    <p>Dasharo ${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</p>
+  </description>
+  <provides>
+    <firmware type="flashed">${CONFIG_DRIVERS_EFI_MAIN_FW_GUID}</firmware>
+  </provides>
+  <url type="homepage">https://docs.dasharo.com/</url>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <categories>
+    <category>X-System</category>
+  </categories>
+  <custom>
+    <value key="LVFS::VersionFormat">quad</value>
+    <value key="LVFS::VersionFormat">dell-bios-msb</value>
+    <value key="LVFS::UpdateProtocol">org.uefi.capsule</value>
+  </custom>
+  <releases>
+    <release version="${version}" date="${date}" tag="${CONFIG_LOCALVERSION}" urgency="high">
+      <checksum type="sha1" filename="firmware.bin" target="content">$sha1sum</checksum>
+      <checksum type="sha256" filename="firmware.bin" target="content">$sha256sum</checksum>
+      <artifacts>
+        <artifact type="source">
+          <filename>firmware.bin</filename>
+          <checksum type="sha1">$sha1sum</checksum>
+          <checksum type="sha256">$sha256sum</checksum>
+        </artifact>
+      </artifacts>
+    </release>
+  </releases>
+</component>
+
+EOF
+
+    cp "$cap_file" "$archive_dir/firmware.bin"
+
+    files_to_sign=(
+        firmware.bin
+        firmware.metainfo.xml
+    )
+    if [[ "$do_sign" == 1 ]]; then
+        pushd "$archive_dir" &>/dev/null
+        for file in "${files_to_sign[@]}"; do
+            "$jcat_cmd" self-sign "$archive_dir/firmware.jcat" "$file" --kind sha1
+            "$jcat_cmd" self-sign "$archive_dir/firmware.jcat" "$file" --kind sha256
+            "$jcat_cmd" sign "$archive_dir/firmware.jcat" "$file" "$cert_file_abs" "$key_file_abs"
+        done
+        popd &>/dev/null
+    fi
+
+    pushd $archive_dir &> /dev/null
+    fwupdtool build-cabinet "$cab_file" firmware.bin firmware.metainfo.xml
+    popd &> /dev/null
+
+    cp "$archive_dir/$cab_file" .
+}
+
 if [ $# -eq 0 ]; then
     print_usage
     exit 1
@@ -352,7 +503,7 @@ subcommand=$1
 shift
 
 case "$subcommand" in
-    box|help|keygen|make)
+    box|help|keygen|make|cab)
         "$subcommand"_subcommand "$@" ;;
 
     *)
