@@ -162,10 +162,6 @@ static const struct pad_config gpio_table[] = {
 	PAD_NC(GPP_A22, NATIVE),
 	/* GPP_A23 - GPIO */
 	PAD_NC(GPP_A23, NATIVE),
-	/* GPP_ESPI_CLK_LPBK - n/a */
-	PAD_CFG_NF(GPP_ESPI_CLK_LPBK, NONE, DEEP, NF1),
-
-	/* ------- GPIO Group GPP_E ------- */
 
 	/* GPP_E00 - GPIO */
 	PAD_CFG_GPO(GPP_E00, 0, DEEP),
