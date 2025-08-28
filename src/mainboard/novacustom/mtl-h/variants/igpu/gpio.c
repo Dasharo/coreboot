@@ -531,7 +531,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B05, 0, DEEP),
 
 	/* GPP_B06 - GPIO (ROM_I2C_EN) */
-	PAD_CFG_GPO(GPP_B06, 0, DEEP),
+	PAD_CFG_GPO(GPP_B06, 1, DEEP),
 
 	/* GPP_B07 - GPIO */
 	PAD_CFG_GPO(GPP_B07, 0, DEEP),
