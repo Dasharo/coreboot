@@ -201,7 +201,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_B03, 0, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_B04, 0, DEEP),	/* GPIO */
 	PAD_CFG_GPO(GPP_B05, 0, DEEP),	/* GPIO - CPU_KBCRST# */
-	PAD_CFG_GPO(GPP_B06, 0, DEEP),	/* GPIO - ROM_I2C_EN */
+	PAD_CFG_GPO(GPP_B06, 1, DEEP),	/* GPIO - ROM_I2C_EN */
 	PAD_CFG_GPO(GPP_B07, 0, DEEP),	/* GPIO - PANTONE_WP# */
 	PAD_CFG_GPO(GPP_B08, 0, DEEP),	/* GPIO - PS8461_SW (DDS for eDP) */
 	PAD_CFG_GPO(GPP_B09, 0, DEEP),	/* GPIO - DGPU_RST#_PCH */
