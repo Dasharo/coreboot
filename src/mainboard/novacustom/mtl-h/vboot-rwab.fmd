@@ -8,11 +8,7 @@ FLASH 32M {
 		RW_SECTION_A 7M {
 			VBLOCK_A 8K
 			FW_MAIN_A(CBFS)
-<<<<<<< HEAD
-			RW_FWID_A 256
-=======
 			RW_FWID_A 0x100
->>>>>>> 9132320ed878 (Add support for BtG and TXT on Meteor Lake)
 		}
 
 		# This section starts at the 16M boundary in SPI flash.
@@ -37,25 +33,16 @@ FLASH 32M {
 		RW_SECTION_B 7M {
 			VBLOCK_B 8K
 			FW_MAIN_B(CBFS)
-<<<<<<< HEAD
-			RW_FWID_B 256
-=======
 			RW_FWID_B 0x100
->>>>>>> 9132320ed878 (Add support for BtG and TXT on Meteor Lake)
 		}
 
 		WP_RO 7M {
 			RO_VPD(PRESERVE) 16K
 			RO_SECTION {
 				FMAP 2K
-<<<<<<< HEAD
-				RO_FRID 256
-				GBB@4K 12K
-=======
 				RO_FRID 0x100
 				RO_FRID_PAD 0xf00
 				GBB 12K
->>>>>>> 9132320ed878 (Add support for BtG and TXT on Meteor Lake)
 				COREBOOT(CBFS)
 			}
 		}
