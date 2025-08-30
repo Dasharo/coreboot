@@ -456,6 +456,9 @@ case "$CMD" in
     "qemu_full" | "QEMU_full" | "q35_full" | "Q35_full" | "x86_q35_uefi_all_menus" )
         build_qemu "_all_menus"
         ;;
+    "qemu_svboot" )
+        build_qemu "_svboot"
+        ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
         build_odroid_h4 "odroid_h4"
         ;;
