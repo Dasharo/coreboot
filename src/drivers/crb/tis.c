@@ -108,6 +108,12 @@ static void crb_tpm_fill_ssdt(const struct device *dev)
 	acpigen_pop_len(); /* Device */
 }
 
+static void crb_tpm_read_resources(struct device *dev)
+{
+	/* Static 5K memory region specified in Kconfig */
+	mmio_range(dev, 0, TPM_CRB_BASE_ADDRESS, 0x5000);
+}
+
 static const char *crb_tpm_acpi_name(const struct device *dev)
 {
 	return "TPM";
@@ -197,7 +203,7 @@ static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned lon
 #endif
 
 static struct device_operations __maybe_unused crb_ops = {
-	.read_resources = noop_read_resources,
+	.read_resources = crb_tpm_read_resources,
 	.set_resources = noop_set_resources,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name = crb_tpm_acpi_name,
