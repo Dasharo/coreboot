@@ -1,8 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <bootstate.h>
 #include <console/console.h>
 #include <dasharo/options.h>
+#include <device/mmio.h>
 #include <drivers/efi/efivars.h>
+#include <fmap.h>
 #include <option.h>
 #include <soc/intel/common/reset.h>
 #include <smmstore.h>
@@ -285,7 +288,7 @@ uint8_t cse_get_me_disable_mode(void)
 enum dgpu_state dasharo_dgpu_state(void)
 {
 	uint8_t dgpu_state = NVIDIA_OPTIMUS;
-	/* 
+	/*
 	 * 0 - IGPU_ONLY
 	 * 1 - NVIDIA_OPTIMUS (iGPU+dGPU)
 	 * 2 - DGPU_ONLY
@@ -540,3 +543,68 @@ bool get_ibecc_option(bool ibecc_default)
 
 	return ibecc_en;
 }
+
+/* Flash Master 1 : HOST/BIOS */
+#define FLMSTR1			0x80
+
+/* Flash signature Offset */
+#define FLASH_SIGN_OFFSET	0x10
+#define FLMSTR_WR_SHIFT_V2	20
+#define FLASH_VAL_SIGN		0xFF0A55A
+
+#define SI_DESC_REGION		"SI_DESC"
+/* From MTL it is larger, but we still just need the first 4K */
+#define SI_DESC_SIZE		0x1000
+
+/* It checks whether host (Flash Master 1) has write access to the Descriptor Region or not */
+static bool is_descriptor_writeable(uint8_t *desc)
+{
+	/* Check flash has valid signature */
+	if (read32((void *)(desc + FLASH_SIGN_OFFSET)) != FLASH_VAL_SIGN) {
+		printk(BIOS_ERR, "Flash Descriptor is not valid\n");
+		return 0;
+	}
+	/* Check host has write access to the Descriptor Region */
+	if (!((read32((void *)(desc + FLMSTR1)) >> FLMSTR_WR_SHIFT_V2) & BIT(0)))
+		return 0;
+
+	return 1;
+}
+
+/*
+ * This function sets an EFI variable to signal to EDK2 whether the descriptor
+ * is locked, which affects the visibility and functionality of certain features
+ */
+static void set_descriptor_lockdown_option(void *unused)
+{
+	uint8_t si_desc_buf[SI_DESC_SIZE];
+	struct region_device desc_rdev, smmstore_rdev;
+	uint8_t descriptor_writeable;
+
+	if (!CONFIG(INTEL_DESCRIPTOR_MODE_CAPABLE) || !CONFIG(SMMSTORE))
+		return;
+
+	if (smmstore_lookup_region(&smmstore_rdev))
+		return;
+
+	if (fmap_locate_area_as_rdev_rw(SI_DESC_REGION, &desc_rdev) < 0) {
+		printk(BIOS_ERR, "Failed to locate %s in the FMAP\n", SI_DESC_REGION);
+		return;
+	}
+
+	if (rdev_readat(&desc_rdev, si_desc_buf, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
+		printk(BIOS_ERR, "Failed to read Descriptor Region from SPI Flash\n");
+		return;
+	}
+
+	descriptor_writeable = is_descriptor_writeable(si_desc_buf);
+
+	printk(BIOS_DEBUG, "Descriptor is %swriteable\n", descriptor_writeable ? "" : "not ");
+
+	efi_fv_set_option(&smmstore_rdev,
+			  &dasharo_system_features_guid,
+			  "DescriptorWriteable",
+			  &descriptor_writeable,
+			  sizeof(descriptor_writeable));
+}
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, set_descriptor_lockdown_option, NULL);
