@@ -605,6 +605,11 @@ static void fill_fsps_cpu_params(FSP_S_CONFIG *s_cfg,
 		fill_fsps_microcode_params(s_cfg, config);
 	else
 		s_cfg->SkipMpInit = !CONFIG(USE_INTEL_FSP_MP_INIT);
+
+#if CONFIG(FSP_TYPE_IOT) && CONFIG(HAVE_ACPI_RESUME)
+	if (!s_cfg->SkipMpInit)
+		s_cfg->CpuFeaturesInitOnS3ResumeOverride = 1;
+#endif
 }
 
 static void fill_fsps_igd_params(FSP_S_CONFIG *s_cfg,
