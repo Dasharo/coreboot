@@ -273,8 +273,12 @@ uint8_t cse_get_me_disable_mode(void)
 		read_u8_var("MeMode", &var);
 	}
 
-	/* Disable ME via HMRPFO if in Firmware Update Mode */
-	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum) {
+	/*
+	 * Disable ME via HMRPFO if in Firmware Update Mode
+	 * Don't do it if capsules are supported, as capsule updates are not
+	 * currently compatible with HMRFPO
+	 */
+	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum	&& !(CONFIG(DRIVERS_EFI_UPDATE_CAPSULES))) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
