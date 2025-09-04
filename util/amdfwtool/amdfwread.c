@@ -10,6 +10,10 @@
 
 #define FILE_REL_MASK 0xffffff
 
+#define MAX_NUM_LEVELS 10
+#define MAX_INDENT_PER_LEVEL 4
+#define MAX_INDENTATION_LEN (MAX_NUM_LEVELS * MAX_INDENT_PER_LEVEL + 1)
+
 #define ERR(...) fprintf(stderr, __VA_ARGS__)
 
 enum spi_frequency {
@@ -95,9 +99,35 @@ static int read_fw_header(FILE *fw, uint32_t offset, embedded_firmware *fw_heade
 	return fw_header->signature != EMBEDDED_FW_SIGNATURE;
 }
 
+static void dump_directory_header(psp_directory_header *header, uint8_t level)
+{
+	char indent[MAX_INDENTATION_LEN] = {0};
+
+	for (uint8_t i = 0; i < level && i < MAX_NUM_LEVELS; i++)
+		strcat(indent, "    ");
+
+	printf("%sHeader:", indent);
+	printf("\n%s  Checksum:              %08X", indent, header->checksum);
+	printf("\n%s  Number of entries:     %u",   indent, header->num_entries);
+	printf("\n%s  Additional Info:       %08x", indent, header->additional_info);
+	printf("\n%s    Version:             %u",   indent, header->additional_info_fields.version);
+	if (header->additional_info_fields.version == 1) {
+		printf("\n%s    Directory size:      %04x", indent, header->additional_info_fields_v1.dir_size);
+		printf("\n%s    SPI block size:      %u",   indent, header->additional_info_fields_v1.spi_block_size);
+		printf("\n%s    Dir header size:     %u",   indent, header->additional_info_fields_v1.dir_header_size);
+		printf("\n%s    Address mode:        %u",   indent, header->additional_info_fields_v1.address_mode);
+	} else {
+		printf("\n%s    Directory size:      %04x", indent, header->additional_info_fields.dir_size);
+		printf("\n%s    SPI block size:      %u",   indent, header->additional_info_fields.spi_block_size);
+		printf("\n%s    Base address:        %04x", indent, header->additional_info_fields.base_addr);
+		printf("\n%s    Address mode:        %u",   indent, header->additional_info_fields.address_mode);
+	}
+	printf("\n\n");
+}
+
 static int read_psp_directory(FILE *fw, uint32_t offset, uint32_t expected_cookie,
 			psp_directory_header *header, psp_directory_entry **entries,
-			size_t *num_entries)
+			size_t *num_entries, uint8_t level)
 {
 	offset &= FILE_REL_MASK;
 
@@ -112,6 +142,8 @@ static int read_psp_directory(FILE *fw, uint32_t offset, uint32_t expected_cooki
 		    header->cookie, expected_cookie);
 		return 1;
 	}
+
+	dump_directory_header(header, level);
 
 	/* Read the entries */
 	*num_entries = header->num_entries;
@@ -132,7 +164,7 @@ static int read_ish_directory(FILE *fw, uint32_t offset, ish_directory_table *ta
 
 static int read_bios_directory(FILE *fw, uint32_t offset, uint32_t expected_cookie,
 			bios_directory_hdr *header, bios_directory_entry **entries,
-			size_t *num_entries)
+			size_t *num_entries, uint8_t level)
 {
 	offset &= FILE_REL_MASK;
 
@@ -147,6 +179,8 @@ static int read_bios_directory(FILE *fw, uint32_t offset, uint32_t expected_cook
 			header->cookie, expected_cookie);
 		return 1;
 	}
+
+	dump_directory_header ((psp_directory_header *)header, level);
 
 	/* Read the entries */
 	*num_entries = header->num_entries;
@@ -174,7 +208,7 @@ static int read_soft_fuse(FILE *fw, const embedded_firmware *fw_header)
 
 	psp_directory_header header;
 	if (read_psp_directory(fw, psp_offset, PSP_COOKIE, &header,
-		       &current_entries, &num_current_entries) != 0)
+		       &current_entries, &num_current_entries, 0) != 0)
 		return 1;
 
 	while (1) {
@@ -240,16 +274,13 @@ static int read_soft_fuse(FILE *fw, const embedded_firmware *fw_header)
 
 		/* Read the L2 PSP directory */
 		if (read_psp_directory(fw, l2_dir_offset, PSPL2_COOKIE, &header,
-			       &current_entries, &num_current_entries) != 0)
+			       &current_entries, &num_current_entries, 1) != 0)
 			break;
 	}
 
 	return 1;
 }
 
-#define MAX_NUM_LEVELS 10
-#define MAX_INDENT_PER_LEVEL 4
-#define MAX_INDENTATION_LEN (MAX_NUM_LEVELS * MAX_INDENT_PER_LEVEL + 1)
 static void do_indentation_string(char *dest, uint8_t level)
 {
 	for (uint8_t i = 0; i < level && i < MAX_NUM_LEVELS; i++)
@@ -267,7 +298,7 @@ static int amdfw_bios_dir_walk(FILE *fw, uint32_t bios_offset, uint32_t cookie, 
 	char indent[MAX_INDENTATION_LEN] = {0};
 
 	if (read_bios_directory(fw, bios_offset, cookie, &header,
-		       &current_entries, &num_current_entries) != 0)
+		       &current_entries, &num_current_entries, level) != 0)
 		return 1;
 
 	if (header.additional_info_fields.version == 1)
@@ -326,7 +357,7 @@ static int amdfw_psp_dir_walk(FILE *fw, uint32_t psp_offset, uint32_t cookie, ui
 	char indent[MAX_INDENTATION_LEN] = {0};
 
 	if (read_psp_directory(fw, psp_offset, cookie, &header,
-		       &current_entries, &num_current_entries) != 0)
+		       &current_entries, &num_current_entries, level) != 0)
 		return 1;
 
 	if (header.additional_info_fields.version == 1)
@@ -498,9 +529,29 @@ static void decode_spi_read_mode(unsigned int mode)
 	}
 }
 
+static void decode_bios_size(unsigned int size)
+{
+	switch (size) {
+	case 0:
+		printf("16MB");
+		break;
+	case 1:
+		printf("32MB");
+		break;
+	case 2:
+		printf("48MB");
+		break;
+	case 3:
+		printf("64MB");
+		break;
+	default:
+		printf("unknown<%x>size", size);
+	}
+}
+
 static int dump_efw(const embedded_firmware *fw_header)
 {
-	printf("EFS Generation:    %s\n", fw_header->efs_gen.gen ? "first" : "second");
+	printf("EFS Generation:            %s\n", fw_header->efs_gen.gen ? "first" : "second");
 
 	printf("\nFamily 15h Models 60h-6Fh");
 	printf("\n  SPI Read Mode          ");
@@ -509,6 +560,8 @@ static int dump_efw(const embedded_firmware *fw_header)
 	decode_spi_frequency(fw_header->fast_speed_new_f15_mod_60_6f);
 
 	printf("\n\nFamily 17h Models 00h-0Fh, 10h-1Fh");
+	printf("\n  PSP Dir:               %08x", fw_header->new_psp_directory);
+	printf("\n  BIOS Dir:              %08x", fw_header->bios0_entry);
 	printf("\n  SPI Read Mode:         ");
 	decode_spi_read_mode(fw_header->spi_readmode_f17_mod_00_2f);
 	printf("\n  Fast Speed New:        ");
@@ -516,11 +569,34 @@ static int dump_efw(const embedded_firmware *fw_header)
 	printf("\n  QPR_Dummy Cycle configure:    0x%02x\n", fw_header->qpr_dummy_cycle_f17_mod_00_2f);
 
 	printf("\nFamily 17h Models 30h-3Fh and later Families");
+	printf("\n  BIOS Dir:              %08x", fw_header->bios2_entry);
 	printf("\n  SPI Read Mode:         ");
 	decode_spi_read_mode(fw_header->spi_readmode_f17_mod_30_3f);
 	printf("\n  SPI Fast Speed:        ");
 	decode_spi_frequency(fw_header->spi_fastspeed_f17_mod_30_3f);
 	printf("\n  Micron Detect Flag:    0x%02x\n", fw_header->micron_detect_f17_mod_30_3f);
+
+	printf("\nFamily 19h Models 00h-0Fh and later Families");
+	printf("\n  Multi Gen EFS:         %08x", fw_header->multi_gen_efs);
+	printf("\n  BIOS Dir:              %08x\n", fw_header->bios3_entry);
+
+	printf("\nFamily 1Ah Models 50h-5Fh and later Families");
+	printf("\n  PSPL1 backup:          %08x", fw_header->psp_bak_directory);
+	printf("\n  BIOS Dir:              %08x\n", fw_header->bios3_entry);
+
+	printf("\nMisc info");
+	printf("\n  Promontory FW:         %08x", fw_header->promontory_fw_ptr);
+	printf("\n  LP Promontory FW:      %08x", fw_header->lp_promontory_fw_ptr);
+	printf("\n  Vendor ID:             %04x", fw_header->vendor_id);
+	printf("\n  Board ID:              %04x", fw_header->board_id);
+	printf("\n  ESPI0 Config:          %02x", fw_header->espi0_config);
+	printf("\n  ESPI0 Config1:         %02x", fw_header->espi0_config1);
+	printf("\n  ESPI1 Config:          %02x", fw_header->espi1_config);
+	printf("\n  ESPI1 Config1:         %02x", fw_header->espi1_config1);
+	printf("\n  BIOS size:             ");
+	decode_bios_size(fw_header->bios_size);
+	printf("\n\n");
+
 	return 0;
 }
 
