@@ -177,7 +177,10 @@ typedef struct _embedded_firmware {
 	uint32_t bios0_entry; /* todo: add way to select correct entry */
 	uint32_t bios1_entry;
 	uint32_t bios2_entry;
-	struct second_gen_efs efs_gen;
+	union {
+		struct second_gen_efs efs_gen;
+		uint32_t multi_gen_efs;
+	};
 	uint32_t bios3_entry;
 	uint32_t psp_bak_directory;
 	uint32_t promontory_fw_ptr;
@@ -196,7 +199,14 @@ typedef struct _embedded_firmware {
 	uint8_t micron_detect_f17_mod_30_3f;
 	uint8_t reserved_4Ah;
 	uint8_t reserved_4Bh;
-	uint32_t reserved_4Ch;
+	uint16_t vendor_id;
+	uint16_t board_id;
+	uint8_t espi0_config;
+	uint8_t espi1_config;
+	uint8_t espi0_config1;
+	uint8_t espi1_config1;
+	uint32_t reserved_54h;
+	uint8_t bios_size;
 } __attribute__((packed, aligned(16))) embedded_firmware;
 
 typedef struct _psp_directory_header {
