@@ -1,0 +1,53 @@
+name: Check tag is annotated & signed
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  verify-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      
+      - name: Force fetch tags
+        run: |
+          git fetch --tags --force --prune
+          git fetch origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+
+      - name: Check tag is annotated
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          ref="refs/tags/${tag}"
+          echo $ref
+
+          if ! git show-ref --verify --quiet "$ref"; then
+            echo "Tag ${tag} not found after checkout"
+            exit 1
+          fi
+          
+          type="$(git cat-file -t "$ref")"   # 'tag' for annotated, 'commit' for lightweight
+          if [[ "$type" != "tag" ]]; then
+            echo "Tag ${tag} is not annotated: type "$type". Use: git tag -a"
+            exit 1
+          fi
+
+      - name: Check tag has a signature block
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          ref="refs/tags/${tag}"
+
+          if git cat-file -p "$ref" | grep -q '^-----BEGIN PGP SIGNATURE-----$'; then
+            echo "Tag ${tag} contains a signature block"
+          else
+            echo "::error::Tag '${tag}' is NOT signed. Create it with: git tag -s"
+            exit 1
+          fi
