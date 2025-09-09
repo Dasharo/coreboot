@@ -16,6 +16,7 @@
 #include <amdblocks/reset.h>
 #include <bootstate.h>
 #include <cbmem.h>
+#include <cpu/amd/microcode.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/smm.h>
 #include <device/device.h>
@@ -296,9 +297,13 @@ static void configure_sdxi(void)
 	sdxi_data->AmdFabricSdxi = true;
 }
 
+static void *mpb = NULL;
+
 static void configure_ccx(void)
 {
 	CCXCLASS_DATA_BLK *ccx_data = SilFindStructure(SilId_CcxClass, 0);
+	UCODEPATCH_BIOSENTRYINFO *ucode_info;
+	void *ucode;
 
 	if (CONFIG(XAPIC_ONLY) || CONFIG(X2APIC_LATE_WORKAROUND))
 		ccx_data->CcxInputBlock.AmdApicMode = xApicMode;
@@ -311,6 +316,26 @@ static void configure_ccx(void)
 	ccx_data->CcxInputBlock.EnableSvmX2AVIC = 1;
 	ccx_data->CcxInputBlock.EnableSvmAVIC = true;
 	ccx_data->CcxInputBlock.AmdCStateIoBaseAddress = ACPI_CSTATE_CONTROL;
+
+	ucode = amd_microcode_find();
+	if (!ucode) {
+		printk(BIOS_ERR, "OpenSIL: CPU microcode not found\n");
+		return;
+	}
+	/*
+	 * Microcode may be found in ROM3 which is above 4G.
+	 * Allocate a buffer for it on heap and copy from ROM.
+	 * Turin has a fixed microcode size of 0x3820 bytes.
+	 */
+	mpb = malloc(0x3820);
+	if (!mpb) {
+		printk(BIOS_ERR, "OpenSIL: Could not allocate memory for CPU microcode\n");
+		return;
+	}
+	memcpy(mpb, ucode, 0x3820);
+
+	ucode_info = &ccx_data->CcxInputBlock.UcodePatchEntryInfo;
+	ucode_info->UcodePatchEntryAddress = (uint64_t)mpb;
 }
 
 void setup_opensil(void)
@@ -343,6 +368,10 @@ static void opensil_entry(SIL_TIMEPOINT timepoint)
 	switch (tp) {
 	case SIL_TP1:
 		ret = InitializeAMDSiTp1();
+		if (mpb) {
+			free(mpb);
+			mpb = NULL;
+		}
 		break;
 	case SIL_TP2:
 		ret = InitializeAMDSiTp2();
