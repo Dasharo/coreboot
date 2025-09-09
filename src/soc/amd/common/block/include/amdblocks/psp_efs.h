@@ -19,6 +19,9 @@
 #elif CONFIG(SOC_AMD_CEZANNE) | CONFIG(SOC_AMD_MENDOCINO)
   #define SPI_MODE_FIELD spi_readmode_f17_mod_30_3f
   #define SPI_SPEED_FIELD spi_fastspeed_f17_mod_30_3f
+#elif CONFIG(SOC_AMD_GENOA_POC) | CONFIG(SOC_AMD_TURIN_POC)
+  #define SPI_MODE_FIELD spi_readmode_f15_mod_60_6f
+  #define SPI_SPEED_FIELD fast_speed_new_f15_mod_60_6f
 #endif
 
 struct second_gen_efs { /* todo: expand for Server products */
