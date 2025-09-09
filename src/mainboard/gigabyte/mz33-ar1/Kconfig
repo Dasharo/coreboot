@@ -12,6 +12,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select IPMI_KCS
 	select IPMI_KCS_ROMSTAGE
 	select DISABLE_KEYBOARD_RESET_PIN
+	select HAVE_GIGABYTE_BMC_BIOS_UPDATE
 
 config FMDFILE
 	default "src/mainboard/gigabyte/mz33-ar1/board.fmd"
