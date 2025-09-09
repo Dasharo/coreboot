@@ -10,7 +10,12 @@
 	ALIGN_COUNTER(64)
 	VBOOT2_WORK(., VB2_FIRMWARE_WORKBUF_RECOMMENDED_SIZE)
 #endif
-
+#if CONFIG(TPM_MEASURED_BOOT)
+	/* Vboot measured boot TPM log measurements.
+	 * Needs to be transferred until CBMEM is available */
+	ALIGN_COUNTER(64)
+	TPM_LOG(., 2K)
+#endif
 	ALIGN_COUNTER(64)
 #if CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK)
 #if ENV_SEPARATE_VERSTAGE
