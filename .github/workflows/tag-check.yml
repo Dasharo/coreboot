@@ -28,13 +28,13 @@ jobs:
           echo $ref
 
           if ! git show-ref --verify --quiet "$ref"; then
-            echo "Tag ${tag} not found after checkout"
+            echo "::error::Tag '${tag}' not found after checkout"
             exit 1
           fi
           
           type="$(git cat-file -t "$ref")"   # 'tag' for annotated, 'commit' for lightweight
           if [[ "$type" != "tag" ]]; then
-            echo "Tag ${tag} is not annotated: type "$type". Use: git tag -a"
+            echo "::error::Tag '${tag}' is not annotated: type '$type'. Use: git tag -s"
             exit 1
           fi
 
@@ -46,7 +46,7 @@ jobs:
           ref="refs/tags/${tag}"
 
           if git cat-file -p "$ref" | grep -q '^-----BEGIN PGP SIGNATURE-----$'; then
-            echo "Tag ${tag} contains a signature block"
+            echo "Tag '${tag}' contains a signature block"
           else
             echo "::error::Tag '${tag}' is NOT signed. Create it with: git tag -s"
             exit 1
