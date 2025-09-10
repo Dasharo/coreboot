@@ -10,14 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
       
       - name: Force fetch tags
         run: |
           git fetch --tags --force --prune
-          git fetch origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
 
       - name: Check tag is annotated
         shell: bash
@@ -34,7 +30,7 @@ jobs:
           
           type="$(git cat-file -t "$ref")"   # 'tag' for annotated, 'commit' for lightweight
           if [[ "$type" != "tag" ]]; then
-            echo "::error::Tag '${tag}' is not annotated: type '$type'. Use: git tag -s"
+            echo "::error::Tag '${tag}' is not annotated: type '$type'. Use: git tag -"
             exit 1
           fi
 
