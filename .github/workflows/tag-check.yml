@@ -10,14 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
       
       - name: Force fetch tags
         run: |
           git fetch --tags --force --prune
-          git fetch origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
 
       - name: Check tag is annotated
         shell: bash
@@ -25,7 +21,6 @@ jobs:
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
           ref="refs/tags/${tag}"
-          echo $ref
 
           if ! git show-ref --verify --quiet "$ref"; then
             echo "::error::Tag '${tag}' not found after checkout"
