@@ -269,6 +269,32 @@ jobs:
           path: |
             build/coreboot.rom
             build/coreboot.cap
+  build_asrock_spc741d8:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        vendor: [ asrock ]
+        model: [ spc741d8 ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Checkout pull request HEAD commit instead of merge commit
+          # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Fetch complete history
+          fetch-depth: 0
+      - name: Checkout all submodules
+        run: git submodule update --init --recursive --checkout
+      - name: Build Dasharo
+        run: |
+          ./build.sh ${{ matrix.model }}
+      - name: Save artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
+          path: |
+            build/coreboot.rom
           retention-days: 30
 
   deploy_protectli_adl:
