@@ -36,5 +36,6 @@
 #define  LPC_BC_EISS			(1 << 5) /* EISS */
 #define LPC_PCCTL			0xE0 /* PCI Clock Control */
 #define  LPC_PCCTL_CLKRUN_EN		(1 << 0)
+#define ESPI_CS1_ENABLE			0xa0
 
 #endif /* _SOC_COMMON_BLOCK_LPC_DEF_H_ */
