@@ -39,6 +39,7 @@ usage() {
   echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
   echo -e "\todroid_h4_netcard      - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
+  echo -e "\asrock_spc741d8         - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
@@ -330,6 +331,27 @@ function build_odroid_h4 {
   fi
 }
 
+function build_asrock_rack {
+  DEFCONFIG="configs/config.asrock_spc741d8"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  build_prep
+
+  echo "Building Dasharo for ASRock Rack SPC741D8-2L2T/BCM (version $FW_VERSION)"
+
+  build_start
+
+  cp build/coreboot.rom asrock_spc741d8_${FW_VERSION}.rom
+
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/asrock_spc741d8_${FW_VERSION}.rom"
+    sha256sum asrock_spc741d8_${FW_VERSION}.rom > asrock_spc741d8_${FW_VERSION}.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
 if [ $# -lt 1 ]; then
   usage
   exit
@@ -461,6 +483,9 @@ case "$CMD" in
         ;;
     "odroid_h4_netcard" | "odroid_H4_netcard" | "ODROID_H4_NETCARD" )
         build_odroid_h4 "odroid_h4_netcard"
+        ;;
+    "asrock_spc741d8")
+        build_asrock_rack
         ;;
     *)
         echo "Invalid command: \"$CMD\""
