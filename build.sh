@@ -146,7 +146,6 @@ function build_msi {
 function build_protectli_vault {
   DEFCONFIG="configs/config.protectli_${BOARD}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
-  LOGO="3rdparty/dasharo-blobs/protectli/bootsplash.bmp"
 
   build_prep
 
@@ -155,14 +154,6 @@ function build_protectli_vault {
   build_start
 
   cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
-
-  sdk_run /bin/bash -c "./build/cbfstool \
-    protectli_${BOARD}_${FW_VERSION}.rom add \
-    -r BOOTSPLASH \
-    -f \"$LOGO\" \
-    -n logo.bmp \
-    -t raw \
-    -c lzma"
 
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/protectli_${BOARD}_${FW_VERSION}.rom"
@@ -176,7 +167,6 @@ function build_protectli_vault {
 function build_v1x10 {
   DEFCONFIG="configs/config.protectli_vault_jsl_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
-  LOGO="3rdparty/dasharo-blobs/protectli/bootsplash.bmp"
 
   build_prep
 
@@ -185,14 +175,6 @@ function build_v1x10 {
   build_start
 
   cp build/coreboot.rom protectli_$1_${FW_VERSION}.rom
-
-  sdk_run /bin/bash -c "./build/cbfstool \
-    ./protectli_${1}_${FW_VERSION}.rom add \
-    -r BOOTSPLASH \
-    -f \"$LOGO\" \
-    -n logo.bmp \
-    -t raw \
-    -c lzma"
 
   if [ $? -eq 0 ]; then
     echo "Result binary placed in $PWD/protectli_$1_${FW_VERSION}.rom"
