@@ -39,7 +39,7 @@ usage() {
   echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
   echo -e "\todroid_h4_netcard      - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
-  echo -e "\tasrock_spc741d8         - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
+  echo -e "\tasrock_spc741d8        - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
