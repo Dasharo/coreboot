@@ -338,6 +338,23 @@ ifeq ($(FAILBUILD),1)
 $(error cannot continue build)
 endif
 
+# Add bootsplash to BOOTSPLASH/logo.bmp if a file is provided
+ifneq ($(CONFIG_BOOTSPLASH_REGION_LOGO_FILE),"")
+
+files_added:: branding_bootsplash_region
+
+.PHONY: branding_bootsplash_region
+branding_bootsplash_region: $(obj)/coreboot.rom $(objutil)/cbfstool/cbfstool
+	@echo "    BRANDING   Adding bootsplash (BOOTSPLASH/logo.bmp) from $(CONFIG_BOOTSPLASH_REGION_LOGO_FILE)"
+	$(objutil)/cbfstool/cbfstool $(obj)/coreboot.rom add \
+		-r BOOTSPLASH \
+		-f $(CONFIG_BOOTSPLASH_REGION_LOGO_FILE) \
+		-n logo.bmp \
+		-t raw \
+		-c lzma
+
+endif
+
 # Run hooks registered by subdirectories that need to be evaluated after all files have been parsed
 $(eval $(postinclude-hooks))
 
