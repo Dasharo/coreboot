@@ -181,4 +181,9 @@ config MEM_POR_FREQ
 	help
 	  When RMT is enabled. Select this option to enforce Intel Plan Of Record(POR)
 	  restriction on DDR5 frequency & voltage settings.
+
+config CPU_MAX_TEMPERATURE
+	int
+	default 93
+
 endif
