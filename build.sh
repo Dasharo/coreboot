@@ -42,15 +42,21 @@ usage() {
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
   echo -e "\todroid_h4_netcard      - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
   echo -e "\tasrock_spc741d8        - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
+  echo
+  echo "Env vars:"
+  echo -e "\tEDK2_REPO_PATH         - path to local edk2 repo to use for payload"
+  echo -e "\tEDK2_REV               - branch/tag/commit hash from which to build edk2"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
+EDK2_REPO_MOUNT_CMD=""
 
 function sdk_run {
   docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
+    $EDK2_REPO_MOUNT_CMD \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -w /home/coreboot/coreboot ${DASHARO_SDK} \
     "$@"
@@ -82,15 +88,23 @@ function build_start {
       mkdir -p "$TARGET_DIR"
       chown -R $(id -u):$(id -g) "$TARGET_DIR"
       chmod -R 755 "$TARGET_DIR"
+      EDK2_REPO_MOUNT_CMD=${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/coreboot/${TARGET_DIR}}
       sdk_run --network none \
-        ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/coreboot/${TARGET_DIR}} \
         /bin/bash -c "make olddefconfig && make -j$(nproc)"
     else
       echo "EDK2_REPO_PATH is not defined in AIRGAP!"
       exit 1
     fi
   else
-    sdk_run /bin/bash -c "make olddefconfig && make -j$(nproc)"
+    sdk_run /bin/bash -c "make olddefconfig"
+    if [[ -v EDK2_REPO_PATH ]]; then
+      EDK2_REPO_MOUNT_CMD="-v $EDK2_REPO_PATH:/home/coreboot/edk2"
+      sed -i 's/^CONFIG_EDK2_REPOSITORY=\"[^"]*"/CONFIG_EDK2_REPOSITORY="\/home\/coreboot\/edk2"/' .config
+    fi
+    if [ -v EDK2_REV ]; then
+      sed -i "s/^CONFIG_EDK2_TAG_OR_REV=\"[^\"]*\"/CONFIG_EDK2_TAG_OR_REV=\"$EDK2_REV\"/" .config
+    fi
+    sdk_run /bin/bash -c "make -j$(nproc)"
   fi
 }
 
