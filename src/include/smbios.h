@@ -1211,7 +1211,7 @@ typedef enum {
 	SMBIOS_DEVICE_TYPE_UFS,
 } smbios_onboard_device_type;
 
-#define SMBIOS_DEVICE_TYPE_COUNT 10
+#define SMBIOS_DEVICE_TYPE_COUNT 16
 
 struct smbios_type41 {
 	struct smbios_header header;
