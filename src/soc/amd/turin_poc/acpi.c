@@ -8,6 +8,7 @@
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/cpu.h>
 #include <device/device.h>
+#include <device/pci_def.h>
 #include <drivers/amd/opensil/opensil.h>
 
 #define IOMMU_DOMAIN_INIT(d)	\
@@ -33,6 +34,35 @@ unsigned int acpi_ivrs_get_iommu_domains(const struct ivrs_iommu_domain **iommu_
 {
 	*iommu_domains = ivrs_iommu_domains;
 	return ARRAY_SIZE(ivrs_iommu_domains);
+}
+
+unsigned long soc_acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd40_t *ivhd,
+				   struct device *nb_dev, struct device *iommu_dev)
+{
+	unsigned long domain = dev_get_domain_id(nb_dev);
+
+	/* Describe UART devices */
+	if (domain == 0) {
+		current = ivhd_describe_f0_device(current, PCI_DEVFN(0x14, 5),
+					"AMDI0020", IVHD_DTE_LINT_0_PASS, 0);
+		current = ivhd_describe_f0_device(current, PCI_DEVFN(0x14, 5),
+					"AMDI0020", IVHD_DTE_LINT_0_PASS, 1);
+		current = ivhd_describe_f0_device(current, PCI_DEVFN(0x14, 5),
+					"AMDI0020", IVHD_DTE_LINT_0_PASS, 2);
+		current = ivhd_describe_f0_device(current, PCI_DEVFN(0x14, 5),
+					"AMDI0020", IVHD_DTE_LINT_0_PASS, 3);
+	}
+
+	/* MPDMA devices */
+	if (domain == 0 || domain == 7) {
+		current = ivhd_describe_f0_device(current,
+				(nb_dev->upstream->secondary << 8) | PCI_DEVFN(0, 4),
+				domain == 0 ? "AMDI0095" : "AMDI0096",
+				IVHD_DTE_SYS_MGT_TRANS,
+				domain == 0 ? 0 : 1);
+	}
+
+	return current;
 }
 
 void acpi_fill_fadt(acpi_fadt_t *fadt)
