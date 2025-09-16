@@ -126,6 +126,8 @@ struct spi_flash {
 	u8 status_cmd;
 	u8 pp_cmd; /* Page program command. */
 	u8 wren_cmd; /* Write Enable command. */
+	u8 pp4b_cmd; /* Page program command 4B address . */
+	u8 erase4b_cmd; /* Sector Erase command 4B address . */
 	const struct spi_flash_ops *ops;
 	/* If !NULL all protection callbacks exist. */
 	const struct spi_flash_protection_ops *prot_ops;

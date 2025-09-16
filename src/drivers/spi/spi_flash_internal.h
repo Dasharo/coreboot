@@ -13,11 +13,15 @@
 #define CMD_READ_ID			0x9f
 
 #define CMD_READ_ARRAY_SLOW		0x03
+#define CMD_READ_ARRAY_SLOW_4B		0x13
 #define CMD_READ_ARRAY_FAST		0x0b
+#define CMD_READ_ARRAY_FAST_4B		0x0c
 #define CMD_READ_ARRAY_LEGACY		0xe8
 
 #define CMD_READ_FAST_DUAL_OUTPUT	0x3b
+#define CMD_READ_FAST_DUAL_OUTPUT_4B	0x3c
 #define CMD_READ_FAST_DUAL_IO		0xbb
+#define CMD_READ_FAST_DUAL_IO_4B	0xbc
 
 #define CMD_READ_STATUS			0x05
 #define CMD_WRITE_ENABLE		0x06
@@ -93,6 +97,8 @@ struct spi_flash_ops_descriptor {
 	uint8_t status_cmd; /* Read Status Register */
 	uint8_t pp_cmd; /* Page program command, if supported. */
 	uint8_t wren_cmd; /* Write Enable command. */
+	uint8_t erase4b_cmd; /* Sector Erase 4byte address mode */
+	uint8_t pp4b_cmd; /* Page program command 4byte address mode, if supported. */
 	struct spi_flash_ops ops;
 };
 

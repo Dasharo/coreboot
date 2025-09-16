@@ -175,21 +175,33 @@ int spi_flash_cmd_read(const struct spi_flash *flash, u32 offset,
 
 	if (CONFIG(SPI_FLASH_NO_FAST_READ)) {
 		cmd_len = 4 + ADDR_MOD;
-		cmd[0] = CMD_READ_ARRAY_SLOW;
+		if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+			cmd[0] = CMD_READ_ARRAY_SLOW_4B;
+		else
+			cmd[0] = CMD_READ_ARRAY_SLOW;
 		do_cmd = do_spi_flash_cmd;
 	} else if (flash->flags.dual_io && flash->spi.ctrlr->xfer_dual) {
 		cmd_len = 5 + ADDR_MOD;
-		cmd[0] = CMD_READ_FAST_DUAL_IO;
+		if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+			cmd[0] = CMD_READ_FAST_DUAL_IO_4B;
+		else
+			cmd[0] = CMD_READ_FAST_DUAL_IO;
 		cmd[4 + ADDR_MOD] = 0;
 		do_cmd = do_dual_io_cmd;
 	} else if (flash->flags.dual_output && flash->spi.ctrlr->xfer_dual) {
 		cmd_len = 5 + ADDR_MOD;
-		cmd[0] = CMD_READ_FAST_DUAL_OUTPUT;
+		if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+			cmd[0] = CMD_READ_FAST_DUAL_OUTPUT_4B;
+		else
+			cmd[0] = CMD_READ_FAST_DUAL_OUTPUT;
 		cmd[4 + ADDR_MOD] = 0;
 		do_cmd = do_dual_output_cmd;
 	} else {
 		cmd_len = 5 + ADDR_MOD;
-		cmd[0] = CMD_READ_ARRAY_FAST;
+		if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+			cmd[0] = CMD_READ_ARRAY_FAST_4B;
+		else
+			cmd[0] = CMD_READ_ARRAY_FAST;
 		cmd[4 + ADDR_MOD] = 0;
 		do_cmd = do_spi_flash_cmd;
 	}
@@ -267,7 +279,11 @@ int spi_flash_cmd_erase(const struct spi_flash *flash, u32 offset, size_t len)
 		return -1;
 	}
 
-	cmd[0] = flash->erase_cmd;
+	if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+		cmd[0] = flash->erase4b_cmd;
+	else
+		cmd[0] = flash->erase_cmd;
+
 	start = offset;
 	end = start + len;
 
@@ -320,7 +336,10 @@ int spi_flash_cmd_write_page_program(const struct spi_flash *flash, u32 offset,
 	u8 cmd[4 + ADDR_MOD];
 
 	page_size = flash->page_size;
-	cmd[0] = flash->pp_cmd;
+	if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+		cmd[0] = flash->pp4b_cmd;
+	else
+		cmd[0] = flash->pp_cmd;
 
 	for (actual = 0; actual < len; actual += chunk_len) {
 		byte_addr = offset % page_size;
@@ -428,6 +447,8 @@ static int fill_spi_flash(const struct spi_slave *spi, struct spi_flash *flash,
 	flash->status_cmd = vi->desc->status_cmd;
 	flash->pp_cmd = vi->desc->pp_cmd;
 	flash->wren_cmd = vi->desc->wren_cmd;
+	flash->pp4b_cmd = vi->desc->pp4b_cmd;
+	flash->erase4b_cmd = vi->desc->erase4b_cmd;
 
 	flash->flags.dual_output = part->fast_read_dual_output_support;
 	flash->flags.dual_io = part->fast_read_dual_io_support;
@@ -852,6 +873,8 @@ const struct spi_flash_ops_descriptor spi_flash_pp_0x20_sector_desc = {
 	.status_cmd = 0x05, /* Read Status */
 	.pp_cmd = 0x02, /* Page Program */
 	.wren_cmd = 0x06, /* Write Enable */
+	.erase4b_cmd = 0x21, /* Sector Erase 4B address */
+	.pp4b_cmd = 0x12, /* Page Program 4B address */
 	.ops = {
 		.read = spi_flash_cmd_read,
 		.write = spi_flash_cmd_write_page_program,
@@ -865,6 +888,8 @@ const struct spi_flash_ops_descriptor spi_flash_pp_0xd8_sector_desc = {
 	.status_cmd = 0x05, /* Read Status */
 	.pp_cmd = 0x02, /* Page Program */
 	.wren_cmd = 0x06, /* Write Enable */
+	.erase4b_cmd = 0xdc, /* Sector Erase 4B address */
+	.pp4b_cmd = 0x12, /* Page Program 4B address */
 	.ops = {
 		.read = spi_flash_cmd_read,
 		.write = spi_flash_cmd_write_page_program,
