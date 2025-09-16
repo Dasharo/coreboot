@@ -269,10 +269,25 @@ static void configure_child_espi_windows(struct device *child)
 	struct resource *res;
 
 	for (res = child->resource_list; res; res = res->next) {
-		if (res->flags & IORESOURCE_IO)
+		/*
+		 * Skip stored resources. Otherwise, the code may set TPM MMIO
+		 * range decoding to eSPI and break SPI TPM communication. TPM driver
+		 * reports the TPM MMIO range as stored, so it will be skipped here.
+		 */
+		if (res->flags & IORESOURCE_STORED)
+			continue;
+
+		if (res->flags & IORESOURCE_IO) {
+			printk(BIOS_DEBUG,
+				"Southbridge eSPI IO decode:%s, base=0x%08llx, end=0x%08llx\n",
+				dev_path(child), res->base, res->base + res->size - 1);
 			espi_open_io_window(res->base, res->size);
-		else if (res->flags & IORESOURCE_MEM)
+		} else if (res->flags & IORESOURCE_MEM) {
+			printk(BIOS_DEBUG,
+				"Southbridge eSPI MMIO decode:%s, base=0x%08llx, end=0x%08llx\n",
+				dev_path(child), res->base, res->base + res->size - 1);
 			espi_open_mmio_window(res->base, res->size);
+		}
 	}
 }
 
