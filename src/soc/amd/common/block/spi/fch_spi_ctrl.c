@@ -99,6 +99,11 @@ static int execute_command(void)
 {
 	dump_state(SPI_DUMP_STATE_BEFORE_CMD);
 
+	if (spi_read32(SPI_CNTRL0) & SPI_ILLEGAL_ACCESS) {
+		printk(BIOS_ERR, "FCH SPI Error: Illegal access\n");
+		return -1;
+	}
+
 	spi_write8(SPI_CMD_TRIGGER, SPI_CMD_TRIGGER_EXECUTE);
 
 	if (wait_for_ready()) {
@@ -149,6 +154,34 @@ void fch_spi_restore_registers(void)
 		spi_write8(SPI_FIFO + count, fifo[count]);
 }
 
+static int fch_spi_configure_32b_address_mode(void)
+{
+	uint8_t reg = spi_read8(SPI_ADDR32CTRL0);
+
+	if (!!(reg & SPI_ROM_ADDR_32) == CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+		return 0;
+
+	if (CONFIG(SPI_FLASH_FORCE_4_BYTE_ADDR_MODE))
+		reg |= SPI_ROM_ADDR_32;
+	else
+		reg &= ~SPI_ROM_ADDR_32;
+
+	if (wait_for_ready()) {
+		printk(BIOS_ERR, "FCH SPI Error: Not ready to change address mode\n");
+		return -1;
+	}
+
+	spi_write8(SPI_ADDR32CTRL0, reg);
+
+	/* SPI_ADDR32CTRL0 may be write-protected by PSP, check if the write succeeded */
+	if (spi_read8(SPI_ADDR32CTRL0) != reg) {
+		printk(BIOS_ERR, "FCH SPI Error: Could not configure address mode\n");
+		return -1;
+	}
+
+	return 0;
+}
+
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 			size_t bytesout, void *din, size_t bytesin)
 {
@@ -187,6 +220,11 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 
 	for (count = 0; count < bytesout; count++)
 		spi_write8(SPI_FIFO + count, bufout[count]);
+
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_HAS_32B_ADDRESS_MODE)) {
+		if (fch_spi_configure_32b_address_mode())
+			return -1;
+	}
 
 	if (execute_command())
 		return -1;

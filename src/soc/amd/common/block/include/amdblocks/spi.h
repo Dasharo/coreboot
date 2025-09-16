@@ -8,6 +8,7 @@
 
 #define SPI_CNTRL0			0x00
 #define   SPI_BUSY			BIT(31)
+#define   SPI_ILLEGAL_ACCESS		BIT(21)
 
 enum spi_read_mode {
 	SPI_READ_MODE_NORMAL33M = 0,
@@ -77,6 +78,9 @@ enum spi100_speed {
 #define   SPI_FIFO_WR_PTR_MASK		0x7f
 #define   SPI_FIFO_RD_PTR_SHIFT		16
 #define   SPI_FIFO_RD_PTR_MASK		0x7f
+
+#define SPI_ADDR32CTRL0			0x50
+#define   SPI_ROM_ADDR_32		BIT(0)
 
 #define SPI_ROM_PAGE			0x5c
 #define   SPI_ROM_PAGE_SEL		(BIT(0) | BIT(1))

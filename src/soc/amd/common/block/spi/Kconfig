@@ -33,6 +33,16 @@ config SOC_AMD_COMMON_BLOCK_SPI_MMAP_USE_ROM3
 	  SPI flash. The default address of ROM3 is below 1024GiB address boundary
 	  and thus can only be used in x86_64 mode.
 
+config SOC_AMD_COMMON_BLOCK_SPI_HAS_32B_ADDRESS_MODE
+	bool
+	default n
+	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE if ROM_SIZE > 0x01000000
+	help
+	  AMD specific SPI flash access. If ROM size is bigger than 16MB the
+	  SPI controller needs to use different commands for 32bit address
+	  mode. Select this option of the SOC supports controlling 32bit
+	  address mode via SPI register 0x50 (ADDR32CTRL0).
+
 config SOC_AMD_COMMON_BLOCK_SPI_MMAP
 	def_bool y
 	select X86_CUSTOM_BOOTMEDIA
