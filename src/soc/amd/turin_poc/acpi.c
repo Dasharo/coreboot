@@ -3,11 +3,37 @@
 /* ACPI - create the Fixed ACPI Description Tables (FADT) */
 
 #include <acpi/acpi.h>
+#include <acpi/acpi_ivrs.h>
 #include <amdblocks/acpi.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/cpu.h>
 #include <device/device.h>
 #include <drivers/amd/opensil/opensil.h>
+
+#define IOMMU_DOMAIN_INIT(d)	\
+	{	\
+		.iommu_domain = (d),	\
+		.num_covered_domains = ARRAY_SIZE(iommu##d##_domains),	\
+		.covered_domain_ids = iommu##d##_domains	\
+	}	\
+
+static const unsigned int iommu0_domains[] = { 0, 3 };
+static const unsigned int iommu2_domains[] = { 2, 1 };
+static const unsigned int iommu5_domains[] = { 5, 6 };
+static const unsigned int iommu7_domains[] = { 7, 4 };
+
+static const struct ivrs_iommu_domain ivrs_iommu_domains[] = {
+	IOMMU_DOMAIN_INIT(0),
+	IOMMU_DOMAIN_INIT(2),
+	IOMMU_DOMAIN_INIT(5),
+	IOMMU_DOMAIN_INIT(7)
+};
+
+unsigned int acpi_ivrs_get_iommu_domains(const struct ivrs_iommu_domain **iommu_domains)
+{
+	*iommu_domains = ivrs_iommu_domains;
+	return ARRAY_SIZE(ivrs_iommu_domains);
+}
 
 void acpi_fill_fadt(acpi_fadt_t *fadt)
 {
