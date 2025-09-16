@@ -123,12 +123,32 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->preferred_pm_profile = PM_ENTERPRISE_SERVER;
 }
 
+static unsigned long acpi_fill_slit(unsigned long current)
+{
+	*(uint64_t *)current = 1; /* 1 locality */
+	current += sizeof(uint64_t);
+	*(uint8_t *)current = 10;
+	current += sizeof(uint8_t);
+
+	return current;
+}
+
 unsigned long soc_acpi_write_tables(const struct device *device, unsigned long current,
 				    struct acpi_rsdp *rsdp)
 {
+	acpi_slit_t *slit;
+
 	/* IVRS */
 	printk(BIOS_DEBUG, "ACPI:   * IVRS\n");
 	current = acpi_add_ivrs_table(current, rsdp);
+
+	/* SLIT */
+	current = ALIGN_UP(current, 8);
+	printk(BIOS_DEBUG, "ACPI:   * SLIT at %lx\n", current);
+	slit = (acpi_slit_t *)current;
+	acpi_create_slit(slit, acpi_fill_slit);
+	current += slit->header.length;
+	acpi_add_table(rsdp, slit);
 
 	return current;
 }
