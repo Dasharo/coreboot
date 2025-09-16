@@ -269,9 +269,9 @@ static void configure_child_espi_windows(struct device *child)
 	struct resource *res;
 
 	for (res = child->resource_list; res; res = res->next) {
-		if (res->flags & IORESOURCE_IO)
+		if (res->flags & IORESOURCE_IO) 
 			espi_open_io_window(res->base, res->size);
-		else if (res->flags & IORESOURCE_MEM)
+		else if (res->flags & IORESOURCE_MEM) 
 			espi_open_mmio_window(res->base, res->size);
 	}
 }
