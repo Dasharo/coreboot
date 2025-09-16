@@ -80,4 +80,7 @@ config EFS_ESPI0_CONFIG0
 config DIMM_MAX
 	default 24
 
+config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
+	default y if TPM_MEASURED_BOOT && !VBOOT
+
 endif
