@@ -198,6 +198,13 @@ static unsigned long acpi_ivhd_misc(unsigned long current, struct device *dev)
 	return current;
 }
 
+/* TODO: Drop the __weak implementation once all SoC implement this function */
+__weak unsigned long soc_acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd40_t *ivhd,
+					  struct device *nb_dev, struct device *iommu_dev)
+{
+	return current;
+}
+
 static unsigned long acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd_t *ivhd,
 				       struct device *nb_dev, struct device *iommu_dev)
 {
@@ -247,6 +254,9 @@ static unsigned long acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd_t *i
 						IVHD_DTE_EXT_INT_PASS | IVHD_DTE_INIT_PASS);
 		}
 	}
+
+	current = soc_acpi_fill_ivrs40(current, ivhd_40, nb_dev, iommu_dev);
+
 	ivhd_40->length += (current - current_backup);
 
 	return current;
