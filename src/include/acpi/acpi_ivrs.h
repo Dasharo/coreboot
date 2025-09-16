@@ -12,6 +12,7 @@
 #define __ACPI_ACPI_IVRS_H__
 
 #include <stdint.h>
+#include <device/device.h>
 
 /* I/O Virtualization Reporting Structure (IVRS) */
 #define IVHD_BLOCK_TYPE_LEGACY__FIXED		0x10
@@ -248,5 +249,12 @@ struct ivrs_iommu_domain {
  * additional PCI devie ranges or IOAPICs in the IVRS.
  */
 unsigned int acpi_ivrs_get_iommu_domains(const struct ivrs_iommu_domain **iommu_domains);
+
+/*
+ * SoCs should implement this function to describe SoC-specific DMA-capable ACPI devices,
+ * which are not discoverable like PCI, in the IVRS type 40h table.
+ */
+unsigned long soc_acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd40_t *ivhd,
+				   struct device *nb_dev, struct device *iommu_dev);
 
 #endif /* __ACPI_ACPI_IVRS_H__ */
