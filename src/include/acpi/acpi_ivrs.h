@@ -231,4 +231,22 @@ typedef struct ivrs_ivhd_f0_entry {
 	uint8_t uuid_length;
 } __packed ivrs_ivhd_f0_entry_t;
 
+struct ivrs_iommu_domain {
+	const unsigned int iommu_domain;
+	const unsigned int num_covered_domains;
+	const unsigned int *covered_domain_ids;
+};
+
+/*
+ * SoC-specific map of domains covered by an IOMMU in given domain. Bigger
+ * SoCs, such as server CPUs, have multiple PCI domains and one IOMMU may
+ * cover more than one domain. IVRS must descrbe additional PCI ranges and
+ * IOAPICs for such IOMMUs.
+ *
+ * Returns the number of entries in the iommu_domains array. Returns 0 if the
+ * IOMMU covers only one PCI domain and there is no need to describe
+ * additional PCI devie ranges or IOAPICs in the IVRS.
+ */
+unsigned int acpi_ivrs_get_iommu_domains(const struct ivrs_iommu_domain **iommu_domains);
+
 #endif /* __ACPI_ACPI_IVRS_H__ */
