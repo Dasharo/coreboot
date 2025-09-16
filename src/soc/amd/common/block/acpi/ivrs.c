@@ -84,12 +84,72 @@ static unsigned long ivhd_dev_range(unsigned long current, uint16_t start_devid,
 	return current;
 }
 
+__weak unsigned int acpi_ivrs_get_iommu_domains(const struct ivrs_iommu_domain **iommu_domains)
+{
+	return 0;
+}
+
+static struct device *get_next_iommu_domain(struct device *domain)
+{
+	const struct ivrs_iommu_domain *iommu_domains;
+	struct device *dev = NULL;
+	unsigned int i, num_iommu_domains;
+	unsigned int cur_domain_id = dev_get_domain_id(domain);
+	static unsigned int d = 0;
+
+	num_iommu_domains = acpi_ivrs_get_iommu_domains(&iommu_domains);
+	/* Find the IOMMU domain index */
+	for (i = 0; i < num_iommu_domains; i++) {
+		if (iommu_domains[i].iommu_domain == cur_domain_id)
+			break;
+	}
+
+	if (i == num_iommu_domains)
+		return NULL;
+
+	if (iommu_domains[i].num_covered_domains == 0)
+		return NULL;
+
+	if (d >= iommu_domains[i].num_covered_domains) {
+		d = 0;
+		return NULL;
+	}
+
+	/*
+	 * Skip the current domain that has an IOMMU.
+	 * IVHD entries are always created for that domain.
+	 */
+	if (iommu_domains[i].covered_domain_ids[d] == cur_domain_id)
+		d++;
+
+	while ((dev = dev_find_path(dev, DEVICE_PATH_DOMAIN)) != NULL) {
+		if (d >= iommu_domains[i].num_covered_domains) {
+			d = 0;
+			return NULL;
+		}
+
+		if (iommu_domains[i].covered_domain_ids[d] == dev_get_domain_id(dev)) {
+			d++;
+			return dev;
+		}
+	}
+
+	/*
+	 * If no domain was found, reset index, so that next invocation of the function
+	 * will search from the start for new domain, but for the current domain counter
+	 * will not be reset until we run out of IOMMU-covered domains.
+	 */
+	d = 0;
+	return NULL;
+}
+
 static unsigned long acpi_ivhd_misc(unsigned long current, struct device *dev)
 {
 	u8 dte_setting = IVHD_DTE_LINT_1_PASS | IVHD_DTE_LINT_0_PASS |
 		       IVHD_DTE_SYS_MGT_NO_TRANS | IVHD_DTE_NMI_PASS |
 		       IVHD_DTE_EXT_INT_PASS | IVHD_DTE_INIT_PASS;
 	struct resource *res;
+	struct device *next_domain = NULL;
 	uint16_t devid_start, devid_end, devid_ioapic;
 
 	/*
@@ -100,12 +160,30 @@ static unsigned long acpi_ivhd_misc(unsigned long current, struct device *dev)
 	devid_end = PCI_DEVFN(0x1f, 6) | (dev->downstream->max_subordinate << 8);
 	current = ivhd_dev_range(current, devid_start, devid_end, 0);
 
+	/* Add additional ranges if IOMMU covers more than one domain */
+	while ((next_domain = get_next_iommu_domain(dev)) != NULL) {
+		devid_start = PCI_DEVFN(0, 3) | (next_domain->downstream->secondary << 8);
+		devid_end = 0xfe | (next_domain->downstream->max_subordinate << 8);
+		current = ivhd_dev_range(current, devid_start, devid_end, 0);
+	}
+
 	res = probe_resource(dev, IOMMU_IOAPIC_IDX);
 	if (res) {
 		/* Describe IOAPIC associated with the IOMMU */
 		devid_ioapic = PCI_DEVFN(0, 1) | (dev->downstream->secondary << 8);
 		current = acpi_fill_ivrs_ioapic(current, (uintptr_t)res->base,
 						devid_ioapic, 0);
+	}
+
+	/* Describe additional IOAPICs associated with the IOMMU */
+	while ((next_domain = get_next_iommu_domain(dev)) != NULL) {
+		res = probe_resource(next_domain, IOMMU_IOAPIC_IDX);
+		if (res) {
+			devid_ioapic = PCI_DEVFN(0, 1);
+			devid_ioapic |= (next_domain->downstream->secondary << 8);
+			current = acpi_fill_ivrs_ioapic(current, (uintptr_t)res->base,
+							devid_ioapic, 0);
+		}
 	}
 
 	/* If the domain has secondary bus as zero then associate HPET & FCH IOAPIC */
@@ -119,7 +197,6 @@ static unsigned long acpi_ivhd_misc(unsigned long current, struct device *dev)
 
 	return current;
 }
-
 
 static unsigned long acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd_t *ivhd,
 				       struct device *nb_dev, struct device *iommu_dev)
