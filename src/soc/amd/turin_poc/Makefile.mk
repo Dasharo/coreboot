@@ -10,6 +10,9 @@ all-y		+= aoac.c
 all-y		+= lpc.c
 smm-y		+= lpc.c
 
+all-y		+= lpc.c
+smm-y		+= lpc.c
+
 bootblock-y	+= early_fch.c
 
 ramstage-y	+= acpi.c
