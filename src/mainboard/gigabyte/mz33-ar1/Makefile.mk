@@ -5,6 +5,8 @@ bootblock-y += bootblock.c
 all-y += die.c
 smm-y += die.c
 
+ramstage-y += acpi.c
+
 ifneq ($(wildcard $(src)/mainboard/$(MAINBOARDDIR)/data.apcb),)
 ifeq ($(CONFIG_BUILD_WITH_DEBUG_APCB),y)
 APCB_SOURCES = $(src)/mainboard/$(MAINBOARDDIR)/data_debug.apcb
