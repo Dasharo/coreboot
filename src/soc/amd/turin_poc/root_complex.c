@@ -1,7 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi.h>
+#include <acpi/acpigen.h>
+#include <acpi/acpi_device.h>
 #include <amdblocks/ioapic.h>
+#include <amdblocks/smn.h>
 #include <amdblocks/root_complex.h>
+#include <arch/ioapic.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <types.h>
@@ -81,9 +86,98 @@ const struct non_pci_mmio_reg *get_iohc_non_pci_mmio_regs(size_t *count)
 	return non_pci_mmio;
 }
 
+#if ENV_RAMSTAGE
+
 static const char *gnb_acpi_name(const struct device *dev)
 {
 	return "GNB";
+}
+
+static void acpigen_write_mpdma_device(const struct device *dev)
+{
+	struct resource *res;
+	size_t reg_count, i;
+	uint64_t bar, bar_offset, bar_size;
+	uint32_t mpdma_redir_entry;
+	struct device *domain = (struct device *)dev_get_domain(dev);
+	struct acpi_irq mpdma_irq = ACPI_IRQ_EDGE_HIGH(0);
+	const uint32_t iohc_misc_base = get_iohc_misc_smn_base(domain);
+	const struct non_pci_mmio_reg *regs;
+
+	if (dev_get_domain_id(dev) == 7) {
+		printk(BIOS_DEBUG, "%s.DMA0\n", acpi_device_path(dev_get_domain(dev)));
+		acpigen_write_device("DMA0");
+		acpigen_write_name_string("_HID", "AMDI0096");
+		acpigen_write_name_integer("_UID", 1);
+		acpigen_pop_len(); /* Device */
+	}
+
+	if (dev_get_domain_id(dev) != 0)
+		return;
+
+	printk(BIOS_DEBUG, "%s.TMPM\n", acpi_device_path(dev_get_domain(dev)));
+	acpigen_write_device("TMPM");
+	acpigen_write_name_string("_HID", "AMDI0095");
+	acpigen_write_name_integer("_UID", 0);
+
+	regs = get_iohc_non_pci_mmio_regs(&reg_count);
+
+	bar = 0;
+	for (i = 0; i < reg_count; i++) {
+		if (regs[i].res_idx != 0x300)
+			continue;
+
+		bar = smn_read64(iohc_misc_base + regs[i].iohc_misc_offset);
+		break;
+	}
+
+	if (((bar & regs[i].mask) == 0) || !(bar & IOHC_MMIO_EN)) {
+		acpigen_write_name_integer("_STA", 0);
+		acpigen_pop_len(); /* Device */
+		return;
+	}
+
+	bar &= regs[i].mask;
+	bar_offset = 0x09510900 & (regs[i].size - 1);
+	bar_size = regs[i].size - bar_offset;
+
+	res = probe_resource(dev, IOMMU_IOAPIC_IDX);
+	if (!res) {
+		acpigen_write_name_integer("_STA", 0);
+		acpigen_pop_len(); /* Device */
+		return;
+	}
+
+	/* Calculate IOAPIC redirection entry offset based on RB index */
+	mpdma_redir_entry = ioapic_get_max_vectors((uintptr_t)res->base);
+	mpdma_redir_entry *= dev_get_domain_id(domain);
+	/* Add offset of FCH IOAPIC redirection entries */
+	mpdma_redir_entry += ioapic_get_max_vectors((uintptr_t)IO_APIC_ADDR);
+	/* MPDMA has a fixed redirection entry of 28 */
+	mpdma_redir_entry += 28;
+
+	mpdma_irq.pin = mpdma_redir_entry;
+
+	acpigen_write_name("_CRS");
+	acpigen_write_resourcetemplate_header();
+	acpigen_write_mem32fixed(1, bar + bar_offset, bar_size);
+	acpi_device_write_interrupt(&mpdma_irq);
+	acpigen_write_resourcetemplate_footer();
+
+	acpigen_write_name_integer("_STA", 0xF);
+
+	acpigen_pop_len(); /* Device */
+}
+
+static void gnb_fill_ssdt(const struct device *dev)
+{
+	const char *acpi_scope = acpi_device_path(dev_get_domain(dev));
+
+	acpigen_write_scope(acpi_scope);
+
+	acpigen_write_mpdma_device(dev);
+
+	acpigen_pop_len(); /* Scope */
 }
 
 struct device_operations turin_root_complex_operations = {
@@ -93,4 +187,7 @@ struct device_operations turin_root_complex_operations = {
 	.set_resources		= noop_set_resources,
 	.enable_resources	= pci_dev_enable_resources,
 	.acpi_name		= gnb_acpi_name,
+	.acpi_fill_ssdt		= gnb_fill_ssdt,
 };
+
+#endif /* ENV_RAMSTAGE */
