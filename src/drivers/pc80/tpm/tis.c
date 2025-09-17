@@ -807,7 +807,7 @@ static void lpc_tpm_set_resources(struct device *dev)
 static void lpc_tpm_fill_ssdt(const struct device *dev)
 {
 	const struct device *domain = dev_get_domain(dev);
-	const char *path = acpi_device_path(domain);
+	const char *path = acpi_device_scope(domain);
 
 	/* Device */
 	acpigen_write_scope(path);
