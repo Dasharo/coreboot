@@ -329,39 +329,39 @@ static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
 	 */
 
 	mrs = ddr4_get_mr3(DDR4_MR3_MPR_SERIAL,
-                       DDR4_MR3_CRC_DM_5,
-                       DDR4_MR3_FINE_GRAN_REF_NORMAL,
-                       DDR4_MR3_TEMP_SENSOR_DISABLE,
-                       DDR4_MR3_PDA_DISABLE,
-                       DDR4_MR3_GEARDOWN_1_2_RATE,
-                       DDR4_MR3_MPR_NORMAL,
-                       0);
+			   DDR4_MR3_CRC_DM_5,
+			   DDR4_MR3_FINE_GRAN_REF_NORMAL,
+			   DDR4_MR3_TEMP_SENSOR_DISABLE,
+			   DDR4_MR3_PDA_DISABLE,
+			   DDR4_MR3_GEARDOWN_1_2_RATE,
+			   DDR4_MR3_MPR_NORMAL,
+			   0);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr6(mca->nccd_l,
-                       DDR4_MR6_VREFDQ_TRAINING_DISABLE,
-                       DDR4_MR6_VREFDQ_TRAINING_RANGE_1, /* Don't care when disabled */
-                       0);
+			   DDR4_MR6_VREFDQ_TRAINING_DISABLE,
+			   DDR4_MR6_VREFDQ_TRAINING_RANGE_1, /* Don't care when disabled */
+			   0);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr5(DDR4_MR5_RD_DBI_DISABLE,
-                       DDR4_MR5_WR_DBI_DISABLE,
-                       DDR4_MR5_DATA_MASK_DISABLE,
-                       vpd_to_rtt_park(ATTR_MSS_VPD_MT_DRAM_RTT_PARK[vpd_idx]),
-                       DDR4_MR5_ODT_PD_ACTIVADED,
-                       DDR4_MR5_CA_PARITY_LAT_DISABLE);
+			   DDR4_MR5_WR_DBI_DISABLE,
+			   DDR4_MR5_DATA_MASK_DISABLE,
+			   vpd_to_rtt_park(ATTR_MSS_VPD_MT_DRAM_RTT_PARK[vpd_idx]),
+			   DDR4_MR5_ODT_PD_ACTIVADED,
+			   DDR4_MR5_CA_PARITY_LAT_DISABLE);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr4(DDR4_MR4_HPPR_DISABLE,
-                       DDR4_MR4_WR_PREAMBLE_1, /* ATTR_MSS_VPD_MT_PREAMBLE - always 0 */
-                       DDR4_MR4_RD_PREAMBLE_1, /* ATTR_MSS_VPD_MT_PREAMBLE - always 0 */
-                       DDR4_MR4_RD_PREAMBLE_TRAINING_DISABLE,
-                       DDR4_MR4_SELF_REFRESH_ABORT_DISABLE,
-                       DDR4_MR4_CS_TO_CMD_LAT_DISABLE,
-                       DDR4_MR4_SPPR_DISABLE,
-                       DDR4_MR4_INTERNAL_VREF_MON_DISABLE,
-                       DDR4_MR4_TEMP_CONTROLLED_REFR_DISABLE,
-                       DDR4_MR4_MAX_PD_MODE_DISABLE);
+			   DDR4_MR4_WR_PREAMBLE_1, /* ATTR_MSS_VPD_MT_PREAMBLE - always 0 */
+			   DDR4_MR4_RD_PREAMBLE_1, /* ATTR_MSS_VPD_MT_PREAMBLE - always 0 */
+			   DDR4_MR4_RD_PREAMBLE_TRAINING_DISABLE,
+			   DDR4_MR4_SELF_REFRESH_ABORT_DISABLE,
+			   DDR4_MR4_CS_TO_CMD_LAT_DISABLE,
+			   DDR4_MR4_SPPR_DISABLE,
+			   DDR4_MR4_INTERNAL_VREF_MON_DISABLE,
+			   DDR4_MR4_TEMP_CONTROLLED_REFR_DISABLE,
+			   DDR4_MR4_MAX_PD_MODE_DISABLE);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	/*
@@ -371,28 +371,27 @@ static void mrs_load(uint8_t chip, int mcs_i, int mca_i, int d)
 	 * maybe write 0 here and don't do pre-?
 	 */
 	mrs = ddr4_get_mr2(DDR4_MR2_WR_CRC_DISABLE, /* ATTR_MSS_MRW_DRAM_WRITE_CRC, default 0 */
-                       vpd_to_rtt_wr(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
-                       /* ATTR_MSS_MRW_REFRESH_RATE_REQUEST, default DOUBLE.
-                        * Do we need to half tREFI as well? */
-                       DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
-                       mem_data[chip].cwl);
+			   vpd_to_rtt_wr(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
+			   /* ATTR_MSS_MRW_REFRESH_RATE_REQUEST, default DOUBLE.
+			    * Do we need to half tREFI as well? */
+			   DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
+			   mem_data[chip].cwl);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr1(DDR4_MR1_QOFF_ENABLE,
-                       mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TQDS_ENABLE : DDR4_MR1_TQDS_DISABLE,
-                       vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
-                       DDR4_MR1_WRLVL_DISABLE,
-                       DDR4_MR1_ODIMP_RZQ_7, /* ATTR_MSS_VPD_MT_DRAM_DRV_IMP_DQ_DQS, always 34 Ohms */
-                       DDR4_MR1_AL_DISABLE,
-                       DDR4_MR1_DLL_ENABLE);
+			   mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TDQS_ENABLE : DDR4_MR1_TDQS_DISABLE,
+			   vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
+			   DDR4_MR1_WRLVL_DISABLE,
+			   DDR4_MR1_ODIMP_RZQ_7, /* ATTR_MSS_VPD_MT_DRAM_DRV_IMP_DQ_DQS, always 34 Ohms */
+			   DDR4_MR1_AL_DISABLE,
+			   DDR4_MR1_DLL_ENABLE);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMRD);
 
 	mrs = ddr4_get_mr0(mca->nwr,
-                       DDR4_MR0_DLL_RESET_YES,
-                       DDR4_MR0_MODE_NORMAL,
-                       mca->cl,
-                       DDR4_MR0_BURST_TYPE_SEQUENTIAL,
-                       DDR4_MR0_BURST_LENGTH_FIXED_8);
+			   DDR4_MR0_DLL_RESET_YES,
+			   mca->cl,
+			   DDR4_MR0_BURST_TYPE_SEQUENTIAL,
+			   DDR4_MR0_BURST_LENGTH_FIXED_8);
 	ccs_add_mrs(chip, id, mrs, ranks, mirrored, tMOD);
 
 	ccs_execute(chip, id, mca_i);

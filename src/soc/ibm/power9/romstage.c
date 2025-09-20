@@ -67,7 +67,7 @@ static void dump_mca_data(mca_data_t *mca)
 }
 
 /* TODO: add checks for same ranks configuration for both DIMMs under one MCA */
-static inline bool is_proper_dimm(spd_raw_data spd, int slot)
+static inline bool is_proper_dimm(spd_ddr4_raw_data spd, int slot)
 {
 	struct dimm_attr_ddr4_st attr;
 	if (spd == NULL)

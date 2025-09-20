@@ -209,7 +209,7 @@ void mcbist_execute(uint8_t chip, int mcs_i)
 int mcbist_is_done(uint8_t chip, int mcs_i)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
-	uint64_t val = val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ);
+	uint64_t val = read_scom_for_chiplet(chip, id, MCB_CNTLSTATQ);
 
 	/* Still in progress */
 	if (val & PPC_BIT(MCB_CNTLSTATQ_MCB_IP))
@@ -217,7 +217,7 @@ int mcbist_is_done(uint8_t chip, int mcs_i)
 
 	/* Not sure if DONE and FAIL can be set at the same time, check FAIL first */
 	if ((val & PPC_BIT(MCB_CNTLSTATQ_MCB_FAIL)) || val == 0)
-		die("MCBIST error (%#16.16llx)\n");
+		die("MCBIST error\n");
 
 	/* Finished */
 	if (val & PPC_BIT(MCB_CNTLSTATQ_MCB_DONE))

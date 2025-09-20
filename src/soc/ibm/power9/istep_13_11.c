@@ -253,7 +253,7 @@ static void dqs_align_turn_on_refresh(uint8_t chip, int mcs_i, int mca_i)
 }
 
 static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
-                         enum rank_selection ranks_present)
+			 enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
@@ -273,9 +273,9 @@ static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 		  [A11-A9]  0
 		*/
 		mrs = ddr4_get_mr2(DDR4_MR2_WR_CRC_DISABLE,
-                           vpd_to_rtt_wr(0),
-                           DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
-                           mem_data[chip].cwl);
+				   vpd_to_rtt_wr(0),
+				   DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
+				   mem_data[chip].cwl);
 		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 
 		/* MR1 =               // redo the rest of the bits
@@ -283,13 +283,13 @@ static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 		  [A8-A10]  240/ATTR_MSS_VPD_MT_DRAM_RTT_WR
 		*/
 		mrs = ddr4_get_mr1(DDR4_MR1_QOFF_ENABLE,
-                           mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TQDS_ENABLE :
-                                                            DDR4_MR1_TQDS_DISABLE,
-                           vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
-                           DDR4_MR1_WRLVL_DISABLE,
-                           DDR4_MR1_ODIMP_RZQ_7,
-                           DDR4_MR1_AL_DISABLE,
-                           DDR4_MR1_DLL_ENABLE);
+				   mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TDQS_ENABLE :
+								    DDR4_MR1_TDQS_DISABLE,
+				   vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
+				   DDR4_MR1_WRLVL_DISABLE,
+				   DDR4_MR1_ODIMP_RZQ_7,
+				   DDR4_MR1_AL_DISABLE,
+				   DDR4_MR1_DLL_ENABLE);
 		/*
 		 * Next command for this rank is REF, done by PHY hardware, so use tMOD.
 		 *
@@ -359,13 +359,13 @@ static void wr_level_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 		mirrored = mca->dimm[i/2].spd[136] & 1;
 
 		mrs = ddr4_get_mr1(DDR4_MR1_QOFF_DISABLE,
-                           mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TQDS_ENABLE :
-                                                            DDR4_MR1_TQDS_DISABLE,
-                           vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
-                           DDR4_MR1_WRLVL_ENABLE,
-                           DDR4_MR1_ODIMP_RZQ_7,
-                           DDR4_MR1_AL_DISABLE,
-                           DDR4_MR1_DLL_ENABLE);
+				   mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TDQS_ENABLE :
+								    DDR4_MR1_TDQS_DISABLE,
+				   vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
+				   DDR4_MR1_WRLVL_ENABLE,
+				   DDR4_MR1_ODIMP_RZQ_7,
+				   DDR4_MR1_AL_DISABLE,
+				   DDR4_MR1_DLL_ENABLE);
 		/*
 		 * Delays apply to commands sent to the same rank, but we are changing
 		 * ranks. Can we get away with 0 delay? Is it worth it? Remember that
@@ -403,7 +403,7 @@ static uint64_t wr_level_time(uint8_t chip, mca_data_t *mca)
 
 /* Undo the pre-workaround, basically */
 static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
-                          enum rank_selection ranks_present)
+			  enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
@@ -419,59 +419,59 @@ static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 	 * enabling equivalent terminations.
 	 */
 	if (ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx] != 0) {
-		#define F(x) ((((x) >> 4) & 0xc) | (((x) >> 2) & 0x3))
+#define F(x) ((((x) >> 4) & 0xc) | (((x) >> 2) & 0x3))
 		/* Originally done in seq_reset() in 13.8 */
 		/* IOM0.DDRPHY_SEQ_ODT_RD_CONFIG1_P0 =
-			  F(X) = (((X >> 4) & 0xc) | ((X >> 2) & 0x3))    // Bits 0,1,4,5 of X, see also MC01.PORT0.SRQ.MBA_FARB2Q
-			  [all]   0
-			  [48-51] ODT_RD_VALUES0 =
-				count_dimm(MCA) == 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][1][0])
-				count_dimm(MCA) != 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][0][2])
-			  [56-59] ODT_RD_VALUES1 =
-				count_dimm(MCA) == 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][1][1])
-				count_dimm(MCA) != 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][0][3])
-		*/
+		   F(X) = (((X >> 4) & 0xc) | ((X >> 2) & 0x3))    // Bits 0,1,4,5 of X, see also MC01.PORT0.SRQ.MBA_FARB2Q
+		   [all]   0
+		   [48-51] ODT_RD_VALUES0 =
+		   count_dimm(MCA) == 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][1][0])
+		   count_dimm(MCA) != 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][0][2])
+		   [56-59] ODT_RD_VALUES1 =
+		   count_dimm(MCA) == 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][1][1])
+		   count_dimm(MCA) != 2: F(ATTR_MSS_VPD_MT_ODT_RD[index(MCA)][0][3])
+		   */
 		/* 2 DIMMs -> odd vpd_idx */
 		uint64_t val = 0;
 		if (vpd_idx % 2)
 			val = PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][0]), ODT_RD_VALUES0, ODT_RD_VALUES0_LEN)
-			    | PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN);
+				| PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_RD[vpd_idx][1][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN);
 
 		mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_RD_CONFIG1_P0, 0, val);
 
 
 		/* IOM0.DDRPHY_SEQ_ODT_WR_CONFIG0_P0 =
-			  F(X) = (((X >> 4) & 0xc) | ((X >> 2) & 0x3))    // Bits 0,1,4,5 of X, see also MC01.PORT0.SRQ.MBA_FARB2Q
-			  [all]   0
-			  [48-51] ODT_WR_VALUES0 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][0])
-			  [56-59] ODT_WR_VALUES1 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][1])
-		*/
+		   F(X) = (((X >> 4) & 0xc) | ((X >> 2) & 0x3))    // Bits 0,1,4,5 of X, see also MC01.PORT0.SRQ.MBA_FARB2Q
+		   [all]   0
+		   [48-51] ODT_WR_VALUES0 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][0])
+		   [56-59] ODT_WR_VALUES1 = F(ATTR_MSS_VPD_MT_ODT_WR[index(MCA)][0][1])
+		   */
 		mca_and_or(chip, id, mca_i, DDRPHY_SEQ_ODT_WR_CONFIG0_P0, 0,
 			   PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][0]), ODT_RD_VALUES0, ODT_RD_VALUES0_LEN) |
 			   PPC_PLACE(F(ATTR_MSS_VPD_MT_ODT_WR[vpd_idx][0][1]), ODT_RD_VALUES1, ODT_RD_VALUES1_LEN));
-		#undef F
+#undef F
 
 		/* MR2 =               // redo the rest of the bits
-		  [A11-A9]  ATTR_MSS_VPD_MT_DRAM_RTT_WR
-		*/
+		   [A11-A9]  ATTR_MSS_VPD_MT_DRAM_RTT_WR
+		   */
 		mrs = ddr4_get_mr2(DDR4_MR2_WR_CRC_DISABLE,
-                           vpd_to_rtt_wr(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
-                           DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
-                           mem_data[chip].cwl);
+				   vpd_to_rtt_wr(ATTR_MSS_VPD_MT_DRAM_RTT_WR[vpd_idx]),
+				   DDR4_MR2_ASR_MANUAL_EXTENDED_RANGE,
+				   mem_data[chip].cwl);
 		ccs_add_mrs(chip, id, mrs, rank, mirrored, tMRD);
 
 		/* MR1 =               // redo the rest of the bits
-		  // Write properly encoded RTT_NOM value
-		  [A8-A10]  240/ATTR_MSS_VPD_MT_DRAM_RTT_NOM
-		*/
+				       // Write properly encoded RTT_NOM value
+				       [A8-A10]  240/ATTR_MSS_VPD_MT_DRAM_RTT_NOM
+				       */
 		mrs = ddr4_get_mr1(DDR4_MR1_QOFF_ENABLE,
-                           mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TQDS_ENABLE :
-                                                            DDR4_MR1_TQDS_DISABLE,
-                           vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
-                           DDR4_MR1_WRLVL_DISABLE,
-                           DDR4_MR1_ODIMP_RZQ_7,
-                           DDR4_MR1_AL_DISABLE,
-                           DDR4_MR1_DLL_ENABLE);
+				   mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TDQS_ENABLE :
+				   DDR4_MR1_TDQS_DISABLE,
+				   vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
+				   DDR4_MR1_WRLVL_DISABLE,
+				   DDR4_MR1_ODIMP_RZQ_7,
+				   DDR4_MR1_AL_DISABLE,
+				   DDR4_MR1_DLL_ENABLE);
 		/*
 		 * Next command for this rank should be REF before Initial Pattern Write,
 		 * done by PHY hardware, so use tMOD.
@@ -483,11 +483,11 @@ static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 
 	/* Different workaround, executed even if RTT_WR == 0 */
 	/* workarounds::wr_lvl::configure_non_calibrating_ranks()
-	for each rank on MCA except current primary rank:
-	  MR1 =               // redo the rest of the bits
-		  [A7]  = 1       // Write Leveling Enable
-		  [A12] = 1       // Outputs disabled (DQ, DQS)
-	*/
+	   for each rank on MCA except current primary rank:
+	   MR1 =               // redo the rest of the bits
+	   [A7]  = 1       // Write Leveling Enable
+	   [A12] = 1       // Outputs disabled (DQ, DQS)
+	   */
 	for (i = 0; i < 4; i++) {
 		rank = 1 << i;
 		if (i == rp || !(ranks_present & rank))
@@ -501,13 +501,13 @@ static void wr_level_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 		mirrored = mca->dimm[i/2].spd[136] & 1;
 
 		mrs = ddr4_get_mr1(DDR4_MR1_QOFF_ENABLE,
-                           mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TQDS_ENABLE :
-                                                            DDR4_MR1_TQDS_DISABLE,
-                           vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
-                           DDR4_MR1_WRLVL_DISABLE,
-                           DDR4_MR1_ODIMP_RZQ_7,
-                           DDR4_MR1_AL_DISABLE,
-                           DDR4_MR1_DLL_ENABLE);
+				   mca->dimm[d].width == WIDTH_x8 ? DDR4_MR1_TDQS_ENABLE :
+				   DDR4_MR1_TDQS_DISABLE,
+				   vpd_to_rtt_nom(ATTR_MSS_VPD_MT_DRAM_RTT_NOM[vpd_idx]),
+				   DDR4_MR1_WRLVL_DISABLE,
+				   DDR4_MR1_ODIMP_RZQ_7,
+				   DDR4_MR1_AL_DISABLE,
+				   DDR4_MR1_DLL_ENABLE);
 		/*
 		 * Delays apply to commands sent to the same rank, but we are changing
 		 * ranks. Can we get away with 0 delay? Is it worth it? Remember that
@@ -576,7 +576,7 @@ static uint64_t dqs_align_time(uint8_t chip, mca_data_t *mca)
 }
 
 static void rdclk_align_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
-                            enum rank_selection ranks_present)
+			    enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 
@@ -609,7 +609,7 @@ static uint64_t rdclk_align_time(uint8_t chip, mca_data_t *mca)
 }
 
 static void rdclk_align_post(uint8_t chip, int mcs_i, int mca_i, int rp,
-                             enum rank_selection ranks_present)
+			     enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -657,7 +657,7 @@ static void rdclk_align_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 }
 
 static void read_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
-                         enum rank_selection ranks_present)
+			 enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -716,7 +716,7 @@ static uint64_t read_ctr_time(uint8_t chip, mca_data_t *mca)
 }
 
 static void read_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
-                          enum rank_selection ranks_present)
+			  enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -740,7 +740,7 @@ static void read_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
 static uint16_t write_delays[18];
 
 static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
-                          enum rank_selection ranks_present)
+			  enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
@@ -769,9 +769,9 @@ static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 
 	/* Fill MRS command once, then flip VREFDQ training mode bit as needed */
 	mrs = ddr4_get_mr6(mca->nccd_l,
-                       DDR4_MR6_VREFDQ_TRAINING_ENABLE,
-                       (ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx] & 0x40) >> 6,
-                       ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx] & 0x3F);
+			   DDR4_MR6_VREFDQ_TRAINING_ENABLE,
+			   (ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx] & 0x40) >> 6,
+			   ATTR_MSS_VPD_MT_VREF_DRAM_WR[vpd_idx] & 0x3F);
 
 	/* Step 1 - enter VREFDQ training mode */
 	ccs_add_mrs(chip, id, mrs, rank, mirrored, tVREFDQ_E_X);
@@ -801,8 +801,8 @@ static void write_ctr_pre(uint8_t chip, int mcs_i, int mca_i, int rp,
 		const uint64_t val_mul = 0x0000000100000000;
 		/* IOM0.DDRPHY_DP16_WR_DELAY_VALUE_<val_idx>_RP<rp>_REG_P0_<dp> */
 		uint64_t val = dp_mca_read(chip, id, dp, mca_i,
-		                           DDRPHY_DP16_WR_DELAY_VALUE_0_RP0_REG_P0_0 +
-		                           rp * rp_mul + val_idx * val_mul);
+					   DDRPHY_DP16_WR_DELAY_VALUE_0_RP0_REG_P0_0 +
+					   rp * rp_mul + val_idx * val_mul);
 		write_delays[dram] = (uint16_t) val;
 	}
 }
@@ -850,7 +850,7 @@ static uint64_t write_ctr_time(uint8_t chip, mca_data_t *mca)
 }
 
 static void write_ctr_post(uint8_t chip, int mcs_i, int mca_i, int rp,
-                           enum rank_selection ranks_present)
+			   enum rank_selection ranks_present)
 {
 	chiplet_id_t id = mcs_ids[mcs_i];
 	int dp;
@@ -899,7 +899,7 @@ static uint64_t coarse_wr_rd_time(uint8_t chip, mca_data_t *mca)
 }
 
 typedef void (phy_workaround_t) (uint8_t chip, int mcs_i, int mca_i, int rp,
-                                 enum rank_selection ranks_present);
+				 enum rank_selection ranks_present);
 
 struct phy_step {
 	const char *name;
@@ -968,7 +968,7 @@ static struct phy_step steps[] = {
 };
 
 static void dispatch_step(uint8_t chip, struct phy_step *step, int mcs_i, int mca_i, int rp,
-                          enum rank_selection ranks_present)
+			  enum rank_selection ranks_present)
 {
 	mca_data_t *mca = &mem_data[chip].mcs[mcs_i].mca[mca_i];
 	printk(BIOS_DEBUG, "%s starting\n", step->name);

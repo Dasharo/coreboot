@@ -3,6 +3,8 @@
 /* Debugging every access takes too much time */
 #define SKIP_SCOM_DEBUG
 
+#include <device/dram/ddr3.h>
+#include <device/dram/ddr4.h>
 #include <device/i2c_simple.h>
 #include <console/console.h>
 #include <cpu/power/proc.h>
@@ -57,7 +59,7 @@ static int get_spd(uint8_t bus, u8 *spd, u8 addr)
 	 */
 	uint8_t fix = addr & 0x80;
 
-	if (i2c_read_bytes(bus, addr, 0, spd, SPD_PAGE_LEN) < 0) {
+	if (i2c_read_bytes(bus, addr, 0, spd, SPD_SIZE_MAX_DDR3) < 0) {
 		printk(BIOS_INFO, "No memory DIMM at address %02X\n", addr);
 		return -1;
 	}
@@ -66,7 +68,7 @@ static int get_spd(uint8_t bus, u8 *spd, u8 addr)
 	i2c_writeb(bus, SPD_PAGE_1 | fix, 0, 0);
 
 	/* No need to check again if DIMM is present */
-	i2c_read_bytes(bus, addr, 0, spd + SPD_PAGE_LEN, SPD_PAGE_LEN);
+	i2c_read_bytes(bus, addr, 0, spd + SPD_SIZE_MAX_DDR3, SPD_SIZE_MAX_DDR3);
 	/* Restore to page 0 */
 	i2c_writeb(bus, SPD_PAGE_0 | fix, 0, 0);
 
@@ -92,7 +94,7 @@ void get_spd_i2c(uint8_t bus, struct spd_block *blk)
 			blk->spd_array[i] = NULL;
 	}
 
-	blk->len = SPD_PAGE_LEN_DDR4;
+	blk->len = SPD_SIZE_MAX_DDR4;
 }
 
 /* The four functions below use 64-bit address and data as for SCOM and do

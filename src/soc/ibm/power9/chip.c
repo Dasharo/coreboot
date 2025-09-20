@@ -4,9 +4,8 @@
 #include <cbfs.h>
 #include <cbmem.h>
 #include <commonlib/bsd/cbmem_id.h>
-#include <commonlib/stdlib.h>		// xzalloc
+#include <commonlib/bsd/stdlib.h>		// xzalloc
 #include <device/device.h>
-#include <device_tree.h>
 #include <drivers/ipmi/ipmi_bt.h>
 #include <cpu/power/istep_13.h>
 #include <cpu/power/istep_18.h>

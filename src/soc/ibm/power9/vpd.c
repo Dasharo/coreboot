@@ -346,13 +346,11 @@ static const uint8_t *find_vpd_conf(const struct vpd_info *vpd, const char *mapp
 static void load_mt_attrs(const uint8_t *mt_conf, size_t size, int vpd_idx)
 {
 	uint8_t version_layout;
-	uint8_t version_data;
 
 	if (size < 2)
 		die("MT configuration is way too small!\n");
 
 	version_layout = mt_conf[0];
-	version_data = mt_conf[1];
 
 	if (version_layout > 1)
 		die("Unsupported layout of MT configuration!\n");
@@ -467,13 +465,11 @@ static void load_mt(const uint8_t *vpd_data)
 static void load_mr_attrs(const uint8_t *mr_conf, size_t size, int vpd_idx)
 {
 	uint8_t version_layout;
-	uint8_t version_data;
 
 	if (size < 2)
 		die("MR configuration is way too small!\n");
 
 	version_layout = mr_conf[0];
-	version_data = mr_conf[1];
 
 	if (version_layout != 0)
 		die("Unsupported layout of MR configuration!\n");

@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include <commonlib/region.h>
-#include <commonlib/stdlib.h>
+#include <commonlib/bsd/stdlib.h>
 #include <console/console.h>
 #include <cpu/power/mvpd.h>
 #include <cpu/power/istep_13.h>
@@ -12,6 +12,7 @@
 #include <cpu/power/rom_media.h>
 #include <cpu/power/scom.h>
 #include <cpu/power/spr.h>
+#include <device/mmio.h>
 #include <string.h>		// memset, memcpy
 #include <timer.h>
 #include <vendorcode/ibm/power9/pstates/p9_pstates_cmeqm.h>
@@ -1068,7 +1069,7 @@ static void istep_16_1(int this_core)
 	 * - address of instruction which generated this exception. It can be then
 	 * read with pdbg.
 	 */
-	*(volatile uint32_t *)0xE40 = 0x48000000;
+	write32p(0x48000000, 0xE40);
 
 	configure_xive(this_core);
 
