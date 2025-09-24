@@ -43,6 +43,9 @@ endif
 
 BUILD_STR += -D BUILD_ARCH=X64
 
+# Enable compiler errors printing from EDK2
+BUILD_STR += -v
+
 #
 # EDK II (edk2/master) has the following build options relevant to coreboot:
 #
