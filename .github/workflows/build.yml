@@ -454,7 +454,7 @@ jobs:
         model: [ vp46xx ]
   deploy_novacustom_adl:
     if: startsWith(github.ref, 'refs/tags/novacustom') && contains(github.ref, 'adl')
-    needs: build_novacustom
+    needs: build_novacustom_laptop
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: novacustom
@@ -468,7 +468,7 @@ jobs:
         model: [ nv4x_adl, ns5x_adl ]
   deploy_novacustom_tgl:
     if: startsWith(github.ref, 'refs/tags/novacustom') && contains(github.ref, 'tgl')
-    needs: build_novacustom
+    needs: build_novacustom_laptop
     uses: ./.github/workflows/deploy-template.yml
     with:
       platform: novacustom
