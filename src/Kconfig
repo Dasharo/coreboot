@@ -481,6 +481,13 @@ config BOOTSPLASH_FILE
 	  The minimum necessary ImageMagick command line seems to be:
 	  $ convert input.img -colorspace YCC -sampling-factor 4:2:0 bootsplash.jpg
 
+config BOOTSPLASH_REGION_LOGO_FILE
+	string "Path to the image to be placed as logo.bmp into the BOOTSPLASH region"
+	help
+		Same as BOOTSPLASH_FILE, but instead of placing the file in the coreboot
+		CBFS as bootsplash.bmp, it's placed into the separate BOOTSPLASH fmap region
+		as logo.bmp.
+
 config BOOTSPLASH_CONVERT
 	bool "Pre-process bootsplash file with ImageMagick"
 	depends on BOOTSPLASH_IMAGE
@@ -1559,6 +1566,9 @@ config INCLUDE_CONFIG_FILE
 config BOOTSPLASH_FILE
 	depends on BOOTSPLASH_IMAGE
 	default "bootsplash.jpg"
+
+config BOOTSPLASH_REGION_LOGO_FILE
+	default "3rdparty/dasharo-blobs/protectli/bootsplash.bmp" if VENDOR_PROTECTLI
 
 config BOOTSPLASH_CONVERT_QUALITY
 	depends on BOOTSPLASH_CONVERT
