@@ -22,7 +22,7 @@ function hex_to_ver_str() {
 
     local ver="v$((0x$major)).$((0x$minor)).$((0x$bugfix))"
     if [ "$((0x$rc))" -lt 128 ]; then
-        ver="$ver-rc$((rc))"
+        ver="$ver-rc$((0x$rc))"
     fi
     echo "$ver"
 }
