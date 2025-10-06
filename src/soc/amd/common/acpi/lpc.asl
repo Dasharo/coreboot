@@ -30,6 +30,11 @@ Device(LPCB) {
 			0xFEC20000,			// Address Base
 			0x00001000,			// Address Length
 			)
+
+			Memory32Fixed(ReadWrite,	// Setup for fixed resource location for eSPI1 base address
+			0xFEC30000,			// Address Base
+			0x00001000,			// Address Length
+			)
 		})
 	}
 
