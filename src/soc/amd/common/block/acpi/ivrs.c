@@ -75,12 +75,6 @@ static unsigned long ivhd_describe_f0_device(unsigned long current, uint16_t dev
 static unsigned long ivhd_dev_range(unsigned long current, uint16_t start_devid,
 				    uint16_t end_devid, uint8_t setting)
 {
-	unsigned long next = ALIGN_UP(current, 4);
-	if (!check_acpi_tables_write_limit(next, 2 * sizeof(ivrs_ivhd_generic_t)))
-		return current;
-
-	/* 4-byte IVHD structures must be aligned to the 4-byte boundary. */
-	current = next;
 	ivrs_ivhd_generic_t *ivhd_range = (ivrs_ivhd_generic_t *)current;
 	memset(ivhd_range, 0, 2 * sizeof(*ivhd_range));
 
