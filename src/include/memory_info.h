@@ -72,6 +72,8 @@ struct dimm_info {
 	 * e.g., SPD_RDIMM, SPD_SODIMM, SPD_MICRO_DIMM
 	 */
 	uint8_t mod_type;
+
+	uint16_t type_detail;
 	/*
 	 * SPD bus width.
 	 *
@@ -96,6 +98,8 @@ struct dimm_info {
 	 * Voltage Level
 	 */
 	uint16_t vdd_voltage;
+	uint16_t vdd_min_voltage;
+	uint16_t vdd_max_voltage;
 	/*
 	 * Max speed in MT/s
 	 * If the value is 0, ddr_frequency should be used instead.
