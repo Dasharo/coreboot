@@ -116,6 +116,7 @@ void write_pci_cfg_irqs(void)
 			continue;	/* Device has invalid INT_PIN so skip it */
 
 		devfn = target_dev->path.pci.devfn;
+		devfn |= target_dev->upstream->secondary << 8;
 
 		/*
 		 * Step 2: Use the INT_PIN and DevFn number to find the PCI_INTR

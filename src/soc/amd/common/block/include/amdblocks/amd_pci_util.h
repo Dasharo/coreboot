@@ -22,7 +22,7 @@ struct fch_irq_routing {
 const struct fch_irq_routing *mb_get_fch_irq_mapping(size_t *length);
 
 struct pirq_struct {
-	u8 devfn;
+	u16 devfn;
 	u8 PIN[4];	/* PINA/B/C/D are index 0/1/2/3 */
 };
 
@@ -54,7 +54,7 @@ enum pci_routing_swizzle {
  * interrupt is reduced modulo 8 onto INT[A-H] and forwarded to the FCH IO-APIC.
  **/
 struct pci_routing_info {
-	uint8_t devfn;
+	uint16_t devfn;
 	uint8_t group;
 	uint8_t swizzle;
 	uint8_t bridge_irq; /* also called 'map' */
@@ -65,9 +65,10 @@ void populate_pirq_data(void);
 /* Implemented by the SoC */
 const struct pci_routing_info *get_pci_routing_table(size_t *entries);
 
-const struct pci_routing_info *get_pci_routing_info(unsigned int devfn);
+const struct pci_routing_info *get_pci_routing_info(const struct device *dev);
 
 unsigned int pci_calculate_irq(const struct pci_routing_info *routing_info, unsigned int pin);
+unsigned int soc_get_gsi_base(const struct pci_routing_info *routing_info);
 
 void acpigen_write_pci_GNB_PRT(const struct device *dev);
 void acpigen_write_pci_FCH_PRT(const struct device *dev);

@@ -20,10 +20,14 @@ static const uint8_t pcie_swizzle_table[][4] = {
 	{PIN_D, PIN_A, PIN_B, PIN_C},
 };
 
-const struct pci_routing_info *get_pci_routing_info(unsigned int devfn)
+const struct pci_routing_info *get_pci_routing_info(const struct device *dev)
 {
 	const struct pci_routing_info *routing_info;
 	size_t entries = 0;
+	uint16_t devfn;
+
+	devfn = dev->path.pci.devfn;
+	devfn |= (dev->upstream->secondary << 8);
 
 	routing_info = get_pci_routing_table(&entries);
 
@@ -34,8 +38,8 @@ const struct pci_routing_info *get_pci_routing_info(unsigned int devfn)
 		if (routing_info->devfn == devfn)
 			return routing_info;
 
-	printk(BIOS_ERR, "Failed to find PCIe routing info for dev: %#x, fn: %#x\n",
-	       PCI_SLOT(devfn), PCI_FUNC(devfn));
+	printk(BIOS_ERR, "Failed to find PCIe routing info for bus: %#x dev: %#x, fn: %#x\n",
+	       devfn >> 8, PCI_SLOT(devfn), PCI_FUNC(devfn));
 
 	return NULL;
 }
