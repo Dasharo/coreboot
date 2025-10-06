@@ -14,40 +14,23 @@ Device(LPCB) {
 	*	DBGO("\\_SB\\PCI0\\LpcIsaBr\\_INI\n")
 	} */ /* End Method(_SB.SBRDG._INI) */
 
-	OperationRegion(CFG,PCI_Config,0x0,0x100) // Map PCI Configuration Space
-	Field(CFG,DWordAcc,NoLock,Preserve){
-		Offset(0xA0),
-		BAR,32}		// SPI Controller Base Address Register (Index 0xA0)
 
 	Device(LDRC)	// LPC device: Resource consumption
 	{
 		Name (_HID, EISAID("PNP0C02"))  // ID for Motherboard resources
 		Name (_UID, 0x3278)
-		Name (CRS, ResourceTemplate ()  // Current Motherboard resources
+		Name (_CRS, ResourceTemplate ()  // Current Motherboard resources
 		{
 			Memory32Fixed(ReadWrite,	// Setup for fixed resource location for SPI base address
-			0x00000000,			// Address Base
+			0xFEC10000,			// Address Base
 			0x00001000,			// Address Length
-			BAR0				// Descriptor Name
 			)
 
 			Memory32Fixed(ReadWrite,	// Setup for fixed resource location for eSPI base address
-			0x00000000,			// Address Base
+			0xFEC20000,			// Address Base
 			0x00001000,			// Address Length
-			BAR1				// Descriptor Name
 			)
 		})
-
-		Method(_CRS,0,Serialized)
-		{
-			CreateDwordField(^CRS,^BAR0._BAS,SPIB)	// Field to hold SPI base address
-			CreateDwordField(^CRS,^BAR1._BAS,ESPB)	// Field to hold eSPI base address
-			Local0 = BAR & 0xffffff00
-			SPIB = Local0	// SPI base address mapped
-			Local1 = Local0 + 0x10000
-			ESPB = Local1	// eSPI base address mapped
-			Return(CRS)
-		}
 	}
 
 	/* Real Time Clock Device */
