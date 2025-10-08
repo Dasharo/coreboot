@@ -1,10 +1,16 @@
 FLASH@0xff000000 16M {
+
+	# ---- Static (vendor / Intel) areas ----
 	SI_ALL@0x0 {
 		SI_DESC 4K
 		SI_ME 0x4c0000
 		SI_DEVICEEXT2 0xbf000
 	}
+
+	# ---- BIOS region ----
 	SI_BIOS@0x580000 0xa80000 {
+
+		# --- Preserved runtime data ---
 		SMMSTORE(PRESERVE) 256K
 
 		RW_MISC 320K {
@@ -18,12 +24,14 @@ FLASH@0xff000000 16M {
 
 		BOOTSPLASH(CBFS) 512K
 
+		# --- Main firmware Slot A ---
 		RW_SECTION_A {
 			VBLOCK_A 64K
 			FW_MAIN_A(CBFS)
 			RW_FWID_A 0x100
 		}
 
+		# --- Read-only / protected section ---
 		WP_RO 5M {
 			RO_VPD(PRESERVE) 16K
 			RO_SECTION {
@@ -31,8 +39,14 @@ FLASH@0xff000000 16M {
 				RO_FRID 0x100
 				RO_FRID_PAD 0x700
 				GBB 12K
-				COREBOOT(CBFS)
+				COREBOOT(CBFS)     # Slot A bootblock + main CBFS
 			}
 		}
+
+		# --- Redundant Slot B / top-swap area ---
+		TOPSWAP(CBFS) 512K          # Slot B CBFS region for redundant bootblock
+		BOOTBLOCK(CBFS) 512K        # Optionally separate block, mirrors Slot A
+
 	}
 }
+
