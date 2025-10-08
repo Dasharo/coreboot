@@ -1354,8 +1354,16 @@ ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
 	printf "    INIT TOPSWAP\n"
 	$(CBFSTOOL) $@.tmp add-master-header -r TOPSWAP
 endif
+ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
+	printf "    BOOTBLOCK (Slot A)\n"
+	$(CBFSTOOL) $@.tmp add -r BOOTBLOCK \
+		-f $(objcbfs)/bootblock.bin \
+		-n bootblock \
+		-t bootblock
+else
 	printf "    BOOTBLOCK\n"
 	$(call add_bootblock,$@.tmp,$(objcbfs)/bootblock.bin)
+endif
 ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
 	printf "    TOPSWAP BB\n"
 	$(CBFSTOOL) $@.tmp add -r TOPSWAP \
