@@ -1351,10 +1351,6 @@ $(obj)/coreboot.pre: $$(prebuilt-files) $(CBFSTOOL) $(obj)/fmap.fmap $(obj)/fmap
 	$(if $(CONFIG_REDUNDANT_BOOTBLOCK),$(objcbfs)/bootblock_b.bin)
 	$(CBFSTOOL) $@.tmp create -M $(obj)/fmap.fmap -r $(shell cat $(obj)/fmap.desc)
 ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
-	printf "    INIT TOPSWAP\n"
-	$(CBFSTOOL) $@.tmp add-master-header -r TOPSWAP
-endif
-ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
 	printf "    BOOTBLOCK (Slot A)\n"
 	$(CBFSTOOL) $@.tmp add -r BOOTBLOCK \
 		-f $(objcbfs)/bootblock.bin \
