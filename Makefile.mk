@@ -127,6 +127,10 @@ subdirs-y += util/checklist util/testing
 #######################################################################
 # Add source classes and their build options
 classes-y := ramstage romstage bootblock decompressor postcar smm smmstub cpu_microcode verstage
+# when building redundant bootblock, we create a second class alias for Slot B
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+classes-y += bootblock_b
+endif
 
 # Add a special 'all' class to add sources to all stages
 $(call add-special-class,all)
@@ -218,6 +222,11 @@ ramstage-postprocess=$$(eval DEPENDENCIES+=$$(addsuffix .d,$$(basename $(1)))) \
 
 decompressor-generic-ccopts += -D__DECOMPRESSOR__
 bootblock-generic-ccopts += -D__BOOTBLOCK__
+bootblock_b-generic-ccopts += -D__BOOTBLOCK__
+ifeq ($(CONFIG_BOOTBLOCK_SLOT_VARIANTS),y)
+bootblock-generic-ccopts   += -DSLOT_A
+bootblock_b-generic-ccopts += -DSLOT_B
+endif
 romstage-generic-ccopts += -D__ROMSTAGE__
 ramstage-generic-ccopts += -D__RAMSTAGE__
 ifeq ($(CONFIG_COVERAGE),y)
@@ -834,6 +843,13 @@ verstage-y += $(CONFIG_MEMLAYOUT_LD_FILE)
 postcar-y += $(CONFIG_MEMLAYOUT_LD_FILE)
 decompressor-y += $(CONFIG_MEMLAYOUT_LD_FILE)
 
+# Make bootblock_b sources mirror bootblock (alias)
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+bootblock_b-y               += $(bootblock-y)
+bootblock_b-c-deps          += $(bootblock-c-deps)
+bootblock_b-c-gen-deps      += $(bootblock-c-gen-deps)
+endif
+
 #######################################################################
 # Clean up rules
 clean-abuild:
@@ -922,11 +938,23 @@ $(objcbfs)/bootblock.raw.elf: $(objcbfs)/decompressor.elf
 	@printf "    OBJCOPY    $(notdir $(@))\n"
 	$(OBJCOPY_bootblock) $(preserve-bss-flags) $< $@
 
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+$(objcbfs)/bootblock_b.raw.elf: $(objcbfs)/decompressor.elf
+	@printf "    OBJCOPY    $(notdir $(@))\n"
+	$(OBJCOPY_bootblock_b) $(preserve-bss-flags) $< $@
+endif
+
 else	# CONFIG_COMPRESS_BOOTBLOCK
 
 $(objcbfs)/bootblock.raw.elf: $(objcbfs)/bootblock.elf
 	@printf "    OBJCOPY    $(notdir $(@))\n"
 	$(OBJCOPY_bootblock) $(preserve-bss-flags) $< $@
+
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+$(objcbfs)/bootblock_b.raw.elf: $(objcbfs)/bootblock_b.elf
+	@printf "    OBJCOPY    $(notdir $(@))\n"
+	$(OBJCOPY_bootblock_b) $(preserve-bss-flags) $< $@
+endif
 
 endif	# CONFIG_COMPRESS_BOOTBLOCK
 
@@ -934,13 +962,31 @@ $(objcbfs)/bootblock.raw.bin: $(objcbfs)/bootblock.raw.elf
 	@printf "    OBJCOPY    $(notdir $(@))\n"
 	$(OBJCOPY_bootblock) -O binary $< $@
 
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+$(objcbfs)/bootblock_b.raw.bin: $(objcbfs)/bootblock_b.raw.elf
+	@printf "    OBJCOPY    $(notdir $(@))\n"
+	$(OBJCOPY_bootblock_b) -O binary $< $@
+endif
+
 ifneq ($(CONFIG_HAVE_BOOTBLOCK),y)
 $(objcbfs)/bootblock.bin:
 	dd if=/dev/zero of=$@ bs=64 count=1
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+$(objcbfs)/bootblock_b.bin:
+	dd if=/dev/zero of=$@ bs=64 count=1
+endif
 endif
 
 $(objcbfs)/%.bin: $(objcbfs)/%.raw.bin
 	cp $< $@
+
+ifeq ($(CONFIG_REDUNDANT_BOOTBLOCK),y)
+# If not building slot-specific variants, Slot B is a copy of Slot A
+ifeq ($(CONFIG_BOOTBLOCK_SLOT_VARIANTS),)
+$(objcbfs)/bootblock_b.bin: $(objcbfs)/bootblock.bin
+	cp $< $@
+endif
+endif
 
 $(objcbfs)/%.map: $(objcbfs)/%.debug
 	$(eval class := $(call find-class,$(@F)))
@@ -1301,10 +1347,22 @@ endif
 $(shell rm -f $(obj)/coreboot.pre)
 
 ifneq ($(CONFIG_UPDATE_IMAGE),y)
-$(obj)/coreboot.pre: $$(prebuilt-files) $(CBFSTOOL) $(obj)/fmap.fmap $(obj)/fmap.desc $(objcbfs)/bootblock.bin
+$(obj)/coreboot.pre: $$(prebuilt-files) $(CBFSTOOL) $(obj)/fmap.fmap $(obj)/fmap.desc $(objcbfs)/bootblock.bin \
+	$(if $(CONFIG_REDUNDANT_BOOTBLOCK),$(objcbfs)/bootblock_b.bin)
 	$(CBFSTOOL) $@.tmp create -M $(obj)/fmap.fmap -r $(shell cat $(obj)/fmap.desc)
+ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
+	printf "    INIT TOPSWAP\n"
+	$(CBFSTOOL) $@.tmp add-master-header -r TOPSWAP
+endif
 	printf "    BOOTBLOCK\n"
 	$(call add_bootblock,$@.tmp,$(objcbfs)/bootblock.bin)
+ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
+	printf "    TOPSWAP BB\n"
+	$(CBFSTOOL) $@.tmp add -r TOPSWAP \
+		-f $(objcbfs)/bootblock_b.bin \
+		-n bootblock \
+		-t bootblock
+endif
 	$(prebuild-files) true
 	mv $@.tmp $@
 else # ifneq ($(CONFIG_UPDATE_IMAGE),y)

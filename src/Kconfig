@@ -116,6 +116,23 @@ config CCACHE
 
 	  For details see https://ccache.samba.org.
 
+config REDUNDANT_BOOTBLOCK
+	bool "Build redundant bootblock (Slot A + Slot B)"
+	default y
+	help
+		Build two bootblock binaries and place them into FMAP regions
+		BOOTBLOCK (Slot A) and TOPSWAP (Slot B). Required for Intel Top Swap
+		based redundancy. Logic to choose a slot is out of scope here.
+
+config BOOTBLOCK_SLOT_VARIANTS
+	bool "Compile bootblock per-slot with distinct defines"
+	depends on REDUNDANT_BOOTBLOCK
+	default n
+	help
+		If enabled, bootblock for Slot A and Slot B is compiled separately with
+		-DSLOT_A or -DSLOT_B so later slot-specific logic can be added.
+		If disabled, Slot B is a byte-for-byte copy of Slot A.
+
 config LTO
 	bool "Use link time optimization (LTO) (experimental)"
 	default n
