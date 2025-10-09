@@ -67,7 +67,7 @@ config SOC_INTEL_CSE_SEND_EOP_EARLY
 	default n
 
 config FMDFILE
-	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd"
 
 config BEEP_ON_BOOT
 	bool "Beep on successful boot"
