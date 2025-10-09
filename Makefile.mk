@@ -1353,9 +1353,10 @@ $(obj)/coreboot.pre: $$(prebuilt-files) $(CBFSTOOL) $(obj)/fmap.fmap $(obj)/fmap
 ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
 	printf "    BOOTBLOCK (Slot A)\n"
 	$(CBFSTOOL) $@.tmp add -r BOOTBLOCK \
-		-f $(objcbfs)/bootblock.bin \
-		-n bootblock \
-		-t bootblock
+	  -f $(objcbfs)/bootblock.bin \
+	  -n bootblock -t bootblock \
+	  -b -$(call file-size,$(objcbfs)/bootblock.bin) \
+	  $(TXTIBB) $(cbfs-autogen-attributes) $(TS_OPTIONS) $(CBFSTOOL_ADD_CMD_OPTIONS)
 else
 	printf "    BOOTBLOCK\n"
 	$(call add_bootblock,$@.tmp,$(objcbfs)/bootblock.bin)
@@ -1363,9 +1364,10 @@ endif
 ifneq ($(CONFIG_REDUNDANT_BOOTBLOCK),)
 	printf "    TOPSWAP BB\n"
 	$(CBFSTOOL) $@.tmp add -r TOPSWAP \
-		-f $(objcbfs)/bootblock_b.bin \
-		-n bootblock \
-		-t bootblock
+	  -f $(objcbfs)/bootblock_b.bin \
+	  -n bootblock -t bootblock \
+	  -b -$(call file-size,$(objcbfs)/bootblock_b.bin) \
+	  $(TXTIBB) $(cbfs-autogen-attributes) $(TS_OPTIONS) $(CBFSTOOL_ADD_CMD_OPTIONS)
 endif
 	$(prebuild-files) true
 	mv $@.tmp $@
