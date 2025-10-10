@@ -45,6 +45,8 @@ const char *smbios_mainboard_product_name(void)
 		return "VP4630";
 	else if (strstr(str, "i5-10210U") != NULL)
 		return "VP4650";
+	else if (strstr(str, "i5-10310U") != NULL)
+		return "VP4651";
 	else if (strstr(str, "i7-10810U") != NULL)
 		return "VP4670";
 	else
