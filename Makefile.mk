@@ -1290,6 +1290,12 @@ $(obj)/fmap.fmap: $(obj)/fmap.fmd $(FMAPTOOL)
 	echo "    FMAP       $(FMAPTOOL) -h $(obj)/fmap_config.h $< $@"
 	$(FMAPTOOL) -h $(obj)/fmap_config.h -R $(obj)/fmap.desc $< $@
 
+ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
+ifneq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
+TS_OPTIONS := -j $(CONFIG_INTEL_TOP_SWAP_BOOTBLOCK_SIZE)
+endif
+endif
+
 ifneq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
 BB_FIT_REGION = COREBOOT
 TS_FIT_REGION = COREBOOT
