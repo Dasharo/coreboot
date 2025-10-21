@@ -272,6 +272,11 @@ chip soc/intel/tigerlake
 			chip drivers/pc80/tpm
 				device pnp 0c31.0 on end
 			end
+			chip ec/dasharo/ec
+				# 60/64 KBC
+				device pnp ff.1 on # dummy address
+				end
+			end
 		end
 		device ref p2sb on end
 		device ref pmc hidden
