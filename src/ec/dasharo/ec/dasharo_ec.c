@@ -5,7 +5,10 @@
 #include <cbfs.h>
 #include <console/system76_ec.h>
 #include <delay.h>
+#include <device/device.h>
+#include <device/pnp.h>
 #include <pc80/mc146818rtc.h>
+#include <pc80/keyboard.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/vboot_common.h>
 #include <timer.h>
@@ -971,3 +974,32 @@ cleanup:
 }
 
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, dasharo_ec_fw_sync, NULL);
+
+static void dasharo_ec_init(struct device *dev)
+{
+	if (!dev->enabled)
+		return;
+
+	printk(BIOS_DEBUG, "Dasharo EC: Initializing keyboard + touchpad.\n");
+	pc_keyboard_init(PROBE_AUX_DEVICE);
+}
+
+static struct device_operations ops = {
+	.init             = dasharo_ec_init,
+	.read_resources   = noop_read_resources,
+	.set_resources    = noop_set_resources,
+};
+
+static struct pnp_info pnp_dev_info[] = {
+	{ NULL, 0, 0, 0, }
+};
+
+static void enable_dev(struct device *dev)
+{
+	pnp_enable_devices(dev, &ops, ARRAY_SIZE(pnp_dev_info), pnp_dev_info);
+}
+
+struct chip_operations ec_dasharo_ec_ops = {
+	.name = "Dasharo EC",
+	.enable_dev = enable_dev
+};
