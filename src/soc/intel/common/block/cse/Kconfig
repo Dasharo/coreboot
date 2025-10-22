@@ -11,6 +11,10 @@ config MAX_HECI_DEVICES
 	int
 	default 6
 
+config MAX_MEI_DEVICES
+	int
+	default 4
+
 config SOC_INTEL_COMMON_BLOCK_CSE
 	bool
 	default n
