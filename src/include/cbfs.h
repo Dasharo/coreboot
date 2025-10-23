@@ -182,6 +182,14 @@ void cbfs_boot_device_find_mcache(struct cbfs_boot_device *cbd, uint32_t id);
 const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro);
 
 /*
+ * Retrieves the CBFS boot device from the |fmap_region|. If |force_ro| is set, will
+ * always return the read-only CBFS instead (this only makes a difference when CONFIG(VBOOT)
+ * is enabled). May perform certain CBFS initialization tasks. Returns NULL
+ * on error (e.g. boot device IO error).
+ */
+const struct cbfs_boot_device *cbfs_get_boot_device_from_region(bool force_ro,
+				const char *fmap_region);
+/*
  * Builds the mcache (if |cbd->mcache| is set) and verifies |metadata_hash| (if it is not NULL).
  * If CB_CBFS_CACHE_FULL is returned, the mcache is incomplete but still valid and the metadata
  * hash was still verified. Should be called once per *boot* (not once per stage) before the
@@ -194,8 +202,14 @@ enum cb_err cbfs_init_boot_device(const struct cbfs_boot_device *cbd,
 /**********************************************************************************************
  *                         INTERNAL HELPERS FOR INLINES, DO NOT USE.                          *
  **********************************************************************************************/
+enum cb_err _cbfs_boot_lookup_in_region(const char *name, bool force_ro,
+			      union cbfs_mdata *mdata, struct region_device *rdev, const char *fmap_region);
+
 enum cb_err _cbfs_boot_lookup(const char *name, bool force_ro,
 			      union cbfs_mdata *mdata, struct region_device *rdev);
+
+void *_cbfs_alloc_in_region(const char *name, cbfs_allocator_t allocator, void *arg,
+		  size_t *size_out, bool force_ro, enum cbfs_type *type, const char *fmap_region);
 
 void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 		  size_t *size_out, bool force_ro, enum cbfs_type *type);
@@ -214,6 +228,8 @@ void *_cbfs_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unus
 /**********************************************************************************************
  *                                  INLINE IMPLEMENTATIONS                                    *
  **********************************************************************************************/
+
+
 static inline void *cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 			       size_t *size_out)
 {

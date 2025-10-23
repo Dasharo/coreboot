@@ -49,7 +49,8 @@ static int create_cbfs(const struct cbfs_test_file *files[], const size_t nfiles
 
 /* Mocks */
 
-const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
+const struct cbfs_boot_device *
+cbfs_get_boot_device_from_region(bool force_ro, const char *region)
 {
 	return &cbd;
 }

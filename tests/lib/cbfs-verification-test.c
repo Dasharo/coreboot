@@ -12,7 +12,8 @@
 
 static struct cbfs_boot_device cbd;
 
-const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
+const struct cbfs_boot_device *
+cbfs_get_boot_device_from_region(bool force_ro, const char *region)
 {
 	check_expected(force_ro);
 	return &cbd;
@@ -111,12 +112,12 @@ static void test_cbfs_map_no_hash(void **state)
 	if (CONFIG(CBFS_VERIFICATION)) {
 		/* File with no hash. No hash causes hash mismatch by default,
 		   so mapping will not be completed successfully. */
-		expect_value(cbfs_get_boot_device, force_ro, false);
+		expect_value(cbfs_get_boot_device_from_region, force_ro, false);
 		will_return(cbfs_lookup, CB_SUCCESS);
 		mapping = cbfs_map(TEST_DATA_1_FILENAME, NULL);
 		assert_null(mapping);
 	} else {
-		expect_value(cbfs_get_boot_device, force_ro, false);
+		expect_value(cbfs_get_boot_device_from_region, force_ro, false);
 		will_return(cbfs_lookup, CB_SUCCESS);
 		mapping = cbfs_map(TEST_DATA_1_FILENAME, NULL);
 		assert_ptr_equal(mapping, file_no_hash.attrs_and_data);
@@ -130,7 +131,7 @@ static void test_cbfs_map_valid_hash(void **state)
 			 rdev_chain_mem(&cbd.rdev, &file_valid_hash, sizeof(file_valid_hash)));
 
 	if (CONFIG(CBFS_VERIFICATION)) {
-		expect_value(cbfs_get_boot_device, force_ro, false);
+		expect_value(cbfs_get_boot_device_from_region, force_ro, false);
 		expect_value(vb2_hash_verify, buf,
 			     &file_valid_hash.attrs_and_data[HASH_ATTR_SIZE]);
 		expect_value(vb2_hash_verify, size, TEST_DATA_1_SIZE);
@@ -138,7 +139,7 @@ static void test_cbfs_map_valid_hash(void **state)
 		mapping = cbfs_map(TEST_DATA_1_FILENAME, NULL);
 		assert_ptr_equal(mapping, &file_valid_hash.attrs_and_data[HASH_ATTR_SIZE]);
 	} else {
-		expect_value(cbfs_get_boot_device, force_ro, false);
+		expect_value(cbfs_get_boot_device_from_region, force_ro, false);
 		will_return(cbfs_lookup, CB_SUCCESS);
 		mapping = cbfs_map(TEST_DATA_1_FILENAME, NULL);
 		assert_ptr_equal(mapping, &file_valid_hash.attrs_and_data[HASH_ATTR_SIZE]);
@@ -152,7 +153,7 @@ static void test_cbfs_map_invalid_hash(void **state)
 		0, rdev_chain_mem(&cbd.rdev, &file_broken_hash, sizeof(file_broken_hash)));
 
 	if (CONFIG(CBFS_VERIFICATION)) {
-		expect_value(cbfs_get_boot_device, force_ro, false);
+		expect_value(cbfs_get_boot_device_from_region, force_ro, false);
 		expect_value(vb2_hash_verify, buf,
 			     &file_broken_hash.attrs_and_data[HASH_ATTR_SIZE]);
 		expect_value(vb2_hash_verify, size, TEST_DATA_1_SIZE);
@@ -160,7 +161,7 @@ static void test_cbfs_map_invalid_hash(void **state)
 		mapping = cbfs_map(TEST_DATA_1_FILENAME, NULL);
 		assert_null(mapping);
 	} else {
-		expect_value(cbfs_get_boot_device, force_ro, false);
+		expect_value(cbfs_get_boot_device_from_region, force_ro, false);
 		will_return(cbfs_lookup, CB_SUCCESS);
 		mapping = cbfs_map(TEST_DATA_1_FILENAME, NULL);
 		assert_ptr_equal(mapping, &file_broken_hash.attrs_and_data[HASH_ATTR_SIZE]);

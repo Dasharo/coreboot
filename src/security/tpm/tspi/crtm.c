@@ -8,6 +8,7 @@
 #include "crtm.h"
 #include <stdio.h>
 #include <string.h>
+#include <option.h>
 
 static int tpm_log_initialized;
 static inline int tpm_log_available(void)
@@ -72,7 +73,24 @@ static tpm_result_t tspi_init_crtm(void)
 		/* Mapping measures the file. We know we can safely map here because
 		   bootblock-as-a-file is only used on x86, where we don't need cache to map. */
 		enum cbfs_type type = CBFS_TYPE_BOOTBLOCK;
-		void *mapping = cbfs_ro_type_map("bootblock", NULL, &type);
+		void *mapping = NULL;
+		if (CONFIG(INTEL_TOP_SWAP_SEPARATE_REGIONS)) {
+			uint32_t attempt_slot_b_flag = get_uint_option("attempt_slot_b", -1u);
+			if (attempt_slot_b_flag == 1) {
+				printk(BIOS_INFO, "CRTM Top Swap: attempt_slot_b_flag==1; Measuring Top Swap bootblock.\n");
+				mapping = _cbfs_alloc_in_region("bootblock", NULL, NULL, NULL, true, &type, "TOPSWAP");
+			} else {
+				if (attempt_slot_b_flag == 0) {
+					printk(BIOS_INFO, "CRTM Top Swap: attempt_slot_b_flag==0; Measuring base bootblock.\n");
+				} else {
+					printk(BIOS_INFO, "CRTM Top Swap: Failed to read attempt_slot_b CMOS flag. Defaulting to measuring base bootblock.\n");
+				}
+			    mapping = _cbfs_alloc_in_region("bootblock", NULL, NULL, NULL, true, &type, "BOOTBLOCK");
+			}
+		} else {
+			mapping = _cbfs_alloc_in_region("bootblock", NULL, NULL, NULL, true, &type, "COREBOOT");
+		}
+
 		if (!mapping) {
 			printk(BIOS_INFO,
 			       "TSPI: Couldn't measure bootblock into CRTM!\n");

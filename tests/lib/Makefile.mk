@@ -198,7 +198,7 @@ cbfs-verification-no-sha512-test-srcs := tests/lib/cbfs-verification-test.c \
 					src/commonlib/bsd/cbfs_private.c \
 					src/commonlib/mem_pool.c \
 					src/commonlib/region.c
-cbfs-verification-no-sha512-test-mocks += cbfs_get_boot_device cbfs_lookup
+cbfs-verification-no-sha512-test-mocks += cbfs_get_boot_device_from_region cbfs_lookup
 cbfs-verification-no-sha512-test-config += CONFIG_COLLECT_TIMESTAMPS=0 \
 					CONFIG_CBFS_VERIFICATION=1 \
 					CONFIG_NO_CBFS_MCACHE=1 \
@@ -224,7 +224,7 @@ cbfs-lookup-no-mcache-test-srcs = tests/lib/cbfs-lookup-test.c \
 				src/commonlib/bsd/cbfs_mcache.c \
 				src/commonlib/mem_pool.c \
 				src/commonlib/region.c
-cbfs-lookup-no-mcache-test-mocks += cbfs_get_boot_device \
+cbfs-lookup-no-mcache-test-mocks += cbfs_get_boot_device_from_region \
 					cbfs_lookup \
 					cbfs_mcache_lookup \
 					mem_pool_alloc \

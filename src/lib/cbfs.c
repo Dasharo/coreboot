@@ -39,10 +39,10 @@ static void switch_to_postram_cache(int unused)
 }
 CBMEM_CREATION_HOOK(switch_to_postram_cache);
 
-enum cb_err _cbfs_boot_lookup(const char *name, bool force_ro,
-			      union cbfs_mdata *mdata, struct region_device *rdev)
+enum cb_err _cbfs_boot_lookup_in_region(const char *name, bool force_ro,
+			      union cbfs_mdata *mdata, struct region_device *rdev, const char *fmap_region)
 {
-	const struct cbfs_boot_device *cbd = cbfs_get_boot_device(force_ro);
+	const struct cbfs_boot_device *cbd = cbfs_get_boot_device_from_region(force_ro, fmap_region);
 	if (!cbd)
 		return CB_ERR;
 
@@ -89,6 +89,12 @@ enum cb_err _cbfs_boot_lookup(const char *name, bool force_ro,
 		return CB_ERR;
 
 	return CB_SUCCESS;
+}
+
+enum cb_err _cbfs_boot_lookup(const char *name, bool force_ro,
+			      union cbfs_mdata *mdata, struct region_device *rdev)
+{
+	return _cbfs_boot_lookup_in_region(name, force_ro, mdata, rdev, "COREBOOT");
 }
 
 void cbfs_unmap(void *mapping)
@@ -163,6 +169,10 @@ static bool cbfs_file_hash_mismatch(const void *buffer, size_t size,
 {
 	/* Avoid linking hash functions when verification and measurement are disabled. */
 	if (!CONFIG(CBFS_VERIFICATION) && !CONFIG(TPM_MEASURED_BOOT))
+		return false;
+
+	/* To not link hash functions in SMM - they're not currently being built */
+	if (ENV_SMM)
 		return false;
 
 	const struct vb2_hash *hash = NULL;
@@ -483,8 +493,8 @@ static void *do_alloc(union cbfs_mdata *mdata, struct region_device *rdev,
 	return loc;
 }
 
-void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
-		  size_t *size_out, bool force_ro, enum cbfs_type *type)
+void *_cbfs_alloc_in_region(const char *name, cbfs_allocator_t allocator, void *arg,
+		  size_t *size_out, bool force_ro, enum cbfs_type *type, const char *fmap_region)
 {
 	struct region_device rdev;
 	bool preload_successful = false;
@@ -493,7 +503,7 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 	DEBUG("%s(name='%s', alloc=%p(%p), force_ro=%s, type=%d)\n", __func__, name, allocator,
 	      arg, force_ro ? "true" : "false", type ? *type : -1);
 
-	if (_cbfs_boot_lookup(name, force_ro, &mdata, &rdev))
+	if (_cbfs_boot_lookup_in_region(name, force_ro, &mdata, &rdev, fmap_region))
 		return NULL;
 
 	if (type) {
@@ -519,6 +529,12 @@ void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
 		cbfs_unmap(rdev_mmap_full(&rdev));
 
 	return ret;
+}
+
+void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
+		  size_t *size_out, bool force_ro, enum cbfs_type *type)
+{
+	return _cbfs_alloc_in_region(name, allocator, arg, size_out, force_ro, type, "COREBOOT");
 }
 
 void *_cbfs_unverified_area_alloc(const char *area, const char *name,
@@ -668,14 +684,14 @@ enum cb_err cbfs_init_boot_device(const struct cbfs_boot_device *cbd,
 	return err;
 }
 
-const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
+const struct cbfs_boot_device *cbfs_get_boot_device_from_region(bool force_ro, const char *fmap_region)
 {
 	static struct cbfs_boot_device ro;
 
 	/* Ensure we always init RO mcache, even if the first file is from the RW CBFS.
 	   Otherwise it may not be available when needed in later stages. */
 	if (ENV_INITIAL_STAGE && !force_ro && !region_device_sz(&ro.rdev))
-		cbfs_get_boot_device(true);
+		cbfs_get_boot_device_from_region(true, fmap_region);
 
 	if (!force_ro) {
 		const struct cbfs_boot_device *rw = vboot_get_cbfs_boot_device();
@@ -693,7 +709,7 @@ const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
 	if (region_device_sz(&ro.rdev))
 		return &ro;
 
-	if (fmap_locate_area_as_rdev("COREBOOT", &ro.rdev))
+	if (fmap_locate_area_as_rdev(fmap_region, &ro.rdev))
 		die("Cannot locate primary CBFS");
 
 	if (ENV_INITIAL_STAGE) {
@@ -707,6 +723,11 @@ const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
 	}
 
 	return &ro;
+}
+
+const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
+{
+	return cbfs_get_boot_device_from_region(force_ro, "COREBOOT");
 }
 
 #if !CONFIG(NO_CBFS_MCACHE)
