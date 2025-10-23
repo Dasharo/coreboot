@@ -2,6 +2,7 @@
 
 #include <device/device.h>
 #include <device/pnp.h>
+#include <delay.h>
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
 #include <superio/ite/common/env_ctrl.h>
@@ -22,6 +23,13 @@ static void it8659e_init(struct device *dev)
 		res = probe_resource(dev, PNP_IDX_IO0);
 		if (!conf || !res)
 			break;
+
+		/* Force HWM/PECI logic reset on warm boot */
+		pnp_set_logical_device(dev); /* selects LDN for current device */
+		pnp_write_config(dev, 0x00, 0x01); /* set RESET bit */
+		udelay(10);
+		pnp_write_config(dev, 0x00, 0x00); /* clear RESET bit */
+
 		ite_ec_init(res->base, &conf->ec);
 		break;
 	case IT8659E_KBCK:
