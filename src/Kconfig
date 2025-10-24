@@ -934,6 +934,16 @@ config IOAPIC_PREDEFINED_ID
 	  Select this option if coreboot should keep IOAPIC IDs programmed
 	  by silicon vendor initialization code.
 
+config IOAPIC_SKIP_VIRTUAL_WIRE_PROGRAMMING
+	bool
+	default n
+	depends on IOAPIC
+	help
+	  Select this option if coreboot should not program IOAPIC INT0
+	  vector as Virtual Wire mode. On AMD systems programing IOAPIC
+	  Virtual Wire mode may cause issues with interrupts during CPU
+	  bringups in OS, even memory corruption.
+
 config USE_WATCHDOG_ON_BOOT
 	bool
 	default n
