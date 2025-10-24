@@ -135,6 +135,10 @@ config USE_PM_ACPI_TIMER
 config VBOOT_FWID_VERSION
 	default "\$(CONFIG_LOCALVERSION)"
 
+# A terrible workaround for SMI issues when BWP is on until a better solution is found.
+config DEBUG_SMI
+	default y if BOOTMEDIA_SMM_BWP
+
 if PAYLOAD_EDK2
 
 config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
