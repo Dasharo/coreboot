@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 
+source "src/security/intel/acm/Kconfig"
 source "src/security/intel/txt/Kconfig"
 source "src/security/intel/stm/Kconfig"
 source "src/security/intel/cbnt/Kconfig"
