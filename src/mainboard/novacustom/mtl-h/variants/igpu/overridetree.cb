@@ -65,6 +65,9 @@ chip soc/intel/meteorlake
 			}"
 			register "pcie_clk_config_flag[2]" = "PCIE_CLK_LAN"
 		end
+		device ref hda on
+			subsystemid 0x1558 0xa743
+		end
 		device ref gbe on end
 	end
 end
