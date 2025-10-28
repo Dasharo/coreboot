@@ -11,6 +11,26 @@
 
 #define LOG(...) printk(BIOS_INFO, "CBnT: " __VA_ARGS__)
 
+static const char *intel_cbnt_processor_error_type(uint8_t type)
+{
+	static const char *const names[] = {
+		[0]  = "Legacy Shutdown",
+		[5]  = "Load memory type error in ACM area",
+		[6]  = "Unrecognized ACM format",
+		[7]  = "Failure to authenticate",
+		[8]  = "Invalid ACM format",
+		[9]  = "Unexpected Snoop hit",
+		[10] = "Invalid event",
+		[11] = "Invalid MLE",
+		[12] = "Machine check event",
+		[13] = "VMXAbort",
+		[14] = "AC memory corruption",
+		[15] = "Illegal voltage/bus ratio",
+	};
+
+	return type < ARRAY_SIZE(names) && names[type] ? names[type] : "Unknown";
+}
+
 union sacm_info {
 	struct {
 		uint64_t nem_enabled : 1;
@@ -196,7 +216,7 @@ void intel_cbnt_log_registers(void)
 		if (err.microcode.valid && !err.microcode.external) {
 			LOG("ERRORCODE is ucode error\n");
 			LOG("  type:                    %s\n",
-			      intel_txt_processor_error_type(err.microcode.type));
+			      intel_cbnt_processor_error_type(err.microcode.type));
 		} else if (err.sinit.valid && err.sinit.external) {
 			LOG("ERRORCODE is SINIT error\n");
 			const char *type = decode_err_type(err.sinit.ac_type);
