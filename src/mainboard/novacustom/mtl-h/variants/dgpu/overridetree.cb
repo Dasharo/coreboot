@@ -71,5 +71,8 @@ chip soc/intel/meteorlake
 				device generic 0 on end
 			end
 		end
+		device ref hda on
+			subsystemid 0x1558 0xa763
+		end
 	end
 end
