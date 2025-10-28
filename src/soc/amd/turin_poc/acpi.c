@@ -7,10 +7,12 @@
 #include <amdblocks/acpi.h>
 #include <amdblocks/acpimmio.h>
 #include <amdblocks/chip.h>
+#include <amdblocks/cppc.h>
 #include <amdblocks/cpu.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <drivers/amd/opensil/opensil.h>
+#include <xPRF-api.h>
 
 #define IOMMU_DOMAIN_INIT(d)	\
 	{	\
@@ -135,4 +137,20 @@ const acpi_cstate_t *get_cstate_config_data(size_t *size)
 {
 	*size = ARRAY_SIZE(cstate_cfg_table);
 	return cstate_cfg_table;
+}
+
+enum cb_err get_ccx_cppc_min_frequency(uint32_t *freq)
+{
+	if (xPrfGetCppcMinFrequency(freq) != SilPass)
+		return CB_ERR;
+
+	return CB_SUCCESS;
+}
+
+enum cb_err get_ccx_cppc_nom_frequency(uint32_t *freq)
+{
+	if (xPrfGetCppcNomFrequency(freq) != SilPass)
+		return CB_ERR;
+
+	return CB_SUCCESS;
 }
