@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config INTEL_ACM
+	def_bool n
+	help
+	  Support for Intel Authenticated Code Modules (ACMs).
+
+if INTEL_ACM
+
+config INTEL_TXT_BIOSACM_FILE
+	string "BIOS ACM file"
+	default "3rdparty/blobs/soc/intel/skylake/biosacm.bin" if SOC_INTEL_COMMON_SKYLAKE_BASE
+	help
+	  Intel TXT BIOS ACM file. This file can be obtained through privileged
+	  access to Intel resources. Or for some platforms found inside the
+	  blob repository.
+
+config INTEL_TXT_SINITACM_FILE
+	string "SINIT ACM file"
+	default "3rdparty/blobs/soc/intel/skylake/sinitacm.bin" if SOC_INTEL_COMMON_SKYLAKE_BASE
+	help
+	  Intel TXT SINIT ACM file. This file can be obtained through privileged
+	  access to Intel resources. Or for some platforms found inside the
+	  blob repository.
+
+config INTEL_TXT_BIOSACM_ALIGNMENT
+	hex
+	default 0x40000 if INTEL_CBNT_SUPPORT
+	default 0x20000 # 128 KiB
+	help
+	  Exceptions are Ivy and Sandy Bridge with 64 KiB and Purley with 256 KiB
+	  alignment size. If necessary, override from platform-specific Kconfig.
+
+config INTEL_TXT_CBFS_BIOS_ACM
+	string
+	default "txt_bios_acm.bin"
+
+config INTEL_TXT_CBFS_SINIT_ACM
+	string
+	default "txt_sinit_acm.bin"
+
+config INTEL_TXT_SINIT_SIZE
+	hex
+	default 0x20000
+	help
+	  This is the size that will be programmed in TXT_SINIT_SIZE.
+	  This needs to be at least the size of the SINIT ACM.
+	  This is platform dependent. For instance on CPX this has
+	  to be the ACM size + 64K.
+
+endif # INTEL_ACM
