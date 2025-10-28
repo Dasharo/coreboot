@@ -6,6 +6,7 @@ config INTEL_CBNT_SUPPORT
 	depends on CPU_INTEL_FIRMWARE_INTERFACE_TABLE
 	#depends on PLATFORM_HAS_DRAM_CLEAR
 	select INTEL_TXT
+	select INTEL_ACM
 	# With CBnT the bootblock is set up as a CBnT IBB and needs a fixed size
 	select TPM_MEASURED_BOOT_INIT_BOOTBLOCK if TPM_MEASURED_BOOT
 	select TPM_STARTUP_IGNORE_POSTINIT
