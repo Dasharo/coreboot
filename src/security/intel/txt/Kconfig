@@ -11,6 +11,7 @@ config INTEL_TXT_LIB
 config INTEL_TXT
 	bool "Intel TXT support"
 	default n
+	select INTEL_ACM
 	select INTEL_TXT_LIB
 	select MRC_SETTINGS_PROTECT if CACHE_MRC_SETTINGS
 	select ENABLE_VMX if CPU_INTEL_COMMON
@@ -22,22 +23,6 @@ config INTEL_TXT
 	depends on (SOC_INTEL_COMMON_BLOCK_SA || HAVE_CF9_RESET)
 
 if INTEL_TXT
-
-config INTEL_TXT_BIOSACM_FILE
-	string "BIOS ACM file"
-	default "3rdparty/blobs/soc/intel/skylake/biosacm.bin" if SOC_INTEL_COMMON_SKYLAKE_BASE
-	help
-	  Intel TXT BIOS ACM file. This file can be obtained through privileged
-	  access to Intel resources. Or for some platforms found inside the
-	  blob repository.
-
-config INTEL_TXT_SINITACM_FILE
-	string "SINIT ACM file"
-	default "3rdparty/blobs/soc/intel/skylake/sinitacm.bin" if SOC_INTEL_COMMON_SKYLAKE_BASE
-	help
-	  Intel TXT SINIT ACM file. This file can be obtained through privileged
-	  access to Intel resources. Or for some platforms found inside the
-	  blob repository.
 
 config INTEL_TXT_DPR_SIZE
 	int
@@ -72,34 +57,9 @@ config INTEL_TXT_LOGGING
 	  Print more TXT related debug output.
 	  Use in pre-production environments only!
 
-config INTEL_TXT_BIOSACM_ALIGNMENT
-	hex
-	default 0x40000 if INTEL_CBNT_SUPPORT
-	default 0x20000 # 128 KiB
-	help
-	  Exceptions are Ivy and Sandy Bridge with 64 KiB and Purley with 256 KiB
-	  alignment size. If necessary, override from platform-specific Kconfig.
-
 config INTEL_TXT_CBFS_BIOS_POLICY
 	string
 	default "txt_bios_policy.bin"
-
-config INTEL_TXT_CBFS_BIOS_ACM
-	string
-	default "txt_bios_acm.bin"
-
-config INTEL_TXT_CBFS_SINIT_ACM
-	string
-	default "txt_sinit_acm.bin"
-
-config INTEL_TXT_SINIT_SIZE
-	hex
-	default 0x20000
-	help
-	  This is the size that will be programmed in TXT_SINIT_SIZE.
-	  This needs to be at least the size of the SINIT ACM.
-	  This is platform dependent. For instance on CPX this has
-	  to be the ACM size + 64K.
 
 config INTEL_TXT_HEAP_SIZE
 	hex
