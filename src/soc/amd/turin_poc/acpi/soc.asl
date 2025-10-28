@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-#include <soc/amd/common/acpi/pci_root.asl>
 #include "globalnvs.asl"
 
 Scope(\_SB) {
@@ -19,14 +18,55 @@ Scope(\_SB) {
 
 	#include "mmio.asl"
 
-	ROOT_BRIDGE(S0B0)
-	ROOT_BRIDGE(S0B1)
-	ROOT_BRIDGE(S0B2)
-	ROOT_BRIDGE(S0B3)
-	ROOT_BRIDGE(S0B4)
-	ROOT_BRIDGE(S0B5)
-	ROOT_BRIDGE(S0B6)
-	ROOT_BRIDGE(S0B7)
+	#define CXL_BRIDGE_NAME S0B0
+	#define CXL_BRIDGE_UID 0
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B1
+	#define CXL_BRIDGE_UID 1
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B2
+	#define CXL_BRIDGE_UID 2
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B3
+	#define CXL_BRIDGE_UID 3
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B4
+	#define CXL_BRIDGE_UID 4
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B5
+	#define CXL_BRIDGE_UID 5
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B6
+	#define CXL_BRIDGE_UID 6
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#define CXL_BRIDGE_NAME S0B7
+	#define CXL_BRIDGE_UID 7
+	#include <soc/amd/common/acpi/cxl_root.asl>
+	#undef CXL_BRIDGE_UID
+	#undef CXL_BRIDGE_NAME
+
+	#include "cxl_root_dev.asl"
 
 	Scope(S0B0) {
 		#include "resources.asl"
