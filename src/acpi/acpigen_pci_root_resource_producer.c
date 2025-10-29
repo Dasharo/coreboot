@@ -64,6 +64,10 @@ void pci_domain_fill_ssdt(const struct device *domain)
 		/* ACPI 6.4.2.5 I/O Port Descriptor */
 		acpigen_write_io16(PCI_IO_CONFIG_INDEX, PCI_IO_CONFIG_LAST_PORT, 1,
 				   PCI_IO_CONFIG_PORT_COUNT, 1);
+		if (CONFIG(MEMORY_MAPPED_TPM)) {
+			write_ssdt_domain_mmio_producer_range(acpi_device_name(domain),
+							      0xfed40000, 0xfed44fff);
+		}
 	}
 
 	struct resource *res;
