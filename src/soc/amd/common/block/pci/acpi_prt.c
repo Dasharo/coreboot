@@ -136,7 +136,7 @@ static void acpigen_write_PRT_PIC(const struct pci_routing_info *routing_info)
 void acpigen_write_pci_GNB_PRT(const struct device *dev)
 {
 	const struct pci_routing_info *routing_info =
-		get_pci_routing_info(dev->path.pci.devfn);
+		get_pci_routing_info(dev);
 
 	if (!routing_info)
 		return;
@@ -344,7 +344,7 @@ void acpigen_write_pci_root_PRT(void)
 void acpigen_write_pci_FCH_PRT(const struct device *dev)
 {
 	const struct pci_routing_info *routing_info =
-		get_pci_routing_info(dev->path.pci.devfn);
+		get_pci_routing_info(dev);
 
 	if (!routing_info)
 		return;
