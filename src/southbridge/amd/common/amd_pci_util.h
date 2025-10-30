@@ -11,7 +11,7 @@
 #define PCI_INTR_DATA	0xc01
 
 struct pirq_struct {
-	u8 devfn;
+	u16 devfn;
 	u8 PIN[4];	/* PINA/B/C/D are index 0/1/2/3 */
 };
 
