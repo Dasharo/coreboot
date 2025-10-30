@@ -137,7 +137,7 @@ static void acpigen_write_PRT_PIC(const struct pci_routing_info *routing_info)
 void acpigen_write_pci_GNB_PRT(const struct device *dev)
 {
 	const struct pci_routing_info *routing_info =
-		get_pci_routing_info(dev->path.pci.devfn);
+		get_pci_routing_info(dev);
 
 	if (!routing_info)
 		return;
@@ -204,7 +204,7 @@ static void acpigen_write_root_PRT_GSI(const struct pci_routing_info *routing_ta
 		 * The HOB's bridge_irq/map byte is not an OS-visible APIC GSI here.
 		 * Route the root port's own INTx through its GNB group/swizzle instead.
 		 */
-		acpigen_write_PRT_GSI_entry(PCI_SLOT(routing_table[i].devfn),
+		acpigen_write_PRT_GSI_entry(PCI_SLOT(routing_table[i].pci_addr),
 					    0, /* root port interrupt pin A */
 					    GNB_GSI_BASE + pci_calculate_irq(&routing_table[i], 0));
 	}
@@ -238,7 +238,7 @@ static void acpigen_write_root_PRT_PIC(const struct pci_routing_info *routing_ta
 
 		irq = pci_calculate_irq(&routing_table[i], 0);
 		link_template[8] = 'A' + (irq % 8);
-		acpigen_write_PRT_source_entry(PCI_SLOT(routing_table[i].devfn),
+		acpigen_write_PRT_source_entry(PCI_SLOT(routing_table[i].pci_addr),
 					       0, /* root port interrupt pin A */
 					       link_template,
 					       0);
@@ -345,7 +345,7 @@ void acpigen_write_pci_root_PRT(void)
 void acpigen_write_pci_FCH_PRT(const struct device *dev)
 {
 	const struct pci_routing_info *routing_info =
-		get_pci_routing_info(dev->path.pci.devfn);
+		get_pci_routing_info(dev);
 
 	if (!routing_info)
 		return;
