@@ -5,6 +5,7 @@
 #include <amdblocks/amd_pci_util.h>
 #include <amdblocks/gpio.h>
 #include <amdblocks/smi.h>
+#include <bootstate.h>
 #include <cpu/x86/smm.h>
 #include <soc/amd_pci_int_defs.h>
 #include <soc/smi.h>
@@ -120,19 +121,53 @@ static void fch_clk_output_48Mhz(void)
 	misc_write32(MISC_CLK_CNTL0, ctrl);
 }
 
-static void fch_pci_int_vw_mode(void)
-{
-	pm_write32(0xa8, 0x80ffcef8);
-}
-
 void fch_init(void *chip_info)
 {
 	fch_init_acpi_ports();
 	fch_clk_output_48Mhz();
 
+	fch_enable_ioapic_decode();
+}
+
+static void fch_pci_int_vw_mode(void)
+{
+	pm_write32(0xa8, 0x80ffcef8);
+}
+
+static void fch_init_extint_nmi(void)
+{
+	uint32_t reg32 = pm_read32(PM_PCI_CTRL);
+	/*
+	 * Configure NMI as legacy PIC NMI message type and
+	 * PIC interrupt request as legacy PIC ExtInt message type.
+	 */
+	reg32 &= ~(PIC_MSG_SEL | NMI_MSG_SEL);
+	/* Deliver legacy PIC interrupt as message type */
+	reg32 |= MSG_INTR_ENABLE;
+	pm_write32(PM_PCI_CTRL, reg32);
+}
+
+/*
+ * Update the PCI devices with a valid IRQ number
+ * that is set in the mainboard PCI_IRQ structures.
+ */
+static void set_pci_irqs(void *unused)
+{
+	fch_init_extint_nmi();
+
 	/* Write PCI_INTR regs 0xC00/0xC01 */
 	write_pci_int_table();
 	fch_pci_int_vw_mode();
 
-	fch_enable_ioapic_decode();
+	/* pirq_data is consumed by `write_pci_cfg_irqs` */
+	populate_pirq_data();
+
+	/* Write IRQs for all devicetree enabled devices */
+	write_pci_cfg_irqs();
 }
+
+/*
+ * Hook this function into the PCI state machine on entry into BS_DEV_ENABLE
+ * after PCI is enumerated.
+ */
+BOOT_STATE_INIT_ENTRY(BS_DEV_ENABLE, BS_ON_ENTRY, set_pci_irqs, NULL);
