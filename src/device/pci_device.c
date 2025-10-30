@@ -1667,9 +1667,11 @@ static int swizzle_irq_pins(struct device *dev, struct device **parent_bridge)
 	/* Start with PIN A = 0 ... D = 3 */
 	swizzled_pin = pci_read_config8(dev, PCI_INTERRUPT_PIN) - 1;
 
-	/* While our current device has parent devices */
+	/* While our current device has parent PCI devices */
 	child = dev;
-	for (parent = child->upstream->dev; parent; parent = parent->upstream->dev) {
+	for (parent = child->upstream->dev;
+	     parent && parent->path.type == DEVICE_PATH_PCI;
+	     parent = parent->upstream->dev) {
 		parent_bus = parent->upstream->secondary;
 		parent_devfn = parent->path.pci.devfn;
 		child_devfn = child->path.pci.devfn;
@@ -1677,11 +1679,11 @@ static int swizzle_irq_pins(struct device *dev, struct device **parent_bridge)
 		/* Swizzle the INT_PIN for any bridges not on root bus */
 		swizzled_pin = (PCI_SLOT(child_devfn) + swizzled_pin) % 4;
 		printk(BIOS_SPEW, "\tWith INT_PIN swizzled to %s\n"
-			"\tAttached to bridge device %01X:%02Xh.%02Xh\n",
+			"\tAttached to bridge device %02X:%02Xh.%02Xh\n",
 			pin_to_str(swizzled_pin + 1), parent_bus,
 			PCI_SLOT(parent_devfn), PCI_FUNC(parent_devfn));
 
-		/* Continue until we find the root bus */
+		/* Continue until we find the domain device the child belongs to */
 		if (parent_bus > 0) {
 			/*
 			 * We will go on to the next parent so this parent
@@ -1691,8 +1693,7 @@ static int swizzle_irq_pins(struct device *dev, struct device **parent_bridge)
 			continue;
 		} else {
 			/*
-			 *  Found the root bridge device,
-			 *  fill in the structure and exit
+			 *  Found the domain device, fill in the structure and exit
 			 */
 			*parent_bridge = parent;
 			break;
@@ -1729,10 +1730,19 @@ int get_pci_irq_pins(struct device *dev, struct device **parent_bdg)
 	uint16_t devfn = 0;	/* This device's device and function numbers */
 	uint8_t int_pin = 0;	/* Interrupt pin used by the device */
 	uint8_t target_pin = 0;	/* Interrupt pin we want to assign an IRQ to */
+	bool parent_is_host_bridge = false;
 
 	/* Make sure this device is enabled */
 	if (!(dev->enabled && (dev->path.type == DEVICE_PATH_PCI)))
 		return -1;
+
+	/*
+	 * Make sure the parent is a PCI. If it is a domain, we should return
+	 * its own interrupt and structure.
+	 */
+	if (!dev->upstream || !dev->upstream->dev ||
+	    (dev->upstream->dev->path.type == DEVICE_PATH_DOMAIN))
+		parent_is_host_bridge = true;
 
 	bus = dev->upstream->secondary;
 	devfn = dev->path.pci.devfn;
@@ -1742,11 +1752,11 @@ int get_pci_irq_pins(struct device *dev, struct device **parent_bdg)
 	if (int_pin < 1 || int_pin > 4)
 		return -1;
 
-	printk(BIOS_SPEW, "PCI IRQ: Found device %01X:%02X.%02X using %s\n",
+	printk(BIOS_SPEW, "PCI IRQ: Found device %02X:%02X.%02X using %s\n",
 		bus, PCI_SLOT(devfn), PCI_FUNC(devfn), pin_to_str(int_pin));
 
 	/* If this device is on a bridge, swizzle its INT_PIN */
-	if (bus) {
+	if (bus && !parent_is_host_bridge) {
 		/* Swizzle its INT_PINs */
 		target_pin = swizzle_irq_pins(dev, parent_bdg);
 
