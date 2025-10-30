@@ -52,7 +52,7 @@ const struct pci_routing_info *get_pci_routing_table(size_t *entries)
 	for (size_t i = 0; i < MAX_BRIDGES; ++i) {
 		dev_remap.raw = smn_read32(SMN_DEVICE_REMAP_BASE_ADDR
 			+ sizeof(uint32_t) * i);
-		routing_table[i].devfn = (dev_remap.dev_num << 3) | dev_remap.fn_num;
+		routing_table[i].pci_addr = (dev_remap.dev_num << 3) | dev_remap.fn_num;
 	}
 
 	for (size_t i = 0; i < MAX_BRIDGES; ++i) {
@@ -62,8 +62,8 @@ const struct pci_routing_info *get_pci_routing_table(size_t *entries)
 		routing_table[i].swizzle = ioapic_routing.intr_swz;
 		routing_table[i].bridge_irq = ioapic_routing.intr_map;
 		printk(BIOS_DEBUG, "%02x.%x: group: %u, swizzle: %u, irq: %u\n",
-		       PCI_SLOT(routing_table[i].devfn),
-		       PCI_FUNC(routing_table[i].devfn),
+		       PCI_SLOT(routing_table[i].pci_addr),
+		       PCI_FUNC(routing_table[i].pci_addr),
 		       routing_table[i].group,
 		       routing_table[i].swizzle,
 		       routing_table[i].bridge_irq);
