@@ -5,16 +5,19 @@
 #include <device/pci_def.h>
 #include <fsp/util.h>
 #include <FspGuids.h>
+#include <string.h>
 #include <types.h>
 
 const struct pci_routing_info *get_pci_routing_table(size_t *entries)
 {
-	static const struct pci_routing_info *routing_table;
+	static struct pci_routing_info *routing_table = NULL;
+	const struct fsp_pci_routing_info *fsp_routing_table = NULL;
 	static size_t routing_table_entries;
 	size_t hob_size = 0;
+	size_t table_size = 0;
 	const struct {
 		uint32_t num_of_entries;
-		struct pci_routing_info routing_table[];
+		struct fsp_pci_routing_info routing_table[];
 	} __packed *routing_hob;
 
 	if (routing_table) {
@@ -30,13 +33,27 @@ const struct pci_routing_info *get_pci_routing_table(size_t *entries)
 		return NULL;
 	}
 
-	routing_table = routing_hob->routing_table;
+	fsp_routing_table = routing_hob->routing_table;
 	routing_table_entries = routing_hob->num_of_entries;
+	table_size = routing_table_entries * sizeof(struct pci_routing_info);
+	routing_table =(struct pci_routing_info *)malloc(table_size);
+
+	if (routing_table == NULL) {
+		printk(BIOS_ERR, "Couldn't allocate memory for PCIe interrupt routing table.\n");
+		return NULL;
+	}
+
+	memset((void *)routing_table, 0, table_size);
 
 	for (size_t i = 0; i < routing_table_entries; ++i) {
+		routing_table[i].pci_addr =  fsp_routing_table[i].devfn;
+		routing_table[i].group =  fsp_routing_table[i].group;
+		routing_table[i].swizzle =  fsp_routing_table[i].swizzle;
+		routing_table[i].bridge_irq =  fsp_routing_table[i].bridge_irq;
+
 		printk(BIOS_DEBUG, "%02x.%x: group: %u, swizzle: %u, bridge irq: %u\n",
-		       PCI_SLOT(routing_table[i].devfn), PCI_FUNC(routing_table[i].devfn),
-		       routing_table[i].group, routing_table[i].swizzle, routing_table[i].bridge_irq);
+		       PCI_SLOT(fsp_routing_table[i].devfn), PCI_FUNC(fsp_routing_table[i].devfn),
+		       fsp_routing_table[i].group, fsp_routing_table[i].swizzle, fsp_routing_table[i].bridge_irq);
 	}
 
 	*entries = routing_table_entries;
