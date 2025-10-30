@@ -85,7 +85,7 @@ void write_pci_cfg_irqs(void)
 	u16 target_pin = 0;	/* Pin we will search our tables for */
 	u16 int_line = 0;	/* IRQ number read from PCI_INTR table and programmed to INT_LINE reg 0x3C */
 	u16 pci_intr_idx = 0;	/* Index into PCI_INTR table, 0xC00/0xC01 */
-	u16 devfn = 0;		/* A PCI Device and Function number */
+	u32 pci_addr = 0;	/* A PCI Device address */
 	u32 i = 0;
 
 	if (pirq_data_ptr == NULL) {
@@ -115,15 +115,15 @@ void write_pci_cfg_irqs(void)
 		if (int_pin < 1 || int_pin > 4)
 			continue;	/* Device has invalid INT_PIN so skip it */
 
-		devfn = target_dev->path.pci.devfn;
+		pci_addr = PCI_DEV_TO_ADDR(target_dev);
 
 		/*
-		 * Step 2: Use the INT_PIN and DevFn number to find the PCI_INTR
+		 * Step 2: Use the INT_PIN and device address to find the PCI_INTR
 		 * register (0xC00) index for this device
 		 */
 		pci_intr_idx = 0xBAD;	/* Will check to make sure it changed */
 		for (i = 0; i < pirq_data_size; i++) {
-			if (pirq_data_ptr[i].devfn != devfn)
+			if (pirq_data_ptr[i].pci_addr != pci_addr)
 				continue;
 
 			/* PIN_A is index 0 in pirq_data array but 1 in PCI cfg reg */
