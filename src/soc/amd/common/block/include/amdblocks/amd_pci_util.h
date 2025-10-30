@@ -13,6 +13,12 @@
 
 #define FCH_IRQ_ROUTING_ENTRIES	0x80
 
+/* Converts PCI address from struct device* to 32bit address value */
+#define PCI_DEV_TO_ADDR(dev) \
+	((dev)->path.pci.devfn | \
+	 ((dev)->upstream->secondary << 8) | \
+	 ((dev)->upstream->segment_group << 16))
+
 struct fch_irq_routing {
 	uint8_t intr_index;
 	uint8_t pic_irq_num;
@@ -22,7 +28,7 @@ struct fch_irq_routing {
 const struct fch_irq_routing *mb_get_fch_irq_mapping(size_t *length);
 
 struct pirq_struct {
-	u8 devfn;
+	u32 pci_addr;
 	u8 PIN[4];	/* PINA/B/C/D are index 0/1/2/3 */
 };
 
@@ -54,6 +60,14 @@ enum pci_routing_swizzle {
  * interrupt is reduced modulo 8 onto INT[A-H] and forwarded to the FCH IO-APIC.
  **/
 struct pci_routing_info {
+	uint32_t pci_addr;
+	uint8_t group;
+	uint8_t swizzle;
+	uint8_t bridge_irq; /* also called 'map' */
+} __packed;
+
+/* AMD FSP uses this structure in a HOB to pass the PCI routing info to host firmware */
+struct fsp_pci_routing_info {
 	uint8_t devfn;
 	uint8_t group;
 	uint8_t swizzle;
@@ -65,7 +79,7 @@ void populate_pirq_data(void);
 /* Implemented by the SoC */
 const struct pci_routing_info *get_pci_routing_table(size_t *entries);
 
-const struct pci_routing_info *get_pci_routing_info(unsigned int devfn);
+const struct pci_routing_info *get_pci_routing_info(const struct device *dev);
 
 unsigned int pci_calculate_irq(const struct pci_routing_info *routing_info, unsigned int pin);
 
