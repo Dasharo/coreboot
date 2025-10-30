@@ -11,7 +11,11 @@ Scope(\_SB) {
 
 	#include <soc/amd/common/acpi/osc.asl>
 
+	/* PCI IRQ mapping for the Southbridge */
 	#include "pci_int_defs.asl"
+
+	/* Describe PCI INT[A-H] for the Southbridge */
+	#include <soc/amd/common/acpi/pci_int.asl>
 
 	#include "mmio.asl"
 
