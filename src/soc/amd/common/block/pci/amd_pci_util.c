@@ -123,7 +123,7 @@ void write_pci_cfg_irqs(void)
 	u16 target_pin = 0;
 	u16 int_line = 0;
 	u16 pci_intr_idx = 0; /* Index into PCI_INTR table, 0xC00/0xC01 */
-	u16 devfn = 0;
+	u32 pci_addr = 0;
 	u32 i = 0;
 	size_t limit;
 	const struct irq_idx_name *idx_name;
@@ -158,15 +158,15 @@ void write_pci_cfg_irqs(void)
 		if (int_pin < 1 || int_pin > 4)
 			continue;	/* Device has invalid INT_PIN - skip  */
 
-		devfn = target_dev->path.pci.devfn;
+		pci_addr = PCI_DEV_TO_ADDR(target_dev);
 
 		/*
-		 * Step 2: Use the INT_PIN and DevFn number to find the PCI_INTR
+		 * Step 2: Use the INT_PIN and device address to find the PCI_INTR
 		 * register (0xC00) index for this device
 		 */
 		pci_intr_idx = 0xbad;	/* Will check to make sure it changed */
 		for (i = 0 ; i < pirq_data_size ; i++) {
-			if (pirq_data_ptr[i].devfn != devfn)
+			if (pirq_data_ptr[i].pci_addr != pci_addr)
 				continue;
 
 			/* PIN_A is idx0 in pirq_data array but 1 in PCI reg */
@@ -183,7 +183,7 @@ void write_pci_cfg_irqs(void)
 		if (pci_intr_idx == 0xbad) {
 			/* Not on a bridge or in pirq_data table, skip it */
 			printk(BIOS_SPEW, "PCI Devfn (0x%x) not found in"
-						" pirq_data table\n", devfn);
+						" pirq_data table\n", pci_addr & 0xff);
 			continue;
 		} else if (pci_intr_idx == 0x1f) {
 			/* Index found is not defined */
