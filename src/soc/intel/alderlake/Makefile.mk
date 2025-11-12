@@ -72,7 +72,13 @@ CPPFLAGS_common += -I$(src)/soc/intel/alderlake
 CPPFLAGS_common += -I$(src)/soc/intel/alderlake/include
 
 ifeq ($(CONFIG_SOC_INTEL_ALDERLAKE_PCH_S),y)
-cpu_microcode_bins += 3rdparty/dasharo-blobs/msi/ms7e06/microcode.bin
+# 06-97-00, 06-97-01, 06-97-04 are ADL-S Engineering Samples
+# 06-97-02 are ADL-S/HX Quality Samples but also ADL-HX Engineering Samples
+# 06-b7-00 are RPL-S Engineering Samples
+# ADL-S/HX C0/H0 and RPL-S C0/H0
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-97-05
+# RPL-S/HX B0
+cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-b7-01
 else ifeq ($(CONFIG_SOC_INTEL_ALDERLAKE_PCH_N),y)
 cpu_microcode_bins += 3rdparty/intel-microcode/intel-ucode/06-be-00
 else
