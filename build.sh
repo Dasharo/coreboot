@@ -359,7 +359,7 @@ case "$CMD" in
         build_msi ddr5 "Z790-P DDR5 "
         ;;
     "vp66xx" | "VP66XX")
-        BOARD="vp66xx"
+        BOARD="vp66xx_cmos_edk2"
         build_protectli_vault
         ;;
     "vp46xx" | "VP46XX")
