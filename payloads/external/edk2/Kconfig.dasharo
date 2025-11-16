@@ -46,11 +46,25 @@ config EDK2_SECURE_BOOT_DEFAULT_ENABLE
 	help
 	  Sets the UEFI Secure Boot state to enabled by default.
 
+config EDK2_ENABLE_SOVEREIGN_BOOT_WIZARD
+	bool "Enable Sovereign Boot Wizard"
+	default n
+	depends on EDK2_SECURE_BOOT_SUPPORT
+	help
+	  Enables Sovereign Boot Wizard support in the TianoCore payload.
+
+config EDK2_SOVEREIGN_BOOT_WIZARD_DEFAULT_STATE
+	bool "Enable Sovereign Boot Wizard by default"
+	default y
+	depends on EDK2_ENABLE_SOVEREIGN_BOOT_WIZARD
+	help
+	  Defines the default state of Sovereign Boot Wizard.
+
 config EDK2_SATA_PASSWORD
 	bool "Enable TianoCore SATA disk password"
 	default n
 	help
-	  Enable SATA disk password suupport in the TianoCore payload.
+	  Enable SATA disk password support in the TianoCore payload.
 
 config EDK2_OPAL_PASSWORD
 	bool "Enable TianoCore TCG OPAL password"
