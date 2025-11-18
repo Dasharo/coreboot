@@ -66,7 +66,7 @@ else
 	printf "    DD         Adding Intel Firmware Descriptor\n"
 	dd if=$(IFD_BIN_PATH) \
 		of=$(obj)/coreboot.pre conv=notrunc >/dev/null 2>&1
-
+endif
 ifeq ($(CONFIG_IFDTOOL_DISABLE_ME),y)
 	printf "    IFDTOOL    set AltMeDisable/HAP bit\n"
 	$(objutil)/ifdtool/ifdtool \
@@ -74,7 +74,6 @@ ifeq ($(CONFIG_IFDTOOL_DISABLE_ME),y)
 		--altmedisable 1 \
 		-O $(obj)/coreboot.pre \
 		$(obj)/coreboot.pre
-
 endif
 ifeq ($(CONFIG_VALIDATE_INTEL_DESCRIPTOR),y)
 	printf "    IFDTOOL    validate IFD against FMAP\n"
