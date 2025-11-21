@@ -82,4 +82,5 @@ const char *cbfs_fmap_region_hint(void)
 	else
 		return "COREBOOT";
 }
+
 #endif
