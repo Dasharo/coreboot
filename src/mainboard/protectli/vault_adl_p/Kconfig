@@ -16,6 +16,14 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_ACPI_TABLES
 	select INTEL_GMA_HAVE_VBT
 	select MEMORY_MAPPED_TPM
+	select HAVE_OPTION_TABLE
+	select HAVE_CMOS_DEFAULT
+	select USE_OPTION_TABLE
+	select INTEL_HAS_TOP_SWAP
+	select INTEL_ADD_TOP_SWAP_BOOTBLOCK
+	select INTEL_TOP_SWAP_SEPARATE_REGIONS
+	select INTEL_TOP_SWAP_OPTION_CONTROL
+	select INTEL_IFD_SET_TOP_SWAP_BOOTBLOCK_SIZE
 
 config MAINBOARD_DIR
 	default "protectli/vault_adl_p"
@@ -48,6 +56,9 @@ config PCIEXP_L1_SUB_STATE
 config PCIEXP_CLK_PM
 	default n
 
+config INTEL_TOP_SWAP_BOOTBLOCK_SIZE
+	default 0x80000
+
 config VBOOT
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 	select GBB_FLAG_DISABLE_FWMP
@@ -66,6 +77,7 @@ config SOC_INTEL_CSE_SEND_EOP_EARLY
 
 config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/top_swap.fmd" if !VBOOT
 
 config BEEP_ON_BOOT
 	bool "Beep on successful boot"
