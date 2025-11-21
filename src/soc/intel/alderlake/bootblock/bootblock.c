@@ -2,6 +2,7 @@
 
 #include <bootblock_common.h>
 #include <intelblocks/fast_spi.h>
+#include <intelblocks/rtc.h>
 #include <intelblocks/systemagent.h>
 #include <intelblocks/tco.h>
 #include <intelblocks/uart.h>
@@ -34,4 +35,7 @@ void bootblock_soc_init(void)
 
 	if (CONFIG(INTEL_CBNT_LOGGING))
 		intel_cbnt_log_registers();
+
+	if (CONFIG(INTEL_TOP_SWAP_OPTION_CONTROL))
+		sync_rtc_buc_top_swap();
 }
