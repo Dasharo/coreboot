@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <fmap.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/rtc.h>
 #include <option.h>
@@ -69,4 +70,20 @@ void sync_rtc_buc_top_swap(void)
 		board_reset();
 	}
 }
+
+/*
+ * Select the FMAP region to continue booting from, depending on the state of
+ * Top Swap
+ */
+const char *cbfs_fmap_region_hint(const char *default_region)
+{
+	if (!CONFIG(INTEL_TOP_SWAP_OPTION_CONTROL))
+		return default_region;
+
+	if (get_rtc_buc_top_swap_status())
+		return "COREBOOT_TS";
+	else
+		return "COREBOOT";
+}
+
 #endif
