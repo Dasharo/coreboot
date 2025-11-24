@@ -63,6 +63,7 @@ chip soc/intel/alderlake
 		device ref pcie_rp7 on
 			register "pch_pcie_rp[PCH_RP(7)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.pcie_rp_aspm = ASPM_DISABLE,
 				.clk_src = 0,
 				.clk_req = 0,
 			}"
@@ -95,6 +96,7 @@ chip soc/intel/alderlake
 		device ref pcie_rp12 on
 			register "pch_pcie_rp[PCH_RP(12)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.pcie_rp_aspm = ASPM_DISABLE,
 				.clk_src = 1,
 				.clk_req = 1,
 			}"
