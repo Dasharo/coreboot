@@ -11,7 +11,8 @@
 #include <soc/iomap.h>
 #include <soc/ramstage.h>
 
-#define FSP_PCH_PCIE_ASPM_L1 2
+#define FSP_PCH_PCIE_ASPM_DISABLE 0
+#define FSP_PCH_PCIE_ASPM_L0S 1
 
 #define IFD_FIA_COMBO_PORT0	0x189
 #define  FIA_PCIE		5
@@ -201,13 +202,17 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	}
 
 	/*
-	 * Enable only L1 for WiFi, L0s doesn't work reliably for Atheros QCA6174.
-	 * On V1610, WiFi is connected to different root port through PCIe switch
-	 * (ASMedia ASM1806), but the switch doesn't support L0s on upstream port
-	 * so this workaround isn't needed there.
+	 * Disable ASPM for WiFi, neither L0s nor L1 works reliably on Atheros
+	 * QCA6174.
 	 */
-	if (!CONFIG(BOARD_PROTECTLI_V1610))
-		params->PcieRpAspm[4] = FSP_PCH_PCIE_ASPM_L1;
+	params->PcieRpAspm[4] = FSP_PCH_PCIE_ASPM_DISABLE;
+
+	/*
+	 * Disable ASPM L1 for SSD slot, as it does not work reliably with Samsung
+	 * NVMe SSDs.
+	 */
+	params->PcieRpAspm[CONFIG(BOARD_PROTECTLI_V1210) || CONFIG(BOARD_PROTECTLI_V1211) ? 0 : 2]
+		= FSP_PCH_PCIE_ASPM_L0S;
 
 	/*
 	 * HWP is too aggressive in power savings and does not let using full
