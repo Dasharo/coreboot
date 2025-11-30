@@ -20,7 +20,7 @@ EFI_TCG2_EVENT_ALGORITHM_BITMAP tpm2_get_active_pcrs(void)
 	uint32_t activePcrBanks = 0;
 	uint32_t index;
 
-	rc = tpm2_get_capability_pcrs(&Pcrs);
+	rc = tlcl2_get_capability_pcrs(&Pcrs);
 	if (rc != TPM_SUCCESS) {
 		tpmHashAlgorithmBitmap = EFI_TCG2_BOOT_HASH_ALG_SHA1;
 		activePcrBanks = EFI_TCG2_BOOT_HASH_ALG_SHA1;
@@ -61,44 +61,6 @@ EFI_TCG2_EVENT_ALGORITHM_BITMAP tpm2_get_active_pcrs(void)
 		activePcrBanks);
 
 	return activePcrBanks;
-}
-
-/*
- * tpm2_get_capability_pcrs
- *
- * Return the TPM PCR information.
- *
- * This function parses the data got from tlcl2_get_capability and returns the
- * PcrSelection.
- *
- * @param[out] Pcrs		The Pcr Selection
- *
- * @retval TPM_SUCCESS		Operation completed successfully.
- * @retval TPM_IOERROR		The command was unsuccessful.
- */
-tpm_result_t tpm2_get_capability_pcrs(TPML_PCR_SELECTION *Pcrs)
-{
-	TPMS_CAPABILITY_DATA TpmCap;
-	tpm_result_t rc;
-	int index;
-
-	rc = tlcl2_get_capability(TPM_CAP_PCRS, 0, 1, &TpmCap);
-	if (rc == TPM_SUCCESS) {
-		Pcrs->count = TpmCap.data.assignedPCR.count;
-		printk(BIOS_DEBUG, "Pcrs->count = %d\n", Pcrs->count);
-		for (index = 0; index < Pcrs->count; index++) {
-			Pcrs->pcrSelections[index].hash =
-				be16toh(TpmCap.data.assignedPCR.pcrSelections[index].hash);
-			printk(BIOS_DEBUG, "Pcrs->pcrSelections[%d].hash = %#x\n", index,
-			       Pcrs->pcrSelections[index].hash);
-			Pcrs->pcrSelections[index].sizeofSelect =
-				TpmCap.data.assignedPCR.pcrSelections[index].sizeofSelect;
-			memcpy(Pcrs->pcrSelections[index].pcrSelect,
-				TpmCap.data.assignedPCR.pcrSelections[index].pcrSelect,
-				Pcrs->pcrSelections[index].sizeofSelect);
-		}
-	}
-	return rc;
 }
 
 /*
