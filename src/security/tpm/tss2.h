@@ -42,6 +42,21 @@ tpm_result_t tlcl2_get_capability(TPM_CAP capability, uint32_t property,
 				  uint32_t property_count,
 				  TPMS_CAPABILITY_DATA *capability_data);
 
+/*
+ * tlcl2_get_capability_pcrs
+ *
+ * Return the TPM PCR information.
+ *
+ * This function parses the data got from tlcl2_get_capability and returns the
+ * PcrSelection.
+ *
+ * @param[out] pcrs		The Pcr Selection
+ *
+ * @retval TPM_SUCCESS		Operation completed successfully.
+ * @retval TPM_IOERROR		The command was unsuccessful.
+ */
+tpm_result_t tlcl2_get_capability_pcrs(TPML_PCR_SELECTION *pcrs);
+
 /* Issue TPM2_NV_SetBits command */
 tpm_result_t tlcl2_set_bits(uint32_t index, uint64_t bits);
 
