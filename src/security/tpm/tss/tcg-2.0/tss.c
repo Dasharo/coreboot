@@ -494,3 +494,31 @@ tpm_result_t tlcl2_get_capability(TPM_CAP capability, uint32_t property,
 	memcpy(capability_data, &response->gc.cd, sizeof(TPMS_CAPABILITY_DATA));
 	return TPM_SUCCESS;
 }
+
+tpm_result_t tlcl2_get_capability_pcrs(TPML_PCR_SELECTION *pcrs)
+{
+	TPMS_CAPABILITY_DATA TpmCap;
+	tpm_result_t rc;
+	int index;
+
+	rc = tlcl2_get_capability(TPM_CAP_PCRS, 0, 1, &TpmCap);
+	if (rc != TPM_SUCCESS)
+		return rc;
+
+	pcrs->count = TpmCap.data.assignedPCR.count;
+	printk(BIOS_DEBUG, "%s(): pcrs->count = %d\n", __func__, pcrs->count);
+
+	for (index = 0; index < pcrs->count; index++) {
+		pcrs->pcrSelections[index].hash =
+			be16toh(TpmCap.data.assignedPCR.pcrSelections[index].hash);
+		printk(BIOS_DEBUG, "%s(): pcrs->pcrSelections[%d].hash = %#x\n",
+		       __func__, index, pcrs->pcrSelections[index].hash);
+		pcrs->pcrSelections[index].sizeofSelect =
+			TpmCap.data.assignedPCR.pcrSelections[index].sizeofSelect;
+		memcpy(pcrs->pcrSelections[index].pcrSelect,
+			TpmCap.data.assignedPCR.pcrSelections[index].pcrSelect,
+			pcrs->pcrSelections[index].sizeofSelect);
+	}
+
+	return TPM_SUCCESS;
+}
