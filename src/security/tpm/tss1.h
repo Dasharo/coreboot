@@ -4,7 +4,6 @@
 #define TSS1_H_
 
 #include <types.h>
-#include <vb2_sha.h>
 
 #include <security/tpm/tss/tcg-1.2/tss_structures.h>
 #include <security/tpm/tss_errors.h>
@@ -78,6 +77,8 @@ tpm_result_t tlcl1_get_permissions(uint32_t index, uint32_t *permissions);
  * based on TPM family.
  */
 
+struct tpm_digest;
+
 tpm_result_t tlcl1_save_state(void);
 tpm_result_t tlcl1_resume(void);
 tpm_result_t tlcl1_startup(void);
@@ -88,7 +89,6 @@ tpm_result_t tlcl1_assert_physical_presence(void);
 tpm_result_t tlcl1_physical_presence_cmd_enable(void);
 tpm_result_t tlcl1_finalize_physical_presence(void);
 tpm_result_t tlcl1_force_clear(void);
-tpm_result_t tlcl1_extend(int pcr_num, const uint8_t *digest_data,
-			  enum vb2_hash_algorithm digest_algo);
+tpm_result_t tlcl1_extend(int pcr_num, const struct tpm_digest *digests);
 
 #endif /* TSS1_H_ */
