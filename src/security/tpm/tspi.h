@@ -132,15 +132,15 @@ static inline void tpm_log_copy_entries(const void *from, void *to)
 /**
  * Retrieves an entry from a log. Returns non-zero on invalid index or error.
  */
-static inline int tpm_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
-			      enum vb2_hash_algorithm *digest_algo, const char **event_name)
+static inline int tpm_log_get(int entry_idx, int *pcr, struct tpm_digest *digests,
+			      const char **event_name)
 {
 	if (CONFIG(TPM_LOG_CB))
-		return tpm_cb_log_get(entry_idx, pcr, digest_data, digest_algo, event_name);
+		return tpm_cb_log_get(entry_idx, pcr, digests, event_name);
 	if (tpm_log_use_tpm1_format())
-		return tpm1_log_get(entry_idx, pcr, digest_data, digest_algo, event_name);
+		return tpm1_log_get(entry_idx, pcr, digests, event_name);
 	if (tpm_log_use_tpm2_format())
-		return tpm2_log_get(entry_idx, pcr, digest_data, digest_algo, event_name);
+		return tpm2_log_get(entry_idx, pcr, digests, event_name);
 	return 1;
 }
 
@@ -148,21 +148,17 @@ static inline int tpm_log_get(int entry_idx, int *pcr, const uint8_t **digest_da
  * Add table entry for cbmem TPM log.
  * @param name Name of the hashed data
  * @param pcr PCR used to extend hashed data
- * @param diget_algo sets the digest algorithm
- * @param digest sets the hash extended into the tpm
- * @param digest_len the length of the digest
+ * @param digests An array of digests terminated by an entry with VB2_HASH_NONE
  */
 static inline void tpm_log_add_table_entry(const char *name, const uint32_t pcr,
-					   enum vb2_hash_algorithm digest_algo,
-					   const uint8_t *digest,
-					   const size_t digest_len)
+					   const struct tpm_digest *digests)
 {
 	if (CONFIG(TPM_LOG_CB))
-		tpm_cb_log_add_table_entry(name, pcr, digest_algo, digest, digest_len);
+		tpm_cb_log_add_table_entry(name, pcr, digests);
 	else if (tpm_log_use_tpm1_format())
-		tpm1_log_add_table_entry(name, pcr, digest_algo, digest, digest_len);
+		tpm1_log_add_table_entry(name, pcr, digests);
 	else if (tpm_log_use_tpm2_format())
-		tpm2_log_add_table_entry(name, pcr, digest_algo, digest, digest_len);
+		tpm2_log_add_table_entry(name, pcr, digests);
 }
 
 /**
@@ -191,15 +187,11 @@ static inline void tpm_log_dump(void *unused)
 /**
  * Ask vboot for a digest and extend a TPM PCR with it.
  * @param pcr sets the pcr index
- * @param diget_algo sets the digest algorithm
- * @param digest sets the hash to extend into the tpm
- * @param digest_len the length of the digest
+ * @param digests An array of digests terminated by an entry with VB2_HASH_NONE
  * @param name sets additional info where the digest comes from
  * @return TPM_SUCCESS on success. If not a tpm error is returned
  */
-tpm_result_t tpm_extend_pcr(int pcr, enum vb2_hash_algorithm digest_algo,
-			    const uint8_t *digest, size_t digest_len,
-			    const char *name);
+tpm_result_t tpm_extend_pcr(int pcr, const struct tpm_digest *digests, const char *name);
 
 /**
  * Issue a TPM_Clear and re-enable/reactivate the TPM.
