@@ -318,18 +318,17 @@ tpm_result_t tlcl1_set_global_lock(void)
 	return tlcl1_write(TPM_NV_INDEX0, NULL, 0);
 }
 
-tpm_result_t tlcl1_extend(int pcr_num, const uint8_t *digest_data,
-			  enum vb2_hash_algorithm digest_algo)
+tpm_result_t tlcl1_extend(int pcr_num, const struct tpm_digest *digests)
 {
 	struct s_tpm_extend_cmd cmd;
 	uint8_t response[kTpmResponseHeaderLength + kPcrDigestLength];
 
-	if (digest_algo != VB2_HASH_SHA1)
-		return TPM_CB_INVALID_ARG;
+	if (digests[0].hash_type != VB2_HASH_SHA1 || digests[1].hash_type != VB2_HASH_INVALID)
+		return TPM_CB_HASH_ERROR;
 
 	memcpy(&cmd, &tpm_extend_cmd, sizeof(cmd));
 	to_tpm_uint32(cmd.buffer + tpm_extend_cmd.pcrNum, pcr_num);
-	memcpy(cmd.buffer + cmd.inDigest, digest_data, kPcrDigestLength);
+	memcpy(cmd.buffer + cmd.inDigest, digests[0].hash, kPcrDigestLength);
 
 	return tlcl1_send_receive(cmd.buffer, response, sizeof(response));
 }
