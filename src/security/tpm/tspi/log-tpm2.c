@@ -104,10 +104,7 @@ void tpm2_log_dump(void)
 	printk(BIOS_INFO, "\n");
 }
 
-void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
-			      enum vb2_hash_algorithm digest_algo,
-			      const uint8_t *digest,
-			      const size_t digest_len)
+void tpm2_log_add_table_entry(const char *name, uint32_t pcr, const struct tpm_digest *digests)
 {
 	struct tpm_2_log_table *tclt;
 	struct tpm_2_log_entry *tce;
@@ -123,15 +120,14 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 		return;
 	}
 
-	if (digest_algo != tpm_log_alg()) {
+	if (digests[0].hash_type != tpm_log_alg()) {
 		printk(BIOS_WARNING, "TPM LOG: digest is of unsupported type: %s\n",
-		       vb2_get_hash_algorithm_name(digest_algo));
+		       vb2_get_hash_algorithm_name(digests[0].hash_type));
 		return;
 	}
 
-	if (digest_len != vb2_digest_size(tpm_log_alg())) {
-		printk(BIOS_WARNING, "TPM LOG: digest has invalid length: %d\n",
-		       (int)digest_len);
+	if (digests[1].hash_type != VB2_HASH_INVALID) {
+		printk(BIOS_WARNING, "TPM LOG: can't handle multiple banks\n");
 		return;
 	}
 
@@ -148,7 +144,7 @@ void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 
 	tce->digest_count = htole32(1);
 	tce->digest_type = htole16(tpm2_alg_from_vb2_hash(tpm_log_alg()));
-	memcpy(tce->digest, digest, vb2_digest_size(tpm_log_alg()));
+	memcpy(tce->digest, digests[0].hash, vb2_digest_size(tpm_log_alg()));
 
 	tce->data_length = htole32(sizeof(tce->data));
 	strncpy((char *)tce->data, name, sizeof(tce->data) - 1);
@@ -196,8 +192,7 @@ void tpm2_log_startup_locality(int locality)
 	memcpy(tce->data, &locality_event, sizeof(locality_event));
 }
 
-int tpm2_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
-		 enum vb2_hash_algorithm *digest_algo, const char **event_name)
+int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name)
 {
 	struct tpm_2_log_table *tclt;
 	struct tpm_2_log_entry *tce;
@@ -211,9 +206,11 @@ int tpm2_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
 
 	tce = &tclt->entries[entry_idx];
 
+	digests[0].hash_type = tpm_log_alg(); /* We validate algorithm on addition */
+	digests[0].hash = tce->digest;
+	digests[1].hash_type = VB2_HASH_INVALID;
+
 	*pcr = le32toh(tce->pcr);
-	*digest_data = tce->digest;
-	*digest_algo = tpm_log_alg(); /* We validate algorithm on addition */
 	*event_name = (char *)tce->data;
 	return 0;
 }
