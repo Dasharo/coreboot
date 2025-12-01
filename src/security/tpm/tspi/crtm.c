@@ -132,10 +132,14 @@ tpm_result_t tspi_cbfs_measurement(const char *name, uint32_t type, const struct
 		break;
 	}
 
+	struct tpm_digest digests[] = {
+		{ .hash_type = hash->algo, .hash = hash->raw },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+
 	snprintf(tpm_log_metadata, TPM_CB_LOG_PCR_HASH_NAME, "CBFS: %s", name);
 
-	return tpm_extend_pcr(pcr_index, hash->algo, hash->raw, vb2_digest_size(hash->algo),
-			      tpm_log_metadata);
+	return tpm_extend_pcr(pcr_index, digests, tpm_log_metadata);
 }
 
 void *tpm_log_init(void)
@@ -163,8 +167,7 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 	int i;
 	int pcr;
 	const char *event_name;
-	const uint8_t *digest_data;
-	enum vb2_hash_algorithm digest_algo;
+	struct tpm_digest digests[2];
 
 	/* This means the table is empty. */
 	if (!tspi_tpm_log_available())
@@ -177,7 +180,7 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 
 	printk(BIOS_DEBUG, "TPM: Write digests cached in TPM log to PCR\n");
 	i = 0;
-	while (!tpm_log_get(i++, &pcr, &digest_data, &digest_algo, &event_name)) {
+	while (!tpm_log_get(i++, &pcr, digests, &event_name)) {
 		/*
 		 * Skip log entries that coreboot synthesized to account for PCR extends
 		 * performed by hardware S-CRTM.
@@ -193,11 +196,12 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 			continue;
 
 		printk(BIOS_DEBUG, "TPM: Write digest for %s into PCR %d\n", event_name, pcr);
-		tpm_result_t rc = tlcl_extend(pcr, digest_data, digest_algo);
+
+		tpm_result_t rc = tlcl_extend(pcr, digests);
 		if (rc != TPM_SUCCESS) {
 			printk(BIOS_ERR,
 			       "TPM: Writing digest of %s into PCR failed with error %d\n",
-				event_name, rc);
+			       event_name, rc);
 			return rc;
 		}
 	}
