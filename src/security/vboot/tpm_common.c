@@ -47,19 +47,21 @@ tpm_result_t vboot_extend_pcr(struct vb2_context *ctx, int pcr,
 	enum vb2_hash_algorithm algo = tlcl_get_family() == TPM_1 ?
 		VB2_HASH_SHA1 : VB2_HASH_SHA256;
 
+	struct tpm_digest digests[] = {
+		{ .hash_type = algo, .hash = buffer },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+
 	switch (which_digest) {
 	/* SHA1 of (devmode|recmode|keyblock) bits */
 	case BOOT_MODE_PCR:
-		return tpm_extend_pcr(pcr, algo, buffer, vb2_digest_size(algo),
-				      TPM_PCR_BOOT_MODE);
+		return tpm_extend_pcr(pcr, digests, TPM_PCR_BOOT_MODE);
 	 /* SHA256 of HWID */
 	case HWID_DIGEST_PCR:
-		return tpm_extend_pcr(pcr, algo, buffer, vb2_digest_size(algo),
-				      TPM_PCR_GBB_HWID_NAME);
+		return tpm_extend_pcr(pcr, digests, TPM_PCR_GBB_HWID_NAME);
 	/* firmware version */
 	case FIRMWARE_VERSION_PCR:
-		return tpm_extend_pcr(pcr, algo, buffer, vb2_digest_size(algo),
-				      TPM_PCR_FIRMWARE_VERSION);
+		return tpm_extend_pcr(pcr, digests, TPM_PCR_FIRMWARE_VERSION);
 	default:
 		return TPM_CB_FAIL;
 	}
