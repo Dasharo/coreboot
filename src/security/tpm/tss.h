@@ -10,6 +10,7 @@
 #define TSS_H_
 
 #include <types.h>
+#include <vb2_api.h>
 #include <vb2_sha.h>
 
 #include <security/tpm/tis.h>
@@ -19,6 +20,13 @@
 #include <security/tpm/tss/tcg-2.0/tss_structures.h>
 #include <security/tpm/tss1.h>
 #include <security/tpm/tss2.h>
+
+struct tpm_digest {
+	/* Pointer to an array of length vb2_digest_size(hash_type) or bigger */
+	const uint8_t *hash;
+	/* VB2_HASH_NONE/VB2_HASH_INVALID here marks the end of a digests list */
+	enum vb2_hash_algorithm hash_type;
+};
 
 /*
  * Operations that are applicable to both TPM versions have wrappers which
@@ -153,10 +161,9 @@ static inline tpm_result_t tlcl_force_clear(void)
 /**
  * Perform a TPM_Extend.
  */
-static inline tpm_result_t tlcl_extend(int pcr_num, const uint8_t *digest_data,
-				       enum vb2_hash_algorithm digest_algo)
+static inline tpm_result_t tlcl_extend(int pcr_num, const struct tpm_digest *digests)
 {
-	TLCL_CALL(extend, pcr_num, digest_data, digest_algo);
+	TLCL_CALL(extend, pcr_num, digests);
 }
 
 extern tis_sendrecv_fn tlcl_tis_sendrecv;
