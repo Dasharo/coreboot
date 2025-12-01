@@ -58,9 +58,7 @@ void tpm_cb_log_dump(void)
 }
 
 void tpm_cb_log_add_table_entry(const char *name, const uint32_t pcr,
-				enum vb2_hash_algorithm digest_algo,
-				const uint8_t *digest,
-				const size_t digest_len)
+				const struct tpm_digest *digests)
 {
 	struct tpm_cb_log_table *tclt = tpm_log_init();
 	if (!tclt) {
@@ -78,22 +76,32 @@ void tpm_cb_log_add_table_entry(const char *name, const uint32_t pcr,
 		return;
 	}
 
+	if (digests[0].hash_type == VB2_HASH_INVALID) {
+		printk(BIOS_WARNING, "TPM LOG: no digests provided\n");
+		return;
+	}
+
+	if (digests[1].hash_type != VB2_HASH_INVALID) {
+		printk(BIOS_WARNING, "TPM LOG: coreboot log can't handle multiple banks\n");
+		return;
+	}
+
 	struct tpm_cb_log_entry *tce = &tclt->entries[tclt->num_entries++];
 	strncpy(tce->name, name, TPM_CB_LOG_PCR_HASH_NAME - 1);
 	tce->name[TPM_CB_LOG_PCR_HASH_NAME - 1] = '\0';
 
 	tce->pcr = pcr;
 
-	if (digest_len > TPM_CB_LOG_DIGEST_MAX_LENGTH) {
+	if (vb2_digest_size(digests[0].hash_type) > TPM_CB_LOG_DIGEST_MAX_LENGTH) {
 		printk(BIOS_WARNING, "TPM LOG: PCR digest too long for log entry\n");
 		return;
 	}
 
 	strncpy(tce->digest_type,
-		vb2_get_hash_algorithm_name(digest_algo),
+		vb2_get_hash_algorithm_name(digests[0].hash_type),
 		TPM_CB_LOG_PCR_HASH_LEN - 1);
-	tce->digest_length = digest_len;
-	memcpy(tce->digest, digest, tce->digest_length);
+	tce->digest_length = vb2_digest_size(digests[0].hash_type);
+	memcpy(tce->digest, digests[0].hash, tce->digest_length);
 }
 
 void tpm_cb_preram_log_clear(void)
@@ -104,8 +112,7 @@ void tpm_cb_preram_log_clear(void)
 	tclt->num_entries = 0;
 }
 
-int tpm_cb_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
-		   enum vb2_hash_algorithm *digest_algo, const char **event_name)
+int tpm_cb_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name)
 {
 	struct tpm_cb_log_table *tclt;
 	struct tpm_cb_log_entry *tce;
@@ -121,16 +128,19 @@ int tpm_cb_log_get(int entry_idx, int *pcr, const uint8_t **digest_data,
 	tce = &tclt->entries[entry_idx];
 
 	*pcr = tce->pcr;
-	*digest_data = tce->digest;
 	*event_name = tce->name;
 
-	*digest_algo = VB2_HASH_INVALID;
+	digests[0].hash = tce->digest;
+	digests[0].hash_type = VB2_HASH_INVALID;
 	for (algo = VB2_HASH_INVALID; algo != VB2_HASH_ALG_COUNT; ++algo) {
 		if (strcmp(tce->digest_type, vb2_hash_names[algo]) == 0) {
-			*digest_algo = algo;
+			digests[0].hash_type = algo;
 			break;
 		}
 	}
+
+	digests[1].hash_type = VB2_HASH_INVALID;
+
 	return 0;
 }
 
