@@ -617,9 +617,13 @@ static enum cb_err cap_pcrs(union cbnt_biosacm_policy biosacm_sts)
 		return CB_ERR;
 	}
 
+	const struct tpm_digest cap_digests[] = {
+		{ .hash_type = hash.algo, .hash = hash.raw },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+
 	for (int pcr = 0; pcr < 8; pcr++) {
-		tpm_log_add_table_entry("CBnT hit TPM failure during boot", pcr, hash.algo,
-					hash.raw, vb2_digest_size(hash.algo));
+		tpm_log_add_table_entry("CBnT hit TPM failure during boot", pcr, cap_digests);
 		printk(BIOS_INFO, "CBnT: capped PCR-%d\n", pcr);
 	}
 	return CB_SUCCESS;
@@ -722,8 +726,11 @@ void intel_cbnt_inject_ibg_measurements(void)
 		}
 
 		/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
-		tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, hash.algo, hash.raw,
-					vb2_digest_size(hash.algo));
+		const struct tpm_digest pcr0_digests[] = {
+			{ .hash_type = hash.algo, .hash = hash.raw },
+			{ .hash_type = VB2_HASH_INVALID }
+		};
+		tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_digests);
 
 		/* Optionally making and hashing PCR-7 data (not supported since MTL). */
 		if (auth_measure) {
@@ -740,8 +747,11 @@ void intel_cbnt_inject_ibg_measurements(void)
 
 			/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type
 			   and event name should be a Unicode string. */
-			tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, hash.algo, hash.raw,
-						vb2_digest_size(hash.algo));
+			const struct tpm_digest pcr7_digests[] = {
+				{ .hash_type = hash.algo, .hash = hash.raw },
+				{ .hash_type = VB2_HASH_INVALID }
+			};
+			tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_digests);
 			printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
 		}
 
@@ -774,8 +784,11 @@ void intel_cbnt_inject_ibg_measurements(void)
 			return;
 		}
 		/* Per BWG this should be logged with EV_S_CRTM_VERSION type. */
-		tpm_log_add_table_entry(crtm_version_str, 0, hash.algo, hash.raw,
-					vb2_digest_size(hash.algo));
+		const struct tpm_digest crtm_digests[] = {
+			{ .hash_type = hash.algo, .hash = hash.raw },
+			{ .hash_type = VB2_HASH_INVALID }
+		};
+		tpm_log_add_table_entry(crtm_version_str, 0, crtm_digests);
 
 		if (copy_ibb_hash(&data_ob, tpm2_alg_from_vb2_hash(tpm_log_alg())) !=
 		    CB_SUCCESS) {
@@ -783,8 +796,11 @@ void intel_cbnt_inject_ibg_measurements(void)
 			return;
 		}
 		/* Per BWG this should be logged with EV_POST_CODE type. */
-		tpm_log_add_table_entry("Boot Guard Measured IBB", 0, tpm_log_alg(), data,
-					obuf_nr_written(&data_ob));
+		const struct tpm_digest post_code_digests[] = {
+			{ .hash_type = tpm_log_alg(), .hash = data },
+			{ .hash_type = VB2_HASH_INVALID }
+		};
+		tpm_log_add_table_entry("Boot Guard Measured IBB", 0, post_code_digests);
 
 		/*
 		 * struct {
@@ -815,8 +831,13 @@ void intel_cbnt_inject_ibg_measurements(void)
 			printk(BIOS_ERR, "CBnT: failed to hash POLICY_DATA\n");
 			return;
 		}
+
 		/* Per BWG this should be logged with EV_POST_CODE type. */
-		if (tpm_extend_pcr(0, hash.algo, hash.raw, vb2_digest_size(hash.algo),
+		const struct tpm_digest policy_digests[] = {
+			{ .hash_type = hash.algo, .hash = hash.raw },
+			{ .hash_type = VB2_HASH_INVALID }
+		};
+		if (tpm_extend_pcr(0, policy_digests,
 				   "BIOS Measured Boot Guard Policy") != TPM_SUCCESS) {
 			printk(BIOS_ERR, "CBnT: failed to extend POLICY_DATA\n");
 			return;
