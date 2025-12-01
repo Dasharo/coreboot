@@ -4,7 +4,6 @@
 #define TSS2_H_
 
 #include <types.h>
-#include <vb2_sha.h>
 
 #include <security/tpm/tss/tcg-2.0/tss_structures.h>
 #include <security/tpm/tss_errors.h>
@@ -89,6 +88,8 @@ tpm_result_t tlcl2_disable_platform_hierarchy(void);
  * based on TPM family.
  */
 
+struct tpm_digest;
+
 tpm_result_t tlcl2_save_state(void);
 tpm_result_t tlcl2_resume(void);
 tpm_result_t tlcl2_startup(void);
@@ -99,7 +100,6 @@ tpm_result_t tlcl2_assert_physical_presence(void);
 tpm_result_t tlcl2_physical_presence_cmd_enable(void);
 tpm_result_t tlcl2_finalize_physical_presence(void);
 tpm_result_t tlcl2_force_clear(void);
-tpm_result_t tlcl2_extend(int pcr_num, const uint8_t *digest_data,
-			  enum vb2_hash_algorithm digest_algo);
+tpm_result_t tlcl2_extend(int pcr_num, const struct tpm_digest *digests);
 
 #endif /* TSS2_H_ */
