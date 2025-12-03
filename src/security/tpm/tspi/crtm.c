@@ -39,6 +39,7 @@ static tpm_result_t tspi_init_crtm(void)
 {
 	tpm_result_t rc = TPM_SUCCESS;
 	/* Initialize TPM PRERAM log. */
+	printk(BIOS_INFO, "%s: tpm_log_initialized = %d\n", __func__, tpm_log_initialized);
 	if (!tpm_log_available()) {
 		tpm_preram_log_clear();
 		tpm_log_initialized = 1;
@@ -136,6 +137,7 @@ tpm_result_t tspi_cbfs_measurement(const char *name, uint32_t type, const struct
 	tpm_result_t rc = TPM_SUCCESS;
 	char tpm_log_metadata[TPM_CB_LOG_PCR_HASH_NAME];
 
+	printk(BIOS_INFO, "%s: tpm_log_initialized = %d\n", __func__, tpm_log_initialized);
 	if (!tpm_log_available()) {
 		rc = tspi_init_crtm();
 		if (rc) {
@@ -144,6 +146,8 @@ tpm_result_t tspi_cbfs_measurement(const char *name, uint32_t type, const struct
 			return rc;
 		}
 		printk(BIOS_DEBUG, "CRTM initialized.\n");
+	} else {
+		printk(BIOS_DEBUG, "CRTM already initialized.\n");
 	}
 
 	switch (type) {
@@ -203,6 +207,7 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 	enum vb2_hash_algorithm digest_algo;
 
 	/* This means the table is empty. */
+	printk(BIOS_INFO, "%s: tpm_log_initialized = %d\n", __func__, tpm_log_initialized);
 	if (!tpm_log_available())
 		return TPM_SUCCESS;
 

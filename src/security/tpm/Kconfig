@@ -132,7 +132,7 @@ config TPM_HASH_SHA512
 endchoice
 
 config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
-	bool
+	bool "Initialize TPM in bootblock"
 	depends on TPM_MEASURED_BOOT && !VBOOT
 	help
 	  Initialize TPM inside the bootblock instead of ramstage. This is
