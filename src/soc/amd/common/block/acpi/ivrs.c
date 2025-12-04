@@ -46,8 +46,10 @@ static unsigned long ivhd_describe_hpet(unsigned long current, uint8_t hndl, uin
 	return current;
 }
 
-static unsigned long ivhd_describe_f0_device(unsigned long current, uint16_t dev_id,
-					     const char acpi_hid[8], uint8_t datasetting)
+
+unsigned long ivhd_describe_f0_device(unsigned long current, uint16_t dev_id,
+				      const char acpi_hid[8], uint8_t datasetting,
+				      uint64_t uid)
 {
 	ivrs_ivhd_f0_entry_t *ivhd_f0 = (ivrs_ivhd_f0_entry_t *)current;
 	memset(ivhd_f0, 0, sizeof(*ivhd_f0));
@@ -55,10 +57,12 @@ static unsigned long ivhd_describe_f0_device(unsigned long current, uint16_t dev
 	ivhd_f0->type = IVHD_DEV_VARIABLE;
 	ivhd_f0->dev_id = dev_id;
 	ivhd_f0->dte_setting = datasetting;
-
+	ivhd_f0->uuid_length = sizeof(uid);
+	ivhd_f0->uuid_format = IVHD_UID_INT;
+	memcpy(&ivhd_f0[1], &uid, sizeof(uid));
 	memcpy(ivhd_f0->hardware_id, acpi_hid, sizeof(ivhd_f0->hardware_id));
 
-	current += sizeof(ivrs_ivhd_f0_entry_t);
+	current += (sizeof(ivrs_ivhd_f0_entry_t) + ivhd_f0->uuid_length);
 	return current;
 }
 
@@ -251,7 +255,8 @@ static unsigned long acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd_t *i
 						"AMDI0040",
 						IVHD_DTE_LINT_1_PASS | IVHD_DTE_LINT_0_PASS |
 						IVHD_DTE_SYS_MGT_TRANS   | IVHD_DTE_NMI_PASS |
-						IVHD_DTE_EXT_INT_PASS | IVHD_DTE_INIT_PASS);
+						IVHD_DTE_EXT_INT_PASS | IVHD_DTE_INIT_PASS,
+						0);
 		}
 	}
 
