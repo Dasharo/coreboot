@@ -257,4 +257,12 @@ unsigned int acpi_ivrs_get_iommu_domains(const struct ivrs_iommu_domain **iommu_
 unsigned long soc_acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd40_t *ivhd,
 				   struct device *nb_dev, struct device *iommu_dev);
 
+/*
+ * SoCs should use this function to describe DMA-capable ACPI devices, which
+ * are not discoverable like PCI, in the IVRS type 40h table.
+ */
+unsigned long ivhd_describe_f0_device(unsigned long current, uint16_t dev_id,
+				      const char acpi_hid[8], uint8_t datasetting,
+				      uint64_t uid);
+
 #endif /* __ACPI_ACPI_IVRS_H__ */
