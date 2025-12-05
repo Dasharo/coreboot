@@ -126,7 +126,6 @@ typedef enum _amd_fw_type {
 	AMD_FW_MINIMSMU = 0x9a,
 	AMD_FW_GFXIMU_0 = 0x9b,
 	AMD_FW_GFXIMU_1 = 0x9c,
-	AMD_FW_GFXIMU_2 = 0x9d,
 	AMD_FW_SRAM_FW_EXT = 0x9d,
 	AMD_FW_TOS_WHITELIST = 0x9f,
 	AMD_FW_UMSMU = 0xa2,
