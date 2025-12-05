@@ -54,6 +54,7 @@ typedef enum _amd_fw_type {
 	AMD_FW_PSP_SMU_FIRMWARE2 = 0x12,
 	AMD_DEBUG_UNLOCK = 0x13,
 	AMD_FW_PSP_TEEIPKEY = 0x15,
+	AMD_SEV_DRIVER = 0x1a,
 	AMD_BOOT_DRIVER = 0x1b,
 	AMD_SOC_DRIVER = 0x1c,
 	AMD_DEBUG_DRIVER = 0x1d,
@@ -100,6 +101,11 @@ typedef enum _amd_fw_type {
 	AMD_FW_MPIO = 0x5d,
 	AMD_FW_TPMLITE = 0x5f, /* family 17h & 19h */
 	AMD_FW_PSP_SMUSCS = 0x5f, /* family 15h & 16h */
+	AMD_FW_RAS_DRIVER = 0x64,
+	AMD_FW_RAS_TA = 0x65,
+	AMD_FW_FHP_DRIVER = 0x67,
+	AMD_FW_SPDM_DRIVER = 0x68,
+	AMD_FW_DPE_DRIVER = 0x69,
 	AMD_FW_DMCUB = 0x71,
 	AMD_FW_PSP_BOOTLOADER_AB = 0x73,
 	AMD_RIB = 0x76,
@@ -121,6 +127,7 @@ typedef enum _amd_fw_type {
 	AMD_FW_GFXIMU_1 = 0x9c,
 	AMD_FW_GFXIMU_2 = 0x9d,
 	AMD_FW_SRAM_FW_EXT = 0x9d,
+	AMD_FW_TOS_WHITELIST = 0x9f,
 	AMD_FW_UMSMU = 0xa2,
 	AMD_FW_S3IMG = 0xa0,
 	AMD_FW_USBDP = 0xa4,

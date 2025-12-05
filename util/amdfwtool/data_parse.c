@@ -144,6 +144,11 @@ static enum platform identify_platform(char *soc_name)
 		}                                        \
 	} while (0)
 
+#define S3_IMAGE_STR_BASE	"CPU_S3_IMAGE"
+#define S3_IMAGE_STR_BASE_LEN	strlen(S3_IMAGE_STR_BASE)
+#define S3_IMAGE_STR_INS_INDEX	strlen(S3_IMAGE_STR_BASE"_INS")
+#define S3_IMAGE_STR_ALL_LEN	strlen(S3_IMAGE_STR_BASE"_INSx")
+
 extern amd_fw_entry amd_psp_fw_table[];
 extern amd_bios_entry amd_bios_table[];
 
@@ -231,6 +236,9 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 	} else if (strcmp(fw_name, "PSP_SMUFW2_SUB2_FILE") == 0) {
 		fw_type = AMD_FW_PSP_SMU_FIRMWARE2;
 		subprog = 2;
+	} else if (strcmp(fw_name, "PSP_SEV_DRIVER_FILE") == 0) {
+		fw_type = AMD_SEV_DRIVER;
+		subprog = 0;
 	} else if (strcmp(fw_name, "PSP_BOOT_DRIVER_FILE") == 0) {
 		fw_type = AMD_BOOT_DRIVER;
 		subprog = 0;
@@ -242,6 +250,21 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 		subprog = 0;
 	} else if (strcmp(fw_name, "PSP_INTERFACE_DRIVER_FILE") == 0) {
 		fw_type = AMD_INTERFACE_DRIVER;
+		subprog = 0;
+	} else if (strcmp(fw_name, "PSP_RAS_DRIVER_FILE") == 0) {
+		fw_type = AMD_FW_RAS_DRIVER;
+		subprog = 0;
+	} else if (strcmp(fw_name, "PSP_RAS_TA_FILE") == 0) {
+		fw_type = AMD_FW_RAS_TA;
+		subprog = 0;
+	} else if (strcmp(fw_name, "PSP_FHP_DRIVER_FILE") == 0) {
+		fw_type = AMD_FW_FHP_DRIVER;
+		subprog = 0;
+	} else if (strcmp(fw_name, "PSP_SPDM_DRIVER_FILE") == 0) {
+		fw_type = AMD_FW_SPDM_DRIVER;
+		subprog = 0;
+	} else if (strcmp(fw_name, "PSP_DPE_DRIVER_FILE") == 0) {
+		fw_type = AMD_FW_DPE_DRIVER;
 		subprog = 0;
 	} else if (strcmp(fw_name, "PSP_SEC_DBG_KEY_FILE") == 0) {
 		if (cb_config->unlock_secure) {
@@ -423,6 +446,9 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 	} else if (strcmp(fw_name, "PSP_DRIVERS_FILE") == 0) {
 		fw_type = AMD_DRIVER_ENTRIES;
 		subprog = 0;
+	} else if (strcmp(fw_name, "PSP_TOS_WHITELIST") == 0) {
+		fw_type = AMD_FW_TOS_WHITELIST;
+		subprog = 0;
 	} else if (strcmp(fw_name, "PSP_S0I3_FILE") == 0) {
 		if (cb_config->s0i3) {
 			fw_type = AMD_S0I3_DRIVER;
@@ -439,6 +465,9 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 	} else if (strcmp(fw_name, "SECURE_POLICY_L1_FILE") == 0) {
 		fw_type = AMD_FW_TOS_SEC_POLICY;
 		subprog = 0;
+	} else if (strcmp(fw_name, "SECURE_POLICY_L3_FILE") == 0) {
+		fw_type = AMD_FW_TOS_SEC_POLICY;
+		subprog = 2;
 	} else if (strcmp(fw_name, "UNIFIEDUSB_FILE") == 0) {
 		fw_type = AMD_FW_USB_PHY;
 		subprog = 0;
@@ -501,9 +530,11 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 	} else if (strcmp(fw_name, "UMSMU_FILE") == 0) {
 		fw_type = AMD_FW_UMSMU;
 		subprog = 0;
-	} else if (strcmp(fw_name, "PSP_S3_IMG") == 0) {
+	} else if (strncmp(fw_name, S3_IMAGE_STR_BASE, S3_IMAGE_STR_BASE_LEN) == 0) {
+		assert(strlen(fw_name) == S3_IMAGE_STR_ALL_LEN);
 		fw_type = AMD_FW_S3IMG;
 		subprog = 0;
+		instance = strtol(&fw_name[S3_IMAGE_STR_INS_INDEX], NULL, 16);
 	} else if (strcmp(fw_name, "PSP_USB_DP") == 0) {
 		fw_type = AMD_FW_USBDP;
 		subprog = 0;
