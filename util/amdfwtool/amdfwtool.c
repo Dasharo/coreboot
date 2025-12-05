@@ -676,6 +676,7 @@ static void fill_psp_directory_to_efs(embedded_firmware *amd_romsig, void *pspdi
 	case PLATFORM_LUCIENNE:
 	case PLATFORM_RENOIR:
 	case PLATFORM_GENOA:
+	case PLATFORM_TURIN:
 	case PLATFORM_FAEGAN:
 	default:
 		/* for combo, it is also combo_psp_directory */
@@ -701,6 +702,7 @@ static void fill_bios_directory_to_efs(embedded_firmware *amd_romsig, void *bios
 	case PLATFORM_LUCIENNE:
 	case PLATFORM_CEZANNE:
 	case PLATFORM_GENOA:
+	case PLATFORM_TURIN:
 		if (!cb_config->recovery_ab)
 			amd_romsig->bios3_entry =
 				BUFF_TO_RUN_MODE(*ctx, biosdir, AMD_ADDR_REL_BIOS);
@@ -750,6 +752,9 @@ static uint32_t get_psp_id(enum platform soc_id)
 		break;
 	case PLATFORM_GENOA:
 		psp_id = 0xBC0C0111;
+		break;
+	case PLATFORM_TURIN:
+		psp_id = 0xBC0E1100;
 		break;
 	case PLATFORM_FAEGAN:
 		psp_id = 0xbc0e1000;
