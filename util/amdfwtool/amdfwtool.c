@@ -1769,6 +1769,15 @@ int main(int argc, char **argv)
 	ctx.amd_romsig_ptr->imc_entry = 0;
 	ctx.amd_romsig_ptr->gec_entry = 0;
 	ctx.amd_romsig_ptr->xhci_entry = 0;
+	ctx.amd_romsig_ptr->bios0_entry = 0;
+	ctx.amd_romsig_ptr->bios1_entry = 0;
+	ctx.amd_romsig_ptr->bios2_entry = 0;
+	ctx.amd_romsig_ptr->bios3_entry = 0;
+	ctx.amd_romsig_ptr->psp_bak_directory = 0;
+	ctx.amd_romsig_ptr->promontory_fw_ptr = 0;
+	ctx.amd_romsig_ptr->lp_promontory_fw_ptr = 0;
+	ctx.amd_romsig_ptr->vendor_id = 0;
+	ctx.amd_romsig_ptr->board_id = 0;
 
 	if (cb_config.soc_id != PLATFORM_UNKNOWN) {
 		retval = set_efs_table(cb_config.soc_id, &cb_config, ctx.amd_romsig_ptr);
