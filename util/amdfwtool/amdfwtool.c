@@ -1694,7 +1694,9 @@ int main(int argc, char **argv)
 	context ctx = { 0 };
 	uint32_t romsig_offset;
 	amd_cb_config cb_config = {
-		.efs_spi_readmode = 0xff, .efs_spi_speed = 0xff, .efs_spi_micron_flag = 0xff
+		.efs_spi_readmode = 0xff, .efs_spi_speed = 0xff, .efs_spi_micron_flag = 0xff,
+		.efs_espi0_config = 0xff, .efs_espi1_config = 0xff,
+		.efs_espi0_config1 = 0xff, .efs_espi1_config1 = 0xff
 	};
 
 	ctx.current_pointer_saved = 0xFFFFFFFF;
