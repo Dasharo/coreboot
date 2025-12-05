@@ -39,10 +39,16 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ "PSP_SMUFW2_SUB1_FILE",		AMD_FW_PSP_SMU_FIRMWARE2,	1, 0 },
 	{ "PSP_TEEIPKEY_FILE",			AMD_FW_PSP_TEEIPKEY,		0, 0 },
 	{ "PSP_SMUFW2_SUB2_FILE",		AMD_FW_PSP_SMU_FIRMWARE2,	2, 0 },
+	{ "PSP_SEV_DRIVER_FILE",		AMD_SEV_DRIVER,			0, 0 },
 	{ "PSP_BOOT_DRIVER_FILE",		AMD_BOOT_DRIVER,		0, 0 },
 	{ "PSP_SOC_DRIVER_FILE",		AMD_SOC_DRIVER,			0, 0 },
 	{ "PSP_DEBUG_DRIVER_FILE",		AMD_DEBUG_DRIVER,		0, 0 },
 	{ "PSP_INTERFACE_DRIVER_FILE",		AMD_INTERFACE_DRIVER,		0, 0 },
+	{ "PSP_RAS_DRIVER_FILE",		AMD_FW_RAS_DRIVER,		0, 0 },
+	{ "PSP_RAS_TA_FILE",			AMD_FW_RAS_TA,			0, 0 },
+	{ "PSP_FHP_DRIVER_FILE",		AMD_FW_FHP_DRIVER,		0, 0 },
+	{ "PSP_SPDM_DRIVER_FILE",		AMD_FW_SPDM_DRIVER,		0, 0 },
+	{ "PSP_DPE_DRIVER_FILE",		AMD_FW_DPE_DRIVER,		0, 0 },
 	{ "PSP_SEC_DBG_KEY_FILE",		AMD_FW_PSP_SECURED_DEBUG,	0, 0 },
 	{ "PSP_SEC_DEBUG_FILE",			AMD_DEBUG_UNLOCK,		0, 0 },
 	{ "PSP_ABL0_FILE",			AMD_ABL0,			0, 0 },
@@ -85,10 +91,12 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ "MINIMSMU_FILE_INS1",			AMD_FW_MINIMSMU,		0, 1 },
 	{ "SRAM_FW_EXT_FILE",			AMD_FW_SRAM_FW_EXT,		0, 0 },
 	{ "PSP_DRIVERS_FILE",			AMD_DRIVER_ENTRIES,		0, 0 },
+	{ "PSP_TOS_WHITELIST",			AMD_FW_TOS_WHITELIST,		0, 0 },
 	{ "PSP_S0I3_FILE",			AMD_S0I3_DRIVER,		0, 0 },
 	{ "AMD_DRIVER_ENTRIES",			AMD_DRIVER_ENTRIES,		0, 0 },
 	{ "VBIOS_BTLOADER_FILE",		AMD_VBIOS_BTLOADER,		0, 0 },
 	{ "SECURE_POLICY_L1_FILE",		AMD_FW_TOS_SEC_POLICY,		0, 0 },
+	{ "SECURE_POLICY_L3_FILE",		AMD_FW_TOS_SEC_POLICY,		2, 0 },
 	{ "UNIFIEDUSB_FILE",			AMD_FW_USB_PHY,			0, 0 },
 	{ "DRTMTA_FILE",			AMD_FW_DRTM_TA,			0, 0 },
 	{ "KEYDBBL_FILE",			AMD_FW_KEYDB_BL,		0, 0 },
@@ -108,7 +116,6 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ "TA_IKEK_FILE",			AMD_TA_IKEK,			0, 0 },
 	{ "SFDR_FILE",				AMD_FW_SFDR,			0, 0 },
 	{ "UMSMU_FILE",				AMD_FW_UMSMU,			0, 0 },
-	{ "PSP_S3_IMG",				AMD_FW_S3IMG,			0, 0 },
 	{ "PSP_USB_DP",				AMD_FW_USBDP,			0, 0 },
 	{ "PSP_USB_SS",				AMD_FW_USBSS,			0, 0 },
 	{ "PSP_USB_4",				AMD_FW_USB4,			0, 0 },
@@ -131,9 +138,21 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ NULL,					AMD_FW_INVALID,			0, 0 },
 };
 
+#define S3_IMAGE_STR_BASE	"CPU_S3_IMAGE"
+#define S3_IMAGE_STR_BASE_LEN	strlen(S3_IMAGE_STR_BASE)
+#define S3_IMAGE_STR_INS_INDEX	strlen(S3_IMAGE_STR_BASE"_INS")
+#define S3_IMAGE_STR_ALL_LEN	strlen(S3_IMAGE_STR_BASE"_INSx")
+
 static amd_fw_type psp_fw_type_lookup(const char *fw_name, uint8_t *subprog, uint8_t *instance)
 {
 	const struct psp_fw_name_entry *entry = psp_fw_name_table;
+
+	if (strncmp(fw_name, S3_IMAGE_STR_BASE, S3_IMAGE_STR_BASE_LEN) == 0) {
+		assert(strlen(fw_name) == S3_IMAGE_STR_ALL_LEN);
+		*subprog = 0;
+		*instance = strtol(&fw_name[S3_IMAGE_STR_INS_INDEX], NULL, 16);
+		return AMD_FW_S3IMG;
+	}
 
 	while (entry->name != NULL) {
 		if (strcmp(fw_name, entry->name) == 0) {
