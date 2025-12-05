@@ -675,6 +675,7 @@ static void fill_psp_directory_to_efs(embedded_firmware *amd_romsig, void *pspdi
 	case PLATFORM_GENOA:
 	case PLATFORM_KRACKAN2E:
 	case PLATFORM_STRIXHALO:
+	case PLATFORM_TURIN:
 	default:
 		/* for combo, it is also combo_psp_directory */
 		amd_romsig->new_psp_directory =
