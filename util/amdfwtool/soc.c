@@ -140,6 +140,16 @@ static const struct platform_info platform_table[] = {
 		.has_dir_header_v1 = false,
 		.psp_id = 0xBC0C0111,
 	},
+	[PLATFORM_TURIN] = {
+		.name = "Turin",
+		.needs_ish = false,
+		.is_multi_level = true,
+		.has_apob_nv_quirk = false,
+		.is_initial_alignment_required = true,
+		.is_second_gen = true,
+		.has_dir_header_v1 = false,
+		.psp_id = 0xBC0E1100,
+	},
 	[PLATFORM_KRACKAN2E] = {
 		.name = "Krackan2e",
 		.needs_ish = true,
