@@ -1625,7 +1625,6 @@ static int set_efs_table(uint8_t soc_id, amd_cb_config *cb_config,
 	case PLATFORM_MENDOCINO:
 	case PLATFORM_PHOENIX:
 	case PLATFORM_GLINDA:
-	case PLATFORM_GENOA:
 	case PLATFORM_FAEGAN:
 		amd_romsig->spi_readmode_f17_mod_30_3f = cb_config->efs_spi_readmode;
 		amd_romsig->spi_fastspeed_f17_mod_30_3f = cb_config->efs_spi_speed;
@@ -1641,6 +1640,40 @@ static int set_efs_table(uint8_t soc_id, amd_cb_config *cb_config,
 			break;
 		default:
 			fprintf(stderr, "Error: EFS Micron flag must be correctly set.\n\n");
+			return 1;
+		}
+		break;
+	case PLATFORM_GENOA:
+	case PLATFORM_TURIN:
+		/* For some reason Genoa and Turin uses the older fields */
+		amd_romsig->spi_readmode_f15_mod_60_6f = cb_config->efs_spi_readmode;
+		amd_romsig->fast_speed_new_f15_mod_60_6f = cb_config->efs_spi_speed;
+		amd_romsig->spi_readmode_f17_mod_00_2f = cb_config->efs_spi_readmode;
+		switch (cb_config->efs_spi_micron_flag) {
+		case 0:
+			amd_romsig->qpr_dummy_cycle_f17_mod_00_2f = 0xff;
+			break;
+		case 1:
+			amd_romsig->qpr_dummy_cycle_f17_mod_00_2f = 0xa;
+			break;
+		default:
+			fprintf(stderr, "Error: EFS Micron flag must be correctly set.\n\n");
+			return 1;
+		}
+		amd_romsig->espi0_config = cb_config->efs_espi0_config;
+		amd_romsig->espi1_config = cb_config->efs_espi1_config;
+		amd_romsig->espi0_config1 = cb_config->efs_espi0_config1;
+		amd_romsig->espi1_config1 = cb_config->efs_espi1_config1;
+		/* Fill in the EFS multi gen field properly for PSP to match EFS */
+		switch (soc_id) {
+		case PLATFORM_GENOA:
+			amd_romsig->multi_gen_efs = 0xfffffffe;
+			break;
+		case PLATFORM_TURIN:
+			amd_romsig->multi_gen_efs = 0xffffffe3;
+			break;
+		default:
+			fprintf(stderr, "Error: Unsupported multi gen EFS platform.\n\n");
 			return 1;
 		}
 		break;
