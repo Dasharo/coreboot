@@ -473,6 +473,10 @@ typedef struct _amd_cb_config {
 	enum platform soc_id;
 
 	uint8_t efs_spi_readmode, efs_spi_speed, efs_spi_micron_flag;
+	uint8_t efs_espi0_config;
+	uint8_t efs_espi0_config1;
+	uint8_t efs_espi1_config;
+	uint8_t efs_espi1_config1;
 	uint32_t body_location, efs_location;
 	uint64_t signed_start_addr;
 	char *manifest_file;
