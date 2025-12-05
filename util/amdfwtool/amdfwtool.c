@@ -1562,6 +1562,15 @@ static int integrate_efs_table(context *ctx, amd_cb_config *cb_config)
 	amd_romsig->imc_entry = 0;
 	amd_romsig->gec_entry = 0;
 	amd_romsig->xhci_entry = 0;
+	amd_romsig->bios0_entry = 0;
+	amd_romsig->bios1_entry = 0;
+	amd_romsig->bios2_entry = 0;
+	amd_romsig->bios3_entry = 0;
+	amd_romsig->psp_bak_directory = 0;
+	amd_romsig->promontory_fw_ptr = 0;
+	amd_romsig->lp_promontory_fw_ptr = 0;
+	amd_romsig->vendor_id = 0;
+	amd_romsig->board_id = 0;
 
 	if (cb_config->soc_id == PLATFORM_MULLINS)
 		return 0;
