@@ -51,6 +51,7 @@ enum {
 	AMDFW_OPT_UCODE,
 	AMDFW_OPT_APOB_NVBASE,
 	AMDFW_OPT_APOB_NVSIZE,
+	AMDFW_OPT_EARLY_VGA_IMAGE,
 
 	AMDFW_OPT_OUTPUT,
 	AMDFW_OPT_FLASHSIZE,
@@ -119,6 +120,7 @@ static struct option long_options[] = {
 	{"ucode",            required_argument, 0, AMDFW_OPT_UCODE },
 	{"apob-nv-base",     required_argument, 0, AMDFW_OPT_APOB_NVBASE },
 	{"apob-nv-size",     required_argument, 0, AMDFW_OPT_APOB_NVSIZE },
+	{"early-vga-image",  required_argument, 0, AMDFW_OPT_EARLY_VGA_IMAGE },
 	/* Embedded Firmware Structure items*/
 	{"spi-read-mode",    required_argument, 0, LONGOPT_SPI_READ_MODE },
 	{"spi-speed",        required_argument, 0, LONGOPT_SPI_SPEED },
@@ -504,6 +506,11 @@ int amdfwtool_getopt(int argc, char *argv[], amd_cb_config *cb_config, context *
 			break;
 		case AMDFW_OPT_UCODE:
 			register_bdt_data(AMD_BIOS_UCODE, sub,
+				instance, optarg);
+			sub = instance = 0;
+			break;
+		case AMDFW_OPT_EARLY_VGA_IMAGE:
+			register_bdt_data(AMD_BIOS_EARLY_VGA, sub,
 				instance, optarg);
 			sub = instance = 0;
 			break;
