@@ -6,6 +6,7 @@
 #include <ec/dasharo/ec/acpi.h>
 #include <fmap.h>
 #include <gpio.h>
+#include <intelblocks/cse.h>
 #include <lib.h>
 #include <mainboard/gpio.h>
 #include <mainboard/variants.h>
@@ -191,12 +192,21 @@ static void mainboard_smbios_strings(struct device *dev, struct smbios_type11 *t
 	}
 
 }
+static int mainboard_smbios_data(struct device *dev, int *handle, unsigned long *current)
+{
+	int len = 0;
+
+	len += cse_write_smbios_type14(handle, current);
+
+	return len;
+}
 #endif
 
 
 static void mainboard_enable(struct device *dev)
 {
 #if CONFIG(GENERATE_SMBIOS_TABLES)
+	dev->ops->get_smbios_data = mainboard_smbios_data;
 	dev->ops->get_smbios_strings = mainboard_smbios_strings;
 #endif
 }
