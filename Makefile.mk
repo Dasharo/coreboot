@@ -1013,6 +1013,8 @@ endif
 
 CBFS_REGION_COUNT := $(words $(subst $(comma),$(spc),$(CBFS_REGIONS)))
 
+CBFS_REGION_COUNT := $(words $(subst $(comma),$(spc),$(CBFS_REGIONS)))
+
 # regions-for-file - Returns a cbfstool regions parameter
 # $(call regions-for-file,$(filename))
 # returns "REGION1,REGION2,..."
