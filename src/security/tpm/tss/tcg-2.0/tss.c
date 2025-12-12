@@ -144,18 +144,25 @@ tpm_result_t tlcl2_extend(int pcr_num, const struct tpm_digest *digests)
 {
 	struct tpm2_pcr_extend_cmd pcr_ext_cmd;
 	struct tpm2_response *response;
-	TPM_ALG_ID alg;
+	int i;
 
-	alg = tpmalg_from_vb2_hash(digests[0].hash_type);
-	if (alg == TPM_ALG_ERROR)
+	for (i = 0; digests[i].hash_type != VB2_HASH_INVALID; ++i) {
+		TPM_ALG_ID alg = tpmalg_from_vb2_hash(digests[i].hash_type);
+		if (alg == TPM_ALG_ERROR)
+			return TPM_CB_HASH_ERROR;
+
+		pcr_ext_cmd.digests.digests[i].hashAlg = alg;
+
+		/* Always copying to sha512 as it's the largest one. */
+		memcpy(pcr_ext_cmd.digests.digests[i].digest.sha512, digests[i].hash,
+		       vb2_digest_size(digests[i].hash_type));
+	}
+
+	if (i == 0)
 		return TPM_CB_HASH_ERROR;
 
 	pcr_ext_cmd.pcrHandle = HR_PCR + pcr_num;
-	pcr_ext_cmd.digests.count = 1;
-	pcr_ext_cmd.digests.digests[0].hashAlg = alg;
-	/* Always copying to sha512 as it's the largest one */
-	memcpy(pcr_ext_cmd.digests.digests[0].digest.sha512, digests[0].hash,
-	       vb2_digest_size(digests[0].hash_type));
+	pcr_ext_cmd.digests.count = i;
 
 	response = tlcl2_process_command(TPM2_PCR_Extend, &pcr_ext_cmd);
 
