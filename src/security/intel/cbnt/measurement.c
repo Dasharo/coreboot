@@ -39,6 +39,12 @@
 #define KM_HASH_USAGE_PFR_CPLD  (1 << 4)
 
 /*
+ * Allow for 4 8192-bit digests in PCR-0 measurements which is an unlikely situation, so this
+ * buffer should be enough to not run out of space (data measured into PCR-7 is smaller).
+ */
+#define MAX_DATA_SIZE  (sizeof(uint64_t) + sizeof(uint16_t) + 4 * KiB)
+
+/*
  * SRTM version is an upper-case hex dump of ACM's "Date" (offset 20) and "TXT SVN" (offset 28)
  * fields as a NUL-terminated UTF16 string.
  */
@@ -636,6 +642,173 @@ static char hex_digit(int nibble)
 	return 'A' + nibble - 10;
 }
 
+static void measure_intel_tgl_style(uint64_t biosacm_policy, bool auth_measure)
+{
+	uint8_t data[MAX_DATA_SIZE];
+	struct obuf data_ob;
+	obuf_init(&data_ob, data, sizeof(data));
+
+	/*
+	 * Making and hashing PCR-0 data.
+	 *
+	 * Pseudo-code of the data to be measured into PCR-0 for TigerLake and newer
+	 * (older hardware isn't supported yet):
+	 *
+	 *     struct {
+	 *          uint64_t ACM_POLICY_STATUS;
+	 *          uint16_t ACM.Header.SVN;
+	 *          uint8_t  ACM.Signature[ACM signature size];
+	 *          uint8_t  KM.Signature[KM signature size];
+	 *          uint8_t  BPM.Signature[BPM signature size];
+	 *          uint8_t  IBB.Digest[IBB digest size];
+	 *     } PCR0_DATA;
+	 */
+
+	/* ACM_POLICY_STATUS (won't run out of space on this one) */
+	(void)obuf_write_le64(&data_ob, biosacm_policy);
+
+	if (fill_pcr0_acm_fields(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to fill ACM fields of PCR-0 measurement data\n");
+		return;
+	}
+
+	if (copy_km_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy KM signature for PCR-0 measurement\n");
+		return;
+	}
+
+	if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
+		return;
+	}
+
+	struct vb2_hash hash;
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, obuf_nr_written(&data_ob),
+			       tpm_log_alg(), &hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
+		return;
+	}
+
+	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
+	const struct tpm_digest pcr0_digests[] = {
+		{ .hash_type = hash.algo, .hash = hash.raw },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_digests);
+
+	/* Optionally making and hashing PCR-7 data (not supported since MTL). */
+	if (!auth_measure)
+		return;
+
+	/* Reuse the first 2 fields of PCR-0 data which are identical in both cases. */
+	obuf_init(&data_ob, data, sizeof(data));
+	(void)obuf_oob_fill(&data_ob, sizeof(uint64_t) + sizeof(uint16_t));
+
+	if (!make_pcr7_hash(&data_ob, &hash)) {
+		printk(BIOS_ERR, "CBnT: failed to build and hash PCR-7 measurement data\n");
+		return;
+	}
+
+	/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type
+	   and event name should be a Unicode string. */
+	const struct tpm_digest pcr7_digests[] = {
+		{ .hash_type = hash.algo, .hash = hash.raw },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_digests);
+	printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
+}
+
+static void measure_tcg_style(uint64_t biosacm_policy)
+{
+	uint8_t data[MAX_DATA_SIZE];
+	struct obuf data_ob;
+	obuf_init(&data_ob, data, sizeof(data));
+
+	size_t acm_len;
+	const struct acm_header_v3 *acm = find_in_fit(FIT_ENTRY_TYPE_SACM, &acm_len);
+	if (acm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find SACM\n");
+		return;
+	}
+
+	uint8_t crtm_version[6];
+	memcpy(&crtm_version[0], &acm->date, 4);
+	memcpy(&crtm_version[4], &acm->txt_svn, 2);
+
+	char crtm_version_str[SCRTM_VERSION_LENGTH] = {0};
+	uint16_t crtm_version_utf16[SCRTM_VERSION_LENGTH] = {0};
+	for (int i = 0; i < sizeof(crtm_version); ++i) {
+		crtm_version_str[i*2 + 0] = hex_digit(crtm_version[i] >> 4);
+		crtm_version_str[i*2 + 1] = hex_digit(crtm_version[i] & 0xf);
+
+		crtm_version_utf16[i*2 + 0] = crtm_version_str[i*2 + 0];
+		crtm_version_utf16[i*2 + 1] = crtm_version_str[i*2 + 1];
+	}
+
+	struct vb2_hash hash;
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), crtm_version_utf16,
+			       sizeof(crtm_version_utf16), tpm_log_alg(), &hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash CRTM version\n");
+		return;
+	}
+	/* Per BWG this should be logged with EV_S_CRTM_VERSION type. */
+	const struct tpm_digest crtm_digests[] = {
+		{ .hash_type = hash.algo, .hash = hash.raw },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+	tpm_log_add_table_entry(crtm_version_str, 0, crtm_digests);
+
+	if (copy_ibb_hash(&data_ob, tpm2_alg_from_vb2_hash(tpm_log_alg())) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to obtain IBB digest\n");
+		return;
+	}
+	/* Per BWG this should be logged with EV_POST_CODE type. */
+	const struct tpm_digest post_code_digests[] = {
+		{ .hash_type = tpm_log_alg(), .hash = data },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+	tpm_log_add_table_entry("Boot Guard Measured IBB", 0, post_code_digests);
+
+	/*
+	 * struct {
+	 *      uint64_t ACM_POLICY_STATUS;
+	 *      uint8_t  KM.Signature[KM signature size];
+	 *      uint8_t  BPM.Signature[BPM signature size];
+	 * } POLICY_DATA;
+	 */
+	obuf_init(&data_ob, data, sizeof(data));
+
+	/* ACM_POLICY_STATUS (won't run out of space on this one) */
+	(void)obuf_write_le64(&data_ob, biosacm_policy);
+	if (copy_acm_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy ACM signature\n");
+		return;
+	}
+	if (copy_km_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy KM signature\n");
+		return;
+	}
+	if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
+		printk(BIOS_ERR, "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
+		return;
+	}
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, obuf_nr_written(&data_ob),
+			       tpm_log_alg(), &hash)) {
+		printk(BIOS_ERR, "CBnT: failed to hash POLICY_DATA\n");
+		return;
+	}
+
+	/* Per BWG this should be logged with EV_POST_CODE type. */
+	const struct tpm_digest policy_digests[] = {
+		{ .hash_type = hash.algo, .hash = hash.raw },
+		{ .hash_type = VB2_HASH_INVALID }
+	};
+	if (tpm_extend_pcr(0, policy_digests,
+			   "BIOS Measured Boot Guard Policy") != TPM_SUCCESS)
+		printk(BIOS_ERR, "CBnT: failed to extend POLICY_DATA\n");
+}
+
 void intel_cbnt_inject_ibg_measurements(void)
 {
 	const union cbnt_biosacm_policy biosacm_sts = {
@@ -671,178 +844,11 @@ void intel_cbnt_inject_ibg_measurements(void)
 		return;
 	}
 
-	/*
-	 * Allow for 4 8192-bit digests in PCR-0 measurements which is an unlikely situation,
-	 * so this buffer should be enough to not run out of space (data measured into PCR-7 is
-	 * smaller).
-	 */
-	uint8_t data[sizeof(uint64_t) + sizeof(uint16_t) + 4 * KiB];
-	struct obuf data_ob;
-	obuf_init(&data_ob, data, sizeof(data));
-
-	if (conventional_measurements) {
-		/*
-		 * Making and hashing PCR-0 data.
-		 *
-		 * Pseudo-code of the data to be measured into PCR-0 for TigerLake and newer
-		 * (older hardware isn't supported yet):
-		 *
-		 *     struct {
-		 *          uint64_t ACM_POLICY_STATUS;
-		 *          uint16_t ACM.Header.SVN;
-		 *          uint8_t  ACM.Signature[ACM signature size];
-		 *          uint8_t  KM.Signature[KM signature size];
-		 *          uint8_t  BPM.Signature[BPM signature size];
-		 *          uint8_t  IBB.Digest[IBB digest size];
-		 *     } PCR0_DATA;
-		 */
-
-		/* ACM_POLICY_STATUS (won't run out of space on this one) */
-		(void)obuf_write_le64(&data_ob, biosacm_sts.raw & biosacm_sts_mask);
-
-		if (fill_pcr0_acm_fields(&data_ob) != CB_SUCCESS) {
-			printk(BIOS_ERR,
-			       "CBnT: failed to fill ACM fields of PCR-0 measurement data\n");
-			return;
-		}
-
-		if (copy_km_signature(&data_ob) != CB_SUCCESS) {
-			printk(BIOS_ERR,
-			       "CBnT: failed to copy KM signature for PCR-0 measurement\n");
-			return;
-		}
-
-		if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
-			printk(BIOS_ERR,
-			       "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
-			return;
-		}
-
-		struct vb2_hash hash;
-		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data,
-				       obuf_nr_written(&data_ob), tpm_log_alg(), &hash)) {
-			printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
-			return;
-		}
-
-		/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
-		const struct tpm_digest pcr0_digests[] = {
-			{ .hash_type = hash.algo, .hash = hash.raw },
-			{ .hash_type = VB2_HASH_INVALID }
-		};
-		tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_digests);
-
-		/* Optionally making and hashing PCR-7 data (not supported since MTL). */
-		if (auth_measure) {
-			/* Reuse the first 2 fields of PCR-0 data which are identical in both
-			   cases. */
-			obuf_init(&data_ob, data, sizeof(data));
-			(void)obuf_oob_fill(&data_ob, sizeof(uint64_t) + sizeof(uint16_t));
-
-			if (!make_pcr7_hash(&data_ob, &hash)) {
-				printk(BIOS_ERR,
-				       "CBnT: failed to build and hash PCR-7 measurement data\n");
-				return;
-			}
-
-			/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type
-			   and event name should be a Unicode string. */
-			const struct tpm_digest pcr7_digests[] = {
-				{ .hash_type = hash.algo, .hash = hash.raw },
-				{ .hash_type = VB2_HASH_INVALID }
-			};
-			tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_digests);
-			printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
-		}
-
-	} else {
-		size_t acm_len;
-		const struct acm_header_v3 *acm = find_in_fit(FIT_ENTRY_TYPE_SACM, &acm_len);
-		if (acm == NULL) {
-			printk(BIOS_ERR, "CBnT: failed to find SACM\n");
-			return;
-		}
-
-		uint8_t crtm_version[6];
-		memcpy(&crtm_version[0], &acm->date, 4);
-		memcpy(&crtm_version[4], &acm->txt_svn, 2);
-
-		char crtm_version_str[SCRTM_VERSION_LENGTH] = {0};
-		uint16_t crtm_version_utf16[SCRTM_VERSION_LENGTH] = {0};
-		for (int i = 0; i < sizeof(crtm_version); ++i) {
-			crtm_version_str[i*2 + 0] = hex_digit(crtm_version[i] >> 4);
-			crtm_version_str[i*2 + 1] = hex_digit(crtm_version[i] & 0xf);
-
-			crtm_version_utf16[i*2 + 0] = crtm_version_str[i*2 + 0];
-			crtm_version_utf16[i*2 + 1] = crtm_version_str[i*2 + 1];
-		}
-
-		struct vb2_hash hash;
-		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), crtm_version_utf16,
-				       sizeof(crtm_version_utf16), tpm_log_alg(), &hash)) {
-			printk(BIOS_ERR, "CBnT: failed to hash CRTM version\n");
-			return;
-		}
-		/* Per BWG this should be logged with EV_S_CRTM_VERSION type. */
-		const struct tpm_digest crtm_digests[] = {
-			{ .hash_type = hash.algo, .hash = hash.raw },
-			{ .hash_type = VB2_HASH_INVALID }
-		};
-		tpm_log_add_table_entry(crtm_version_str, 0, crtm_digests);
-
-		if (copy_ibb_hash(&data_ob, tpm2_alg_from_vb2_hash(tpm_log_alg())) !=
-		    CB_SUCCESS) {
-			printk(BIOS_ERR, "CBnT: failed to obtain IBB digest\n");
-			return;
-		}
-		/* Per BWG this should be logged with EV_POST_CODE type. */
-		const struct tpm_digest post_code_digests[] = {
-			{ .hash_type = tpm_log_alg(), .hash = data },
-			{ .hash_type = VB2_HASH_INVALID }
-		};
-		tpm_log_add_table_entry("Boot Guard Measured IBB", 0, post_code_digests);
-
-		/*
-		 * struct {
-		 *      uint64_t ACM_POLICY_STATUS;
-		 *      uint8_t  KM.Signature[KM signature size];
-		 *      uint8_t  BPM.Signature[BPM signature size];
-		 * } POLICY_DATA;
-		 */
-		obuf_init(&data_ob, data, sizeof(data));
-
-		/* ACM_POLICY_STATUS (won't run out of space on this one) */
-		(void)obuf_write_le64(&data_ob, biosacm_sts.raw & biosacm_sts_mask);
-		if (copy_acm_signature(&data_ob) != CB_SUCCESS) {
-			printk(BIOS_ERR, "CBnT: failed to copy ACM signature\n");
-			return;
-		}
-		if (copy_km_signature(&data_ob) != CB_SUCCESS) {
-			printk(BIOS_ERR, "CBnT: failed to copy KM signature\n");
-			return;
-		}
-		if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
-			printk(BIOS_ERR,
-			       "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
-			return;
-		}
-		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data,
-				       obuf_nr_written(&data_ob), tpm_log_alg(), &hash)) {
-			printk(BIOS_ERR, "CBnT: failed to hash POLICY_DATA\n");
-			return;
-		}
-
-		/* Per BWG this should be logged with EV_POST_CODE type. */
-		const struct tpm_digest policy_digests[] = {
-			{ .hash_type = hash.algo, .hash = hash.raw },
-			{ .hash_type = VB2_HASH_INVALID }
-		};
-		if (tpm_extend_pcr(0, policy_digests,
-				   "BIOS Measured Boot Guard Policy") != TPM_SUCCESS) {
-			printk(BIOS_ERR, "CBnT: failed to extend POLICY_DATA\n");
-			return;
-		}
-	}
+	uint64_t biosacm_policy = biosacm_sts.raw & biosacm_sts_mask;
+	if (conventional_measurements)
+		measure_intel_tgl_style(biosacm_policy, auth_measure);
+	else
+		measure_tcg_style(biosacm_policy);
 
 	/*
 	 * BWG suggests to Perform reconstruction at this point, but we are likely to continue
