@@ -180,6 +180,13 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 		return TPM_CB_FAIL;
 	}
 
+	/*
+	 * At this point TPM has been initialized, but none of coreboot's measurements have been
+	 * submitted to it yet.  Before extending cached digests, invoke a log-specific function
+	 * to do modifications based on the information queried from a TPM.
+	 */
+	tpm_log_align_with_tpm();
+
 	printk(BIOS_DEBUG, "TPM: Write digests cached in TPM log to PCR\n");
 	i = 0;
 	while (!tpm_log_get(i++, &pcr, digests, &event_name)) {
