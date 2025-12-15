@@ -43,36 +43,20 @@ static inline bool tpm_log_use_tpm2_format(void)
 }
 
 /**
- * Retrieves hash algorithm used by TPM event log or VB2_HASH_INVALID.
- */
-static inline enum vb2_hash_algorithm tpm_log_alg(void)
-{
-	if (CONFIG(TPM_LOG_CB))
-		return (tlcl_get_family() == TPM_1 ? VB2_HASH_SHA1 : VB2_HASH_SHA256);
-
-	if (tpm_log_use_tpm1_format())
-		return VB2_HASH_SHA1;
-
-	if (tpm_log_use_tpm2_format()) {
-		if (CONFIG(TPM_HASH_SHA1))
-			return VB2_HASH_SHA1;
-		if (CONFIG(TPM_HASH_SHA256))
-			return VB2_HASH_SHA256;
-		if (CONFIG(TPM_HASH_SHA384))
-			return VB2_HASH_SHA384;
-		if (CONFIG(TPM_HASH_SHA512))
-			return VB2_HASH_SHA512;
-	}
-
-	return VB2_HASH_INVALID;
-}
-
-/**
  * Checks whether a PCR banks corresponding to a hash algorithm is active.
  */
 static inline bool tpm_log_alg_active(enum vb2_hash_algorithm alg)
 {
-	return alg == tpm_log_alg();
+	if (CONFIG(TPM_LOG_CB))
+		return alg == (tlcl_get_family() == TPM_1 ? VB2_HASH_SHA1 : VB2_HASH_SHA256);
+
+	if (tpm_log_use_tpm1_format())
+		return alg == VB2_HASH_SHA1;
+
+	if (tpm_log_use_tpm2_format())
+		return tpm2_log_alg_active(alg);
+
+	return false;
 }
 
 /**
@@ -177,6 +161,15 @@ static inline void tpm_log_startup_locality(int locality)
 	/* Locality 0 is the default and doesn't need to be logged. */
 	if (locality != 0 && tpm_log_use_tpm2_format())
 		tpm2_log_startup_locality(locality);
+}
+
+/**
+ * Align TPM log with the TPM if necessary.
+ */
+static inline void tpm_log_align_with_tpm(void)
+{
+	if (tpm_log_use_tpm2_format())
+		tpm2_log_align_with_tpm();
 }
 
 /**
