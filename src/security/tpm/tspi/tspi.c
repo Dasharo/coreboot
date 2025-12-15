@@ -267,49 +267,55 @@ tpm_result_t tpm_extend_pcr(int pcr, const struct tpm_digest *digests, const cha
 tpm_result_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 			    const char *rname)
 {
-	uint8_t digest[TPM_PCR_MAX_LEN], digest_len;
 	uint8_t buf[HASH_DATA_CHUNK_SIZE];
 	uint32_t offset;
+	int i, j;
 	size_t len;
 	struct vb2_digest_context ctx;
+	struct tpm_digests digests;
 
 	if (!rdev || !rname)
 		return TPM_CB_INVALID_ARG;
 
-	digest_len = vb2_digest_size(tpm_log_alg());
-	assert(digest_len <= sizeof(digest));
-	if (vb2_digest_init(&ctx, vboot_hwcrypto_allowed(), tpm_log_alg(),
-			    region_device_sz(rdev))) {
-		printk(BIOS_ERR, "TPM: Error initializing hash.\n");
-		return TPM_CB_HASH_ERROR;
-	}
-	/*
-	 * Though one can mmap the full needed region on x86 this is not the
-	 * case for e.g. ARM. In order to make this code as universal as
-	 * possible across different platforms read the data to hash in chunks.
-	 */
-	for (offset = 0; offset < region_device_sz(rdev); offset += len) {
-		len = MIN(sizeof(buf), region_device_sz(rdev) - offset);
-		if (rdev_readat(rdev, buf, offset, len) < 0) {
-			printk(BIOS_ERR, "TPM: Not able to read region %s.\n",
-			       rname);
-			return TPM_CB_READ_FAILURE;
-		}
-		if (vb2_digest_extend(&ctx, buf, len)) {
-			printk(BIOS_ERR, "TPM: Error extending hash.\n");
+	for (i = 0, j = 0; i < ENABLED_TPM_ALGS_NUM; ++i) {
+		enum vb2_hash_algorithm alg = enabled_tpm_algs[i];
+		if (!tpm_log_alg_active(alg))
+			continue;
+
+		if (vb2_digest_init(&ctx, vboot_hwcrypto_allowed(), alg,
+				    region_device_sz(rdev))) {
+			printk(BIOS_ERR, "TPM: Error initializing hash.\n");
 			return TPM_CB_HASH_ERROR;
 		}
-	}
-	if (vb2_digest_finalize(&ctx, digest, digest_len)) {
-		printk(BIOS_ERR, "TPM: Error finalizing hash.\n");
-		return TPM_CB_HASH_ERROR;
+		/*
+		 * Though one can mmap the full needed region on x86 this is not the
+		 * case for e.g. ARM. In order to make this code as universal as
+		 * possible across different platforms read the data to hash in chunks.
+		 */
+		for (offset = 0; offset < region_device_sz(rdev); offset += len) {
+			len = MIN(sizeof(buf), region_device_sz(rdev) - offset);
+			if (rdev_readat(rdev, buf, offset, len) < 0) {
+				printk(BIOS_ERR, "TPM: Not able to read region %s.\n",
+				       rname);
+				return TPM_CB_READ_FAILURE;
+			}
+			if (vb2_digest_extend(&ctx, buf, len)) {
+				printk(BIOS_ERR, "TPM: Error extending hash.\n");
+				return TPM_CB_HASH_ERROR;
+			}
+		}
+		if (vb2_digest_finalize(&ctx, digests.hashes[j].raw, vb2_digest_size(alg))) {
+			printk(BIOS_ERR, "TPM: Error finalizing hash.\n");
+			return TPM_CB_HASH_ERROR;
+		}
+
+		digests.values[j].hash = digests.hashes[j].raw;
+		digests.values[j].hash_type = alg;
+		++j;
 	}
 
-	struct tpm_digest digests[] = {
-		{ .hash_type = tpm_log_alg(), .hash = digest },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
-	return tpm_extend_pcr(pcr, digests, rname);
+	digests.values[j].hash_type = VB2_HASH_INVALID;
+	return tpm_extend_pcr(pcr, digests.values, rname);
 }
 
 bool tpm_make_digests(const void *buffer, size_t size, const struct vb2_hash *hash_hint,
