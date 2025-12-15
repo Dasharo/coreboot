@@ -105,7 +105,8 @@ static bool is_runtime_data(const char *name)
 	return !strcmp(allowlist, name);
 }
 
-tpm_result_t tspi_cbfs_measurement(const char *name, uint32_t type, const struct vb2_hash *hash)
+tpm_result_t tspi_cbfs_measurement(const char *name, const void *buffer, size_t size,
+				   uint32_t type, const struct vb2_hash *hash_hint)
 {
 	uint32_t pcr_index;
 	char tpm_log_metadata[TPM_CB_LOG_PCR_HASH_NAME];
@@ -132,14 +133,15 @@ tpm_result_t tspi_cbfs_measurement(const char *name, uint32_t type, const struct
 		break;
 	}
 
-	struct tpm_digest digests[] = {
-		{ .hash_type = hash->algo, .hash = hash->raw },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
+	struct tpm_digests digests;
+	if (!tpm_make_digests(buffer, size, hash_hint, &digests)) {
+		printk(BIOS_ERR, "%s: failed to fill digests!\n", __func__);
+		return TPM_FAIL;
+	}
 
 	snprintf(tpm_log_metadata, TPM_CB_LOG_PCR_HASH_NAME, "CBFS: %s", name);
 
-	return tpm_extend_pcr(pcr_index, digests, tpm_log_metadata);
+	return tpm_extend_pcr(pcr_index, digests.values, tpm_log_metadata);
 }
 
 void *tpm_log_init(void)
@@ -167,7 +169,7 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 	int i;
 	int pcr;
 	const char *event_name;
-	struct tpm_digest digests[2];
+	struct tpm_digest digests[ENABLED_TPM_ALGS_NUM + 1];
 
 	/* This means the table is empty. */
 	if (!tspi_tpm_log_available())
