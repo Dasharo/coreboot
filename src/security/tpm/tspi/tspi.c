@@ -311,4 +311,34 @@ tpm_result_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 	};
 	return tpm_extend_pcr(pcr, digests, rname);
 }
+
+bool tpm_make_digests(const void *buffer, size_t size, const struct vb2_hash *hash_hint,
+		      struct tpm_digests *digests)
+{
+	int i, j;
+	for (i = 0, j = 0; i < ENABLED_TPM_ALGS_NUM; ++i) {
+		enum vb2_hash_algorithm alg = enabled_tpm_algs[i];
+		if (!tpm_log_alg_active(alg))
+			continue;
+
+		digests->values[j].hash_type = alg;
+
+		if (hash_hint != NULL && hash_hint->algo == alg) {
+			digests->values[j++].hash = hash_hint->raw;
+			continue;
+		}
+
+		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), buffer, size,
+				       alg, &digests->hashes[i])) {
+			printk(BIOS_ERR, "%s: failed to compute %s hash.\n", __func__,
+			       vb2_get_hash_algorithm_name(alg));
+			return false;
+		}
+
+		digests->values[j++].hash = digests->hashes[i].raw;
+	}
+
+	digests->values[j].hash_type = VB2_HASH_INVALID;
+	return true;
+}
 #endif /* VBOOT_LIB */
