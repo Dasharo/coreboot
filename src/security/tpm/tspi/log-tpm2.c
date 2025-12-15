@@ -29,7 +29,7 @@ struct log_event {
 	uint32_t pcr;
 	uint32_t event_type;
 	uint32_t digest_count;
-	struct tpm_digest digests[1];
+	struct tpm_digest digests[ENABLED_TPM_ALGS_NUM];
 	uint32_t name_len;
 	const char *name;
 };
@@ -38,6 +38,45 @@ struct startup_locality_event {
 	char signature[16];       /* "StartupLocality" (NUL-terminated) */
 	uint8_t startup_locality; /* 0 or 3 */
 } __packed;
+
+struct pcr_banks_info {
+	int active_count;                     /* Number is_active entries set to true. */
+	bool is_active[ENABLED_TPM_ALGS_NUM]; /* Set of active banks. */
+};
+
+static int find_alg_index(enum vb2_hash_algorithm alg)
+{
+	unsigned int i;
+	for (i = 0; i < ENABLED_TPM_ALGS_NUM; i++) {
+		if (enabled_tpm_algs[i] == alg)
+			return i;
+	}
+
+	return -1;
+}
+
+static bool is_all_zeroes(const void *buffer, size_t size)
+{
+	const uint8_t *p = buffer;
+	while (size-- != 0) {
+		if (*p++ != 0)
+			return false;
+	}
+	return true;
+}
+
+static bool supports_digest(const struct tpm_2_log_table *tclt, uint16_t alg_id)
+{
+	const struct tcg_efi_spec_id_event *hdr = &tclt->header;
+
+	int i;
+	for (i = 0; i < le32toh(hdr->num_of_algorithms); ++i) {
+		if (hdr->digest_sizes[i].alg_id == htole16(alg_id))
+			return true;
+	}
+
+	return false;
+}
 
 /* Assumes tclt->header.num_of_algorithms is already set to its final value. */
 static struct tpm_2_log_bottom *get_log_bottom(const struct tpm_2_log_table *tclt)
@@ -50,6 +89,78 @@ static struct tpm_2_log_bottom *get_log_bottom(const struct tpm_2_log_table *tcl
 	p += le32toh(tclt->header.num_of_algorithms) * sizeof(tclt->header.digest_sizes[0]);
 	/* `p` points at `uint8_t vendor_info_size` here. */
 	return (struct tpm_2_log_bottom *)p;
+}
+
+/* See comment on tpm2_log_align_with_tpm(). */
+static const struct pcr_banks_info *get_pcr_banks_info(void)
+{
+	static bool initialized;
+	static struct pcr_banks_info info;
+
+	if (initialized)
+		return &info;
+
+	/* Start by pretending that all supported banks are active in case there will be an
+	   error. */
+	unsigned int i;
+	for (i = 0; i < ENABLED_TPM_ALGS_NUM; ++i)
+		info.is_active[i] = true;
+	info.active_count = ENABLED_TPM_ALGS_NUM;
+
+	if (CONFIG(TPM_INIT_RAMSTAGE) && !ENV_RAMSTAGE && !ENV_POSTCAR && !ENV_PAYLOAD_LOADER) {
+		/* TPM initialization is postponed until ramstage, no use poking it. */
+		initialized = true;
+		return &info;
+	}
+
+	tpm_result_t rc = tlcl_lib_init();
+	if (rc != TPM_SUCCESS) {
+		printk(BIOS_WARNING, "TPM LOG: failed to initialize TLCL: %d\n", rc);
+		return &info;
+	}
+
+	TPML_PCR_SELECTION pcrs;
+	rc = tlcl2_get_capability_pcrs(&pcrs);
+	if (rc != TPM_SUCCESS) {
+		printk(BIOS_WARNING, "TPM LOG: failed to query PCR capabilities: %d\n", rc);
+		return &info;
+	}
+
+	if (pcrs.count == 0) {
+		/* TPM likely just hasn't been set up yet. */
+		return &info;
+	}
+
+	info.active_count = 0;
+	memset(info.is_active, 0, sizeof(info.is_active));
+
+	for (i = 0; i < pcrs.count; i++) {
+		TPMS_PCR_SELECTION *selection = &pcrs.pcrSelections[i];
+
+		enum vb2_hash_algorithm alg = tpm2_alg_to_vb2_hash(selection->hash);
+		if (alg == VB2_HASH_INVALID) {
+			printk(BIOS_INFO, "TPM LOG: unsupported PCR bank: %#x\n",
+			       selection->hash);
+			continue;
+		}
+
+		int alg_index = find_alg_index(alg);
+		if (alg_index < 0) {
+			printk(BIOS_INFO,
+			       "TPM LOG: skipping PCR bank disabled at build-time: %s\n",
+			       vb2_get_hash_algorithm_name(alg));
+			continue;
+		}
+
+		bool is_active = !is_all_zeroes(selection->pcrSelect, selection->sizeofSelect);
+		if (is_active) {
+			info.is_active[alg_index] = true;
+			++info.active_count;
+		}
+	}
+
+	initialized = true;
+	return &info;
 }
 
 static uint16_t get_log_footprint(const struct tpm_2_log_table *tclt)
@@ -67,7 +178,9 @@ void *tpm2_log_cbmem_init(void)
 		return tclt;
 
 	if (ENV_HAS_CBMEM) {
+		int i, j;
 		struct tcg_efi_spec_id_event *hdr;
+		const struct pcr_banks_info *pcr_banks_info;
 		struct tpm_2_log_bottom *bottom;
 
 		tclt = cbmem_find(CBMEM_ID_TPM2_TCG_LOG);
@@ -78,12 +191,14 @@ void *tpm2_log_cbmem_init(void)
 		if (!tclt)
 			return NULL;
 
+		pcr_banks_info = get_pcr_banks_info();
+
 		memset(tclt, 0, TPM_LOG_SIZE);
 		hdr = &tclt->header;
 
 		hdr->event_type = htole32(EV_NO_ACTION);
 		hdr->event_size = htole32(28 +
-					  1 * sizeof(hdr->digest_sizes[0]) +
+					  pcr_banks_info->active_count * sizeof(hdr->digest_sizes[0]) +
 					  1 +
 					  TPM_20_VENDOR_INFO_SIZE);
 		strcpy((char *)hdr->signature, TPM_20_SPEC_ID_EVENT_SIGNATURE);
@@ -93,9 +208,17 @@ void *tpm2_log_cbmem_init(void)
 		hdr->spec_errata = 0x00;
 		hdr->uintn_size = 0x02; // 64-bit UINT
 
-		hdr->num_of_algorithms = htole32(1);
-		hdr->digest_sizes[0].alg_id = htole16(tpm2_alg_from_vb2_hash(tpm_log_alg()));
-		hdr->digest_sizes[0].digest_size = htole16(vb2_digest_size(tpm_log_alg()));
+		hdr->num_of_algorithms = htole32(pcr_banks_info->active_count);
+		for (i = 0, j = -1; i < le32toh(hdr->num_of_algorithms); ++i) {
+			/* Find the next active bank. */
+			while (!pcr_banks_info->is_active[++j])
+				continue;
+
+			hdr->digest_sizes[i].alg_id =
+				htole16(tpm2_alg_from_vb2_hash(enabled_tpm_algs[j]));
+			hdr->digest_sizes[i].digest_size =
+				htole16(vb2_digest_size(enabled_tpm_algs[j]));
+		}
 
 		bottom = get_log_bottom(tclt);
 		bottom->vendor_info_size = TPM_20_VENDOR_INFO_SIZE;
@@ -184,6 +307,15 @@ void tpm2_log_dump(void)
 	printk(BIOS_INFO, "\n");
 }
 
+bool tpm2_log_alg_active(enum vb2_hash_algorithm alg)
+{
+	int alg_index = find_alg_index(alg);
+	if (alg_index < 0)
+		return false;
+
+	return get_pcr_banks_info()->is_active[alg_index];
+}
+
 /* The function assumes output buffer has enough space for the new event. */
 static void write_log_event(struct obuf *ob,
 			    const void *data,
@@ -266,12 +398,22 @@ void tpm2_log_startup_locality(int locality)
 		return;
 	}
 
+	const struct pcr_banks_info *pcr_banks_info = get_pcr_banks_info();
+
 	/* EV_NO_ACTION events use zeroes for digest(s). */
 	struct vb2_hash zero_hash = {0};
-	const struct tpm_digest digests[] = {
-		{ .hash_type = tpm_log_alg(), .hash = zero_hash.raw },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
+	struct tpm_digest digests[ENABLED_TPM_ALGS_NUM + 1];
+
+	int i, j;
+	for (i = 0, j = 0; i < ARRAY_SIZE(pcr_banks_info->is_active); ++i) {
+		if (!pcr_banks_info->is_active[i])
+			continue;
+
+		digests[j].hash_type = enabled_tpm_algs[i];
+		digests[j].hash = zero_hash.raw;
+		++j;
+	}
+	digests[j].hash_type = VB2_HASH_INVALID;
 
 	struct startup_locality_event event_data;
 	strcpy(event_data.signature, "StartupLocality");
@@ -332,7 +474,7 @@ void tpm2_preram_log_clear(void)
 	 * is not fully initialized.
 	 */
 	struct tpm_2_log_table *tclt = (struct tpm_2_log_table *)_tpm_log;
-	tclt->header.num_of_algorithms = htole32(1);
+	tclt->header.num_of_algorithms = htole32(get_pcr_banks_info()->active_count);
 
 	struct tpm_2_log_bottom *bottom = get_log_bottom(tclt);
 	bottom->num_entries = 0;
@@ -354,4 +496,116 @@ void tpm2_log_copy_entries(const void *from, void *to)
 	memcpy(to_bottom->events, from_bottom->events, le16toh(from_bottom->next_offset));
 	to_bottom->num_entries = from_bottom->num_entries;
 	to_bottom->next_offset = from_bottom->next_offset;
+}
+
+/*
+ * Events can be logged before TPM is initialized but the set of active PCR banks can be queried
+ * only after its initialization.  For this reason get_pcr_banks_info() reports all supported
+ * banks as active if TPM is unavailable, collecting all possible digests in the log itself.
+ * Once TPM is initialized, tspi_measure_cache_to_pcr() is called which invokes this function.
+ * The purpose of the function is to trim down the log by removing unnecessary digests.
+ * Normally, this function gets called in the ramstage, but if TPM gets initialized in the
+ * bootblock, no trimming (and no unnecessary hashing) will occur.
+ */
+void tpm2_log_align_with_tpm(void)
+{
+	/* There is no point doing anything if exactly one digest algorithm is enabled. */
+	if (ENABLED_TPM_ALGS_NUM == 1)
+		return;
+
+	struct tpm_2_log_table *tclt = tpm_log_init();
+	if (tclt == NULL) {
+		printk(BIOS_WARNING, "TPM LOG: can't adjust a non-existent log!\n");
+		return;
+	}
+
+	struct tcg_efi_spec_id_event *hdr = &tclt->header;
+	const int old_alg_count = le32toh(hdr->num_of_algorithms);
+
+	/* Filter-out unsupported digest algorithms in place. */
+	int i;
+	int new_alg_count = 0;
+	for (i = 0; i < old_alg_count; ++i) {
+		uint16_t alg_id = le16toh(hdr->digest_sizes[i].alg_id);
+		if (tpm2_log_alg_active(tpm2_alg_to_vb2_hash(alg_id)))
+			hdr->digest_sizes[new_alg_count++] = hdr->digest_sizes[i];
+	}
+
+	if (new_alg_count == old_alg_count) {
+		printk(BIOS_INFO, "TPM LOG: none of %d digests were filtered\n", old_alg_count);
+		return;
+	}
+
+	if (new_alg_count == 0) {
+		printk(BIOS_WARNING, "TPM LOG: can't filter-out all digests, leaving as is\n");
+		return;
+	}
+
+	printk(BIOS_INFO, "TPM LOG: filtering-out digests of inactive banks: %d -> %d\n",
+	       old_alg_count, new_alg_count);
+
+	/*
+	 * The following code excludes inactive hashes in place.  This allows using it in a
+	 * bootblock which lacks dynamic memory allocation and avoid reserving memory for a
+	 * temporary copy.  Updating in place is safe to do and success is guaranteed because
+	 * the data is merely shifted.  The only possible concern is that obuf_write() uses
+	 * memcpy() which per standard doesn't deal with overlapping ranges but that should be
+	 * fine in this environment which has its own memcpy().
+	 *
+	 * How the update is performed:
+	 *  1. Remember current range of event data.
+	 *  2. Unsupported digest algorithms inside log's header are already gone, merely need
+	 *     to update their count.
+	 *  3. Increase size of log's header (it got shorter).
+	 *  4. Rediscover bottom part of the log (where vendor data is) whose location depends
+	 *     on the number of digest algorithms.
+	 *  5. Reinsert all log entries while skipping inactive banks.
+	 *  6. Fill bottom part with correct values and update offsets there.
+	 *  7. Clear the remainder of the log.
+	 */
+
+	/* Save original bottom part on the stack. */
+	struct tpm_2_log_bottom *bottom = get_log_bottom(tclt);
+	const struct tpm_2_log_bottom old_bottom = *bottom;
+
+	/* Set up input buffer before bottom gets moved (updates to the header above don't
+	   hurt anything). */
+	struct ibuf ib;
+	ibuf_init(&ib, bottom->events, le16toh(bottom->next_offset));
+
+	size_t size_diff =
+		(old_alg_count - new_alg_count) * sizeof(tclt->header.digest_sizes[0]);
+
+	hdr->num_of_algorithms = htole32(new_alg_count);
+	hdr->event_size = htole32(le32toh(hdr->event_size) - size_diff);
+
+	/* Updating `hdr->num_of_algorithms` above shifted location of the bottom part. */
+	bottom = get_log_bottom(tclt);
+
+	/* Set up output buffer at the new location. */
+	struct obuf ob;
+	obuf_init(&ob, bottom->events, le16toh(old_bottom.max_offset) + size_diff);
+
+	for (i = 0; i < le16toh(old_bottom.num_entries); ++i) {
+		struct log_event ev;
+		read_log_event(&ib, &ev);
+
+		int j, k = 0;
+		struct tpm_digest digests[ENABLED_TPM_ALGS_NUM + 1];
+		for (j = 0; j < ev.digest_count; ++j) {
+			uint16_t alg = tpm2_alg_from_vb2_hash(ev.digests[j].hash_type);
+			if (supports_digest(tclt, alg))
+				digests[k++] = ev.digests[j];
+		}
+		digests[k].hash_type = VB2_HASH_INVALID;
+
+		write_log_event(&ob, ev.name, ev.name_len, ev.pcr, ev.event_type, digests);
+	}
+
+	*bottom = old_bottom;
+	bottom->max_offset = htole16(le16toh(old_bottom.max_offset) + size_diff);
+	bottom->next_offset = htole16(obuf_nr_written(&ob));
+
+	memset(&bottom->events[obuf_nr_written(&ob)], 0,
+	       le16toh(bottom->max_offset) - obuf_nr_written(&ob));
 }
