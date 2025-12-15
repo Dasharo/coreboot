@@ -477,7 +477,23 @@ static enum cb_err fill_pcr7_km_fields(struct obuf *ob)
 	return CB_SUCCESS;
 }
 
-static enum cb_err copy_ibb_hash(struct obuf *ob, uint16_t tpm2_alg)
+static const struct hash_struct *find_ibb_digest(const struct bpm_ibbs *ibbs,
+						 enum vb2_hash_algorithm alg)
+{
+	unsigned int i;
+	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
+	uint16_t tpm2_alg = tpm2_alg_from_vb2_hash(alg);
+	for (i = 0; i < ibbs->digest_list.count; ++i) {
+		if (ibb_hash->alg == tpm2_alg)
+			return ibb_hash;
+
+		ibb_hash = (const void *)&ibb_hash->data[ibb_hash->size];
+	}
+
+	return NULL;
+}
+
+static enum cb_err copy_ibb_hash(struct obuf *ob, enum vb2_hash_algorithm alg)
 {
 	size_t bpm_len;
 	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
@@ -486,16 +502,9 @@ static enum cb_err copy_ibb_hash(struct obuf *ob, uint16_t tpm2_alg)
 		return CB_ERR;
 	}
 
-	unsigned int i;
 	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
-	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
-	for (i = 0; i < ibbs->digest_list.count; ++i) {
-		if (ibb_hash->alg == tpm2_alg)
-			break;
-		ibb_hash = (const void *)&ibb_hash->data[ibb_hash->size];
-	}
-
-	if (i == ibbs->digest_list.count) {
+	const struct hash_struct *ibb_hash = find_ibb_digest(ibbs, alg);
+	if (ibb_hash == NULL) {
 		printk(BIOS_ERR, "CBnT: failed to find matching IBB digest\n");
 		return CB_ERR;
 	}
@@ -509,7 +518,7 @@ static enum cb_err copy_ibb_hash(struct obuf *ob, uint16_t tpm2_alg)
 	return CB_SUCCESS;
 }
 
-static enum cb_err copy_bpm_signature(struct obuf *ob)
+static enum cb_err copy_bpm_signature(struct obuf *ob, enum vb2_hash_algorithm alg)
 {
 	size_t bpm_len;
 	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
@@ -528,7 +537,7 @@ static enum cb_err copy_bpm_signature(struct obuf *ob)
 		return CB_ERR;
 	}
 
-	return copy_ibb_hash(ob, tpm2_alg_from_vb2_hash(tpm_log_alg()));
+	return copy_ibb_hash(ob, alg);
 }
 
 /*
@@ -545,9 +554,9 @@ static enum cb_err copy_bpm_signature(struct obuf *ob)
  *
  * Applies only for TPM2.0.
  *
- * Returns true and initializes *hash on success.
+ * Returns true on success.
  */
-static bool make_pcr7_hash(struct obuf *ob, struct vb2_hash *hash)
+static bool make_pcr7_data(struct obuf *ob)
 {
 	/*
 	 * ACM.KeyHash[32]
@@ -563,13 +572,6 @@ static bool make_pcr7_hash(struct obuf *ob, struct vb2_hash *hash)
 
 	if (fill_pcr7_km_fields(ob) != CB_SUCCESS) {
 		printk(BIOS_ERR, "CBnT: failed to fill KM fields of PCR-7 measurement data\n");
-		return false;
-	}
-
-	size_t size;
-	const void *data = obuf_contents(ob, &size);
-	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, size, tpm_log_alg(), hash)) {
-		printk(BIOS_ERR, "CBnT: failed to hash PCR-7 measurement data\n");
 		return false;
 	}
 
@@ -593,15 +595,8 @@ int intel_cbnt_get_locality(void)
 	return biosacm_sts.status.tpm_startup_locality == 0 ? 3 : 0;
 }
 
-static enum cb_err cap_pcrs(union cbnt_biosacm_policy biosacm_sts)
+static enum cb_err cap_pcrs_for_alg(enum vb2_hash_algorithm alg)
 {
-	/* TODO: when adding support of all active PCR banks to Measured Boot, implement
-	         capping those PCRs for which there is no corresponding IBB digest in BPM. */
-
-	/* Nothing to do if there was no TPM failure. */
-	if (biosacm_sts.status.tpm_success)
-		return CB_SUCCESS;
-
 	size_t bpm_len;
 	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
 	if (bpm == NULL) {
@@ -617,8 +612,8 @@ static enum cb_err cap_pcrs(union cbnt_biosacm_policy biosacm_sts)
 
 	const uint32_t separator = 0x00000001;
 	struct vb2_hash hash;
-	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), &separator, sizeof(separator),
-			       tpm_log_alg(), &hash)) {
+	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), &separator, sizeof(separator), alg,
+			       &hash)) {
 		printk(BIOS_ERR, "CBnT: failed to hash PCR separator\n");
 		return CB_ERR;
 	}
@@ -632,6 +627,41 @@ static enum cb_err cap_pcrs(union cbnt_biosacm_policy biosacm_sts)
 		tpm_log_add_table_entry("CBnT hit TPM failure during boot", pcr, cap_digests);
 		printk(BIOS_INFO, "CBnT: capped PCR-%d\n", pcr);
 	}
+	return CB_SUCCESS;
+}
+
+static enum cb_err cap_pcrs(union cbnt_biosacm_policy biosacm_sts)
+{
+	size_t bpm_len;
+	const struct bpm_header *bpm = find_in_fit(FIT_ENTRY_TYPE_BPM, &bpm_len);
+	if (bpm == NULL) {
+		printk(BIOS_ERR, "CBnT: failed to find BPM\n");
+		return CB_ERR;
+	}
+
+	const struct bpm_ibbs *ibbs = (const void *)bpm->se_element;
+
+	int i;
+	for (i = 0; i < ENABLED_TPM_ALGS_NUM; ++i) {
+		enum vb2_hash_algorithm alg = enabled_tpm_algs[i];
+		if (!tpm_log_alg_active(alg))
+			continue;
+
+		/*
+		 * If there was a TPM failure, cap all active banks.  Otherwise, cap those
+		 * active banks for which there is no corresponding IBB digests in BPM.
+		 */
+		if (biosacm_sts.status.tpm_success && find_ibb_digest(ibbs, alg) != NULL)
+			continue;
+
+		enum cb_err err = cap_pcrs_for_alg(alg);
+		if (err != CB_SUCCESS) {
+			printk(BIOS_WARNING, "CBnT: failed to cap %s bank\n",
+			       vb2_get_hash_algorithm_name(alg));
+			return err;
+		}
+	}
+
 	return CB_SUCCESS;
 }
 
@@ -677,54 +707,65 @@ static void measure_intel_tgl_style(uint64_t biosacm_policy, bool auth_measure)
 		return;
 	}
 
-	if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
-		printk(BIOS_ERR, "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
-		return;
+	int i, j;
+	struct tpm_digests pcr0_digests;
+	for (i = 0, j = 0; i < ENABLED_TPM_ALGS_NUM; ++i) {
+		enum vb2_hash_algorithm alg = enabled_tpm_algs[i];
+		if (!tpm_log_alg_active(alg))
+			continue;
+
+		struct obuf local_ob = data_ob;
+		if (copy_bpm_signature(&local_ob, alg) != CB_SUCCESS) {
+			printk(BIOS_ERR,
+			       "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
+			return;
+		}
+
+		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data,
+				       obuf_nr_written(&data_ob), alg,
+				       &pcr0_digests.hashes[i])) {
+			printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
+			return;
+		}
+
+		pcr0_digests.values[j].hash_type = alg;
+		pcr0_digests.values[j].hash = pcr0_digests.hashes[i].raw;
+		++j;
 	}
 
-	struct vb2_hash hash;
-	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, obuf_nr_written(&data_ob),
-			       tpm_log_alg(), &hash)) {
-		printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
-		return;
-	}
+	pcr0_digests.values[j].hash_type = VB2_HASH_INVALID;
 
 	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
-	const struct tpm_digest pcr0_digests[] = {
-		{ .hash_type = hash.algo, .hash = hash.raw },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
-	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_digests);
+	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_digests.values);
 
 	/* Optionally making and hashing PCR-7 data (not supported since MTL). */
 	if (!auth_measure)
 		return;
 
+	struct tpm_digests pcr7_digests;
+
 	/* Reuse the first 2 fields of PCR-0 data which are identical in both cases. */
 	obuf_init(&data_ob, data, sizeof(data));
 	(void)obuf_oob_fill(&data_ob, sizeof(uint64_t) + sizeof(uint16_t));
 
-	if (!make_pcr7_hash(&data_ob, &hash)) {
-		printk(BIOS_ERR, "CBnT: failed to build and hash PCR-7 measurement data\n");
+	if (!make_pcr7_data(&data_ob)) {
+		printk(BIOS_ERR, "CBnT: failed to build PCR-7 measurement data\n");
+		return;
+	}
+
+	if (!tpm_make_digests(data, obuf_nr_written(&data_ob), NULL, &pcr7_digests)) {
+		printk(BIOS_ERR, "CBnT: failed to hash PCR-7 measurement data\n");
 		return;
 	}
 
 	/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type
 	   and event name should be a Unicode string. */
-	const struct tpm_digest pcr7_digests[] = {
-		{ .hash_type = hash.algo, .hash = hash.raw },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
-	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_digests);
+	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_digests.values);
 	printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
 }
 
 static void measure_tcg_style(uint64_t biosacm_policy)
 {
-	uint8_t data[MAX_DATA_SIZE];
-	struct obuf data_ob;
-	obuf_init(&data_ob, data, sizeof(data));
-
 	size_t acm_len;
 	const struct acm_header_v3 *acm = find_in_fit(FIT_ENTRY_TYPE_SACM, &acm_len);
 	if (acm == NULL) {
@@ -746,29 +787,39 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 		crtm_version_utf16[i*2 + 1] = crtm_version_str[i*2 + 1];
 	}
 
-	struct vb2_hash hash;
-	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), crtm_version_utf16,
-			       sizeof(crtm_version_utf16), tpm_log_alg(), &hash)) {
+	struct tpm_digests crtm_digests;
+	if (!tpm_make_digests(crtm_version_utf16, sizeof(crtm_version_utf16), NULL,
+			      &crtm_digests)) {
 		printk(BIOS_ERR, "CBnT: failed to hash CRTM version\n");
 		return;
 	}
 	/* Per BWG this should be logged with EV_S_CRTM_VERSION type. */
-	const struct tpm_digest crtm_digests[] = {
-		{ .hash_type = hash.algo, .hash = hash.raw },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
-	tpm_log_add_table_entry(crtm_version_str, 0, crtm_digests);
+	tpm_log_add_table_entry(crtm_version_str, 0, crtm_digests.values);
 
-	if (copy_ibb_hash(&data_ob, tpm2_alg_from_vb2_hash(tpm_log_alg())) != CB_SUCCESS) {
-		printk(BIOS_ERR, "CBnT: failed to obtain IBB digest\n");
-		return;
+	int i, j;
+
+	struct tpm_digests post_code_digests;
+	for (i = 0, j = 0; i < ENABLED_TPM_ALGS_NUM; ++i) {
+		enum vb2_hash_algorithm alg = enabled_tpm_algs[i];
+		if (!tpm_log_alg_active(alg))
+			continue;
+
+		struct obuf data_ob;
+		obuf_init(&data_ob, post_code_digests.hashes[j].sha512,
+			  sizeof(post_code_digests.hashes[j].sha512));
+
+		if (copy_ibb_hash(&data_ob, alg) != CB_SUCCESS) {
+			printk(BIOS_ERR, "CBnT: failed to obtain IBB digest\n");
+			return;
+		}
+
+		++j;
 	}
+
+	post_code_digests.values[j].hash_type = VB2_HASH_INVALID;
+
 	/* Per BWG this should be logged with EV_POST_CODE type. */
-	const struct tpm_digest post_code_digests[] = {
-		{ .hash_type = tpm_log_alg(), .hash = data },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
-	tpm_log_add_table_entry("Boot Guard Measured IBB", 0, post_code_digests);
+	tpm_log_add_table_entry("Boot Guard Measured IBB", 0, post_code_digests.values);
 
 	/*
 	 * struct {
@@ -777,6 +828,8 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 	 *      uint8_t  BPM.Signature[BPM signature size];
 	 * } POLICY_DATA;
 	 */
+	uint8_t data[MAX_DATA_SIZE];
+	struct obuf data_ob;
 	obuf_init(&data_ob, data, sizeof(data));
 
 	/* ACM_POLICY_STATUS (won't run out of space on this one) */
@@ -789,22 +842,36 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 		printk(BIOS_ERR, "CBnT: failed to copy KM signature\n");
 		return;
 	}
-	if (copy_bpm_signature(&data_ob) != CB_SUCCESS) {
-		printk(BIOS_ERR, "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
-		return;
-	}
-	if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data, obuf_nr_written(&data_ob),
-			       tpm_log_alg(), &hash)) {
-		printk(BIOS_ERR, "CBnT: failed to hash POLICY_DATA\n");
-		return;
+
+	struct tpm_digests policy_digests;
+	for (i = 0, j = 0; i < ENABLED_TPM_ALGS_NUM; ++i) {
+		enum vb2_hash_algorithm alg = enabled_tpm_algs[i];
+		if (!tpm_log_alg_active(alg))
+			continue;
+
+		struct obuf local_ob = data_ob;
+		if (copy_bpm_signature(&local_ob, alg) != CB_SUCCESS) {
+			printk(BIOS_ERR,
+			       "CBnT: failed to copy BPM signature for PCR-0 measurement\n");
+			return;
+		}
+
+		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data,
+				       obuf_nr_written(&data_ob), alg,
+				       &policy_digests.hashes[i])) {
+			printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
+			return;
+		}
+
+		policy_digests.values[j].hash_type = alg;
+		policy_digests.values[j].hash = policy_digests.hashes[i].raw;
+		++j;
 	}
 
+	policy_digests.values[j].hash_type = VB2_HASH_INVALID;
+
 	/* Per BWG this should be logged with EV_POST_CODE type. */
-	const struct tpm_digest policy_digests[] = {
-		{ .hash_type = hash.algo, .hash = hash.raw },
-		{ .hash_type = VB2_HASH_INVALID }
-	};
-	if (tpm_extend_pcr(0, policy_digests,
+	if (tpm_extend_pcr(0, policy_digests.values,
 			   "BIOS Measured Boot Guard Policy") != TPM_SUCCESS)
 		printk(BIOS_ERR, "CBnT: failed to extend POLICY_DATA\n");
 }
