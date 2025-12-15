@@ -119,22 +119,20 @@ config TPM_LOG_TPM2
 
 endchoice
 
-choice
-	prompt "TPM2 hashing algorithm"
-	depends on TPM_MEASURED_BOOT && (TPM_LOG_TCG || TPM_LOG_TPM2)
-	default TPM_HASH_SHA1 if TPM1
-	default TPM_HASH_SHA256 if TPM2
+if TPM_MEASURED_BOOT && (TPM_LOG_TCG || TPM_LOG_TPM2)
 
 config TPM_HASH_SHA1
-	bool "SHA1"
+	bool "SHA1 PCR hashing"
+	default y if TPM1 || TPM2
 config TPM_HASH_SHA256
-	bool "SHA256"
+	bool "SHA256 PCR hashing"
+	default y if TPM2
 config TPM_HASH_SHA384
-	bool "SHA384"
+	bool "SHA384 PCR hashing"
 config TPM_HASH_SHA512
-	bool "SHA512"
+	bool "SHA512 PCR hashing"
 
-endchoice
+endif
 
 config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
 	bool
