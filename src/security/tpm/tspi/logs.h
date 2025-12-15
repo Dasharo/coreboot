@@ -44,7 +44,9 @@ int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char
 void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 			      const struct tpm_digest *digests);
 void tpm2_log_startup_locality(int locality);
+void tpm2_log_align_with_tpm(void);
 void tpm2_log_dump(void);
+bool tpm2_log_alg_active(enum vb2_hash_algorithm alg);
 
 static inline uint16_t tpm2_alg_from_vb2_hash(enum vb2_hash_algorithm hash_type)
 {
