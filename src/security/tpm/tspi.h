@@ -68,6 +68,14 @@ static inline enum vb2_hash_algorithm tpm_log_alg(void)
 }
 
 /**
+ * Checks whether a PCR banks corresponding to a hash algorithm is active.
+ */
+static inline bool tpm_log_alg_active(enum vb2_hash_algorithm alg)
+{
+	return alg == tpm_log_alg();
+}
+
+/**
  * Get the pointer to the single instance of global
  * TPM log data, and initialize it when necessary
  */
@@ -215,5 +223,45 @@ tpm_result_t tpm_setup(int s3flag);
  */
 tpm_result_t tpm_measure_region(const struct region_device *rdev, uint8_t pcr,
 				const char *rname);
+
+/*
+ * Arrays of tpm_digest structures should generally have `ENABLED_TPM_ALGS_NUM + 1` entries.
+ * The extra entry terminates the list.  Functions that fill such arrays rely on this
+ * assumption.
+ */
+#define ENABLED_TPM_ALGS_NUM  ARRAY_SIZE(enabled_tpm_algs)
+
+/*
+ * This is a list of supported digests to be used in loops.
+ */
+static const enum vb2_hash_algorithm enabled_tpm_algs[] __maybe_unused = {
+#if CONFIG(TPM_HASH_SHA1) || CONFIG(TPM_LOG_CB)
+	VB2_HASH_SHA1,
+#endif
+#if CONFIG(TPM_HASH_SHA256) || CONFIG(TPM_LOG_CB)
+	VB2_HASH_SHA256,
+#endif
+#if CONFIG(TPM_HASH_SHA384)
+	VB2_HASH_SHA384,
+#endif
+#if CONFIG(TPM_HASH_SHA512)
+	VB2_HASH_SHA512,
+#endif
+};
+
+_Static_assert(ENABLED_TPM_ALGS_NUM <= HASH_COUNT,
+	       "Marshalling code of TSS 2.0 can't accommodate all enabled hashes.");
+
+struct tpm_digests {
+	struct vb2_hash hashes[ENABLED_TPM_ALGS_NUM];
+	struct tpm_digest values[ENABLED_TPM_ALGS_NUM + 1];
+};
+
+/**
+ * Compute all supported hashes of a buffer.  hash_hint can be passed in to avoid recomputing
+ * the digest if it's already known.
+ */
+bool tpm_make_digests(const void *buffer, size_t size, const struct vb2_hash *hash_hint,
+		      struct tpm_digests *digests);
 
 #endif /* TSPI_H_ */
