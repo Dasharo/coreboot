@@ -8,6 +8,7 @@
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/x86/pae.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <drivers/efi/efivars.h>
 #include <drivers/efi/capsules.h>
@@ -855,11 +856,13 @@ static void enable_capsule_smi(void *unused)
 	uint32_t ret;
 	const bool supported = get_boot_mode() == LB_BOOT_MODE_FLASH_UPDATE;
 
+	bool full_flash_access = supported || dasharo_is_disk_capsules_boot();
+
 	/* SMI can occasionally be ignored, so retry several times on failure. */
 	uint8_t retries_left = 10;
 	while (1) {
 		ret = call_smm(APM_CNT_SMMSTORE, SMMSTORE_CMD_USE_FULL_FLASH,
-			       (void *)(uintptr_t)supported);
+			       (void *)(uintptr_t)full_flash_access);
 		if (ret == SMMSTORE_RET_SUCCESS)
 			break;
 
