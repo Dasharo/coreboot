@@ -94,6 +94,7 @@ enum {
 	LB_TAG_PANEL_POWEROFF		= 0x0049,
 	LB_TAG_SDHCI_NONPCI		= 0x004a,
 	LB_TAG_LOGO			= 0x00a0,
+	LB_TAG_BOOT_INFO		= 0x00a1,
 	/* The following options are CMOS-related */
 	LB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	LB_TAG_OPTION			= 0x00c9,
@@ -673,6 +674,16 @@ struct lb_boot_mode {
  */
 struct bootlogo_header {
 	uint64_t size;
+} __packed;
+
+/*
+ * Passing extra information about the current boot to payload.
+ */
+struct lb_boot_info {
+	uint32_t tag;
+	uint32_t size;
+	uint8_t is_disk_capsules_boot; /* Boolean. */
+	uint8_t pad[3];
 } __packed;
 
 #endif
