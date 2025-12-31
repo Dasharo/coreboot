@@ -25,6 +25,7 @@
 #include <smmstore.h>
 #include <types.h>
 #include <version.h>
+#include <dasharo/options.h>
 
 #if CONFIG(USE_OPTION_TABLE)
 #include <option_table.h>
@@ -517,6 +518,17 @@ size_t write_coreboot_forwarding_table(uintptr_t entry, uintptr_t target)
 	return (uintptr_t)lb_table_fini(head) - entry;
 }
 
+static void lb_add_boot_info(struct lb_header *header)
+{
+	struct lb_boot_info *boot_info;
+
+	boot_info = (struct lb_boot_info *)lb_new_record(header);
+	boot_info->tag = LB_TAG_BOOT_INFO;
+	boot_info->size = sizeof(*boot_info);
+
+	boot_info->is_disk_capsules_boot = dasharo_is_disk_capsules_boot();
+}
+
 static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 {
 	struct lb_header *head;
@@ -597,6 +609,8 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 	/* Add information about firmware in form suitable for EFI updates. */
 	if (CONFIG(DRIVERS_EFI_FW_INFO))
 		lb_efi_fw_info(head);
+
+	lb_add_boot_info(head);
 
 	/* Add board-specific table entries, if any. */
 	lb_board(head);
