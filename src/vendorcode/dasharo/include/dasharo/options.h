@@ -327,4 +327,13 @@ enum dgpu_state dasharo_dgpu_state(void);
  */
 bool get_ibecc_option(bool ibecc_default);
 
+/* Looks up Dasharo/"DiskCapsulesBoot" EFI variable.  EDK removes this variable during boot.
+ *
+ * Result:
+ *  - true  - EDK intends to process on-disk capsules and needs: lifting protections and access
+ *            to whole flash
+ *  - false - there are either no on-disk capsules or EDK hasn't discovered them (yet)
+ */
+bool dasharo_is_disk_capsules_boot(void);
+
 #endif /* DASHARO_OPTIONS_H */
