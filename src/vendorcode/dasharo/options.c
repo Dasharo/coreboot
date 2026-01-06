@@ -185,6 +185,10 @@ static bool fum_is_active(void)
 	if (!CONFIG(DASHARO_FIRMWARE_UPDATE_MODE))
 		return false;
 
+	/* Handling capsules implies active FUM. */
+	if (dasharo_is_disk_capsules_boot())
+		return true;
+
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("FirmwareUpdateMode", &fum);
 
@@ -282,10 +286,13 @@ uint8_t cse_get_me_disable_mode(void)
 
 	/*
 	 * Disable ME via HMRPFO if in Firmware Update Mode
-	 * Don't do it if capsules are supported, as capsule updates are not
-	 * currently compatible with HMRFPO
+	 *
+	 * If capsules are supported, don't do this unless it's on-disk
+	 * capsules, because in-RAM capsules do not survive a cold reset
+	 * required for HMRFPO.
 	 */
-	if (fum_is_active() && !CONFIG(DRIVERS_EFI_UPDATE_CAPSULES)) {
+	if (fum_is_active() &&
+	    (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot())) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -549,6 +556,18 @@ bool get_ibecc_option(bool ibecc_default)
 		read_bool_var("IBECC", &ibecc_en);
 
 	return ibecc_en;
+}
+
+bool dasharo_is_disk_capsules_boot(void)
+{
+	if (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES))
+		return false;
+
+	bool disk_capsules_boot = false;
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("DiskCapsulesBoot", &disk_capsules_boot);
+
+	return disk_capsules_boot;
 }
 
 /* Flash Master 1 : HOST/BIOS */
