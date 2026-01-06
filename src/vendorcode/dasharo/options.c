@@ -178,18 +178,28 @@ bool dasharo_resizeable_bars_enabled(void)
 	return enabled;
 }
 
-bool is_vboot_locking_permitted(void)
+static bool fum_is_active(void)
 {
-	bool lock = true;
 	bool fum = false;
+
+	if (!CONFIG(DASHARO_FIRMWARE_UPDATE_MODE))
+		return false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_bool_var("FirmwareUpdateMode", &fum);
-	else
+
+	return fum;
+}
+
+bool is_vboot_locking_permitted(void)
+{
+	bool lock = true;
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		return !CONFIG(BOOTMEDIA_LOCK_NONE);
 
 	/* Disable lock if in Firmware Update Mode */
-	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
+	if (fum_is_active())
 		return false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
@@ -266,19 +276,16 @@ hmrfpo_error:
 uint8_t cse_get_me_disable_mode(void)
 {
 	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
-	bool fum = false;
 
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
-		read_bool_var("FirmwareUpdateMode", &fum);
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("MeMode", &var);
-	}
 
 	/*
 	 * Disable ME via HMRPFO if in Firmware Update Mode
 	 * Don't do it if capsules are supported, as capsule updates are not
 	 * currently compatible with HMRFPO
 	 */
-	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum	&& !(CONFIG(DRIVERS_EFI_UPDATE_CAPSULES))) {
+	if (fum_is_active() && !CONFIG(DRIVERS_EFI_UPDATE_CAPSULES)) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -313,13 +320,9 @@ uint8_t cse_get_me_disable_mode(void)
 bool is_smm_bwp_permitted(void)
 {
 	bool smm_bwp = false;
-	bool fum = false;
-
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
-		read_bool_var("FirmwareUpdateMode", &fum);
 
 	/* Disable SMM BWP if in Firmware Update Mode */
-	if (CONFIG(DASHARO_FIRMWARE_UPDATE_MODE) && fum)
+	if (fum_is_active())
 		return false;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
