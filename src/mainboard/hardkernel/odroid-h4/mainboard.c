@@ -4,6 +4,8 @@
 #include <soc/ramstage.h>
 #include <soc/gpio.h>
 #include <gpio.h>
+#include <intelblocks/cse.h>
+#include <smbios.h>
 #include <string.h>
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
@@ -29,3 +31,25 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
 }
+
+#if CONFIG(GENERATE_SMBIOS_TABLES)
+static int mainboard_smbios_data(struct device *dev, int *handle, unsigned long *current)
+{
+	int len = 0;
+
+	len += cse_write_smbios_type14(handle, current);
+
+	return len;
+}
+#endif
+
+static void mainboard_enable(struct device *dev)
+{
+#if CONFIG(GENERATE_SMBIOS_TABLES)
+	dev->ops->get_smbios_data = mainboard_smbios_data;
+#endif
+}
+
+struct chip_operations mainboard_ops = {
+	.enable_dev = mainboard_enable,
+};
