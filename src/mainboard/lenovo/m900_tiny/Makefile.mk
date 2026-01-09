@@ -10,4 +10,5 @@ romstage-y += romstage.c
 ramstage-y += gpio.c
 ramstage-y += hda_verb.c
 ramstage-y += ramstage.c
+ramstage-y += cfr.c
 ramstage-$(CONFIG_MAINBOARD_USE_LIBGFXINIT) += gma-mainboard.ads

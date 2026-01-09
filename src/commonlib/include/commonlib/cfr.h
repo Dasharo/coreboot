@@ -49,6 +49,8 @@
  *
  */
 
+#define CFR_VERSION 0x00000000
+
 enum cfr_tags {
 	CFR_TAG_OPTION_FORM		= 1,
 	CFR_TAG_ENUM_VALUE		= 2,
@@ -61,6 +63,7 @@ enum cfr_tags {
 	CFR_TAG_VARCHAR_UI_HELPTEXT	= 9,
 	CFR_TAG_VARCHAR_DEF_VALUE	= 10,
 	CFR_TAG_OPTION_COMMENT		= 11,
+	CFR_TAG_DEP_VALUES		= 12,
 };
 
 /*
@@ -68,7 +71,7 @@ enum cfr_tags {
  * effect on the non-volatile variable.
  * CFR_OPTFLAG_READONLY:
  *   Prevents writes to the variable.
- * CFR_OPTFLAG_GRAYOUT:
+ * CFR_OPTFLAG_INACTIVE:
  *   Implies READONLY. The option is visible, but cannot be modified
  *   because one of the dependencies are not given. However there's a
  *   possibility to enable the option by changing runtime configuration.
@@ -93,7 +96,7 @@ enum cfr_tags {
  */
 enum cfr_option_flags {
 	CFR_OPTFLAG_READONLY	= 1 << 0,
-	CFR_OPTFLAG_GRAYOUT	= 1 << 1,
+	CFR_OPTFLAG_INACTIVE	= 1 << 1,
 	CFR_OPTFLAG_SUPPRESS	= 1 << 2,
 	CFR_OPTFLAG_VOLATILE	= 1 << 3,
 	CFR_OPTFLAG_RUNTIME	= 1 << 4,
@@ -102,7 +105,8 @@ enum cfr_option_flags {
 struct __packed lb_cfr_varbinary {
 	uint32_t tag;		/*
 				 * CFR_TAG_VARCHAR_OPT_NAME, CFR_TAG_VARCHAR_UI_NAME,
-				 * CFR_TAG_VARCHAR_UI_HELPTEXT or CFR_TAG_VARCHAR_DEF_VALUE
+				 * CFR_TAG_VARCHAR_UI_HELPTEXT, CFR_TAG_VARCHAR_DEF_VALUE
+				 * or CFR_TAG_DEP_VALUES
 				 */
 	uint32_t size;		/* Length of the entire structure */
 	uint32_t data_length;	/* Length of data, including NULL terminator for strings */
@@ -115,6 +119,15 @@ struct __packed lb_cfr_enum_value {
 	/*
 	 * struct lb_cfr_varbinary		ui_name
 	 */
+};
+
+/*
+ * The optional flags describe how a numeric option is to be displayed.
+ * CFR_NUM_OPT_DISPFLAG_HEX:
+ *   Displays a NUMBER option in hexadecimal instead of decimal notation.
+ */
+enum cfr_numeric_option_display_flags {
+	CFR_NUM_OPT_DISPFLAG_HEX	= 1 << 0,
 };
 
 /* Supports multiple option types: ENUM, NUMBER, BOOL */
@@ -130,10 +143,16 @@ struct __packed lb_cfr_numeric_option {
 				 */
 	uint32_t flags;		/* enum cfr_option_flags */
 	uint32_t default_value;
+	uint32_t min;
+	uint32_t max;
+	uint32_t step;
+	uint32_t display_flags;	/* enum cfr_numeric_option_display_flags */
+
 	/*
 	 * struct lb_cfr_varbinary		opt_name
 	 * struct lb_cfr_varbinary		ui_name
 	 * struct lb_cfr_varbinary		ui_helptext (Optional)
+	 * struct lb_cfr_varbinary		dependency_values (Optional)
 	 * struct lb_cfr_enum_value		enum_values[]
 	 */
 };
@@ -151,6 +170,7 @@ struct __packed lb_cfr_varchar_option {
 	 * struct lb_cfr_varbinary		opt_name
 	 * struct lb_cfr_varbinary		ui_name
 	 * struct lb_cfr_varbinary		ui_helptext (Optional)
+	 * struct lb_cfr_varbinary		dependency_values (Optional)
 	 */
 };
 
@@ -170,6 +190,7 @@ struct __packed lb_cfr_option_comment {
 	/*
 	 * struct lb_cfr_varbinary		ui_name
 	 * struct lb_cfr_varbinary		ui_helptext (Optional)
+	 * struct lb_cfr_varbinary		dependency_values (Optional)
 	 */
 };
 
@@ -184,6 +205,7 @@ struct __packed lb_cfr_option_form {
 	uint32_t flags;		/* enum cfr_option_flags */
 	/*
 	 * struct lb_cfr_varbinary		ui_name
+	 * struct lb_cfr_varbinary		dependency_values (Optional)
 	 * struct lb_cfr_varchar_option		options[]
 	 */
 };
