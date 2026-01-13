@@ -249,7 +249,11 @@ static void *intel_txt_prepare_bios_acm(size_t *acm_len)
 	if (!acm_len)
 		return NULL;
 
-	acm_data = cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, acm_len);
+	if (CONFIG(INTEL_TOP_SWAP_SEPARATE_REGIONS))
+		acm_data = cbfs_unverified_area_map("BOOTBLOCK", CONFIG_INTEL_TXT_CBFS_BIOS_ACM, acm_len);
+	else
+		acm_data = cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, acm_len);
+
 	if (!acm_data) {
 		printk(BIOS_ERR, "TEE-TXT: Couldn't locate BIOS ACM in CBFS.\n");
 		return NULL;
