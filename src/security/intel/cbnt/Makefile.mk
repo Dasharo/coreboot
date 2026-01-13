@@ -13,6 +13,14 @@ PK_HASH_ALG_SHA1:=4
 PK_HASH_ALG_SHA256:=11
 PK_HASH_ALG_SHA384:=12
 
+ifneq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
+BB_FIT_REGION = COREBOOT
+TS_FIT_REGION = COREBOOT
+else
+BB_FIT_REGION = BOOTBLOCK
+TS_FIT_REGION = TOPSWAP
+endif
+
 # The private key also contains the public key, so use that if a private key is provided.
 ifeq ($(CONFIG_INTEL_CBNT_NEED_KM_PRIV_KEY),y)
 $(obj)/km_pub.pem: $(call strip_quotes, $(CONFIG_INTEL_CBNT_KM_PRIV_KEY_FILE))
@@ -109,10 +117,18 @@ cbfs-files-y += boot_policy_manifest.bin
 boot_policy_manifest.bin-file := $(CONFIG_INTEL_CBNT_BOOT_POLICY_MANIFEST_BINARY)
 boot_policy_manifest.bin-type := raw
 boot_policy_manifest.bin-align := 0x40
+regions-for-file-boot_policy_manifest.bin = BOOTBLOCK,TOPSWAP
 
 $(call add_intermediate, add_bpm_fit, $(IFITTOOL) set_fit_ptr)
-	$(IFITTOOL) -r COREBOOT -a -n boot_policy_manifest.bin -t 12 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
+	$(IFITTOOL) -r $(BB_FIT_REGION) -a -n boot_policy_manifest.bin -t 12 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
+
+ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
+$(call add_intermediate, add_ts_bpm_fit, $(IFITTOOL) set_fit_ptr)
+	$(IFITTOOL) -r $(TS_FIT_REGION) -a -n boot_policy_manifest.bin -t 12 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
 endif
+
+endif
+
 endif # CONFIG_INTEL_CBNT_GENERATE_BPM
 
 ifeq ($(CONFIG_INTEL_CBNT_GENERATE_KM),y)
@@ -159,9 +175,10 @@ cbfs-files-y += key_manifest.bin
 key_manifest.bin-file := $(KM_FILE)
 key_manifest.bin-type := raw
 key_manifest.bin-align := 0x40
+regions-for-file-key_manifest.bin = BOOTBLOCK,TOPSWAP
 
 $(call add_intermediate, add_km_fit, $(IFITTOOL) set_fit_ptr)
-	$(IFITTOOL) -r COREBOOT -a -n key_manifest.bin -t 11 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
+	$(IFITTOOL) -r $(BB_FIT_REGION) -a -n key_manifest.bin -t 11 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
 endif
 
 endif # CONFIG_INTEL_CBNT_KM_ONLY_UNSIGNED
