@@ -96,6 +96,33 @@ enum cb_err _cbfs_boot_lookup(const char *name, bool force_ro,
 	return CB_SUCCESS;
 }
 
+enum cb_err _cbfs_unverified_area_lookup(const char *area, const char *name, union cbfs_mdata *mdata, struct region_device *rdev)
+{
+	struct region_device area_dev;
+
+	if (fmap_locate_area_as_rdev(area, &area_dev)) {
+		printk(BIOS_ERR, "CBFS ERROR: Could not find region %s\n", area);
+	}
+
+	size_t data_offset;
+	enum cb_err err;
+
+	err = cbfs_lookup(&area_dev, name, mdata, &data_offset, NULL);
+
+	if (err) {
+		if (err == CB_CBFS_NOT_FOUND)
+			printk(BIOS_WARNING, "CBFS: Could not find file %s in region %s\n", name, area);
+		else
+			printk(BIOS_ERR, "CBFS ERROR: Error %d when looking up '%s'\n", err, name);
+		return err;
+	}
+
+	if (rdev_chain(rdev, &area_dev, data_offset, be32toh(mdata->h.len)))
+		return CB_ERR;
+
+	return CB_SUCCESS;
+}
+
 void cbfs_unmap(void *mapping)
 {
 	/*

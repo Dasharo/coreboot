@@ -140,15 +140,18 @@ enum cb_err cbfs_prog_stage_load(struct prog *prog);
    and instead use cbfs_alloc() so the file only needs to be looked up once. */
 static inline size_t cbfs_get_size(const char *name);
 static inline size_t cbfs_ro_get_size(const char *name);
+static inline size_t cbfs_unverified_area_get_size(const char *area, const char *name);
 
 /* Returns the type of a CBFS file, or CBFS_TYPE_NULL on error. Use cbfs_type_load() instead of
    this where possible to avoid looking up the file more than once. */
 static inline enum cbfs_type cbfs_get_type(const char *name);
 static inline enum cbfs_type cbfs_ro_get_type(const char *name);
+static inline enum cbfs_type cbfs_unverified_area_get_type(const char *area, const char *name);
 
 /* Check whether a CBFS file exists. */
 static inline bool cbfs_file_exists(const char *name);
 static inline bool cbfs_ro_file_exists(const char *name);
+static inline bool cbfs_unverified_area_file_exists(const char *area, const char *name);
 
 
 /**********************************************************************************************
@@ -195,6 +198,9 @@ enum cb_err cbfs_init_boot_device(const struct cbfs_boot_device *cbd,
  *                         INTERNAL HELPERS FOR INLINES, DO NOT USE.                          *
  **********************************************************************************************/
 enum cb_err _cbfs_boot_lookup(const char *name, bool force_ro,
+			      union cbfs_mdata *mdata, struct region_device *rdev);
+
+enum cb_err _cbfs_unverified_area_lookup(const char *area, const char *name,
 			      union cbfs_mdata *mdata, struct region_device *rdev);
 
 void *_cbfs_alloc(const char *name, cbfs_allocator_t allocator, void *arg,
@@ -370,6 +376,15 @@ static inline size_t cbfs_ro_get_size(const char *name)
 	return be32toh(mdata.h.len);
 }
 
+static inline size_t cbfs_unverified_area_get_size(const char *area, const char *name)
+{
+	union cbfs_mdata mdata;
+	struct region_device rdev;
+	if (_cbfs_unverified_area_lookup(area, name, &mdata, &rdev) != CB_SUCCESS)
+		return 0;
+	return be32toh(mdata.h.len);
+}
+
 static inline enum cbfs_type cbfs_get_type(const char *name)
 {
 	union cbfs_mdata mdata;
@@ -388,6 +403,15 @@ static inline enum cbfs_type cbfs_ro_get_type(const char *name)
 	return be32toh(mdata.h.type);
 }
 
+static inline enum cbfs_type cbfs_unverified_area_get_type(const char *area, const char *name)
+{
+	union cbfs_mdata mdata;
+	struct region_device rdev;
+	if (_cbfs_unverified_area_lookup(area, name, &mdata, &rdev) != CB_SUCCESS)
+		return CBFS_TYPE_NULL;
+	return be32toh(mdata.h.type);
+}
+
 static inline bool cbfs_file_exists(const char *name)
 {
 	union cbfs_mdata mdata;
@@ -402,6 +426,15 @@ static inline bool cbfs_ro_file_exists(const char *name)
 	union cbfs_mdata mdata;
 	struct region_device rdev;
 	if (_cbfs_boot_lookup(name, true, &mdata, &rdev) != CB_SUCCESS)
+		return false;
+	return true;
+}
+
+static inline bool cbfs_unverified_area_file_exists(const char *area, const char *name)
+{
+	union cbfs_mdata mdata;
+	struct region_device rdev;
+	if (_cbfs_unverified_area_lookup(area, name, &mdata, &rdev) != CB_SUCCESS)
 		return false;
 	return true;
 }
