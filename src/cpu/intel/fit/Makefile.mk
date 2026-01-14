@@ -48,6 +48,12 @@ $(call add_intermediate, set_ts_fit_ptr, $(IFITTOOL))
 	@printf "    UPDATE-FIT Top Swap: set FIT pointer to table\n"
 	$(IFITTOOL) -f $< -F -n intel_fit_ts -r $(TS_FIT_REGION) $(TS_OPTIONS)
 
+ifeq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
+TS_MCU_REGION=COREBOOT_TS
+else
+TS_MCU_REGION=COREBOOT
+endif
+
 $(call add_intermediate, add_ts_mcu_fit, set_ts_fit_ptr $(IFITTOOL))
 	@printf "    UPDATE-FIT Top Swap: Microcode\n"
 ifneq ($(FIT_ENTRY),)
