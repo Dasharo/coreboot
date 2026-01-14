@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
 			}
 
 			len = be32toh(cbfs_file->len);
-			offset = offset_to_ptr(convert_to_from_absolute_top_aligned,
+			offset = offset_to_ptr(convert_to_from_top_aligned,
 					&file_source_image.buffer,
 					cbfs_get_entry_addr(&file_source_image, cbfs_file) +
 					be32toh(cbfs_file->offset));
