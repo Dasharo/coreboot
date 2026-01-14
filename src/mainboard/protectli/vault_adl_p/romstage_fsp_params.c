@@ -65,7 +65,11 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 		txt_dump_chipset_info();
 	}
 
-	acm_base = (uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
+	if (CONFIG(INTEL_TOP_SWAP_SEPARATE_REGIONS))
+		acm_base = (uintptr_t)cbfs_unverified_area_map("BOOTBLOCK", CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
+	else
+		acm_base = (uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, &acm_size);
+
 
 	msr_t msr = rdmsr(IA32_FEATURE_CONTROL);
 	printk(BIOS_DEBUG, "IA32_FEATURE_CONTROL: %08x %08x\n", msr.hi, msr.lo);
