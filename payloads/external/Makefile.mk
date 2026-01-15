@@ -156,8 +156,12 @@ payloads/external/depthcharge/depthcharge/build/depthcharge.elf depthcharge: $(D
 
 # edk2
 
-$(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG)
-	$(MAKE) -C payloads/external/edk2 UefiPayloadPkg \
+ifeq ($(CONFIG_EDK2_ENABLE_IPXE),y)
+IPXE_EFI := payloads/external/iPXE/ipxe/ipxe.rom
+endif
+
+$(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
+	$(MAKE) -C payloads/external/edk2 DasharoPayloadPkg \
 		HOSTCC="$(HOSTCC)" \
 		CC="$(HOSTCC)" \
 		CONFIG_EDK2_REPOSITORY=$(CONFIG_EDK2_REPOSITORY) \
