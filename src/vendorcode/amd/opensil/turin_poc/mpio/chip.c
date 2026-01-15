@@ -5,6 +5,7 @@
 #include <opensil_config.h>
 #include <CCX/Common/CcxApic.h>
 #include <Cxl/CxlClass-api.h>
+#include <CCX/Common/CcxApic.h>
 #include <Mpio/Common/MpioStructs.h>
 #include <Mpio/MpioClass-api.h>
 #include <Nbio/NbioClass-api.h>
@@ -93,7 +94,7 @@ static void mpio_params_config(void)
 	mpio_data->PcieLinkAspmAllPort                 = 0xff;
 	mpio_data->SyncHeaderByPass                    = 1;
 	mpio_data->CxlTempGen5AdvertAltPtcl            = 0;
-	mpio_data->CfgSevSnpSupport                    = 0;
+	mpio_data->CfgSevSnpSupport                    = CONFIG(AMD_SEV_SNP_ENABLE);
 	mpio_data->CfgSevTioSupport                    = 0;
 	mpio_data->PcieIdeCapSup                       = 0;
 	mpio_data->Master7bitSteeringTag               = 1;
@@ -117,7 +118,9 @@ static void nbio_params_config(void)
 	input->EsmEnableAllRootPorts        = false;
 	input->EsmTargetSpeed               = 16;
 	input->CfgRxMarginPersistenceMode   = 1;
-	input->SevSnpSupport                = false;
+	input->SevSnpSupport                = CONFIG(AMD_SEV_SNP_ENABLE);
+	input->IohcNonPCIBarInitIommuVf     = CONFIG(AMD_SEV_SNP_ENABLE);
+	input->IohcNonPCIBarInitIommuVfCntl = CONFIG(AMD_SEV_SNP_ENABLE);
 	input->AerEnRccDev0                 = false;
 	input->CfgAEREnable                 = true;
 	input->AtomicRoutingEnStrap5        = true;
