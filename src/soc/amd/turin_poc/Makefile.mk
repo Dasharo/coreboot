@@ -23,6 +23,7 @@ ramstage-y	+= fch.c
 ramstage-y	+= pci_irq_routing.c
 ramstage-y	+= root_complex.c
 ramstage-y	+= mca.c
+ramstage-y	+= psp.c
 
 smm-y		+= root_complex.c
 smm-$(CONFIG_DEBUG_SMI) += uart.c
