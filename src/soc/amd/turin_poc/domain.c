@@ -9,6 +9,7 @@
 #include <amdblocks/root_complex.h>
 #include <amdblocks/smn.h>
 #include <arch/ioapic.h>
+#include <bootmem.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/amd/mtrr.h>
@@ -18,6 +19,9 @@
 #include <root_bridge_info.h>
 #include <soc/iomap.h>
 #include <types.h>
+
+#include <xSIM-api.h>
+#include <CCX/CcxClass-api.h>
 
 /* EDK2 headers to construct proper RB attributes */
 #include <Uefi/UefiBaseType.h>
@@ -44,6 +48,27 @@
  */
 #define ACPI_EINJ_RESERVED_BASE		(4ull * GiB)
 #define ACPI_EINJ_RESERVED_SIZE		(64 * KiB)
+
+void bootmem_platform_add_ranges(void)
+{
+	CCXCLASS_DATA_BLK *ccx_data;
+
+	if (!CONFIG(AMD_SEV_SNP_ENABLE))
+		return;
+
+	ccx_data = SilFindStructure(SilId_CcxClass, 0);
+	if (!ccx_data || !ccx_data->CcxOutputBlock.AmdIsSnpSupported)
+		return;
+
+	if (ccx_data->CcxOutputBlock.AmdRmpTableBase == 0 ||
+	    ccx_data->CcxOutputBlock.AmdRmpTableSize == 0)
+		return;
+
+	/* Reserve SEV-SNP RMP table memory */
+	bootmem_add_range(ccx_data->CcxOutputBlock.AmdRmpTableBase,
+			  ccx_data->CcxOutputBlock.AmdRmpTableSize,
+			  BM_MEM_RESERVED);
+}
 
 void read_soc_memmap_resources(struct device *domain, unsigned long *idx)
 {
