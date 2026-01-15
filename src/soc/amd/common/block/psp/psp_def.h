@@ -31,7 +31,9 @@
 #define MBOX_BIOS_CMD_PSP_CAPS_QUERY		0x27
 #define MBOX_BIOS_CMD_SET_SPL_FUSE		0x2d
 #define MBOX_BIOS_CMD_SET_RPMC_ADDRESS		0x39
+#define MBOX_BIOS_CMD_SEND_IVRS_ACPI_TABLE	0x3F
 #define MBOX_BIOS_CMD_QUERY_SPL_FUSE		0x47
+#define MBOX_BIOS_CMD_SET_CONFIG		0x5d
 #define MBOX_BIOS_CMD_I2C_TPM_ARBITRATION	0x64
 #define MBOX_BIOS_CMD_ABORT			0xfe
 
@@ -130,6 +132,33 @@ struct mbox_cmd_dtpm_config_buffer {
 	struct mbox_buffer_header header;
 	uint32_t request_type;
 	struct dtpm_config config;
+} __packed __aligned(32);
+
+
+struct generic_config {
+	uint32_t config_id;
+	uint32_t arg0;
+	uint32_t arg1;
+	uint32_t arg2;
+	uint32_t arg3;
+} __packed;
+
+/* MBOX_BIOS_CMD_SET_CONFIG */
+struct mbox_cmd_set_config_buffer {
+	struct mbox_buffer_header header;
+	struct generic_config config;
+} __packed __aligned(32);
+
+struct ivrs_acpi_table_info {
+	uint64_t ivrs_table_buffer;
+	uint32_t ivrs_table_size;
+} __packed;
+
+
+/* MBOX_BIOS_CMD_SET_IVRS_TABLE_INFO */
+struct mbox_cmd_ivrs_acpi_table_info {
+	struct mbox_buffer_header header;
+	struct ivrs_acpi_table_info info;
 } __packed __aligned(32);
 
 #define PSP_INIT_TIMEOUT 10000 /* 10 seconds */
