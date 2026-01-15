@@ -74,7 +74,9 @@ enum {
 	LONGOPT_ESPI0_CONFIG	= 264,
 	LONGOPT_ESPI1_CONFIG	= 265,
 	LONGOPT_ESPI0_CONFIG1	= 266,
-	LONGOPT_ESPI1_CONFIG1	= 267
+	LONGOPT_ESPI1_CONFIG1	= 267,
+	LONGOPT_SEV_NVRAM_BASE	= 268,
+	LONGOPT_SEV_NVRAM_SIZE	= 269
 };
 
 static const char optstring[] = {AMDFW_OPT_CONFIG, ':',
@@ -96,6 +98,8 @@ static struct option long_options[] = {
 	{"nvram-size",       required_argument, 0, LONGOPT_NVRAM_SIZE },
 	{"rpmc-nvram-base",  required_argument, 0, LONGOPT_RPMC_NVRAM_BASE },
 	{"rpmc-nvram-size",  required_argument, 0, LONGOPT_RPMC_NVRAM_SIZE },
+	{"sev-nvram-base",   required_argument, 0, LONGOPT_SEV_NVRAM_BASE },
+	{"sev-nvram-size",   required_argument, 0, LONGOPT_SEV_NVRAM_SIZE },
 	{"soft-fuse",        required_argument, 0, AMDFW_OPT_FUSE },
 	{"token-unlock",           no_argument, 0, AMDFW_OPT_UNLOCK },
 	{"whitelist",        required_argument, 0, AMDFW_OPT_WHITELIST },
@@ -166,6 +170,8 @@ static void usage(void)
 	printf("--nvram-size <HEX_VAL>         Size of nvram\n");
 	printf("--rpmc-nvram-base <HEX_VAL>    Base address of RPMC nvram\n");
 	printf("--rpmc-nvram-size <HEX_VAL>    Size of RPMC nvram\n");
+	printf("--sev-nvram-base <HEX_VAL>     Location of SEV nvram\n");
+	printf("--sev-nvram-size <HEX_VAL>     Size of SEV nvram\n");
 	printf("--whitelist                    Set if there is a whitelist\n");
 	printf("--use-pspsecureos              Set if psp secure OS is needed\n");
 	printf("--load-mp2-fw                  Set if load MP2 firmware\n");
@@ -626,6 +632,16 @@ int amdfwtool_getopt(int argc, char *argv[], amd_cb_config *cb_config, context *
 		case LONGOPT_RPMC_NVRAM_SIZE:
 			/* PSP RPMC NV size */
 			register_amd_psp_fw_addr(AMD_RPMC_NVRAM, sub, 0, optarg);
+			sub = instance = 0;
+			break;
+		case LONGOPT_SEV_NVRAM_BASE:
+			/* PSP SEV NV base */
+			register_amd_psp_fw_addr(AMD_SEV_DATA, sub, optarg, 0);
+			sub = instance = 0;
+			break;
+		case LONGOPT_SEV_NVRAM_SIZE:
+			/* PSP SEV NV size */
+			register_amd_psp_fw_addr(AMD_SEV_DATA, sub, 0, optarg);
 			sub = instance = 0;
 			break;
 		case AMDFW_OPT_CONFIG:
