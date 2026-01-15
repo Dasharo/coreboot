@@ -1405,6 +1405,24 @@ static void acpi_create_spcr(acpi_header_t *header, void *unused)
 	header->checksum = acpi_checksum((void *)spcr, header->length);
 }
 
+void acpi_create_aspt(acpi_aspt_t *aspt,
+		      unsigned long (*acpi_fill_aspt_func)(unsigned long current))
+{
+	acpi_header_t *header = &(aspt->header);
+	unsigned long current = (unsigned long)aspt;
+
+	memset((void *)aspt, 0, sizeof(acpi_aspt_t));
+
+	if (acpi_fill_header(header, "ASPT", ASPT, sizeof(acpi_aspt_t)) != CB_SUCCESS)
+		return;
+
+	current = acpi_fill_aspt_func(current);
+
+	/* (Re)calculate length and checksum. */
+	header->length = current - (unsigned long)aspt;
+	header->checksum = acpi_checksum((void *)aspt, header->length);
+}
+
 unsigned long __weak fw_cfg_acpi_tables(unsigned long start)
 {
 	return 0;
@@ -1890,6 +1908,8 @@ int get_acpi_table_revision(enum acpi_tables table)
 		return 6;
 	case WDAT:
 		return 1;
+	case ASPT:
+		return 2;
 	default:
 		return -1;
 	}
