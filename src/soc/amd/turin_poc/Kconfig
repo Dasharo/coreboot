@@ -312,4 +312,28 @@ config SERIRQ_CONTINUOUS_MODE
 	  Set this option to y for serial IRQ in continuous mode.
 	  Otherwise it is in quiet mode.
 
+config AMD_SME_ENABLE
+	bool "Enable AMD Secure Memory Encryption (SME)"
+	default n
+	help
+	  Set this option to y to enable AMD Secure Memory Encryption (SMEE).
+
+config AMD_SME_HMK_ENABLE
+	bool "Enable AMD Secure Memory Encryption Host Multi Key (SME-HMK)"
+	default n
+	depends on !AMD_SME_ENABLE
+	help
+	  Set this option to y to enable AMD Secure Memory Encryption Host
+	  Multi Key (SME-HMK). This option is mutually exclusive with AMD
+	  Secure Memory Encryption (SME).
+
+config AMD_SEV_SNP_ENABLE
+	bool "Enable AMD SEV Secure Nested Paging (SEV-SNP)"
+	default n
+	select AMD_SME_ENABLE
+	help
+	  Set this option to y to enable AMD Secure Encrypted Virtualization
+	  Secure Nested Paging (SEV-SNP).
+
+
 endif # SOC_AMD_TURIN_POC
