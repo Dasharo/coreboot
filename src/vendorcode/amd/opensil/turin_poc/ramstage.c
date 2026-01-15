@@ -145,6 +145,8 @@ static void setup_rc_manager_default(void)
 	 */
 	rc_mgr_input_block->MmioAbove4GLimit = POWER_OF_2(MIN(48, cpu_phys_address_size()));
 	rc_mgr_input_block->Above4GMmioSizePerRbForNonPciDevice = 0;
+
+	rc_mgr_input_block->AmdSmee = CONFIG(AMD_SME_ENABLE);
 }
 
 static void setup_data_fabric_default(void)
@@ -305,9 +307,14 @@ static void configure_ccx(void)
 		ccx_data->CcxInputBlock.AmdApicMode = ApicAutoMode;
 
 	ccx_data->CcxInputBlock.EnableAvx512 = 1;
-	ccx_data->CcxInputBlock.EnableSvmX2AVIC = 1;
+	ccx_data->CcxInputBlock.EnableSvmX2AVIC = true;
 	ccx_data->CcxInputBlock.EnableSvmAVIC = true;
 	ccx_data->CcxInputBlock.AmdCStateIoBaseAddress = ACPI_CSTATE_CONTROL;
+
+	ccx_data->CcxInputBlock.AmdSmee = CONFIG(AMD_SME_ENABLE);
+	ccx_data->CcxInputBlock.AmdReserved = CONFIG(AMD_SME_HMK_ENABLE);
+	ccx_data->CcxInputBlock.AmdVmplEnable = CONFIG(AMD_SEV_SNP_ENABLE);
+	ccx_data->CcxInputBlock.AmdSnpMemCover = CONFIG(AMD_SEV_SNP_ENABLE);
 
 	ucode = amd_microcode_find();
 	if (!ucode) {
