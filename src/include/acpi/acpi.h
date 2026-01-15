@@ -105,6 +105,7 @@ enum acpi_tables {
 	WDAT,   /* Watchdog Action Table */
 	XSDT,   /* Extended System Description Table */
 	/* Additional proprietary tables used by coreboot */
+	ASPT,   /* AMD Secure Processor Table */
 	CRAT,   /* Component Resource Attribute Table */
 	IORT,   /* Input Output Remapping Table */
 	NHLT,   /* Non HD audio Link Table */
@@ -1509,6 +1510,45 @@ typedef struct acpi_table_wdat {
 	u32 entries;
 } __packed acpi_wdat_t;
 
+/* ASPT */
+#define ASPT_STRUCTURE_TYPE_ASP_GLOBAL_REGISTERS	0
+#define ASPT_STRUCTURE_TYPE_SEV_MAILBOX_REGISTERS	1
+#define ASPT_STRUCTURE_TYPE_ACPI_MAILBOX_REGISTERS	2
+typedef struct {
+  uint16_t  type;			/* 0-ASP global registers */
+  uint16_t  length;			/* 20 */
+  uint32_t  reserved;			/* Must be 0 */
+  uint32_t  feature_reg_offset;		/* Offset to MP0_P2CMSG_63 */
+  uint32_t  int_enable_reg_offset;	/* Offset to MP0_P2CMSG_INTEN */
+  uint32_t  int_status_reg_offset;	/* Offset to MP0_P2CMSG_INTSTS */
+} __packed aspt_global_regs_t;
+
+typedef struct {
+  uint16_t  type;			/* 1-SEV Mailbox registers */
+  uint16_t  length;			/* 20 */
+  uint8_t   mailbox_innterrupt_id;	/* SEV mailbox interrupt ID */
+  uint8_t   reserved[3];		/* Must be 0 */
+  uint32_t  cmd_respRegisterOffset;	/* Offset to SEV CmdResp */
+  uint32_t  cmd_buf_addr_lo_offset;	/* Offset to CmdBufAddrLo */
+  uint32_t  cmd_buf_addr_hi_offset;	/* Offset to CmdBufAddrHi */
+} __packed aspt_sev_mbox_regs_t;
+
+typedef struct {
+  uint16_t  type;			/* 2-ACPI Mailbox registers */
+  uint16_t  length;			/* 20 */
+  uint32_t  reserved;			/* Must be 0 */
+  uint32_t  cmd_resp_reg_offset;	/* Offset to ACPI CmdRespRegister */
+  uint64_t  reserved2;			/* Must be 0 */
+} __packed aspt_acpi_mbox_regs_t;
+
+typedef struct acpi_table_aspt {
+	acpi_header_t header;		/* Common ACPI table header */
+	uint64_t asp_base_address;	/* Base Address for ASP registers (4K-aligned) */
+	uint32_t asp_space_pages;	/* Number of 4K pages for ASP register space */
+	uint32_t asp_structure_count;	/* Number of ASP register structures. */
+	u8 asp_structures[0];		/* Array of ASP register structures */
+} __packed acpi_aspt_t;
+
 uintptr_t get_coreboot_rsdp(void);
 
 unsigned long fw_cfg_acpi_tables(unsigned long start);
@@ -1663,6 +1703,9 @@ unsigned long acpi_gtdt_add_timer_block(unsigned long current, const uint64_t ad
 					   struct acpi_gtdt_timer_entry *timers, size_t number);
 unsigned long acpi_gtdt_add_watchdog(unsigned long current, uint64_t refresh_frame,
 				     uint64_t control_frame, uint32_t gsiv, uint32_t flags);
+
+void acpi_create_aspt(acpi_aspt_t *aspt,
+		      unsigned long (*acpi_fill_aspt_func)(unsigned long current));
 
 /*
  * Populate primary acpi_wdat_t struct to provide basic information about watchdog and
