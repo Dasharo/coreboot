@@ -13,6 +13,7 @@ static const char *psp_status_recovery = "error: PSP recovery required";
 static const char *psp_status_errcmd = "error sending command";
 static const char *psp_status_init_timeout = "error: PSP init timeout";
 static const char *psp_status_cmd_timeout = "error: PSP command timeout";
+static const char *psp_status_async_cmd_in_progress = "error: async command in progress";
 static const char *psp_status_noerror = "";
 
 static const char *status_to_string(int err)
@@ -30,6 +31,8 @@ static const char *status_to_string(int err)
 		return psp_status_init_timeout;
 	case -PSPSTS_CMD_TIMEOUT:
 		return psp_status_cmd_timeout;
+	case -PSPSTS_ASYNC_CMD:
+		return psp_status_async_cmd_in_progress;
 	default:
 		return psp_status_noerror;
 	}
