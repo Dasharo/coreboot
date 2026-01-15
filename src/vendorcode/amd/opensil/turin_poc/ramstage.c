@@ -134,6 +134,8 @@ static void setup_rc_manager_default(void)
 	 */
 	rc_mgr_input_block->MmioAbove4GLimit = (1ULL << 46) - 1;
 	rc_mgr_input_block->Above4GMmioSizePerRbForNonPciDevice = 0;
+
+	rc_mgr_input_block->AmdSmee = CONFIG(AMD_SME_ENABLE);
 }
 
 static void setup_data_fabric_default(void)
@@ -269,25 +271,6 @@ static void configure_fch_acpi(void)
 	fch_data->FchRunTime.FchDeviceEnableMap |= ((DEV_PTR(emmc))->enabled ? BIT(28) : 0);
 }
 
-static void configure_nbio(void)
-{
-	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilId_NbioClass, 0);
-
-	nbio_data->NbioConfigData.CfgSyshubMgcgClkGating = 1;
-	nbio_data->NbioConfigData.IoApicIdPreDefineEn = true;
-	/* Up to 16 IOAPICs for 2 sockets (8 per socket) */
-	nbio_data->NbioConfigData.IoApicIdBase = 240;
-
-	nbio_data->NbioConfigData.IommuAvicSupport = true;
-
-	if (CONFIG(XAPIC_ONLY) || CONFIG(X2APIC_LATE_WORKAROUND))
-		nbio_data->NbioConfigData.AmdApicMode = xApicMode;
-	else if (CONFIG(X2APIC_ONLY))
-		nbio_data->NbioConfigData.AmdApicMode = x2ApicMode;
-	else
-		nbio_data->NbioConfigData.AmdApicMode = ApicAutoMode;
-}
-
 static void configure_sdxi(void)
 {
 	MPIOCLASS_INPUT_BLK *mpio_data = SilFindStructure(SilId_MpioClass, 0);
@@ -313,9 +296,14 @@ static void configure_ccx(void)
 		ccx_data->CcxInputBlock.AmdApicMode = ApicAutoMode;
 
 	ccx_data->CcxInputBlock.EnableAvx512 = 1;
-	ccx_data->CcxInputBlock.EnableSvmX2AVIC = 1;
+	ccx_data->CcxInputBlock.EnableSvmX2AVIC = true;
 	ccx_data->CcxInputBlock.EnableSvmAVIC = true;
 	ccx_data->CcxInputBlock.AmdCStateIoBaseAddress = ACPI_CSTATE_CONTROL;
+
+	ccx_data->CcxInputBlock.AmdSmee = CONFIG(AMD_SME_ENABLE);
+	ccx_data->CcxInputBlock.AmdReserved = CONFIG(AMD_SME_HMK_ENABLE);
+	ccx_data->CcxInputBlock.AmdVmplEnable = CONFIG(AMD_SEV_SNP_ENABLE);
+	ccx_data->CcxInputBlock.AmdSnpMemCover = CONFIG(AMD_SEV_SNP_ENABLE);
 
 	ucode = amd_microcode_find();
 	if (!ucode) {
@@ -354,7 +342,6 @@ void setup_opensil(void)
 	configure_ccx();
 	configure_fch_isa();
 	configure_fch_acpi();
-	configure_nbio();
 	configure_usb();
 	configure_sata();
 	configure_sdxi();

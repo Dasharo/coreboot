@@ -4,6 +4,7 @@
 #include <device/pci_def.h>
 #include <opensil_config.h>
 #include <Cxl/CxlClass-api.h>
+#include <CCX/Common/CcxApic.h>
 #include <Mpio/Common/MpioStructs.h>
 #include <Mpio/MpioClass-api.h>
 #include <Nbio/NbioClass-api.h>
@@ -56,7 +57,7 @@ static void mpio_params_config(void)
 	mpio_data->CxlCorrectableErrorLogging          = 1;
 	mpio_data->CxlUnCorrectableErrorLogging        = 1;
 	  // This is also available in Nbio. How to handle duplicate entries?
-	mpio_data->CfgAEREnable                        = 0;
+	mpio_data->CfgAEREnable                        = 1;
 	mpio_data->CfgMcCapEnable                      = 0;
 	mpio_data->CfgRcvErrEnable                     = 0;
 	mpio_data->EarlyBmcLinkTraining                = 1;
@@ -92,7 +93,7 @@ static void mpio_params_config(void)
 	mpio_data->PcieLinkAspmAllPort                 = 0xff;
 	mpio_data->SyncHeaderByPass                    = 1;
 	mpio_data->CxlTempGen5AdvertAltPtcl            = 0;
-	mpio_data->CfgSevSnpSupport                    = 0;
+	mpio_data->CfgSevSnpSupport                    = CONFIG(AMD_SEV_SNP_ENABLE);
 	mpio_data->CfgSevTioSupport                    = 0;
 	mpio_data->PcieIdeCapSup                       = 0;
 	mpio_data->Master7bitSteeringTag               = 1;
@@ -113,15 +114,42 @@ static void nbio_params_config(void)
 {
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilId_NbioClass, 0);
 	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;
-	input->EsmEnableAllRootPorts       = false;
-	input->EsmTargetSpeed              = 16;
-	input->CfgRxMarginPersistenceMode  = 1;
-	input->SevSnpSupport               = false;
-	input->RccDev0E2EPrefix            = false;
-	input->RccDev0ExtendedFmtSupported = false;
-	input->AerEnRccDev0                = false;
-	input->CfgAerEnDev0F1              = false;
-	input->CfgAEREnable                = false;
+	input->EsmEnableAllRootPorts        = false;
+	input->EsmTargetSpeed               = 16;
+	input->CfgRxMarginPersistenceMode   = 1;
+	input->SevSnpSupport                = CONFIG(AMD_SEV_SNP_ENABLE);
+	input->IohcNonPCIBarInitIommuVf     = CONFIG(AMD_SEV_SNP_ENABLE);
+	input->IohcNonPCIBarInitIommuVfCntl = CONFIG(AMD_SEV_SNP_ENABLE);
+	input->AerEnRccDev0                 = false;
+	input->AtomicRoutingEnStrap5        = true;
+	input->CfgSriovEnDev0F1             = true;
+	input->CfgAriEnDev0F1               = true;
+	input->CfgAerEnDev0F1               = true;
+	input->CfgAcsEnDev0F1               = true;
+	input->CfgAtsEnDev0F1               = true;
+	input->CfgPasidEnDev0F1             = true;
+	input->CfgRtrEnDev0F1               = true;
+	input->CfgPriEnDev0F1               = true;
+	input->CfgPwrEnDev0F1               = true;
+	input->AtcEnable                    = true;
+	input->NbifDev0F1AtomicRequestEn    = true;
+	input->AcsEnRccDev0                 = true;
+	input->AcsP2pReq                    = true;
+	input->AcsSourceVal                 = true;
+	input->RccDev0E2EPrefix             = true;
+	input->RccDev0ExtendedFmtSupported  = true;
+	input->CfgSyshubMgcgClkGating       = 1;
+	input->IoApicIdPreDefineEn          = true;
+	/* Up to 16 IOAPICs for 2 sockets (8 per socket) */
+	input->IoApicIdBase                 = 240;
+	input->IommuAvicSupport             = true;
+
+	if (CONFIG(XAPIC_ONLY) || CONFIG(X2APIC_LATE_WORKAROUND))
+		input->AmdApicMode = xApicMode;
+	else if (CONFIG(X2APIC_ONLY))
+		input->AmdApicMode = x2ApicMode;
+	else
+		input->AmdApicMode = ApicAutoMode;
 }
 
 static void setup_bmc_lanes(uint8_t lane, uint8_t socket)
