@@ -586,9 +586,6 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 	} else if (strcmp(fw_name, "PSP_TOKEN_UNLOCK_FILE") == 0) {
 		fw_type = AMD_TOKEN_UNLOCK;
 		subprog = 0;
-	} else if (strcmp(fw_name, "SEV_DATA_FILE") == 0) {
-		fw_type = AMD_SEV_DATA;
-		subprog = 0;
 	} else if (strcmp(fw_name, "SEV_CODE_FILE") == 0) {
 		fw_type = AMD_SEV_CODE;
 		subprog = 0;
