@@ -258,7 +258,7 @@ EDK2_PAYLOAD_ARGS = \
 	CONFIG_EDK2_USE_LVGL_RENDERER=$(CONFIG_EDK2_USE_LVGL_RENDERER)
 
 $(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
-	$(MAKE) -C payloads/external/edk2 UefiPayloadPkg \
+	$(MAKE) -C payloads/external/edk2 DasharoPayloadPkg \
 		EDK2_UEFIPAYLOAD_OUT="$(abspath $@)" \
 		$(EDK2_PAYLOAD_ARGS)
 

@@ -37,8 +37,10 @@ endif
 EDK2_UEFIPAYLOAD_OUT ?= ../../../build/UEFIPAYLOAD.fd
 EDK2_UNIVERSAL_PAYLOAD_OUT ?= ../../../build/UniversalPayload.fit
 
+PAYLOAD_PKG=DasharoPayloadPkg
+
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
-BUILD_STR += -p UefiPayloadPkg/UefiPayloadPkg.dsc
+BUILD_STR += -p $(PAYLOAD_PKG)/$(PAYLOAD_PKG).dsc
 endif
 BUILD_STR += -t GCC
 BUILD_STR += -D BOOTLOADER=COREBOOT
@@ -177,12 +179,12 @@ endif
 # AppendRmapManifest.py moved from BaseTools/Scripts to UefiPayloadPkg/Tools in
 # newer edk2 trees.
 EDK2_APPEND_RMAP_MANIFEST = $(firstword $(wildcard \
-	$(EDK2_PATH)/UefiPayloadPkg/Tools/AppendRmapManifest.py \
+	$(EDK2_PATH)/$(PAYLOAD_PKG)/Tools/AppendRmapManifest.py \
 	$(EDK2_PATH)/BaseTools/Scripts/AppendRmapManifest.py \
 ))
 
 # If FmpDxe is built, edk2 also places it in the top-level X64 output dir.
-EDK2_FMP_DXE = $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_GCC/X64/FmpDxe.efi
+EDK2_FMP_DXE = $(WORKSPACE)/Build/$(PAYLOAD_PKG)X64/$(RELEASE_STR)_GCC/X64/FmpDxe.efi
 
 define EDK2_ENSURE_FMP_CERT_INC
 	if [ "$(CONFIG_DRIVERS_EFI_UPDATE_CAPSULES)" = "y" ] && [ -n "$(CAPSULE_TRUSTED_PUBLIC_CERT)" ]; then \
@@ -272,7 +274,7 @@ ifneq ($(CONFIG_EDK2_CUSTOM_BUILD_PARAMS),)
 BUILD_STR += $(CONFIG_EDK2_CUSTOM_BUILD_PARAMS)
 endif
 
-all: UefiPayloadPkg
+all: $(PAYLOAD_PKG)
 
 $(WORKSPACE):
 	mkdir $(WORKSPACE)
@@ -327,16 +329,16 @@ logo: $(EDK2_PATH)
 gop_driver: $(EDK2_PATH)
 	if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
 		echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
-		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/UefiPayloadPkg/IntelGopDriver.efi; \
-		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/UefiPayloadPkg/vbt.bin; \
+		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/$(PAYLOAD_PKG)/IntelGopDriver.efi; \
+		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/$(PAYLOAD_PKG)/vbt.bin; \
 	fi; \
 
 ipxe_rom: $(EDK2_PATH)
 	if [ "$(CONFIG_EDK2_IPXE)" == "y" ]; then \
 		echo "    Including externally built iPXE"; \
-		mkdir -p $(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/; \
+		mkdir -p $(EDK2_PATH)/$(PAYLOAD_PKG)/NetworkDrivers/; \
 		cp $(top)/payloads/external/iPXE/ipxe/ipxe.rom \
-			$(EDK2_PATH)/UefiPayloadPkg/NetworkDrivers/ipxe.efi; \
+			$(EDK2_PATH)/$(PAYLOAD_PKG)/NetworkDrivers/ipxe.efi; \
 	fi \
 
 checktools:
@@ -388,27 +390,27 @@ prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver ipxe_
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
 
-$(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_GCC/FV/UEFIPAYLOAD.fd: \
+$(WORKSPACE)/Build/$(PAYLOAD_PKG)X64/$(RELEASE_STR)_GCC/FV/UEFIPAYLOAD.fd: \
 	prep print
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		$(EDK2_ENSURE_FMP_CERT_INC) \
 		echo -n "EDK2: Building... "; \
 		build -a IA32 -a X64 -b $(RELEASE_STR) $(BUILD_STR) -D BUILD_ARCH=X64 \
-			-y $(WORKSPACE)/Build/UefiPayloadPkgX64/UEFIPAYLOAD.txt; \
+			-y $(WORKSPACE)/Build/$(PAYLOAD_PKG)X64/UEFIPAYLOAD.txt; \
 		if [ ! -f $@ ]; then \
 			echo "Failed!"; \
 			exit 1; \
 		fi
 		echo "Success!"; \
 
-$(WORKSPACE)/Build/UefiPayloadPkgIA32/UniversalPayload.fit: \
+$(WORKSPACE)/Build/$(PAYLOAD_PKG)IA32/UniversalPayload.fit: \
 	prep print
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		$(EDK2_ENSURE_FMP_CERT_INC) \
 		echo -n "EDK2: Building... "; \
-		bash $(EDK2_PATH)/UefiPayloadPkg/UniversalPayloadBuild.sh -a IA32 -b $(RELEASE_STR) $(BUILD_STR) \
+		bash $(EDK2_PATH)/$(PAYLOAD_PKG)/UniversalPayloadBuild.sh -a IA32 -b $(RELEASE_STR) $(BUILD_STR) \
 			-D BUILD_ARCH=IA32 --Fit \
 			--pcd gUefiPayloadPkgTokenSpaceGuid.PcdHandOffFdtEnable=TRUE
 		if [ ! -f $@ ]; then \
@@ -417,14 +419,14 @@ $(WORKSPACE)/Build/UefiPayloadPkgIA32/UniversalPayload.fit: \
 		fi
 		echo "Success!"; \
 
-UefiPayloadPkg: $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_GCC/FV/UEFIPAYLOAD.fd
+$(PAYLOAD_PKG): $(WORKSPACE)/Build/$(PAYLOAD_PKG)X64/$(RELEASE_STR)_GCC/FV/UEFIPAYLOAD.fd
 	mkdir -p $(dir $(EDK2_UEFIPAYLOAD_OUT))
-	mv $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_GCC/FV/UEFIPAYLOAD.fd \
+	mv $(WORKSPACE)/Build/$(PAYLOAD_PKG)X64/$(RELEASE_STR)_GCC/FV/UEFIPAYLOAD.fd \
 		$(EDK2_UEFIPAYLOAD_OUT)
 
-UniversalPayload: $(WORKSPACE)/Build/UefiPayloadPkgIA32/UniversalPayload.fit
+UniversalPayload: $(WORKSPACE)/Build/$(PAYLOAD_PKG)IA32/UniversalPayload.fit
 	mkdir -p $(dir $(EDK2_UNIVERSAL_PAYLOAD_OUT))
-	mv $(WORKSPACE)/Build/UefiPayloadPkgIA32/UniversalPayload.fit \
+	mv $(WORKSPACE)/Build/$(PAYLOAD_PKG)IA32/UniversalPayload.fit \
 		$(EDK2_UNIVERSAL_PAYLOAD_OUT)
 
 clean:
@@ -433,7 +435,7 @@ clean:
 distclean:
 	rm -rf $(WORKSPACE)
 
-.PHONY: $(EDK2_PATH) checktools logo UefiPayloadPkg UniversalPayload clean distclean
+.PHONY: $(EDK2_PATH) checktools logo $(PAYLOAD_PKG) UniversalPayload clean distclean
 
 .PHONY: coreboot_capsule capsule_keys
 
