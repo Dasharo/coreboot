@@ -126,7 +126,6 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ "PSP_GMI3PHYFW_FILE",			AMD_FW_PSP_GMI3_PHY,		0, 0 },
 	{ "PSP_MPDMAPMFW_FILE",			AMD_FW_PSP_MPDMA_PM,		0, 0 },
 	{ "PSP_TOKEN_UNLOCK_FILE",		AMD_FW_PSP_TOKEN_UNLOCK,		0, 0 },
-	{ "SEV_DATA_FILE",			AMD_FW_PSP_SEV_DATA,			0, 0 },
 	{ "SEV_CODE_FILE",			AMD_FW_PSP_SEV_CODE,			0, 0 },
 	{ "PSP_SEV_DRIVER_FILE",		AMD_FW_PSP_SEV_DRIVER,			0, 0 },
 	{ "PSP_RAS_DRIVER_FILE",		AMD_FW_PSP_RAS_DRIVER,			0, 0 },
