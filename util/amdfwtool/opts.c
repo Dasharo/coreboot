@@ -171,6 +171,8 @@ static void usage(void)
 	printf("--variable-nvram-size <HEX_VAL> Size of variable nvram\n");
 	printf("--rpmc-nvram-base <HEX_VAL>     Base address of RPMC nvram\n");
 	printf("--rpmc-nvram-size <HEX_VAL>     Size of RPMC nvram\n");
+	printf("--sev-nvram-base <HEX_VAL>     Location of SEV nvram\n");
+	printf("--sev-nvram-size <HEX_VAL>     Size of SEV nvram\n");
 	printf("--whitelist                     Set if there is a whitelist\n");
 	printf("--use-pspsecureos               Set if psp secure OS is needed\n");
 	printf("--load-mp2-fw                   Set if load MP2 firmware\n");

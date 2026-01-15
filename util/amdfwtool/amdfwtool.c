@@ -195,7 +195,7 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_PSP_ABL5, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_ABL6, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_ABL7, .level = PSP_BOTH | PSP_LVL2_AB },
-	{ .type = AMD_FW_PSP_SEV_DATA, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PSP_SEV_DATA, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_SEV_CODE, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_WHITELIST, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_VBIOS_BTLOADER, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -1194,7 +1194,8 @@ static struct psp_directory_table *integrate_psp_firmwares(context *ctx,
 		} else if (fw_table[i].type == AMD_FW_PSP_NVRAM ||
 			   fw_table[i].type == AMD_FW_PSP_RPMC_NVRAM ||
 			   fw_table[i].type == AMD_FW_PSP_SEV_DATA) {
-			if (fw_table[i].filename == NULL) {
+			if (fw_table[i].filename == NULL ||
+			    (fw_table[i].type == AMD_FW_PSP_SEV_DATA && fw_table[i].size != 0)) {
 				if (fw_table[i].size == 0)
 					continue;
 				size = fw_table[i].size;
