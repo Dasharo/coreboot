@@ -447,4 +447,12 @@ config EDK2_CAPSULE_ON_DISK_SUPPORT
 	  `/EFI/UpdateCapsule/`, setting the third bit in `OsIndications` EFI
 	  variable and rebooting.
 
+config EDK2_SHOW_CAPSULE_REPORT
+	bool "Report firmware update status at the end"
+	default n
+	depends on DRIVERS_EFI_UPDATE_CAPSULES
+	help
+	  Display a dialog reporting status of the update after processing
+	  capsules.
+
 endif
