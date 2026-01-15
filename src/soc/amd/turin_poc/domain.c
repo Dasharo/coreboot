@@ -7,6 +7,7 @@
 #include <amdblocks/root_complex.h>
 #include <amdblocks/smn.h>
 #include <arch/ioapic.h>
+#include <bootmem.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/amd/mtrr.h>
@@ -16,6 +17,9 @@
 #include <root_bridge_info.h>
 #include <types.h>
 
+#include <xSIM-api.h>
+#include <CCX/CcxClass-api.h>
+
 /* EDK2 headers to construct proper RB attributes */
 #include <Uefi/UefiBaseType.h>
 #include <Uefi/UefiSpec.h>
@@ -23,6 +27,30 @@
 #include <Protocol/PciIo.h>
 
 #define IOHC_IOAPIC_BASE_ADDR_LO 0x2f0
+
+void bootmem_platform_add_ranges(void)
+{
+	CCXCLASS_DATA_BLK *ccx_data;
+
+	/* AMD reference code reserves 64KiB at 4G */
+	bootmem_add_range(4ULL * GiB, 64 * KiB, BM_MEM_RESERVED);
+
+	if (!CONFIG(AMD_SEV_SNP_ENABLE))
+		return;
+
+	ccx_data = SilFindStructure(SilId_CcxClass, 0);
+	if (!ccx_data || !ccx_data->CcxOutputBlock.AmdIsSnpSupported)
+		return;
+
+	if (ccx_data->CcxOutputBlock.AmdRmpTableBase == 0 ||
+	    ccx_data->CcxOutputBlock.AmdRmpTableSize == 0)
+		return;
+
+	/* Reserve SEV-SNP RMP table memory */
+	bootmem_add_range(ccx_data->CcxOutputBlock.AmdRmpTableBase,
+			  ccx_data->CcxOutputBlock.AmdRmpTableSize,
+			  BM_MEM_RESERVED);
+}
 
 void read_soc_memmap_resources(struct device *domain, unsigned long *idx)
 {
