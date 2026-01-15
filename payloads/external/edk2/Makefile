@@ -133,6 +133,9 @@ BUILD_STR += -D CAPSULE_MAIN_FW_GUID=$(CONFIG_DRIVERS_EFI_MAIN_FW_GUID)
 ifeq ($(CONFIG_EDK2_CAPSULE_ON_DISK_SUPPORT),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport=TRUE
 endif
+ifeq ($(CONFIG_EDK2_SHOW_CAPSULE_REPORT),y)
+BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.PcdShowCapsuleReport=TRUE
+endif
 endif
 # QEMU_PLATFORM			= FALSE
 ifneq ($(CONFIG_QEMU_PLATFORM),)
