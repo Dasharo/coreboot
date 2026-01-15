@@ -51,6 +51,7 @@ void soc_fill_smm_reg_info(struct smm_register_info *reg); /* v2 only */
 #define PSPSTS_UNSUPPORTED	7
 #define PSPSTS_INVALID_NAME	8
 #define PSPSTS_INVALID_BLOB	9
+#define PSPSTS_ASYNC_CMD	10
 
 /* PSP gen1-only. SoCs with PSP gen2 already have the DRAM initialized when
    the x86 cores are released from reset. */
