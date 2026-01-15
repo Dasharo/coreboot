@@ -214,7 +214,7 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_ABL5, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_ABL6, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_ABL7, .level = PSP_BOTH | PSP_LVL2_AB },
-	{ .type = AMD_SEV_DATA, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_SEV_DATA, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_SEV_CODE, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_PSP_WHITELIST, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_VBIOS_BTLOADER, .level = PSP_BOTH | PSP_LVL2_AB },
@@ -1176,6 +1176,7 @@ static void integrate_psp_firmwares(context *ctx,
 			pspdir->entries[count].address_mode = 0;
 			count++;
 		} else if (fw_table[i].type == AMD_FW_PSP_NVRAM ||
+		           fw_table[i].type == AMD_SEV_DATA ||
 			   fw_table[i].type == AMD_RPMC_NVRAM) {
 			if (fw_table[i].filename == NULL) {
 				if (fw_table[i].size == 0)
