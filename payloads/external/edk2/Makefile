@@ -143,6 +143,9 @@ BUILD_STR += -D CAPSULE_MAIN_FW_GUID=$(CONFIG_DRIVERS_EFI_MAIN_FW_GUID)
 ifeq ($(CONFIG_EDK2_CAPSULE_ON_DISK_SUPPORT),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport=TRUE
 endif
+ifeq ($(CONFIG_EDK2_SHOW_CAPSULE_REPORT),y)
+BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.PcdShowCapsuleReport=TRUE
+endif
 endif
 ifeq ($(CONFIG_DRIVERS_EFI_CAPSULE_ACCEPT_EMBEDDED_DRIVERS),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleEmbeddedDriverSupport=TRUE
