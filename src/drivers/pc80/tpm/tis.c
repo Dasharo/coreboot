@@ -806,8 +806,8 @@ static void lpc_tpm_set_resources(struct device *dev)
 #if CONFIG(HAVE_ACPI_TABLES)
 static void lpc_tpm_fill_ssdt(const struct device *dev)
 {
-	/* Windows 11 requires the following path for TPM to be detected */
-	const char *path = "\\_SB_.PCI0";
+	const struct device *domain = dev_get_domain(dev);
+	const char *path = acpi_device_path(domain);
 
 	/* Device */
 	acpigen_write_scope(path);
