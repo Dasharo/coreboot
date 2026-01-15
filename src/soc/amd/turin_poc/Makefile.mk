@@ -24,6 +24,7 @@ ramstage-y	+= pci_irq_routing.c
 ramstage-y	+= root_complex.c
 ramstage-y	+= smihandler.c
 ramstage-y	+= mca.c
+ramstage-y	+= psp.c
 
 smm-y		+= root_complex.c
 smm-y		+= smihandler.c
