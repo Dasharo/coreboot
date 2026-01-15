@@ -69,6 +69,17 @@ endif
 # type = 0x55
 SPL_TABLE_FILE=$(CONFIG_SPL_TABLE_FILE)
 
+ifeq ($(CONFIG_AMD_SEV_SNP_ENABLE),y)
+# type = 0x38
+# The flashmap section used for this is expected to be named PSP_SEV_NVRAM
+PSP_SEV_NVRAM_BASE=$(call get_fmap_value,FMAP_SECTION_PSP_SEV_NVRAM_START)
+PSP_SEV_NVRAM_SIZE=$(call get_fmap_value,FMAP_SECTION_PSP_SEV_NVRAM_SIZE)
+# The section should be at least 32KiB (0x8000)
+ifeq ($(call int-lt, $(PSP_SEV_NVRAM_SIZE) 0x8000), 1)
+$(error Error: PSP_SEV_NVRAM must be at least 32KiB (0x8000) in size)
+endif
+endif
+
 #
 # BIOS Directory Table items - proper ordering is managed by amdfwtool
 #
@@ -147,11 +158,16 @@ OPT_UCODE_FILES=$(foreach i, $(shell seq $(words $(microcode_bins))), \
 
 OPT_VGA_IMAGE=$(call add_opt_prefix, $(CONFIG_PSP_EARLY_VGA_IMAGE), --early-vga-image)
 
+OPT_PSP_SEV_NVRAM_BASE=$(call add_opt_prefix, $(PSP_SEV_NVRAM_BASE), --sev-nvram-base)
+OPT_PSP_SEV_NVRAM_SIZE=$(call add_opt_prefix, $(PSP_SEV_NVRAM_SIZE), --sev-nvram-size)
+
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
 		$(OPT_APOB_NV_SIZE) \
 		$(OPT_APOB_NV_BASE) \
 		$(OPT_UCODE_FILES) \
+		$(OPT_PSP_SEV_NVRAM_BASE) \
+		$(OPT_PSP_SEV_NVRAM_SIZE) \
 		$(OPT_DEBUG_AMDFWTOOL) \
 		$(OPT_PSP_BIOSBIN_FILE) \
 		$(OPT_PSP_BIOSBIN_DEST) \
