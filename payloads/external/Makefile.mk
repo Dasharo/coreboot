@@ -196,7 +196,7 @@ EDK2_CAPSULE_ARGS = \
 	CONFIG_DRIVERS_EFI_CAPSULE_TRUSTED_PUBLIC_CERT=$(CONFIG_DRIVERS_EFI_CAPSULE_TRUSTED_PUBLIC_CERT)
 
 $(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
-	$(MAKE) -C payloads/external/edk2 UefiPayloadPkg \
+	$(MAKE) -C payloads/external/edk2 DasharoPayloadPkg \
 		EDK2_UEFIPAYLOAD_OUT="$(abspath $(obj))/UEFIPAYLOAD.fd" \
 		HOSTCC="$(HOSTCC)" \
 		CC="$(HOSTCC)" \
