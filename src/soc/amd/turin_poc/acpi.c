@@ -9,9 +9,11 @@
 #include <amdblocks/chip.h>
 #include <amdblocks/cppc.h>
 #include <amdblocks/cpu.h>
+#include <amdblocks/psp.h>
 #include <device/device.h>
 #include <device/pci_def.h>
 #include <drivers/amd/opensil/opensil.h>
+#include <soc/amd/common/block/psp/psp_def.h>
 #include <xPRF-api.h>
 
 #define IOMMU_DOMAIN_INIT(d)	\
@@ -109,12 +111,140 @@ void acpi_fill_fadt(acpi_fadt_t *fadt)
 	fadt->preferred_pm_profile = PM_ENTERPRISE_SERVER;
 }
 
+static unsigned long acpi_fill_slit(unsigned long current)
+{
+	*(uint64_t *)current = 1; /* 1 locality */
+	current += sizeof(uint64_t);
+	*(uint8_t *)current = 10;
+	current += sizeof(uint8_t);
+
+	return current;
+}
+
+static void send_ivrs_to_psp(struct acpi_rsdp *rsdp)
+{
+	acpi_xsdt_t *xsdt = (acpi_xsdt_t *)(uintptr_t)rsdp->xsdt_address;
+	size_t entries_num = ARRAY_SIZE(xsdt->entry);
+	struct acpi_table_header *hdr;
+	bool found = false;
+	size_t i;
+	int cmd_status;
+	struct mbox_cmd_ivrs_acpi_table_info buffer;
+
+	/* Locate IVRS in XSDT to get its address */
+	for (i = 0; i < entries_num; i++) {
+		hdr = (struct acpi_table_header *)xsdt->entry[i];
+		if (xsdt->entry[i] == 0)
+			return;
+
+		if (strncmp(hdr->signature, "IVRS", 4)) {
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+		return;
+
+	buffer.header.size = sizeof(buffer);
+	buffer.info.ivrs_table_buffer = (uint64_t)hdr;
+	buffer.info.ivrs_table_size = hdr->length;
+
+	printk(BIOS_DEBUG, "PSP: Sending IVRS ACPI table\n");
+
+	cmd_status = send_psp_command(MBOX_BIOS_CMD_SEND_IVRS_ACPI_TABLE, &buffer);
+
+	/* buffer's status shouldn't change but report it if it does */
+	psp_print_cmd_status(cmd_status, &buffer.header);
+}
+
+static unsigned long acpi_fill_aspt(unsigned long current)
+{
+	aspt_global_regs_t *global_regs;
+	aspt_sev_mbox_regs_t *sev_mbox_regs;
+	aspt_acpi_mbox_regs_t *acpi_mbox_regs;
+	acpi_aspt_t *aspt = (acpi_aspt_t *)current;
+	const uint64_t psp_mmio = get_psp_mmio_base();
+
+	if (!psp_mmio) {
+		printk(BIOS_WARNING, "PSP: PSP MMIO not allocated\n");
+		return current;
+	}
+
+	/*
+	 * The mailboxes are located at offsets 0x10xxx. To fit everything
+	 * in one page, add 64K to the MMIO base and adjust the C2P/P2C
+	 * offsets by subtracting 64K.
+	 */
+	aspt->asp_base_address = psp_mmio + 64 * KiB;
+	aspt->asp_space_pages = 1;
+	aspt->asp_structure_count = 3;
+
+	/* ASP global registers */
+	current = (unsigned long)&aspt->asp_structures;
+	global_regs = (aspt_global_regs_t *)current;
+	memset((void *)global_regs, 0, sizeof(aspt_global_regs_t));
+
+	global_regs->type = ASPT_STRUCTURE_TYPE_ASP_GLOBAL_REGISTERS;
+	global_regs->length = sizeof(aspt_global_regs_t);
+	global_regs->feature_reg_offset = 0x9fc;
+	global_regs->int_enable_reg_offset = 0x510;
+	global_regs->int_status_reg_offset = 0x514;
+
+	current += global_regs->length;
+
+	/* SEV mailbox registers */
+	sev_mbox_regs = (aspt_sev_mbox_regs_t *)current;
+	memset((void *)sev_mbox_regs, 0, sizeof(aspt_sev_mbox_regs_t));
+
+	sev_mbox_regs->type = ASPT_STRUCTURE_TYPE_SEV_MAILBOX_REGISTERS;
+	sev_mbox_regs->length = sizeof(aspt_sev_mbox_regs_t);
+	sev_mbox_regs->mailbox_innterrupt_id = 1;
+	sev_mbox_regs->cmd_respRegisterOffset = 0x980;
+	sev_mbox_regs->cmd_buf_addr_lo_offset = 0x9e0;
+	sev_mbox_regs->cmd_buf_addr_hi_offset = 0x9e4;
+
+	current += sev_mbox_regs->length;
+
+	/* ACPI mailbox registers */
+	acpi_mbox_regs = (aspt_acpi_mbox_regs_t *)current;
+	memset((void *)acpi_mbox_regs, 0, sizeof(aspt_acpi_mbox_regs_t));
+
+	acpi_mbox_regs->type = ASPT_STRUCTURE_TYPE_ACPI_MAILBOX_REGISTERS;
+	acpi_mbox_regs->length = sizeof(aspt_acpi_mbox_regs_t);
+	acpi_mbox_regs->cmd_resp_reg_offset = 0x958;
+
+	current += acpi_mbox_regs->length;
+
+	return current;
+}
+
 unsigned long soc_acpi_write_tables(const struct device *device, unsigned long current,
 				    struct acpi_rsdp *rsdp)
 {
+	acpi_slit_t *slit;
+	acpi_aspt_t *aspt;
+
 	/* IVRS */
 	printk(BIOS_DEBUG, "ACPI:   * IVRS\n");
 	current = acpi_add_ivrs_table(current, rsdp);
+	send_ivrs_to_psp(rsdp);
+
+	/* SLIT */
+	current = ALIGN_UP(current, 8);
+	printk(BIOS_DEBUG, "ACPI:   * SLIT at %lx\n", current);
+	slit = (acpi_slit_t *)current;
+	acpi_create_slit(slit, acpi_fill_slit);
+	current += slit->header.length;
+	acpi_add_table(rsdp, slit);
+
+	/* ASPT */
+	current = ALIGN_UP(current, 8);
+	printk(BIOS_DEBUG, "ACPI:   * ASPT at %lx\n", current);
+	aspt = (acpi_aspt_t *)current;
+	acpi_create_aspt(aspt, acpi_fill_aspt);
+	current += aspt->header.length;
+	acpi_add_table(rsdp, aspt);
 
 	return current;
 }
