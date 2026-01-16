@@ -288,6 +288,10 @@ endif
 ifeq ($(CONFIG_EDK2_DASHARO_NETWORK_BOOT_DEFAULT_ENABLE),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultNetworkBootEnable=TRUE
 endif
+# EDK2_DASHARO_FAST_BOOT_DEFAULT_ENABLE   = FALSE
+ifeq ($(EDK2_DASHARO_FAST_BOOT_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdDefaultFastBootEnable=TRUE
+endif
 ifeq ($(CONFIG_EDK2_DASHARO_OC_WDT_SHOW),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdOcWdtEnableDefault=TRUE
 endif
