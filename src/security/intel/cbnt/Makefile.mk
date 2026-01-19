@@ -117,7 +117,10 @@ cbfs-files-y += boot_policy_manifest.bin
 boot_policy_manifest.bin-file := $(CONFIG_INTEL_CBNT_BOOT_POLICY_MANIFEST_BINARY)
 boot_policy_manifest.bin-type := raw
 boot_policy_manifest.bin-align := 0x40
+
+ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
 regions-for-file-boot_policy_manifest.bin = BOOTBLOCK,TOPSWAP
+endif
 
 $(call add_intermediate, add_bpm_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r $(BB_FIT_REGION) -a -n boot_policy_manifest.bin -t 12 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
