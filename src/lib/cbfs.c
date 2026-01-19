@@ -102,6 +102,7 @@ enum cb_err _cbfs_unverified_area_lookup(const char *area, const char *name, uni
 
 	if (fmap_locate_area_as_rdev(area, &area_dev)) {
 		printk(BIOS_ERR, "CBFS ERROR: Could not find region %s\n", area);
+		return CB_ERR;
 	}
 
 	size_t data_offset;
