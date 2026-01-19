@@ -306,9 +306,6 @@ static void txt_heap_push_bdr_for_two_acms(u8 **heap_struct)
 	if (CONFIG(INTEL_TXT_LOGGING))
 		txt_dump_acm_info(sinit_base);
 
-	data.heap_acm.acm_addrs[0] =
-		(uintptr_t)cbfs_map(CONFIG_INTEL_TXT_CBFS_BIOS_ACM, NULL);
-
 	if (CONFIG(INTEL_TOP_SWAP_SEPARATE_REGIONS))
 		data.heap_acm.acm_addrs[0] =
 			(uintptr_t)cbfs_unverified_area_map("BOOTBLOCK", CONFIG_INTEL_TXT_CBFS_BIOS_ACM, NULL);
