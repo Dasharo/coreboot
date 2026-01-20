@@ -85,6 +85,15 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		 * params->PcieRpEnableCpm[10] = 1;
 		 */
 		params->PcieRpEnableCpm[11] = 1;
+
+		/*
+		 * VP2430 does not have clock gating, because not all CLKREQs are
+		 * connected. In tests, this meant that network performance was higher.
+		 * Disable clock gating manually on VP2440 to make it perform in line
+		 * with VP2430.
+		 */
+		params->PchPcieClockGating = false;
+		params->PchPciePowerGating = false;
 	}
 
 	// Enable port reset message on Type-C ports
