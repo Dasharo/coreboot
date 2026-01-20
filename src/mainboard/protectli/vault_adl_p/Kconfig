@@ -20,7 +20,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select DRAM_SUPPORT_DDR5
 	select HAVE_OPTION_TABLE
 	select INTEL_HAS_TOP_SWAP
-	select TOP_SWAP_REDUNDANCY
+	select TOP_SWAP_REDUNDANCY if !VBOOT
 	select INTEL_IFD_SET_TOP_SWAP_BOOTBLOCK_SIZE
 
 config MAINBOARD_DIR
@@ -76,8 +76,8 @@ config SOC_INTEL_CSE_SEND_EOP_EARLY
 	default n
 
 config FMDFILE
-	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT
-	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/top_swap.fmd" if INTEL_HAS_TOP_SWAP
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/top_swap.fmd" if !VBOOT
 
 config BEEP_ON_BOOT
 	bool "Beep on successful boot"
