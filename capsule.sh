@@ -48,6 +48,13 @@ function print_usage() {
     echo '                 -b (the flag adds battery check DXE into the capsule)'
     echo '  create_cabinet create a fwupd cabinet (.cab) from a capsule'
     echo '                 positional argument: capsule-file'
+    echo '  upload_lvfs    upload a cabinet (.cab) to LVFS, options'
+    echo '                 [-c credentials-file] (defaults to ~/.config/dasharo-credentials/lvfs)'
+    echo '                 [-u lvfs-base-url]    (defaults to $LVFS_URL)'
+    echo '                 [-e email]            (defaults to $LVFS_EMAIL)'
+    echo '                 [-t token]            (defaults to $LVFS_TOKEN)'
+    echo '                 positional argument:'
+    echo '                 cabinet-file (optional if exactly one .cab in current dir)'
 }
 
 function help_subcommand() {
@@ -452,6 +459,126 @@ EOF
     echo "  ${dst}/GenerateCapsule --output decoded --decode coreboot.cap"
 }
 
+function upload_lvfs_subcommand() {
+    local default_creds_file creds_file opt_creds_file opt_url opt_email opt_token
+    local env_email env_token env_url
+    local email token base_url cabinet
+    local url response status body curl_rc
+
+    default_creds_file="${XDG_CONFIG_HOME:-$HOME/.config}/dasharo-credentials/lvfs"
+    creds_file="$default_creds_file"
+
+    opt_creds_file=""
+    opt_url=""
+    opt_email=""
+    opt_token=""
+
+    OPTIND=1
+    while getopts "c:u:e:t:" OPTION; do
+        case $OPTION in
+            c) opt_creds_file="$OPTARG" ;;
+            u) opt_url="$OPTARG" ;;
+            e) opt_email="$OPTARG" ;;
+            t) opt_token="$OPTARG" ;;
+            *) exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    cabinet="$1"
+
+    if [ -n "$opt_creds_file" ]; then
+        creds_file="$opt_creds_file"
+    fi
+
+    env_email="${LVFS_EMAIL-}"
+    env_token="${LVFS_TOKEN-}"
+    env_url="${LVFS_URL-}"
+
+    if [ -r "$creds_file" ]; then
+        # shellcheck disable=SC1090
+        . "$creds_file"
+    fi
+
+    if [ -n "$env_email" ]; then
+        LVFS_EMAIL="$env_email"
+    fi
+    if [ -n "$env_token" ]; then
+        LVFS_TOKEN="$env_token"
+    fi
+    if [ -n "$env_url" ]; then
+        LVFS_URL="$env_url"
+    fi
+
+    email="${LVFS_EMAIL-}"
+    token="${LVFS_TOKEN-}"
+    base_url="${LVFS_URL-https://fwupd.org}"
+
+    if [ -n "$opt_email" ]; then
+        email="$opt_email"
+    fi
+    if [ -n "$opt_token" ]; then
+        token="$opt_token"
+    fi
+    if [ -n "$opt_url" ]; then
+        base_url="$opt_url"
+    fi
+
+    if [ -z "$cabinet" ]; then
+        set -- ./*.cab
+        if [ ! -e "$1" ]; then
+            die "No cabinet specified and no .cab found in current directory"
+        fi
+        if [ $# -ne 1 ]; then
+            die "Multiple .cab files found in current directory, specify the cabinet path explicitly"
+        fi
+        cabinet="$1"
+    fi
+
+    if [ ! -f "$cabinet" ]; then
+        die "File '$cabinet' not found"
+    fi
+
+    if [ -z "$email" ]; then
+        die "LVFS email is not set. Put LVFS_EMAIL into '$creds_file' or pass -e"
+    fi
+    if [ -z "$token" ]; then
+        die "LVFS token is not set. Put LVFS_TOKEN into '$creds_file' or pass -t"
+    fi
+
+    if ! command -v curl >/dev/null 2>&1; then
+        die "curl not found in PATH"
+    fi
+
+    url="${base_url%/}/lvfs/upload/token"
+
+    set +e
+    response=$(curl -sS -X POST \
+        --connect-timeout 10 --max-time 300 \
+        --retry 3 --retry-delay 2 --retry-connrefused \
+        -F "file=@${cabinet}" \
+        --user "${email}:${token}" \
+        -w "\n%{http_code}" \
+        "$url")
+    curl_rc=$?
+    set -e
+
+    if [ "$curl_rc" -ne 0 ]; then
+        die "curl failed with exit code $curl_rc"
+    fi
+
+    status="${response##*$'\n'}"
+    body="${response%$'\n'*}"
+
+    if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+        echo "$body" 1>&2
+        die "LVFS upload failed with HTTP status $status"
+    fi
+
+    echo "$body"
+}
+
+
 if [ $# -eq 0 ]; then
     print_usage
     exit 1
@@ -461,7 +588,7 @@ subcommand=$1
 shift
 
 case "$subcommand" in
-    box|help|keygen|make|create_cabinet)
+    box|help|keygen|make|create_cabinet|upload_lvfs)
         "$subcommand"_subcommand "$@" ;;
 
     *)
