@@ -37,19 +37,41 @@ function print_usage() {
     echo "Usage: $(basename "$0") subcommand [subcommand-args...]"
     echo
     echo 'Subcommands:'
-    echo '  box     export standalone GenerateCapsule out of EDK2'
-    echo '  help    print this message'
-    echo '  keygen  use OpenSSL to auto-generate test keys suitable for signing'
-    echo '          positional argument: directory-path'
-    echo '  make    build a capsule, options:'
-    echo '          -t root-certificate-file'
-    echo '          -o subroot-certificate-file'
-    echo '          -s signing-certificate-file'
-    echo '          -b (the flag adds battery check DXE into the capsule)'
+    echo '  box            export standalone GenerateCapsule out of EDK2'
+    echo '  help           print this message'
+    echo '  keygen         use OpenSSL to auto-generate test keys suitable for signing'
+    echo '                 positional argument: directory-path'
+    echo '  make           build a capsule, options:'
+    echo '                 -t root-certificate-file'
+    echo '                 -o subroot-certificate-file'
+    echo '                 -s signing-certificate-file'
+    echo '                 -b (the flag adds battery check DXE into the capsule)'
+    echo '  create_cabinet create a fwupd cabinet (.cab) from a capsule'
+    echo '                 positional argument: capsule-file'
 }
 
 function help_subcommand() {
     print_usage
+}
+
+function source_coreboot_config() {
+    if [ ! -f .config ]; then
+        die "no '.config' file in current directory"
+    fi
+
+    local line
+
+    while read -r line; do
+        if ! eval "$line"; then
+            die "failed to source '.config'"
+        fi
+    done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' .config)"
+}
+
+function require_capsule_support() {
+    if [ "$CONFIG_DRIVERS_EFI_UPDATE_CAPSULES" != y ]; then
+        die "current board configuration lacks support of update capsules"
+    fi
 }
 
 function keygen_subcommand() {
@@ -192,22 +214,15 @@ function make_subcommand() {
         die "'${edk_tools}/GenerateCapsule' can't be executed"
     fi
 
-    # import coreboot's config file replacing $(...) with ${...}
-    while read -r line; do
-        if ! eval "$line"; then
-            die "failed to source '.config'"
-        fi
-    done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' .config)"
-
-    if [ "$CONFIG_DRIVERS_EFI_UPDATE_CAPSULES" != y ]; then
-        die "current board configuration lacks support of update capsules"
-    fi
+    source_coreboot_config
+    require_capsule_support
 
     # Option names match terminology of GenerateCapsule which conveniently start
     # with different letters:
     #  * t - trusted
     #  * o - other
     #  * s - signer
+
     local root_cert sub_cert sign_cert include_battery_check
     while getopts "t:o:s:b" OPTION; do
         case $OPTION in
@@ -300,6 +315,94 @@ EOF
     echo "Created the capsule at '$cap_file'"
 }
 
+function create_cabinet_subcommand() {
+    if [ $# -ne 1 ]; then
+        die "Incorrect number of input parameters specified: $# (expected: 1)"
+    fi
+
+    local capsule=$1
+    local cabinet="${capsule%.cap}.cab"
+
+    if [ -z "$capsule" ]; then
+        die "No input capsule specified"
+    fi
+
+    if [ ! -f "$capsule" ]; then
+        die "File $capsule not found"
+    fi
+
+    if ! command -v fwupdtool >/dev/null 2>&1; then
+        die "fwupdtool not found in PATH"
+    fi
+
+    local fmp_guid_bytes_hex=edd5cb6d2de8444cbda17194199ad92a
+    if [ "$(xxd -l 16 -ps "$capsule")" != "$fmp_guid_bytes_hex" ]; then
+        die "'$capsule' is not an FMP capsule file"
+    fi
+
+    source_coreboot_config
+    require_capsule_support
+
+    local date vendor version
+    date=$(stat -c %w "$capsule" 2>/dev/null | cut -d ' ' -f 1)
+    if [ -z "$date" ] || [ "$date" = "-" ]; then
+        date=$(stat -c %y "$capsule" 2>/dev/null | cut -d ' ' -f 1)
+    fi
+
+    vendor=$(grep -e "CONFIG_VENDOR_.*=y" .config | cut -d '=' -f 1 | cut -d '_' -f 3- | awk '{ print tolower($0) }')
+    version=$(echo "$CONFIG_LOCALVERSION" | tr -d 'v' | cut -d '-' -f 1)
+
+    local archive_dir
+    archive_dir=$(mktemp --tmpdir -d XXXXXXXX)
+    trap 'rm -rf -- "$archive_dir"' EXIT
+
+    local id=com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware
+    id=${id// /_}
+    id=${id////_}
+
+    cat > "${archive_dir}/firmware.metainfo.xml" << EOF
+<?xml version='1.0' encoding='utf-8'?>
+<component type="firmware">
+  <id>${id}</id>
+  <name>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}</name>
+  <summary>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</summary>
+  <description>
+    <p>Dasharo ${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</p>
+  </description>
+  <provides>
+    <firmware type="flashed">${CONFIG_DRIVERS_EFI_MAIN_FW_GUID}</firmware>
+  </provides>
+  <url type="homepage">https://docs.dasharo.com/</url>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <categories>
+    <category>X-System</category>
+  </categories>
+  <custom>
+    <value key="LVFS::VersionFormat">quad</value>
+    <value key="LVFS::VersionFormat">dell-bios-msb</value>
+    <value key="LVFS::UpdateProtocol">org.uefi.capsule</value>
+  </custom>
+  <releases>
+    <release version="${version}" date="${date}" tag="${CONFIG_LOCALVERSION}" urgency="high">
+      <checksum filename="firmware.bin" target="content"/>
+    </release>
+  </releases>
+</component>
+
+EOF
+
+    cp "$capsule" "${archive_dir}/firmware.bin"
+
+    pushd "$archive_dir" >/dev/null
+    fwupdtool build-cabinet "${cabinet}" firmware.bin firmware.metainfo.xml
+    popd >/dev/null
+
+    cp "${archive_dir}/${cabinet}" ./
+
+    echo "File ${cabinet} created"
+}
+
 function box_subcommand() {
     local src=${edk_basetools}/Source/Python
     local dst=gencap
@@ -358,7 +461,7 @@ subcommand=$1
 shift
 
 case "$subcommand" in
-    box|help|keygen|make)
+    box|help|keygen|make|create_cabinet)
         "$subcommand"_subcommand "$@" ;;
 
     *)
