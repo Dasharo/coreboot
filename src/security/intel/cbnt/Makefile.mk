@@ -178,7 +178,10 @@ cbfs-files-y += key_manifest.bin
 key_manifest.bin-file := $(KM_FILE)
 key_manifest.bin-type := raw
 key_manifest.bin-align := 0x40
+
+ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
 regions-for-file-key_manifest.bin = BOOTBLOCK,TOPSWAP
+endif
 
 $(call add_intermediate, add_km_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r $(BB_FIT_REGION) -a -n key_manifest.bin -t 11 -s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
