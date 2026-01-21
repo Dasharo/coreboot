@@ -184,12 +184,13 @@ CAPSULE_TRUSTED_PUBLIC_CERT_PATH := $(call edk2_abspath,$(CAPSULE_TRUSTED_PUBLIC
 # AppendRmapManifest.py moved from BaseTools/Scripts to UefiPayloadPkg/Tools in
 # newer edk2 trees.
 EDK2_APPEND_RMAP_MANIFEST = $(firstword $(wildcard \
+	$(EDK2_PATH)/$(PAYLOAD_NAME)/Tools/AppendRmapManifest.py \
 	$(EDK2_PATH)/UefiPayloadPkg/Tools/AppendRmapManifest.py \
 	$(EDK2_PATH)/BaseTools/Scripts/AppendRmapManifest.py \
 ))
 
 # If FmpDxe is built, edk2 also places it in the top-level X64 output dir.
-EDK2_FMP_DXE = $(WORKSPACE)/Build/UefiPayloadPkgX64/$(RELEASE_STR)_GCC/X64/FmpDxe.efi
+EDK2_FMP_DXE = $(WORKSPACE)/Build/$(PAYLOAD_NAME)X64/$(RELEASE_STR)_GCC/X64/FmpDxe.efi
 
 CAPSULE_ROOT_CERT_DER := $(WORKSPACE)/capsule_trusted_root.der
 
