@@ -709,7 +709,7 @@ const struct cbfs_boot_device *cbfs_get_boot_device(bool force_ro)
 
 	/* Falls back to the default COREBOOT region if no overriding mechanisms are in
 	   place (e.g. Intel Top Swap). */
-	const char *region = cbfs_fmap_region_hint("COREBOOT");
+	const char *region = cbfs_fmap_region_hint();
 
 	if (fmap_locate_area_as_rdev(region, &ro.rdev))
 		die("Cannot locate %s CBFS", region);
