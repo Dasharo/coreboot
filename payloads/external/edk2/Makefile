@@ -190,6 +190,7 @@ endif
 # AppendRmapManifest.py moved from BaseTools/Scripts to UefiPayloadPkg/Tools in
 # newer edk2 trees.
 EDK2_APPEND_RMAP_MANIFEST = $(firstword $(wildcard \
+	$(EDK2_PATH)/$(PAYLOAD_NAME)/Tools/AppendRmapManifest.py \
 	$(EDK2_PATH)/UefiPayloadPkg/Tools/AppendRmapManifest.py \
 	$(EDK2_PATH)/BaseTools/Scripts/AppendRmapManifest.py \
 ))
