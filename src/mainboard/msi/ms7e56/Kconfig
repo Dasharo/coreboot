@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_MSI_PRO_B850_P
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_32768
+	select SOC_AMD_PHOENIX_AM5_OPENSIL
+	select SOC_AMD_COMMON_BLOCK_USE_ESPI
+	select SOC_AMD_COMMON_BLOCK_ESPI_RETAIN_PORT80_EN
+	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE
+	select SUPERIO_NUVOTON_NCT6687D
+	select DRIVERS_UART_8250IO
+	select HAVE_ACPI_TABLES
+	select MEMORY_MAPPED_TPM
+	select HAVE_X86_64_SUPPORT
+	select USE_X86_64_SUPPORT
+
+config FMDFILE
+	default "src/mainboard/msi/ms7e56/board.fmd"
+
+config MAINBOARD_DIR
+	default "msi/ms7e56"
+
+config MAINBOARD_PART_NUMBER
+	default "PRO B850-P WIFI (MS-7E56)"
+
+config MAINBOARD_VENDOR
+	default "Micro-Star International Co., Ltd."
+
+config MAINBOARD_FAMILY
+	default "Default string"
+
+config UART_FOR_CONSOLE
+	default 0
+
+config DEVICETREE
+	default "devicetree.cb"
+
+config VBOOT
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_SEPARATE_VERSTAGE
+	select VBOOT_STARTS_IN_BOOTBLOCK
+
+config VBOOT_VBNV_OFFSET
+	hex
+	default 0x2A
+
+config RO_REGION_ONLY
+	string
+	depends on VBOOT_SLOTS_RW_AB || VBOOT_SLOTS_RW_A
+	default "apu/amdfw"
+
+config EFS_SPI_READ_MODE
+	default 5	# Quad IO (1-4-4)
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+
+config EFS_SPI_MICRON_FLAG
+	default 2
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 0	# 66MHz
+
+config TPM_SPI_SPEED
+	default 3	# 16MHz
+
+config CPU_PT_ROM_MAP_GB
+	default 1024
+
+endif # BOARD_MSI_PRO_B850_P
