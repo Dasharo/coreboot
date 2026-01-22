@@ -55,7 +55,7 @@ config PCIEXP_CLK_PM
 	default n
 
 config INTEL_TOP_SWAP_BOOTBLOCK_SIZE
-	default 0x80000
+	default 0x100000
 
 config VBOOT
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
