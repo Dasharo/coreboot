@@ -50,6 +50,14 @@ CPPFLAGS_common += -I$(src)/vendorcode/amd/fsp/phoenix
 CPPFLAGS_common += -I$(src)/vendorcode/amd/fsp/common
 endif
 
+ifeq ($(CONFIG_SOC_AMD_PHOENIX_AM5),y)
+ifeq ($(call int-gt, $(CONFIG_ROM_SIZE) 0x1000000), 1)
+CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0x1000000:0xff000000:0x1000000
+endif
+endif
+
+ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
+
 # Building the cbfs image will fail if the offset, aligned to 64 bytes, isn't large enough
 ifeq ($(CONFIG_CBFS_VERIFICATION),y)
 # 0x80 accounts for the cbfs_file struct + filename + metadata structs
@@ -232,6 +240,13 @@ OPT_AMDFW_BODY_LOCATION=$(call add_opt_prefix, $(FMAP_AMDFW_BODY_LOCATION), --bo
 MANIFEST_FILE=$(obj)/amdfw_manifest
 OPT_MANIFEST=$(call add_opt_prefix, $(MANIFEST_FILE), --output-manifest)
 
+microcode_sbins=$(wildcard ${FIRMWARE_LOCATION}/*U?odePatch_*.sbin)
+
+OPT_UCODE_FILES=$(foreach i, $(shell seq $(words $(microcode_sbins))), \
+	$(call add_opt_prefix, $(word $(i), $(microcode_sbins)), \
+	--instance $(shell printf "%x" $$(($(i)-1))) --ucode))
+
+
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_PSP_NVRAM_BASE) \
 		$(OPT_PSP_NVRAM_SIZE) \
@@ -256,7 +271,8 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--flashsize $(CONFIG_ROM_SIZE) \
 		$(OPT_RECOVERY_AB_SINGLE_COPY) \
-		$(OPT_AMDFW_BODY_LOCATION)
+		$(OPT_AMDFW_BODY_LOCATION) \
+		$(OPT_UCODE_FILES)
 
 $(obj)/amdfw.rom:	$(call strip_quotes, $(PSP_BIOSBIN_FILE)) \
 			$(PSP_VERSTAGE_FILE) \
@@ -379,5 +395,7 @@ ifeq ($(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),y)
 vboot-gscvd-ranges += $(call amdfwread-range-cmd,PSPL2: 0x52)
 endif # ifeq ($(CONFIG_VBOOT_STARTS_BEFORE_BOOTBLOCK),y)
 endif # ifeq ($(CONFIG_VBOOT_GSCVD),y)
+
+endif # ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
 
 endif # ($(CONFIG_SOC_AMD_PHOENIX_BASE),y)
