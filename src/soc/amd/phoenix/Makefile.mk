@@ -172,6 +172,13 @@ OPT_BIOS_FWCOMPRESS=$(if $(CONFIG_CBFS_VERIFICATION), --bios-bin-uncomp)
 MANIFEST_FILE=$(obj)/amdfw_manifest
 OPT_MANIFEST=$(call add_opt_prefix, $(MANIFEST_FILE), --output-manifest)
 
+microcode_sbins=$(wildcard ${FIRMWARE_LOCATION}/*U?odePatch_*.sbin)
+
+OPT_UCODE_FILES=$(foreach i, $(shell seq $(words $(microcode_sbins))), \
+	$(call add_opt_prefix, $(word $(i), $(microcode_sbins)), \
+	--instance $(shell printf "%x" $$(($(i)-1))) --ucode))
+
+
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_PSP_NVRAM_BASE) \
 		$(OPT_PSP_NVRAM_SIZE) \
@@ -228,6 +235,7 @@ $(PSP_BIOSBIN_FILE): $(PSP_ELF_FILE) $(AMDCOMPRESS)
 
 $(MANIFEST_FILE): $(obj)/amdfw.rom
 cbfs-files-y += amdfw_manifest
+amdfw_manifest-file := $(MANIFEST_FILE)
 amdfw_manifest-file := $(MANIFEST_FILE)
 amdfw_manifest-type := raw
 
