@@ -13,14 +13,6 @@ PK_HASH_ALG_SHA1:=4
 PK_HASH_ALG_SHA256:=11
 PK_HASH_ALG_SHA384:=12
 
-ifneq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
-BB_FIT_REGION = COREBOOT
-TS_FIT_REGION = COREBOOT
-else
-BB_FIT_REGION = BOOTBLOCK
-TS_FIT_REGION = TOPSWAP
-endif
-
 # The private key also contains the public key, so use that if a private key is provided.
 ifeq ($(CONFIG_INTEL_CBNT_NEED_KM_PRIV_KEY),y)
 $(obj)/km_pub.pem: $(call strip_quotes, $(CONFIG_INTEL_CBNT_KM_PRIV_KEY_FILE))
@@ -119,7 +111,7 @@ boot_policy_manifest.bin-type := raw
 boot_policy_manifest.bin-align := 0x40
 
 ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
-regions-for-file-boot_policy_manifest.bin = BOOTBLOCK,TOPSWAP
+regions-for-file-boot_policy_manifest.bin = BOOTBLOCK,BOOTBLOCK_B
 endif
 
 $(call add_intermediate, add_bpm_fit, $(IFITTOOL) set_fit_ptr)
@@ -180,7 +172,7 @@ key_manifest.bin-type := raw
 key_manifest.bin-align := 0x40
 
 ifeq ($(CONFIG_INTEL_ADD_TOP_SWAP_BOOTBLOCK),y)
-regions-for-file-key_manifest.bin = BOOTBLOCK,TOPSWAP
+regions-for-file-key_manifest.bin = BOOTBLOCK,BOOTBLOCK_B
 endif
 
 $(call add_intermediate, add_km_fit, $(IFITTOOL) set_fit_ptr)
