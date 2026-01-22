@@ -180,7 +180,7 @@ enum nct6687d_fast_track_weight {
 	WEIGHT_DIV_64,
 };
 
-struct nct6687d_pch_smbus_sensor {
+struct nct6687d_smbus_sensor {
 	bool	sensor_en;
 	uint8_t	sensor_idx;
 	bool	report_one_byte;
@@ -188,6 +188,8 @@ struct nct6687d_pch_smbus_sensor {
 	enum	nct6687d_baud_rate baud_rate;
 	uint8_t	sensor_addr;
 	uint8_t	sensor_cmd;
+	uint8_t	dev_addr;
+	uint8_t	dev_cmd;
 };
 
 struct nct6687d_dts_sensor_config {
@@ -332,10 +334,11 @@ struct nct6687d_fan_config {
 struct superio_nuvoton_nct6687d_config {
 	struct nct6687d_fan_config fans[MAX_NUM_FANS];
 	enum nct6687d_sensor_src_select sensors[MAX_NUM_SENSORS];
+	bool sensor_filter_en[MAX_NUM_SENSORS];
 
 	enum nct6687d_peci_speed peci_speed;
 
-	struct nct6687d_pch_smbus_sensor smbus_sensor;
+	struct nct6687d_smbus_sensor smbus_sensor;
 	struct nct6687d_dts_sensor_config dts_sensor;
 	struct nct6687d_dts2_sensor_config dts2_sensor;
 
