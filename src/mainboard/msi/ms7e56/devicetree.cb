@@ -1,0 +1,304 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/amd/phoenix
+	# Set FADT Configuration
+	register "common_config.fadt_boot_arch" = "ACPI_FADT_LEGACY_DEVICES"
+
+	register "common_config.espi_config" = "{
+		.std_io_decode_bitmap = ESPI_DECODE_IO_0x80_EN | ESPI_DECODE_IO_0X2E_0X2F_EN | ESPI_DECODE_IO_0X60_0X64_EN,
+		.generic_io_range[0] = {
+			.base = 0x3f0,
+			.size = 16,
+		},
+		// I/O range 1 not programmed
+		.generic_io_range[2] = {
+			.base = 0x4e,
+			.size = 2,
+		},
+		.generic_io_range[3] = {
+			.base = 0xa00,
+			.size = 256,
+		},
+		.generic_io_range[4] = {
+			.base = 0x2f8,
+			.size = 8,
+		},
+		.generic_io_range[5] = {
+			.base = 0x3e8,
+			.size = 8,
+		},
+		.generic_io_range[6] = {
+			.base = 0x2e8,
+			.size = 8,
+		},
+		.io_mode = ESPI_IO_MODE_SINGLE,
+		.op_freq_mhz = ESPI_OP_FREQ_16_MHZ,
+		.crc_check_enable = 1,
+		.alert_pin = ESPI_ALERT_PIN_PUSH_PULL,
+		.periph_ch_en = 1,
+		.vw_ch_en = 1,
+		.oob_ch_en = 1,
+		.flash_ch_en = 1,
+	}"
+
+	register "s0ix_enable" = "false"
+
+	register "pspp_policy" = "DXIO_PSPP_DISABLED"
+
+	device domain 0 on
+		device ref iommu on end
+		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
+			device ref gfx on end # Internal GPU (GFX)
+			device ref gfx_hda on end # Display HD Audio Controller (GFXAZ)
+			device ref crypto on end # Crypto Coprocessor
+			device ref xhci_0 on # USB 3.1 (USB0)
+				chip drivers/usb/acpi
+					device ref xhci_0_root_hub on
+						chip drivers/usb/acpi
+							device ref usb3_port2 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb3_port3 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port2 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port3 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port4 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port5 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port6 on end
+						end
+					end
+				end
+			end
+			device ref xhci_1 on # USB 3.1 (USB1)
+				chip drivers/usb/acpi
+					device ref xhci_1_root_hub on
+						chip drivers/usb/acpi
+							device ref usb3_port7 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port7 on end
+						end
+					end
+				end
+			end
+			device ref acp on end # Audio Processor (ACP)
+		end
+		device ref gpp_bridge_c on  # Internal GPP Bridge 2 to Bus C
+			device ref usb4_xhci_0 on
+				chip drivers/usb/acpi
+					device ref usb4_xhci_0_root_hub on
+						chip drivers/usb/acpi
+							device ref usb3_port0 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port0 on end
+						end
+					end
+				end
+			end
+			device ref usb4_xhci_1 on
+				chip drivers/usb/acpi
+					device ref usb4_xhci_1_root_hub on
+						chip drivers/usb/acpi
+							device ref usb3_port1 on end
+						end
+						chip drivers/usb/acpi
+							device ref usb2_port1 on end
+						end
+					end
+				end
+			end
+		end
+		device ref lpc_bridge on
+
+			chip superio/nuvoton/nct6687d
+				register "sensors[0]" = "AMD_TSI_ADDRESS_0x98"
+				register "sensors[1]" = "TD0P_CURRENT_MODE"
+				register "sensors[2]" = "THERMISTOR15"
+				register "sensors[3]" = "THERMISTOR1"
+				register "sensors[16]" = "VIN0"
+				register "sensors[17]" = "VIN1"
+				register "sensors[18]" = "VIN2"
+				register "sensors[19]" = "VIN3"
+				register "sensors[20]" = "VIN4"
+				register "sensors[21]" = "VIN5"
+				register "sensors[22]" = "VIN6"
+				register "sensors[23]" = "VIN7"
+				register "sensors[24]" = "VCC"
+				register "sensors[25]" = "VSB"
+				register "sensors[26]" = "AVSB"
+				register "sensors[27]" = "VTT"
+				register "sensors[28]" = "VBAT"
+				register "sensors[29]" = "VREF"
+				register "sensors[31]" = "THERMISTOR15"
+
+				register "sensor_filter_en[1]" = "true"
+				register "sensor_filter_en[2]" = "true"
+				register "sensor_filter_en[3]" = "true"
+				register "sensor_filter_en[4]" = "true"
+				register "sensor_filter_en[5]" = "true"
+				register "sensor_filter_en[16]" = "true"
+				register "sensor_filter_en[17]" = "true"
+				register "sensor_filter_en[18]" = "true"
+				register "sensor_filter_en[19]" = "true"
+				register "sensor_filter_en[20]" = "true"
+				register "sensor_filter_en[23]" = "true"
+
+
+				register "smbus_sensor.sensor_idx" = "4"
+				register "smbus_sensor.sensor_en" = "true"
+				register "smbus_sensor.sensor_cmd" = "0x91"
+				register "smbus_sensor.sensor_addr" = "0x96"
+				register "smbus_sensor.baud_rate" = "BAUD_100K"
+				register "smbus_sensor.port_sel" = "3"
+				register "smbus_sensor.dev_addr" = "0x78"
+				register "smbus_sensor.dev_cmd" = "0xe"
+
+				register "fan_default_val" = "60"
+
+				register "smart_tracking.speed_boundary_low" = "1500"
+				register "smart_tracking.speed_boundary_high" = "2500"
+				register "smart_tracking.rpm_tolerance_low" = "100"
+				register "smart_tracking.rpm_tolerance_mid" = "100"
+				register "smart_tracking.rpm_tolerance_high" = "100"
+				register "smart_tracking.step_up" = "1"
+				register "smart_tracking.step_down" = "1"
+
+				# CPU_FAN
+				register "FAN1.mode" = "FAN_SMART_FAN_IV"
+				register "FAN1.unit_sel" = "FAN_PWM"
+				register "FAN1.fanin_sel" = "TACH_PWM1"
+				register "FAN1.fanout_sel" = "TACH_PWM0"
+				register "FAN1.fan_alg_weight" = "10"
+				register "FAN1.smart_tracking_en" = "true"
+				register "FAN1.crit_temp" = "101"
+				register "FAN1.smart_fan.temp_src" = "{ 1, 0, 0, 0 }"
+				register "FAN1.smart_fan.temp_levels" = "{ 40, 55, 70, 85, 90, 95, 100 }"
+				register "FAN1.smart_fan.speed_levels" = "{ 13, 38, 63, 85, 90, 95, 100 }"
+				register "FAN1.smart_fan.cut_off_delay" = "5"
+				register "FAN1.smart_fan.step_up_time" = "1"
+				register "FAN1.smart_fan.step_down_time" = "1"
+
+				# PUMP_FAN
+				register "FAN2.mode" = "FAN_SMART_FAN_IV"
+				register "FAN2.unit_sel" = "FAN_PWM"
+				register "FAN2.fanin_sel" = "TACH_PWM3"
+				register "FAN2.fanout_sel" = "TACH_PWM2"
+				register "FAN2.fan_alg_weight" = "10"
+				register "FAN2.smart_tracking_en" = "true"
+				register "FAN2.crit_temp" = "101"
+				register "FAN2.smart_fan.temp_src" = "{ 1, 0, 0, 0 }"
+				register "FAN2.smart_fan.temp_levels" = "{ 32, 32, 32, 32, 32, 32, 32 }"
+				register "FAN2.smart_fan.speed_levels" = "{ 100, 100, 100, 100, 100, 100, 100 }"
+				register "FAN2.smart_fan.cut_off_delay" = "5"
+				register "FAN2.smart_fan.step_up_time" = "1"
+				register "FAN2.smart_fan.step_down_time" = "1"
+
+				# SYS_FAN1
+				register "FAN3.mode" = "FAN_SMART_FAN_IV"
+				register "FAN3.unit_sel" = "FAN_PWM"
+				register "FAN3.fanin_sel" = "TACH_PWM11"
+				register "FAN3.fanout_sel" = "TACH_PWM10"
+				register "FAN3.fan_alg_weight" = "10"
+				register "FAN3.smart_tracking_en" = "true"
+				register "FAN3.crit_temp" = "101"
+				register "FAN3.smart_fan.temp_src" = "{ 1, 0, 0, 0 }"
+				register "FAN3.smart_fan.temp_levels" = "{ 10, 20, 30, 40, 50, 60, 70 }"
+				register "FAN3.smart_fan.speed_levels" = "{ 60, 60, 60, 60, 60, 60, 60 }"
+				register "FAN3.smart_fan.cut_off_delay" = "5"
+				register "FAN3.smart_fan.step_up_time" = "1"
+				register "FAN3.smart_fan.step_down_time" = "1"
+
+				# SYS_FAN2
+				register "FAN4.mode" = "FAN_SMART_FAN_IV"
+				register "FAN4.unit_sel" = "FAN_PWM"
+				register "FAN4.fanin_sel" = "TACH_PWM13"
+				register "FAN4.fanout_sel" = "TACH_PWM12"
+				register "FAN4.fan_alg_weight" = "10"
+				register "FAN4.smart_tracking_en" = "true"
+				register "FAN4.crit_temp" = "101"
+				register "FAN4.smart_fan.temp_src" = "{ 1, 0, 0, 0 }"
+				register "FAN4.smart_fan.temp_levels" = "{ 10, 20, 30, 40, 50, 60, 70 }"
+				register "FAN4.smart_fan.speed_levels" = "{ 60, 60, 60, 60, 60, 60, 60 }"
+				register "FAN4.smart_fan.cut_off_delay" = "5"
+				register "FAN4.smart_fan.step_up_time" = "1"
+				register "FAN4.smart_fan.step_down_time" = "1"
+
+				# SYS_FAN3
+				register "FAN5.mode" = "FAN_SMART_FAN_IV"
+				register "FAN5.unit_sel" = "FAN_PWM"
+				register "FAN5.fanin_sel" = "TACH_PWM15"
+				register "FAN5.fanout_sel" = "TACH_PWM14"
+				register "FAN5.fan_alg_weight" = "10"
+				register "FAN5.smart_tracking_en" = "true"
+				register "FAN5.crit_temp" = "101"
+				register "FAN5.smart_fan.temp_src" = "{ 1, 0, 0, 0 }"
+				register "FAN5.smart_fan.temp_levels" = "{ 10, 20, 30, 40, 50, 60, 70 }"
+				register "FAN5.smart_fan.speed_levels" = "{ 60, 60, 60, 60, 60, 60, 60 }"
+				register "FAN5.smart_fan.cut_off_delay" = "5"
+				register "FAN5.smart_fan.step_up_time" = "1"
+				register "FAN5.smart_fan.step_down_time" = "1"
+
+				# SYS_FAN4
+				register "FAN6.mode" = "FAN_SMART_FAN_IV"
+				register "FAN6.unit_sel" = "FAN_PWM"
+				register "FAN6.fanin_sel" = "TACH_PWM17"
+				register "FAN6.fanout_sel" = "TACH_PWM16"
+				register "FAN6.fan_alg_weight" = "10"
+				register "FAN6.smart_tracking_en" = "true"
+				register "FAN6.crit_temp" = "101"
+				register "FAN6.smart_fan.temp_src" = "{ 1, 0, 0, 0 }"
+				register "FAN6.smart_fan.temp_levels" = "{ 10, 20, 30, 40, 50, 60, 70 }"
+				register "FAN6.smart_fan.speed_levels" = "{ 60, 60, 60, 60, 60, 60, 60 }"
+				register "FAN6.smart_fan.cut_off_delay" = "5"
+				register "FAN6.smart_fan.step_up_time" = "1"
+				register "FAN6.smart_fan.step_down_time" = "1"
+
+
+				device pnp 4e.1 off end		# Parallel port
+				device pnp 4e.2 on		# COM1
+					io 0x60 = 0x3f8
+					irq 0x70 = 4
+				end
+				device pnp 4e.3 off end		# COM2, IR
+				device pnp 4e.5 off end		# Keyboard
+				device pnp 4e.6 off end		# CIR
+				device pnp 4e.7 on		# GPIO0-7
+					io 0x60 = 0xa00
+					# Vendor firmware did not assign IRQ
+				end
+				device pnp 4e.8 off end		# P80 UART
+				device pnp 4e.9 off end		# GPIO8-9, GPIO1-8 AF
+				device pnp 4e.a on		# ACPI
+					irq 0x70 = 0x40
+					# Vendor firmware did not assign I/O
+				end
+				device pnp 4e.b on		# EC
+					io 0x60 = 0xa20
+					# Vendor firmware did not assign IRQ
+				end
+				device pnp 4e.c on end		# RTC
+				device pnp 4e.d off end		# Deep Sleep
+				device pnp 4e.e off end		# TACH/PWM assignment
+				device pnp 4e.f off end		# Function register
+			end
+			chip drivers/pc80/tpm
+				device pnp 0.0 on end	# TPM
+			end
+		end
+	end
+
+	device ref i2c_0 on end
+	device ref i2c_1 on end
+	device ref i2c_2 on end
+	device ref i2c_3 on end
+end
