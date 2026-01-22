@@ -21,6 +21,9 @@ chip soc/amd/phoenix
 		chip drivers/amd/opensil/mpio
 			device pci 01.4 alias gpp_bridge_1_4 hidden ops amd_external_pcie_gpp_ops end
 		end
+		chip drivers/amd/opensil/mpio
+			device pci 01.5 alias gpp_bridge_1_5 hidden ops amd_external_pcie_gpp_ops end
+		end
 
 		device pci 02.0 on end # Dummy device function, do not disable
 		# The PCIe GPP aliases in this SoC match the device and function numbers
