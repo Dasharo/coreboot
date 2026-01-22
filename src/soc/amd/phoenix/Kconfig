@@ -99,11 +99,22 @@ config SOC_AMD_PHOENIX_FSP
 	help
 	  AMD Phoenix support using FSP
 
+config SOC_AMD_PHOENIX_AM5
+	bool
+	select SOC_AMD_PHOENIX_BASE
+	help
+	  AMD Phoenix AM5 support
+
 config SOC_AMD_PHOENIX_OPENSIL
 	bool
 	select SOC_AMD_PHOENIX_BASE
 	select SOC_AMD_OPENSIL
 	select OPENSIL_DRIVER
+
+config SOC_AMD_PHOENIX_AM5_OPENSIL
+	bool
+	select SOC_AMD_PHOENIX_AM5
+	select SOC_AMD_PHOENIX_OPENSIL
 
 if SOC_AMD_PHOENIX_BASE
 
@@ -135,11 +146,12 @@ config PSP_APOB_DRAM_ADDRESS
 
 config PSP_APOB_DRAM_SIZE
 	hex
+	default 0x100000 if SOC_AMD_PHOENIX_AM5
 	default 0x40000
 
 config PSP_SHAREDMEM_BASE
 	hex
-	default 0x2041000 if VBOOT
+	default 0x2041000 if VBOOT && VBOOT_STARTS_BEFORE_BOOTBLOCK
 	default 0x0
 	help
 	  This variable defines the base address in DRAM memory where PSP copies
@@ -149,7 +161,7 @@ config PSP_SHAREDMEM_BASE
 
 config PSP_SHAREDMEM_SIZE
 	hex
-	default 0x8000 if VBOOT
+	default 0x8000 if VBOOT && VBOOT_STARTS_BEFORE_BOOTBLOCK
 	default 0x0
 	help
 	  Sets the maximum size for the PSP to pass the vboot workbuf and
@@ -184,6 +196,7 @@ config C_ENV_BOOTBLOCK_SIZE
 
 config ROMSTAGE_ADDR
 	hex
+	default 0x2130000 if SOC_AMD_PHOENIX_AM5
 	default 0x2070000
 	help
 	  Sets the address in DRAM where romstage should be loaded.
@@ -197,6 +210,7 @@ config ROMSTAGE_SIZE
 config VERSTAGE_ADDR
 	hex
 	depends on VBOOT_SEPARATE_VERSTAGE
+	default 0x2270000 if SOC_AMD_PHOENIX_AM5
 	default 0x21A0000
 	help
 	  Sets the address in DRAM where verstage should be loaded if running
@@ -358,6 +372,7 @@ config PSP_WHITELIST_FILE
 
 config PSP_SOFTFUSE_BITS
 	string "PSP Soft Fuse bits to enable"
+	default "29 15 6 0" if SOC_AMD_PHOENIX_AM5
 	default "36 28 6"
 	help
 	  Space separated list of Soft Fuse bits to enable.
