@@ -96,11 +96,22 @@ config SOC_AMD_PHOENIX_FSP
 	help
 	  AMD Phoenix support using FSP
 
+config SOC_AMD_PHOENIX_AM5
+	bool
+	select SOC_AMD_PHOENIX_BASE
+	help
+	  AMD Phoenix AM5 support
+
 config SOC_AMD_PHOENIX_OPENSIL
 	bool
 	select SOC_AMD_PHOENIX_BASE
 	select SOC_AMD_OPENSIL
 	select OPENSIL_DRIVER
+
+config SOC_AMD_PHOENIX_AM5_OPENSIL
+	bool
+	select SOC_AMD_PHOENIX_AM5
+	select SOC_AMD_PHOENIX_OPENSIL
 
 if SOC_AMD_PHOENIX_BASE
 
@@ -132,6 +143,7 @@ config PSP_APOB_DRAM_ADDRESS
 
 config PSP_APOB_DRAM_SIZE
 	hex
+	default 0x100000 if SOC_AMD_PHOENIX_AM5
 	default 0x40000
 
 config PRE_X86_CBMEM_CONSOLE_SIZE
@@ -156,6 +168,7 @@ config C_ENV_BOOTBLOCK_SIZE
 
 config ROMSTAGE_ADDR
 	hex
+	default 0x2130000 if SOC_AMD_PHOENIX_AM5
 	default 0x2070000
 	help
 	  Sets the address in DRAM where romstage should be loaded.
@@ -169,6 +182,7 @@ config ROMSTAGE_SIZE
 config VERSTAGE_ADDR
 	hex
 	depends on VBOOT_SEPARATE_VERSTAGE
+	default 0x2270000 if SOC_AMD_PHOENIX_AM5
 	default 0x21A0000
 	help
 	  Sets the address in DRAM where verstage should be loaded if running
@@ -325,6 +339,7 @@ config PSP_WHITELIST_FILE
 
 config PSP_SOFTFUSE_BITS
 	string "PSP Soft Fuse bits to enable"
+	default "29 15 6 0" if SOC_AMD_PHOENIX_AM5
 	default "36 28 6"
 	help
 	  Space separated list of Soft Fuse bits to enable.
