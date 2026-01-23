@@ -310,6 +310,7 @@ function create_cabinet_subcommand() {
     fi
 
     local capsule=$1
+    local cabinet="${capsule%.cap}.cab"
 
     if [ -z "$capsule" ]; then
         die "No input capsule specified"
@@ -374,12 +375,12 @@ EOF
     cp "$capsule" "${archive_dir}/firmware.bin"
 
     pushd "$archive_dir" >/dev/null
-    fwupdtool build-cabinet "${capsule}.cab" firmware.bin firmware.metainfo.xml
+    fwupdtool build-cabinet "${cabinet}" firmware.bin firmware.metainfo.xml
     popd >/dev/null
 
-    cp "${archive_dir}/${capsule}.cab" ./
+    cp "${archive_dir}/${cabinet}" ./
 
-    echo "File ${capsule}.cab created"
+    echo "File ${cabinet} created"
 }
 
 function box_subcommand() {
