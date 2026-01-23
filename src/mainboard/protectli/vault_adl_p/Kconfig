@@ -23,9 +23,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select TOP_SWAP_REDUNDANCY if !VBOOT
 	select INTEL_IFD_SET_TOP_SWAP_BOOTBLOCK_SIZE
 
-config INTEL_TOP_SWAP_BOOTBLOCK_SIZE
-	default 0x80000
-
 config MAINBOARD_DIR
 	default "protectli/vault_adl_p"
 
