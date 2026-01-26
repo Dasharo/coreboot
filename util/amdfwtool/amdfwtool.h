@@ -213,7 +213,7 @@ typedef struct _embedded_firmware {
 	uint8_t espi1_config;
 	uint8_t espi0_config1;
 	uint8_t espi1_config1;
-	uint32_t reserved_54h;
+	uint32_t ubu_table;
 	uint8_t bios_size;
 } __attribute__((packed, aligned(16))) embedded_firmware;
 
