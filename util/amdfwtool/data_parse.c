@@ -134,6 +134,8 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ "PSP_MPDMAPMFW_FILE",			AMD_FW_PSP_MPDMA_PM,		0, 0 },
 	{ "PSP_TOKEN_UNLOCK_FILE",		AMD_FW_PSP_TOKEN_UNLOCK,		0, 0 },
 	{ "SEV_CODE_FILE",			AMD_FW_PSP_SEV_CODE,			0, 0 },
+	{ "PROM21_FW_FILE",			AMD_FW_PSP_PROM21,			0, 0 },
+	{ "PROM21_FW_INS1_FILE",		AMD_FW_PSP_PROM21,			0, 1 },
 	{ NULL,					AMD_FW_PSP_INVALID,			0, 0 },
 };
 
