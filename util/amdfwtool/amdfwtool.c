@@ -265,6 +265,8 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_MPCCX, .subprog = 1, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_GMI3_PHY, .level = PSP_BOTH | PSP_BOTH_AB },
 	{ .type = AMD_FW_MPDMA_PM, .level = PSP_BOTH | PSP_BOTH_AB },
+	{ .type = AMD_FW_PROM21, .inst = 0, .level = PSP_LVL2 | PSP_LVL2_AB},
+	{ .type = AMD_FW_PROM21, .inst = 1, .level = PSP_LVL2 | PSP_LVL2_AB},
 	{ .type = AMD_FW_LSDMA, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_C20_MP, .level = PSP_BOTH | PSP_LVL2_AB },
 	{ .type = AMD_FW_FCFG_TABLE, .level = PSP_LVL2 | PSP_LVL2_AB },
