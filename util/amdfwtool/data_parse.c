@@ -405,6 +405,14 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 	} else if (strcmp(fw_name, "MPCCX_FILE_SUB1_FILE") == 0) {
 		fw_type = AMD_FW_MPCCX;
 		subprog = 1;
+	} else if (strcmp(fw_name, "PROM21_FW_FILE") == 0) {
+		fw_type = AMD_FW_PROM21;
+		subprog = 0;
+		instance = 0;
+	} else if (strcmp(fw_name, "PROM21_FW_INS1_FILE") == 0) {
+		fw_type = AMD_FW_PROM21;
+		subprog = 0;
+		instance = 1;
 	} else if (strcmp(fw_name, "LSDMA_FILE") == 0) {
 		fw_type = AMD_FW_LSDMA;
 		subprog = 0;
