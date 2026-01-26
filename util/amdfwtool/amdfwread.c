@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include "amdfwtool.h"
 
-#define FILE_REL_MASK 0xffffff
+#define FILE_REL_MASK 0xfffffff
+#define FILE_PHYS_MASK 0xffffff
 
 #define MAX_NUM_LEVELS 10
 #define MAX_INDENT_PER_LEVEL 4
@@ -52,11 +53,11 @@ static uint64_t relative_offset(uint32_t header_offset, uint64_t addr, uint64_t 
 	/* Since this utility operates on the BIOS file, physical address is converted
 	   relative to the start of the BIOS file. */
 	case AMD_ADDR_PHYSICAL:
-		if (addr < SPI_ROM_BASE || addr > (SPI_ROM_BASE + FILE_REL_MASK)) {
+		if (addr < SPI_ROM_BASE || addr > (SPI_ROM_BASE + FILE_PHYS_MASK)) {
 			ERR("Invalid address(%lx) or mode(%lx)\n", addr, mode);
 			exit(1);
 		}
-		return addr & FILE_REL_MASK;
+		return addr & FILE_PHYS_MASK;
 
 	case AMD_ADDR_REL_BIOS:
 		if (addr > FILE_REL_MASK) {
