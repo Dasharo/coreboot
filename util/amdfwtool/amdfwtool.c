@@ -528,6 +528,7 @@ static void *new_psp_dir(context *ctx, const amd_cb_config *cb_config,
 			 const uint32_t cookie)
 {
 	psp_directory_header *psp;
+	uint32_t address_mode;
 
 	/*
 	 * Force both onto boundary when multi.  Primary table is after
@@ -545,18 +546,24 @@ static void *new_psp_dir(context *ctx, const amd_cb_config *cb_config,
 	psp->num_entries = 0;
 	psp->additional_info = 0;
 
+	/* PSP L1 never has address mode 2 when ISH is used. Use address mode 1. */
+	if (cookie == PSP_COOKIE && ctx->address_mode == AMD_ADDR_REL_TAB)
+		address_mode = AMD_ADDR_REL_BIOS;
+	else
+		address_mode = ctx->address_mode;
+
 	/* Updated in fill_dir_header() after filling the table. */
 	if (platform_has_dir_header_v1(cb_config->soc_id)) {
 		psp->additional_info_fields_v1.version = 1;
 		psp->additional_info_fields_v1.dir_size = 0;
 		psp->additional_info_fields_v1.spi_block_size = 0;
 		psp->additional_info_fields_v1.dir_hdr_size = 0;
-		psp->additional_info_fields_v1.address_mode = ctx->address_mode;
+		psp->additional_info_fields_v1.address_mode = address_mode;
 	} else {
 		psp->additional_info_fields.version = 0;
 		psp->additional_info_fields.dir_size = 0;
 		psp->additional_info_fields.spi_block_size = 1;
-		psp->additional_info_fields.address_mode = ctx->address_mode;
+		psp->additional_info_fields.address_mode = address_mode;
 		psp->additional_info_fields.base_addr = 0;
 	}
 
@@ -882,8 +889,9 @@ static void dump_bdt_firmwares(amd_bios_entry *fw_table)
 	printf("BIOS Directory Table (BDT) components:\n");
 	for (index = fw_table; index->type != AMD_BIOS_INVALID; index++) {
 		if (index->filename)
-			printf("  %2x: level=%x, %s\n",
-				index->type, index->level, index->filename);
+			printf("  %2x: level=%x, subprog=%x, inst=%x, %s\n",
+				index->type, index->level, index->subpr,
+				index->inst, index->filename);
 	}
 }
 
@@ -1091,12 +1099,14 @@ static psp_directory_table *integrate_psp_firmwares(context *ctx,
 		assert_fw_entry(count, MAX_PSP_ENTRIES, ctx);
 
 		/*
-		 * Pre-allocate entry for L2 pointer, so that all entries in directory
-		 * are sorted. It will be patched in integrate_psp_levels to point to
-		 * the second level directory.
+		 * Pre-allocate entries for L2 pointer or BIOS pointer, so
+		 * that all entries in directory are sorted. It will be
+		 * patched in integrate_psp_levels to point to the given
+		 * directory. If ISH is needed, PSP L2 pointer lives in ISH.
 		 */
 		if (fw_table[i].type == AMD_FW_L2_PTR &&
-		    platform_is_multi_level(cb_config->soc_id)) {
+		    platform_is_multi_level(cb_config->soc_id) &&
+		    !platform_needs_ish(cb_config->soc_id)) {
 			pspdir->entries[count].type = fw_table[i].type;
 			count++;
 		} else if (fw_table[i].type == AMD_TOKEN_UNLOCK) {
@@ -1112,6 +1122,9 @@ static psp_directory_table *integrate_psp_firmwares(context *ctx,
 			adjust_current_pointer(ctx, 4096, 0x100U);
 			count++;
 		} else if (fw_table[i].type == AMD_PSP_FUSE_CHAIN) {
+			/* Soft fuse chain should only be in PSP L2 when ISH is used */
+			if (cookie != PSPL2_COOKIE && platform_needs_ish(cb_config->soc_id))
+				continue;
 			pspdir->entries[count].type = fw_table[i].type;
 			pspdir->entries[count].subprog = fw_table[i].subprog;
 			pspdir->entries[count].rsvd = 0;
@@ -1212,6 +1225,7 @@ static void add_psp_firmware_entry(context *ctx,
 	uint32_t count = pspdir->header.num_entries;
 	uint32_t index;
 	uint32_t current_table_save;
+	uint32_t old_addr_mode = ctx->address_mode;
 
 	current_table_save = ctx->current_table;
 	ctx->current_table = BUFF_TO_RUN_MODE(*ctx, pspdir, AMD_ADDR_REL_BIOS);
@@ -1221,6 +1235,9 @@ static void add_psp_firmware_entry(context *ctx,
 		if (pspdir->entries[index].type == (uint8_t)type)
 			break;
 	}
+
+	if (pspdir->header.cookie == PSP_COOKIE && ctx->address_mode == AMD_ADDR_REL_TAB)
+		ctx->address_mode = AMD_ADDR_REL_BIOS;
 
 	assert_fw_entry(count, MAX_PSP_ENTRIES, ctx);
 	pspdir->entries[index].type = (uint8_t)type;
@@ -1234,6 +1251,9 @@ static void add_psp_firmware_entry(context *ctx,
 
 	fill_dir_header(pspdir, count, ctx);
 	ctx->current_table = current_table_save;
+
+	if (pspdir->header.cookie == PSP_COOKIE && old_addr_mode == AMD_ADDR_REL_TAB)
+		ctx->address_mode = old_addr_mode;
 }
 
 static void *new_bios_dir(context *ctx, const amd_cb_config *cb_config, const uint32_t cookie)
@@ -1644,6 +1664,7 @@ static int integrate_efs_table(context *ctx, amd_cb_config *cb_config)
 	amd_romsig->lp_promontory_fw_ptr = 0;
 	amd_romsig->vendor_id = 0;
 	amd_romsig->board_id = 0;
+	amd_romsig->ubu_table = 0;
 
 	if (cb_config->soc_id == PLATFORM_MULLINS)
 		return 0;
