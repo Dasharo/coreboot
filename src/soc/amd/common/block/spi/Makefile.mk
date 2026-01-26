@@ -7,6 +7,13 @@ smm-$(CONFIG_SOC_AMD_COMMON_BLOCK_SPI_MMAP) += mmap_boot.c
 all-$(CONFIG_SOC_AMD_COMMON_BLOCK_SPI_MMAP_USE_ROM3) += mmap_boot_rom3.c
 smm-$(CONFIG_SOC_AMD_COMMON_BLOCK_SPI_MMAP_USE_ROM3) += mmap_boot_rom3.c
 
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_SPI_MMAP_USE_ROM3),y)
+# The soft fuse bit 14 must be clear for ROM3 to work properly in coreboot.
+ifneq ($(findstring 14,$(CONFIG_PSP_SOFTFUSE_BITS)),)
+$(error "Soft fuse bit 14 must be clear to use ROM3.")
+endif
+endif
+
 bootblock-y += fch_spi_ctrl.c
 romstage-y += fch_spi_ctrl.c
 verstage-y += fch_spi_ctrl.c
