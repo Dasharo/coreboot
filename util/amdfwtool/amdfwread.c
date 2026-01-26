@@ -598,6 +598,7 @@ static int dump_efw(const embedded_firmware *fw_header)
 	printf("\n  ESPI0 Config1:         %02x", fw_header->espi0_config1);
 	printf("\n  ESPI1 Config:          %02x", fw_header->espi1_config);
 	printf("\n  ESPI1 Config1:         %02x", fw_header->espi1_config1);
+	printf("\n  UBU Table:             %08x", fw_header->ubu_table);
 	printf("\n  BIOS size:             ");
 	decode_bios_size(fw_header->bios_size);
 	printf("\n\n");
