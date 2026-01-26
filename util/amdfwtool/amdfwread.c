@@ -156,6 +156,24 @@ static int read_psp_directory(FILE *fw, uint32_t offset, uint32_t expected_cooki
 	return 0;
 }
 
+static void dump_ish_header(ish_directory_table *header, uint8_t level)
+{
+	char indent[MAX_INDENTATION_LEN] = {0};
+
+	for (uint8_t i = 0; i < level && i < MAX_NUM_LEVELS; i++)
+		strcat(indent, "    ");
+
+	printf("%sISH Header:", indent);
+	printf("\n%s  Checksum:              %08X", indent, header->checksum);
+	printf("\n%s  Boot priority:         %08x", indent, header->boot_priority);
+	printf("\n%s  Update retry count:    %08x", indent, header->update_retry_count);
+	printf("\n%s  Glitch retry count:    %u",   indent, header->glitch_retry_count);
+	printf("\n%s  PL2 location:          %08x", indent, header->pl2_location);
+	printf("\n%s  PSP ID:                %08x", indent, header->psp_id);
+	printf("\n%s  Slot max size:         %08x", indent, header->slot_max_size);
+	printf("\n\n");
+}
+
 static int read_ish_directory(FILE *fw, uint32_t offset, ish_directory_table *table)
 {
 	return read_header(fw, offset & FILE_REL_MASK, table, sizeof(*table));
@@ -327,10 +345,11 @@ static int amdfw_bios_dir_walk(FILE *fw, uint32_t bios_offset, uint32_t cookie, 
 		if (type == AMD_BIOS_L2_PTR) {
 			/* There's a second level BIOS directory to read */
 			if (l2_dir_offset != 0) {
-				ERR("Duplicate BIOS L2 Entry, prior offset: %08x\n",
-									l2_dir_offset);
-				free(current_entries);
-				return 1;
+				printf("    %sBIOSL2: Dir  0x%08x\n", indent,
+				       relative_offset(bios_offset, addr, mode));
+				ERR("Duplicate BIOS L2 Entry @0x%08lx, prior offset: %08x\n",
+				    relative_offset(bios_offset, addr, mode), l2_dir_offset);
+				break;
 			}
 
 			l2_dir_offset = relative_offset(bios_offset, addr, mode);
@@ -390,10 +409,11 @@ static int amdfw_psp_dir_walk(FILE *fw, uint32_t psp_offset, uint32_t cookie, ui
 		case AMD_FW_L2_PTR:
 			/* There's a second level PSP directory to read */
 			if (l2_dir_offset != 0) {
-				ERR("Duplicate PSP L2 Entry, prior offset: %08x\n",
-									l2_dir_offset);
-				free(current_entries);
-				return 1;
+				printf("    %sPSPL2: Dir  @0x%08lx\n", indent,
+				       relative_offset(psp_offset, addr, mode));
+				ERR("Duplicate PSP L2 Entry @0x%08lx, prior offset: %08x\n",
+				    relative_offset(psp_offset, addr, mode), l2_dir_offset);
+				break;
 			}
 
 			l2_dir_offset = relative_offset(psp_offset, addr, mode);
@@ -405,18 +425,21 @@ static int amdfw_psp_dir_walk(FILE *fw, uint32_t psp_offset, uint32_t cookie, ui
 			break;
 
 		case AMD_FW_RECOVERYAB_A:
-			if (l2_dir_offset != 0) {
-				ERR("Duplicate PSP L2 Entry, prior offset: %08x\n",
-									l2_dir_offset);
-				free(current_entries);
-				return 1;
-			}
-
+		case AMD_FW_RECOVERYAB_B:
 			ish_dir_offset = relative_offset(psp_offset, addr, mode);
 			if (read_ish_directory(fw, ish_dir_offset, &ish_dir) != 0) {
 				ERR("Error reading ISH directory\n");
 				free(current_entries);
 				return 1;
+			}
+
+			dump_ish_header(&ish_dir, level);
+
+			if (l2_dir_offset != 0) {
+				printf("    %sPSPL2: Dir  @0x%08x\n", indent, ish_dir.pl2_location);
+				ERR("Duplicate ISH PSP L2 Entry @0x%08x, prior offset: %08x\n",
+				    ish_dir.pl2_location, l2_dir_offset);
+				break;
 			}
 
 			l2_dir_offset = ish_dir.pl2_location;
@@ -452,6 +475,18 @@ static int list_amdfw_psp_dir(FILE *fw, const embedded_firmware *fw_header)
 
 	printf("PSPL1: Dir  0x%08x\n", psp_offset);
 	amdfw_psp_dir_walk(fw, psp_offset, PSP_COOKIE, 0);
+
+	if (fw_header->psp_bak_directory != 0xffffffff && fw_header->psp_bak_directory != 0x00000000) {
+		psp_offset = fw_header->psp_bak_directory;
+
+		if (amdfw_psp_dir_size(fw, psp_offset, PSP_COOKIE, &dir_size) == 0)
+			printf("PSPL1: Backup Dir  [0x%08x-0x%08x)\n", psp_offset, psp_offset + dir_size);
+		else
+			printf("PSPL1: Backup Dir  @0x%08x\n", psp_offset);
+
+		amdfw_psp_dir_walk(fw, psp_offset, PSP_COOKIE, 0);
+	}
+
 	return 0;
 }
 
