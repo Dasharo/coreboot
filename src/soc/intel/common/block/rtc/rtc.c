@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <console/console.h>
+#include <drivers/efi/capsules.h>
 #include <fmap.h>
 #include <intelblocks/pcr.h>
 #include <intelblocks/rtc.h>
@@ -44,6 +46,19 @@ void rtc_conf_set_bios_interface_lockdown(void)
 }
 
 #if CONFIG(INTEL_HAS_TOP_SWAP)
+
+/*
+ * When UEFI update capsules are detected, enable the attempt_slot_b CMOS option
+ * so that the next boot will use the Top Swap (slot B) region for safe updates.
+ */
+void efi_capsule_update_prepare_redundant_slot(void)
+{
+	if (CONFIG(INTEL_TOP_SWAP_OPTION_CONTROL)) {
+		printk(BIOS_INFO, "Top Swap: enabling slot B for capsule update\n");
+		set_uint_option(TOP_SWAP_ENABLE_CMOS_OPTION, 1);
+	}
+}
+
 void configure_rtc_buc_top_swap(enum ts_config ts_state)
 {
 	pcr_rmw32(PID_RTC, PCR_RTC_BUC, ~PCR_RTC_BUC_TOP_SWAP, ts_state);
