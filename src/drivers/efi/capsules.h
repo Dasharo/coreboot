@@ -24,4 +24,12 @@ static inline void efi_add_capsules_to_bootmem(void) { }
 
 #endif
 
+/*
+ * Called when UEFI update capsules are detected.
+ *
+ * Platform-specific code can override this to prepare for capsule updates,
+ * e.g., to switch to a redundant firmware slot for safe updates.
+ */
+void efi_capsule_update_prepare_redundant_slot(void);
+
 #endif /* _EDK2_CAPSULES_H_ */
