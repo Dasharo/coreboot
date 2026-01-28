@@ -304,7 +304,30 @@ EOF
     echo "Created the capsule at '$cap_file'"
 }
 
+appstream_id_part() {
+    # Lowercase, convert separators to '-', replace invalid chars with '-'
+    # Collapse repeats and trim leading/trailing '.' and '-'
+    echo "$1" \
+      | tr '[:upper:]' '[:lower:]' \
+      | sed -E \
+          -e 's/[[:space:]_]+/-/g' \
+          -e 's/[^a-z0-9.-]+/-/g' \
+          -e 's/[-.]{2,}/-/g' \
+          -e 's/^[.-]+//; s/[.-]+$//'
+}
+
 function create_cabinet_subcommand() {
+    # Extra distinction for multi-build boards (e.g. MSI)
+    local extra=""
+    OPTIND=1
+    while getopts "x:" OPTION; do
+        case $OPTION in
+            x) extra="$OPTARG" ;;
+            *) exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+    
     if [ $# -ne 1 ]; then
         die "Incorrect number of input parameters specified: $# (expected: 1)"
     fi
@@ -336,14 +359,33 @@ function create_cabinet_subcommand() {
     vendor=$(grep -e "CONFIG_VENDOR_.*=y" .config | cut -d '=' -f 1 | cut -d '_' -f 3- | awk '{ print tolower($0) }')
     version=$(echo "$CONFIG_LOCALVERSION" | tr -d 'v' | cut -d '-' -f 1)
 
+    # sanitize parts used in the ID
+    local product boardver vendor_id product_id boardver_id
+    product="${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}"
+
+    vendor_id="$(appstream_id_part "$vendor")"
+    product_id="$(appstream_id_part "$product")"
+
     local archive_dir
     archive_dir=$(mktemp --tmpdir -d XXXXXXXX)
     trap 'rm -rf -- "$archive_dir"' EXIT
 
+    local extra_id=""
+    if [ -n "$extra" ]; then
+        extra_id="$(appstream_id_part "$extra")"
+    fi
+
+    local component_id
+    if [ -n "$extra_id" ]; then
+        component_id="com.${vendor_id}.${product_id}.${extra_id}.system.firmware"
+    else
+        component_id="com.${vendor_id}.${product_id}.system.firmware"
+    fi
+
     cat > "${archive_dir}/firmware.metainfo.xml" << EOF
 <?xml version='1.0' encoding='utf-8'?>
 <component type="firmware">
-  <id>com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware</id>
+  <id>${component_id}</id>
   <name>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}</name>
   <summary>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</summary>
   <description>
