@@ -524,6 +524,9 @@ $(EDK2_PATH): $(WORKSPACE)
 	fi
 	cd $(EDK2_PATH); \
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
+		if [ "$(CONFIG_EDK2_CAPSULES_V2)" = y ]; then \
+			git checkout -- DasharoPayloadPkg/CapsuleSplashDxe/Logo.bmp > /dev/null 2>&1 || true; \
+		fi; \
 		if [ -e $(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o ]; then \
 			rm $(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o; \
 		fi; \
@@ -549,7 +552,17 @@ logo: $(EDK2_PATH)
 			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
 		*) convert -background None $(top)/$(CONFIG_EDK2_BOOTSPLASH_FILE) \
 			BMP3:$(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp;; \
-	esac \
+	esac; \
+	if [ "$(CONFIG_EDK2_CAPSULES_V2)" = y ]; then \
+		case "$(CONFIG_BOOTSPLASH_REGION_LOGO_FILE)" in \
+			"") cp $(EDK2_PATH)/MdeModulePkg/Logo/Logo.bmp \
+				$(EDK2_PATH)/DasharoPayloadPkg/CapsuleSplashDxe/Logo.bmp;; \
+			/*) magick -background None $(CONFIG_BOOTSPLASH_REGION_LOGO_FILE) \
+				BMP3:$(EDK2_PATH)/DasharoPayloadPkg/CapsuleSplashDxe/Logo.bmp;; \
+			*) magick -background None $(top)/$(CONFIG_BOOTSPLASH_REGION_LOGO_FILE) \
+				BMP3:$(EDK2_PATH)/DasharoPayloadPkg/CapsuleSplashDxe/Logo.bmp;; \
+		esac \
+	fi
 
 gop_driver: $(EDK2_PATH)
 	if [ -n "$(CONFIG_EDK2_GOP_DRIVER)" ]; then \
