@@ -4,6 +4,7 @@ on:
     branches:
       - dasharo
       - dasharo-24.12
+      - capsules-v2
   push:
     branches:
       - dasharo-24.12
