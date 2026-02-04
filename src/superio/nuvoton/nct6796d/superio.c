@@ -1,12 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
+#include <console/console.h>
 #include <device/device.h>
 #include <device/pnp.h>
 #include <pc80/keyboard.h>
 #include <superio/conf_mode.h>
 #include <superio/common/ssdt.h>
 #include <acpi/acpi.h>
+#include "chip.h"
 #include "nct6796d.h"
+#include "nct6796d_hwm.h"
 
 static void nct6796d_init(struct device *dev)
 {
@@ -16,6 +19,15 @@ static void nct6796d_init(struct device *dev)
 	switch (dev->path.pnp.device) {
 	case NCT6796D_KBC:
 		pc_keyboard_init(NO_AUX_DEVICE);
+		break;
+
+	case NCT6796D_HWM_FPLED:
+		if (CONFIG(SUPERIO_NUVOTON_NCT6796D_HWM)) {
+			const struct superio_nuvoton_nct6796d_config *conf = dev->chip_info;
+			const struct resource *res = probe_resource(dev, PNP_IDX_IO0);
+			if (conf && res && res->base)
+				nct6796d_hwm_init(res->base, conf);
+		}
 		break;
 	}
 }
