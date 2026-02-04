@@ -27,6 +27,7 @@ config SOC_INTEL_METEORLAKE
 	select HAVE_FSP_GOP
 	select HAVE_FSP_LOGO_SUPPORT if RUN_FSP_GOP
 	select HAVE_HYPERTHREADING
+	select HAVE_INTEL_FSP_REPO
 	select HAVE_INTEL_COMPLIANCE_TEST_MODE
 	select HAVE_INTEL_ME_HAP
 	select HAVE_SMI_HANDLER
@@ -340,6 +341,12 @@ config VBOOT_HASH_BLOCK_SIZE
 config CBFS_SIZE
 	hex
 	default 0x200000
+
+config FSP_TYPE_IOT
+	bool
+	default n
+	help
+	  This option allows to select FSP IOT type from 3rdparty/fsp repo
 
 config PRERAM_CBMEM_CONSOLE_SIZE
 	hex
