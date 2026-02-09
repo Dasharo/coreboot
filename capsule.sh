@@ -62,6 +62,8 @@ function source_coreboot_config() {
         die "no '.config' file in current directory"
     fi
 
+    local line
+
     while read -r line; do
         if ! eval "$line"; then
             die "failed to source '.config'"
@@ -217,6 +219,12 @@ function make_subcommand() {
 
     source_coreboot_config
     require_capsule_support
+
+    # Option names match terminology of GenerateCapsule which conveniently start
+    # with different letters:
+    #  * t - trusted
+    #  * o - other
+    #  * s - signer
 
     local root_cert sub_cert sign_cert include_battery_check
     while getopts "t:o:s:b" OPTION; do
