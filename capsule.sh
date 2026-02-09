@@ -48,9 +48,13 @@ function print_usage() {
     echo '                 -b (the flag adds battery check DXE into the capsule)'
     echo '  create_cabinet create a fwupd cabinet (.cab) from a capsule'
     echo '                 positional argument: capsule-file'
-    echo '  upload_lvfs    upload a cabinet (.cab) to LVFS'
-    echo '          options: -c credentials-file -u lvfs-base-url -e email -t token'
-    echo '          positional argument: cabinet-file (optional if exactly one .cab in current dir)'
+    echo '  upload_lvfs    upload a cabinet (.cab) to LVFS, options'
+    echo '                 [-c credentials-file] (defaults to ~/.config/dasharo-credentials/lvfs)'
+    echo '                 [-u lvfs-base-url]    (defaults to $LVFS_URL)'
+    echo '                 [-e email]            (defaults to $LVFS_EMAIL)'
+    echo '                 [-t token]            (defaults to $LVFS_TOKEN)'
+    echo '                 positional argument:'
+    echo '                 cabinet-file (optional if exactly one .cab in current dir)'
 }
 
 function help_subcommand() {
@@ -61,6 +65,8 @@ function source_coreboot_config() {
     if [ ! -f .config ]; then
         die "no '.config' file in current directory"
     fi
+
+    local line
 
     while read -r line; do
         if ! eval "$line"; then
@@ -218,6 +224,12 @@ function make_subcommand() {
     source_coreboot_config
     require_capsule_support
 
+    # Option names match terminology of GenerateCapsule which conveniently start
+    # with different letters:
+    #  * t - trusted
+    #  * o - other
+    #  * s - signer
+
     local root_cert sub_cert sign_cert include_battery_check
     while getopts "t:o:s:b" OPTION; do
         case $OPTION in
@@ -324,6 +336,11 @@ function create_cabinet_subcommand() {
         die "fwupdtool not found in PATH"
     fi
 
+    local fmp_guid_bytes_hex=edd5cb6d2de8444cbda17194199ad92a
+    if [ "$(xxd -l 16 -ps "$capsule")" != "$fmp_guid_bytes_hex" ]; then
+        die "'$capsule' is not an FMP capsule file"
+    fi
+
     source_coreboot_config
     require_capsule_support
 
@@ -332,6 +349,10 @@ function create_cabinet_subcommand() {
     if [ -z "$date" ] || [ "$date" = "-" ]; then
         date=$(stat -c %y "$capsule" 2>/dev/null | cut -d ' ' -f 1)
     fi
+
+    local id=com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware
+    id=${id// /_}
+    id=${id////_}
 
     vendor=$(grep -e "CONFIG_VENDOR_.*=y" .config | cut -d '=' -f 1 | cut -d '_' -f 3- | awk '{ print tolower($0) }')
     version=$(echo "$CONFIG_LOCALVERSION" | tr -d 'v' | cut -d '-' -f 1)
@@ -343,7 +364,7 @@ function create_cabinet_subcommand() {
     cat > "${archive_dir}/firmware.metainfo.xml" << EOF
 <?xml version='1.0' encoding='utf-8'?>
 <component type="firmware">
-  <id>com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware</id>
+  <id>${id}</id>
   <name>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}</name>
   <summary>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</summary>
   <description>
