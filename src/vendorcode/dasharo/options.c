@@ -189,8 +189,9 @@ static bool fum_is_active(void)
 	if (dasharo_is_disk_capsules_boot())
 		return true;
 
+	/* Check the FUM Request variable. FUM Active var is created by the payload. */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
-		read_bool_var("FirmwareUpdateMode", &fum);
+		read_bool_var("FirmwareUpdateModeRequest", &fum);
 
 	return fum;
 }
