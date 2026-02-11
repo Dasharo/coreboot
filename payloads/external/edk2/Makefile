@@ -158,12 +158,6 @@ ifneq ($(CONFIG_QEMU_PLATFORM),)
 BUILD_STR += -D QEMU_PLATFORM=TRUE
 endif
 
-# GRAPHICAL_CAPSULE_PROGRESS	= TRUE
-# Decides if capsule update progress bar should use Graphics or Text based lib
-ifneq ($(CONFIG_EDK2_GRAPHICAL_CAPSULE_PROGRESS),y)
-BUILD_STR += -D GRAPHICAL_CAPSULE_PROGRESS=FALSE
-endif
-
 CAPSULE_PCD_INC_REL := BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
 CAPSULE_PCD_INC := $(EDK2_PATH)/$(CAPSULE_PCD_INC_REL)
 CAPSULE_PCD_NAME := gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr
