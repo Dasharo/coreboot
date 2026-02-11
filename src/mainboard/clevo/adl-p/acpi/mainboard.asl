@@ -23,3 +23,28 @@ If (S0IX == 0) {
 Name(\_S4, Package(){0x6,0x0,0x0,0x0})
 #endif
 Name(\_S5, Package(){0x7,0x0,0x0,0x0})
+
+Scope (\_GPE)
+{
+    Method (_L6B, 0, NotSerialized)
+    {
+        If (CondRefOf (\_SB.PCI0.LPCB.EC0))
+        {
+            Local0 = \_SB.PCI0.LPCB.EC0.WFNO
+
+            Switch (ToInteger (Local0))
+            {
+                Case (0x1B) { \_SB.PCI0.LPCB.EC0._Q1B() } // lid
+                Case (0x15) { \_SB.PCI0.LPCB.EC0._Q15() } // sleep button
+                Case (0x1D) { \_SB.PCI0.LPCB.EC0._Q1D() } // power button
+                Default
+                {
+                    If (CondRefOf (\_SB.LID0)) { Notify (\_SB.LID0, 0x80) }
+                    If (CondRefOf (\_SB.SLPB)) { Notify (\_SB.SLPB, 0x80) }
+                }
+            }
+
+            \_SB.PCI0.LPCB.EC0.WFNO = Zero
+        }
+    }
+}
