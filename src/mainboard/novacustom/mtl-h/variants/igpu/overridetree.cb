@@ -11,6 +11,10 @@ chip soc/intel/meteorlake
 	# MTL SOC has additional setting for PsysPmax
 	register "psys_pmax_watts" = "99"
 
+	# set EPP to 45%: 45 * 256/100 = 115 = 0x73
+	register "enable_energy_perf_pref" = "true"
+	register "energy_perf_pref_value" = "0x73"
+
 	device domain 0 on
 		subsystemid 0x1558 0xa743 inherit
 		device ref igpu on
