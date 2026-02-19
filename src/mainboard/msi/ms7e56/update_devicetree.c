@@ -4,7 +4,6 @@
 #include <soc/amd/phoenix/chip.h>
 #include <soc/soc_util.h>
 #include <static.h>
-#include <drivers/amd/opensil/mpio/chip.h>
 #include "update_devicetree.h"
 
 static void mainboard_update_mpio(void)
