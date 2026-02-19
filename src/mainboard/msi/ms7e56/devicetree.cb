@@ -47,44 +47,79 @@ chip soc/amd/phoenix
 
 	device domain 0 on
 		device ref iommu on end
+
+		# PCIE_E1: x8 PCIe slot, DXIO lanes 0-7
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "0"
+			register "end_lane" = "7"
+			device ref gpp_bridge_1_1 on end
+		end
+		# M2_1: x4 M.2 slot, DXIO lanes 16-19
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "16"
+			register "end_lane" = "19"
+			device ref gpp_bridge_1_2 on end
+		end
+		# Promontory B850 chipset: x4 link, DXIO lanes 20-23
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "20"
+			register "end_lane" = "23"
+			device ref gpp_bridge_2_1 on end
+		end
+		# M2_2: x4 M.2 slot, DXIO lanes 24-27
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "24"
+			register "end_lane" = "27"
+			device ref gpp_bridge_2_2 on end
+		end
+
 		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
 			device ref gfx on end # Internal GPU (GFX)
 			device ref gfx_hda on end # Display HD Audio Controller (GFXAZ)
 			device ref crypto on end # Crypto Coprocessor
-			device ref xhci_0 on # USB 3.1 (USB0)
+			device ref xhci_0 on
 				chip drivers/usb/acpi
 					device ref xhci_0_root_hub on
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB3 Type-A 5G""
+							register "type" = "UPC_TYPE_USB3_A"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_A(BACK, RIGHT, ACPI_PLD_GROUP(4, 1))"
 							device ref usb3_port2 on end
 						end
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB-C""
+							register "type" = "UPC_TYPE_C_USB2_SS"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_C(BACK, RIGHT, ACPI_PLD_GROUP(2, 1))"
 							device ref usb3_port3 on end
 						end
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB3 Type-A 5G""
+							register "type" = "UPC_TYPE_USB3_A"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_A(BACK, RIGHT, ACPI_PLD_GROUP(4, 1))"
 							device ref usb2_port2 on end
 						end
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB-C""
+							register "type" = "UPC_TYPE_C_USB2_SS"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_C(BACK, RIGHT, ACPI_PLD_GROUP(2, 1))"
 							device ref usb2_port3 on end
-						end
-						chip drivers/usb/acpi
-							device ref usb2_port4 on end
-						end
-						chip drivers/usb/acpi
-							device ref usb2_port5 on end
-						end
-						chip drivers/usb/acpi
-							device ref usb2_port6 on end
 						end
 					end
 				end
 			end
-			device ref xhci_1 on # USB 3.1 (USB1)
+			device ref xhci_1 on
 				chip drivers/usb/acpi
 					device ref xhci_1_root_hub on
 						chip drivers/usb/acpi
-							device ref usb3_port7 on end
-						end
-						chip drivers/usb/acpi
+							register "type" = "UPC_TYPE_INTERNAL"
 							device ref usb2_port7 on end
 						end
 					end
@@ -97,9 +132,17 @@ chip soc/amd/phoenix
 				chip drivers/usb/acpi
 					device ref usb4_xhci_0_root_hub on
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB3 Type-A 10G""
+							register "type" = "UPC_TYPE_USB3_A"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_A(BACK, CENTER, ACPI_PLD_GROUP(3, 1))"
 							device ref usb3_port0 on end
 						end
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB3 Type-A 10G""
+							register "type" = "UPC_TYPE_USB3_A"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_A(BACK, CENTER, ACPI_PLD_GROUP(3, 1))"
 							device ref usb2_port0 on end
 						end
 					end
@@ -109,9 +152,17 @@ chip soc/amd/phoenix
 				chip drivers/usb/acpi
 					device ref usb4_xhci_1_root_hub on
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB-C""
+							register "type" = "UPC_TYPE_C_USB2_SS"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_C(BACK, LEFT, ACPI_PLD_GROUP(1, 1))"
 							device ref usb3_port1 on end
 						end
 						chip drivers/usb/acpi
+							register "desc" = ""Rear USB-C""
+							register "type" = "UPC_TYPE_C_USB2_SS"
+							register "use_custom_pld" = "true"
+							register "custom_pld" = "ACPI_PLD_TYPE_C(BACK, LEFT, ACPI_PLD_GROUP(1, 1))"
 							device ref usb2_port1 on end
 						end
 					end
