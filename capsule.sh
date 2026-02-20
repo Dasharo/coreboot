@@ -350,16 +350,16 @@ function create_cabinet_subcommand() {
         date=$(stat -c %y "$capsule" 2>/dev/null | cut -d ' ' -f 1)
     fi
 
-    local id=com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware
-    id=${id// /_}
-    id=${id////_}
-
     vendor=$(grep -e "CONFIG_VENDOR_.*=y" .config | cut -d '=' -f 1 | cut -d '_' -f 3- | awk '{ print tolower($0) }')
     version=$(echo "$CONFIG_LOCALVERSION" | tr -d 'v' | cut -d '-' -f 1)
 
     local archive_dir
     archive_dir=$(mktemp --tmpdir -d XXXXXXXX)
     trap 'rm -rf -- "$archive_dir"' EXIT
+
+    local id=com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware
+    id=${id// /_}
+    id=${id////_}
 
     cat > "${archive_dir}/firmware.metainfo.xml" << EOF
 <?xml version='1.0' encoding='utf-8'?>
