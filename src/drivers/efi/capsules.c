@@ -23,9 +23,6 @@
 #include <Guid/FmpCapsule.h>
 #include <IndustryStandard/WindowsUxCapsule.h>
 
-/* Weak default - platforms can override to prepare redundant slots */
-__weak void efi_capsule_update_prepare_redundant_slot(void) { }
-
 /*
  * Overview
  *
@@ -841,7 +838,7 @@ BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, parse_capsules, NULL);
 
 #endif
 
-static void enable_capsule_update_path(void *unused)
+static void enable_capsule_smi(void *unused)
 {
 	uint32_t ret;
 
@@ -864,10 +861,6 @@ static void enable_capsule_update_path(void *unused)
 
 	printk(BIOS_INFO, "%sabled capsule update SMI handler\n",
 	       ret == SMMSTORE_RET_SUCCESS ? "En" : "Dis");
-
-	/* For redundancy-enabled platforms, ensure booting from Slot B */
-	if (full_flash_access)
-		efi_capsule_update_prepare_redundant_slot();
 }
 
-BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, enable_capsule_update_path, NULL);
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, enable_capsule_smi, NULL);
