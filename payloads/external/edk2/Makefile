@@ -394,7 +394,7 @@ BUILD_STR += -D BOOT_MENU_KEY=$(CONFIG_EDK2_BOOT_MENU_KEY)
 BUILD_STR += -D SETUP_MENU_KEY=$(CONFIG_EDK2_SETUP_MENU_KEY)
 
 # PcdShowLockBios               = FALSE
-ifeq ($(CONFIG_EDK2_ENABLE_BIOS_LOCK),y)
+ifneq ($(CONFIG_EDK2_DISABLE_BIOS_LOCK),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowLockBios=TRUE
 endif
 # PcdShowSmmBwp                 = FALSE
