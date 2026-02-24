@@ -4,6 +4,7 @@
 #include <spi_flash.h>
 #include <soc/pci_devs.h>
 #include <amdblocks/lpc.h>
+#include <amdblocks/psp.h>
 #include <amdblocks/smi.h>
 #include <amdblocks/spi.h>
 #include <device/pci_ops.h>
@@ -321,6 +322,11 @@ static int fch_spi_flash_protect(const struct spi_flash *flash, const struct reg
 static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	uint8_t reg8;
+
+	if (psp_get_hsti_state_rom_armor_enforced()) {
+		printk(BIOS_ERR, "PSP ROM Armor is enforced, cannot access SPI flash directly\n");
+		return -1;
+	}
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_SMI)) {
 		if (ENV_RAMSTAGE || ENV_SMM) {
