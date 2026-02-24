@@ -134,7 +134,6 @@ static void mainboard_init(void *chip_info)
 
 	dasharo_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
-	mainboard_configure_gpios();
 	set_fan_curve();
 	set_camera_enablement();
 	set_battery_thresholds();
