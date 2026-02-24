@@ -35,4 +35,9 @@ ramstage-y += fch_spi_util.c
 verstage-y += fch_spi_util.c
 smm-$(CONFIG_SPI_FLASH_SMM) += fch_spi_util.c
 
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3),y)
+all_x86-y += rom_armor_boot_device_rw_nommap.c
+smm-y += rom_armor_boot_device_rw_nommap.c
+endif # CONFIG_SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3
+
 endif # CONFIG_SOC_AMD_COMMON_BLOCK_SPI
