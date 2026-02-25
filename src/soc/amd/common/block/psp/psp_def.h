@@ -36,6 +36,8 @@
 #define MBOX_BIOS_CMD_SET_RPMC_ADDRESS		0x39
 #define MBOX_BIOS_CMD_SEND_IVRS_ACPI_TABLE	0x3F
 #define MBOX_BIOS_CMD_QUERY_SPL_FUSE		0x47
+#define MBOX_BIOS_CMD_ARMOR_ENTER_SMM_MODE	0x50
+#define MBOX_BIOS_CMD_ARMOR_SPI_TRANSACTION	0x51
 #define MBOX_BIOS_CMD_SET_CONFIG		0x5d
 #define MBOX_BIOS_CMD_I2C_TPM_ARBITRATION	0x64
 #define MBOX_BIOS_CMD_ABORT			0xfe
@@ -157,11 +159,35 @@ struct ivrs_acpi_table_info {
 	uint32_t ivrs_table_size;
 } __packed;
 
-
 /* MBOX_BIOS_CMD_SET_IVRS_TABLE_INFO */
 struct mbox_cmd_ivrs_acpi_table_info {
 	struct mbox_buffer_header header;
 	struct ivrs_acpi_table_info info;
+} __packed __aligned(32);
+
+/* MBOX_BIOS_CMD_ARMOR_ENTER_SMM_MODE */
+struct mbox_rom_armor_enforce_buffer {
+	struct mbox_buffer_header header;
+	uint32_t flash_size;		/* Returned by PSP: SPI flash size in bytes */
+	uint32_t capsule_update;	/* 1 for capsule update/recovery mode, 0 otherwise */
+} __packed __aligned(32);
+
+enum mbox_rom_armor_transaction {
+	READ_ACCESS	= 1,
+	WRITE_ACCESS	= 2,
+	ERASE		= 3,
+};
+struct mbox_rom_armor_flash_command {
+	enum mbox_rom_armor_transaction transaction;
+	uint64_t buffer_ptr;	/* Pointer to data buffer. Must not be NULL. */
+	uint32_t offset;	/* SPI flash offset */
+	uint32_t size;		/* Transfer size for all operations */
+	uint32_t read_back;	/* Whether to read back data after write for validation */
+} __packed;
+
+struct mbox_rom_armor_flash_command_buffer {
+	struct mbox_buffer_header header;
+	struct mbox_rom_armor_flash_command cmd;
 } __packed __aligned(32);
 
 #define PSP_INIT_TIMEOUT 10000 /* 10 seconds */
@@ -206,5 +232,45 @@ enum cb_err psp_get_hsti_state(uint32_t *state);
 enum cb_err soc_read_c2p38(uint32_t *msg_38_value);
 
 void enable_psp_smi(void);
+
+void psp_set_smm_flag(void);
+void psp_clear_smm_flag(void);
+
+
+struct mbox_rom_armor_flash_command;
+/*
+ * psp_rom_armor_spi_transaction - Send PSP ROM Armor SPI transaction command to PSP firmware
+ *
+ * @param cmd_buf: Command buffer with SPI transaction to execute.
+ *
+ * On ROM Armor2:
+ * READ/WRITE/ERASE
+ *
+ * On ROM Armor3:
+ * WRITE/ERASE
+ * (READ is not supported on ROM Armor3 as flash contents can be read directly from MMIO)
+ *
+ * Communicates with PSP via mailbox to perform the requested SPI flash operation through ROM Armor.
+ * The PSP firmware will enforce the access based on the command parameters and the
+ * protection configuration in PSP firmware ('Writable' bit set on PSP directory entries) and
+ * BIOS directory types 0x6d (whitelisted flash regions) and return the result via the same command buffer.
+ *
+ * Returns 0 on success, negative error code on failure.
+ */
+int psp_rom_armor_spi_transaction(const struct mbox_rom_armor_flash_command *cmd_buf);
+
+/**
+ * psp_rom_armor_enter_smm_mode - Active PSP Rom Armor
+ * @param allow_capsule_update: Indicates if the system is in capsule update mode
+ * @param flash_size: Pointer to store the flash size retrieved from PSP firmware
+ *
+ * After this function is called, PSP Rom Armor will be active and protect
+ * the SPI flash according to the configuration in PSP firmware. This function
+ * also retrieves the flash size from PSP firmware and returns it via the
+ * flash_size output parameter.
+ *
+ * Returns: 0 on success, negative error code on failure
+ */
+int psp_rom_armor_enter_smm_mode(const bool allow_capsule_update, size_t *flash_size);
 
 #endif /* __AMD_PSP_DEF_H__ */
