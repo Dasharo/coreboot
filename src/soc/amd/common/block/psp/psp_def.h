@@ -197,7 +197,6 @@ struct ivrs_acpi_table_info {
 	uint32_t ivrs_table_size;
 } __packed;
 
-
 /* MBOX_BIOS_CMD_SET_IVRS_TABLE_INFO */
 struct mbox_cmd_ivrs_acpi_table_info {
 	struct mbox_buffer_header header;
