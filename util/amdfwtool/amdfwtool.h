@@ -314,12 +314,15 @@ typedef struct _bios_directory_hdr {
 typedef struct _bios_directory_entry {
 	uint8_t type;
 	uint8_t region_type;
-	int reset:1;
-	int copy:1;
-	int ro:1;
-	int compressed:1;
-	int inst:4;
-	uint8_t subprog; /* b[7:3] reserved */
+	uint8_t reset:1;
+	uint8_t copy:1;
+	uint8_t ro:1;
+	uint8_t compressed:1;
+	uint8_t inst:4;
+	uint8_t subprog:3;
+	uint8_t romid:2;
+	uint8_t writable:1;
+	uint8_t rsvd:2;
 	uint32_t size;
 	uint64_t source:62;
 	uint64_t address_mode:2;
