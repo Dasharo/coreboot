@@ -48,4 +48,34 @@ config INTEL_TXT_SINIT_SIZE
 	  This is platform dependent. For instance on CPX this has
 	  to be the ACM size + 64K.
 
+config INTEL_TXT_BIOSACM_STUB
+	bool "Reserve CBFS space for BIOS ACM using a zeroed stub"
+	depends on INTEL_TXT_BIOSACM_FILE = ""
+	default n
+	help
+	  When the BIOS ACM is intentionally omitted from the public build
+	  (e.g. it is proprietary and cannot be redistributed), enabling this
+	  option inserts a zeroed-out stub of INTEL_TXT_BIOSACM_STUB_SIZE bytes
+	  into CBFS during the build with the required INTEL_TXT_BIOSACM_ALIGNMENT,
+	  then removes it from the final coreboot.rom.
+
+	  This serves two purposes:
+	  - The build fails at cbfstool time if there is insufficient CBFS space
+	    for the ACM, rather than silently producing an image that cannot be
+	    provisioned.
+	  - After the stub is removed, the provisioning tool can insert the real
+	    ACM into the freed, correctly-aligned slot.
+
+	  The stub is NOT a functional ACM and must not be left in the image.
+
+config INTEL_TXT_BIOSACM_STUB_SIZE
+	hex "BIOS ACM stub size (bytes)"
+	depends on INTEL_TXT_BIOSACM_STUB
+	default 0x3E800
+	help
+	  Size of the zeroed placeholder inserted to reserve CBFS space for the
+	  BIOS ACM. This must equal the size of the real BIOS ACM that the
+	  provisioning tool will supply. The default (0x3E800 = 250 KiB) matches
+	  the typical Intel CBnT BIOS ACM for Alder Lake platforms.
+
 endif # INTEL_ACM
