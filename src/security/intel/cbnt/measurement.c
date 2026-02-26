@@ -730,7 +730,7 @@ static void measure_intel_tgl_style(uint64_t biosacm_policy, bool auth_measure)
 		}
 
 		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data,
-				       obuf_nr_written(&data_ob), alg,
+				       obuf_nr_written(&local_ob), alg,
 				       &pcr0_digests.hashes[i])) {
 			printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
 			return;
@@ -865,7 +865,7 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 		}
 
 		if (vb2_hash_calculate(vboot_hwcrypto_allowed(), data,
-				       obuf_nr_written(&data_ob), alg,
+				       obuf_nr_written(&local_ob), alg,
 				       &policy_digests.hashes[i])) {
 			printk(BIOS_ERR, "CBnT: failed to hash PCR-0 measurement data\n");
 			return;
