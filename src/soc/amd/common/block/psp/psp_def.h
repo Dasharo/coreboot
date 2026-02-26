@@ -236,7 +236,6 @@ void enable_psp_smi(void);
 void psp_set_smm_flag(void);
 void psp_clear_smm_flag(void);
 
-
 struct mbox_rom_armor_flash_command;
 /*
  * psp_rom_armor_spi_transaction - Send PSP ROM Armor SPI transaction command to PSP firmware
