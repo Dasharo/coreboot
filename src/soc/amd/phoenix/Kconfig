@@ -107,9 +107,14 @@ config SOC_AMD_PHOENIX_AM5
 
 config SOC_AMD_PHOENIX_OPENSIL
 	bool
+	select HAVE_X86_64_SUPPORT
+	select USE_X86_64_SUPPORT
+	select OPENSIL_DRIVER
 	select SOC_AMD_PHOENIX_BASE
 	select SOC_AMD_OPENSIL
-	select OPENSIL_DRIVER
+	select SOC_AMD_OPENSIL_PHOENIX_POC
+	help
+	 AMD Phoenix support using OpenSIL (Proof of Comcept)
 
 config SOC_AMD_PHOENIX_AM5_OPENSIL
 	bool
@@ -483,11 +488,3 @@ config FSP_TEMP_RAM_SIZE
 	  The amount of coreboot-allocated heap and stack usage by the FSP.
 
 endif # SOC_AMD_PHOENIX_FSP
-
-if SOC_AMD_PHOENIX_OPENSIL
-
-config SOC_AMD_OPENSIL_STUB
-	prompt "Build with openSIL stub"
-	default y
-
-endif # SOC_AMD_PHOENIX_OPENSIL
