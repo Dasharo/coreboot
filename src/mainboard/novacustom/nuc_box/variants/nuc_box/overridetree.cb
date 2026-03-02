@@ -30,6 +30,8 @@ chip soc/intel/meteorlake
 		end
 		device ref tcss_dma0 on end
 		device ref xhci on
+			register "usb2_wake_enable_bitmap" = "0xFF"
+			register "usb3_wake_enable_bitmap" = "0x3"
 			register "usb2_ports" = "{
 				[0] = USB2_PORT_MID(OC_SKIP),	/* USB3 Rear */
 				[1] = USB2_PORT_MID(OC_SKIP),	/* USB3 Rear */

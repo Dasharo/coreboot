@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <intelblocks/xhci.h>
 #include <soc/gpe.h>
+
+/* Include UWES method for enabling USB wake */
+#include <soc/intel/common/acpi/xhci_wake.asl>
 
 /* XHCI Controller 0:14.0 */
 
@@ -9,6 +13,20 @@ Device (XHCI)
 	Name (_ADR, 0x00140000)
 
 	Name (_PRW, Package () { GPE0_PME_B0, 3 })
+
+	OperationRegion (XPRT, PCI_Config, 0x00, 0x100)
+	Field (XPRT, AnyAcc, NoLock, Preserve)
+	{
+		Offset (0x10),
+		, 16,
+		XMEM, 16,	/* MEM_BASE */
+	}
+
+	Method (_DSW, 3)
+	{
+		UWES ((\U2WE & 0x3FF), PORTSCN_OFFSET, XMEM)
+		UWES ((\U3WE & 0x3), PORTSCXUSB3_OFFSET, XMEM)
+	}
 
 	Name (_S3D, 3)	/* D3 supported in S3 */
 	Name (_S0W, 3)	/* D3 can wake device in S0 */
