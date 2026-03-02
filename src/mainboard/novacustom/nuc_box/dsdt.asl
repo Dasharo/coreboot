@@ -1,8 +1,5 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
-//TODO: HACK FOR MISSING MISCCFG_GPIO_PM_CONFIG_BITS
-#include <soc/gpio.h>
-
 #include <acpi/acpi.h>
 DefinitionBlock(
 	"dsdt.aml",
@@ -26,11 +23,6 @@ DefinitionBlock(
 	}
 
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
-
-	Scope (\_SB.PCI0.LPCB)
-	{
-		#include <drivers/pc80/pc/ps2_controller.asl>
-	}
 
 	#include "acpi/mainboard.asl"
 }
