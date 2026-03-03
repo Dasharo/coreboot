@@ -1,10 +1,10 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
-# 2023.8 - Last commit of August 2023
+# 2026.2 - Last commit of February 2026
 # When updating, change the name both here and in payloads/external/iPXE/Kconfig
 
-# Temporarily Dasharo fork is used until i225/i226 native support is merged.
-STABLE_COMMIT_ID=6c7068fce4bba31b4d03a6990dedc530c0727588
+# Temporarily Dasharo fork is used until i225/i226 and i219 native support is merged.
+STABLE_COMMIT_ID=ad8cbcee950840547f87394179a7e712e1c3c06f
 
 TAG-$(CONFIG_IPXE_MASTER)=origin/master
 TAG-$(CONFIG_IPXE_STABLE)=$(STABLE_COMMIT_ID)
