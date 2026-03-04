@@ -16,7 +16,8 @@ void *tpm_cb_log_cbmem_init(void);
 void tpm_cb_preram_log_clear(void);
 uint16_t tpm_cb_log_get_size(const void *log_table);
 void tpm_cb_log_copy_entries(const void *from, void *to);
-int tpm_cb_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name);
+int tpm_cb_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
+		   uint32_t *event_type);
 void tpm_cb_log_add_table_entry(const char *name, const uint32_t pcr,
 				const struct tpm_digest *digests);
 void tpm_cb_log_dump(void);
@@ -28,7 +29,8 @@ void *tpm1_log_cbmem_init(void);
 void tpm1_preram_log_clear(void);
 uint16_t tpm1_log_get_size(const void *log_table);
 void tpm1_log_copy_entries(const void *from, void *to);
-int tpm1_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name);
+int tpm1_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
+		 uint32_t *event_type);
 void tpm1_log_add_table_entry(const char *name, const uint32_t pcr,
 			      const struct tpm_digest *digests);
 void tpm1_log_dump(void);
@@ -40,7 +42,8 @@ void *tpm2_log_cbmem_init(void);
 void tpm2_preram_log_clear(void);
 uint16_t tpm2_log_get_size(const void *log_table);
 void tpm2_log_copy_entries(const void *from, void *to);
-int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name);
+int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
+		 uint32_t *event_type);
 void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
 			      const struct tpm_digest *digests);
 void tpm2_log_startup_locality(int locality);
