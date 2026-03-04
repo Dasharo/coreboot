@@ -214,7 +214,19 @@ tpm_result_t tspi_measure_cache_to_pcr(void)
 
 	printk(BIOS_DEBUG, "TPM: Write digests cached in TPM log to PCR\n");
 	i = 0;
-	while (!tpm_log_get(i++, &pcr, digests, &event_name)) {
+	uint32_t event_type;
+	while (!tpm_log_get(i++, &pcr, digests, &event_name, &event_type)) {
+		/*
+		 * EV_NO_ACTION events (e.g. the StartupLocality event logged by
+		 * tspi_init_crtm()) must never be extended into any PCR per the TCG spec.
+		 * They carry all-zero digests and are informational-only.  This can happen
+		 * when CBFS files are loaded before tpm_setup() is called (e.g. due to
+		 * CMOS option reads), which triggers tspi_init_crtm() early and buffers
+		 * these events in the pre-RAM log.
+		 */
+		if (event_type == EV_NO_ACTION)
+			continue;
+
 		/*
 		 * Skip log entries that coreboot synthesized to account for PCR extends
 		 * performed by hardware S-CRTM.
