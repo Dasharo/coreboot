@@ -271,7 +271,7 @@ function make_subcommand() {
 
     local json_file
     json_file=$(mktemp --tmpdir --suffix -cap.json XXXXXXXX)
-    trap "$(printf 'rm -f %q' "$json_file")" EXIT
+    trap "$(printf 'rm -f -- %q %q' "$json_file" "$cap_file.inner")" EXIT
 
     cat > "$json_file" << EOF
 {
@@ -285,6 +285,19 @@ EOF
             "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/CapsuleChargerCheckDxe.efi"
         },
 EOF
+    fi
+
+    local opt_root_cert=$root_cert
+    local opt_sub_cert=$sub_cert
+    local opt_sign_cert=$sign_cert
+    if [ "$CONFIG_EDK2_CAPSULES_V2" = y ]; then
+        # The inner capsule is always signed with the test key.  Not signing it
+        # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
+        # least due to Image->AuthInfo.Hdr.wRevision check in
+        # AuthenticateFmpImage().
+        opt_root_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestRoot.pub.pem
+        opt_sub_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestSub.pub.pem
+        opt_sign_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestCert.pem
     fi
 
     cat >> "$json_file" << EOF
@@ -302,6 +315,34 @@ EOF
             "FwVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_VERSION}",
             "LowestSupportedVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_LSV}",
 
+            "OpenSslSignerPrivateCertFile": "${opt_sign_cert}",
+            "OpenSslOtherPublicCertFile": "${opt_sub_cert}",
+            "OpenSslTrustedPublicCertFile": "${opt_root_cert}"
+        }
+    ]
+}
+EOF
+
+    if [ "$CONFIG_EDK2_CAPSULES_V2" = y ]; then
+        # The capsule created above is the inner capsule.  Make it and then
+        # update JSON file to point at it as a payload.
+        if ! "${edk_tools}/GenerateCapsule" --encode \
+                                            --capflag PersistAcrossReset \
+                                            --json-file "$json_file" \
+                                            --output "$cap_file.inner"; then
+            die "GenerateCapsule failed"
+        fi
+
+        cat > "$json_file" << EOF
+{
+    "EmbeddedDrivers": [],
+    "Payloads": [
+        {
+            "Payload": "$cap_file.inner",
+            "Guid": "${CONFIG_DRIVERS_EFI_MAIN_FW_GUID}",
+            "FwVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_VERSION}",
+            "LowestSupportedVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_LSV}",
+
             "OpenSslSignerPrivateCertFile": "${sign_cert}",
             "OpenSslOtherPublicCertFile": "${sub_cert}",
             "OpenSslTrustedPublicCertFile": "${root_cert}"
@@ -309,6 +350,7 @@ EOF
     ]
 }
 EOF
+    fi
 
     # Linux doesn't support InitiateReset flag, omitting it to rely on manual
     # warm reset
