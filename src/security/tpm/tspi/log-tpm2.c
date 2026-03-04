@@ -455,7 +455,8 @@ void tpm2_log_startup_locality(int locality)
 	add_log_table_entry(tclt, &event_data, sizeof(event_data), 0, EV_NO_ACTION, digests);
 }
 
-int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name)
+int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
+		 uint32_t *event_type)
 {
 	uint16_t offset;
 	struct log_event ev;
@@ -486,6 +487,7 @@ int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char
 
 		*pcr = ev.pcr;
 		*event_name = ev.name;
+		*event_type = ev.event_type;
 		return 0;
 	}
 
