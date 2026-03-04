@@ -125,14 +125,14 @@ static inline void tpm_log_copy_entries(const void *from, void *to)
  * Retrieves an entry from a log. Returns non-zero on invalid index or error.
  */
 static inline int tpm_log_get(int entry_idx, int *pcr, struct tpm_digest *digests,
-			      const char **event_name)
+			      const char **event_name, uint32_t *event_type)
 {
 	if (CONFIG(TPM_LOG_CB))
-		return tpm_cb_log_get(entry_idx, pcr, digests, event_name);
+		return tpm_cb_log_get(entry_idx, pcr, digests, event_name, event_type);
 	if (tpm_log_use_tpm1_format())
-		return tpm1_log_get(entry_idx, pcr, digests, event_name);
+		return tpm1_log_get(entry_idx, pcr, digests, event_name, event_type);
 	if (tpm_log_use_tpm2_format())
-		return tpm2_log_get(entry_idx, pcr, digests, event_name);
+		return tpm2_log_get(entry_idx, pcr, digests, event_name, event_type);
 	return 1;
 }
 
