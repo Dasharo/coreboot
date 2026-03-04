@@ -15,8 +15,12 @@ config BOARD_SPECIFIC_OPTIONS
 	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE
 	select SYSTEM_TYPE_SERVER
 	select HAVE_GIGABYTE_BMC_BIOS_UPDATE
+	select HAVE_OPTION_TABLE
+	select HAVE_CMOS_DEFAULT
 
 config FMDFILE
+	default "src/mainboard/gigabyte/mz33-ar1/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
+	default "src/mainboard/gigabyte/mz33-ar1/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
 	default "src/mainboard/gigabyte/mz33-ar1/board.fmd"
 
 config MAINBOARD_DIR
@@ -63,5 +67,21 @@ config EFS_ESPI0_CONFIG
 
 config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
 	default y if TPM_MEASURED_BOOT && !VBOOT
+
+config VBOOT
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_NO_TPM
+	select VBOOT_CLEAR_RECOVERY_IN_RAMSTAGE
+
+config VBOOT_SLOTS_RW_AB
+	default y if VBOOT
+
+config VBOOT_VBNV_OFFSET
+	default 0x60
 
 endif
