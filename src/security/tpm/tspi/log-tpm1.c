@@ -140,7 +140,8 @@ void tpm1_preram_log_clear(void)
 	tclt->vendor.num_entries = htole16(0);
 }
 
-int tpm1_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name)
+int tpm1_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
+		 uint32_t *event_type)
 {
 	struct tpm_1_log_table *tclt;
 	struct tpm_1_log_entry *tce;
@@ -160,6 +161,7 @@ int tpm1_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char
 
 	*pcr = le32toh(tce->pcr);
 	*event_name = (char *)tce->data;
+	*event_type = le32toh(tce->event_type);
 	return 0;
 }
 

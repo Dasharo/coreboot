@@ -112,7 +112,8 @@ void tpm_cb_preram_log_clear(void)
 	tclt->num_entries = 0;
 }
 
-int tpm_cb_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name)
+int tpm_cb_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
+		   uint32_t *event_type)
 {
 	struct tpm_cb_log_table *tclt;
 	struct tpm_cb_log_entry *tce;
@@ -129,6 +130,8 @@ int tpm_cb_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const ch
 
 	*pcr = tce->pcr;
 	*event_name = tce->name;
+	/* The coreboot-specific log format doesn't use EV_NO_ACTION. */
+	*event_type = EV_ACTION;
 
 	digests[0].hash = tce->digest;
 	digests[0].hash_type = VB2_HASH_INVALID;
