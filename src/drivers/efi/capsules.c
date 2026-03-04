@@ -669,16 +669,26 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 	/* EDK2 starts with 20 items and then grows the list, but it's unlikely
 	   to be necessary in practice. */
 	enum { MAX_CAPSULE_BLOCKS = MAX_CAPSULES };
+	static bool parsed;
+	static uintptr_t capsule_base = 0;
+	static uintptr_t capsule_size = 0;
 
 	/* Assume no capsules at the start. */
 	*base = 0;
 	*size = 0;
 
-	struct region_device rdev;
-	if (smmstore_lookup_region(&rdev)) {
-		printk(BIOS_INFO, "capsules: no SMMSTORE region, no update capsules.\n");
+	/* Return early if already parsed */
+	if (parsed) {
+		*base = capsule_base;
+		*size = capsule_size;
 		return;
 	}
+
+	parsed = true;
+
+	struct region_device rdev;
+	if (smmstore_lookup_region(&rdev))
+		printk(BIOS_INFO, "capsules: no SMMSTORE region, no update capsules.\n");
 
 	memranges_init(&memory_map, IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_STORED |
 		       IORESOURCE_ASSIGNED | IORESOURCE_CACHEABLE, IORESOURCE_MEM |
@@ -748,6 +758,9 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 
 	*base = coalesce_buffer.base;
 	*size = coalesce_buffer.len;
+
+	capsule_base = coalesce_buffer.base;
+	capsule_size = coalesce_buffer.len;
 
 exit:
 	paging_disable_pae();
