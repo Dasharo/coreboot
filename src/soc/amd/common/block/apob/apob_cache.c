@@ -19,6 +19,8 @@
 #include <types.h>
 #include <pc80/mc146818rtc.h>
 
+#include "memctx_cmos.h"
+
 #define DEFAULT_MRC_CACHE	"RW_MRC_CACHE"
 #define DEFAULT_MRC_CACHE_SIZE	FMAP_SECTION_RW_MRC_CACHE_SIZE
 
@@ -244,6 +246,9 @@ static void soc_update_apob_cache(void *unused)
 		printk(BIOS_DEBUG, "APOB valid copy is already in flash\n");
 
 	if (!update_needed) {
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_APOB_MEMCTX_CMOS))
+			amd_mem_restore_signoff();
+
 		timestamp_add_now(TS_AMD_APOB_END);
 		return;
 	}
@@ -276,6 +281,9 @@ static void soc_update_apob_cache(void *unused)
 	// update the signature in CMOS to indicate APOB updated.
 	cmos_write(0x5A, 0x86);
 	cmos_write(0xA5, 0x87);
+
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_APOB_MEMCTX_CMOS))
+		amd_mem_restore_signoff();
 
 	timestamp_add_now(TS_AMD_APOB_END);
 
