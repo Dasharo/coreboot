@@ -20,3 +20,9 @@ config SOC_AMD_COMMON_BLOCK_APOB_HASH
 	help
 	  Select this to use a hash of the APOB data to determine when to update
 	  the non-volatile APOB store.
+
+config SOC_AMD_COMMON_BLOCK_APOB_MEMCTX_CMOS
+	bool
+	help
+	  Select this to use CMOS-backed state of memory context restore to tell
+	  ABL when to use APOB cache.
