@@ -24,6 +24,7 @@ static int translate_opensil_debug_level(size_t MsgLevel)
 	}
 }
 
+/* Not used by Pheonix OpenSIL? */
 void HostDebugService(size_t MsgLevel, const char *SilPrefix, const char *Message,
 				 const char *Function, size_t Line, ...)
 {
@@ -31,6 +32,26 @@ void HostDebugService(size_t MsgLevel, const char *SilPrefix, const char *Messag
 		return;
 
 	const int loglevel = translate_opensil_debug_level(MsgLevel);
+
+	/* print fomatted prefix */
+	if (CONFIG(OPENSIL_DEBUG_PREFIX))
+		printk(loglevel, "%s%s:%zu:", SilPrefix, Function, Line);
+
+	/* print formatted message */
+	va_list args;
+	va_start(args, Line);
+	vprintk(loglevel, Message, args);
+	va_end(args);
+}
+
+void
+SilTracePoint (size_t SilMsgLevel, const char *SilPrefix, const char  *Message,
+			 const char  *Function, size_t Line, ...)
+{
+	if (!CONFIG(OPENSIL_DEBUG_OUTPUT))
+		return;
+
+	const int loglevel = translate_opensil_debug_level(SilMsgLevel);
 
 	/* print fomatted prefix */
 	if (CONFIG(OPENSIL_DEBUG_PREFIX))
