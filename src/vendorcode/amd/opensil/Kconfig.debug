@@ -90,6 +90,12 @@ config OPENSIL_DEBUG_RCMGR
 	help
 	  Enable printing Resource Manager related messages.
 
+config OPENSIL_DEBUG_GFX
+	bool "Enable GFX messages"
+	default y
+	help
+	  Enable printing graphics related messages.
+
 config OPENSIL_DEBUG_XUSL_CMN
 	bool "Enable xUSL CommonLib messages"
 	default y
