@@ -132,6 +132,8 @@ void setup_opensil(void)
 	if (!buf)
 		die("Could not allocate OpenSIL memory in cbmem!");
 
+	memset(buf, 0, mem_req);
+
 	SilContext.ApobBaseAddress = CONFIG_PSP_APOB_DRAM_ADDRESS;
 	SilContext.SilMemBaseAddress = (uintptr_t)buf;
 
