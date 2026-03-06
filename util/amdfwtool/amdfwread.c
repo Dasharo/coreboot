@@ -351,7 +351,7 @@ static int amdfw_bios_dir_walk(FILE *fw, uint32_t bios_offset, uint32_t cookie, 
 		if (type == AMD_BIOS_L2_PTR) {
 			/* There's a second level BIOS directory to read */
 			if (l2_dir_offset != 0) {
-				printf("    %sBIOSL2: Dir  0x%08x\n", indent,
+				printf("    %sBIOSL2: Dir  0x%08lx\n", indent,
 				       relative_offset(bios_offset, addr, mode));
 				ERR("Duplicate BIOS L2 Entry @0x%08lx, prior offset: %08x\n",
 				    relative_offset(bios_offset, addr, mode), l2_dir_offset);
