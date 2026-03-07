@@ -1,8 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpigen.h>
 #include <bootstate.h>
 #include <arch/io.h>
 #include <cbfs.h>
+#include <cbmem.h>
+#include <commonlib/bsd/cbmem_id.h>
 #include <console/system76_ec.h>
 #include <delay.h>
 #include <device/device.h>
@@ -984,10 +987,101 @@ static void dasharo_ec_init(struct device *dev)
 	pc_keyboard_init(PROBE_AUX_DEVICE);
 }
 
+/*
+ * Setting minimum length of UCSI_ACPI will ensure this region is placed out of
+ * IMD Small, preventing memory mapping conflicts.
+ */
+#define UCSI_MIN_ALLOC_REGION_LEN	CBMEM_SM_ROOT_SIZE
+
+static struct fieldlist ucsi_region_fields[] = {
+	FIELDLIST_NAMESTR("VER0", 8),
+	FIELDLIST_NAMESTR("VER1", 8),
+	FIELDLIST_NAMESTR("RSV0", 8),
+	FIELDLIST_NAMESTR("RSV1", 8),
+	FIELDLIST_NAMESTR("CCI0", 8),
+	FIELDLIST_NAMESTR("CCI1", 8),
+	FIELDLIST_NAMESTR("CCI2", 8),
+	FIELDLIST_NAMESTR("CCI3", 8),
+	FIELDLIST_NAMESTR("CTL0", 8),
+	FIELDLIST_NAMESTR("CTL1", 8),
+	FIELDLIST_NAMESTR("CTL2", 8),
+	FIELDLIST_NAMESTR("CTL3", 8),
+	FIELDLIST_NAMESTR("CTL4", 8),
+	FIELDLIST_NAMESTR("CTL5", 8),
+	FIELDLIST_NAMESTR("CTL6", 8),
+	FIELDLIST_NAMESTR("CTL7", 8),
+	FIELDLIST_NAMESTR("MGI0", 8),
+	FIELDLIST_NAMESTR("MGI1", 8),
+	FIELDLIST_NAMESTR("MGI2", 8),
+	FIELDLIST_NAMESTR("MGI3", 8),
+	FIELDLIST_NAMESTR("MGI4", 8),
+	FIELDLIST_NAMESTR("MGI5", 8),
+	FIELDLIST_NAMESTR("MGI6", 8),
+	FIELDLIST_NAMESTR("MGI7", 8),
+	FIELDLIST_NAMESTR("MGI8", 8),
+	FIELDLIST_NAMESTR("MGI9", 8),
+	FIELDLIST_NAMESTR("MGIA", 8),
+	FIELDLIST_NAMESTR("MGIB", 8),
+	FIELDLIST_NAMESTR("MGIC", 8),
+	FIELDLIST_NAMESTR("MGID", 8),
+	FIELDLIST_NAMESTR("MGIE", 8),
+	FIELDLIST_NAMESTR("MGIF", 8),
+	FIELDLIST_NAMESTR("MGO0", 8),
+	FIELDLIST_NAMESTR("MGO1", 8),
+	FIELDLIST_NAMESTR("MGO2", 8),
+	FIELDLIST_NAMESTR("MGO3", 8),
+	FIELDLIST_NAMESTR("MGO4", 8),
+	FIELDLIST_NAMESTR("MGO5", 8),
+	FIELDLIST_NAMESTR("MGO6", 8),
+	FIELDLIST_NAMESTR("MGO7", 8),
+	FIELDLIST_NAMESTR("MGO8", 8),
+	FIELDLIST_NAMESTR("MGO9", 8),
+	FIELDLIST_NAMESTR("MGOA", 8),
+	FIELDLIST_NAMESTR("MGOB", 8),
+	FIELDLIST_NAMESTR("MGOC", 8),
+	FIELDLIST_NAMESTR("MGOD", 8),
+	FIELDLIST_NAMESTR("MGOE", 8),
+	FIELDLIST_NAMESTR("MGOF", 8),
+};
+static const size_t ucsi_region_fields_len = ARRAY_SIZE(ucsi_region_fields);
+
+static void dasharo_ec_fill_ssdt(const struct device *dev)
+{
+	struct opregion opreg;
+	void *region_ptr;
+	size_t alloc_len;
+
+	alloc_len = ucsi_region_fields_len < UCSI_MIN_ALLOC_REGION_LEN ?
+		UCSI_MIN_ALLOC_REGION_LEN : ucsi_region_fields_len;
+
+	region_ptr = cbmem_add(CBMEM_ID_ACPI_UCSI, alloc_len);
+	if (!region_ptr) {
+		printk(BIOS_ERR, "Dasharo EC: Failed to allocate UCSI CBMEM region\n");
+		return;
+	}
+	memset(region_ptr, 0, alloc_len);
+
+	opreg.name = "UCSM";
+	opreg.regionspace = SYSTEMMEMORY;
+	opreg.regionoffset = (uintptr_t)region_ptr;
+	opreg.regionlen = alloc_len;
+
+	acpigen_write_scope("\\_SB.UCSI");
+	acpigen_write_name("_CRS");
+	acpigen_write_resourcetemplate_header();
+	acpigen_write_mem32fixed(1, (uintptr_t)region_ptr, ucsi_region_fields_len);
+	acpigen_write_resourcetemplate_footer();
+	acpigen_write_opregion(&opreg);
+	acpigen_write_field(opreg.name, ucsi_region_fields, ucsi_region_fields_len,
+			    FIELD_ANYACC | FIELD_LOCK | FIELD_PRESERVE);
+	acpigen_pop_len(); /* Scope */
+}
+
 static struct device_operations ops = {
 	.init             = dasharo_ec_init,
 	.read_resources   = noop_read_resources,
 	.set_resources    = noop_set_resources,
+	.acpi_fill_ssdt   = dasharo_ec_fill_ssdt,
 };
 
 static struct pnp_info pnp_dev_info[] = {
