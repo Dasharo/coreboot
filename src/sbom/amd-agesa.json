@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "75efb0da-7a82-524f-bd46-86fdc9e802b9",
+  "tag-version": 0,
+  "software-name": "AMD AGESA",
+  "software-version": "<software_version>",
+  "software-meta": [
+    {
+      "product": "AMD AGESA",
+      "persistent-id": "com.amd.agesa",
+      "summary": "AMD AGESA (AMD Generic Encapsulated Software Architecture) is a binary PI (Platform Initialization) blob providing memory and silicon initialization for AMD platforms"
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
