@@ -4,6 +4,7 @@
   "tag-id": "2de383e0-1721-5369-8511-e3d07743b09a",
   "tag-version": 0,
   "software-name": "Intel BIOS ACM",
+  "software-version": "<software_version>",
   "entity": [
     {
       "entity-name": "coreboot",
