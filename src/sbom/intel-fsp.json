@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "719e6299-4355-5beb-b182-9cf47928515a",
+  "tag-version": 0,
+  "software-name": "Intel Firmware Support Package",
+  "software-version": "<software_version>",
+  "software-meta": [
+    {
+      "product": "Intel Firmware Support Package",
+      "persistent-id": "com.intel.fsp",
+      "summary": "Intel Firmware Support Package (FSP) is a binary blob providing memory initialization and silicon bring-up for Intel platforms"
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
