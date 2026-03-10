@@ -1,15 +1,15 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 {
   "lang": "en-US",
-  "tag-id": "9579af2b-39d8-59f1-ac5a-5b1fd4c03bd0",
+  "tag-id": "9a5e8734-7068-5502-9f6a-6e1bcffb77dd",
   "tag-version": 0,
-  "software-name": "Intel Management Engine",
+  "software-name": "Intel Flash Descriptor",
   "software-version": "<software_version>",
   "version-scheme": "alphanumeric",
   "software-meta": [
     {
-      "persistent-id": "com.intel.me",
-      "summary": "Intel Management Engine firmware"
+      "colloquial-version": "<colloquial_version>",
+      "summary": "The Intel Flash Descriptor defines the flash layout and hardware strap settings for Intel platforms"
     }
   ],
   "entity": [
