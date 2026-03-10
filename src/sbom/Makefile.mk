@@ -162,10 +162,10 @@ $(build-dir)/compiler-%.json: $(src-dir)/compiler-%.json | $(build-dir)/goswid
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ --name $$(basename $$tool) --version $$version; \
 	done
 
-$(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(obj)/build.h | $(build-dir)/goswid
+$(build-dir)/coreboot.json: $(src-dir)/coreboot.json .git/HEAD | $(build-dir)/goswid
 	cp $< $@
-	git_tree_hash=$$(grep 'COREBOOT_ORIGIN_TREE_REVISION' $(obj)/build.h | sed 's/.*"\(.*\)".*/\1/');\
-	git_comm_hash=$$(grep 'COREBOOT_ORIGIN_GIT_REVISION' $(obj)/build.h | sed 's/.*"\(.*\)".*/\1/');\
+	git_tree_hash=$$(git log -n 1 --format=%T);\
+	git_comm_hash=$$(git log -n 1 --format=%H);\
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;\
 	$(build-dir)/goswid add-license -o $@ -i $@ $(coreboot-licenses)
 
@@ -307,9 +307,13 @@ $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json | $(build-dir)
 	cp $< $@
 	set -e; \
 	opensil_path='$(CONFIG_AMD_OPENSIL_PATH)'; \
+	if [ -z "$$opensil_path" ] || [ ! -d "$$opensil_path" ]; then \
+		for p in src/vendorcode/amd/opensil/*/opensil; do \
+			if [ -e "$$p/.git" ]; then opensil_path="$$p"; break; fi; \
+		done; \
+	fi; \
 	if [ -n "$$opensil_path" ] && [ -d "$$opensil_path" ]; then \
-		comm_hash=$$(git -C "$$opensil_path" log -n 1 --format=%H 2>/dev/null); \
-		tree_hash=$$(git -C "$$opensil_path" log -n 1 --format=%T 2>/dev/null); \
+		comm_hash=$$(git -c safe.directory='*' -C "$$opensil_path" log -n 1 --format=%H 2>/dev/null); \
 		if [ -n "$$comm_hash" ]; then \
 			sed -i -e "s/<software_version>/$$comm_hash/" $@; \
 		else \
@@ -346,7 +350,11 @@ $(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-micro
 	month=$$$$(hexdump --skip 3 --length 1 --format '"%02x"' $(1)); \
 	sed -i "s/<software_version>/$$$$year-$$$$month-$$$$day/" $$@
 endef
-$(foreach ucode,$(amd_microcode_bins),$(eval $(call amd-ucode-sbom-rule,$(ucode))))
+# amd_microcode_bins is populated in src/soc/amd/common/block/cpu/Makefile.mk,
+# which is included several rounds after src/sbom (breadth-first traversal).
+# Deferring via postinclude-hooks ensures the rules are generated after all
+# Makefile.mks have been processed and amd_microcode_bins is fully populated.
+postinclude-hooks += $$(foreach ucode,$$(amd_microcode_bins),$$(eval $$(call amd-ucode-sbom-rule,$$(ucode))))
 
 # Resolve the real .git dir for the vboot submodule.
 # When vboot is a submodule, 3rdparty/vboot/.git is a file (gitdir pointer), not a directory.
