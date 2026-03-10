@@ -3,6 +3,8 @@
   "lang": "en-US",
   "tag-id": "a79cee21-97a6-53e5-8e41-65b084a7b90e",
   "tag-version": 0,
+  "software-version": "<software_version>",
+  "version-scheme": "semver",
   "entity": [
     {
       "entity-name": "coreboot",
