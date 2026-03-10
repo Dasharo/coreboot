@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "7d6f330b-8561-54ac-b507-a143b12e1d32",
+  "tag-version": 0,
+  "software-name": "vboot",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "colloquial-version": "<colloquial_version>",
+      "persistent-id": "org.chromium.vboot",
+      "summary": "Chromium OS Verified Boot reference implementation, used by coreboot for firmware verification and anti-rollback protection."
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
