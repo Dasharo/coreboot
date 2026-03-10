@@ -17,6 +17,8 @@ intel-fsp-s:         uuidgen --name intel-fsp-s      --namespace "6ba7b810-9dad-
 intel-fsp-m:         uuidgen --name intel-fsp-m      --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
 intel-fsp-t:         uuidgen --name intel-fsp-t      --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
 intel-fsp:           uuidgen --name intel-fsp        --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
+amd-agesa:           uuidgen --name amd-agesa        --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
+amd-opensil:         uuidgen --name amd-opensil      --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
 intel-mircocode:     uuidgen --name intel-microcode  --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
 amd-mircocode:       uuidgen --name amd-microcode    --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1
 compiler-gcc:        uuidgen --name compiler-gcc     --namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" --sha1

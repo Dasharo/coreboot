@@ -4,9 +4,12 @@
   "tag-id": "9579af2b-39d8-59f1-ac5a-5b1fd4c03bd0",
   "tag-version": 0,
   "software-name": "Intel Management Engine",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
   "software-meta": [
     {
-      "persistent-id": "com.intel.me"
+      "persistent-id": "com.intel.me",
+      "summary": "Intel Management Engine firmware"
     }
   ],
   "entity": [
