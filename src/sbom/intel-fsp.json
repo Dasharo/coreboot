@@ -3,12 +3,13 @@
   "lang": "en-US",
   "tag-id": "719e6299-4355-5beb-b182-9cf47928515a",
   "tag-version": 0,
-  "software-name": "Firmware Support Package",
+  "software-name": "Intel Firmware Support Package",
   "software-version": "<software_version>",
   "software-meta": [
     {
-      "product": "Firmware Support Package",
-      "summary": "Firmware Support Package is a binary which exports an API implementing memory and silicon initialization (e.g. Intel FSP or AMD AGESA)"
+      "product": "Intel Firmware Support Package",
+      "persistent-id": "com.intel.fsp",
+      "summary": "Intel Firmware Support Package (FSP) is a binary blob providing memory initialization and silicon bring-up for Intel platforms"
     }
   ],
   "entity": [
