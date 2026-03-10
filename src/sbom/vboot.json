@@ -1,15 +1,16 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 {
   "lang": "en-US",
-  "tag-id": "9579af2b-39d8-59f1-ac5a-5b1fd4c03bd0",
+  "tag-id": "7d6f330b-8561-54ac-b507-a143b12e1d32",
   "tag-version": 0,
-  "software-name": "Intel Management Engine",
+  "software-name": "vboot",
   "software-version": "<software_version>",
   "version-scheme": "alphanumeric",
   "software-meta": [
     {
-      "persistent-id": "com.intel.me",
-      "summary": "Intel Management Engine firmware"
+      "colloquial-version": "<colloquial_version>",
+      "persistent-id": "org.chromium.vboot",
+      "summary": "Chromium OS Verified Boot reference implementation, used by coreboot for firmware verification and anti-rollback protection."
     }
   ],
   "entity": [
