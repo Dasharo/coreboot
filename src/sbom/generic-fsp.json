@@ -4,6 +4,7 @@
   "tag-id": "719e6299-4355-5beb-b182-9cf47928515a",
   "tag-version": 0,
   "software-name": "Firmware Support Package",
+  "software-version": "<software_version>",
   "software-meta": [
     {
       "product": "Firmware Support Package",
