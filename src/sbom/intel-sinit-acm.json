@@ -4,6 +4,7 @@
   "tag-id": "231b1f39-28c2-596a-a33e-3d2d6570888f",
   "tag-version": 0,
   "software-name": "Intel SINIT ACM",
+  "software-version": "<software_version>",
   "entity": [
     {
       "entity-name": "coreboot",
