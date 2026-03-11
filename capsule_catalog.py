@@ -43,11 +43,13 @@ Certificate requirements
     Sign with an EV code-signing certificate from a Microsoft-trusted CA.
 
   Development / test-signing mode on Windows:
-    Any certificate works; enable test signing with:
+    Use --gen-cert to create a two-cert chain (root CA + leaf signing cert).
+    Windows requires the actual signing cert to be a leaf (CA:FALSE); using
+    a CA cert directly as a signer triggers CERT_E_BASICCONSTRAINTS.
+    Enable test signing and import the root CA (run as Administrator):
       bcdedit /set testsigning on
-    Import the signing cert into BOTH stores (Local Machine):
-      certutil -addstore Root cert.pem
-      certutil -addstore TrustedPublisher cert.pem
+      certutil -addstore Root firmware-signing-ca.crt
+      certutil -addstore TrustedPublisher firmware-signing-ca.crt
 
 Usage
 -----
@@ -57,7 +59,8 @@ Usage
 
 Requirements
 ------------
-  osslsigncode >= 2.0  (dnf install osslsigncode / apt install osslsigncode)
+  Python "cryptography" library  (pip install cryptography)
+  openssl  (for --gen-cert; pre-installed on most Linux systems)
 """
 
 import argparse
@@ -370,69 +373,157 @@ def build_ctl(files: list[str], timestamp: datetime,
 
 
 # ---------------------------------------------------------------------------
-# Unsigned PKCS#7 wrapper
-#
-# CTL bytes are placed directly under the [0] EXPLICIT tag in encapContentInfo
-# — without an OCTET STRING wrapper (PKCS#7 v1 legacy format).
-# osslsigncode then adds the certificate and signerInfo.
+# Sign — pure Python via the "cryptography" library
 # ---------------------------------------------------------------------------
 
-def _unsigned_pkcs7(ctl: bytes) -> bytes:
+# Additional OIDs used only for signing
+_OID_CONTENT_TYPE       = '1.2.840.113549.1.9.3'
+_OID_MSG_DIGEST         = '1.2.840.113549.1.9.4'
+_OID_SIGNING_TIME       = '1.2.840.113549.1.9.5'
+_OID_RSA_SHA256         = '1.2.840.113549.1.1.11'   # sha256WithRSAEncryption
+_OID_EC_SHA256          = '1.2.840.10045.4.3.2'     # ecdsa-with-SHA256
+# Required by Windows Authenticode policy (present in all WHQL/EV-signed catalogs)
+_OID_SPC_STMT_TYPE      = '1.3.6.1.4.1.311.2.1.11'  # szOID_SPC_STATEMENT_TYPE
+_OID_SPC_INDIVIDUAL     = '1.3.6.1.4.1.311.2.1.21'  # SPC_INDIVIDUAL_SP_KEY_PURPOSE_OBJID
+
+
+def sign(ctl: bytes, cert_path: str, key_path: str, out: str) -> None:
+    """
+    Build a complete DER-encoded Windows Security Catalog from *ctl* and
+    write it to *out*.
+
+    The PKCS#7 SignedData is assembled entirely in Python:
+      • encapContentInfo holds the CTL bytes directly under [0] EXPLICIT
+        (no OCTET STRING wrapper — required for Windows catalog format)
+      • signedAttrs contains contentType, signingTime, messageDigest
+      • The signature covers DER(signedAttrs) with the outer tag rewritten
+        as SET (0x31), per RFC 2315
+
+    *cert_path* may be a PEM file containing a certificate chain (leaf cert
+    first, then any intermediate/root CAs).  All certs are embedded in the
+    SignedData certificates field so Windows can build the full trust chain.
+    The first cert is the signing certificate.
+    """
+    try:
+        from cryptography import x509 as _x509
+        from cryptography.hazmat.primitives import hashes as _hashes
+        from cryptography.hazmat.primitives import serialization as _ser
+        from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            EllipticCurvePrivateKey, ECDSA as _ECDSA,
+        )
+        from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
+    except ImportError:
+        sys.exit(
+            'Python "cryptography" library required — install with:\n'
+            '  pip install cryptography'
+        )
+
+    import re as _re
+
+    with open(cert_path, 'rb') as f:
+        chain_pem = f.read()
+    with open(key_path, 'rb') as f:
+        privkey = _ser.load_pem_private_key(f.read(), password=None)
+
+    # Parse all certs from the PEM (leaf first, then CA(s))
+    pem_blocks = _re.findall(
+        b'-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----',
+        chain_pem,
+    )
+    if not pem_blocks:
+        sys.exit(f'No certificates found in {cert_path}')
+    certs = [_x509.load_pem_x509_certificate(b) for b in pem_blocks]
+    cert = certs[0]   # signing (leaf) certificate
+
+    # Embed all chain certs in the SignedData
+    chain_der = b''.join(c.public_bytes(_ser.Encoding.DER) for c in certs)
+
+    issuer_der    = cert.issuer.public_bytes()   # DER-encoded Name SEQUENCE
+    serial_der    = _int(cert.serial_number)
+
+    # IssuerAndSerialNumber ::= SEQUENCE { issuer Name, serialNumber INTEGER }
+    issuer_and_serial = _seq(issuer_der + serial_der)
+
+    # messageDigest = SHA-256 of the CTL *value* bytes (SEQUENCE contents, no tag+len)
+    # Windows hashes the inner bytes, stripping the outer SEQUENCE wrapper — same
+    # convention as for OCTET STRING eContent where only the value is hashed.
+    def _seq_value(data: bytes) -> bytes:
+        """Return the value bytes of a DER SEQUENCE, skipping tag + length."""
+        assert data[0] == 0x30, f'Expected SEQUENCE (0x30), got {data[0]:#x}'
+        off = 1
+        b = data[off]; off += 1
+        if b & 0x80:
+            off += b & 0x7F
+        return data[off:]
+
+    ctl_hash = hashlib.sha256(_seq_value(ctl)).digest()
+    ts = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+
+    # signedAttrs (authenticated attributes)
+    # SPC_STATEMENT_TYPE is required by Windows Authenticode policy.
+    # Elements must be in DER SET OF sort order (ascending by encoded bytes).
+    content_type_attr   = _seq(_oid(_OID_CONTENT_TYPE), _set(_oid(_OID_CTL)))
+    signing_time_attr   = _seq(_oid(_OID_SIGNING_TIME),  _set(_utctime(ts)))
+    message_digest_attr = _seq(_oid(_OID_MSG_DIGEST),    _set(_octet(ctl_hash)))
+    stmt_type_attr      = _seq(_oid(_OID_SPC_STMT_TYPE),
+                               _set(_seq(_oid(_OID_SPC_INDIVIDUAL))))
+
+    # Sort by full DER encoding (lexicographic) to comply with DER SET OF rules.
+    attrs = sorted(
+        [content_type_attr, signing_time_attr, message_digest_attr, stmt_type_attr],
+        key=lambda x: x,
+    )
+    signed_attrs_body = b''.join(attrs)
+
+    # RFC 2315 §9.3: the signature is computed over signedAttrs with its
+    # outer tag changed from [0] IMPLICIT (0xA0) to SET (0x31).
+    to_sign = _tlv(0x31, signed_attrs_body)
+
+    if isinstance(privkey, RSAPrivateKey):
+        sig     = privkey.sign(to_sign, PKCS1v15(), _hashes.SHA256())
+        sig_alg = _seq(_oid(_OID_RSA_SHA256), _null())
+    elif isinstance(privkey, EllipticCurvePrivateKey):
+        sig     = privkey.sign(to_sign, _ECDSA(_hashes.SHA256()))
+        sig_alg = _seq(_oid(_OID_EC_SHA256))
+    else:
+        sys.exit(f'Unsupported private key type: {type(privkey).__name__}')
+
+    sha256_alg = _seq(_oid(_OID_SHA256), _null())
+
+    # SignerInfo
+    signer_info = _seq(
+        _tlv(0x02, b'\x01'),            # version INTEGER 1
+        issuer_and_serial,
+        sha256_alg,                     # digestAlgorithm
+        _tlv(0xA0, signed_attrs_body),  # signedAttrs [0] IMPLICIT
+        sig_alg,                        # signatureAlgorithm
+        _octet(sig),                    # signature OCTET STRING
+    )
+
+    # encapContentInfo — CTL bytes directly under [0] EXPLICIT (no OCTET STRING)
     encap = _seq(
         _oid(_OID_CTL),
-        _tlv(0xA0, ctl),      # [0] EXPLICIT { CTL bytes, no OCTET STRING }
+        _tlv(0xA0, ctl),
     )
+
+    # SignedData (version 1, PKCS#7 v1.5 compatible)
     signed_data = _seq(
-        _tlv(0x02, b'\x01'),   # version INTEGER 1
-        _tlv(0x31, b''),        # digestAlgorithms SET {} (empty)
-        encap,
-        _tlv(0x31, b''),        # signerInfos SET {} (empty)
+        _tlv(0x02, b'\x01'),    # version INTEGER 1
+        _set(sha256_alg),       # digestAlgorithms SET { sha256 }
+        encap,                  # encapContentInfo
+        _tlv(0xA0, chain_der),  # certificates [0] IMPLICIT (leaf + CA chain)
+        _set(signer_info),      # signerInfos SET { signerInfo }
     )
-    return _seq(
+
+    # ContentInfo
+    content_info = _seq(
         _oid(_OID_SIGNED_DATA),
         _tlv(0xA0, signed_data),
     )
 
-
-# ---------------------------------------------------------------------------
-# Sign via osslsigncode
-# ---------------------------------------------------------------------------
-
-def sign(ctl: bytes, cert: str, key: str, out: str) -> None:
-    """Sign the CTL with osslsigncode and write the signed .cat file."""
-    unsigned = _unsigned_pkcs7(ctl)
-
-    with tempfile.NamedTemporaryFile(suffix='.cat', delete=False) as tmp:
-        tmp.write(unsigned)
-        unsigned_path = tmp.name
-
-    try:
-        try:
-            result = subprocess.run(
-                [
-                    'osslsigncode', 'sign',
-                    '-certs', cert,
-                    '-key',   key,
-                    '-h',     'sha256',
-                    '-in',    unsigned_path,
-                    '-out',   out,
-                ],
-                capture_output=True,
-                text=True,
-            )
-        except FileNotFoundError:
-            sys.exit(
-                'osslsigncode not found — install with:\n'
-                '  dnf install osslsigncode   (Fedora/RHEL)\n'
-                '  apt install osslsigncode   (Debian/Ubuntu)'
-            )
-        if result.returncode != 0:
-            sys.exit(
-                f'osslsigncode failed (exit {result.returncode}):\n'
-                f'{result.stderr.rstrip()}'
-            )
-    finally:
-        os.unlink(unsigned_path)
+    with open(out, 'wb') as f:
+        f.write(content_info)
 
 
 # ---------------------------------------------------------------------------
@@ -440,23 +531,81 @@ def sign(ctl: bytes, cert: str, key: str, out: str) -> None:
 # ---------------------------------------------------------------------------
 
 def gen_cert(cert_out: str, key_out: str, subject: str) -> None:
-    result = subprocess.run(
-        [
-            'openssl', 'req', '-x509', '-newkey', 'rsa:2048',
-            '-keyout', key_out,
-            '-out',    cert_out,
-            '-days',   '3650',
-            '-nodes',
-            '-subj',   subject,
-            '-addext', 'basicConstraints=critical,CA:TRUE',
-            '-addext', 'keyUsage=critical,digitalSignature,keyCertSign,cRLSign',
-            '-addext', 'extendedKeyUsage=codeSigning',
-        ],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        sys.exit(f'openssl error:\n{result.stderr.rstrip()}')
+    """
+    Generate a two-certificate chain for test code-signing:
+
+      1. Root CA  (CA:TRUE, keyUsage: keyCertSign+cRLSign, no EKU)
+         → Windows must trust this cert: certutil -addstore Root <product>-ca.crt
+         → Also add to TrustedPublisher:  certutil -addstore TrustedPublisher <product>-ca.crt
+
+      2. Leaf signing cert  (CA:FALSE, keyUsage: digitalSignature, EKU: codeSigning)
+         → This is the cert that signs the catalog; signed by the root CA above.
+
+    *cert_out* receives a PEM chain: leaf cert + root CA cert (in that order).
+    *key_out*  receives the leaf private key.
+
+    A companion file named <cert_out base>-ca.crt is written with the root CA cert
+    alone so the user can easily import it into the Windows certificate stores.
+    """
+    # Derive CA cert output path from cert_out
+    base = cert_out
+    for suffix in ('.crt', '.pem', '.cer'):
+        if base.endswith(suffix):
+            base = base[:-len(suffix)]
+            break
+    ca_cert_out = base + '-ca.crt'
+    ca_key_tmp  = base + '-ca.key'
+
+    def _run(*args: str) -> None:
+        r = subprocess.run(list(args), capture_output=True, text=True)
+        if r.returncode != 0:
+            sys.exit(f'openssl error:\n{r.stderr.rstrip()}')
+
+    # Step 1: root CA key + self-signed cert
+    _run('openssl', 'req', '-x509', '-newkey', 'rsa:2048',
+         '-keyout', ca_key_tmp, '-out', ca_cert_out,
+         '-days', '3650', '-nodes',
+         '-subj', subject + ' CA',
+         '-addext', 'basicConstraints=critical,CA:TRUE,pathlen:0',
+         '-addext', 'keyUsage=critical,keyCertSign,cRLSign')
+
+    # Step 2: leaf key + CSR
+    leaf_csr_tmp = base + '-leaf.csr'
+    _run('openssl', 'req', '-newkey', 'rsa:2048',
+         '-keyout', key_out, '-out', leaf_csr_tmp,
+         '-nodes', '-subj', subject)
+
+    # Step 3: sign leaf CSR with root CA, adding leaf-cert extensions
+    leaf_cert_tmp = base + '-leaf.crt'
+    ext_tmp = base + '-leaf.ext'
+    with open(ext_tmp, 'w') as f:
+        f.write('[v3_leaf]\n')
+        f.write('basicConstraints = critical,CA:FALSE\n')
+        f.write('keyUsage = critical,digitalSignature\n')
+        f.write('extendedKeyUsage = codeSigning\n')
+    _run('openssl', 'x509', '-req',
+         '-in',      leaf_csr_tmp,
+         '-CA',      ca_cert_out,
+         '-CAkey',   ca_key_tmp,
+         '-CAcreateserial',
+         '-out',     leaf_cert_tmp,
+         '-days',    '3650',
+         '-extfile', ext_tmp,
+         '-extensions', 'v3_leaf')
+
+    # Step 4: assemble chain PEM: leaf cert + CA cert
+    with open(cert_out, 'w') as out_f:
+        for path in (leaf_cert_tmp, ca_cert_out):
+            with open(path) as pf:
+                out_f.write(pf.read())
+
+    # Cleanup temp files (keep ca_cert_out for user to import)
+    for tmp in (ca_key_tmp, leaf_csr_tmp, leaf_cert_tmp, ext_tmp,
+                base + '-ca.srl'):
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -631,7 +780,8 @@ def main() -> None:
     ap.add_argument('--cert', default='firmware-signing.crt', metavar='cert.pem')
     ap.add_argument('--key',  default='firmware-signing.key', metavar='key.pem')
     ap.add_argument('--gen-cert', action='store_true',
-                    help='Generate a self-signed code-signing certificate')
+                    help='Generate a test code-signing certificate chain '
+                         '(root CA + leaf signing cert)')
     ap.add_argument('--subject', default='/CN=Firmware Test Signing',
                     metavar='/CN=...')
     ap.add_argument('--hwid', default='', metavar='UEFI\\RES_{GUID}',
@@ -641,22 +791,36 @@ def main() -> None:
     ap.add_argument('--out', default=None, metavar='firmware.cat')
     ap.add_argument('--update-cabinet', action='store_true',
                     help='Rewrite the input cabinet with the .cat added')
-    ap.add_argument('files', nargs='+',
+    ap.add_argument('files', nargs='*',
                     help='Files to catalog, or a single .cab to read from')
     args = ap.parse_args()
 
     if args.gen_cert:
-        print(f'Generating self-signed certificate → {args.cert}, {args.key}',
-              file=sys.stderr)
+        base = args.cert
+        for sfx in ('.crt', '.pem', '.cer'):
+            if base.endswith(sfx):
+                base = base[:-len(sfx)]
+                break
+        ca_cert = base + '-ca.crt'
+        print(f'Generating test code-signing chain → {args.cert} (leaf+CA chain), '
+              f'{args.key} (leaf key)', file=sys.stderr)
         gen_cert(args.cert, args.key, args.subject)
-        print('WARNING: self-signed certificate is for test-signing only.',
-              file=sys.stderr)
+        print(f'Root CA cert: {ca_cert}', file=sys.stderr)
+        print('WARNING: self-signed chain is for test-signing only.', file=sys.stderr)
+        print('  On Windows (Administrator):', file=sys.stderr)
+        print(f'    bcdedit /set testsigning on', file=sys.stderr)
+        print(f'    certutil -addstore Root "{ca_cert}"', file=sys.stderr)
+        print(f'    certutil -addstore TrustedPublisher "{ca_cert}"', file=sys.stderr)
+        if not args.files:
+            return   # cert-only mode; no files to catalog
     else:
         missing = [f for f in [args.cert, args.key] if not os.path.isfile(f)]
         if missing:
             sys.exit('error: file(s) not found: ' + ', '.join(missing))
 
     files = args.files
+    if not files:
+        ap.error('files are required (or use --gen-cert alone to only generate a certificate)')
     cab_tmpdir: str | None = None
     cab_contents: dict[str, bytes] | None = None
     cab_path: str | None = None
