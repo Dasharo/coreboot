@@ -165,7 +165,8 @@ $(build-dir)/compiler-%.json: $(src-dir)/compiler-%.json | $(build-dir)/goswid
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "$$name" --version "$$version"; \
 	done
 
-$(build-dir)/coreboot.json: $(src-dir)/coreboot.json .git/HEAD | $(build-dir)/goswid
+coreboot-gitdir := $(shell git rev-parse --git-dir)
+$(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $(build-dir)/goswid
 	cp $< $@
 	git_tree_hash=$$(git log -n 1 --format=%T);\
 	git_comm_hash=$$(git log -n 1 --format=%H);\
