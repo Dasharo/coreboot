@@ -165,10 +165,11 @@ $(build-dir)/compiler-%.json: $(src-dir)/compiler-%.json | $(build-dir)/goswid
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "$$name" --version "$$version"; \
 	done
 
-$(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(obj)/build.h | $(build-dir)/goswid
+coreboot-gitdir := $(shell git rev-parse --git-dir)
+$(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $(build-dir)/goswid
 	cp $< $@
-	git_tree_hash=$$(grep 'COREBOOT_ORIGIN_TREE_REVISION' $(obj)/build.h | sed 's/.*"\(.*\)".*/\1/');\
-	git_comm_hash=$$(grep 'COREBOOT_ORIGIN_GIT_REVISION' $(obj)/build.h | sed 's/.*"\(.*\)".*/\1/');\
+	git_tree_hash=$$(git log -n 1 --format=%T);\
+	git_comm_hash=$$(git log -n 1 --format=%H);\
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;\
 	$(build-dir)/goswid add-license -o $@ -i $@ $(coreboot-licenses)
 
