@@ -17,6 +17,7 @@ CONFIG_SBOM_ME_PATH        := $(call strip_quotes, $(CONFIG_SBOM_ME_PATH))
 CONFIG_FSP_S_FILE               := $(call strip_quotes, $(CONFIG_FSP_S_FILE))
 CONFIG_FSP_M_FILE               := $(call strip_quotes, $(CONFIG_FSP_M_FILE))
 CONFIG_FSP_T_FILE               := $(call strip_quotes, $(CONFIG_FSP_T_FILE))
+CONFIG_FSP_FD_PATH              := $(call strip_quotes, $(CONFIG_FSP_FD_PATH))
 CONFIG_SBOM_INTEL_FSP_PATH      := $(call strip_quotes, $(CONFIG_SBOM_INTEL_FSP_PATH))
 CONFIG_AGESA_BINARY_PI_FILE     := $(call strip_quotes, $(CONFIG_AGESA_BINARY_PI_FILE))
 CONFIG_SBOM_AGESA_PATH          := $(call strip_quotes, $(CONFIG_SBOM_AGESA_PATH))
@@ -259,12 +260,11 @@ $(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json | $(build-dir
 	rm -f $$acm_tmp
 
 $(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_S_FILE) $(CONFIG_FSP_T_FILE) $(CONFIG_FSP_M_FILE) | $(build-dir)/goswid
-	cp $(src-dir)/intel-fsp.json $@
+	cp $< $@
 ifeq ($(CONFIG_FSP_USE_REPO),y)
 	set -e; \
-	fsp_fd='$(patsubst "%",%,$(CONFIG_FSP_FD_PATH))'; \
-	fsp_git_root=$$(git -C "$$(dirname "$$fsp_fd")" rev-parse --show-toplevel 2>/dev/null); \
-	fsp_fd_abs=$$(realpath "$$fsp_fd" 2>/dev/null || printf '%s\n' "$$fsp_fd"); \
+	fsp_git_root=$$(git -C "$$(dirname "$(CONFIG_FSP_FD_PATH)")" rev-parse --show-toplevel 2>/dev/null); \
+	fsp_fd_abs=$$(realpath "$(CONFIG_FSP_FD_PATH)" 2>/dev/null || printf '%s\n' "$(CONFIG_FSP_FD_PATH)"); \
 	fsp_rel=$${fsp_fd_abs#$$fsp_git_root/}; \
 	fsp_version=$$(git -C "$$fsp_git_root" log --format=%s -- "$$fsp_rel" 2>/dev/null | grep -o -m1 -E '\([0-9]+_[0-9]+\)|[A-Z]\.[0-9]+\.[A-Fa-f0-9]+\.[0-9]+'); \
 	if [ -n "$$fsp_version" ]; then \
@@ -296,8 +296,7 @@ $(build-dir)/amd-agesa.json: $(src-dir)/amd-agesa.json $(CONFIG_AGESA_BINARY_PI_
 	cp $< $@
 	set -e; \
 	agesa_ver=$$(strings -a "$(CONFIG_AGESA_BINARY_PI_FILE)" \
-		| grep -m1 -Eo 'AGESA![A-Za-z0-9_]+|[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
-		| head -1); \
+		| grep -m1 -Eo 'AGESA![A-Za-z0-9_]+|[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'); \
 	if [ -n "$$agesa_ver" ]; then \
 		sed -i "s/<software_version>/$$agesa_ver/" $@; \
 	else \
@@ -360,16 +359,7 @@ endef
 # Makefile.mks have been processed and amd_microcode_bins is fully populated.
 postinclude-hooks += $$(foreach ucode,$$(amd_microcode_bins),$$(eval $$(call amd-ucode-sbom-rule,$$(ucode))))
 
-# Resolve the real .git dir for the vboot submodule.
-# When vboot is a submodule, 3rdparty/vboot/.git is a file (gitdir pointer), not a directory.
-# NOTE: avoid case/pattern syntax inside $(shell) — make parses ')' as closing the $(shell) call.
-vboot-gitdir := $(shell \
-  if [ -d 3rdparty/vboot/.git ]; then \
-    echo 3rdparty/vboot/.git; \
-  elif [ -f 3rdparty/vboot/.git ]; then \
-    realpath --relative-to=. \
-      "3rdparty/vboot/$$(sed 's/^gitdir: //' 3rdparty/vboot/.git)"; \
-  fi)
+vboot-gitdir := $(shell git -C 3rdparty/vboot rev-parse --absolute-git-dir 2>/dev/null)
 
 $(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitdir)/HEAD,) | $(build-dir)
 	cp $< $@
