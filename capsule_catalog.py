@@ -769,6 +769,160 @@ def write_cabinet(path: str, files: dict[str, bytes],
 
 
 # ---------------------------------------------------------------------------
+# Catalog verifier (debug helper — checks PKCS#7 messageDigest and signature)
+# ---------------------------------------------------------------------------
+
+def _der_read(data: bytes, off: int = 0) -> tuple[int, bytes, int]:
+    """
+    Parse one DER TLV at *off*.
+    Returns (tag, value_bytes, next_offset).
+    """
+    tag = data[off]; pos = off + 1
+    b = data[pos]; pos += 1
+    if b & 0x80:
+        n = b & 0x7F
+        vlen = int.from_bytes(data[pos:pos + n], 'big')
+        pos += n
+    else:
+        vlen = b
+    return tag, data[pos:pos + vlen], pos + vlen
+
+
+def _der_children(data: bytes) -> list[tuple[int, bytes, bytes]]:
+    """
+    Iterate over DER children of a constructed element *data* (the value, no tag/len).
+    Returns list of (tag, raw_tlv, value).
+    """
+    out = []
+    off = 0
+    while off < len(data):
+        start = off
+        tag, val, off = _der_read(data, off)
+        out.append((tag, data[start:off], val))
+    return out
+
+
+def _verify_cat(cat_path: str, cert_path: str) -> None:
+    """
+    Parse *cat_path* and verify:
+      1. The messageDigest in signedAttrs matches SHA256 of the CTL value bytes.
+      2. The RSA/ECDSA signature over signedAttrs (with SET tag) is valid.
+
+    Prints a pass/fail report.  Requires the "cryptography" library.
+    """
+    try:
+        from cryptography import x509 as _x509
+        from cryptography.hazmat.primitives import hashes as _hashes
+        from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
+        from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+        from cryptography.hazmat.primitives.asymmetric.ec import (
+            EllipticCurvePublicKey, ECDSA as _ECDSA,
+        )
+        from cryptography.exceptions import InvalidSignature
+    except ImportError:
+        sys.exit('Python "cryptography" library required')
+
+    import re as _re
+
+    with open(cat_path, 'rb') as f:
+        raw = f.read()
+    print(f'Verifying {cat_path}  ({len(raw)} bytes)', file=sys.stderr)
+
+    # ContentInfo SEQUENCE
+    _, ci_val, _ = _der_read(raw, 0)
+    ci = _der_children(ci_val)
+    # ci[0] = OID signedData, ci[1] = [0] EXPLICIT { SignedData }
+    _, sd_val, _ = _der_read(ci[1][2], 0)   # unwrap [0] EXPLICIT
+    sd = _der_children(sd_val)
+    # sd: [0]=version, [1]=digestAlgs, [2]=encapContentInfo, [3]=[0]certs, [4]=signerInfos
+
+    # encapContentInfo (sd[2])
+    ec = _der_children(sd[2][2])
+    # ec[0]=OID CTL, ec[1]=[0] EXPLICIT { CTL bytes }
+    # ec[1][2] = VALUE of [0] EXPLICIT = the full CTL SEQUENCE (30 len body)
+    ctl_full_seq = ec[1][2]
+    assert ctl_full_seq[0] == 0x30, f'Expected CTL SEQUENCE, got {ctl_full_seq[0]:#x}'
+    # Strip outer SEQUENCE tag+len to get the body — this is what sign() hashes
+    _, ctl_body, _ = _der_read(ctl_full_seq, 0)
+    ctl_digest_expected = hashlib.sha256(ctl_body).digest()
+    print(f'  CTL SEQUENCE length  : {len(ctl_full_seq)} bytes', file=sys.stderr)
+    print(f'  SHA256(CTL body)     : {ctl_digest_expected.hex()}', file=sys.stderr)
+
+    # signerInfos SET (sd[-1])
+    si_set_children = _der_children(sd[-1][2])
+    # First SignerInfo SEQUENCE
+    si = _der_children(si_set_children[0][2])
+    # si: [0]=version, [1]=issuerAndSerial, [2]=digestAlg, [3]=[0]signedAttrs,
+    #     [4]=sigAlg, [5]=signature OCTET STRING
+
+    # Find [0] IMPLICIT signedAttrs (tag 0xA0)
+    sa_item = next((t, r, v) for t, r, v in si if t == 0xA0)
+    sa_raw = sa_item[1]  # raw bytes including tag+len (for signature computation)
+    sa_val = sa_item[2]  # value bytes (the attrs themselves)
+
+    # Find signature OCTET STRING (last tag 0x04 in si)
+    sig_bytes = next(v for t, _, v in reversed(si) if t == 0x04)
+    print(f'  Signature length     : {len(sig_bytes)} bytes', file=sys.stderr)
+
+    # Find messageDigest attribute OID 1.2.840.113549.1.9.4
+    _OID_MD_RAW = _oid(_OID_MSG_DIGEST)  # full OID TLV
+    md_found: bytes | None = None
+    for attr_tag, attr_raw, attr_val in _der_children(sa_val):
+        if _OID_MD_RAW not in attr_raw:
+            continue
+        # attr_val = OID + SET { OCTET STRING }
+        for ct, _, cv in _der_children(attr_val):
+            if ct == 0x31:   # SET
+                for it, _, iv in _der_children(cv):
+                    if it == 0x04:
+                        md_found = iv
+        break
+
+    if md_found is None:
+        print('  FAIL: messageDigest attribute not found in signedAttrs', file=sys.stderr)
+    elif md_found == ctl_digest_expected:
+        print(f'  PASS: messageDigest matches SHA256(CTL value)', file=sys.stderr)
+    else:
+        print(f'  FAIL: messageDigest MISMATCH', file=sys.stderr)
+        print(f'    in catalog : {md_found.hex()}', file=sys.stderr)
+        print(f'    expected   : {ctl_digest_expected.hex()}', file=sys.stderr)
+        full_hash = hashlib.sha256(ctl_full_seq).hexdigest()
+        print(f'    SHA256(full seq)   : {full_hash}', file=sys.stderr)
+
+    # Verify signature over signedAttrs with tag rewritten 0x31
+    to_verify = b'\x31' + sa_raw[1:]
+
+    ok = False
+    if os.path.isfile(cert_path):
+        with open(cert_path, 'rb') as f:
+            chain_pem = f.read()
+        pem_blocks = _re.findall(
+            b'-----BEGIN CERTIFICATE-----[^-]+-----END CERTIFICATE-----',
+            chain_pem,
+        )
+        for pem in pem_blocks:
+            cert_obj = _x509.load_pem_x509_certificate(pem)
+            pub = cert_obj.public_key()
+            try:
+                if isinstance(pub, RSAPublicKey):
+                    pub.verify(sig_bytes, to_verify, PKCS1v15(), _hashes.SHA256())
+                elif isinstance(pub, EllipticCurvePublicKey):
+                    pub.verify(sig_bytes, to_verify, _ECDSA(_hashes.SHA256()))
+                else:
+                    continue
+                print(f'  PASS: signature valid ({cert_obj.subject.rfc4514_string()})',
+                      file=sys.stderr)
+                ok = True
+                break
+            except InvalidSignature:
+                continue
+        if not ok:
+            print('  FAIL: signature invalid against all certs in chain', file=sys.stderr)
+    else:
+        print(f'  (skipping sig check — cert not found: {cert_path})', file=sys.stderr)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -791,9 +945,16 @@ def main() -> None:
     ap.add_argument('--out', default=None, metavar='firmware.cat')
     ap.add_argument('--update-cabinet', action='store_true',
                     help='Rewrite the input cabinet with the .cat added')
+    ap.add_argument('--verify', metavar='firmware.cat',
+                    help='Parse an existing .cat and verify PKCS#7 messageDigest + '
+                         'signature (requires --cert / --key to match)')
     ap.add_argument('files', nargs='*',
                     help='Files to catalog, or a single .cab to read from')
     args = ap.parse_args()
+
+    if args.verify:
+        _verify_cat(args.verify, args.cert)
+        return
 
     if args.gen_cert:
         base = args.cert
@@ -858,6 +1019,13 @@ def main() -> None:
         ts = datetime.now(timezone.utc).replace(second=0, microsecond=0)
 
         print(f'Building CTL for {len(files)} file(s)...', file=sys.stderr)
+        for f in files:
+            sha1   = _sha1_file(f).hex()
+            sha256 = _sha256_file(f).hex()
+            name   = os.path.basename(f)
+            print(f'  {name}', file=sys.stderr)
+            print(f'    SHA1:   {sha1}', file=sys.stderr)
+            print(f'    SHA256: {sha256}', file=sys.stderr)
         ctl = build_ctl(files, ts, hwid=args.hwid)
 
         print(f'Signing → {args.out}', file=sys.stderr)
