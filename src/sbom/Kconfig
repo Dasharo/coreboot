@@ -237,7 +237,7 @@ config SBOM_INTEL_FSP_GENERATE
 config SBOM_INTEL_FSP_PATH
 	string "Path to SBOM file for the Intel FSP firmware"
 	depends on SBOM_INTEL_FSP && !SBOM_INTEL_FSP_GENERATE
-	default "build/sbom/intel-fsp.json"
+	default "src/sbom/intel-fsp.json"
 	help
 	  The path of the SBOM file describing the Software included in the build
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
