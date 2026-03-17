@@ -132,7 +132,7 @@ endif
 
 ## Build final SBOM (Software Bill of Materials) file in uswid format
 
-$(build-dir)/sbom.uswid: $(build-dir)/coreboot.json $$(swid-files-y) $(swid-files-compiler) | $(build-dir)/goswid $(build-dir)
+$(build-dir)/sbom.uswid: $(build-dir)/coreboot.json $$(swid-files-y) $(swid-files-compiler) | $(build-dir)/goswid $(build-dir) sbom-acm-clean
 	echo "    SBOM      " $^
 	$(build-dir)/goswid convert -o $@ \
 		--parent $(build-dir)/coreboot.json \
@@ -393,4 +393,4 @@ sbom-acm-clean:
 	$(if $(CONFIG_SBOM_BIOS_ACM_GENERATE),rm -f $(build-dir)/intel-bios-acm.json,)
 	$(if $(CONFIG_SBOM_SINIT_ACM_GENERATE),rm -f $(build-dir)/intel-sinit-acm.json,)
 
-sbom: sbom-acm-clean $(build-dir)/sbom.uswid
+sbom: $(build-dir)/sbom.uswid
