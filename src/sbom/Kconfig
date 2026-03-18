@@ -352,4 +352,32 @@ config SBOM_VBOOT_GENERATE
 	  If disabled, the pkgconfig .pc files generated during the vboot
 	  build are used instead (original behaviour).
 
+config SBOM_IPXE
+	bool "Include iPXE metadata in SBOM"
+	default n
+	depends on BUILD_IPXE
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the
+	  iPXE network boot firmware into the SBOM
+	  (Software Bill of Materials) File in your build.
+
+config SBOM_IPXE_GENERATE
+	bool "Auto-generate iPXE revision in SBOM"
+	depends on SBOM_IPXE
+	default y
+	help
+	  When enabled, coreboot reads the git commit hash of the iPXE
+	  source tree (payloads/external/iPXE/ipxe) and records it as the
+	  SBOM version, with the tree hash stored as colloquial-version.
+	  If disabled, set SBOM_IPXE_PATH to a custom file.
+
+config SBOM_IPXE_PATH
+	string "Path to SBOM file for iPXE"
+	depends on SBOM_IPXE && !SBOM_IPXE_GENERATE
+	default "src/sbom/payload-iPXE.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
 endif
