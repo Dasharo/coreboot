@@ -404,4 +404,6 @@ sbom-acm-clean:
 	$(if $(CONFIG_SBOM_BIOS_ACM_GENERATE),rm -f $(build-dir)/intel-bios-acm.json,)
 	$(if $(CONFIG_SBOM_SINIT_ACM_GENERATE),rm -f $(build-dir)/intel-sinit-acm.json,)
 
+## FIXME: this target doesn't reliably trigger regeneration of sbom.uswid, which
+##        is easy to see by running `make --debug=b sbom` once or twice
 sbom: $(build-dir)/sbom.uswid
