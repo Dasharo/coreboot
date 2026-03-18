@@ -90,7 +90,7 @@ help_coreboot help::
 	@echo  '*** coreboot platform targets ***'
 	@echo  '  Use "make [target] V=1" for extra build debug information'
 	@echo  '  all                     - Build coreboot'
-	@echo  '  sbom                    - Rebuild SBOM (sbom.uswid) from existing build artifacts'
+	@echo  '  sbom                    - Rebuild SBOM (sbom.uswid) from existing build artifacts (FIXME)'
 	@echo  '  clean                   - Remove coreboot build artifacts'
 	@echo  '  distclean               - Remove build artifacts and config files'
 	@echo  '  sphinx                  - Build sphinx documentation for coreboot'
