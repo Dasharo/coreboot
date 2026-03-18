@@ -36,6 +36,7 @@ CONFIG_INTEL_TXT_CBFS_BIOS_ACM   := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS
 CONFIG_INTEL_TXT_CBFS_SINIT_ACM  := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS_SINIT_ACM))
 CONFIG_SBOM_COMPILER_PATH  := $(call strip_quotes, $(CONFIG_SBOM_COMPILER_PATH))
 CONFIG_EDK2_REPOSITORY     := $(call strip_quotes, $(CONFIG_EDK2_REPOSITORY))
+CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
 
 # Select the correct payload directory for the used payload. Ideally we could just make this
 # a one-liner, but since the payload is generated externally (with an extra make command), we
@@ -106,6 +107,8 @@ swid-files-$(CONFIG_SBOM_SINIT_ACM) += \
 	$(if $(CONFIG_SBOM_SINIT_ACM_GENERATE), \
 		$(if $(wildcard $(obj)/coreboot.rom),$(build-dir)/intel-sinit-acm.json,), \
 		$(CONFIG_SBOM_SINIT_ACM_PATH))
+
+swid-files-$(CONFIG_SBOM_IPXE) += $(if $(CONFIG_SBOM_IPXE_GENERATE),$(build-dir)/payload-iPXE.json,$(CONFIG_SBOM_IPXE_PATH))
 
 vboot-pkgconfig-files = $(obj)/external/vboot_reference-bootblock/vboot_host.pc $(obj)/external/vboot_reference-ramstage/vboot_host.pc $(obj)/external/vboot_reference-postcar/vboot_host.pc
 ifeq ($(CONFIG_SEPARATE_ROMSTAGE),y)
@@ -365,6 +368,14 @@ $(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitd
 	cp $< $@
 	git_tree_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%T); \
 	git_comm_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%H); \
+	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
+
+ipxe-gitdir := $(shell git -C payloads/external/iPXE/ipxe rev-parse --absolute-git-dir 2>/dev/null)
+
+$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir),$(ipxe-gitdir)/HEAD,) | $(build-dir)
+	cp $< $@
+	git_tree_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%T); \
+	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
 
 # Order-only dep on the .git dir ensures the payload is cloned before we try
