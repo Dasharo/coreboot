@@ -13,6 +13,19 @@ config SOC_AMD_COMMON_BLOCK_PCI_MMCONF
 	  Selecting this option adds the AMD-common enable_pci_mmconf function
 	  to the build.
 
+config SOC_AMD_COMMON_BLOCK_PCI_MMCONF_SYNC_WITH_DF
+	bool
+	depends on SOC_AMD_COMMON_BLOCK_PCI_MMCONF
+	help
+	  Selecting this option to synchronize the PCI MMCONF base address in
+	  Data Fabric PCI configuration space. Besides setting the MMCONF MSR,
+	  the PCI MMCONF base address must also match the Data Fabric
+	  configuration programmed by PSP in ABL. A mismatch between MSR and
+	  DF will cause the PCI access via MMCONF to fail. When this option
+	  is selected the boards do not have to worry about the coreboot's
+	  ECAM_MMCONF_BASE_ADDRESS value and PSP programmed MMCONF, because
+	  coreboot will overwrite what PSP has configured in ABL.
+
 config SOC_AMD_COMMON_BLOCK_PCIE_GPP_DRIVER
 	bool
 	depends on SOC_AMD_COMMON_BLOCK_PCI
