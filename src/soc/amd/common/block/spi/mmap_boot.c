@@ -19,11 +19,14 @@ static const struct mem_region_device boot_dev =
 
 const struct region_device *boot_device_ro(void)
 {
+	uint8_t mapping = 0;
 	/*
 	 * The following code assumes that ROM2 is mapped at flash offset 0. This is the default
 	 * configuration currently enforced by soft-straps.
+	 * When ROM Armor is enabled fch_spi_rom_remapping() returns failure as the SPIBAR is
+	 * no longer accessible.
 	 */
-	if (fch_spi_rom_remapping() != 0)
+	if (!fch_spi_rom_remapping(&mapping) && mapping != 0)
 		die("Non default SPI ROM remapping is not supported!");
 
 	return &boot_dev.rdev;
