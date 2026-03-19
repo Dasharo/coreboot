@@ -134,8 +134,11 @@ void spi_write8(uint8_t reg, uint8_t val);
 void spi_write16(uint8_t reg, uint16_t val);
 void spi_write32(uint8_t reg, uint32_t val);
 
-/* Returns the active SPI ROM remapping */
-uint8_t fch_spi_rom_remapping(void);
+/* Returns the active SPI ROM remapping
+ * @param Returns the active remapping
+ * @return 0 on success.
+ */
+int fch_spi_rom_remapping(uint8_t *mapping);
 
 void fch_spi_config_modes(void);
 void fch_spi_backup_registers(void);
