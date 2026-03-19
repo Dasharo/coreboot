@@ -16,7 +16,12 @@ void opensil_fill_fadt(acpi_fadt_t *fadt)
 		.SilMemBaseAddress = (uintptr_t)cbmem_find(CBMEM_ID_AMD_OPENSIL)
 	};
 
-	FCHCLASS_INPUT_BLK *blk = SilFindStructure(&SilContext, SilId_FchClass,  0);
+	if (!SilContext.SilMemBaseAddress) {
+		printk(BIOS_ERR, "OpenSIL cbmem memory not found\n");
+		return;
+	}
+
+	FCHCLASS_INPUT_BLK *blk = SilFindStructure(&SilContext, SilId_FchClass, 0);
 
 	fadt->pm1a_evt_blk = blk->FchBldCfg.CfgAcpiPm1EvtBlkAddr;
 	fadt->pm1a_cnt_blk = blk->FchBldCfg.CfgAcpiPm1CntBlkAddr;
