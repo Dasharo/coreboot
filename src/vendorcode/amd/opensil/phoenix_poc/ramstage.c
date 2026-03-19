@@ -85,11 +85,10 @@ static void configure_usb(SIL_CONTEXT *SilContext)
 	if (!fch_usb_data)
 		return;
 
-	fch_usb_data->Xhci0Enable = usb_ctrlr[0] && usb_ctrlr[0]->enabled;
-	fch_usb_data->Xhci1Enable = usb_ctrlr[1] && usb_ctrlr[1]->enabled;
-	fch_usb_data->Xhci2Enable = usb_ctrlr[2] && usb_ctrlr[2]->enabled;
-	fch_usb_data->Xhci3Enable = usb_ctrlr[3] && usb_ctrlr[3]->enabled;
-
+	fch_usb_data->Xhci0Enable = is_dev_enabled(usb_ctrlr[0]);
+	fch_usb_data->Xhci1Enable = is_dev_enabled(usb_ctrlr[1]);
+	fch_usb_data->Usb4Host[0].Usb3HCDisable = !is_dev_enabled(usb_ctrlr[2]);
+	fch_usb_data->Usb4Host[1].Usb3HCDisable = !is_dev_enabled(usb_ctrlr[3]);
 }
 
 static void configure_ccx(SIL_CONTEXT *SilContext)
@@ -151,14 +150,13 @@ static void opensil_entry(SIL_TIMEPOINT timepoint)
 {
 	SIL_STATUS ret;
 	SIL_TIMEPOINT tp = (uintptr_t)timepoint;
-	SIL_CONTEXT SilContext;
-	void *buf = cbmem_find(CBMEM_ID_AMD_OPENSIL);
+	SIL_CONTEXT SilContext = {
+		.ApobBaseAddress = CONFIG_PSP_APOB_DRAM_ADDRESS,
+		.SilMemBaseAddress = (uintptr_t)cbmem_find(CBMEM_ID_AMD_OPENSIL)
+	};
 
-	if (!buf)
+	if (!SilContext.SilMemBaseAddress)
 		die("OpenSIL cbmem memory not found!\n");
-
-	SilContext.ApobBaseAddress = CONFIG_PSP_APOB_DRAM_ADDRESS;
-	SilContext.SilMemBaseAddress = (uintptr_t)buf;
 
 	switch (tp) {
 	case SIL_TP1:
