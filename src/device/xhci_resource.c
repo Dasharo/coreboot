@@ -39,7 +39,7 @@ enum cb_err xhci_resource_for_each_ext_cap(const struct resource *res, void *con
 
 	ext_caps_word_offset = read16(res2mmio(res, XHCI_HCCPARAMS1_XECP, 0));
 
-	if (!ext_caps_word_offset) {
+	if ((ext_caps_word_offset == 0) || (ext_caps_word_offset == 0xffff)) {
 		printk(BIOS_ERR, "%s: No extended capabilities defined\n", __func__);
 		return CB_ERR;
 	}
@@ -62,7 +62,7 @@ enum cb_err xhci_resource_for_each_ext_cap(const struct resource *res, void *con
 		if (!header.next_ptr)
 			break;
 
-		ext_cap_ptr += header.next_ptr;
+		ext_cap_ptr += (header.next_ptr << 2);
 	}
 
 	return CB_SUCCESS;
