@@ -181,7 +181,9 @@ void opensil_mpio_per_device_config(struct device *dev)
 							config->aspm_l1_1,
 							config->aspm_l1_2,
 							config->clock_pm);
+
 		port.Port = port_data;
+		port.Port.MiscControls.SbLink = config->sb_link;
 	}
 	port.Port.AlwaysExpose = 1;
 	port.Port.SlotNum = ++slot_num;
