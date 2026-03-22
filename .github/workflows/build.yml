@@ -4,9 +4,11 @@ on:
     branches:
       - dasharo
       - dasharo-24.12
+      - dasharo-25.12
   push:
     branches:
       - dasharo-24.12
+      - dasharo-25.12
     tags:
       - '*'
 
