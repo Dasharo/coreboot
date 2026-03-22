@@ -2,10 +2,10 @@ name: Dasharo
 on:
   pull_request:
     branches:
-      - dasharo
+      - dasharo-25.12
   push:
     branches:
-      - dasharo-24.12
+      - dasharo-25.12
     tags:
       - '*'
 
