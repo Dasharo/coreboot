@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootblock_common.h>
+#include <delay.h>
 #include <device/pci_ops.h>
 #include <northbridge/intel/sandybridge/sandybridge.h>
 #include <superio/smsc/sch5545/sch5545.h>
@@ -17,6 +18,12 @@ void bootblock_mainboard_early_init(void)
 	pci_write_config32(HOST_BRIDGE, MCHBAR, CONFIG_FIXED_MCHBAR_MMIO_BASE | 1);
 	pci_write_config32(HOST_BRIDGE, MCHBAR + 4, 0);
 	mchbar_write16(SSKPD_HI, 0);
+
+	/*
+	 * The EC init process may fail asmay not yet be ready to accept the
+	 * initialization. Add some delay to avoid boot issues.
+	 */
+	mdelay(100);
 
 	sch5545_early_init(0x2e);
 	/* Bare EC and SIO GPIO initialization which allows to enable serial port */
