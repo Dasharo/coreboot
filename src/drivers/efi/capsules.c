@@ -298,7 +298,9 @@ static bool is_good_capsule_head(struct block_descr *block)
 static bool is_good_capsule_block(struct block_descr *block, uint32_t size_left)
 {
 	if (is_final_block(block)) {
-		printk(BIOS_ERR, "capsules: not enough SG blocks to cover a capsule.\n");
+		printk(BIOS_ERR,
+		       "capsules: not enough SG blocks to cover a capsule (%#x bytes more).\n",
+		       size_left);
 		return false;
 	}
 
@@ -308,7 +310,8 @@ static bool is_good_capsule_block(struct block_descr *block, uint32_t size_left)
 	}
 
 	if (block->len > size_left) {
-		printk(BIOS_ERR, "capsules: SG blocks reach beyond a capsule.\n");
+		printk(BIOS_ERR, "capsules: SG block reaches beyond a capsule: %#llx > %#x.\n",
+		       block->len, size_left);
 		return false;
 	}
 
@@ -372,6 +375,9 @@ static struct block_descr check_capsule_block(struct block_descr first_block,
 		while (size_left != 0) {
 			/* is_good_block() holds here whether it's the first iteration or
 			   not. */
+
+			printk(BIOS_SPEW, "capsules: checking SG block @ %#010llx.\n",
+			       block.self);
 
 			if (!is_good_capsule_block(&block, size_left))
 				goto error;
