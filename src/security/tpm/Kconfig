@@ -107,6 +107,7 @@ config TPM_LOG_TCG
 config TPM_LOG_TPM1
 	bool "TPM 1.2 format"
 	depends on TPM1 && !TPM2
+	select TPM_HASH_SHA1
 	help
 	  Log per TPM 1.2 specification.
 	  See "TCG PC Client Specific Implementation Specification for Conventional BIOS".
@@ -119,18 +120,26 @@ config TPM_LOG_TPM2
 
 endchoice
 
-if TPM_MEASURED_BOOT && (TPM_LOG_TCG || TPM_LOG_TPM2)
+if TPM_MEASURED_BOOT && !TPM_LOG_CB
 
 config TPM_HASH_SHA1
 	bool "SHA1 PCR hashing"
 	default y if TPM1 || TPM2
+
+endif
+
+if TPM_MEASURED_BOOT && (TPM_LOG_TCG || TPM_LOG_TPM2)
+
 config TPM_HASH_SHA256
 	bool "SHA256 PCR hashing"
 	default y if TPM2
+	depends on !TPM_LOG_TPM1
 config TPM_HASH_SHA384
 	bool "SHA384 PCR hashing"
+	depends on !TPM_LOG_TPM1
 config TPM_HASH_SHA512
 	bool "SHA512 PCR hashing"
+	depends on !TPM_LOG_TPM1
 
 endif
 
