@@ -1,0 +1,82 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_ASROCK_TURIND8UD_2T
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select SOC_AMD_TURIN_POC
+	select BOARD_ROMSIZE_KB_32768
+	select MEMORY_MAPPED_TPM
+	select DISABLE_KEYBOARD_RESET_PIN
+	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE
+	select SYSTEM_TYPE_SERVER
+	select HAVE_OPTION_TABLE
+	select HAVE_CMOS_DEFAULT
+
+config FMDFILE
+	default "src/mainboard/asrock/turind8ud-2t/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
+	default "src/mainboard/asrock/turind8ud-2t/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+	default "src/mainboard/asrock/turind8ud-2t/board.fmd"
+
+config MAINBOARD_DIR
+	default "asrock/turind8ud-2t"
+
+config MAINBOARD_PART_NUMBER
+	default "FIXME"
+
+config PSP_EARLY_VGA_IMAGE
+	default "src/mainboard/asrock/turind8ud-2t/early_vga.bin"
+
+config BUILD_WITH_DEBUG_APCB
+	bool "Build with debug APCB blobs"
+	default n
+	help
+	  Build coreboot image with debug APCB blobs. When selected, the
+	  APCBs with debug output on serial port will be used during build.
+
+	  Enabel it when debugging pre-reset vector issues.
+
+config ECAM_MMCONF_BASE_ADDRESS
+	default 0xb0000000
+
+config EFS_SPI_READ_MODE
+	default 0	# Normal read 33MHz
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+
+config EFS_SPI_MICRON_FLAG
+	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 1	# 33MHz
+
+config TPM_SPI_SPEED
+	default 1	# 33MHz
+
+config EFS_ESPI0_CONFIG
+	default 0x0e
+
+config TPM_MEASURED_BOOT_INIT_BOOTBLOCK
+	default y if TPM_MEASURED_BOOT && !VBOOT
+
+config VBOOT
+	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
+	select GBB_FLAG_DISABLE_FWMP
+	select GBB_FLAG_DISABLE_LID_SHUTDOWN
+	select GBB_FLAG_DISABLE_PD_SOFTWARE_SYNC
+	select VBOOT_ALWAYS_ENABLE_DISPLAY
+	select VBOOT_NO_BOARD_SUPPORT
+	select VBOOT_NO_TPM
+	select VBOOT_CLEAR_RECOVERY_IN_RAMSTAGE
+
+config VBOOT_SLOTS_RW_AB
+	default y if VBOOT
+
+config VBOOT_VBNV_OFFSET
+	default 0x60
+
+endif
