@@ -13,6 +13,8 @@
 #define   CORE_2_PSP_MSG_38_SPL_ENTRY_ERROR	BIT(14)
 #define   CORE_2_PSP_MSG_38_SPL_ENTRY_MISSING	BIT(15)
 
+#define CORE_2_PSP_MSG_63_OFFSET	0x109fc /* 4 byte */
+
 /* x86 to PSP commands */
 #define MBOX_BIOS_CMD_SMM_INFO			0x02
 #define MBOX_BIOS_CMD_SX_INFO			0x03
