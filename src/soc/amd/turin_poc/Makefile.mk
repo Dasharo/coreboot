@@ -109,6 +109,12 @@ APOB_NV_SIZE=$(call get_fmap_value,FMAP_SECTION_RW_MRC_CACHE_SIZE)
 APOB_NV_BASE=$(call get_fmap_value,FMAP_SECTION_RW_MRC_CACHE_START)
 endif # !CONFIG_SOC_AMD_COMMON_BLOCK_APOB_NV_DISABLE
 
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3)$(CONFIG_SMMSTORE),yy)
+# Rom Armor needs the SMM Store region to be whitelisted
+PSP_BIOS_NV_ST_BASE=$(call get_fmap_value,FMAP_SECTION_SMMSTORE_START)
+PSP_BIOS_NV_ST_SIZE=$(call get_fmap_value,FMAP_SECTION_SMMSTORE_SIZE)
+endif
+
 # Helper function to return a value with given bit set
 # Soft Fuse type = 0xb - See #57299 (NDA) for bit definitions.
 set-bit=$(call int-shift-left, 1 $(call _toint,$1))
@@ -169,6 +175,9 @@ OPT_PSP_SEV_NVRAM_SIZE=$(call add_opt_prefix, $(PSP_SEV_NVRAM_SIZE), --sev-nvram
 OPT_PSP_RPMC_NVRAM_BASE=$(call add_opt_prefix, $(PSP_RPMC_NVRAM_BASE), --rpmc-nvram-base)
 OPT_PSP_RPMC_NVRAM_SIZE=$(call add_opt_prefix, $(PSP_RPMC_NVRAM_SIZE), --rpmc-nvram-size)
 
+OPT_BIOS_NV_ST_BASE=$(call add_opt_prefix, $(PSP_BIOS_NV_ST_BASE), --variable-nvram-base)
+OPT_BIOS_NV_ST_SIZE=$(call add_opt_prefix, $(PSP_BIOS_NV_ST_SIZE), --variable-nvram-size)
+
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
 		$(OPT_APOB_NV_SIZE) \
@@ -178,6 +187,8 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_PSP_RPMC_NVRAM_SIZE) \
 		$(OPT_PSP_SEV_NVRAM_BASE) \
 		$(OPT_PSP_SEV_NVRAM_SIZE) \
+		$(OPT_BIOS_NV_ST_BASE) \
+		$(OPT_BIOS_NV_ST_SIZE) \
 		$(OPT_DEBUG_AMDFWTOOL) \
 		$(OPT_PSP_BIOSBIN_FILE) \
 		$(OPT_PSP_BIOSBIN_DEST) \
