@@ -4,7 +4,10 @@
 #include <amdblocks/smn.h>
 #include <bootstate.h>
 #include <console/console.h>
+#include <device/device.h>
 #include <device/mmio.h>
+#include <device/pci.h>
+#include <device/pci_ids.h>
 #include <soc/amd/common/block/psp/psp_def.h>
 
 #include <Nbio/NbioClass-api.h>
@@ -114,3 +117,24 @@ static void update_psp_hsti_state(void *unused)
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, send_psp_commands, NULL);
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, update_psp_hsti_state, NULL);
 BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_LOAD, BS_ON_EXIT, update_psp_hsti_state, NULL);
+
+static void enable_bus_master(struct device *dev)
+{
+	if (CONFIG(PCI_ALLOW_BUS_MASTER_ANY_DEVICE)) {
+		pci_or_config16(dev, PCI_COMMAND, PCI_COMMAND_MASTER);
+		printk(BIOS_DEBUG, "PSP PCI CMD: %04x\n", pci_read_config16(dev, PCI_COMMAND));
+	}
+}
+
+static struct device_operations turin_psp_ops  = {
+	.read_resources   = pci_dev_read_resources,
+	.set_resources    = pci_dev_set_resources,
+	.enable_resources = pci_dev_enable_resources,
+	.enable           = enable_bus_master,
+};
+
+static const struct pci_driver turin_psp_driver __pci_driver = {
+	.ops    = &turin_psp_ops,
+	.vendor = PCI_VID_AMD,
+	.device = 0x156e
+};
