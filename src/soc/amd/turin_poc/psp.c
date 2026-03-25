@@ -4,6 +4,7 @@
 #include <amdblocks/smn.h>
 #include <bootstate.h>
 #include <console/console.h>
+#include <device/mmio.h>
 #include <soc/amd/common/block/psp/psp_def.h>
 
 #include <Nbio/NbioClass-api.h>
@@ -83,4 +84,33 @@ static void send_psp_commands(void *unused)
 				       "Notify MPDMA-TF SRIOV enabled");
 }
 
+static void update_psp_hsti_state(void *unused)
+{
+	uint32_t hsti_state = 0;
+	uint32_t c2pmsg_63;
+	uintptr_t psp_mmio = get_psp_mmio_base();
+
+	if (!psp_mmio) {
+		printk(BIOS_ERR, "PSP MMIO not programmed\n");
+		return;
+	}
+
+	c2pmsg_63 = read32p(psp_mmio + CORE_2_PSP_MSG_63_OFFSET);
+
+	/* If HSTI already reported, skip updating the PSP capability register */
+	if (c2pmsg_63 & (1 << 7)){
+		printk(BIOS_DEBUG, "PSP HSTI already reported\n");
+		return;
+	}
+
+	if (psp_get_hsti_state(&hsti_state) == CB_SUCCESS) {
+		printk(BIOS_INFO, "PSP: HSTI = %08x\n", hsti_state);
+		c2pmsg_63 |= (hsti_state << 8);
+		c2pmsg_63 |= (1 << 7); /* Set HSTI state reported bit */
+		write32p(psp_mmio + CORE_2_PSP_MSG_63_OFFSET, c2pmsg_63);
+	}
+}
+
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, send_psp_commands, NULL);
+BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, update_psp_hsti_state, NULL);
+BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_LOAD, BS_ON_EXIT, update_psp_hsti_state, NULL);
