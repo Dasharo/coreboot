@@ -66,6 +66,11 @@ ifeq ($(CONFIG_HAVE_PSP_WHITELIST_FILE),y)
 PSP_WHITELIST_FILE=$(CONFIG_PSP_WHITELIST_FILE)
 endif
 
+# type = 0x54
+# The flashmap section used for this is expected to be named PSP_RPMC_NVRAM
+PSP_RPMC_NVRAM_BASE=$(call get_fmap_value,FMAP_SECTION_PSP_RPMC_NVRAM_START)
+PSP_RPMC_NVRAM_SIZE=$(call get_fmap_value,FMAP_SECTION_PSP_RPMC_NVRAM_SIZE)
+
 # type = 0x55
 SPL_TABLE_FILE=$(CONFIG_SPL_TABLE_FILE)
 
@@ -161,11 +166,16 @@ OPT_VGA_IMAGE=$(call add_opt_prefix, $(CONFIG_PSP_EARLY_VGA_IMAGE), --early-vga-
 OPT_PSP_SEV_NVRAM_BASE=$(call add_opt_prefix, $(PSP_SEV_NVRAM_BASE), --sev-nvram-base)
 OPT_PSP_SEV_NVRAM_SIZE=$(call add_opt_prefix, $(PSP_SEV_NVRAM_SIZE), --sev-nvram-size)
 
+OPT_PSP_RPMC_NVRAM_BASE=$(call add_opt_prefix, $(PSP_RPMC_NVRAM_BASE), --rpmc-nvram-base)
+OPT_PSP_RPMC_NVRAM_SIZE=$(call add_opt_prefix, $(PSP_RPMC_NVRAM_SIZE), --rpmc-nvram-size)
+
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
 		$(OPT_APOB_NV_SIZE) \
 		$(OPT_APOB_NV_BASE) \
 		$(OPT_UCODE_FILES) \
+		$(OPT_PSP_RPMC_NVRAM_BASE) \
+		$(OPT_PSP_RPMC_NVRAM_SIZE) \
 		$(OPT_PSP_SEV_NVRAM_BASE) \
 		$(OPT_PSP_SEV_NVRAM_SIZE) \
 		$(OPT_DEBUG_AMDFWTOOL) \
