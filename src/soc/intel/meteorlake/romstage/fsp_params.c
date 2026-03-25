@@ -71,7 +71,6 @@ static void configure_rp_clocks(FSP_M_CONFIG *m_cfg,
 	 */
 	if (m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] == FSP_CLK_NOTUSED)
 		m_cfg->PcieClkSrcUsage[rp_cfg->clk_src] = index;
-	
 }
 
 static void pcie_rp_init(FSP_M_CONFIG *m_cfg, uint32_t en_mask,
