@@ -135,6 +135,14 @@ static void *map_range(uint64_t base, uint32_t len)
 
 	printk(BIOS_SPEW, "capsules: mapping %#010x bytes at %#010llx.\n", len, base);
 
+	/* Don't bother with the mapping if we run in x86_64 */
+	if (ENV_X86_64) {
+		if ((base + len) > (uint64_t)CONFIG_CPU_PT_ROM_MAP_GB * GiB)
+			die("capsules: page tables in ROM can't reach requested block\n");
+
+		return (void *)(uintptr_t)base;
+	}
+
 	if (base + len <= 4ULL * GiB &&
 	    (base + len <= window_base || base >= window_base + window_size)) {
 		/* Don't bother with the mapping, the whole range must be
@@ -674,13 +682,17 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 	static uintptr_t capsule_size = 0;
 
 	/* Assume no capsules at the start. */
-	*base = 0;
-	*size = 0;
+	if (base)
+		*base = 0;
+	if (size)
+		*size = 0;
 
 	/* Return early if already parsed */
 	if (parsed) {
-		*base = capsule_base;
-		*size = capsule_size;
+		if (base)
+			*base = capsule_base;
+		if (size)
+			*size = capsule_size;
 		return;
 	}
 
@@ -695,7 +707,8 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 		       IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED |
 		       IORESOURCE_CACHEABLE, BM_MEM_RAM);
 
-	init_pae_pagetables(&pae_page_tables);
+	if (!ENV_X86_64)
+		init_pae_pagetables(&pae_page_tables);
 
 	/* Blocks are collected here when traversing CapsuleUpdateData*
 	   variables, duplicates are skipped. */
@@ -756,14 +769,19 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 	       coalesce_buffer.base, coalesce_buffer.base + coalesce_buffer.len);
 	coalesce_capsules(block_chain, (void *)(uintptr_t)coalesce_buffer.base);
 
-	*base = coalesce_buffer.base;
-	*size = coalesce_buffer.len;
+	if (base)
+		*base = coalesce_buffer.base;
+	if (size)
+		*size = coalesce_buffer.len;
 
 	capsule_base = coalesce_buffer.base;
 	capsule_size = coalesce_buffer.len;
 
 exit:
-	paging_disable_pae();
+
+	if (!ENV_X86_64)
+		paging_disable_pae();
+
 	memranges_teardown(&memory_map);
 }
 
@@ -821,13 +839,13 @@ static void enable_capsule_update_path(void *unused)
 {
 	uint32_t ret;
 
-	bool full_flash_access = uefi_capsule_count > 0 || dasharo_is_disk_capsules_boot();
+	bool full_flash_access = (uefi_capsule_count > 0) || dasharo_is_disk_capsules_boot();
 
 	/* SMI can occasionally be ignored, so retry several times on failure. */
 	uint8_t retries_left = 10;
 	while (1) {
 		ret = call_smm(APM_CNT_SMMSTORE, SMMSTORE_CMD_USE_FULL_FLASH,
-			       (void *)(uintptr_t)full_flash_access);
+			       (void *)(uintptr_t)&full_flash_access);
 		if (ret == SMMSTORE_RET_SUCCESS)
 			break;
 
