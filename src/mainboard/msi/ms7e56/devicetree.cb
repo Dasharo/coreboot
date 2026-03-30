@@ -67,6 +67,7 @@ chip soc/amd/phoenix
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "20"
 			register "end_lane" = "23"
+			register "sb_link" = "1"
 			device ref gpp_bridge_2_1 on end
 		end
 		# M2_2: x4 M.2 slot, DXIO lanes 24-27
