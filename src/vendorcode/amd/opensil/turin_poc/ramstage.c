@@ -215,11 +215,19 @@ static void configure_sata(void)
 		fch_sata_data[i].SataSetMaxGen2 = false;
 		fch_sata_data[i].SataMsiEnable = true;
 		fch_sata_data[i].SataEspPort = 0xFF;
+		/*
+		 * TODO: Hook into MPIO chip to detect which
+		 * ports should be enabled based on DXIO lines
+		 */
+		fch_sata_data[i].SataPortPower = 0xFF;
 		fch_sata_data[i].SataRasSupport = true;
 		fch_sata_data[i].SataDevSlpPort1Num = 1;
-		fch_sata_data[i].SataMsiEnable = true;
 		fch_sata_data[i].SataControllerAutoShutdown = true;
-		fch_sata_data[i].SataRxPolarity = 0xFF;
+		/*
+		 * TODO: Add SATA RX polarity inversion to chip config.
+		 * It should settable per platform (HW design dependent)
+		 */
+		fch_sata_data[i].SataRxPolarity = 0x00;
 	}
 }
 
