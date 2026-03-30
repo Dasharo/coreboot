@@ -7,6 +7,7 @@
 
 /* Power management registers:  0xfed80300 or index/data at IO 0xcd6/cd7 */
 #define PM_ISACONTROL			0x04
+#define   PM_LOCK_IOMUX			BIT(15)
 #define   ABCLKGATEEN			BIT(16)
 #define PM_PCI_CTRL			0x08
 #define   MSG_INTR_ENABLE		BIT(4)
