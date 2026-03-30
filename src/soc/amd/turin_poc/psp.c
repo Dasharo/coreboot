@@ -54,7 +54,7 @@ static void psp_finalize(void *unused)
 {
 	uint32_t hsti_state = 0;
 	uint32_t c2pmsg_63;
-	uintptr_t psp_mmio = get_psp_mmio_base();
+	uintptr_t psp_mmio = psp_get_base();
 
 	if (!psp_mmio) {
 		printk(BIOS_ERR, "PSP MMIO not programmed\n");
