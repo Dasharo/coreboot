@@ -8,6 +8,7 @@
 #include <types.h>
 #include "psp_def.h"
 
+#define IOHC_MISC_CCP_MMIO_REG		0x2d8
 #define IOHC_MISC_PSP_MMIO_REG		0x2e0
 
 static uint64_t get_psp_mmio_mask(void)
@@ -18,6 +19,8 @@ static uint64_t get_psp_mmio_mask(void)
 
 	for (size_t i = 0; i < reg_count; i++) {
 		if (mmio_regs[i].iohc_misc_offset == IOHC_MISC_PSP_MMIO_REG)
+			return mmio_regs[i].mask;
+		if (mmio_regs[i].iohc_misc_offset == IOHC_MISC_CCP_MMIO_REG)
 			return mmio_regs[i].mask;
 	}
 
@@ -76,6 +79,55 @@ static uintptr_t get_psp_mmio_base(void)
 		printk(BIOS_ERR, "No usable PSP MMIO found.\n");
 
 	return psp_mmio_base;
+}
+
+uintptr_t get_ccp_mmio_base(void)
+{
+	static uintptr_t ccp_mmio_base;
+	const struct domain_iohc_info *iohc;
+	size_t iohc_count;
+
+	if (ccp_mmio_base)
+		return ccp_mmio_base;
+
+	iohc = get_iohc_info(&iohc_count);
+	const uint64_t ccp_mmio_mask = get_psp_mmio_mask();
+
+	if (!ccp_mmio_mask)
+		return 0;
+
+	for (size_t i = 0; i < iohc_count; i++) {
+		uint64_t reg64 = smn_read64(iohc[i].misc_smn_base | IOHC_MISC_CCP_MMIO_REG);
+
+		if (!(reg64 & IOHC_MMIO_EN))
+			continue;
+
+		const uint64_t base = reg64 & ccp_mmio_mask;
+
+		if (ENV_X86_32 && base >= 4ull * GiB) {
+			printk(BIOS_WARNING, "PSP CCP MMIO base above 4GB.\n");
+			continue;
+		}
+
+		/* If the PSP CCP MMIO base is enabled but the register isn't locked, set the lock
+		   bit. This shouldn't happen, but better be a bit too careful here */
+		if (!(reg64 & PSP_MMIO_LOCK)) {
+			printk(BIOS_WARNING, "Enabled PSP CCP MMIO in domain %zu isn't locked. "
+					     "Locking it.\n", i);
+			reg64 |= PSP_MMIO_LOCK;
+			/* Since the lock bit lives in the lower one of the two 32 bit SMN
+			   registers, we only need to write that one to lock it */
+			smn_write32(iohc[i].misc_smn_base | IOHC_MISC_CCP_MMIO_REG,
+				    reg64 & 0xffffffff);
+		}
+
+		ccp_mmio_base = base;
+	}
+
+	if (!ccp_mmio_base)
+		printk(BIOS_ERR, "No usable PSP CCP MMIO found.\n");
+
+	return ccp_mmio_base;
 }
 
 uint64_t psp_get_base(void)
