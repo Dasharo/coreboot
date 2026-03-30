@@ -69,10 +69,6 @@ BUILD_STR += -D CPU_TIMER_LIB_ENABLE=FALSE
 else
 BUILD_STR += --pcd gUefiCpuPkgTokenSpaceGuid.PcdCpuCoreCrystalClockFrequency=$(CONFIG_CPU_XTAL_HZ)
 endif
-# DISABLE_SERIAL_TERMINAL	= FALSE
-ifneq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
-BUILD_STR += -D DISABLE_SERIAL_TERMINAL=TRUE
-endif
 # VARIABLE_SUPPORT		= EMU
 # MAX_VARIABLE_SIZE		= 0x10000
 ifeq ($(CONFIG_SMMSTORE_V2),y)
@@ -194,14 +190,14 @@ endif
 ifneq ($(CONFIG_EDK2_ABOVE_4G_MEMORY),y)
 BUILD_STR += -D ABOVE_4G_MEMORY=FALSE
 endif
-# PcdSerialRedirectionDefaultState	= FALSE
-ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
-BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
-endif
 # SERIAL_TERMINAL	= FALSE
 ifeq ($(CONFIG_EDK2_SERIAL_SUPPORT),y)
 BUILD_STR += -D DISABLE_SERIAL_TERMINAL=FALSE
 BUILD_STR += -D SERIAL_TERMINAL=TRUE
+# PcdSerialRedirectionDefaultState	= FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSerialRedirectionDefaultState=TRUE
+endif
 ifeq ($(CONFIG_EDK2_HAVE_2ND_UART),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdHave2ndUart=TRUE
 ifeq ($(CONFIG_EDK2_DASHARO_SERIAL_REDIRECTION2_DEFAULT_ENABLE),y)
