@@ -9,8 +9,11 @@
 #include <cbmem.h>
 #include <cpu/amd/microcode.h>
 #include <cpu/cpu.h>
+#include <cpu/x86/smm.h>
 #include <device/device.h>
 #include <soc/amd/phoenix/chip.h>
+#include <soc/aoac_defs.h>
+#include <soc/iomap.h>
 #include <static.h>
 #include <stdio.h>
 #include <xSIM-api.h>
@@ -121,6 +124,51 @@ static void configure_ccx(SIL_CONTEXT *SilContext)
 	ucode_info->UcodePatchEntryAddress = (uint64_t)ucode;
 }
 
+#define FCH_DEV_ENABLE(dev, aoac_bit) \
+	fch_data->FchRunTime.FchDeviceEnableMap |= \
+		(is_dev_enabled(DEV_PTR(dev)) ? aoac_bit : 0)
+
+static void configure_fch_acpi(SIL_CONTEXT *SilContext)
+{
+	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilContext, SilId_FchHwAcpiP, 0);
+	FCHCLASS_INPUT_BLK *fch_data = SilFindStructure(SilContext, SilId_FchClass, 0);
+	struct device *smb = DEV_PTR(smbus);
+
+	fch_data->Smbus.SmbusSsid = smb->subsystem_vendor |
+				    ((uint32_t)smb->subsystem_device << 16);
+
+	fch_data->FchBldCfg.CfgSioPmeBaseAddress = 0;
+	fch_data->FchBldCfg.CfgAcpiPm1EvtBlkAddr = ACPI_PM_EVT_BLK;
+	fch_data->FchBldCfg.CfgAcpiPm1CntBlkAddr = ACPI_PM1_CNT_BLK;
+	fch_data->FchBldCfg.CfgAcpiPmTmrBlkAddr = ACPI_PM_TMR_BLK;
+	fch_data->FchBldCfg.CfgCpuControlBlkAddr = ACPI_CSTATE_CONTROL;
+	fch_data->FchBldCfg.CfgAcpiGpe0BlkAddr = ACPI_GPE0_BLK;
+	fch_data->FchBldCfg.CfgSmiCmdPortAddr = APM_CNT;
+
+	fch_data->WdtEnable = false;
+
+	if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 2)
+		fch_hwacpi_data->PwrFailShadow = UsePrevious;
+	else if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 1)
+		fch_hwacpi_data->PwrFailShadow = AlwaysOn;
+	else
+		fch_hwacpi_data->PwrFailShadow = AlwaysOff;
+
+	fch_data->FchRunTime.FchDeviceEnableMap = 0;
+	FCH_DEV_ENABLE(i2c_0, FCH_AOAC_DEV_I2C0);
+	FCH_DEV_ENABLE(i2c_1, FCH_AOAC_DEV_I2C1);
+	FCH_DEV_ENABLE(i2c_2, FCH_AOAC_DEV_I2C2);
+	FCH_DEV_ENABLE(i2c_3, FCH_AOAC_DEV_I2C3);
+	FCH_DEV_ENABLE(uart_0, FCH_AOAC_DEV_UART0);
+	FCH_DEV_ENABLE(uart_1, FCH_AOAC_DEV_UART1);
+	FCH_DEV_ENABLE(uart_2, FCH_AOAC_DEV_UART2);
+	FCH_DEV_ENABLE(uart_3, FCH_AOAC_DEV_UART3);
+	FCH_DEV_ENABLE(uart_4, FCH_AOAC_DEV_UART4);
+	FCH_DEV_ENABLE(i3c_0, FCH_AOAC_DEV_I3C0);
+	FCH_DEV_ENABLE(i3c_1, FCH_AOAC_DEV_I3C1);
+	FCH_DEV_ENABLE(i3c_2, FCH_AOAC_DEV_I3C2);
+	FCH_DEV_ENABLE(i3c_3, FCH_AOAC_DEV_I3C3);
+}
 
 void setup_opensil(void)
 {
@@ -140,10 +188,10 @@ void setup_opensil(void)
 	const SIL_STATUS assign_mem_ret = xSimAssignMemoryTp1(&SilContext, mem_req);
 	SIL_STATUS_report("xSimAssignMemory", assign_mem_ret);
 
-
 	setup_rc_manager_default(&SilContext);
 	configure_usb(&SilContext);
 	configure_ccx(&SilContext);
+	configure_fch_acpi(&SilContext);
 }
 
 static void opensil_entry(SIL_TIMEPOINT timepoint)
