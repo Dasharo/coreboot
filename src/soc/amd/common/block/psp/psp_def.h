@@ -311,6 +311,7 @@ enum mbox_p2c_status {
 };
 
 uintptr_t get_psp_mmio_base(void);
+uintptr_t get_ccp_mmio_base(void);
 
 void psp_print_cmd_status(int cmd_status, struct mbox_buffer_header *header);
 
