@@ -104,6 +104,15 @@ bool psp_get_hsti_state_rom_armor_enforced(void);
 static inline bool psp_get_hsti_state_rom_armor_enforced(void) { return false; }
 #endif
 
+#if ENV_SMM && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)
+/*
+ * With ROM Armor 1 querying HSTI state does not work in SMM after enter SMM-only mode.
+ * However, it still works in normal world (non-SMM). We will use this flag to inform
+ * SMM that ROM Armor 1 is active.
+ */
+extern bool rom_armor_enforced;
+#endif
+
 /* Region device accessing the ROM through PSP mailbox */
 extern struct region_device rom_armor_smm_rw;
 

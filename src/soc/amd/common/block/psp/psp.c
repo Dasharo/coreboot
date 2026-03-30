@@ -162,11 +162,12 @@ enum cb_err psp_command_set_config(uint32_t config, const char *msg)
 bool psp_get_hsti_state_rom_armor_enforced(void)
 {
 	uint32_t hsti_state;
+	static bool enforced = false;
 
-	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3))
-		return false;
+#if ENV_SMM && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)
+	return rom_armor_enforced;
+#endif
 
-	static bool enforced;
 	if (enforced)
 		return true; /* ROM Armor already enforced, no need to check again */
 
