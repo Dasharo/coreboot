@@ -168,6 +168,8 @@ void fch_init(void *chip_info)
 
 	fch_clk_output_48Mhz();
 	cgpll_clock_gate_init();
+
+	fch_enable_ioapic_decode();
 }
 
 void fch_final(void *chip_info)
