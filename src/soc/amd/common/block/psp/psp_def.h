@@ -230,6 +230,8 @@ enum cb_err psp_get_ftpm_capabilties(uint32_t *capabilities);
 enum cb_err psp_get_psp_capabilities(uint32_t *capabilities);
 enum cb_err psp_get_hsti_state(uint32_t *state);
 enum cb_err soc_read_c2p38(uint32_t *msg_38_value);
+enum cb_err psp_send_generic_command(uint32_t command, const char *msg);
+enum cb_err psp_command_set_config(uint32_t config, const char *msg);
 
 void enable_psp_smi(void);
 
