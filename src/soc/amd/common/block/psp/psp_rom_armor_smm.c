@@ -306,6 +306,8 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 		if (flash)
 			spi_release_bus(&flash->spi);
 
+		fch_spi_lock();
+
 		/* For ROM Armor 1 we have to pass the transfer buffer used to talk to PSP */
 		params->operation_buf = (uint64_t)&transfer_buffer[0];
 		params->chip_select = spi_cs;
