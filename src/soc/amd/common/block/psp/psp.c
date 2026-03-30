@@ -127,7 +127,7 @@ enum cb_err psp_send_generic_command(uint32_t command, const char *msg)
 	return CB_SUCCESS;
 }
 
-enum cb_err psp_command_set_config(uint32_t config, const char *msg)
+enum cb_err psp_command_set_config(uint32_t config, uint32_t args[4], const char *msg)
 {
 	int cmd_status;
 	struct mbox_cmd_set_config_buffer buffer = {
@@ -135,7 +135,11 @@ enum cb_err psp_command_set_config(uint32_t config, const char *msg)
 			.size = sizeof(buffer)
 		},
 		.config = {
-			.config_id = config
+			.config_id = config,
+			.arg0 = args[0],
+			.arg1 = args[1],
+			.arg2 = args[2],
+			.arg3 = args[3]
 		}
 	};
 
