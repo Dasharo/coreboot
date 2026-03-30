@@ -68,6 +68,7 @@ config SOC_AMD_GLINDA_BASE
 	select SOC_AMD_COMMON_BLOCK_SMBUS		# TODO: Check if this is still correct
 	select SOC_AMD_COMMON_BLOCK_SMI			# TODO: Check if this is still correct
 	select SOC_AMD_COMMON_BLOCK_SMM			# TODO: Check if this is still correct
+	select SOC_AMD_COMMON_BLOCK_SMM_LOCK_SMM_BASE	# TODO: Check if this is still correct
 	select SOC_AMD_COMMON_BLOCK_SMU			# TODO: Check if this is still correct
 	select SOC_AMD_COMMON_BLOCK_SMU_SX_ENTRY	# TODO: Check if this is still correct
 	select SOC_AMD_COMMON_BLOCK_SPI			# TODO: Check if this is still correct
