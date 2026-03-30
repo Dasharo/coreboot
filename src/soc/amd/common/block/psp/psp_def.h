@@ -334,6 +334,7 @@ uint64_t psp_get_base(void);
 uint32_t psp_read32(uint64_t base, uint32_t offset);
 void psp_write32(uint64_t base, uint32_t offset, uint32_t data);
 void psp_write64(uint64_t base, uint32_t offset, uint64_t data);
+uintptr_t get_ccp_mmio_base(void);
 
 void psp_print_cmd_status(int cmd_status, struct mbox_buffer_header *header);
 
