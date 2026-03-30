@@ -8,6 +8,7 @@
 #include <boot_device.h>
 #include <device/pci_ops.h>
 #include <lib.h>
+#include <soc/amd/common/block/psp/psp_def.h>
 #include <soc/pci_devs.h>
 #include <spi_flash.h>
 #include <timer.h>
@@ -27,8 +28,6 @@ static uint8_t default_cs;
 #define SPI_RESTRICTED_CMD1		0x04
 #define SPI_RESTRICTED_CMD2		0x08
 #define SPI_CNTRL1			0x0c
-#define SPI_ALT_CS_REG			0x1d
-#define   SPI_ALT_CS_REG_MASK		0x03
 #define SPI_CMD_CODE			0x45
 #define SPI_CMD_TRIGGER			0x47
 #define   SPI_CMD_TRIGGER_EXECUTE	BIT(7)
@@ -170,6 +169,37 @@ void fch_spi_restore_registers(void)
 		spi_write8(SPI_FIFO + count, fifo[count]);
 }
 
+static int psp_rom_armor_transfer(const void *dout, size_t bytesout,
+				  void *din, size_t bytesin)
+{
+	struct rom_armor_spi_cmd cmd_buf = { 0 };
+	const uint8_t *bufout = dout;
+	uint8_t *bufin = din;
+
+	bytesout--;
+
+	if (bytesout + bytesin > PSP_MAX_SPI_DATA_BUFFER_SIZE) {
+		printk(BIOS_WARNING, "PSP ROM Armor 1: Too much to transfer!\n");
+		return -1;
+	}
+
+	/* CS is 1-based from ROM Armor 1 */
+	cmd_buf.cs = default_cs < 2 ? default_cs + 1 : 1;
+	cmd_buf.tx_bytes = bytesout;
+	cmd_buf.rx_bytes = bytesin;
+	cmd_buf.opcode = bufout[0];
+	bufout++;
+
+	memcpy(cmd_buf.buffer, bufout, bytesout);
+	if (psp_rom_armor1_spi_transaction(&cmd_buf))
+		return -1;
+
+	if (cmd_buf.rx_bytes)
+		memcpy(bufin, &cmd_buf.buffer[cmd_buf.tx_bytes], cmd_buf.rx_bytes);
+
+	return 0;
+}
+
 static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 			size_t bytesout, void *din, size_t bytesin)
 {
@@ -180,6 +210,17 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
 		printk(BIOS_DEBUG, "%s(%zx, %zx)\n", __func__, bytesout, bytesin);
+
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
+		bool rom_armor_active = psp_get_hsti_state_rom_armor_enforced();
+		if (ENV_SMM && rom_armor_active) {
+			return psp_rom_armor_transfer(dout, bytesout, din, bytesin);
+		} else if (!ENV_SMM && rom_armor_active) {
+			printk(BIOS_ERR,
+			       "ROM Armor enforced but trying to access SPI in non-SMM mode!\n");
+			return -1;
+		}
+	}
 
 	/* First byte is cmd which cannot be sent through FIFO */
 	cmd = bufout[0];
@@ -344,19 +385,26 @@ static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 	uint8_t reg8;
 
 	if (psp_get_hsti_state_rom_armor_enforced()) {
+		/*
+		 * ROM Armor 1 hooks into SPI controller code, no need to claim the bus.
+		 * Just let APMC calls/SMM handle SPI access through PSP.
+		 */
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1))
+			return 0;
+
 		printk(BIOS_ERR, "PSP ROM Armor is enforced, cannot access SPI flash directly\n");
 		return -1;
-	}
+	} else {
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_SMI)) {
+			if (ENV_RAMSTAGE || ENV_SMM) {
+				reg8 = spi_read8(SPI_MISC_CNTRL);
 
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_SMI)) {
-		if (ENV_RAMSTAGE || ENV_SMM) {
-			reg8 = spi_read8(SPI_MISC_CNTRL);
-
-			if (reg8 & SPI_SEMAPHORE_BIOS_LOCKED)
-				return -1;
+				if (reg8 & SPI_SEMAPHORE_BIOS_LOCKED)
+					return -1;
+			}
+			if (ENV_RAMSTAGE)
+				spi_write8(SPI_MISC_CNTRL, reg8 | SPI_SEMAPHORE_BIOS_LOCKED);
 		}
-		if (ENV_RAMSTAGE)
-			spi_write8(SPI_MISC_CNTRL, reg8 | SPI_SEMAPHORE_BIOS_LOCKED);
 	}
 
 	/* Set chip select line */
@@ -376,6 +424,10 @@ static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 {
 	uint8_t reg8;
+
+	/* PSP handles the SPI access */
+	if (psp_get_hsti_state_rom_armor_enforced())
+		return;
 
 	/* Reset chip select line */
 	reg8 = spi_read8(SPI_ALT_CS_REG);
