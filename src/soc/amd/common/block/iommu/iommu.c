@@ -21,19 +21,21 @@ static void iommu_read_resources(struct device *dev)
 	res->limit = 0xffffffff;	/* 4G */
 	res->flags = IORESOURCE_MEM;
 
-	res = new_resource(dev, IOMMU_VF_BASE_LO);
-	res->size = 256 * MiB;
-	res->align = log2(res->size);
-	res->gran = log2(res->size);
-	res->limit = 0xffffffffffffffff;
-	res->flags = IORESOURCE_MEM;
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_IOMMU_HAS_VF_BARS)) {
+		res = new_resource(dev, IOMMU_VF_BASE_LO);
+		res->size = 256 * MiB;
+		res->align = log2(res->size);
+		res->gran = log2(res->size);
+		res->limit = 0xffffffffffffffffULL;
+		res->flags = IORESOURCE_MEM | IORESOURCE_PCI64;
 
-	res = new_resource(dev, IOMMU_VF_CNTL_BASE_LO);
-	res->size = 4 * MiB;
-	res->align = log2(res->size);
-	res->gran = log2(res->size);
-	res->limit = 0xffffffffffffffff;
-	res->flags = IORESOURCE_MEM;
+		res = new_resource(dev, IOMMU_VF_CNTL_BASE_LO);
+		res->size = 4 * MiB;
+		res->align = log2(res->size);
+		res->gran = log2(res->size);
+		res->limit = 0xffffffffffffffffULL;
+		res->flags = IORESOURCE_MEM | IORESOURCE_PCI64;
+	}
 }
 
 static void iommu_enable_resources(struct device *dev)
@@ -44,19 +46,21 @@ static void iommu_enable_resources(struct device *dev)
 	printk(BIOS_DEBUG, "%s -> mmio enable: %08X\n", __func__,
 	       pci_read_config32(dev, IOMMU_CAP_BASE_LO));
 
- 	base = pci_read_config32(dev, IOMMU_VF_BASE_LO);
-	base |= IOMMU_ENABLE;
-	pci_write_config32(dev, IOMMU_VF_BASE_LO, base);
-	printk(BIOS_DEBUG, "%s -> VF mmio enable: %08X%08X\n", __func__,
-	       pci_read_config32(dev, IOMMU_VF_BASE_LO + 4),
-	       pci_read_config32(dev, IOMMU_VF_BASE_LO));
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_IOMMU_HAS_VF_BARS)) {
+		base = pci_read_config32(dev, IOMMU_VF_BASE_LO);
+		base |= IOMMU_ENABLE;
+		pci_write_config32(dev, IOMMU_VF_BASE_LO, base);
+		printk(BIOS_DEBUG, "%s -> VF mmio enable: %08X%08X\n", __func__,
+		pci_read_config32(dev, IOMMU_VF_BASE_LO + 4),
+		pci_read_config32(dev, IOMMU_VF_BASE_LO));
 
- 	base = pci_read_config32(dev, IOMMU_VF_CNTL_BASE_LO);
-	base |= IOMMU_ENABLE;
-	pci_write_config32(dev, IOMMU_VF_CNTL_BASE_LO, base);
-	printk(BIOS_DEBUG, "%s -> VF CTNL mmio enable: %08X%08X\n", __func__,
-	       pci_read_config32(dev, IOMMU_VF_CNTL_BASE_LO + 4),
-	       pci_read_config32(dev, IOMMU_VF_CNTL_BASE_LO));
+		base = pci_read_config32(dev, IOMMU_VF_CNTL_BASE_LO);
+		base |= IOMMU_ENABLE;
+		pci_write_config32(dev, IOMMU_VF_CNTL_BASE_LO, base);
+		printk(BIOS_DEBUG, "%s -> VF CTNL mmio enable: %08X%08X\n", __func__,
+		pci_read_config32(dev, IOMMU_VF_CNTL_BASE_LO + 4),
+		pci_read_config32(dev, IOMMU_VF_CNTL_BASE_LO));
+	}
 
 	pci_dev_enable_resources(dev);
 }
