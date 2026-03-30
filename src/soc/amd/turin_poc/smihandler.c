@@ -260,3 +260,10 @@ const struct psp_rom_armor1_whitelist *soc_get_psp_rom_armor_whitelist(void)
 {
 	return &rom_armor_whitelist;
 }
+
+void soc_apmc_finalize(void)
+{
+	pm_write32(PM_ISACONTROL, pm_read32(PM_ISACONTROL) | PM_LOCK_IOMUX);
+	psp_send_generic_command(MBOX_BIOS_CMD_LOCK_FCH_REG, "Locking FCH registers");
+	psp_send_generic_command(MBOX_BIOS_CMD_LOCK_FCH_GPIO, "Locking FCH GPIO");
+}
