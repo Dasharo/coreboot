@@ -45,6 +45,8 @@ static void soc_finalize(void *unused)
 		}
 	}
 
+	apm_control(APM_CNT_FINALIZE);
+
 	post_code(POSTCODE_OS_BOOT);
 }
 
