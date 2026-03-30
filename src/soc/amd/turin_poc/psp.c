@@ -20,43 +20,6 @@
 
 #define NBIF_DDR_BASE_ADDRESS_SMN		0x10133284
 
-static void send_generic_psp_command(uint32_t command, const char *msg)
-{
-	int cmd_status;
-	struct mbox_default_buffer buffer = {
-		.header = {
-			.size = sizeof(buffer)
-		},
-	};
-
-	printk(BIOS_DEBUG, "PSP: %s... ", msg);
-
-	cmd_status = send_psp_command(command, &buffer);
-
-	/* buffer's status shouldn't change but report it if it does */
-	psp_print_cmd_status(cmd_status, &buffer.header);
-}
-
-static void psp_command_set_config(uint32_t config, const char *msg)
-{
-	int cmd_status;
-	struct mbox_cmd_set_config_buffer buffer = {
-		.header = {
-			.size = sizeof(buffer)
-		},
-		.config = {
-			.config_id = config
-		}
-	};
-
-	printk(BIOS_DEBUG, "PSP: %s... ", msg);
-
-	cmd_status = send_psp_command(MBOX_BIOS_CMD_SET_CONFIG, &buffer);
-
-	/* buffer's status shouldn't change but report it if it does */
-	psp_print_cmd_status(cmd_status, &buffer.header);
-}
-
 static bool is_nbif_ddr_base_assigned(void)
 {
 	/* Check NBIF DDR Base address was assigned at ABL phase */
@@ -75,8 +38,8 @@ static void send_psp_commands(void *unused)
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilId_NbioClass, 0);
 	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;
 
-	send_generic_psp_command(MBOX_BIOS_CMD_SMM_LOCK, "Locking SMM");
-	send_generic_psp_command(MBOX_BIOS_CMD_LOCK_DF_REG, "Locking DF registers");
+	psp_send_generic_command(MBOX_BIOS_CMD_SMM_LOCK, "Locking SMM");
+	psp_send_generic_command(MBOX_BIOS_CMD_LOCK_DF_REG, "Locking DF registers");
 
 	if (is_nbif_ddr_base_assigned())
 		psp_command_set_config(CMD_CONFIG_ID_NBIF_DDR_CTRL,
