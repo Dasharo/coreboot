@@ -34,4 +34,11 @@ void mp_init_cpus(struct bus *cpu_bus)
 	/* SMMINFO only needs to be set up when booting from S5 */
 	if (!acpi_is_wakeup_s3())
 		apm_control(APM_CNT_SMMINFO);
+
+	/* For ROM Armor 1, enabling SMM-only mode must happen after SMM_INFO */
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
+		/* Parse EFI capsules */
+		efi_parse_capsules(&capsule_base, &capsule_size);
+		psp_rom_armor_init(capsule_base && capsule_size);
+	}
 }

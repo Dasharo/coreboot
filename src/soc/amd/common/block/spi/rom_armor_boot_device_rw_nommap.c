@@ -71,6 +71,19 @@ static void boot_device_rw_init(void)
 const struct region_device *boot_device_rw(void)
 {
 	if (ENV_SMM) {
+		/*
+		 * ROM Armor 1 hooks into SPI controller in SMM.
+		 * Use SPI controller directly regardless of enforcement state.
+		 */
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
+			boot_device_rw_init();
+
+			if (sfg_init_done != true)
+				return NULL;
+
+			return &spi_rw;
+		}
+
 		/* Could return SPI drivers here, but that would increase SMM size.
 		 * ROM Armor is enforced right after SMM has been set up, so it's
 		 * unlikely that something need R/W access to SPI flash before it

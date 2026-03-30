@@ -168,8 +168,12 @@ enum mbox_p2c_status psp_smi_spi_get_info(struct mbox_default_buffer *buffer)
 	if (!is_valid_psp_spi_info(cmd_buf))
 		return MBOX_PSP_COMMAND_PROCESS_ERROR;
 
-	if (spi_controller_busy()) {
-		return MBOX_PSP_SPI_BUSY;
+	/* Only check SPI busy if the ROM Armor 1 is inactive, we still need to service those requests */
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) ||
+	    !psp_get_hsti_state_rom_armor_enforced()) {
+		if (spi_controller_busy()) {
+			return MBOX_PSP_SPI_BUSY;
+		}
 	}
 
 	target_nv_id = get_psp_spi_info_id(cmd_buf);
@@ -210,8 +214,12 @@ enum mbox_p2c_status psp_smi_spi_read(struct mbox_default_buffer *buffer)
 	if (!is_valid_psp_spi_read_write(cmd_buf))
 		return MBOX_PSP_COMMAND_PROCESS_ERROR;
 
-	if (spi_controller_busy()) {
-		return MBOX_PSP_SPI_BUSY;
+	/* Only check SPI busy if the ROM Armor 1 is inactive, we still need to service those requests */
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) ||
+	    !psp_get_hsti_state_rom_armor_enforced()) {
+		if (spi_controller_busy()) {
+			return MBOX_PSP_SPI_BUSY;
+		}
 	}
 
 	get_psp_spi_read_write(cmd_buf, &target_nv_id, &lba, &offset, &num_bytes, &data);
@@ -258,8 +266,12 @@ enum mbox_p2c_status psp_smi_spi_write(struct mbox_default_buffer *buffer)
 	if (!is_valid_psp_spi_read_write(cmd_buf))
 		return MBOX_PSP_COMMAND_PROCESS_ERROR;
 
-	if (spi_controller_busy()) {
-		return MBOX_PSP_SPI_BUSY;
+	/* Only check SPI busy if the ROM Armor 1 is inactive, we still need to service those requests */
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) ||
+	    !psp_get_hsti_state_rom_armor_enforced()) {
+		if (spi_controller_busy()) {
+			return MBOX_PSP_SPI_BUSY;
+		}
 	}
 
 	get_psp_spi_read_write(cmd_buf, &target_nv_id, &lba, &offset, &num_bytes, &data);
@@ -305,8 +317,12 @@ enum mbox_p2c_status psp_smi_spi_erase(struct mbox_default_buffer *buffer)
 	if (!is_valid_psp_spi_erase(cmd_buf))
 		return MBOX_PSP_COMMAND_PROCESS_ERROR;
 
-	if (spi_controller_busy()) {
-		return MBOX_PSP_SPI_BUSY;
+	/* Only check SPI busy if the ROM Armor 1 is inactive, we still need to service those requests */
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) ||
+	    !psp_get_hsti_state_rom_armor_enforced()) {
+		if (spi_controller_busy()) {
+			return MBOX_PSP_SPI_BUSY;
+		}
 	}
 
 	get_psp_spi_erase(cmd_buf, &target_nv_id, &lba, &num_blocks);
@@ -340,8 +356,12 @@ enum mbox_p2c_status psp_smi_spi_rpmc_inc_mc(struct mbox_default_buffer *buffer)
 	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_RPMC))
 		return MBOX_PSP_UNSUPPORTED;
 
-	if (spi_controller_busy()) {
-		return MBOX_PSP_SPI_BUSY;
+	/* Only check SPI busy if the ROM Armor 1 is inactive, we still need to service those requests */
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) ||
+	    !psp_get_hsti_state_rom_armor_enforced()) {
+		if (spi_controller_busy()) {
+			return MBOX_PSP_SPI_BUSY;
+		}
 	}
 
 	if (get_flash_device(&flash) != MBOX_PSP_SUCCESS)
@@ -366,8 +386,12 @@ enum mbox_p2c_status psp_smi_spi_rpmc_req_mc(struct mbox_default_buffer *buffer)
 	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_RPMC))
 		return MBOX_PSP_UNSUPPORTED;
 
-	if (spi_controller_busy()) {
-		return MBOX_PSP_SPI_BUSY;
+	/* Only check SPI busy if the ROM Armor 1 is inactive, we still need to service those requests */
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) ||
+	    !psp_get_hsti_state_rom_armor_enforced()) {
+		if (spi_controller_busy()) {
+			return MBOX_PSP_SPI_BUSY;
+		}
 	}
 
 	if (get_flash_device(&flash) != MBOX_PSP_SUCCESS)
