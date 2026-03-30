@@ -29,6 +29,12 @@ enum spi_read_mode {
 #define   SPI_READ_MODE(x)		(SPI_READ_MODE_UPPER_BITS(x) | \
 					 SPI_READ_MODE_LOWER_BITS(x))
 #define   SPI_ACCESS_MAC_ROM_EN		BIT(22)
+#define   SPI_HOST_ACCESS_ROM_EN	BIT(23)
+
+#define SPI_ALT_CS_REG			0x1d
+#define   SPI_ALT_CS_REG_MASK		0x03
+#define   SPI_PROTECT_EN		BIT(3)
+#define   SPI_PROTECT_LOCK		BIT(5)
 
 #define SPI100_ENABLE			0x20
 #define   SPI_USE_SPI100		BIT(0)
@@ -118,6 +124,9 @@ struct spi_config {
  * settings from mainboard devicetree to configure speed and read mode.
  */
 void fch_spi_early_init(void);
+
+/* Locks the SPI controller registers */
+void fch_spi_lock(void);
 
 /* Set the SPI base address variable */
 void spi_set_base(void *base);
