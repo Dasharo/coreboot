@@ -23,6 +23,14 @@ chip soc/amd/turin_poc
 	register "usb.usb3_force_gen1.port0" = "3"
 	register "usb.usb3_force_gen1.port1" = "3"
 
+	# Shutdown all unused SATA0 and SATA1 ports
+	register "sata.shutdown_ports[0].raw" = "0xff"
+	register "sata.shutdown_ports[1].raw" = "0xff"
+
+	# Enable all SATA2 and SATA3 ports as eSATA
+	register "sata.enable_esata[2].raw" = "0xff"
+	register "sata.enable_esata[3].raw" = "0xff"
+
 	# eSPI configuration
 	register "common_config.espi_config" = "{
 		.std_io_decode_bitmap = ESPI_DECODE_IO_0x80_EN | ESPI_DECODE_IO_0X2E_0X2F_EN,
