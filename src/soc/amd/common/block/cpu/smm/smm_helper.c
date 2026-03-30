@@ -41,12 +41,21 @@ void tseg_valid(void)
 bool is_smm_locked(void)
 {
 	msr_t hwcr = rdmsr(HWCR_MSR);
-	return hwcr.lo & SMM_LOCK ? true : false;
+	uint64_t cond = SMM_LOCK;
+
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SMM_LOCK_SMM_BASE))
+		cond |= SMM_BASE_LOCK;
+
+	return (hwcr.raw & cond) == cond ? true : false;
 }
 
 void lock_smm(void)
 {
 	msr_t hwcr = rdmsr(HWCR_MSR);
 	hwcr.lo |= SMM_LOCK;
+
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SMM_LOCK_SMM_BASE))
+		hwcr.lo |= SMM_BASE_LOCK;
+
 	wrmsr(HWCR_MSR, hwcr);
 }
