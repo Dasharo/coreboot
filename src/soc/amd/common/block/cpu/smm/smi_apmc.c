@@ -110,6 +110,8 @@ static void handle_smi_rom_armor(void)
 	io_smi->rax = rom_armor_exec(sub_command, (void *)(uintptr_t)reg_ebx);
 }
 
+__weak void soc_apmc_finalize(void) {}
+
 void fch_apmc_smi_handler(void)
 {
 	const uint8_t cmd = apm_get_apmc();
@@ -136,6 +138,9 @@ void fch_apmc_smi_handler(void)
 	break;
 	case APM_CNT_SMMINFO:
 		psp_notify_smm();
+		break;
+	case APM_CNT_FINALIZE:
+		soc_apmc_finalize();
 		break;
 	}
 
