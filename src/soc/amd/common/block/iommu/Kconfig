@@ -4,3 +4,10 @@ config SOC_AMD_COMMON_BLOCK_IOMMU
 	bool
 	help
 	  Select this option to use AMD common IOMMU support.
+
+config SOC_AMD_COMMON_BLOCK_IOMMU_HAS_VF_BARS
+	bool
+	depends on SOC_AMD_COMMON_BLOCK_IOMMU
+	help
+	  Select this option to allocate and program AMD IOMMU VF BARs.
+	  This is only available on servers.
