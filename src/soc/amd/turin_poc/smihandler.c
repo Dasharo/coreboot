@@ -6,11 +6,13 @@
 #include <amdblocks/psp.h>
 #include <amdblocks/smi.h>
 #include <amdblocks/smm.h>
+#include <amdblocks/spi.h>
 #include <arch/hlt.h>
 #include <arch/io.h>
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/smm.h>
+#include <soc/amd/common/block/psp/psp_def.h>
 #include <soc/smi.h>
 #include <soc/smu.h>
 #include <soc/southbridge.h>
@@ -94,4 +96,167 @@ void *get_smi_source_handler(int source)
 			return smi_sources[i].handler;
 
 	return NULL;
+}
+
+#define SPI_CMD_READ_ID			0x9f
+#define SPI_CMD_READ_ARRAY_SLOW		0x03
+#define SPI_CMD_READ_ARRAY_FAST		0x0b
+#define SPI_CMD_READ_STATUS		0x05
+#define SPI_CMD_WRITE_ENABLE		0x06
+#define SPI_CMD_BLOCK_ERASE		0xD8
+#define SPI_CMD_PAGE_PROGRAM		0x02
+#define SPI_CMD_SECTOR_ERASE		0x20
+#define SPI_CMD_SECTOR_ERASE_32K	0x52
+
+static const struct psp_rom_armor1_whitelist rom_armor_whitelist = {
+	.allowed_cmd_count = 9,
+	.allowed_region_count = 1,
+	.allowed_cmds = {
+		/* SPI part will be in 4-Byte mode for 3-Byte commands */
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_READ_ID,
+			.min_tx = 0,
+			.max_tx = 0,
+			.min_rx = 3,
+			.max_rx = 3,
+			.addr_check = NO_ADDR_CHECK,
+			.impact_size = 0
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_READ_STATUS,
+			.min_tx = 0,
+			.max_tx = 0,
+			.min_rx = 1,
+			.max_rx = 3,
+			.addr_check = NO_ADDR_CHECK,
+			.impact_size = 0
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_READ_ARRAY_SLOW,
+			.min_tx = 4,
+			.max_tx = 4,
+			.min_rx = 1,
+			.max_rx = 68,
+			.addr_check = NO_ADDR_CHECK,
+			.impact_size = 0
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_READ_ARRAY_FAST,
+			.min_tx = 5,
+			.max_tx = 5,
+			.min_rx = 1,
+			.max_rx = 67,
+			.addr_check = NO_ADDR_CHECK,
+			.impact_size = 0
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_WRITE_ENABLE,
+			.min_tx = 0,
+			.max_tx = 0,
+			.min_rx = 0,
+			.max_rx = 0,
+			.addr_check = NO_ADDR_CHECK,
+			.impact_size = 0
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_PAGE_PROGRAM,
+			.min_tx = 5,
+			.max_tx = 72,
+			.min_rx = 0,
+			.max_rx = 0,
+			.addr_check = ADDR_CHECK_32BIT,
+			.impact_size = 256
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_SECTOR_ERASE,
+			.min_tx = 4,
+			.max_tx = 4,
+			.min_rx = 0,
+			.max_rx = 0,
+			.addr_check = ADDR_CHECK_32BIT,
+			.impact_size = 4 * KiB
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_SECTOR_ERASE_32K,
+			.min_tx = 4,
+			.max_tx = 4,
+			.min_rx = 0,
+			.max_rx = 0,
+			.addr_check = ADDR_CHECK_32BIT,
+			.impact_size = 32 * KiB
+		},
+		{
+			.cs = CHIP_SELECT_1,
+			.freq = CONFIG_NORMAL_READ_SPI_SPEED,
+			.opcode = SPI_CMD_BLOCK_ERASE,
+			.min_tx = 4,
+			.max_tx = 4,
+			.min_rx = 0,
+			.max_rx = 0,
+			.addr_check = ADDR_CHECK_32BIT,
+			.impact_size = 64 * KiB
+		},
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}, /* empty */
+		{ 0, 0, 0, 0, 0, 0, 0, 0, 0}  /* empty */
+		},
+	.allowed_regions = {
+		{ 0x00000000, CONFIG_ROM_SIZE - 1 }, /* whole flash */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }, /* empty */
+		{ 0x00000000, 0x00000000 }  /* empty */
+	}
+};
+
+const struct psp_rom_armor1_whitelist *soc_get_psp_rom_armor_whitelist(void)
+{
+	return &rom_armor_whitelist;
 }
