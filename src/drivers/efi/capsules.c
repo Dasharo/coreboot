@@ -701,16 +701,20 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 	enum { MAX_CAPSULE_BLOCKS = MAX_CAPSULES };
 
 	/* Assume no capsules at the start. */
-	*base = 0;
-	*size = 0;
+	if (base)
+		*base = 0;
+	if (size)
+		*size = 0;
 
 	static bool once;
 	if (!once) {
 		once = true;
 	} else {
 		printk(BIOS_DEBUG, "capsules: already parsed, skipping.\n");
-		*base = coalesce_buffer.base;
-		*size = coalesce_buffer.len;
+		if (base)
+			*base = coalesce_buffer.base;
+		if (size)
+			*size = coalesce_buffer.len;
 		return;
 	}
 
@@ -795,8 +799,10 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 	if (uefi_capsule_count > 0)
 		set_boot_mode(LB_BOOT_MODE_FLASH_UPDATE);
 
-	*base = coalesce_buffer.base;
-	*size = coalesce_buffer.len;
+	if (base)
+		*base = coalesce_buffer.base;
+	if (size)
+		*size = coalesce_buffer.len;
 
 exit:
 	if (ENV_X86_32)
@@ -865,7 +871,7 @@ static void enable_capsule_update_path(void *unused)
 	uint8_t retries_left = 10;
 	while (1) {
 		ret = call_smm(APM_CNT_SMMSTORE, SMMSTORE_CMD_USE_FULL_FLASH,
-			       (void *)(uintptr_t)full_flash_access);
+			       (void *)(uintptr_t)&full_flash_access);
 		if (ret == SMMSTORE_RET_SUCCESS)
 			break;
 
