@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/psp.h>
 #include <device/mmio.h>
 #include <bootstate.h>
 #include <console/console.h>
@@ -101,6 +102,53 @@ enum cb_err psp_get_hsti_state(uint32_t *state)
 		return CB_ERR;
 
 	*state = read32(&buffer.state);
+	return CB_SUCCESS;
+}
+
+enum cb_err psp_send_generic_command(uint32_t command, const char *msg)
+{
+	int cmd_status;
+	struct mbox_default_buffer buffer = {
+		.header = {
+			.size = sizeof(buffer)
+		},
+	};
+
+	printk(BIOS_DEBUG, "PSP: %s... ", msg);
+
+	cmd_status = send_psp_command(command, &buffer);
+
+	/* buffer's status shouldn't change but report it if it does */
+	psp_print_cmd_status(cmd_status, &buffer.header);
+
+	if (cmd_status)
+		return CB_ERR;
+
+	return CB_SUCCESS;
+}
+
+enum cb_err psp_command_set_config(uint32_t config, const char *msg)
+{
+	int cmd_status;
+	struct mbox_cmd_set_config_buffer buffer = {
+		.header = {
+			.size = sizeof(buffer)
+		},
+		.config = {
+			.config_id = config
+		}
+	};
+
+	printk(BIOS_DEBUG, "PSP: %s... ", msg);
+
+	cmd_status = send_psp_command(MBOX_BIOS_CMD_SET_CONFIG, &buffer);
+
+	/* buffer's status shouldn't change but report it if it does */
+	psp_print_cmd_status(cmd_status, &buffer.header);
+
+	if (cmd_status)
+		return CB_ERR;
+
 	return CB_SUCCESS;
 }
 
