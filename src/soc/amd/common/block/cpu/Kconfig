@@ -94,6 +94,15 @@ config SOC_AMD_COMMON_BLOCK_SMM
 	  Add common SMM relocation, finalization and handler functionality to
 	  the build.
 
+config SOC_AMD_COMMON_BLOCK_SMM_LOCK_SMM_BASE
+	bool
+	depends on SOC_AMD_COMMON_BLOCK_SMM
+	help
+	  Enable locking SMM_BASE MSR for platforms that support it. It will
+	  cause the code to set HWCR bit 31 to lock SMM_BASE MSR from changes.
+	  The bit is available since Zen architecture, earlier platforms must
+	  not select this option.
+
 config SOC_AMD_COMMON_LATE_SMM_LOCKING
 	bool
 	depends on SOC_AMD_COMMON_BLOCK_SMM
