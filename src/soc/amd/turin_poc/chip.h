@@ -54,6 +54,28 @@ struct soc_usb_config {
 	struct usb31_phy_settings s1_usb31_phy[2];
 };
 
+union sata_ports {
+	struct {
+		uint8_t port0 : 1;
+		uint8_t port1 : 1;
+		uint8_t port2 : 1;
+		uint8_t port3 : 1;
+		uint8_t port4 : 1;
+		uint8_t port5 : 1;
+		uint8_t port6 : 1;
+		uint8_t port7 : 1;
+	};
+	uint8_t raw;
+};
+
+struct soc_sata_config {
+	union sata_ports shutdown_ports[4];
+	union sata_ports enable_esata[4];
+	union sata_ports rx_polarity[4];
+	bool sgpio0_enable[4];
+	bool sgpio1_enable[4];
+};
+
 struct soc_amd_turin_poc_config {
 	struct soc_amd_common_config common_config;
 
@@ -61,6 +83,7 @@ struct soc_amd_turin_poc_config {
 	struct dw_i2c_bus_config i2c[I2C_CTRLR_COUNT];
 
 	struct soc_usb_config usb;
+	struct soc_sata_config sata;
 };
 
 #endif /* __TURIN_POC_CHIP_H__ */
