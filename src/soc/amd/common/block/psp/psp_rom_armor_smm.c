@@ -301,6 +301,8 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 		spi_freq = DECODE_SPI_NORMAL_SPEED(spi_read16(SPI100_SPEED_CONFIG));
 		spi_page = spi_read8(SPI_ROM_PAGE) & SPI_ROM_PAGE_SEL;
 
+		fch_spi_lock();
+
 		/* For ROM Armor 1 we have to pass the transfer buffer used to talk to PSP */
 		params->operation_buf = (uint64_t)&transfer_buffer[0];
 		params->chip_select = spi_cs;
