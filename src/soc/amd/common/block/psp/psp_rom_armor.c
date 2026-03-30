@@ -20,8 +20,9 @@ static ssize_t rom_armor_ramstage_readat(const struct region_device *rd, void *b
 	};
 	u32 ret;
 
-	printk(BIOS_DEBUG, "PSP RomArmor (ramstage): Read offset=0x%zx, len=0x%zx\n",
-	       offset, len);
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "PSP RomArmor (ramstage): Read offset=0x%zx, len=0x%zx\n",
+		       offset, len);
 
 	if (!buf) {
 		printk(BIOS_ERR, "PSP RomArmor (ramstage): Invalid read parameters\n");
@@ -48,8 +49,9 @@ static ssize_t rom_armor_ramstage_writeat(const struct region_device *rd, const 
 	};
 	u32 ret;
 
-	printk(BIOS_DEBUG, "PSP RomArmor (ramstage): Write offset=0x%zx, len=0x%zx\n",
-	       offset, len);
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "PSP RomArmor (ramstage): Write offset=0x%zx, len=0x%zx\n",
+		       offset, len);
 
 	if (!buf || len == 0) {
 		printk(BIOS_ERR, "PSP RomArmor (ramstage): Invalid write parameters\n");
@@ -75,8 +77,9 @@ static ssize_t rom_armor_ramstage_eraseat(const struct region_device *rd,
 	};
 	u32 ret;
 
-	printk(BIOS_DEBUG, "PSP RomArmor (ramstage): Erase offset=0x%zx, len=0x%zx\n",
-	       offset, len);
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "PSP RomArmor (ramstage): Erase offset=0x%zx, len=0x%zx\n",
+		       offset, len);
 
 	ret = call_smm(APM_CNT_ROM_ARMOR, ROM_ARMOR_APM_CMD_ERASE, &params);
 
@@ -93,7 +96,7 @@ static ssize_t rom_armor_ramstage_eraseat(const struct region_device *rd,
 const struct region_device_ops rom_armor_apm_ops = {
 	.mmap = NULL,
 	.munmap = NULL,
-	.readat = rom_armor_ramstage_readat,	/* Only used by Rom Armor 2 */
+	.readat = rom_armor_ramstage_readat,	/* Only used by ROM Armor 1/2 */
 	.writeat = rom_armor_ramstage_writeat,
 	.eraseat = rom_armor_ramstage_eraseat,
 };
@@ -109,7 +112,9 @@ void psp_rom_armor_init(bool allow_capsule_update)
 	};
 	ret = call_smm(APM_CNT_ROM_ARMOR, ROM_ARMOR_APM_CMD_INIT, &params);
 	if (ret != ROM_ARMOR_RET_SUCCESS)
-		die("Failed to initialize ROM Armor. ret=%u", ret);
+		printk(BIOS_CRIT, "Failed to initialize ROM Armor. ret=%u\n", ret);
+	else
+		printk(BIOS_INFO, "AMD ROM Armor initialized\n");
 }
 
 static void rom_armor_finalize(void *unused)
