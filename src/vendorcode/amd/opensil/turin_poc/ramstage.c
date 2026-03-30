@@ -200,26 +200,29 @@ static void configure_usb(void)
 static void configure_sata(void)
 {
 	FCHSATA_INPUT_BLK *fch_sata_data = SilFindStructure(SilId_FchSata, 0);
-	FCHSATA_INPUT_BLK *fch_sata_defaults = FchSataGetInputBlk();
-	struct device *sata[NUM_SATA_CONTROLLERS] = {
-		DEV_PTR(sata_2_0),
-		DEV_PTR(sata_2_1),
+	const struct soc_amd_turin_poc_config *soc_config = config_of_soc();
+	const struct soc_sata_config *sata = &soc_config->sata;
+
+	struct device *sata_devs[NUM_SATA_CONTROLLERS] = {
 		DEV_PTR(sata_7_0),
-		DEV_PTR(sata_7_1)
+		DEV_PTR(sata_7_1),
+		DEV_PTR(sata_2_0),
+		DEV_PTR(sata_2_1)
 	};
 
 	for (int i = 0; i < NUM_SATA_CONTROLLERS; i++) {
-		fch_sata_data[i] = fch_sata_defaults[i];
-		fch_sata_data[i].SataAhciSsid = (sata[i])->subsystem_vendor |
-						((uint32_t)((sata[i])->subsystem_device) << 16);
+		fch_sata_data[i].SataEnable = is_dev_enabled(sata_devs[i]);
+		fch_sata_data[i].SataAhciSsid = (sata_devs[i])->subsystem_vendor |
+						((uint32_t)((sata_devs[i])->subsystem_device) << 16);
 		fch_sata_data[i].SataSetMaxGen2 = false;
 		fch_sata_data[i].SataMsiEnable = true;
-		fch_sata_data[i].SataEspPort = 0xFF;
 		fch_sata_data[i].SataRasSupport = true;
-		fch_sata_data[i].SataDevSlpPort1Num = 1;
-		fch_sata_data[i].SataMsiEnable = true;
-		fch_sata_data[i].SataControllerAutoShutdown = true;
-		fch_sata_data[i].SataRxPolarity = 0xFF;
+		fch_sata_data[i].SataStaggeredSpinupEnable = true;
+		fch_sata_data[i].SataRxPolarity = sata->rx_polarity[i].raw;
+		fch_sata_data[i].SataPortPower = sata->shutdown_ports[i].raw;
+		fch_sata_data[i].SataEspPort = sata->enable_esata[i].raw;
+		fch_sata_data[i].SataSgpio0 =  sata->sgpio0_enable[i];
+		fch_sata_data[i].SataSgpio1 =  sata->sgpio1_enable[i];
 	}
 }
 
