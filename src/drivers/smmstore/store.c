@@ -32,14 +32,14 @@ _Static_assert(FMAP_SECTION_SMMSTORE_SIZE >= SMMSTORE_MIN_SIZE,
 _Static_assert(FMAP_SECTION_SMMSTORE_SIZE >= SMM_BLOCK_SIZE,
 	       "SMMSTORE FMAP region must fit at least one logical block");
 
-static int smmstore_use_full_flash;
+static int smmstore_use_full_flash = 0;
 static int has_capsules = -1;
 
 int smmstore_preprocess_cmd(uint8_t *cmd, void *param)
 {
 	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES)) {
 		if (has_capsules == -1 && *cmd == SMMSTORE_CMD_USE_FULL_FLASH) {
-			has_capsules = !!(uintptr_t)param;
+			has_capsules = *(bool *)param ? 1 : 0;
 			/*
 			 * If we have capsules, return success, otherwise let smmstore_exec()
 			 * fail on !param check, which will be 0 in that case. This informs
