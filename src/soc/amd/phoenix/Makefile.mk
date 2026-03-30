@@ -29,6 +29,7 @@ ramstage-y	+= graphics.c
 ramstage-y	+= mca.c
 ramstage-y	+= memmap.c
 ramstage-$(CONFIG_SOC_AMD_PHOENIX_OPENSIL) += pci_irq_routing.c
+ramstage-$(CONFIG_SOC_AMD_PHOENIX_OPENSIL) += psp.c
 ramstage-y	+= root_complex.c
 ramstage-y	+= soc_util.c
 ramstage-y	+= xhci.c
