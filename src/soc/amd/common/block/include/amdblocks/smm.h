@@ -17,6 +17,8 @@ void lock_smm(void);
 /* See SMITYPE_* for list possible of events. GEVENTS are handled with mainboard_smi_gpi. */
 void mainboard_handle_smi(int event);
 
+void soc_apmc_finalize(void);
+
 #if CONFIG_SMM_TSEG_SIZE != 0
 #if (CONFIG_SMM_TSEG_SIZE <= CONFIG_SMM_RESERVED_SIZE)
 # error "CONFIG_SMM_TSEG_SIZE <= CONFIG_SMM_RESERVED_SIZE"
