@@ -66,6 +66,8 @@ void show_spi_speeds_and_modes(void)
 	       spi_read16(SPI100_ENABLE) & SPI_USE_SPI100 ? "Enabled" : "Disabled");
 	printk(BIOS_DEBUG, "SPI Read Mode: %s\n", read_mode_str[DECODE_SPI_READ_MODE(val32)]);
 	printk(BIOS_DEBUG, "SPI ROM mapping: %s\n", remapping[val8]);
+	printk(BIOS_DEBUG, "SPI ROM address: %ubit\n",
+		spi_read8(SPI_ADDR32_CTRL0) & SPI_ROM_ADDR_32BIT ? 32 : 24);
 }
 
 void __weak mainboard_spi_cfg_override(uint8_t *fast_speed, uint8_t *read_mode)
