@@ -133,7 +133,7 @@ void fch_apmc_smi_handler(void)
 			handle_smi_store();
 	break;
 	case APM_CNT_ROM_ARMOR:
-		if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3))
+		if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR_DISABLED))
 			handle_smi_rom_armor();
 	break;
 	case APM_CNT_SMMINFO:
