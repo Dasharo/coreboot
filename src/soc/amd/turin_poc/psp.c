@@ -50,7 +50,7 @@ static void send_psp_commands(void *unused)
 				       "Notify MPDMA-TF SRIOV enabled");
 }
 
-static void update_psp_hsti_state(void *unused)
+static void psp_finalize(void *unused)
 {
 	uint32_t hsti_state = 0;
 	uint32_t c2pmsg_63;
@@ -63,12 +63,6 @@ static void update_psp_hsti_state(void *unused)
 
 	c2pmsg_63 = read32p(psp_mmio + CORE_2_PSP_MSG_63_OFFSET);
 
-	/* If HSTI already reported, skip updating the PSP capability register */
-	if (c2pmsg_63 & (1 << 7)){
-		printk(BIOS_DEBUG, "PSP HSTI already reported\n");
-		return;
-	}
-
 	if (psp_get_hsti_state(&hsti_state) == CB_SUCCESS) {
 		printk(BIOS_INFO, "PSP: HSTI = %08x\n", hsti_state);
 		c2pmsg_63 |= (hsti_state << 8);
@@ -78,8 +72,8 @@ static void update_psp_hsti_state(void *unused)
 }
 
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_EXIT, send_psp_commands, NULL);
-BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, update_psp_hsti_state, NULL);
-BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_LOAD, BS_ON_EXIT, update_psp_hsti_state, NULL);
+BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, psp_finalize, NULL);
+BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_LOAD, BS_ON_EXIT, psp_finalize, NULL);
 
 static void enable_bus_master(struct device *dev)
 {
