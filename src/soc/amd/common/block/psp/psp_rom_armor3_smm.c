@@ -229,6 +229,8 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 		printk(BIOS_DEBUG, "%s: Init command received (capsule_update=%d)\n",
 		       __func__, params->capsule_update);
 
+		fch_spi_lock();
+
 		if (psp_rom_armor_enter_smm_mode(params, &flash_size) != 0) {
 			printk(BIOS_ERR, "%s: Failed to enter SMM mode\n", __func__);
 			return ROM_ARMOR_RET_FAILURE;
