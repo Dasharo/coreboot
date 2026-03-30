@@ -37,16 +37,17 @@ static void send_psp_commands(void *unused)
 {
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilId_NbioClass, 0);
 	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;
+	uint32_t args[4] = { 0 };
 
 	psp_send_generic_command(MBOX_BIOS_CMD_SMM_LOCK, "Locking SMM");
 	psp_send_generic_command(MBOX_BIOS_CMD_LOCK_DF_REG, "Locking DF registers");
 
 	if (is_nbif_ddr_base_assigned())
-		psp_command_set_config(CMD_CONFIG_ID_NBIF_DDR_CTRL,
+		psp_command_set_config(CMD_CONFIG_ID_NBIF_DDR_CTRL, args,
 				       "Notify NBIF DDR Init sequence");
 
 	if (input->CfgSriovEnDev0F1)
-		psp_command_set_config(CMD_CONFIG_ID_L1_SRIOV_SEC_POLICY_CPU,
+		psp_command_set_config(CMD_CONFIG_ID_L1_SRIOV_SEC_POLICY_CPU, args,
 				       "Notify MPDMA-TF SRIOV enabled");
 }
 
