@@ -84,6 +84,9 @@ enum spi100_speed {
 #define   SPI_FIFO_RD_PTR_SHIFT		16
 #define   SPI_FIFO_RD_PTR_MASK		0x7f
 
+#define SPI_ADDR32_CTRL0		0x50
+#define   SPI_ROM_ADDR_32BIT		BIT(0)
+
 #define SPI_ROM_PAGE			0x5c
 #define   SPI_ROM_PAGE_SEL		(BIT(0) | BIT(1))
 
