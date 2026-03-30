@@ -158,3 +158,14 @@ void fch_spi_early_init(void)
 	fch_spi_configure_4dw_burst();
 	fch_spi_config_modes();
 }
+
+void fch_spi_lock(void)
+{
+	uint32_t reg32 = spi_read32(SPI_CNTRL0);
+	reg32 &= ~(SPI_ACCESS_MAC_ROM_EN | SPI_HOST_ACCESS_ROM_EN);
+	spi_write32(SPI_CNTRL0, reg32);
+
+	uint16_t reg16 = spi_read16(SPI_ALT_CS_REG);
+	reg32 |= (SPI_PROTECT_EN | SPI_PROTECT_LOCK);
+	spi_write16(SPI_ALT_CS_REG, reg16);
+}
