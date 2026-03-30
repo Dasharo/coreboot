@@ -164,7 +164,7 @@ static unsigned long acpi_fill_aspt(unsigned long current)
 	aspt_sev_mbox_regs_t *sev_mbox_regs;
 	aspt_acpi_mbox_regs_t *acpi_mbox_regs;
 	acpi_aspt_t *aspt = (acpi_aspt_t *)current;
-	const uint64_t psp_mmio = get_psp_mmio_base();
+	const uint64_t psp_mmio = psp_get_base();
 
 	if (!psp_mmio) {
 		printk(BIOS_WARNING, "PSP: PSP MMIO not allocated\n");
