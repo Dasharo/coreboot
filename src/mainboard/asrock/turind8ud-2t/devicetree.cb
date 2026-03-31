@@ -37,8 +37,48 @@ chip soc/amd/turin_poc
 		device ref rcec_0 on end
 
 		device ref lpc_bridge on
+			chip drivers/ipmi
+				# On cold boot it takes a while for the BMC to start the IPMI service
+				register "wait_for_bmc" = "1"
+				register "bmc_boot_timeout" = "60"
+				device pnp ca2.0 on end	# IPMI KCS
+			end
+
 			chip drivers/pc80/tpm # TPM
 				device pnp 0.0 on end
+			end
+
+			chip superio/common
+				device pnp 2e.0 on
+					chip superio/aspeed/ast2400
+						device pnp 2e.2 on	# SUART1
+							io 0x60 = 0x3f8
+							irq 0x70 = 4
+							drq 0xf0 = 0x00
+						end
+						device pnp 2e.3 off end	# SUART2
+						device pnp 2e.4 off	# SWC
+							io 0x60 = 0x8e6
+							io 0x62 = 0x8e0
+							io 0x64 = 0x8e4
+							io 0x66 = 0x8e8
+							irq 0x70 = 0x09
+						end
+						device pnp 2e.5 off end	# KBC
+						device pnp 2e.7 on	# GPIO
+							irq 0x70 = 0x0a
+						end
+						device pnp 2e.b off end	# SUART3
+						device pnp 2e.c off end	# SUART4
+						device pnp 2e.d on	# iLPC2AHB
+							irq 0x70 = 0x00
+						end
+						device pnp 2e.e on	# Mailbox
+							io 0x60 = 0xa00
+							irq 0x70 = 0x9
+						end
+					end
+				end
 			end
 		end
 	end
