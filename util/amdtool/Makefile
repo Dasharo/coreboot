@@ -14,7 +14,7 @@ CPPFLAGS += -I$(top)/util/amdtool
 CPPFLAGS += -I$(top)/src/commonlib/include -I$(top)/src/commonlib/bsd/include
 CPPFLAGS += -I$(top)/src/arch/x86/include
 
-OBJS = amdtool.o gpio.o acpimmio.o spi.o lpc.o psb.o smn.o cpu.o irq.o espi.o
+OBJS = amdtool.o gpio.o acpimmio.o spi.o lpc.o psb.o smn.o cpu.o irq.o espi.o ahci.o
 
 OS_ARCH	= $(shell uname)
 ifeq ($(OS_ARCH), Darwin)
