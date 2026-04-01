@@ -72,8 +72,10 @@ static inline void outl(uint32_t value, uint16_t port)
 
 #define PCI_VENDOR_ID_AMD			0x1022
 
+#define PCI_DEVICE_ID_AMD_FCH_SATA_AHCI_1	0x7801
 #define PCI_DEVICE_ID_AMD_FCH_SMB_1		0x780b
 #define PCI_DEVICE_ID_AMD_FCH_LPC_1		0x780e
+#define PCI_DEVICE_ID_AMD_FCH_SATA_AHCI_2	0x7901
 #define PCI_DEVICE_ID_AMD_FCH_SMB_2		0x790b
 #define PCI_DEVICE_ID_AMD_FCH_LPC_2		0x790e
 
@@ -137,5 +139,6 @@ int print_spi(struct pci_dev *sb, struct pci_dev *nb);
 int print_acpimmio(struct pci_dev *sb);
 void print_psb(struct pci_dev *nb);
 int print_irq_routing(struct pci_dev *sb, struct pci_dev *nb);
+int print_ahci_devs(struct pci_access *pacc, struct pci_dev *nb);
 
 #endif
