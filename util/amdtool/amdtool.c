@@ -131,6 +131,7 @@ static void print_usage(const char *name)
 	     "   -c | --cpu:                       dump CPU information and features\n\n"
 	     "   -M | --msrs:                      dump CPU MSRs\n"
 	     "   -A | --acpimmio:                  dump southbridge ACPI MMIO registers\n"
+	     "   -R | --ahci:                      dump southbridge AHCI registers\n"
 	     "   -p | --psb:                       dump Platform Secure Boot state\n"
 	     "   -a | --all:                       dump all known (safe) registers\n"
 	     "\n");
@@ -184,6 +185,7 @@ int main(int argc, char *argv[])
 
 	int dump_gpios = 0, dump_coremsrs = 0, dump_acpimmio = 0, dump_cpu = 0;
 	int dump_spi = 0, dump_lpc = 0, show_gpio_diffs = 0, dump_psb = 0, dump_irq = 0;
+	int dump_ahci = 0;
 
 	static struct option long_options[] = {
 		{"version", 0, 0, 'v'},
@@ -195,13 +197,14 @@ int main(int argc, char *argv[])
 		{"cpu", 0, 0, 'c'},
 		{"msrs", 0, 0, 'M'},
 		{"acpimmio", 0, 0, 'A'},
+		{"ahci", 0, 0, 'R'},
 		{"psb", 0, 0, 'p'},
 		{"spi", 0, 0, 's'},
 		{"all", 0, 0, 'a'},
 		{0, 0, 0, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "vh?gGilcMApsa",
+	while ((opt = getopt_long(argc, argv, "vh?gGilcMARpsa",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'v':
@@ -229,6 +232,9 @@ int main(int argc, char *argv[])
 		case 'A':
 			dump_acpimmio = 1;
 			break;
+		case 'R':
+			dump_ahci = 1;
+			break;
 		case 'p':
 			dump_psb = 1;
 			break;
@@ -245,6 +251,7 @@ int main(int argc, char *argv[])
 			dump_acpimmio = 1;
 			dump_spi = 1;
 			dump_psb = 1;
+			dump_ahci = 1;
 			break;
 		case 'h':
 		case '?':
@@ -282,7 +289,7 @@ int main(int argc, char *argv[])
 #endif
 
 	pacc = pci_alloc();
-	pacc->method = PCI_ACCESS_I386_TYPE1;
+	pacc->method = PCI_ACCESS_AUTO;
 	pci_init(pacc);
 	pci_scan_bus(pacc);
 
@@ -398,6 +405,11 @@ int main(int argc, char *argv[])
 
 	if (dump_psb) {
 		print_psb(nb);
+		printf("\n\n");
+	}
+
+	if (dump_ahci) {
+		print_ahci_devs(pacc, nb);
 		printf("\n\n");
 	}
 
