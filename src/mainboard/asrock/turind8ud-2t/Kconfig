@@ -41,7 +41,7 @@ config BUILD_WITH_DEBUG_APCB
 	  Enabel it when debugging pre-reset vector issues.
 
 config ECAM_MMCONF_BASE_ADDRESS
-	default 0xe0000000
+	default 0xb0000000
 
 config EFS_SPI_READ_MODE
 	default 0	# Normal read 33MHz
