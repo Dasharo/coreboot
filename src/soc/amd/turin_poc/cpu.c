@@ -62,6 +62,9 @@ static void amd_turin_cpu_init(struct device *dev)
 	amd_cpu_init(dev);
 
 	if (boot_cpu()) {
+		rmp_cfg = rdmsr(RMP_CFG_MSR);
+		sys_cfg = rdmsr(SYSCFG_MSR);
+
 		ccx_data = SilFindStructure(SilId_CcxClass, 0);
 		if (ccx_data != NULL && ccx_data->CcxOutputBlock.AmdIsSnpSupported) {
 			rmp_size = ccx_data->CcxOutputBlock.AmdRmpTableSize;
@@ -78,9 +81,6 @@ static void amd_turin_cpu_init(struct device *dev)
 		/* Update the RMP base in OpenSIL data to be later used by bootmem */
 		if (rmp_base)
 			ccx_data->CcxOutputBlock.AmdRmpTableBase = rmp_base;
-
-		rmp_cfg = rdmsr (RMP_CFG_MSR);
-		sys_cfg = rdmsr (SYSCFG_MSR);
 
 		/* Clear the RMP table memory */
 		if (rmp_base && rmp_size)
