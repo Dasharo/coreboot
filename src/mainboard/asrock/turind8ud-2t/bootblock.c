@@ -18,7 +18,7 @@ void bootblock_mainboard_early_init(void)
 	 * APCBs are configured to enable 0xca2 and 0x3f8 ranges already.
 	 * Eable only SIO and post codes here.
 	 */
-	espi_open_io_window(0x4e, 2);
+	//espi_open_io_window(0x4e, 2);
 	espi_open_io_window(0x80, 1);
 
 	aspeed_enable_serial(serial1_dev, 0x3f8);
