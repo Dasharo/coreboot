@@ -111,7 +111,7 @@ static bool spi_controller_busy(void)
 	 * we still need to service PSP requests with ROM Armor 1.
 	 */
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1) &&
-	    psp_get_hsti_state_rom_armor_enforced())
+	    rom_armor_enforced)
 		return false;
 
 	/* When the firmware is using the SPI controller stop here */
