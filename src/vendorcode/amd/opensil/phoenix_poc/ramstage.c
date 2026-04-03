@@ -8,6 +8,7 @@
 #include <bootstate.h>
 #include <cbmem.h>
 #include <cpu/amd/microcode.h>
+#include <cpu/amd/mtrr.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/smm.h>
 #include <device/device.h>
@@ -62,16 +63,17 @@ static void setup_rc_manager_default(SIL_CONTEXT *SilContext)
 
 	/* Let openSIL distribute the resources to the different PCI roots */
 	rc_mgr_input_block->SetRcBasedOnNv = false;
-
 	rc_mgr_input_block->SocketNumber = 1;
 	rc_mgr_input_block->RbsPerSocket = 1; /* PCI root bridges per socket */
-	
 	rc_mgr_input_block->PciExpressBaseAddress = CONFIG_ECAM_MMCONF_BASE_ADDRESS;
-	rc_mgr_input_block->BottomMmioReservedForPrimaryRb = 4ull * GiB - 32 * MiB;
 	rc_mgr_input_block->MmioSizePerRbForNonPciDevice = 16 * MiB;
+	rc_mgr_input_block->BottomMmioReservedForPrimaryRb = 4ull * GiB - 32 * MiB;
 	/* MmioAbove4GLimit will be adjusted down in openSIL */
 	rc_mgr_input_block->MmioAbove4GLimit = POWER_OF_2(cpu_phys_address_size());
 	rc_mgr_input_block->Above4GMmioSizePerRbForNonPciDevice = 0;
+	/* Enforce remapping and address space reduction, as this is what AGESA does */
+	rc_mgr_input_block->AmdFabric1TbRemap = 1;
+	rc_mgr_input_block->AmdSmee = true;
 }
 
 #define NUM_XHCI_CONTROLLERS 4
@@ -124,6 +126,20 @@ static void configure_ccx(SIL_CONTEXT *SilContext)
 	ucode_info->UcodePatchEntryAddress = (uint64_t)ucode;
 }
 
+WEAK_DEV_PTR(i2c_0);
+WEAK_DEV_PTR(i2c_1);
+WEAK_DEV_PTR(i2c_2);
+WEAK_DEV_PTR(i2c_3);
+WEAK_DEV_PTR(uart_0);
+WEAK_DEV_PTR(uart_1);
+WEAK_DEV_PTR(uart_2);
+WEAK_DEV_PTR(uart_3);
+WEAK_DEV_PTR(uart_4);
+WEAK_DEV_PTR(i3c_0);
+WEAK_DEV_PTR(i3c_1);
+WEAK_DEV_PTR(i3c_2);
+WEAK_DEV_PTR(i3c_3);
+
 #define FCH_DEV_ENABLE(dev, aoac_bit) \
 	fch_data->FchRunTime.FchDeviceEnableMap |= \
 		(is_dev_enabled(DEV_PTR(dev)) ? aoac_bit : 0)
@@ -133,6 +149,22 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilContext, SilId_FchHwAcpiP, 0);
 	FCHCLASS_INPUT_BLK *fch_data = SilFindStructure(SilContext, SilId_FchClass, 0);
 	struct device *smb = DEV_PTR(smbus);
+
+	if (!fch_hwacpi_data) {
+		printk(BIOS_ERR, "OpenSIL: FCH HW ACPI data not found\n");
+	} else {
+		if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 2)
+			fch_hwacpi_data->PwrFailShadow = UsePrevious;
+		else if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 1)
+			fch_hwacpi_data->PwrFailShadow = AlwaysOn;
+		else
+			fch_hwacpi_data->PwrFailShadow = AlwaysOff;
+	}
+
+	if (!fch_data) {
+		printk(BIOS_ERR, "OpenSIL: FCH Class data not found\n");
+		return;
+	}
 
 	fch_data->Smbus.SmbusSsid = smb->subsystem_vendor |
 				    ((uint32_t)smb->subsystem_device << 16);
@@ -146,13 +178,6 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	fch_data->FchBldCfg.CfgSmiCmdPortAddr = APM_CNT;
 
 	fch_data->WdtEnable = false;
-
-	if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 2)
-		fch_hwacpi_data->PwrFailShadow = UsePrevious;
-	else if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 1)
-		fch_hwacpi_data->PwrFailShadow = AlwaysOn;
-	else
-		fch_hwacpi_data->PwrFailShadow = AlwaysOff;
 
 	fch_data->FchRunTime.FchDeviceEnableMap = 0;
 	FCH_DEV_ENABLE(i2c_0, FCH_AOAC_DEV_I2C0);
