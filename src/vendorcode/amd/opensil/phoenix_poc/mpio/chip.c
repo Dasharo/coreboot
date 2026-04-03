@@ -8,6 +8,7 @@
 #include <RcMgr/DfX/RcManager-api.h>
 #include <vendorcode/amd/opensil/opensil.h>
 #include <xSIM-api.h>
+#include <static.h>
 
 #include "chip.h"
 
@@ -87,6 +88,11 @@ static void mpio_params_config(SIL_CONTEXT *SilContext)
 	mpio_data->PcieTopologyData.PlatformData[0].PciePortList = mpio_data->PcieTopologyData.PortList;
 }
 
+WEAK_DEV_PTR(usb4_router_0);
+WEAK_DEV_PTR(usb4_pcie_bridge_0);
+WEAK_DEV_PTR(usb4_router_1);
+WEAK_DEV_PTR(usb4_pcie_bridge_1);
+
 static void nbio_params_config(SIL_CONTEXT *SilContext)
 {
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilContext, SilId_NbioClass, 0);
@@ -95,6 +101,10 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 	input->EsmTargetSpeed             = 16;
 	input->CfgRxMarginPersistenceMode = 1;
 	input->SevSnpSupport              = false;
+	input->Usb4Rt0En                  = is_dev_enabled(DEV_PTR(usb4_router_0));
+	input->Usb4Rt0PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_0));
+	input->Usb4Rt1En                  = is_dev_enabled(DEV_PTR(usb4_router_1));
+	input->Usb4Rt1PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_1));
 }
 
 #ifndef MPIO_ENGINE_DATA_INITIALIZER
