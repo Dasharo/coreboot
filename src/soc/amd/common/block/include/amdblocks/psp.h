@@ -97,14 +97,16 @@ bool psp_ftpm_is_active(void);
 void psp_ftpm_needs_recovery(bool *psp_rpmc_nvram,
 			     bool *psp_nvram,
 			     bool *psp_dir);
-#if ENV_RAMSTAGE || ENV_SMM
-bool psp_get_hsti_state_rom_armor_enforced(void);
-#else
+#if ENV_ROMSTAGE_OR_BEFORE
 /* ROM Armor might get activated after SMM has been set up. It's safe to return false here. */
 static inline bool psp_get_hsti_state_rom_armor_enforced(void) { return false; }
+#else
+bool psp_get_hsti_state_rom_armor_enforced(void);
 #endif
 
-#if ENV_SMM && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)
+#if CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR_DISABLED)
+#define rom_armor_enforced false
+#else
 /*
  * With ROM Armor 1 querying HSTI state does not work in SMM after enter SMM-only mode.
  * However, it still works in normal world (non-SMM). We will use this flag to inform
