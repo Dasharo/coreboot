@@ -42,7 +42,7 @@ static const char *remapping[8] = {
 
 void show_spi_speeds_and_modes(void)
 {
-	if (psp_get_hsti_state_rom_armor_enforced()) {
+	if (rom_armor_enforced) {
 		printk(BIOS_DEBUG, "%s: Skipped as ROM Armor active\n", __func__);
 		return;
 	}
@@ -115,14 +115,14 @@ static void fch_spi_set_read_mode(u32 mode)
 
 uint8_t fch_spi_rom_remapping(void)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	return spi_read8(SPI_ROM_PAGE) & SPI_ROM_PAGE_SEL;
 }
 
 void fch_spi_config_modes(void)
 {
-	if (psp_get_hsti_state_rom_armor_enforced()) {
+	if (rom_armor_enforced) {
 		printk(BIOS_DEBUG, "%s: Skipped as ROM Armor active\n", __func__);
 		return;
 	}

@@ -113,7 +113,10 @@ void psp_rom_armor_init(bool allow_capsule_update)
 	ret = call_smm(APM_CNT_ROM_ARMOR, ROM_ARMOR_APM_CMD_INIT, &params);
 	if (ret != ROM_ARMOR_RET_SUCCESS)
 		printk(BIOS_CRIT, "Failed to initialize ROM Armor. ret=%u\n", ret);
-	else
+
+	rom_armor_enforced = psp_get_hsti_state_rom_armor_enforced();
+
+	if (rom_armor_enforced)
 		printk(BIOS_INFO, "AMD ROM Armor initialized\n");
 }
 
