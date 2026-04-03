@@ -42,7 +42,7 @@ static const char *remapping[8] = {
 
 void show_spi_speeds_and_modes(void)
 {
-	if (psp_get_hsti_state_rom_armor_enforced()) {
+	if (rom_armor_enforced) {
 		printk(BIOS_DEBUG, "%s: Skipped as ROM Armor active\n", __func__);
 		return;
 	}
@@ -95,7 +95,7 @@ static void fch_spi_set_spi100(uint8_t norm, uint8_t fast, uint8_t alt, uint8_t 
 
 void fch_spi_configure_4dw_burst(void)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	uint16_t val = spi_read16(SPI100_HOST_PREF_CONFIG);
 
@@ -116,14 +116,14 @@ static void fch_spi_set_read_mode(u32 mode)
 
 uint8_t fch_spi_rom_remapping(void)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	return spi_read8(SPI_ROM_PAGE);
 }
 
 uint32_t fch_spi_get_rom2_page(uint32_t rom2_base)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	uint32_t page = rom2_base >> 24;
 	uint8_t rom2_override = spi_read8(SPI_ROM2_OVERRIDE);
@@ -146,7 +146,7 @@ uint32_t fch_spi_get_rom2_page(uint32_t rom2_base)
 
 uint64_t fch_spi_get_rom3_page(uint64_t rom3_base)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	uint64_t page = rom3_base >> 24;
 
@@ -158,21 +158,21 @@ uint64_t fch_spi_get_rom3_page(uint64_t rom3_base)
 
 bool fch_spi_rom_32bit(void)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	return !!(spi_read8(SPI_ROM_ADDR32_CTRL0) & SPI_ROM_ADDR32);
 }
 
 bool fch_spi_rom3_maps_to_bank3(void)
 {
-	assert(!psp_get_hsti_state_rom_armor_enforced());
+	assert(!rom_armor_enforced);
 
 	return !!(spi_read8(SPI_ROM2_OVERRIDE) & SPI_FORCE_ROM3_MAP_TO_BANK3);
 }
 
 void fch_spi_config_modes(void)
 {
-	if (psp_get_hsti_state_rom_armor_enforced()) {
+	if (rom_armor_enforced) {
 		printk(BIOS_DEBUG, "%s: Skipped as ROM Armor active\n", __func__);
 		return;
 	}

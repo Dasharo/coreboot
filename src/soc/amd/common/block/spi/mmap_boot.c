@@ -31,7 +31,7 @@ const struct region_device *boot_device_ro(void)
 	 * When ROM Armor is enabled, don't call FCH SPI functions
 	 * because the SPIBAR is no longer accessible.
 	 */
-	if (!psp_get_hsti_state_rom_armor_enforced()) {
+	if (!rom_armor_enforced) {
 		/*
 		 * The following code assumes that ROM2 is mapped at flash offset 0.
 		 * This is the default configuration currently enforced by soft-straps.
