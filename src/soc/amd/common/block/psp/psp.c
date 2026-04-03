@@ -168,12 +168,9 @@ bool psp_get_hsti_state_rom_armor_enforced(void)
 	uint32_t hsti_state;
 	static bool enforced = false;
 
-#if ENV_SMM && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)
-	return rom_armor_enforced;
-#endif
-
+	/* ROM Armor already enforced, no need to check again */
 	if (enforced)
-		return true; /* ROM Armor already enforced, no need to check again */
+		return enforced;
 
 	if (psp_get_hsti_state(&hsti_state) != CB_SUCCESS) {
 		printk(BIOS_EMERG, "PSP: Failed to get HSTI state\n");
