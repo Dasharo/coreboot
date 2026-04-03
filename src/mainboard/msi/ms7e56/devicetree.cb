@@ -332,7 +332,7 @@ chip soc/amd/phoenix
 				device pnp 4e.9 off end		# GPIO8-9, GPIO1-8 AF
 				device pnp 4e.a on		# ACPI
 					irq 0x70 = 0x40
-					# Vendor firmware did not assign I/O
+					io 0x60 = 0xa10
 				end
 				device pnp 4e.b on		# EC
 					io 0x60 = 0xa20
