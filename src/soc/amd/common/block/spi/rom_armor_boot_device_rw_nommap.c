@@ -11,6 +11,8 @@
 static struct spi_flash sfg;
 static bool sfg_init_done;
 
+bool rom_armor_enforced = false;
+
 __weak int boot_device_spi_cs(void)
 {
 	return 0;	/* Default to chip select 0 */
@@ -70,8 +72,6 @@ static void boot_device_rw_init(void)
 
 const struct region_device *boot_device_rw(void)
 {
-	static bool rom_armor_active = false;
-
 	if (ENV_SMM) {
 		/*
 		 * ROM Armor 1 hooks into SPI controller in SMM.
@@ -91,17 +91,13 @@ const struct region_device *boot_device_rw(void)
 		 * unlikely that something need R/W access to SPI flash before it
 		 * is enforced.
 		 */
-		if (!psp_get_hsti_state_rom_armor_enforced())
-			return NULL;
+		if (!rom_armor_enforced)
+			return &spi_rw;
 
 		return &rom_armor_smm_rw;
 	} else if (ENV_RAMSTAGE) {
-		/* ROM Armor active, use APM interface */
-		if (rom_armor_active)
-			return &rom_armor_apm_call_rw;
-
 		/* Probe for the SPI flash device if not already done. */
-		if (!psp_get_hsti_state_rom_armor_enforced()) {
+		if (!rom_armor_enforced) {
 			/* ROM Armor not active, can use SPI controller directly */
 			boot_device_rw_init();
 
@@ -110,11 +106,7 @@ const struct region_device *boot_device_rw(void)
 
 			return &spi_rw;
 		}
-		/*
-		 * Cache the state of ROM Armor, to avoid querying HSTI over and over.
-		 * Once ROM Armor is enforced, it cannot be deactivated until reset.
-		 */
-		rom_armor_active = true;
+
 		/* ROM Armor active, use APM interface */
 		return &rom_armor_apm_call_rw;
 	} else {
@@ -130,7 +122,7 @@ const struct region_device *boot_device_rw(void)
 
 const struct spi_flash *boot_device_spi_flash(void)
 {
-	if (!psp_get_hsti_state_rom_armor_enforced())
+	if (!rom_armor_enforced)
 		boot_device_rw_init();
 
 	if (sfg_init_done != true)
