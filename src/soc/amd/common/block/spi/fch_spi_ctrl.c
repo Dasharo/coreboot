@@ -384,7 +384,8 @@ static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	uint8_t reg8;
 
-	if (psp_get_hsti_state_rom_armor_enforced()) {
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR_DISABLED) &&
+	    psp_get_hsti_state_rom_armor_enforced()) {
 		/*
 		 * ROM Armor 1 hooks into SPI controller code, no need to claim the bus.
 		 * Just let APMC calls/SMM handle SPI access through PSP.
@@ -426,7 +427,8 @@ static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 	uint8_t reg8;
 
 	/* PSP handles the SPI access */
-	if (psp_get_hsti_state_rom_armor_enforced())
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR_DISABLED) &&
+	    psp_get_hsti_state_rom_armor_enforced())
 		return;
 
 	/* Reset chip select line */
