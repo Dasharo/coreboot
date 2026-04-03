@@ -22,8 +22,6 @@ static uint8_t transfer_buffer[4 * KiB] __aligned(32);
 
 static bool initialized;
 
-bool rom_armor_enforced = false;
-
 static void print_psp_spi_cmd_status(uint16_t result)
 {
 	printk(BIOS_ERR, "PSP RomArmor transaction result: 0x%04x ", result);
@@ -317,6 +315,10 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 			return ROM_ARMOR_RET_FAILURE;
 		}
 
+		/*
+		 * Cache the state of ROM Armor, to avoid querying HSTI over and over.
+		 * Once ROM Armor is enforced, it cannot be deactivated until reset.
+		 */
 		rom_armor_enforced = true;
 
 		printk(BIOS_INFO, "%s: Initialized with flash size 0x%zx\n", __func__, flash_size);
@@ -326,12 +328,10 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 			rom_armor_smm_rw.region.size = flash_size;
 		}
 
-		if (psp_rom_armor_enforce_whitelist(params, spi_freq) != 0) {
+		if (psp_rom_armor_enforce_whitelist(params, spi_freq) != 0)
 			printk(BIOS_ERR, "%s: Failed to enforce SPI whitelist\n", __func__);
-			return ROM_ARMOR_RET_FAILURE;
-		}
 		/*
-		 * Do not call QueryHSTI as it seems to fail on Turin after
+		 * Do not call Query HSTI as it seems to fail on Turin after
 		 * entering SMM-only mode in the very same SMI handler.
 		 * However, it unblocks in normal, non-SMM world for some reason.
 		 *
