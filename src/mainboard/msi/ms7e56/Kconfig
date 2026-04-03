@@ -82,4 +82,8 @@ config CPU_PT_ROM_MAP_GB
 config MRC_SETTINGS_CACHE_SIZE
 	default 0x1000000
 
+# Do not move this address. It has to match APCB.
+config ECAM_MMCONF_BASE_ADDRESS
+	default 0xe0000000
+
 endif # BOARD_MSI_PRO_B850_P
