@@ -211,11 +211,10 @@ static int spi_ctrlr_xfer(const struct spi_slave *slave, const void *dout,
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
 		printk(BIOS_DEBUG, "%s(%zx, %zx)\n", __func__, bytesout, bytesin);
 
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
-		bool rom_armor_active = psp_get_hsti_state_rom_armor_enforced();
-		if (ENV_SMM && rom_armor_active) {
+	if (!ENV_ROMSTAGE_OR_BEFORE && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
+		if (ENV_SMM && rom_armor_enforced) {
 			return psp_rom_armor_transfer(dout, bytesout, din, bytesin);
-		} else if (!ENV_SMM && rom_armor_active) {
+		} else if (!ENV_SMM && rom_armor_enforced) {
 			printk(BIOS_ERR,
 			       "ROM Armor enforced but trying to access SPI in non-SMM mode!\n");
 			return -1;
@@ -384,7 +383,7 @@ static int spi_ctrlr_claim_bus(const struct spi_slave *slave)
 {
 	uint8_t reg8;
 
-	if (psp_get_hsti_state_rom_armor_enforced()) {
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR_DISABLED) && rom_armor_enforced) {
 		/*
 		 * ROM Armor 1 hooks into SPI controller code, no need to claim the bus.
 		 * Just let APMC calls/SMM handle SPI access through PSP.
@@ -426,7 +425,7 @@ static void spi_ctrlr_release_bus(const struct spi_slave *slave)
 	uint8_t reg8;
 
 	/* PSP handles the SPI access */
-	if (psp_get_hsti_state_rom_armor_enforced())
+	if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR_DISABLED) && rom_armor_enforced)
 		return;
 
 	/* Reset chip select line */
