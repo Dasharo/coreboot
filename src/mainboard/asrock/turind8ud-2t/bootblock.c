@@ -6,22 +6,37 @@
 #include <bootblock_common.h>
 #include <device/pnp_type.h>
 #include <gpio.h>
+#include <superio/nuvoton/common/nuvoton.h>
+#include <superio/nuvoton/nct6791d/nct6791d.h>
 #include <superio/aspeed/ast2400/ast2400.h>
 #include <superio/aspeed/common/aspeed.h>
+#include <device/pnp_ops.h>
 
 void bootblock_mainboard_early_init(void)
 {
 	/* Configure appropriate physical port of SuperIO chip off BMC */
 	const pnp_devfn_t serial1_dev = PNP_DEV(0x4e, AST2400_SUART1);
+	const pnp_devfn_t serial2_dev = PNP_DEV(0x4e, AST2400_SUART2);
 
 	/*
-	 * APCBs are configured to enable 0xca2 and 0x3f8 ranges already.
-	 * Eable only SIO and post codes here.
+	 * APCBs are configured to enable 0x3f8 range already.
+	 * Eable only post codes here.
 	 */
-	//espi_open_io_window(0x4e, 2);
 	espi_open_io_window(0x80, 1);
 
+	/*
+	 * Disable the Nuvoton NCT6791D SuperIO UART1.  It is enabled by
+	 * default, but the AST2600's is connected to the serial port.
+	 */
+	const pnp_devfn_t nvt_serial_dev = PNP_DEV(0x2E, NCT6791D_SP1);
+	nuvoton_pnp_enter_conf_state(nvt_serial_dev);
+	pnp_set_logical_device(nvt_serial_dev);
+	pnp_set_enable(nvt_serial_dev, 0);
+	nuvoton_pnp_exit_conf_state(nvt_serial_dev);
+
+	/* Enable AST2600 SuperIO UART1 and UART2 */
 	aspeed_enable_serial(serial1_dev, 0x3f8);
+	aspeed_enable_serial(serial2_dev, 0x2f8);
 	/* Enable UART function pin */
 	aspeed_enable_uart_pin(serial1_dev);
 }
