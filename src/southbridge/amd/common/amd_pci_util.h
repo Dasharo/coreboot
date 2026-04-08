@@ -10,8 +10,14 @@
 #define PCI_INTR_INDEX	0xc00
 #define PCI_INTR_DATA	0xc01
 
+/* Converts PCI address from struct device* to 32bit address value */
+#define PCI_DEV_TO_ADDR(dev) \
+	((dev)->path.pci.devfn | \
+	 ((dev)->upstream->secondary << 8) | \
+	 ((dev)->upstream->segment_group << 16))
+
 struct pirq_struct {
-	u16 devfn;
+	u32 pci_addr;
 	u8 PIN[4];	/* PINA/B/C/D are index 0/1/2/3 */
 };
 

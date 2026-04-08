@@ -15,6 +15,8 @@ romstage-y += smbus_spd.c
 
 verstage-y += early_setup.c
 
+postcar-y += lpc_simpledev.c
+
 ramstage-y += enable_usbdebug.c
 ramstage-$(CONFIG_HAVE_ACPI_TABLES) += fadt.c
 ramstage-y += hda.c
