@@ -254,17 +254,17 @@ EOF
     if [ "$include_battery_check" = 1 ]; then
       cat >> "$json_file" << EOF
         {
-            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/CapsuleChargerCheckDxe.efi"
+            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/CapsuleChargerCheckDxe.efi"
         },
 EOF
     fi
 
     cat >> "$json_file" << EOF
         {
-            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/CapsuleSplashDxe.efi"
+            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/CapsuleSplashDxe.efi"
         },
         {
-            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_COREBOOT/X64/FmpDxe.efi"
+            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/FmpDxe.efi"
         }
     ],
     "Payloads": [
