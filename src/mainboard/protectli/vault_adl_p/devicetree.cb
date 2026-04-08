@@ -103,6 +103,18 @@ chip soc/intel/alderlake
 				[9] = USB2_PORT_SHORT(OC_SKIP),  // WiFi slot
 			}"
 
+			register "enabletcsscovtypea" = "{
+				[0] = true,
+				[1] = true,
+				[3] = true,
+			}"
+
+			register "mappingpchxhciusba" = "{
+				[0] = 1,
+				[1] = 2,
+				[3] = 4,
+			}"
+
 			# PCH USB3.x ports not used
 
 			chip drivers/usb/acpi
