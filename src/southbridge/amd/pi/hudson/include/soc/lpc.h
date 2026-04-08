@@ -10,4 +10,11 @@
 #define   SPI_ROM_ENABLE		BIT(1)
 #define   SPI_PRESERVE_BITS		(BIT(1) | BIT(3))
 
+#if ENV_RAMSTAGE || ENV_SMM
+bool psp_get_hsti_state_rom_armor_enforced(void)
+{
+	return false;
+}
+#endif
+
 #endif /* SOC_LPC_H */
