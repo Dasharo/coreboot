@@ -108,19 +108,19 @@ static int get_spd(u8 *spd, u8 addr)
 		}
 
 		/* Check if module is DDR4, DDR4 spd is 512 byte. */
-		if (spd[SPD_DRAM_TYPE] == SPD_DRAM_DDR4 &&
-					CONFIG_DIMM_SPD_SIZE > SPD_PAGE_LEN) {
+		if (spd[SPD_MEMORY_TYPE] == SPD_MEMORY_TYPE_DDR4_SDRAM &&
+		    CONFIG_DIMM_SPD_SIZE > SPD_SIZE_MAX_DDR3) {
 			/* Switch to page 1 */
-			smbus_write_byte(SPD_PAGE_1, 0, 0);
+			spd_write_byte(SPD_PAGE_1, 0, 0);
 
 			/* IMC doesn't support i2c eeprom read. */
 			if (CONFIG(SOC_INTEL_COMMON_BLOCK_IMC) ||
-					i2c_eeprom_read(addr, 0, SPD_PAGE_LEN, spd + SPD_PAGE_LEN) < 0) {
+			    i2c_eeprom_read(addr, 0, SPD_SIZE_MAX_DDR3, spd + SPD_SIZE_MAX_DDR3) < 0) {
 				printk(BIOS_INFO, "do_i2c_eeprom_read failed, using fallback\n");
-				spd_read(spd + SPD_PAGE_LEN, addr);
+				spd_read(spd + SPD_SIZE_MAX_DDR3, addr);
 			}
 			/* Restore to page 0 */
-			smbus_write_byte(SPD_PAGE_0, 0, 0);
+			spd_write_byte(SPD_PAGE_0, 0, 0);
 		}
 	}
 
