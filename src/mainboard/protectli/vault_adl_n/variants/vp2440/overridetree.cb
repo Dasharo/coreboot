@@ -28,6 +28,9 @@ chip soc/intel/alderlake
 			register "usb2_ports[5]" = "USB2_PORT_SHORT(OC_SKIP)" # 5G/LTE
 			register "usb3_ports[1]" = "USB3_PORT_EMPTY"
 
+			register "enabletcsscovtypea[1]" = "true"
+			register "mappingpchxhciusba[1]" = "6"
+
 			chip drivers/usb/acpi
 				device ref xhci_root_hub on
 					chip drivers/usb/acpi
