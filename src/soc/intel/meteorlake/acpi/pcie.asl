@@ -299,13 +299,3 @@ Device (RP12)
 		Return (IRQM (1))
 	}
 }
-
-Device (SRAM)
-{
-	Name (_ADR, 0x00140002)
-}
-
-Device (HEC1)
-{
-	Name (_ADR, 0x00160000)
-}
