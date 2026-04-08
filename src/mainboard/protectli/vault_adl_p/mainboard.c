@@ -61,14 +61,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	/* IOM USB config */
 	params->PchUsbOverCurrentEnable = 0;
 
-	params->EnableTcssCovTypeA[0] = 1;
-	params->EnableTcssCovTypeA[1] = 1;
-	params->EnableTcssCovTypeA[3] = 1;
-
-	params->MappingPchXhciUsbA[0] = 1;
-	params->MappingPchXhciUsbA[1] = 2;
-	params->MappingPchXhciUsbA[3] = 4;
-
 	params->CnviRfResetPinMux = 0;
 	params->CnviClkreqPinMux = 0;
 
