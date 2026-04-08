@@ -137,7 +137,8 @@ void write_pci_cfg_irqs(void)
 		 * the IRQ number from the PCI_INTR register table
 		 */
 		if (pci_intr_idx == 0xBAD) {	/* Not on a bridge or in pirq_data table, skip it */
-			printk(BIOS_SPEW, "PCI Devfn (0x%x) not found in pirq_data table\n", devfn);
+			printk(BIOS_SPEW, "PCI Devfn (0x%x) not found in pirq_data table\n",
+			       pci_addr & 0xff);
 			continue;
 		} else if (pci_intr_idx == 0x1F) {	/* Index found is not defined */
 			printk(BIOS_SPEW, "Got index 0x1F (Not Connected), perhaps this device was defined wrong?\n");
