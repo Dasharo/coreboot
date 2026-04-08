@@ -117,15 +117,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 
 	// IOM USB config
 	params->PchUsbOverCurrentEnable = 0;
-
-	if (CONFIG(BOARD_PROTECTLI_VP2440)) {
-		/*
-		 * Second Type-C port used as regular USB3.x for LTE.
-		 * Remap it to PCH xHCI first port.
-		 */
-		params->EnableTcssCovTypeA[1] = 1;
-		params->MappingPchXhciUsbA[1] = 6;
-	}
 }
 
 static void mainboard_final(void *chip_info)
