@@ -501,7 +501,7 @@ static void soc_memory_init_params(FSP_M_CONFIG *m_cfg,
 		fill_fspm_trace_params,
 		fill_fspm_vr_config_params,
 		fill_fspm_ibecc_params,
-		fill_fsps_acoustic_params,
+		fill_fspm_acoustic_params,
 		fill_txt_params,
 	};
 
