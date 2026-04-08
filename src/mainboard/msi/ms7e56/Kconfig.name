@@ -4,4 +4,3 @@
 
 config BOARD_MSI_PRO_B850_P
 	bool "PRO B850-P (WIFI)"
-
