@@ -50,10 +50,18 @@ CPPFLAGS_common += -I$(src)/southbridge/amd/pi/hudson/include
 #
 # EC ROM should be 64K aligned.
 
-ifeq ($(CONFIG_AMDFW_OUTSIDE_CBFS),y)
-HUDSON_FWM_POSITION=0x20000
-else
-HUDSON_FWM_POSITION=0x7a0000
+ifeq ($(CONFIG_AMD_FWM_POSITION_420000),y)
+$(error "Invalid AMD FWM position: " $(CONFIG_AMD_FWM_POSITION_420000))
+endif
+
+HUDSON_FWM_POSITION=$(CONFIG_AMD_FWM_POSITION)
+
+# CONFIG_AMD_FWM_POSITION only works for 16MB or bigger flashes.
+# For smaller chips, the offset has to be adjusted to be relative.
+ifeq ($(call int-lt, $(CONFIG_ROM_SIZE) 0x1000000),1)
+ifeq ($(call int-gt, $(CONFIG_AMD_FWM_POSITION) $(CONFIG_ROM_SIZE)),1)
+HUDSON_FWM_POSITION=$(call _tohex, $(call int-subtract, $(CONFIG_AMD_FWM_POSITION) $(CONFIG_ROM_SIZE)))
+endif
 endif
 
 ifeq ($(CONFIG_HUDSON_PSP), y)
@@ -134,15 +142,17 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_HUDSON_XHCI_FWM_FILE)) \
 
 ifeq ($(CONFIG_AMDFW_OUTSIDE_CBFS),y)
 $(call add_intermediate, add_amdfw, $(obj)/amdfw.rom)
-	printf "    DD         Adding AMD Firmware\n"
+	printf "    DD         Adding AMD Firmware at ROM offset 0x%x\n" \
+		"$(HUDSON_FWM_POSITION)"
 	dd if=$(obj)/amdfw.rom \
-		of=$< conv=notrunc bs=1 seek=131072 >/dev/null 2>&1
+		of=$< conv=notrunc bs=1 \
+		seek=$(HUDSON_FWM_POSITION) >/dev/null 2>&1
 
 else # ifeq ($(CONFIG_AMDFW_OUTSIDE_CBFS),y)
 
 cbfs-files-y += apu/amdfw
 apu/amdfw-file := $(obj)/amdfw.rom
-apu/amdfw-position := $(HUDSON_FWM_POSITION)
+apu/amdfw-position := $(call int-add, 0xff000000 $(CONFIG_AMD_FWM_POSITION))
 apu/amdfw-type := raw
 
 endif # ifeq ($(CONFIG_AMDFW_OUTSIDE_CBFS),y)
