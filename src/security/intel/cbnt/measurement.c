@@ -104,14 +104,19 @@ struct bpm_ibbs {
 	uint64_t dma_prot_base1;
 	uint64_t dma_prot_limit1;
 	struct hash_struct post_ibb_hash; /* deprecated since v1.2.0 of CBnT BWG */
+	/* struct bpm_ibbs_mid middle; */
+	/* struct hash_struct obb_hash; */ /* deprecated since v1.2.0 of CBnT BWG */
+	/* struct bpm_ibbs_bottom bottom; */
+} __packed;
+
+/* IBB Segment Element (middle part) */
+struct bpm_ibbs_mid {
 	uint32_t ibb_entry_point;
 	struct bpm_hash_list digest_list; /* each entry is of variable size */
-	/* struct bpm_ibbs_bottom bottom; */
 } __packed;
 
 /* IBB Segment Element (lower part) */
 struct bpm_ibbs_bottom {
-	struct hash_struct obb_hash; /* deprecated since v1.2.0 of CBnT BWG */
 	uint8_t reserved4[3];
 	uint8_t segment_count;
 	/* ibb_segments[segment_count]; */
@@ -481,9 +486,12 @@ static const struct hash_struct *find_ibb_digest(const struct bpm_ibbs *ibbs,
 						 enum vb2_hash_algorithm alg)
 {
 	unsigned int i;
-	const struct hash_struct *ibb_hash = ibbs->digest_list.hashes;
+	uintptr_t mid_ptr = (uintptr_t)ibbs + sizeof(*ibbs) + ibbs->post_ibb_hash.size;
+	const struct bpm_ibbs_mid *mid = (const struct bpm_ibbs_mid *)mid_ptr;
+	const struct hash_struct *ibb_hash = mid->digest_list.hashes;
+
 	uint16_t tpm2_alg = tpm2_alg_from_vb2_hash(alg);
-	for (i = 0; i < ibbs->digest_list.count; ++i) {
+	for (i = 0; i < mid->digest_list.count; ++i) {
 		if (ibb_hash->alg == tpm2_alg)
 			return ibb_hash;
 
