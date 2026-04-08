@@ -50,7 +50,19 @@ CPPFLAGS_common += -I$(src)/southbridge/amd/pi/hudson/include
 #
 # EC ROM should be 64K aligned.
 
-HUDSON_FWM_POSITION=0x7a0000
+ifeq ($(CONFIG_AMD_FWM_POSITION_420000),y)
+$(error "Invalid AMD FWM position: " $(CONFIG_AMD_FWM_POSITION_420000))
+endif
+
+HUDSON_FWM_POSITION=$(CONFIG_AMD_FWM_POSITION)
+
+# CONFIG_AMD_FWM_POSITION only works for 16MB or bigger flashes.
+# For smaller chips, the offset has to be adjusted to be relative.
+ifeq ($(call int-lt, $(CONFIG_ROM_SIZE) 0x1000000),1)
+ifeq ($(call int-gt, $(CONFIG_AMD_FWM_POSITION) $(CONFIG_ROM_SIZE)),1)
+HUDSON_FWM_POSITION=$(call _tohex, $(call int-subtract, $(CONFIG_AMD_FWM_POSITION) $(CONFIG_ROM_SIZE)))
+endif
+endif
 
 add_opt_prefix=$(if $(call strip_quotes, $(1)), $(2) $(call strip_quotes, $(1)), )
 
