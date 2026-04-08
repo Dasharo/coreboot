@@ -51,5 +51,5 @@ repos:
     # pre-commit run --hook-stage pre-push check-upstream-status
     hooks:
       - id: check-upstream-status
-        args: [--base, origin/dasharo]
+        args: [--base, refs/tags/25.12]
         stages: [pre-push]
