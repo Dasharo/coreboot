@@ -60,7 +60,11 @@ jobs:
           python-version: '3.13'
 
       - name: Install dependencies
+        env:
+          GH_USERNAME: ${{ secrets.OSFV_SCRIPTS_USERNAME }}
+          GH_TOKEN: ${{ secrets.OSFV_SCRIPTS_TOKEN }}
         run: |
+          sed -i "s/https:\/\/github\.com\/Dasharo\/osfv-scripts\.git/https:\/\/${{ env.GH_USERNAME }}:${{ secrets.GH_TOKEN }}@github\.com\/Dasharo\/osfv-scripts\.git/g" requirements.txt
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
