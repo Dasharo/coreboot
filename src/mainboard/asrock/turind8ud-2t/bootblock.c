@@ -4,41 +4,44 @@
 #include <amdblocks/lpc.h>
 #include <amdblocks/spi.h>
 #include <bootblock_common.h>
+#include <device/mmio.h>
+#include <device/pnp_ops.h>
 #include <device/pnp_type.h>
 #include <gpio.h>
-#include <superio/nuvoton/common/nuvoton.h>
-#include <superio/nuvoton/nct6791d/nct6791d.h>
 #include <superio/aspeed/ast2400/ast2400.h>
 #include <superio/aspeed/common/aspeed.h>
-#include <device/pnp_ops.h>
+#include <superio/nuvoton/common/nuvoton.h>
+#include <superio/nuvoton/nct6796d/nct6796d.h>
+
+#define ESPI1_BASE 0xfec30000
 
 void bootblock_mainboard_early_init(void)
 {
 	/* Configure appropriate physical port of SuperIO chip off BMC */
 	const pnp_devfn_t serial1_dev = PNP_DEV(0x4e, AST2400_SUART1);
-	const pnp_devfn_t serial2_dev = PNP_DEV(0x4e, AST2400_SUART2);
+	const pnp_devfn_t serial2_dev = PNP_DEV(0x2e, NCT6796D_SP1);
+
+	/* Unconfigure 0x3e8 and 0x2e8 ranges on eSPI 1 */
+	write16p(ESPI1_BASE + 0x80, 0x0);
+	write16p(ESPI1_BASE + 0x82, 0x0);
+	write8p(ESPI1_BASE + 0x88, 0x0);
+	write8p(ESPI1_BASE + 0x89, 0x0);
 
 	/*
 	 * APCBs are configured to enable 0x3f8 range already.
-	 * Eable only post codes here.
+	 * Eable only post codes and SIO UART1 here.
 	 */
+	espi_open_io_window(0x2e, 2);
 	espi_open_io_window(0x80, 1);
+	espi_open_io_window(0x3e8, 8);
 
-	/*
-	 * Disable the Nuvoton NCT6791D SuperIO UART1.  It is enabled by
-	 * default, but the AST2600's is connected to the serial port.
-	 */
-	const pnp_devfn_t nvt_serial_dev = PNP_DEV(0x2E, NCT6791D_SP1);
-	nuvoton_pnp_enter_conf_state(nvt_serial_dev);
-	pnp_set_logical_device(nvt_serial_dev);
-	pnp_set_enable(nvt_serial_dev, 0);
-	nuvoton_pnp_exit_conf_state(nvt_serial_dev);
-
-	/* Enable AST2600 SuperIO UART1 and UART2 */
+	/* Enable AST2600 SuperIO UART1 (COM1 header) */
 	aspeed_enable_serial(serial1_dev, 0x3f8);
-	aspeed_enable_serial(serial2_dev, 0x2f8);
 	/* Enable UART function pin */
 	aspeed_enable_uart_pin(serial1_dev);
+
+	/* Enable serial port on UART1 header */
+	nuvoton_enable_serial(serial2_dev, 0x3e8);
 }
 
 static const struct soc_amd_gpio gpio_table[] = {
