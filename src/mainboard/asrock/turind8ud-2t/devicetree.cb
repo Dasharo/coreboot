@@ -21,6 +21,10 @@ chip soc/amd/turin_poc
 			.size = 8,
 		},
 		.generic_io_range[2] = {
+			.base = 0x3e8,
+			.size = 8,
+		},
+		.generic_io_range[3] = {
 			.base = 0x4e,
 			.size = 2,
 		},
@@ -94,6 +98,17 @@ chip soc/amd/turin_poc
 					end
 				end
 			end
+			chip superio/common
+				register "acpi_name" = ""SIO1""
+				device pnp 2e.0 on
+					chip superio/nuvoton/nct6796d
+						device pnp 2e.2 on	# UART A
+							io 0x60 = 0x3e8
+							irq 0x70 = 4
+						end
+					end
+				end
+			end
 		end
 	end
 
@@ -125,28 +140,28 @@ chip soc/amd/turin_poc
 	device domain 3 on
 		# G3 0 - MCIO 3 PCIe. Can also be SATA
 		chip drivers/amd/opensil/mpio
-			register "type" = "IFTYPE_PCIE"
+			register "type" = "IFTYPE_SATA"
 			register "start_lane" = "80"
 			register "end_lane" = "83"
 			device ref gpp_bridge_3_0_a on end
 		end
 		# G3 1 - MCIO 3 PCIe. Can also be SATA
 		chip drivers/amd/opensil/mpio
-			register "type" = "IFTYPE_PCIE"
+			register "type" = "IFTYPE_SATA"
 			register "start_lane" = "84"
 			register "end_lane" = "87"
 			device ref gpp_bridge_3_1_a on end
 		end
 		# G3 2 - MCIO 4 PCIe. Can also be SATA
 		chip drivers/amd/opensil/mpio
-			register "type" = "IFTYPE_PCIE"
+			register "type" = "IFTYPE_SATA"
 			register "start_lane" = "88"
 			register "end_lane" = "91"
 			device ref gpp_bridge_3_2_a on end
 		end
 		# G3 3 - MCIO 4 PCIe. Can also be SATA
 		chip drivers/amd/opensil/mpio
-			register "type" = "IFTYPE_PCIE"
+			register "type" = "IFTYPE_SATA"
 			register "start_lane" = "92"
 			register "end_lane" = "95"
 			device ref gpp_bridge_3_3_a on end
