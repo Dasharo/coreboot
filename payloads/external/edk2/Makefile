@@ -499,6 +499,7 @@ $(EDK2_PATH): $(WORKSPACE)
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
 		if [ "$(CONFIG_EDK2_CAPSULES_V2)" = y ]; then \
 			git checkout -- DasharoPayloadPkg/CapsuleSplashDxe/Logo.bmp > /dev/null 2>&1 || true; \
+			git checkout -- DasharoPayloadPkg/CapsuleRootKey.inc > /dev/null 2>&1 || true; \
 		fi; \
 		if [ -e $(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o ]; then \
 			rm $(PAYLOAD_NAME)/ShimLayer/UniversalPayload.o; \
@@ -535,6 +536,11 @@ logo: $(EDK2_PATH)
 			*) magick -background None $(top)/$(CONFIG_BOOTSPLASH_REGION_LOGO_FILE) \
 				BMP3:$(EDK2_PATH)/DasharoPayloadPkg/CapsuleSplashDxe/Logo.bmp;; \
 		esac \
+	fi
+
+root_key: $(EDK2_PATH)
+	if [ "$(CONFIG_EDK2_CAPSULES_V2)" = y ] && [ -f CapsuleRootKey.inc ]; then \
+		cp CapsuleRootKey.inc $(EDK2_PATH)/DasharoPayloadPkg/CapsuleRootKey.inc; \
 	fi
 
 gop_driver: $(EDK2_PATH)
@@ -600,7 +606,7 @@ print:
 		-e 's/s /Build:          Silent/' \
 		-e 's/t /Toolchain:      /'
 
-prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_rom ipxe_rom
+prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo root_key gop_driver lan_rom ipxe_rom
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
@@ -660,4 +666,4 @@ clean:
 distclean:
 	rm -rf $(WORKSPACE)
 
-.PHONY: $(EDK2_PATH) checktools logo $(PAYLOAD_NAME) UniversalPayload clean distclean
+.PHONY: $(EDK2_PATH) checktools logo root_key $(PAYLOAD_NAME) UniversalPayload clean distclean
