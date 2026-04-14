@@ -462,6 +462,12 @@ endif
 ifneq ($(CONFIG_EDK2_FUM_AUTO_IPXE_BOOT),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdFumAutoIpxeBoot=FALSE
 endif
+# USE_AMD_PLATFORM_GOP = FALSE
+ifeq ($(CONFIG_EDK2_AMD_GOP_DRIVER),y)
+BUILD_STR += -D USE_AMD_PLATFORM_GOP=TRUE
+BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.AmdVbiosOptionRomVendorId=$(CONFIG_EDK2_VGA_BIOS_VENDOR_ID)
+BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.AmdVbiosOptionRomDeviceId=$(CONFIG_EDK2_VGA_BIOS_DEVICE_ID)
+endif
 
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString=$(CONFIG_EDK2_FW_VERSION)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor=$(CONFIG_EDK2_FW_VENDOR)
@@ -559,6 +565,11 @@ gop_driver: $(EDK2_PATH)
 		echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
 		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/$(PAYLOAD_NAME)/IntelGopDriver.efi; \
 		cp $(top)/$(CONFIG_INTEL_GMA_VBT_FILE) $(EDK2_PATH)/$(PAYLOAD_NAME)/vbt.bin; \
+	fi; \
+	if [ -n "$(CONFIG_EDK2_AMD_GOP_DRIVER)" ]; then \
+		echo "Using GOP driver $(CONFIG_EDK2_GOP_FILE)"; \
+		cp $(top)/$(CONFIG_EDK2_GOP_FILE) $(EDK2_PATH)/$(PAYLOAD_NAME)/AmdGopDriver.efi; \
+		cp $(top)/$(CONFIG_VGA_BIOS_FILE) $(EDK2_PATH)/$(PAYLOAD_NAME)/Vbios.bin; \
 	fi; \
 
 lan_rom: $(EDK2_PATH)

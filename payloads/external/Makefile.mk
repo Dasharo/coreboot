@@ -305,8 +305,11 @@ $(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
 		CONFIG_EDK2_FW_VERSION=L"$(CONFIG_LOCALVERSION)" \
 		CONFIG_EDK2_FW_VENDOR=L"$(CONFIG_BIOS_VENDOR)" \
 		CONFIG_EDK2_FW_RELEASE_DATE=L"$(call get_build_value,COREBOOT_DMI_DATE)" \
-		CONFIG_EDK2_FW_REVISION=$(shell printf 0x"%04x%04x" $(DASHARO_MAJOR_VERSION) $(DASHARO_MINOR_VERSION))
-
+		CONFIG_EDK2_FW_REVISION=$(shell printf 0x"%04x%04x" $(DASHARO_MAJOR_VERSION) $(DASHARO_MINOR_VERSION)) \
+		CONFIG_EDK2_AMD_GOP_DRIVER=$(CONFIG_EDK2_AMD_GOP_DRIVER) \
+		CONFIG_EDK2_VGA_BIOS_VENDOR_ID=0x$(word 1,$(subst $(comma),$(spc),$(call strip_quotes,$(CONFIG_VGA_BIOS_ID)))) \
+		CONFIG_EDK2_VGA_BIOS_DEVICE_ID=0x$(word 2,$(subst $(comma),$(spc),$(call strip_quotes,$(CONFIG_VGA_BIOS_ID)))) \
+		CONFIG_VGA_BIOS_FILE=$(CONFIG_VGA_BIOS_FILE)
 
 $(obj)/ShimmedUniversalPayload.elf: $(DOTCONFIG)
 	$(MAKE) -C payloads/external/edk2 UniversalPayload \
