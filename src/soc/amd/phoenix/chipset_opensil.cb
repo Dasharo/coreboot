@@ -160,6 +160,9 @@ chip soc/amd/phoenix
 		device pci 18.7 alias data_fabric_7 on ops amd_data_fabric_ops end
 	end
 
+	device mmio 0xfec11000 alias hfp   off end
+	device mmio 0xfec12000 alias hid_2 off end
+	device mmio 0xfec13000 alias hid   off end
 	device mmio 0xfedc2000 alias i2c_0 off ops soc_amd_i2c_mmio_ops end
 	device mmio 0xfedc3000 alias i2c_1 off ops soc_amd_i2c_mmio_ops end
 	device mmio 0xfedc4000 alias i2c_2 off ops soc_amd_i2c_mmio_ops end
