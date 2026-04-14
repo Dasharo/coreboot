@@ -1,7 +1,6 @@
 chip soc/intel/jasperlake
 	device domain 0 on
-		# Using x2 link on PCIe 5/6 to avoid switching to SATA
-		device pci 1c.0 on	# PCI Express Root Port 1
+		device pci 1c.0 on	    # PCI Express Root Port 1
 			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
 					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth2X"
 		end

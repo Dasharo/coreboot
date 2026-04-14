@@ -3,7 +3,6 @@ chip soc/intel/jasperlake
 		# ASMedia PCIe switch with x2 link to 4x1 ports (3 LANs and WiFi)
 		device pci 1c.0 on	end # PCI Express Root Port 1
 		device pci 1c.1 off	end	# PCI Express Root Port 2
-		# NVMe with x2 link, lane 8 switchable to SATA
 		device pci 1c.2 on	# PCI Express Root Port 3
 			smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther"
 					 "M.2/M 2280 (NVMe)" "SlotDataBusWidth2X"
