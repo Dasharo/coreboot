@@ -3,6 +3,8 @@
 #include <CCX/CcxClass-api.h>
 #include <CCX/Common/CcxApic.h>
 #include <FCH/Common/FchCommon.h>
+#include <FCH/FchUsb-api.h>
+#include <FCH/Tacoma/FchCore/FchUsb/FchUsbOemTc.h>
 #include <RcMgr/DfX/RcManager-api.h>
 #include <amdblocks/reset.h>
 #include <bootstate.h>
@@ -11,6 +13,7 @@
 #include <cpu/amd/mtrr.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/smm.h>
+#include <console/console.h>
 #include <device/device.h>
 #include <soc/amd/phoenix/chip.h>
 #include <soc/aoac_defs.h>
@@ -76,7 +79,13 @@ static void setup_rc_manager_default(SIL_CONTEXT *SilContext)
 	rc_mgr_input_block->AmdSmee = true;
 }
 
+#define TACOMA_USB_STRUCT_MAJOR_VERSION 0xf
+#define TACOMA_USB_STRUCT_MINOR_VERSION 0x1
+
+static FCH_TC_USB_OEM_PLATFORM_TABLE usb_config = { 0 };
+
 #define NUM_XHCI_CONTROLLERS 4
+#define NUM_USB4_CONTROLLERS 2
 static void configure_usb(SIL_CONTEXT *SilContext)
 {
 	struct device *usb_ctrlr[NUM_XHCI_CONTROLLERS] = {
@@ -85,6 +94,53 @@ static void configure_usb(SIL_CONTEXT *SilContext)
 		DEV_PTR(usb4_xhci_0),
 		DEV_PTR(usb4_xhci_1)
 	};
+
+	struct device *usb4_rt[NUM_USB4_CONTROLLERS] = {
+		DEV_PTR(usb4_router_0),
+		DEV_PTR(usb4_router_1)
+	};
+
+	struct device *usb4_pcie[NUM_USB4_CONTROLLERS] = {
+		DEV_PTR(usb4_pcie_bridge_0),
+		DEV_PTR(usb4_pcie_bridge_1)
+	};
+
+	/* In coreboot the USB4 ports are first in order, but openSIL expects the opposite */
+	struct device *usb2_ports[USB2_PORT_COUNT] = {
+		DEV_PTR(usb2_port2),
+		DEV_PTR(usb2_port3),
+		DEV_PTR(usb2_port4),
+		DEV_PTR(usb2_port5),
+		DEV_PTR(usb2_port6),
+		DEV_PTR(usb2_port7),
+		DEV_PTR(usb2_port0),
+		DEV_PTR(usb2_port1)
+	};
+
+	struct device *usb3_ports[USB3_PORT_COUNT] = {
+		DEV_PTR(usb3_port2),
+		DEV_PTR(usb3_port3),
+		DEV_PTR(usb3_port7)
+	};
+
+	struct device *usb4_xhci_ports[NUM_USB4_CONTROLLERS] = {
+		DEV_PTR(usb3_port0),
+		DEV_PTR(usb3_port1)
+	};
+
+	const struct usb_port_map {
+		uint8_t usb2_ports;
+		uint8_t usb3_ports;
+	} usb_port_map[NUM_XHCI_CONTROLLERS] = {
+		{ 5, 2 },
+		{ 1, 1 },
+		{ 1, 1 },
+		{ 1, 1 }
+	};
+
+	const struct soc_amd_phoenix_config *soc_config = config_of_soc();
+	const struct usb_phy_config *usb_phy = &soc_config->usb_phy;
+
 	FCHUSB_INPUT_BLK *fch_usb_data = SilFindStructure(SilContext, SilId_FchUsb, 0);
 
 	if (!fch_usb_data)
@@ -94,6 +150,86 @@ static void configure_usb(SIL_CONTEXT *SilContext)
 	fch_usb_data->Xhci1Enable = is_dev_enabled(usb_ctrlr[1]);
 	fch_usb_data->Usb4Host[0].Usb3HCDisable = !is_dev_enabled(usb_ctrlr[2]);
 	fch_usb_data->Usb4Host[1].Usb3HCDisable = !is_dev_enabled(usb_ctrlr[3]);
+	fch_usb_data->Usb4Host[0].HostEnable = is_dev_enabled(usb4_rt[0]);
+	fch_usb_data->Usb4Host[1].HostEnable = is_dev_enabled(usb4_rt[1]);
+	fch_usb_data->Usb4Host[0].PcieAdpHidden = !is_dev_enabled(usb4_pcie[0]);
+	fch_usb_data->Usb4Host[1].PcieAdpHidden = !is_dev_enabled(usb4_pcie[1]);
+	if (fch_usb_data->Usb4Host[0].PcieAdpHidden)
+		fch_usb_data->Usb4Host[0].PcieTunnelingDisable = 1;
+	if (fch_usb_data->Usb4Host[1].PcieAdpHidden)
+		fch_usb_data->Usb4Host[1].PcieTunnelingDisable = 1;
+
+	/*
+	 * XHCI_OC structure is broken, it tries to fit u32 and u16 into single u32.
+	 * It causes the memcpy to incorrectly assign USB3 OC pins. Also the OC pin map
+	 * is not separate from USB2 ports, but simply follows the USB2 OC pin map and
+	 * the offset depens on the port count,
+	 */
+	uint32_t oc_pins, mask, shift;
+	for (int i = 0; i < NUM_XHCI_CONTROLLERS; i++) {
+		oc_pins = 0xffffffff;
+		memcpy(&oc_pins, &soc_config->usb2_oc_pins[i], sizeof(soc_config->usb2_oc_pins[i]));
+
+		mask = (1 << (usb_port_map[i].usb2_ports * 4)) - 1;
+		fch_usb_data->XhciOCpinSelect[i].OcPinSelect &= ~mask;
+		fch_usb_data->XhciOCpinSelect[i].OcPinSelect |= oc_pins & mask;
+
+		oc_pins = 0xffffffff;
+		memcpy(&oc_pins, &soc_config->usb3_oc_pins[i], sizeof(soc_config->usb3_oc_pins[i]));
+
+		mask = (1 << (usb_port_map[i].usb3_ports * 4)) - 1;
+		shift = usb_port_map[i].usb2_ports * 4;
+		fch_usb_data->XhciOCpinSelect[i].OcPinSelect &= ~(mask << shift);
+		fch_usb_data->XhciOCpinSelect[i].OcPinSelect |= (oc_pins & mask) << shift;
+	}
+
+	for (int i = 0; i < (USB2_PORT_COUNT - NUM_USB4_CONTROLLERS); i++) {
+		if (!is_dev_enabled(usb2_ports[i]))
+			fch_usb_data->XhciUsb2PortDisable |= (1 << i);
+	}
+
+	for (int i = 0; i < USB3_PORT_COUNT; i++) {
+		if (!is_dev_enabled(usb3_ports[i]))
+			fch_usb_data->XhciUsb3PortDisable |= (1 << i);
+	}
+
+	/* USB4 ports have different bit shifts */
+	if (!is_dev_enabled(usb2_ports[6]))
+		fch_usb_data->XhciUsb2PortDisable |= (1 << 8);
+
+	if (!is_dev_enabled(usb2_ports[7]))
+		fch_usb_data->XhciUsb2PortDisable |= (1 << 12);
+
+	if (!is_dev_enabled(usb4_xhci_ports[0])) {
+		fch_usb_data->XhciUsb3PortDisable |= (1 << 4);
+		fch_usb_data->Usb4Host[0].SSPortDisable |= 1;
+	}
+
+	if (!is_dev_enabled(usb4_xhci_ports[1])) {
+		fch_usb_data->XhciUsb3PortDisable |= (1 << 6);
+		fch_usb_data->Usb4Host[1].SSPortDisable |= 1;
+	}
+
+	fch_usb_data->XhciOcPolarityCfgLow = soc_config->polarity_cfg_low;
+	fch_usb_data->Usb3PortForceGen1 = soc_config->usb3_force_gen1.raw;
+
+	if (!soc_config->usb_phy_custom)
+		return;
+
+	usb_config.Version_Major = TACOMA_USB_STRUCT_MAJOR_VERSION;
+	usb_config.Version_Minor = TACOMA_USB_STRUCT_MINOR_VERSION;
+	usb_config.TableLength = sizeof(FCH_TC_USB_OEM_PLATFORM_TABLE);
+
+	memcpy(usb_config.Usb3PhyPort, usb_phy->Usb3PhyPort, sizeof(usb_config.Usb3PhyPort));
+	memcpy(usb_config.Usb20PhyPort, usb_phy->Usb2PhyPort, sizeof(usb_config.Usb20PhyPort));
+	memcpy(usb_config.ComboPhyStaticConfig, usb_phy->ComboPhyStaticConfig,
+	       sizeof(usb_config.ComboPhyStaticConfig));
+	memcpy(usb_config.Reserved1, usb_phy->Usb4Phy, sizeof(usb_config.Reserved1));
+
+	usb_config.BatteryChargerEnable = usb_phy->BatteryChargerEnable;
+	usb_config.PhyP3CpmP4Support = usb_phy->PhyP3CpmP4Support;
+
+	fch_usb_data->OemUsbConfigurationTable = (uintptr_t)&usb_config;
 }
 
 static void configure_ccx(SIL_CONTEXT *SilContext)
@@ -139,10 +275,14 @@ WEAK_DEV_PTR(i3c_0);
 WEAK_DEV_PTR(i3c_1);
 WEAK_DEV_PTR(i3c_2);
 WEAK_DEV_PTR(i3c_3);
+WEAK_DEV_PTR(hfp);
+WEAK_DEV_PTR(hid_2);
+WEAK_DEV_PTR(hid);
+WEAK_DEV_PTR(lpc_bridge);
 
 #define FCH_DEV_ENABLE(dev, aoac_bit) \
 	fch_data->FchRunTime.FchDeviceEnableMap |= \
-		(is_dev_enabled(DEV_PTR(dev)) ? aoac_bit : 0)
+		(is_dev_enabled(DEV_PTR(dev)) ? (1ul << aoac_bit) : 0)
 
 static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 {
@@ -179,7 +319,9 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 
 	fch_data->WdtEnable = false;
 
-	fch_data->FchRunTime.FchDeviceEnableMap = 0;
+	/* eSPI always enabled (bit 27) */
+	fch_data->FchRunTime.FchDeviceEnableMap = (1 << 27);
+	FCH_DEV_ENABLE(lpc_bridge, 4);
 	FCH_DEV_ENABLE(i2c_0, FCH_AOAC_DEV_I2C0);
 	FCH_DEV_ENABLE(i2c_1, FCH_AOAC_DEV_I2C1);
 	FCH_DEV_ENABLE(i2c_2, FCH_AOAC_DEV_I2C2);
@@ -193,6 +335,9 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	FCH_DEV_ENABLE(i3c_1, FCH_AOAC_DEV_I3C1);
 	FCH_DEV_ENABLE(i3c_2, FCH_AOAC_DEV_I3C2);
 	FCH_DEV_ENABLE(i3c_3, FCH_AOAC_DEV_I3C3);
+	FCH_DEV_ENABLE(hfp, 29);
+	FCH_DEV_ENABLE(hid_2, 30);
+	FCH_DEV_ENABLE(hid, 31);
 }
 
 void setup_opensil(void)
