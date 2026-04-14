@@ -16,6 +16,9 @@ all_x86-y	+= gpio.c
 all_x86-y	+= i3c.c
 all_x86-y	+= uart.c
 
+all_x86-y	+= lpc.c
+smm-y		+= lpc.c
+
 bootblock-y	+= early_fch.c
 bootblock-y	+= espi_util.c
 
