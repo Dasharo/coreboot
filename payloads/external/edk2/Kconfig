@@ -291,9 +291,17 @@ config EDK2_GOP_DRIVER
 	help
 	  Select this option to have edk2 use an external GOP driver for display init.
 
+config EDK2_AMD_GOP_DRIVER
+	bool "Add an AMD GOP driver to the Tianocore build"
+	depends on VGA_BIOS && NO_GFX_INIT && !EDK2_REPO_OFFICIAL && !EDK2_DISABLE_OPTION_ROMS
+	default y if VGA_BIOS && NO_GFX_INIT && EDK2_REPO_MRCHROMEBOX
+	help
+	  Select this option to have edk2 use an external GOP driver for AMD display init.
+
 config EDK2_GOP_FILE
 	string "GOP driver file"
-	depends on EDK2_GOP_DRIVER
+	depends on EDK2_GOP_DRIVER || EDK2_AMD_GOP_DRIVER
+	default "AmdGopDriver.efi" if EDK2_AMD_GOP_DRIVER
 	default "IntelGopDriver.efi"
 	help
 	  The name of the GOP driver file passed to edk2.
