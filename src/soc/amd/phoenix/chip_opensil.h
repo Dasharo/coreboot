@@ -60,15 +60,6 @@ struct fch_usb3_phy {
 	uint8_t tx_vboost_lvl;		///< TX_VBOOST_LVL
 };
 
-#define USB0_PORT0	0
-#define USB0_PORT1	1
-#define USB0_PORT2	1
-#define USB0_PORT3	3
-#define USB1_PORT0	(0<<2)
-#define USB1_PORT1	(1<<2)
-#define USB1_PORT2	(1<<2)
-#define USB1_PORT3	(3<<2)
-
 #define USB_COMBO_PHY_MODE_USB_C	0
 #define USB_COMBO_PHY_MODE_USB_ONLY	1
 #define USB_COMBO_PHY_MODE_USB_DPM	2
@@ -80,6 +71,7 @@ struct usb_phy_config {
 	uint8_t			BatteryChargerEnable;              ///< bit[1:0]-Usb0 Port[1:0], bit[3:2]-Usb1 Port[1:0]
 	uint8_t			PhyP3CpmP4Support;                 ///< bit[1:0]-Usb0 Port[1:0], bit[3:2]-Usb1 Port[1:0]
 	uint8_t			ComboPhyStaticConfig[USBC_COMBO_PHY_COUNT]; ///< 0-Type C, 1- USB only mode, 2- DP only mode, 3- USB + DP
+	uint8_t			Usb4Phy[USBC_COMBO_PHY_COUNT];     /// bit[3:0]-USB4 Port0, bit[7:4]-USB4 Port1
 };
 
 #endif /* PHOENIX_CHIP_OPENSIL_H */
