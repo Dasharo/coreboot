@@ -144,6 +144,7 @@ static void cgpll_clock_gate_init(void)
 	misc_write32(MISC_CLKGATEDCNTL, t);
 
 	t = misc_read32(MISC_CGPLL_CONFIGURATION0);
+	t |= USB_PHY_CMCLK_ZSTATE_DIS;
 	t |= USB_PHY_CMCLK_S3_DIS;
 	t |= USB_PHY_CMCLK_S0I3_DIS;
 	t |= USB_PHY_CMCLK_S5_DIS;
