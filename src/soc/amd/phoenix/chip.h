@@ -106,7 +106,55 @@ struct soc_amd_phoenix_config {
 	} pspp_policy;
 
 	bool usb_phy_custom;
+
 	struct usb_phy_config usb_phy;
+
+	/*
+	 * XHCI0 has 5 USB2 ports
+	 * XHCI1 has 1 USB2 port
+	 * USB4 XHCI has 1 USB2 port each
+	 */
+	struct {
+		uint8_t port0 : 4;
+		uint8_t port1 : 4;
+		uint8_t port2 : 4;
+		uint8_t port3 : 4;
+		uint8_t port4 : 4;
+		uint8_t port5 : 4;
+		uint8_t port6 : 4;
+		uint8_t port7 : 4;
+	} usb2_oc_pins[4];
+	/*
+	 * XHCI0 has 2 USB3 ports
+	 * XHCI1 has 1 USB3 port
+	 * USB4 XHCI has 1 USB3 port each
+	 */
+	struct {
+		uint8_t port0 : 4;
+		uint8_t port1 : 4;
+		uint8_t port2 : 4;
+		uint8_t port3 : 4;
+	} usb3_oc_pins[4];
+
+	bool polarity_cfg_low;
+
+	/*
+	 * Force gen1 for XHCI.
+	 * bits [1:0] for XHCI0 port 0-1
+	 * bit 2 for XHCI1 port 0
+	 * bit 3 for first USB4 XHCI port 0
+	 * bit 4 for second USB4 XHCI port 0
+	 */
+	union {
+		struct {
+			uint8_t port0 : 1;
+			uint8_t port1 : 1;
+			uint8_t port2 : 1;
+			uint8_t port3 : 1;
+			uint8_t port4 : 1;
+		};
+		uint8_t raw;
+	} usb3_force_gen1;
 
 #if !CONFIG(PLATFORM_USES_FSP2_0)
 	struct ddi_descriptor ddi[DDI_DESCRIPTOR_COUNT];
