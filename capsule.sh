@@ -285,7 +285,6 @@ EOF
     local opt_sub_cert=$sub_cert
     local opt_sign_cert=$sign_cert
     if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
-        echo "nested capsules"
         # The inner capsule is always signed with the test key.  Not signing it
         # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
         # least due to Image->AuthInfo.Hdr.wRevision check in
