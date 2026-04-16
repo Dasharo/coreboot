@@ -7,7 +7,7 @@ jobs:
   check-upstream-status:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         # Checkout pull request HEAD commit instead of merge commit
         # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
