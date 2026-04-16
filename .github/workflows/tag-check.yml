@@ -46,3 +46,6 @@ jobs:
             echo "::error::Tag '${tag}' is NOT signed. Create it with: git tag -s"
             exit 1
           fi
+
+      - name: Verify update capsules support in defconfigs
+        run: .github/scripts/capsule-versioning-check.sh "${GITHUB_REF_NAME}"
