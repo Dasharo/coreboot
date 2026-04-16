@@ -39,6 +39,7 @@
 
 #if CONFIG(X86EMU_DEBUG_TIMINGS)
 extern struct mono_time zero;
+extern struct mono_time now;
 #endif
 extern u32 debug_flags;
 // from x86emu...needed for debugging
@@ -100,7 +101,7 @@ static inline void set_ci(void) {};
 // to be executed, since the x86emu advances CS:IP _before_ actually executing an instruction
 
 #if CONFIG(X86EMU_DEBUG_TIMINGS)
-#define DEBUG_PRINTF_CS_IP(_x...) DEBUG_PRINTF("[%08lx]%x:%x ", (current_time_from(&zero)).microseconds, M.x86.R_CS, M.x86.R_IP); DEBUG_PRINTF(_x);
+#define DEBUG_PRINTF_CS_IP(_x...) timer_monotonic_get(&now); DEBUG_PRINTF("[%lld]%x:%x ", mono_time_diff_microseconds(&zero, &now), M.x86.R_CS, M.x86.R_IP); DEBUG_PRINTF(_x);
 #else
 #define DEBUG_PRINTF_CS_IP(_x...) DEBUG_PRINTF("%x:%x ", M.x86.R_CS, M.x86.R_IP); DEBUG_PRINTF(_x);
 #endif
