@@ -96,6 +96,21 @@ enum fw_splash_vertical_alignment {
 	 * the geometrical center of the logo at the screen's Y-midpoint.
 	 */
 	FW_SPLASH_VALIGNMENT_MIDDLE = 3,
+	/*
+	 * The splash image is centered vertically at 38.2% of the screen height:
+	 * (38.2% * Y-axis) - logo_height/2`.
+	 * https://learn.microsoft.com/en-us/windows-hardware/drivers/bringup/boot-screen-components#position-the-logo-during-post
+	 * The [LOGO] is placed with its center at 38.2% from the screen's top edge.
+	 *
+	 * +---------------+
+	 * |               |
+	 * |               |
+	 * |    [LOGO]     |  <-- Vertically Centered
+	 * |               |
+	 * |               |
+	 * +---------------+
+	 */
+	FW_SPLASH_VALIGNMENT_CENTER_38P2 = 4,
 };
 
 enum fw_splash_horizontal_alignment {

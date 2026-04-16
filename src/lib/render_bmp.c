@@ -519,6 +519,9 @@ static struct logo_coordinates calculate_logo_coordinates(
 	case FW_SPLASH_VALIGNMENT_BOTTOM:
 		coords.y = vertical_resolution - logo_height;
 		break;
+	case FW_SPLASH_VALIGNMENT_CENTER_38P2:
+		coords.y = (vertical_resolution * 382) / 1000 - logo_height / 2;
+		break;
 	default: /* FW_SPLASH_VALIGNMENT_CENTER (default) */
 		coords.y = (vertical_resolution - logo_height) / 2;
 		break;
