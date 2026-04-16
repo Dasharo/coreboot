@@ -45,6 +45,160 @@ chip soc/amd/phoenix
 
 	register "pspp_policy" = "DXIO_PSPP_DISABLED"
 
+	register "usb_phy_custom" = "true"
+
+	register "usb_phy" = "{
+		.Usb2PhyPort[0] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[1] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[2] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[3] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[4] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[5] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[6] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb2PhyPort[7] = {
+			.compdistune = 0x1,
+			.pllbtune = 0x1,
+			.pllitune = 0x0,
+			.pllptune = 0xc,
+			.sqrxtune = 0x2,
+			.txfslstune = 0x1,
+			.txpreempamptune = 0x3,
+			.txpreemppulsetune = 0x0,
+			.txrisetune = 0x1,
+			.txvreftune = 0x3,
+			.txhsxvtune = 0x3,
+			.txrestune = 0x2,
+		},
+		.Usb3PhyPort[0] = {
+			.tx_term_ctrl = 0x2,
+			.rx_term_ctrl = 0x2,
+			.tx_vboost_lvl_en = 0x0,
+			.tx_vboost_lvl = 0x5,
+		},
+		.Usb3PhyPort[1] = {
+			.tx_term_ctrl = 0x2,
+			.rx_term_ctrl = 0x2,
+			.tx_vboost_lvl_en = 0x0,
+			.tx_vboost_lvl = 0x5,
+		},
+		.Usb3PhyPort[2] = {
+			.tx_term_ctrl = 0x2,
+			.rx_term_ctrl = 0x2,
+			.tx_vboost_lvl_en = 0x0,
+			.tx_vboost_lvl = 0x5,
+		},
+		.ComboPhyStaticConfig[0] = USB_COMBO_PHY_MODE_USB_ONLY,
+		.ComboPhyStaticConfig[1] = USB_COMBO_PHY_MODE_USB_ONLY,
+		.ComboPhyStaticConfig[2] = USB_COMBO_PHY_MODE_USB_ONLY,
+	}"
+
+	register "usb3_force_gen1" = "{
+		.port0 = 1,
+		.port2 = 1,
+	}"
+
+	register "polarity_cfg_low" = "true"
+
+	register "usb2_oc_pins[0]" = "{ 0x2, 0x3, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf }"
+	register "usb2_oc_pins[1]" = "{ 0x3, 0x3, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf }"
+	register "usb2_oc_pins[2]" = "{ 0x1, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf }"
+	register "usb2_oc_pins[3]" = "{ 0x1, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf }"
+	register "usb3_oc_pins[0]" = "{ 0x2, 0x3, 0xf, 0xf }"
+	register "usb3_oc_pins[1]" = "{ 0x3, 0xf, 0xf, 0xf }"
+	register "usb3_oc_pins[2]" = "{ 0x1, 0xf, 0xf, 0xf }"
+	register "usb3_oc_pins[3]" = "{ 0x1, 0xf, 0xf, 0xf }"
+
 	device domain 0 on
 		device ref iommu on end
 
