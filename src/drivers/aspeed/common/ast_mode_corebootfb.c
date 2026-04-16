@@ -3,6 +3,7 @@
  * Copied from Linux drivers/gpu/drm/ast/ast_mode.c
  */
 
+#include <bootsplash.h>
 #include <console/console.h>
 #include <edid.h>
 #include <device/pci_def.h>
@@ -232,6 +233,22 @@ int ast_driver_framebuffer_init(struct drm_device *dev, int flags)
 
 	/* Clear display */
 	memset((void *)(uintptr_t)fb.mmio_addr, 0, edid.bytes_per_line * edid.y_resolution);
+
+	if (CONFIG(BMP_LOGO)) {
+		struct logo_config logo_cfg;
+
+		memset((void *)&logo_cfg, 0, sizeof(logo_cfg));
+		logo_cfg.framebuffer_base = fb.mmio_addr;
+		logo_cfg.horizontal_resolution = edid.x_resolution;
+		logo_cfg.vertical_resolution = edid.y_resolution;
+		logo_cfg.bytes_per_scanline = edid.bytes_per_line;
+		logo_cfg.panel_orientation = LB_FB_ORIENTATION_NORMAL;
+		logo_cfg.halignment = FW_SPLASH_HALIGNMENT_CENTER;
+		logo_cfg.valignment = FW_SPLASH_VALIGNMENT_CENTER_38P2;
+		logo_cfg.logo_bottom_margin = 100;
+
+		render_logo_to_framebuffer(&logo_cfg);
+	}
 
 	return 0;
 }
