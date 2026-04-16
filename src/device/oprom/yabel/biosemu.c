@@ -55,6 +55,7 @@
 #if CONFIG(X86EMU_DEBUG_TIMINGS)
 #include <timer.h>
 struct mono_time zero;
+struct mono_time now;
 #endif
 
 static X86EMU_memFuncs my_mem_funcs = {
