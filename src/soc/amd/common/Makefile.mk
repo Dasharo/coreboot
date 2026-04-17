@@ -11,7 +11,11 @@ ifneq ($(V),)
 OPT_DEBUG_AMDFWTOOL = --debug
 endif
 
-ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
+ifeq ($(CONFIG_SBOM_AMD_PSP_FW),y)
+OPT_SBOM_DIR = --sbom-dir $(obj)/sbom/amdfw
+endif
+
+ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)), )
 FIRMWARE_LOCATION=$(shell grep -e FIRMWARE_LOCATION $(CONFIG_AMDFW_CONFIG_FILE) | awk '{print $$2}')
 
 # Add all the files listed in the config file to the dependency list
