@@ -348,13 +348,15 @@ $(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/in
 #   offset 0x00, 2 bytes LE: year  (BCD)
 #   offset 0x02, 1 byte:     day   (BCD)
 #   offset 0x03, 1 byte:     month (BCD)
+#   offset 0x04, 4 bytes:    patch ID (HEX)
 define amd-ucode-sbom-rule
 $(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-microcode.json $(1) | $(build-dir)
 	cp $$< $$@
 	year=$$$$(hexdump --skip 0 --length 2 --format '"%04x"' $(1)); \
 	day=$$$$(hexdump --skip 2 --length 1 --format '"%02x"' $(1)); \
 	month=$$$$(hexdump --skip 3 --length 1 --format '"%02x"' $(1)); \
-	sed -i "s/<software_version>/$$$$year-$$$$month-$$$$day/" $$@
+	patch=$$$$(hexdump --skip 4 --length 4 --format '"0x%08x"' $(1)); \
+	sed -i "s/<software_version>/$$$$patch $$$$year-$$$$month-$$$$day/" $$@
 endef
 # amd_microcode_bins is populated in src/soc/amd/common/block/cpu/Makefile.mk,
 # which is included several rounds after src/sbom (breadth-first traversal).
