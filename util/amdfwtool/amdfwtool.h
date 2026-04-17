@@ -455,6 +455,22 @@ struct amd_fw_header {
 	uint8_t reserved_80[128];
 } __packed;
 
+/* SEV Specification chapter B.1 (55766 PUB) */
+struct amd_fw_key {
+	uint32_t version;
+	uint8_t key_id[16];
+	uint8_t certifying_id[16];
+	uint32_t key_usage;
+	uint8_t reserved[16];
+	uint32_t exponent_size;
+	uint32_t modulus_size;
+	/*
+	uint8_t exponent[exponent_size];
+	uint8_t modulus[modulus_size];
+	uint8_t signature[modulus_size];
+	*/
+} __packed;
+
 /* Based on the available PSP resources and increasing number of signed PSP binaries,
    AMD recommends to split the hash table into 3 parts for now. */
 #define MAX_NUM_HASH_TABLES 3
@@ -494,6 +510,7 @@ typedef struct _amd_cb_config {
 	const char *signed_output_file;
 	char *output, *config;
 	char *combo_config[MAX_COMBO_ENTRIES];
+	char *sbom_dir;		/* if set, generate CoSWID SBOM JSON files here */
 	int debug;
 } amd_cb_config;
 
@@ -525,6 +542,8 @@ void process_signed_psp_firmwares(const char *signed_rom,
 		uint64_t signed_start_addr,
 		enum platform soc_id);
 int find_bios_entry(amd_bios_type type);
+void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table);
+void generate_sbom_bios(const char *sbom_dir, amd_bios_entry *fw_table);
 
 #define EFS_FILE_SUFFIX ".efs"
 #define TMP_FILE_SUFFIX ".tmp"
