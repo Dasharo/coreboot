@@ -246,7 +246,8 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_EFS_SPI_MICRON_FLAG) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--flashsize $(CONFIG_ROM_SIZE) \
-		$(OPT_RECOVERY_AB_SINGLE_COPY)
+		$(OPT_RECOVERY_AB_SINGLE_COPY) \
+		$(OPT_SBOM_DIR)
 
 # If vBOOT is not enabled, we want the MP2 firmware in the common AMDFW
 ifeq ($(CONFIG_VBOOT),)
