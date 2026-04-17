@@ -380,4 +380,28 @@ config SBOM_IPXE_PATH
 	  The path of the SBOM file describing the Software included in the build
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
+config SBOM_AMD_PSP_FW
+	bool "Include AMD PSP firmware metadata in SBOM"
+	default n
+	depends on USE_AMDFWTOOL
+	help
+	  When enabled, amdfwtool generates a CoSWID (Concise Software
+	  Identification) SBOM JSON file for each AMD Platform Security
+	  Processor (PSP) firmware blob included in the build.
+
+	  Output files are written to build/sbom/ as
+	  amd-pspfw-<firmware-filename>.json.  A Makefile fragment
+	  (build/sbom/amd-pspfw-sbom.mk) is also generated so that the
+	  SBOM assembly step can incorporate the per-blob tags into the
+	  final sbom.uswid.
+
+	  Type classifications follow PSPTool conventions
+	  (https://github.com/PSPReverse/PSPTool):
+	    - Public key types use a dedicated tag template.
+	    - No-header types are skipped (soft fuse is never included).
+	    - Wrapped KEK types (0x21, 0x82, 0x84, 0x8d) use a template
+	      that stores the raw blob content as the version field.
+	    - Key store types (0x50, 0x51) and SEV driver (0x1a, if the
+	      $PS1 magic is present) are treated as regular PSP FW.
+
 endif
