@@ -2076,6 +2076,12 @@ int main(int argc, char **argv)
 		dump_blob_version(cb_config.manifest_file, amd_psp_fw_table);
 	}
 
+	if (cb_config.sbom_dir) {
+		generate_sbom_psp(cb_config.sbom_dir, amd_psp_fw_table);
+		if (have_bios_tables(amd_bios_table))
+			generate_sbom_bios(cb_config.sbom_dir, amd_bios_table);
+	}
+
 	amdfwtool_cleanup(&ctx);
 	return retval;
 }
