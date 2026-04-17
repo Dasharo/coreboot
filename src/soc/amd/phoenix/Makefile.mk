@@ -270,7 +270,8 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--flashsize $(CONFIG_ROM_SIZE) \
 		$(OPT_RECOVERY_AB_SINGLE_COPY) \
-		$(OPT_UCODE_FILES)
+		$(OPT_UCODE_FILES) \
+		$(OPT_SBOM_DIR)
 
 $(obj)/amdfw.rom:	$(call strip_quotes, $(PSP_BIOSBIN_FILE)) \
 			$(PSP_VERSTAGE_FILE) \
