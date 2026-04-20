@@ -5,6 +5,7 @@
 
 /* FCH AOAC device offsets for AOAC_DEV_D3_CTL/AOAC_DEV_D3_STATE */
 #define FCH_AOAC_DEV_CLK_GEN		0
+#define FCH_AOAC_DEV_LPC		4
 #define FCH_AOAC_DEV_I2C0		5
 #define FCH_AOAC_DEV_I2C1		6
 #define FCH_AOAC_DEV_I2C2		7
