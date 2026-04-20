@@ -66,6 +66,8 @@ static int get_socket_type(void)
 		return PROCESSOR_UPGRADE_SOCKET_LGA3647_1;
 	if (CONFIG(CPU_INTEL_SOCKET_OTHER))
 		return PROCESSOR_UPGRADE_OTHER;
+	if (CONFIG(SOC_AMD_TURIN_POC) || CONFIG(SOC_AMD_GENOA_POC))
+		return PROCESSOR_UPGRADE_SOCKET_SP5;
 
 	return PROCESSOR_UPGRADE_UNKNOWN;
 }
@@ -151,11 +153,13 @@ int smbios_write_type4(unsigned long *current, int handle)
 		t->core_count = t->core_count2 > 0xff ? 0xff : t->core_count2;
 		t->thread_count2 = leaf_b_cores;
 		t->thread_count = t->thread_count2 > 0xff ? 0xff : t->thread_count2;
+		t->thread_enabled = t->thread_count2;
 	} else {
 		t->core_count = (res.ebx >> 16) & 0xff;
 		t->core_count2 = t->core_count;
 		t->thread_count2 = t->core_count2;
 		t->thread_count = t->thread_count2;
+		t->thread_enabled = t->thread_count2;
 	}
 	/* Assume we enable all the cores always, capped only by MAX_CPUS */
 	t->core_enabled = MIN(t->core_count, MAX_CPUS_ENABLED);
@@ -325,5 +329,24 @@ int smbios_write_type7_cache_parameters(unsigned long *current,
 		}
 	};
 
+	return len;
+}
+
+int smbios_write_type44(unsigned long *current, int handle, struct smbios_type4 *type4)
+{
+	struct smbios_type44 *t = smbios_carve_table(*current,
+						     SMBIOS_PROCESSOR_ADDITIONAL_INFORMATION,
+						     sizeof(*t), handle);
+
+	t->ref_handle = type4->header.handle;
+	t->block_len = 0;
+
+	if (type4->processor_characteristics & PROCESSOR_64BIT_CAPABLE)
+		t->processor_type = SMBIOS_PROCESSOR_ARCH_X64;
+	else
+		t->processor_type = SMBIOS_PROCESSOR_ARCH_IA32;
+
+	const int len = smbios_full_table_len(&t->header, t->eos);
+	*current += len;
 	return len;
 }

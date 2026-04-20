@@ -126,6 +126,9 @@ int smbios_write_type8(unsigned long *current, int *handle,
 #define BIOS_EXT2_CHARACTERISTICS_BIOS_BOOT	(1 << 1)
 #define BIOS_EXT2_CHARACTERISTICS_TARGET	(1 << 2)
 #define BIOS_EXT2_CHARACTERISTICS_UEFI		(1 << 3)
+#define BIOS_EXT2_CHARACTERISTICS_VIRTUAL_MACHINE	(1 << 4)
+#define BIOS_EXT2_CHARACTERISTICS_MFG_MODE_SUPPORTED	(1 << 5)
+#define BIOS_EXT2_CHARACTERISTICS_MFG_MODE_ENABLED	(1 << 6)
 
 #define BIOS_MEMORY_ECC_SINGLE_BIT_CORRECTING	(1 << 3)
 #define BIOS_MEMORY_ECC_DOUBLE_BIT_CORRECTING	(1 << 4)
@@ -292,7 +295,11 @@ typedef enum {
 	SMBIOS_IPMI_DEVICE_INFORMATION = 38,
 	SMBIOS_SYSTEM_POWER_SUPPLY = 39,
 	SMBIOS_ONBOARD_DEVICES_EXTENDED_INFORMATION = 41,
+	SMBIOS_MANAGEMENT_CONTROLLER_HOST_INTERFACE = 42,
 	SMBIOS_TPM_DEVICE = 43,
+	SMBIOS_PROCESSOR_ADDITIONAL_INFORMATION = 44,
+	SMBIOS_FIRMWARE_INVENTORY_INFORMATION = 45,
+	SMBIOS_STRING_PROPERTY = 46,
 	SMBIOS_END_OF_TABLE = 127,
 } smbios_struct_type_t;
 
@@ -498,6 +505,8 @@ struct smbios_type4 {
 	u16 core_count2;
 	u16 core_enabled2;
 	u16 thread_count2;
+	u16 thread_enabled;	/* Added in SMBIOS v3.6 */
+	u8 socket_type;		/* Added in SMBIOS v3.8 */
 	u8 eos[2];
 } __packed;
 
@@ -589,6 +598,21 @@ enum smbios_processor_upgrade_field {
 	PROCESSOR_UPGRADE_SOCKET_LGA2422 = 0x46,
 	PROCESSOR_UPGRADE_SOCKET_LGA5773 = 0x47,
 	PROCESSOR_UPGRADE_SOCKET_BGA5773 = 0x48,
+	PROCESSOR_UPGRADE_SOCKET_AM5 = 0x49,
+	PROCESSOR_UPGRADE_SOCKET_SP5 = 0x4a,
+	PROCESSOR_UPGRADE_SOCKET_SP6 = 0x4b,
+	PROCESSOR_UPGRADE_SOCKET_BGA883 = 0x4c,
+	PROCESSOR_UPGRADE_SOCKET_BGA1190 = 0x4d,
+	PROCESSOR_UPGRADE_SOCKET_BGA4129 = 0x4e,
+	PROCESSOR_UPGRADE_SOCKET_LGA4710 = 0x4f,
+	PROCESSOR_UPGRADE_SOCKET_LGA7529 = 0x50,
+	PROCESSOR_UPGRADE_SOCKET_BGA1964 = 0x51,
+	PROCESSOR_UPGRADE_SOCKET_BGA1792 = 0x52,
+	PROCESSOR_UPGRADE_SOCKET_BGA2049 = 0x53,
+	PROCESSOR_UPGRADE_SOCKET_BGA2551 = 0x54,
+	PROCESSOR_UPGRADE_SOCKET_LGA1851 = 0x55,
+	PROCESSOR_UPGRADE_SOCKET_BGA2114 = 0x56,
+	PROCESSOR_UPGRADE_SOCKET_BGA2833 = 0x57,
 };
 
 /* defines for processor family */
@@ -600,7 +624,22 @@ enum smbios_processor_upgrade_field {
 #define SMBIOS_PROCESSOR_FAMILY_FROM_FAMILY2		0xfe
 
 /* defines for processor family 2 */
+#define SMBIOS_PROCESSOR_FAMILY2_ARMV7			0x100
 #define SMBIOS_PROCESSOR_FAMILY2_ARMV8			0x101
+#define SMBIOS_PROCESSOR_FAMILY2_ARMV9			0x102
+#define SMBIOS_PROCESSOR_FAMILY2_RISCV_RV32		0x200
+#define SMBIOS_PROCESSOR_FAMILY2_RISCV_RV64		0x201
+#define SMBIOS_PROCESSOR_FAMILY2_RISCV_RV128		0x202
+#define SMBIOS_PROCESSOR_FAMILY2_LOONGARCH		0x258
+#define SMBIOS_PROCESSOR_FAMILY2_LOONGSON3A		0x025d
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE3		0x300
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE5		0x301
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE7		0x302
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE9		0x303
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE_ULTRA3	0x304
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE_ULTRA5	0x305
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE_ULTRA7	0x306
+#define SMBIOS_PROCESSOR_FAMILY2_INTEL_CORE_ULTRA9	0x307
 
 /* defines for processor characteristics */
 #define PROCESSOR_64BIT_CAPABLE				(1 << 2)
@@ -609,6 +648,8 @@ enum smbios_processor_upgrade_field {
 #define PROCESSOR_EXECUTE_PROTECTION			(1 << 5)
 #define PROCESSOR_ENHANCED_VIRTUALIZATION		(1 << 6)
 #define PROCESSOR_POWER_PERFORMANCE_CONTROL		(1 << 7)
+#define PROCESSOR_128BIT_CAPABLE			(1 << 8)
+#define PROCESSOR_ARM64_SOC_ID				(1 << 9)
 
 /* defines for supported_sram_type/current_sram_type */
 
@@ -846,7 +887,12 @@ enum misc_slot_type {
 	SlotTypePciExpressMini52pinWithBSKO = 0x21,
 	SlotTypePciExpressMini52pinWithoutBSKO = 0x22,
 	SlotTypePciExpressMini76pin = 0x23,
+	SlotTypePciExpressGen4Sff_8639 = 0x24,
+	SlotTypePciExpressGen5Sff_8639 = 0x25,
 	SlotTypePciExpressOCPNIC30SFF = 0x26,
+	SlotTypePciExpressOCPNIC30LFF = 0x27,
+	SlotTypePciExpressOCPNICPriorTo30 = 0x28,
+	SlotTypeCXLFlexbus10 = 0x30,
 	SlotTypePC98C20 = 0xA0,
 	SlotTypePC98C24 = 0xA1,
 	SlotTypePC98E = 0xA2,
@@ -932,10 +978,14 @@ enum misc_slot_length {
 #define SMBIOS_SLOT_PCCARD_ZOOM		(1 << 6)
 #define SMBIOS_SLOT_PCCARD_MODEM_RING	(1 << 7)
 /* System Slots - Slot Characteristics 2. */
-#define SMBIOS_SLOT_PME		(1 << 0)
-#define SMBIOS_SLOT_HOTPLUG	(1 << 1)
-#define SMBIOS_SLOT_SMBUS	(1 << 2)
-#define SMBIOS_SLOT_BIFURCATION	(1 << 3)
+#define SMBIOS_SLOT_PME			(1 << 0)
+#define SMBIOS_SLOT_HOTPLUG		(1 << 1)
+#define SMBIOS_SLOT_SMBUS		(1 << 2)
+#define SMBIOS_SLOT_BIFURCATION		(1 << 3)
+#define SMBIOS_SLOT_ASYNC_SURPRISE_REMOVE	(1 << 4)
+#define SMBIOS_SLOT_CXL10_CAPABLE	(1 << 5)
+#define SMBIOS_SLOT_CXL20_CAPABLE	(1 << 6)
+#define SMBIOS_SLOT_CXL30_CAPABLE	(1 << 7)
 
 struct slot_peer_groups {
 	u16 peer_seg_num;
@@ -962,6 +1012,26 @@ struct smbios_type9 {
 	struct slot_peer_groups peer[0];
 	u8 eos[2];
 } __packed;
+
+/* System Slots - Slot Information (v3.4). */
+enum misc_slot_information {
+	SlotInformationOther = 0x00,
+	SlotInformationGen1 = 0x01,
+	SlotInformationGen2 = 0x02,
+	SlotInformationGen3 = 0x03,
+	SlotInformationGen4 = 0x04,
+	SlotInformationGen5 = 0x05,
+	SlotInformationGen6 = 0x06,
+};
+
+/* System Slots - Slot Height (v3.5). */
+enum misc_slot_height {
+	SlotHeightNone = 0x00,
+	SlotHeightOther = 0x01,
+	SlotHeightUnknown = 0x02,
+	SlotHeightFullHeight = 0x03,
+	SlotHeightLowProfile = 0x04,
+};
 
 struct smbios_type11 {
 	struct smbios_header header;
@@ -1019,6 +1089,24 @@ struct smbios_type16 {
 	u8 eos[2];
 } __packed;
 
+enum type17_memory_technology {
+	MemoryTechnologyOther = 0x01,
+	MemoryTechnologyUnknown = 0x02,
+	MemoryTechnologyDRAM = 0x03,
+	MemoryTechnologyNVDIMM_N = 0x04,
+	MemoryTechnologyNVDIMM_F = 0x05,
+	MemoryTechnologyNVDIMM_P = 0x06,
+	MemoryTechnologyIntelOptane = 0x07,
+	MemoryTechnologyMRDIMM = 0x08,
+};
+
+#define SMBIOS_MEM_OPERATING_MODE_CAP_RESERVED			(0 << 0)
+#define SMBIOS_MEM_OPERATING_MODE_CAP_OTHER			(1 << 0)
+#define SMBIOS_MEM_OPERATING_MODE_CAP_UNKNOWN			(1 << 0)
+#define SMBIOS_MEM_OPERATING_MODE_CAP_VOLATILE			(1 << 0)
+#define SMBIOS_MEM_OPERATING_MODE_CAP_BYTE_ACC_PERSISTENT	(1 << 0)
+#define SMBIOS_MEM_OPERATING_MODE_CAP_BLOCK_ACC_PERSISTENT	(1 << 0)
+
 struct smbios_type17 {
 	struct smbios_header header;
 	u16 phys_memory_array_handle;
@@ -1043,6 +1131,26 @@ struct smbios_type17 {
 	u16 minimum_voltage;
 	u16 maximum_voltage;
 	u16 configured_voltage;
+	/* Added in SMBIOS v3.2 */
+	u8 memory_technology;
+	u16 memory_operating_mode_capability;
+	u8 firmware_version;
+	u16 module_manuf_id;
+	u16 module_product_id;
+	u16 memory_subsys_cntrlr_manuf_id;
+	u16 memory_subsys_cntrlr_product_id;
+	u64 non_volatile_size;
+	u64 volatile_size;
+	u64 cache_size;
+	u64 logical_size;
+	/* Added in SMBIOS v3.3 */
+	u32 speed_ex;
+	u32 clock_speed_ex;
+	/* Added in SMBIOS v3.7 */
+	u16 pmic0_manufacturer_id;
+	u16 pmic0_revision_number;
+	u16 rcd_manufacturer_id;
+	u16 rcd_revision_number;
 	u8 eos[2];
 } __packed;
 
@@ -1236,6 +1344,41 @@ struct smbios_type41 {
 } __packed;
 
 
+/* Type 42 - Management Controller Host Interface */
+enum smbios_mc_host_interface_type {
+	SMBIOS_MC_HOST_INTERFACE_TYPE_KCS = 0x02,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_8250_UART = 0x03,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_16450_UART = 0x04,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_16550_UART = 0x05,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_16650_UART = 0x06,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_16750_UART = 0x07,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_16850_UART = 0x08,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_I2C = 0x09,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_I3C = 0x0a,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_PCIE_VDM = 0x0b,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_MMBI = 0x0c,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_PCC = 0x0d,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_UCIE = 0x0e,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_USB = 0x0f,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_NETWORK = 0x40,
+	SMBIOS_MC_HOST_INTERFACE_TYPE_OEM = 0xf0,
+};
+
+enum smbios_mc_host_interface_protocol_type {
+	SMBIOS_MC_HOST_INTERFACE_PROTOCOL_IPMI = 0x02,
+	SMBIOS_MC_HOST_INTERFACE_PROTOCOL_MCTP = 0x03,
+	SMBIOS_MC_HOST_INTERFACE_PROTOCOL_REDFISH = 0x04,
+	SMBIOS_MC_HOST_INTERFACE_PROTOCOL_OEM = 0xf0,
+};
+
+struct smbios_type42 {
+	struct smbios_header header;
+	u8 interface_type;
+	u8 interface_type_specific_data_length;
+	u8 interface_type_specific_data[4];
+	u8 eos[2];
+} __packed;
+
 #define SMBIOS_TPM_DEVICE_CHARACTERISTICS_NOT_SUPPORTED (1ULL << 2)
 #define SMBIOS_TPM_DEVICE_FAMILY_CONFIGURABLE_VIA_FW_UPD (1ULL << 3)
 #define SMBIOS_TPM_DEVICE_FAMILY_CONFIGURABLE_VIA_PLATFORM_SW_SUPPORT (1ULL << 4)
@@ -1251,6 +1394,87 @@ struct smbios_type43 {
 	u8 description;
 	u64 characteristics;
 	u32 oem_defined;
+	u8 eos[2];
+} __packed;
+
+/* Type 44 - Processor Additional Information */
+enum smbios_processor_arch_type {
+	SMBIOS_PROCESSOR_ARCH_RESERVED = 0x00,
+	SMBIOS_PROCESSOR_ARCH_IA32 = 0x01,
+	SMBIOS_PROCESSOR_ARCH_X64 = 0x02,
+	SMBIOS_PROCESSOR_ARCH_ITANIUM = 0x03,
+	SMBIOS_PROCESSOR_ARCH_AARCH32 = 0x04,
+	SMBIOS_PROCESSOR_ARCH_AARCH64 = 0x05,
+	SMBIOS_PROCESSOR_ARCH_RISCV_RV32 = 0x06,
+	SMBIOS_PROCESSOR_ARCH_RISCV_RV64 = 0x07,
+	SMBIOS_PROCESSOR_ARCH_RISCV_RV128 = 0x08,
+	SMBIOS_PROCESSOR_ARCH_LOONGARCH32 = 0x09,
+	SMBIOS_PROCESSOR_ARCH_LOONGARCH64 = 0x0a,
+};
+
+struct smbios_type44 {
+	struct smbios_header header;
+	u16 ref_handle;
+	u8 block_len;
+	u8 processor_type;
+	/* processor-specific block (variable length) follows */
+	u8 eos[2];
+} __packed;
+
+/* Type 45 - Firmware Inventory Information */
+enum smbios_firmware_version_format {
+	SMBIOS_FIRMWARE_VERSION_FORMAT_FREEFORM = 0x00,
+	SMBIOS_FIRMWARE_VERSION_FORMAT_MAJOR_MINOR = 0x01,
+	SMBIOS_FIRMWARE_VERSION_FORMAT_HEX32 = 0x02,
+	SMBIOS_FIRMWARE_VERSION_FORMAT_HEX64 = 0x03,
+};
+
+enum smbios_firmware_id_format {
+	SMBIOS_FIRMWARE_ID_FORMAT_FREEFORM = 0x00,
+	SMBIOS_FIRMWARE_ID_FORMAT_UUID = 0x01,
+};
+
+enum smbios_firmware_state {
+	SMBIOS_FIRMWARE_STATE_OTHER = 0x01,
+	SMBIOS_FIRMWARE_STATE_UNKNOWN = 0x02,
+	SMBIOS_FIRMWARE_STATE_DISABLED = 0x03,
+	SMBIOS_FIRMWARE_STATE_ENABLED = 0x04,
+	SMBIOS_FIRMWARE_STATE_ABSENT = 0x05,
+	SMBIOS_FIRMWARE_STATE_STANDBY_OFFLINE = 0x06,
+	SMBIOS_FIRMWARE_STATE_STANDBY_SPARE = 0x07,
+	SMBIOS_FIRMWARE_STATE_UNAVAILABLE_OFFLINE = 0x08,
+};
+
+#define SMBIOS_FIRMWARE_CHARACTERISTICS_UPDATABLE		(1 << 0)
+#define SMBIOS_FIRMWARE_CHARACTERISTICS_WRITE_PROTECTED		(1 << 1)
+
+struct smbios_type45 {
+	struct smbios_header header;
+	u8 firmware_component_name;
+	u8 firmware_version;
+	u8 firmware_version_format;
+	u8 firmware_id;
+	u8 firmware_id_format;
+	u8 release_date;
+	u8 manufacturer;
+	u8 lowest_supported_version;
+	u64 image_size;
+	u16 characteristics;
+	u8 state;
+	u8 associated_component_count;
+	/* associated_component_count * u16 handles follow */
+	u8 eos[2];
+} __packed;
+
+/* Type 46 - String Property */
+#define SMBIOS_STRING_PROPERTY_ID_NONE		0x0000
+#define SMBIOS_STRING_PROPERTY_ID_DEVICE_PATH	0x0001
+
+struct smbios_type46 {
+	struct smbios_header header;
+	u16 string_property_id;
+	u8 string_property_value;
+	u16 parent_handle;
 	u8 eos[2];
 } __packed;
 
@@ -1272,6 +1496,7 @@ enum smbios_cache_associativity smbios_cache_associativity(const u8 num);
 
 /* Must be defined by architecture code */
 int smbios_write_type4(unsigned long *current, int handle);
+int smbios_write_type44(unsigned long *current, int handle, struct smbios_type4 *type4);
 int smbios_write_type7_cache_parameters(unsigned long *current,
 					int *handle,
 					int *max_struct_size,

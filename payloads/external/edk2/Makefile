@@ -479,7 +479,7 @@ BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId="COREv4"
 BUILD_STR += --pcd gUefiCpuPkgTokenSpaceGuid.PcdFirstTimeWakeUpAPsBySipi=FALSE
 
 # coreboot produces SMBIOS 3.0.0 tables
-BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion=0x0300
+BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion=0x0308
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosDocRev=0x0
 
 bootloader = $(word 8,$(subst /, ,$(BUILD_STR)))
