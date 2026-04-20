@@ -67,10 +67,17 @@ static void transfer_memory_info(const SIL_TYPE17_DMI_INFO *dmi17, struct dimm_i
 	dimm->ddr_type = dmi17->MemoryType;
 	memcpy(&dimm->type_detail, &dmi17->TypeDetail, sizeof(dimm->type_detail));
 
-	dimm->configured_speed_mts = ddr_speed_mhz_to_reported_mts(
-		dmi17->MemoryType, dmi17->ConfigSpeed);
+	if (dmi17->ConfigSpeed == 0xffff)
+		dimm->configured_speed_mts = dmi17->ExtendedConfiguredMemorySpeed;
+	else
+		dimm->configured_speed_mts = ddr_speed_mhz_to_reported_mts(dmi17->MemoryType,
+									   dmi17->ConfigSpeed);
 
-	dimm->max_speed_mts = ddr_speed_mhz_to_reported_mts(dmi17->MemoryType, dmi17->Speed);
+	if (dmi17->Speed == 0xffff)
+		dimm->max_speed_mts = dmi17->ExtendedSpeed;
+	else
+		dimm->max_speed_mts = ddr_speed_mhz_to_reported_mts(dmi17->MemoryType,
+								    dmi17->Speed);
 
 	dimm->rank_per_dimm = dmi17->Attributes;
 
@@ -91,10 +98,22 @@ static void transfer_memory_info(const SIL_TYPE17_DMI_INFO *dmi17, struct dimm_i
 	dimm->vdd_min_voltage = dmi17->MinimumVoltage ? dmi17->MinimumVoltage : dimm->vdd_voltage;
 	dimm->vdd_max_voltage = dmi17->MaximumVoltage ? dmi17->MaximumVoltage : dimm->vdd_voltage;
 
-	strncpy((char *)dimm->module_part_number, dmi17->PartNumber,
-		sizeof(dimm->module_part_number) - 1);
+	/* Added in SMBIOS v3.2 */
+	dimm->memory_technology = dmi17->MemoryTechnology;
+	dimm->memory_operating_mode_capability = dmi17->MemoryOperatingModeCapability.AsUint16;
 
-	/* Other fields not supported yet in SMBIOS 3.0.0 */
+	memset(dimm->fw_version, 0, sizeof(dimm->fw_version));
+	strncpy((char *)dimm->fw_version, dmi17->FirmwareVersion,
+	        MIN(sizeof(dimm->fw_version), sizeof(dmi17->FirmwareVersion)));
+
+	dimm->module_product_id = dmi17->ModuleProductId;
+	dimm->memory_subsys_cntrlr_manuf_id = dmi17->MemorySubsystemControllerManufacturerId;
+	dimm->memory_subsys_cntrlr_product_id = dmi17->MemorySubsystemControllerProductId;
+
+	dimm->non_volatile_size = dmi17->NonvolatileSize;
+	dimm->volatile_size = dmi17->VolatileSize;
+	dimm->cache_size = dmi17->CacheSize;
+	dimm->logical_size = dmi17->LogicalSize;
 }
 
 static void print_dimm_info(const struct dimm_info *dimm)
@@ -299,9 +318,9 @@ void opensil_smbios_fill_cbmem_meminfo(void)
 	for (unsigned int socket = 0;
 	     socket < MIN(CONFIG_MAX_SOCKET, SIL_MAX_SOCKETS_SUPPORTED);
 	     socket++) {
-		for (unsigned int channel = 0;
-		     channel < SIL_MAX_CHANNELS_PER_SOCKET;
-		     channel++) {
+		for (unsigned int ch = 0;
+		     ch < SIL_MAX_CHANNELS_PER_SOCKET;
+		     ch++) {
 			for (unsigned int dimm = 0; dimm < SIL_MAX_DIMMS_PER_CHANNEL; dimm++) {
 				if (dimm_cnt >= CONFIG_DIMM_MAX) {
 					printk(BIOS_WARNING,
@@ -310,26 +329,31 @@ void opensil_smbios_fill_cbmem_meminfo(void)
 					goto out;
 				}
 
-				if (dmi_info->T17[socket][channel][dimm].MemorySize == 0) {
-					if (mainboard_dimm_slot_exists(socket, channel, dimm))
+				if (dmi_info->T17[socket][ch][dimm].MemorySize == 0) {
+					if (mainboard_dimm_slot_exists(socket, ch, dimm)) {
 						printk(BIOS_DEBUG,
 						      "Found empty DIMM slot on Socket %u Channel %u DIMM %u\n",
-						       socket, channel, dimm);
-					else
-						continue;
-				} else {
-					printk(BIOS_DEBUG,
-					      "Found DIMM on Socket %u Channel %u DIMM %u\n",
-					       socket, channel, dimm);
+						       socket, ch, dimm);
+						dimm_info = &mem_info->dimm[dimm_cnt];
+						dimm_info->dimm_size = 0;
+						dimm_info->soc_num = socket;
+						dimm_info->channel_num = ch;
+						dimm_info->dimm_num = dimm;
+						dimm_cnt++;
+					}
+					continue;
 				}
+				printk(BIOS_DEBUG,
+				       "Found DIMM on Socket %u Channel %u DIMM %u\n",
+				       socket, ch, dimm);
 
-				print_type17_info(&dmi_info->T17[socket][channel][dimm]);
-				print_type20_info(&dmi_info->T20[socket][channel][dimm][0]);
+				print_type17_info(&dmi_info->T17[socket][ch][dimm]);
+				print_type20_info(&dmi_info->T20[socket][ch][dimm][0]);
 				dimm_info = &mem_info->dimm[dimm_cnt];
 				dimm_info->soc_num = socket;
-				dimm_info->channel_num = channel;
+				dimm_info->channel_num = ch;
 				dimm_info->dimm_num = dimm;
-				transfer_memory_info(&dmi_info->T17[socket][channel][dimm],
+				transfer_memory_info(&dmi_info->T17[socket][ch][dimm],
 						     dimm_info);
 				print_dimm_info(dimm_info);
 				dimm_cnt++;
