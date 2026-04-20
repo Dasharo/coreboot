@@ -18,6 +18,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_GIGABYTE_BMC_BIOS_UPDATE
 	select HAVE_OPTION_TABLE
 	select HAVE_CMOS_DEFAULT
+	select SMBIOS_TYPE41_PROVIDED_BY_DEVTREE
 
 config FMDFILE
 	default "src/mainboard/gigabyte/mz33-ar1/vboot-rwab.fmd" if VBOOT && VBOOT_SLOTS_RW_AB
