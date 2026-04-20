@@ -6,6 +6,7 @@
 #include <amdblocks/chip.h>
 #include <amdblocks/i2c.h>
 #include <drivers/i2c/designware/dw_i2c.h>
+#include <soc/i2c.h>
 #include <soc/iomap.h>
 #include <types.h>
 
@@ -81,6 +82,7 @@ struct soc_amd_turin_poc_config {
 
 	u8 i2c_scl_reset;
 	struct dw_i2c_bus_config i2c[I2C_CTRLR_COUNT];
+	struct i2c_pad_control i2c_pad[I2C_CTRLR_COUNT];
 
 	struct soc_usb_config usb;
 	struct soc_sata_config sata;
