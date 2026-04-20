@@ -12,6 +12,7 @@
 #include <Mpio/MpioClass-api.h>
 #include <RcMgr/DfX/RcManager4-api.h>
 #include <Sdxi/SdxiClass-api.h>
+#include <amdblocks/aoac.h>
 #include <amdblocks/reset.h>
 #include <bootstate.h>
 #include <cbmem.h>
@@ -241,8 +242,17 @@ static void configure_fch_isa(void)
 }
 
 #define FCH_DEV_ENABLE(dev, aoac_bit) \
-	fch_data->FchRunTime.FchDeviceEnableMap |= ((DEV_PTR(dev))->enabled ? aoac_bit : 0)
-
+	do { \
+		if (is_dev_enabled(DEV_PTR(dev))) { \
+			fch_data->FchRunTime.FchDeviceEnableMap |= (1ul << (aoac_bit)); \
+			if (!is_aoac_device_enabled(aoac_bit)) { \
+				printk(BIOS_DEBUG, "Enabling " #dev "\n"); \
+				power_on_aoac_device(aoac_bit); \
+				wait_for_aoac_enabled(aoac_bit); \
+			} \
+		} \
+	} while (0)
+	
 static void configure_fch_acpi(void)
 {
 	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilId_FchHwAcpiP, 0);
@@ -271,7 +281,8 @@ static void configure_fch_acpi(void)
 	fch_hwacpi_data->PwrFailShadow = (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 2) ?
 						3 : CONFIG_MAINBOARD_POWER_FAILURE_STATE;
 
-	fch_data->FchRunTime.FchDeviceEnableMap = 0;
+	fch_data->FchRunTime.FchDeviceEnableMap = (1 << FCH_AOAC_DEV_AMBA) |
+						  (1 << FCH_AOAC_DEV_ESPI);
 	FCH_DEV_ENABLE(i2c_0, FCH_AOAC_DEV_I2C0);
 	FCH_DEV_ENABLE(i2c_1, FCH_AOAC_DEV_I2C1);
 	FCH_DEV_ENABLE(i2c_2, FCH_AOAC_DEV_I2C2);
