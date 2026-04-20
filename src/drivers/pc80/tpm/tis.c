@@ -376,6 +376,35 @@ static tpm_result_t tis_command_ready(u8 locality)
 	return tis_wait_ready(locality);
 }
 
+static void tpm_tis_get_dev_name(enum tpm_family tpm_family, u32 didvid,
+			    const char **device_name, const char **vendor_name)
+{
+	const struct device_name *dev;
+	u16 vid, did;
+	int i;
+
+	vid = didvid & 0xffff;
+	did = (didvid >> 16) & 0xffff;
+	for (i = 0; i < ARRAY_SIZE(vendor_names); i++) {
+		int j = 0;
+		if (vid == vendor_names[i].vendor_id) {
+			*vendor_name = vendor_names[i].vendor_name;
+		} else {
+			continue;
+		}
+		dev = &vendor_names[i].dev_names[j];
+		while (dev->dev_id != 0xffff) {
+			if (dev->dev_id == did && dev->family == tpm_family) {
+				*device_name = dev->dev_name;
+				break;
+			}
+			j++;
+			dev = &vendor_names[i].dev_names[j];
+		}
+		break;
+	}
+}
+
 /*
  * pc80_tis_probe()
  *
@@ -390,11 +419,9 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 
 	const char *device_name = NULL;
 	const char *vendor_name = NULL;
-	const struct device_name *dev;
 	u32 didvid, intf_id;
 	u16 vid, did;
 	u8 locality = 0, intf_type;
-	int i;
 	const char *family_str;
 
 	if (vendor_dev_id) {
@@ -435,27 +462,10 @@ static tpm_result_t pc80_tpm_probe(enum tpm_family *family)
 	}
 
 	vendor_dev_id = didvid;
-
 	vid = didvid & 0xffff;
 	did = (didvid >> 16) & 0xffff;
-	for (i = 0; i < ARRAY_SIZE(vendor_names); i++) {
-		int j = 0;
-		if (vid == vendor_names[i].vendor_id) {
-			vendor_name = vendor_names[i].vendor_name;
-		} else {
-			continue;
-		}
-		dev = &vendor_names[i].dev_names[j];
-		while (dev->dev_id != 0xffff) {
-			if (dev->dev_id == did && dev->family == tpm_family) {
-				device_name = dev->dev_name;
-				break;
-			}
-			j++;
-			dev = &vendor_names[i].dev_names[j];
-		}
-		break;
-	}
+
+	tpm_tis_get_dev_name(didvid, tpm_family, &device_name, &vendor_name);
 
 	family_str = (tpm_family == TPM_1 ? "TPM 1.2" : "TPM 2.0");
 	if (vendor_name == NULL) {
@@ -887,12 +897,113 @@ static const char *lpc_tpm_acpi_name(const struct device *dev)
 }
 #endif
 
+
+#if CONFIG(GENERATE_SMBIOS_TABLES) && CONFIG(TPM2)
+static tpm_result_t tpm_tis_get_cap(uint32_t property, uint32_t *value)
+{
+	TPMS_CAPABILITY_DATA cap_data;
+	int i;
+	tpm_result_t rc;
+
+	if (!value)
+		return TPM_CB_INVALID_ARG;
+
+	rc = tlcl2_get_capability(TPM_CAP_TPM_PROPERTIES, property, 1, &cap_data);
+
+	if (rc)
+		return rc;
+
+	for (i = 0 ; i < cap_data.data.tpmProperties.count; i++) {
+		if (cap_data.data.tpmProperties.tpmProperty[i].property == property) {
+			*value = cap_data.data.tpmProperties.tpmProperty[i].value;
+			return TPM_SUCCESS;
+		}
+	}
+
+	return TPM_CB_FAIL;
+}
+
+static int smbios_write_type43_tpm_tis(struct device *dev, int *handle, unsigned long *current)
+{
+	uint32_t tpm_manuf, tpm_family;
+	uint32_t fw_ver1, fw_ver2;
+	uint8_t major_spec_ver, minor_spec_ver;
+	enum tpm_family family;
+	const char *device_name = NULL;
+	const char *vendor_name = NULL;
+	static char description[100] = { 0 };
+
+	family = tlcl_get_family();
+
+	if (family == TPM_1)
+		return 0;
+
+	/* If any of these have invalid values, assume TPM not present or disabled */
+	if (vendor_dev_id == 0 || vendor_dev_id == 0xFFFFFFFF) {
+		printk(BIOS_DEBUG, "%s: Invalid Vendor ID/Device ID\n", __func__);
+		return 0;
+	}
+
+	tpm_tis_get_dev_name(vendor_dev_id, family, &device_name, &vendor_name);
+
+	/* Vendor ID is the value returned by TPM2_GetCapabiltiy TPM_PT_MANUFACTURER */
+	if (tpm_tis_get_cap(TPM_PT_MANUFACTURER, &tpm_manuf)) {
+		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_MANUFACTURER failed\n");
+		return 0;
+	}
+
+	tpm_manuf = be32toh(tpm_manuf);
+
+	if (tpm_tis_get_cap(TPM_PT_FIRMWARE_VERSION_1, &fw_ver1)) {
+		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_FIRMWARE_VERSION_1 failed\n");
+		return 0;
+	}
+
+	if (tpm_tis_get_cap(TPM_PT_FIRMWARE_VERSION_2, &fw_ver2)) {
+		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_FIRMWARE_VERSION_2 failed\n");
+		return 0;
+	}
+
+	if (tpm_tis_get_cap(TPM_PT_FAMILY_INDICATOR, &tpm_family)) {
+		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_FAMILY_INDICATOR failed\n");
+		return 0;
+	}
+
+	tpm_family = be32toh(tpm_family);
+
+	if (!strncmp((char *)&tpm_family, "2.0", 4)) {
+		major_spec_ver = 2;
+		minor_spec_ver = 0;
+	} else {
+		printk(BIOS_ERR, "%s: Invalid TPM family\n", __func__);
+		return 0;
+	}
+
+	if (vendor_name == NULL) {
+		snprintf(description, sizeof(description), "VendorID: %04x DeviceID: %04x",
+			 vendor_dev_id & 0xffff, (vendor_dev_id >> 16) & 0xffff);
+	} else if (device_name == NULL) {
+		snprintf(description, sizeof(description), "%s DeviceID: %04x",
+			 vendor_name, (vendor_dev_id >> 16) & 0xffff);
+	} else {
+		snprintf(description, sizeof(description), "%s %s", vendor_name, device_name);
+	}
+
+	return smbios_write_type43(current, handle, tpm_manuf, major_spec_ver, minor_spec_ver,
+				   fw_ver1, fw_ver2, description,
+				   SMBIOS_TPM_DEVICE_CHARACTERISTICS_NOT_SUPPORTED, 0);
+}
+#endif
+
 static struct device_operations lpc_tpm_ops = {
 	.read_resources   = lpc_tpm_read_resources,
 	.set_resources    = lpc_tpm_set_resources,
 #if CONFIG(HAVE_ACPI_TABLES)
 	.acpi_name        = lpc_tpm_acpi_name,
 	.acpi_fill_ssdt   = lpc_tpm_fill_ssdt,
+#endif
+#if CONFIG(GENERATE_SMBIOS_TABLES) && CONFIG(TPM2)
+	.get_smbios_data  = smbios_write_type43_tpm_tis,
 #endif
 };
 
