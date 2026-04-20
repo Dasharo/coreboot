@@ -5,6 +5,11 @@
 
 __weak void opensil_smbios_fill_cbmem_meminfo(void) { }
 
+__weak bool mainboard_dimm_slot_exists(uint8_t socket, uint8_t channel, uint8_t slot)
+{
+	return false;
+}
+
 static void prepare_dmi_17(void *unused)
 {
 	opensil_smbios_fill_cbmem_meminfo();
