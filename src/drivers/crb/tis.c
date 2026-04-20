@@ -120,7 +120,7 @@ static const char *crb_tpm_acpi_name(const struct device *dev)
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES) && CONFIG(TPM2)
-static tpm_result_t tpm_get_cap(uint32_t property, uint32_t *value)
+static tpm_result_t tpm_crb_get_cap(uint32_t property, uint32_t *value)
 {
 	TPMS_CAPABILITY_DATA cap_data;
 	int i;
@@ -144,7 +144,7 @@ static tpm_result_t tpm_get_cap(uint32_t property, uint32_t *value)
 	return TPM_CB_FAIL;
 }
 
-static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned long *current)
+static int smbios_write_type43_tpm_crb(struct device *dev, int *handle, unsigned long *current)
 {
 	struct crb_tpm_info info;
 	uint32_t tpm_manuf, tpm_family;
@@ -164,24 +164,24 @@ static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned lon
 	}
 
 	/* Vendor ID is the value returned by TPM2_GetCapabiltiy TPM_PT_MANUFACTURER */
-	if (tpm_get_cap(TPM_PT_MANUFACTURER, &tpm_manuf)) {
+	if (tpm_crb_get_cap(TPM_PT_MANUFACTURER, &tpm_manuf)) {
 		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_MANUFACTURER failed\n");
 		return 0;
 	}
 
 	tpm_manuf = be32toh(tpm_manuf);
 
-	if (tpm_get_cap(TPM_PT_FIRMWARE_VERSION_1, &fw_ver1)) {
+	if (tpm_crb_get_cap(TPM_PT_FIRMWARE_VERSION_1, &fw_ver1)) {
 		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_FIRMWARE_VERSION_1 failed\n");
 		return 0;
 	}
 
-	if (tpm_get_cap(TPM_PT_FIRMWARE_VERSION_2, &fw_ver2)) {
+	if (tpm_crb_get_cap(TPM_PT_FIRMWARE_VERSION_2, &fw_ver2)) {
 		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_FIRMWARE_VERSION_2 failed\n");
 		return 0;
 	}
 
-	if (tpm_get_cap(TPM_PT_FAMILY_INDICATOR, &tpm_family)) {
+	if (tpm_crb_get_cap(TPM_PT_FAMILY_INDICATOR, &tpm_family)) {
 		printk(BIOS_DEBUG, "TPM2_GetCap TPM_PT_FAMILY_INDICATOR failed\n");
 		return 0;
 	}
@@ -210,7 +210,7 @@ static struct device_operations __maybe_unused crb_ops = {
 	.acpi_fill_ssdt = crb_tpm_fill_ssdt,
 #endif
 #if CONFIG(GENERATE_SMBIOS_TABLES) && CONFIG(TPM2)
-	.get_smbios_data	= smbios_write_type43_tpm,
+	.get_smbios_data	= smbios_write_type43_tpm_crb,
 #endif
 };
 
