@@ -94,6 +94,7 @@ chip soc/amd/turin_poc
 				# On cold boot it takes a while for the BMC to start the IPMI service
 				register "wait_for_bmc" = "1"
 				register "bmc_boot_timeout" = "60"
+				register "bmc_i2c_address" = "0x10"
 				device pnp ca2.0 on end	# IPMI KCS
 			end
 
