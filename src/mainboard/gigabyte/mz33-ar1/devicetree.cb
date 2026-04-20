@@ -437,4 +437,5 @@ chip soc/amd/turin_poc
 	device ref i2c_4 hidden end
 	device ref i2c_5 hidden end
 	device ref uart_0 on end
+	device ref uart_1 on end
 end
