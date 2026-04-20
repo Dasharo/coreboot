@@ -161,6 +161,46 @@ static void smbios_fill_dimm_part_number(const char *part_number, struct smbios_
 	}
 }
 
+/** This function will fill the firmware version  */
+static void smbios_fill_dimm_fw_version(const char *fw_version, struct smbios_type17 *t)
+{
+	int invalid;
+	size_t i, len;
+	char trimmed_fw_version[DIMM_INFO_FW_VERSION_SIZE];
+
+	strncpy(trimmed_fw_version, fw_version, sizeof(trimmed_fw_version));
+	trimmed_fw_version[sizeof(trimmed_fw_version) - 1] = '\0';
+
+	/*
+	 * SPD mandates that unused characters be represented with a ' '.
+	 * We don't want to publish the whitespace in the SMBIOS tables.
+	 */
+	trim_trailing_whitespace(trimmed_fw_version, sizeof(trimmed_fw_version));
+
+	len = strlen(trimmed_fw_version);
+
+	invalid = 0; /* assume valid */
+	for (i = 0; i < len; i++) {
+		if (trimmed_fw_version[i] < ' ') {
+			invalid = 1;
+			trimmed_fw_version[i] = '*';
+		}
+	}
+
+	if (len == 0) {
+		/* Null String in Part Number will have "None" instead. */
+		t->part_number = smbios_add_string(t->eos, "None");
+	} else if (invalid) {
+		char string_buffer[sizeof(trimmed_fw_version) + 10];
+
+		snprintf(string_buffer, sizeof(string_buffer), "Invalid (%s)",
+			 trimmed_fw_version);
+		t->part_number = smbios_add_string(t->eos, string_buffer);
+	} else {
+		t->part_number = smbios_add_string(t->eos, trimmed_fw_version);
+	}
+}
+
 /* Encodes the SPD serial number into hex */
 static void smbios_fill_dimm_serial_number(const struct dimm_info *dimm,
 					   struct smbios_type17 *t)
@@ -243,14 +283,31 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 						     sizeof(*t), *handle);
 
 	t->memory_type = dimm->ddr_type;
-	if (dimm->configured_speed_mts != 0)
-		t->clock_speed = dimm->configured_speed_mts;
-	else
+	if (dimm->configured_speed_mts != 0) {
+		if (dimm->configured_speed_mts >= 0xffff) {
+			t->clock_speed = 0xffff;
+			/* Bit 31 reserved */
+			t->clock_speed_ex = dimm->configured_speed_mts & 0x7fffffff;
+		} else {
+			t->clock_speed = dimm->configured_speed_mts & 0xffff;
+		}
+	} else {
 		t->clock_speed = dimm->ddr_frequency;
-	if (dimm->max_speed_mts != 0)
+	}
+
+	if (dimm->max_speed_mts != 0) {
 		t->speed = dimm->max_speed_mts;
-	else
+		if (dimm->max_speed_mts >= 0xffff) {
+			t->speed = 0xffff;
+			/* Bit 31 reserved */
+			t->speed_ex = dimm->max_speed_mts & 0x7fffffff;
+		} else {
+			t->speed = dimm->max_speed_mts & 0xffff;
+		}
+	} else {
 		t->speed = dimm->ddr_frequency;
+	}
+
 	if (dimm->dimm_size < 0x7fff) {
 		t->size = dimm->dimm_size;
 	} else {
@@ -282,6 +339,50 @@ static int create_smbios_type17_for_dimm(struct dimm_info *dimm,
 		t->type_detail = info.type_detail;
 		/* Synchronous = 1 */
 		t->type_detail |= MEMORY_TYPE_DETAIL_SYNCHRONOUS;
+	}
+
+
+	if (dimm->memory_technology != 0)
+		t->memory_technology = dimm->memory_technology;
+	else
+		t->memory_technology = MemoryTechnologyUnknown;
+
+	if (dimm->memory_operating_mode_capability != 0)
+		t->memory_operating_mode_capability = dimm->memory_operating_mode_capability;
+
+	/* put '\0' in the end of data */
+	dimm->fw_version[DIMM_INFO_FW_VERSION_SIZE - 1] = '\0';
+	smbios_fill_dimm_fw_version((char *)dimm->fw_version, t);
+
+	t->module_manuf_id = dimm->mod_id;
+	t->module_product_id = dimm->module_product_id;
+	t->memory_subsys_cntrlr_manuf_id = dimm->memory_subsys_cntrlr_manuf_id;
+	t->memory_subsys_cntrlr_product_id = dimm->memory_subsys_cntrlr_product_id;
+	t->pmic0_manufacturer_id = dimm->pmic0_manufacturer_id;
+	if (dimm->pmic0_revision_number != 0)
+		t->pmic0_revision_number = dimm->pmic0_revision_number;
+	else
+		t->pmic0_revision_number = 0xff00; /* Unknown */
+
+	t->rcd_manufacturer_id = dimm->rcd_manufacturer_id;
+	if (dimm->rcd_revision_number != 0)
+		t->rcd_revision_number = dimm->rcd_revision_number;
+	else
+		t->rcd_revision_number = 0xff00; /* Unknown */
+
+	if (t->memory_type == MEMORY_TYPE_LOGICAL_NON_VOLATILE_DEVICE) {
+		t->logical_size = dimm->logical_size;
+		t->cache_size = dimm->cache_size;
+		t->non_volatile_size = dimm->non_volatile_size;
+		t->volatile_size = dimm->volatile_size;
+	} else {
+		t->logical_size = UINT64_MAX;
+		t->cache_size = UINT64_MAX;
+		t->non_volatile_size = UINT64_MAX;
+		if (dimm->volatile_size != 0)
+			t->volatile_size = dimm->volatile_size;
+		else
+			t->volatile_size = dimm->dimm_size;
 	}
 
 	/* no handle for error information */
@@ -522,6 +623,11 @@ static int smbios_write_type3(unsigned long *current, int handle)
 	const int len = smbios_full_table_len(&t->header, t->eos);
 	*current += len;
 	return len;
+}
+
+int __weak smbios_write_type44(unsigned long *current, int handle, struct smbios_type4 *type4)
+{
+	return 0;
 }
 
 /*
@@ -1274,7 +1380,9 @@ unsigned long smbios_write_tables(unsigned long current)
 		struct smbios_type4 *type4 = (struct smbios_type4 *)current;
 		update_max(len, max_struct_size, smbios_write_type4(&current, handle++));
 		len += smbios_write_type7_cache_parameters(&current, &handle, &max_struct_size, type4);
+		update_max(len, max_struct_size, smbios_write_type44(&current, handle++, type4));
 	}
+
 	update_max(len, max_struct_size, smbios_write_type11(&current, &handle));
 	if (CONFIG(ELOG))
 		update_max(len, max_struct_size,
@@ -1318,7 +1426,7 @@ unsigned long smbios_write_tables(unsigned long current)
 	memcpy(se3->anchor, "_SM3_", 5);
 	se3->length = sizeof(*se3);
 	se3->major_version = 3;
-	se3->minor_version = 0;
+	se3->minor_version = 8;
 
 	se3->struct_table_address = (u64)tables;
 	se3->struct_table_length = len;
