@@ -15,7 +15,7 @@
 #include <gpio.h>
 #include <types.h>
 
-#define MAX_PIN_COUNT 4
+#define MAX_PIN_COUNT 6
 
 uintptr_t dw_i2c_base_address(unsigned int bus)
 {
