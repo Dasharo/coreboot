@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <types.h>
 
+const char *smbios_system_version(void)
+{
+	return "0100";
+}
+
 /* The IRQ mapping in fch_irq_map ends up getting written to the indirect
    address space that is accessed via I/O ports 0xc00/0xc01. */
 
