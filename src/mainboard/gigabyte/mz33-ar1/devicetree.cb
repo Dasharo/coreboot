@@ -56,6 +56,14 @@ chip soc/amd/turin_poc
 		.flash_ch_en = 1,
 	}"
 
+	# I2C Pad Control RX Select Configuration
+	register "i2c_pad[0].rx_level" = "I3C_PAD_RX_1_1V"
+	register "i2c_pad[1].rx_level" = "I3C_PAD_RX_1_1V"
+	register "i2c_pad[2].rx_level" = "I3C_PAD_RX_1_1V"
+	register "i2c_pad[3].rx_level" = "I3C_PAD_RX_1_1V"
+	register "i2c_pad[4].rx_level" = "I2C_PAD_RX_NO_CHANGE"
+	register "i2c_pad[5].rx_level" = "I2C_PAD_RX_NO_CHANGE"
+
 	device domain 0 on
 		subsystemid 0x1458 0x1000 inherit
 
