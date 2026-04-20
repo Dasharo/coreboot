@@ -39,7 +39,12 @@ void reset_i2c_peripherals(void)
 
 void soc_i2c_misc_init(unsigned int bus, const struct dw_i2c_bus_config *cfg)
 {
-	/* TODO: write I2C pad control registers */
+	const struct soc_amd_turin_poc_config *config = config_of_soc();
+
+	if (bus >= ARRAY_SIZE(config->i2c_pad))
+		return;
+
+	fch_i23c_pad_init(bus, cfg->speed, &config->i2c_pad[bus]);
 }
 
 const struct soc_i2c_ctrlr_info *soc_get_i2c_ctrlr_info(size_t *num_ctrlrs)
