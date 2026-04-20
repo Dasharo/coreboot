@@ -67,7 +67,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "60"
 			register "end_lane" = "63"
-			device ref gpp_bridge_0_0_a on end
+			device ref gpp_bridge_0_0_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X16" "SlotLengthLong" "PCIE_6" "SlotDataBusWidth16X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -147,7 +149,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "28"
 			register "end_lane" = "31"
-			device ref gpp_bridge_1_0_a on end
+			device ref gpp_bridge_1_0_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X16" "SlotLengthLong" "PCIE_7" "SlotDataBusWidth16X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -179,7 +183,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "112"
 			register "end_lane" = "115"
-			device ref gpp_bridge_2_0_a on end
+			device ref gpp_bridge_2_0_a on
+				smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M2_0" "SlotDataBusWidth4X"
+			end
 		end
 
 		# MCIO U2_P0_G2A on G2 port 2x4
@@ -187,7 +193,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "120"
 			register "end_lane" = "123"
-			device ref gpp_bridge_2_2_a on end
+			device ref gpp_bridge_2_2_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X8" "SlotLengthOther" "U2_P0_G2A" "SlotDataBusWidth8X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -201,8 +209,12 @@ chip soc/amd/turin_poc
 		end
 
 		device ref gpp_bridge_2_b on
-			device ref sata_2_0 on end
-			device ref sata_2_1 on end
+			device ref sata_2_0 on
+				smbios_dev_info 2 "SATA Controller"
+			end
+			device ref sata_2_1 on
+				smbios_dev_info 3 "SATA Controller"
+			end
 		end
 	end
 
@@ -214,14 +226,18 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_SATA"
 			register "start_lane" = "80"
 			register "end_lane" = "87"
-			device ref gpp_bridge_3_0_a on end
+			device ref gpp_bridge_3_0_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X8" "SlotLengthOther" "U2_P0_G3A" "SlotDataBusWidth8X"
+			end
 		end
 		# U2_P0_G3B as SATA. Can also be PCIe
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_SATA"
 			register "start_lane" = "88"
 			register "end_lane" = "95"
-			device ref gpp_bridge_3_1_a on end
+			device ref gpp_bridge_3_1_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X8" "SlotLengthOther" "U2_P0_G3B" "SlotDataBusWidth8X"
+			end
 		end
 	end
 
@@ -246,7 +262,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "68"
 			register "end_lane" = "71"
-			device ref gpp_bridge_4_2_a on end
+			device ref gpp_bridge_4_2_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X8" "SlotLengthOther" "U2_P0_G1B" "SlotDataBusWidth8X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -266,7 +284,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "108"
 			register "end_lane" = "111"
-			device ref gpp_bridge_5_0_a on end
+			device ref gpp_bridge_5_0_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X8" "SlotLengthOther" "U2_P0_G0A" "SlotDataBusWidth8X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -280,7 +300,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "100"
 			register "end_lane" = "103"
-			device ref gpp_bridge_5_2_a on end
+			device ref gpp_bridge_5_2_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X8" "SlotLengthOther" "U2_P0_G0B" "SlotDataBusWidth8X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -294,7 +316,11 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "128"
 			register "end_lane" = "131"
-			device ref gpp_bridge_5_0_b on end
+			device ref gpp_bridge_5_0_b on
+				device pci 00.0 on
+					smbios_dev_info 1 "Onboard LAN"
+				end
+			end
 		end
 		# BMC on P4/P5 port 2 x1
 		chip drivers/amd/opensil/mpio
@@ -302,7 +328,11 @@ chip soc/amd/turin_poc
 			register "start_lane" = "134"
 			register "end_lane" = "134"
 			register "bmc" = "1"
-			device ref gpp_bridge_5_2_b on end
+			device ref gpp_bridge_5_2_b on
+				device pci 00.0 on
+					smbios_dev_info 1 "Onboard IGD"
+				end
+			end
 		end
 		# ABL configures this on P4/P5 port 3 x1
 		chip drivers/amd/opensil/mpio
@@ -326,7 +356,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "32"
 			register "end_lane" = "35"
-			device ref gpp_bridge_6_0_a on end
+			device ref gpp_bridge_6_0_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X16" "SlotLengthLong" "PCIE_4" "SlotDataBusWidth16X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -359,7 +391,9 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "0"
 			register "end_lane" = "3"
-			device ref gpp_bridge_7_0_a on end
+			device ref gpp_bridge_7_0_a on
+				smbios_slot_desc "SlotTypePciExpressGen5X16" "SlotLengthLong" "PCIE_3" "SlotDataBusWidth16X"
+			end
 		end
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
@@ -385,8 +419,12 @@ chip soc/amd/turin_poc
 		end
 
 		device ref gpp_bridge_7_b on
-			device ref sata_7_0 on end
-			device ref sata_7_1 on end
+			device ref sata_7_0 on
+				smbios_dev_info 0 "SATA Controller"
+			end
+			device ref sata_7_1 on
+				smbios_dev_info 1 "SATA Controller"
+			end
 		end
 	end
 
