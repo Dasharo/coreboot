@@ -101,4 +101,7 @@ config VBOOT_SLOTS_RW_AB
 config VBOOT_VBNV_OFFSET
 	default 0x60
 
+config DIMM_MAX
+	default 24
+
 endif
