@@ -7,6 +7,7 @@
 
 #define DIMM_INFO_SERIAL_SIZE		4
 #define DIMM_INFO_PART_NUMBER_SIZE	33
+#define DIMM_INFO_FW_VERSION_SIZE	20
 #define DIMM_INFO_TOTAL			64
 
 /**
@@ -122,12 +123,33 @@ struct dimm_info {
 	 * Max speed in MT/s
 	 * If the value is 0, ddr_frequency should be used instead.
 	 */
-	uint16_t max_speed_mts;
+	uint32_t max_speed_mts;
 	/*
 	 * Configured speed in MT/s
 	 * If the value is 0, ddr_frequency should be used instead.
 	 */
-	uint16_t configured_speed_mts;
+	uint32_t configured_speed_mts;
+
+	/* Added in SMBIOS v3.2 */
+	uint8_t memory_technology;
+	uint16_t memory_operating_mode_capability;
+
+	uint8_t fw_version[DIMM_INFO_FW_VERSION_SIZE];
+
+	uint16_t module_product_id;
+	uint16_t memory_subsys_cntrlr_manuf_id;
+	uint16_t memory_subsys_cntrlr_product_id;
+
+	uint64_t non_volatile_size;
+	uint64_t volatile_size;
+	uint64_t cache_size;
+	uint64_t logical_size;
+
+	/* Added in SMBIOS v3.7 */
+	uint16_t pmic0_manufacturer_id;
+	uint16_t pmic0_revision_number;
+	uint16_t rcd_manufacturer_id;
+	uint16_t rcd_revision_number;
 } __packed;
 
 struct memory_info {
