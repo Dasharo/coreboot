@@ -27,8 +27,24 @@ config FMDFILE
 config MAINBOARD_DIR
 	default "gigabyte/mz33-ar1"
 
+config MAINBOARD_SMBIOS_MANUFACTURER
+	default "Giga Computing"
+
 config MAINBOARD_PART_NUMBER
 	default "MZ33-AR1-000"
+
+config MAINBOARD_SMBIOS_PRODUCT_NAME
+	default "MZ33-AR1-000"
+
+config MAINBOARD_SERIAL_NUMBER
+	default "01234567890123456789AB"
+
+config MAINBOARD_VERSION
+	default "03000300"
+
+config MAINBOARD_FAMILY
+	string
+	default "Server"
 
 config PSP_EARLY_VGA_IMAGE
 	default "src/mainboard/gigabyte/mz33-ar1/early_vga.bin"
