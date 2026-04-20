@@ -296,27 +296,48 @@ void opensil_smbios_fill_cbmem_meminfo(void)
 	print_type16_info(&dmi_info->T16);
 
 	/* Loop up to CONFIG_MAX_SOCKETS only. The array me not be filled for more sockets than 1 currently */
-	for (unsigned int socket = 0; socket < MIN(CONFIG_MAX_SOCKET, SIL_MAX_SOCKETS_SUPPORTED); socket++) {
-		for (unsigned int channel = 0; channel < SIL_MAX_CHANNELS_PER_SOCKET; channel++) {
+	for (unsigned int socket = 0;
+	     socket < MIN(CONFIG_MAX_SOCKET, SIL_MAX_SOCKETS_SUPPORTED);
+	     socket++) {
+		for (unsigned int channel = 0;
+		     channel < SIL_MAX_CHANNELS_PER_SOCKET;
+		     channel++) {
 			for (unsigned int dimm = 0; dimm < SIL_MAX_DIMMS_PER_CHANNEL; dimm++) {
-				/* Skip non-present DIMMs */
-				if (dmi_info->T17[socket][channel][dimm].MemorySize == 0 ||
-				    dmi_info->T17[socket][channel][dimm].MemorySize == 0xdead)
-					continue;
-				printk(BIOS_DEBUG, "Found DIMM on Socket %u Channel %u DIMM %u\n", socket, channel, dimm);
+				if (dimm_cnt >= CONFIG_DIMM_MAX) {
+					printk(BIOS_WARNING,
+					       "%s: DIMMs info exceeds CONFIG_DIMM_MAX\n",
+					       __func__);
+					goto out;
+				}
+
+				if (dmi_info->T17[socket][channel][dimm].MemorySize == 0) {
+					if (mainboard_dimm_slot_exists(socket, channel, dimm))
+						printk(BIOS_DEBUG,
+						      "Found empty DIMM slot on Socket %u Channel %u DIMM %u\n",
+						       socket, channel, dimm);
+					else
+						continue;
+				} else {
+					printk(BIOS_DEBUG,
+					      "Found DIMM on Socket %u Channel %u DIMM %u\n",
+					       socket, channel, dimm);
+				}
+
 				print_type17_info(&dmi_info->T17[socket][channel][dimm]);
 				print_type20_info(&dmi_info->T20[socket][channel][dimm][0]);
 				dimm_info = &mem_info->dimm[dimm_cnt];
 				dimm_info->soc_num = socket;
 				dimm_info->channel_num = channel;
 				dimm_info->dimm_num = dimm;
-				transfer_memory_info(&dmi_info->T17[socket][channel][dimm], dimm_info);
+				transfer_memory_info(&dmi_info->T17[socket][channel][dimm],
+						     dimm_info);
 				print_dimm_info(dimm_info);
 				dimm_cnt++;
 			}
 		}
 	}
 
+out:
 	print_type19_info(&dmi_info->T19[0]);
 
 	mem_info->dimm_cnt = dimm_cnt;
