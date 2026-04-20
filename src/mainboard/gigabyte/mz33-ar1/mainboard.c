@@ -61,6 +61,12 @@ const struct fch_irq_routing *mb_get_fch_irq_mapping(size_t *length)
 	return fch_irq_map;
 }
 
+bool mainboard_dimm_slot_exists(uint8_t socket, uint8_t channel, uint8_t slot)
+{
+	/* All DIMM slots exist on socket 0. This is single socket platform */
+	return (socket == 0);
+}
+
 void smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17 *t)
 {
 	char locator[40];
