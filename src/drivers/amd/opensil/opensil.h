@@ -19,5 +19,7 @@ void amd_opensil_fill_fadt_io_ports(acpi_fadt_t *fadt);
 void opensil_smbios_fill_cbmem_meminfo(void);
 /* Fill DIMM locators usign OpenSIL DMI info, returns 0 on success */
 int opensil_smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17 *t);
+/* Hook for mainboard to determine if the DIMM slot exists or not */
+bool mainboard_dimm_slot_exists(uint8_t socket, uint8_t channel, uint8_t slot);
 
 #endif /* OPENSIL_DRIVER_H */
