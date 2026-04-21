@@ -12,6 +12,7 @@ usage() {
   echo -e "\tb850p                  - build Dasharo image compatible with MSI PRO B850-P WIFI"
   echo -e "\tvp66xx                 - build Dasharo for Protectli VP66xx"
   echo -e "\tvp46xx                 - build Dasharo for Protectli VP46xx"
+  echo -e "\tvp46xx_noemmc- build Dasharo for Protectli VP46xx variants without eMMC (VP46xxe, VP4651)"
   echo -e "\tvp32xx                 - build Dasharo for Protectli VP32xx"
   echo -e "\tvp2440                 - build Dasharo for Protectli VP2440"
   echo -e "\tvp2430                 - build Dasharo for Protectli VP2430"
@@ -159,20 +160,21 @@ function build_msi {
 }
 
 function build_protectli_vault {
-  DEFCONFIG="configs/config.protectli_${BOARD}"
+  EMMC_VARIANT="${1:-""}"
+  DEFCONFIG="configs/config.protectli_${BOARD}${EMMC_VARIANT}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   build_prep
 
-  echo "Building Dasharo for Protectli $BOARD (version $FW_VERSION)"
+  echo "Building Dasharo for Protectli ${BOARD}${EMMC_VARIANT} (version $FW_VERSION)"
 
   build_start
 
-  cp build/coreboot.rom protectli_${BOARD}_${FW_VERSION}.rom
+  cp build/coreboot.rom protectli_${BOARD}${EMMC_VARIANT}_${FW_VERSION}.rom
 
   if [ $? -eq 0 ]; then
-    echo "Result binary placed in $PWD/protectli_${BOARD}_${FW_VERSION}.rom"
-    sha256sum protectli_${BOARD}_${FW_VERSION}.rom > protectli_${BOARD}_${FW_VERSION}.rom.sha256
+    echo "Result binary placed in $PWD/protectli_${BOARD}${EMMC_VARIANT}_${FW_VERSION}.rom"
+    sha256sum protectli_${BOARD}${EMMC_VARIANT}_${FW_VERSION}.rom > protectli_${BOARD}${EMMC_VARIANT}_${FW_VERSION}.rom.sha256
   else
     echo "Build failed!"
     exit 1
@@ -406,6 +408,10 @@ case "$CMD" in
     "vp46xx" | "VP46XX")
         BOARD="vp46xx"
         build_protectli_vault
+        ;;
+    "vp46xx_noemmc" | "VP46XX_noemmc" | "vp46xxe" | "VP46XXe")
+        BOARD="vp46xx"
+        build_protectli_vault _no_emmc
         ;;
     "vp32xx" | "VP32XX")
         BOARD="vp32xx"
