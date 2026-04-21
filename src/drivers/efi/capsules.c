@@ -845,7 +845,7 @@ static void enable_capsule_update_path(void *unused)
 	uint8_t retries_left = 10;
 	while (1) {
 		ret = call_smm(APM_CNT_SMMSTORE, SMMSTORE_CMD_USE_FULL_FLASH,
-			       (void *)(uintptr_t)&full_flash_access);
+			       (void *)(uintptr_t)full_flash_access);
 		if (ret == SMMSTORE_RET_SUCCESS)
 			break;
 
