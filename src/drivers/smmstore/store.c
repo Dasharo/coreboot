@@ -55,7 +55,7 @@ int smmstore_preprocess_cmd(uint8_t *cmd, void *param)
 {
 	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES)) {
 		if (has_capsules == -1 && *cmd == SMMSTORE_CMD_USE_FULL_FLASH) {
-			has_capsules = *(bool *)param ? 1 : 0;
+			has_capsules = !!(uintptr_t)param;
 			/*
 			 * If we have capsules, return success, otherwise let smmstore_exec()
 			 * fail on !param check, which will be 0 in that case. This informs
@@ -64,10 +64,10 @@ int smmstore_preprocess_cmd(uint8_t *cmd, void *param)
 			return has_capsules;
 		} else if (has_capsules == 1 && *cmd & SMMSTORE_CMD_USE_FULL_FLASH) {
 			smmstore_use_full_flash = 1;
-			*cmd &= ~SMMSTORE_CMD_USE_FULL_FLASH;
 		} else {
 			smmstore_use_full_flash = 0;
 		}
+		*cmd &= ~SMMSTORE_CMD_USE_FULL_FLASH;
 	}
 
 	return 0;
