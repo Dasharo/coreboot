@@ -11,6 +11,7 @@
 #include <intelblocks/cse.h>
 #include <superio/ite/it8613e/it8613e.h>
 #include <smbios.h>
+#include <static.h>
 #include <string.h>
 
 #define ITE_GPIO_PIN(x)		(1 << ((x) % 10))
@@ -58,6 +59,15 @@ static void mainboard_enable(struct device *dev)
 #if CONFIG(GENERATE_SMBIOS_TABLES)
 	dev->ops->get_smbios_data = mainboard_smbios_data;
 #endif
+	/*
+	 * Disable USB wake capability if we do not apply power for USB ports
+	 * in sleep states to avoid instant wake up/power on when USB port
+	 * power is cut-off in SMI handler.
+	 */
+	if (dasharo_get_usb_port_power() != USB_PORT_ALWAYS_ON) {
+		config->usb2_wake_enable_bitmap = 0;
+		config->usb3_wake_enable_bitmap = 0;
+	}
 }
 
 static void mainboard_final(void *unused)

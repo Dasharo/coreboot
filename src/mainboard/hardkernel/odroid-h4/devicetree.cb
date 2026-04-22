@@ -68,6 +68,9 @@ chip soc/intel/alderlake
 				[1] = USB3_PORT_DEFAULT(OC_SKIP),	// USB3_LAN1 Top
 			}"
 
+			register "usb2_wake_enable_bitmap" = "0x53"
+			register "usb3_wake_enable_bitmap" = "0x3"
+
 			chip drivers/usb/acpi
 				device ref xhci_root_hub on
 					chip drivers/usb/acpi
