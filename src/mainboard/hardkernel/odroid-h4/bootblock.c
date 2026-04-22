@@ -22,9 +22,20 @@ static void ite_set_gpio_iobase(u16 iobase)
 	pnp_exit_conf_state(GPIO_DEV);
 }
 
+static void ite_reset_hw_cfg(void)
+{
+	ite_reg_write(GPIO_DEV, 0x02, 0x01);
+}
+
 void bootblock_mainboard_early_init(void)
 {
 	/* Set up Super I/O GPIOs, some values are dumped from vendor firmware */
+
+	/*
+	 * Do a full reset of Super I/O config.
+	 * Some registers maintain values after resets.
+	 */
+	ite_reset_hw_cfg();
 
 	/* Internal VCC_OK */
 	ite_reg_write(GPIO_DEV, 0x23, 0x40);
@@ -53,9 +64,13 @@ void bootblock_mainboard_early_init(void)
 		       ITE_GPIO_OUTPUT, ITE_GPIO_SIMPLE_IO_MODE, ITE_GPIO_CONTROL_DEFAULT);
 
 	ite_set_gpio_iobase(ITE_GPIO_BASE);
-	/* GP21 and GP23 to low to enable USB ports VBUS */
-	outb(inb(ITE_GPIO_IO_ADDR(21)) & ~ITE_GPIO_PIN(21), ITE_GPIO_IO_ADDR(21));
-	outb(inb(ITE_GPIO_IO_ADDR(23)) & ~ITE_GPIO_PIN(23), ITE_GPIO_IO_ADDR(23));
+	/*
+	 * GP21 and GP23 to low to disable USB ports VBUS and let the USB devices reset.
+	 * The interval between ite_reset_hw_cfg and GPIO programming is too short.
+	 * Thus we re-apply the power later in mainboard_final.
+	 */
+	outb(inb(ITE_GPIO_IO_ADDR(21)) | ITE_GPIO_PIN(21), ITE_GPIO_IO_ADDR(21));
+	outb(inb(ITE_GPIO_IO_ADDR(23)) | ITE_GPIO_PIN(23), ITE_GPIO_IO_ADDR(23));
 
 	ite_delay_pwrgd3(GPIO_DEV);
 
