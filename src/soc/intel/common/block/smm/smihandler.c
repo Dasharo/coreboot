@@ -78,6 +78,11 @@ __weak void mainboard_smi_espi_handler(void)
 #define SMMSTORE_SYNC_SMI_SETTLE_USEC 50
 #define SMMSTORE_SYNC_SMI_CLEAR_TRIES 8
 
+__weak void mainboard_smi_pm1_handler(uint16_t pm1_sts, uint16_t pm1_en)
+{
+	/* no-op */
+}
+
 static void smmstore_drain_sync_smi(void)
 {
 	int i;
@@ -469,6 +474,8 @@ void smihandler_southbridge_pm1(
 {
 	uint16_t pm1_sts = pmc_clear_pm1_status();
 	u16 pm1_en = pmc_read_pm1_enable();
+
+	mainboard_smi_pm1_handler(pm1_sts, pm1_en);
 
 	/*
 	 * While OSPM is not active, poweroff immediately
