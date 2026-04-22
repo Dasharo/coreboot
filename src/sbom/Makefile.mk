@@ -78,6 +78,17 @@ payload-swid          := $(build-dir)/payload-edk2.json
 payload-swid-template := $(src-dir)/payload-edk2.json
 endif
 
+# Keep standalone "make sbom" rebuilds read-only with respect to payloads:
+# use already checked-out repositories for version extraction and avoid
+# re-triggering payload fetch/build targets (especially with `make -B sbom`).
+ifeq ($(filter sbom,$(MAKECMDGOALS)),sbom)
+payload-swid-ready-dep := $(if $(wildcard $(payload-git-dir-y)/.git),$(payload-git-dir-y)/.git,)
+ipxe-swid-ready-dep := $(if $(wildcard payloads/external/iPXE/ipxe/.git),payloads/external/iPXE/ipxe/.git,)
+else
+payload-swid-ready-dep := $(CONFIG_PAYLOAD_FILE)
+ipxe-swid-ready-dep := payloads/external/iPXE/ipxe/ipxe.rom
+endif
+
 # Add all SBOM files into the swid-files-y target. This target contains all
 # .json, .ini, .uswid, .xml, .pc SBOM files that are later merged into one uSWID SBOM file.
 # Some of these have an option that this Makefile generates/extracts some information from
@@ -372,18 +383,18 @@ $(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitd
 
 ipxe-gitdir := $(shell git -C payloads/external/iPXE/ipxe rev-parse --absolute-git-dir 2>/dev/null)
 
-$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir),$(ipxe-gitdir)/HEAD,) | $(build-dir)
+$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir),$(ipxe-gitdir)/HEAD,) | $(build-dir) $(ipxe-swid-ready-dep)
 	cp $< $@
+	set -e; \
 	git_tree_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%T); \
 	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
 
-# Order-only dep on the .git dir ensures the payload is cloned before we try
-# to read it.  We do NOT depend on the payload binary ($(CONFIG_PAYLOAD_FILE))
-# because: (a) the recipe never reads the binary, only .git; (b) with make -B
-# an order-only dep on the binary would still force a full payload rebuild.
-$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-git-dir-y)/.git
+# Build payload SBOM metadata only after the payload is ready in regular builds.
+# For standalone `make sbom`, use an existing checkout only.
+$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-swid-ready-dep)
 	cp $< $@;\
+	set -e; \
 	git_tree_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%T);\
 	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%H);\
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;
