@@ -144,6 +144,9 @@ void mainboard_smi_gpi_handler(const struct gpi_status *sts);
 /* Mainboard handler for ESPI EMIs */
 void mainboard_smi_espi_handler(void);
 
+/* Mainboard handler for PM1 SMIs */
+void mainboard_smi_pm1_handler(uint16_t pm1_sts, uint16_t pm1_en);
+
 extern const struct smm_save_state_ops em64t100_smm_ops;
 
 extern const struct smm_save_state_ops em64t101_smm_ops;

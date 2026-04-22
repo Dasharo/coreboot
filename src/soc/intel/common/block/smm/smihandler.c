@@ -64,6 +64,11 @@ __weak void mainboard_smi_espi_handler(void)
 	/* no-op */
 }
 
+__weak void mainboard_smi_pm1_handler(uint16_t pm1_sts, uint16_t pm1_en)
+{
+	/* no-op */
+}
+
 /* Common Functions */
 
 static void *find_save_state(const struct smm_save_state_ops *save_state_ops,
@@ -415,6 +420,8 @@ void smihandler_southbridge_pm1(
 {
 	uint16_t pm1_sts = pmc_clear_pm1_status();
 	u16 pm1_en = pmc_read_pm1_enable();
+
+	mainboard_smi_pm1_handler(pm1_sts, pm1_en);
 
 	/*
 	 * While OSPM is not active, poweroff immediately
