@@ -104,7 +104,7 @@ chip soc/amd/turin_poc
 					chip superio/nuvoton/nct6796d
 						device pnp 2e.2 on	# UART A
 							io 0x60 = 0x3e8
-							irq 0x70 = 4
+							irq 0x70 = 11
 						end
 					end
 				end
