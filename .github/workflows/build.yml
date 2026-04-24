@@ -18,13 +18,13 @@ jobs:
         model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl, v540tu, v560tu, v540tnx, v560tnx ]
     steps:
     - name: Checkout EC
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: Dasharo/ec
     - name: Build EC
       run: EC_BOARD_VENDOR=${{ matrix.vendor }} EC_BOARD_MODEL=${{ matrix.model }} ./build.sh
     - name: Save artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-ec"
         path: |
@@ -39,7 +39,7 @@ jobs:
         model: [ nv4x_adl, ns5x_adl, nv4x_tgl, ns5x_tgl, v540tu, v560tu, v540tnx, v560tnx ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -49,11 +49,11 @@ jobs:
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Obtain EC
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-ec"
       - name: Obtain blobs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Dasharo/novacustom-blobs
           ref: 480afdc3d15bb9ec5b72b100581badea11e779f8
@@ -71,7 +71,7 @@ jobs:
         run: |
           ./capsule.sh make -t keys/TestRoot.pub.pem -o keys/TestSub.pub.pem -s keys/TestCert.pem -b
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -86,7 +86,7 @@ jobs:
         model: [ nuc_box ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -96,7 +96,7 @@ jobs:
       - name: Checkout all submodules
         run: git submodule update --init --recursive --checkout
       - name: Obtain blobs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Dasharo/novacustom-blobs
           ref: 480afdc3d15bb9ec5b72b100581badea11e779f8
@@ -113,7 +113,7 @@ jobs:
         run: |
           ./capsule.sh make -t keys/TestRoot.pub.pem -o keys/TestSub.pub.pem -s keys/TestCert.pem -b
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -128,7 +128,7 @@ jobs:
         model: [ optiplex_9010_sff, optiplex_9010_sff_uefi ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -141,7 +141,7 @@ jobs:
         run: |
           ./build.sh ${{ matrix.model }}
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -155,7 +155,7 @@ jobs:
         model: [ ms7d25_ddr4, ms7d25_ddr5, ms7e06_ddr4, ms7e06_ddr5 ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -173,7 +173,7 @@ jobs:
                             -s "$pkcs7sign"/TestCert.pem
           mv *.cap build/coreboot.cap
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -188,7 +188,7 @@ jobs:
         model: [ vp66xx, vp46xx, vp32xx, vp2440, vp2430, vp2420, vp2410, V1210, V1211, V1410, V1610 ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -208,7 +208,7 @@ jobs:
             mv *.cap build/coreboot.cap
           fi
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -224,7 +224,7 @@ jobs:
         payload: [ uefi ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -237,7 +237,7 @@ jobs:
         run: |
           ./build.sh ${{ matrix.model }}
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
           path: |
@@ -252,7 +252,7 @@ jobs:
         payload: [ uefi, uefi_all_menus ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -263,7 +263,7 @@ jobs:
         run: |
           ./build.sh ${{ matrix.model }}_${{ matrix.payload }}
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}-${{ matrix.payload }}"
           path: |
@@ -287,7 +287,7 @@ jobs:
         model: [ odroid_h4, odroid_h4_netcard ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -305,7 +305,7 @@ jobs:
                             -s "$pkcs7sign"/TestCert.pem
           mv *.cap build/coreboot.cap
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
@@ -319,7 +319,7 @@ jobs:
         model: [ spc741d8 ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Checkout pull request HEAD commit instead of merge commit
           # See: https://github.com/actions/checkout#checkout-pull-request-head-commit-instead-of-merge-commit
@@ -332,7 +332,7 @@ jobs:
         run: |
           ./build.sh ${{ matrix.vendor }}_${{ matrix.model }}
       - name: Save artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: "dasharo-${{ matrix.vendor }}-${{ matrix.model }}"
           path: |
