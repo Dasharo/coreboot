@@ -1746,6 +1746,7 @@ typedef struct {
   UINT16    LrDimm          :1;
 } MEMORY_DEVICE_TYPE_DETAIL;
 
+#if !CONFIG(DISPLAY_FSP_VERSION_INFO_2)
 ///
 /// Memory Device - Memory Technology
 ///
@@ -1762,6 +1763,7 @@ typedef enum {
   //
   MemoryTechnologyIntelPersistentMemory     = 0x07
 } MEMORY_DEVICE_TECHNOLOGY;
+#endif
 
 ///
 /// Memory Device - Memory Operating Mode Capability
