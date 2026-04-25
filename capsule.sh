@@ -46,6 +46,11 @@ function print_usage() {
     echo '                 -o subroot-certificate-file'
     echo '                 -s signing-certificate-file'
     echo '                 -b (the flag adds battery check DXE into the capsule)'
+    echo '  resign         resign an existing capsule with a different key'
+    echo '                 -t root-certificate-file'
+    echo '                 -o subroot-certificate-file'
+    echo '                 -s signing-certificate-file'
+    echo '                 positional arguments: input-capsule output-capsule'
     echo '  create_cabinet create a fwupd cabinet (.cab) from a capsule'
     echo '                 positional argument: capsule-file'
     echo '  upload_lvfs    upload a cabinet (.cab) to LVFS, options'
@@ -383,6 +388,104 @@ function assert_command_exists() {
     fi
 }
 
+function decode_capsule() {
+    local tmp_dir=$1
+    local capsule=$2
+    local -n result=$3
+
+    "${edk_tools}/GenerateCapsule" --decode "$capsule" \
+                                   --output "$tmp_dir/decoded"
+
+    local json_file="$tmp_dir/decoded.json"
+    result["fw_version"]=$(jq -r '.Payloads[0].FwVersion' "$json_file")
+    result["guid"]=$(jq -r '.Payloads[0].Guid' "$json_file")
+    result["lowest_supported_version"]=$(jq -r '.Payloads[0].LowestSupportedVersion' "$json_file")
+    result["payload"]=$(jq -r '.Payloads[0].Payload' "$json_file")
+
+    local drivers
+    drivers=$(ls -v "$tmp_dir"/decoded.EmbeddedDriver* 2>/dev/null | while read -r f; do
+        printf '    { "Driver": "%s" },\n' "$f"
+    done | sed '$s/,$//')
+    result["drivers"]="$drivers"
+}
+
+function encode_capsule() {
+    local tmp_dir=$1
+    local cap_out=$2
+    local -n json_data=$3
+
+    cat > "$tmp_dir/cap.json" <<EOF
+{
+  "EmbeddedDrivers": [
+${json_data["drivers"]}
+  ],
+  "Payloads": [
+    {
+      "Payload": "${json_data["payload"]}",
+      "Guid": "${json_data["guid"]}",
+      "FwVersion": "${json_data["fw_version"]}",
+      "LowestSupportedVersion": "${json_data["lowest_supported_version"]}",
+      "OpenSslSignerPrivateCertFile": "${json_data["sign_cert"]}",
+      "OpenSslOtherPublicCertFile": "${json_data["sub_cert"]}",
+      "OpenSslTrustedPublicCertFile": "${json_data["root_cert"]}"
+    }
+  ]
+}
+EOF
+
+    "${edk_tools}/GenerateCapsule" --encode \
+                                   --capflag PersistAcrossReset \
+                                   --json-file "$tmp_dir/cap.json" \
+                                   --output "$cap_out"
+}
+
+function resign_subcommand() {
+    if [ ! -x "${edk_tools}/GenerateCapsule" ]; then
+        die "'${edk_tools}/GenerateCapsule' can't be executed"
+    fi
+
+    local root_cert sub_cert sign_cert
+    OPTIND=1
+    while getopts "t:o:s:" OPTION; do
+        case $OPTION in
+            t) root_cert="$OPTARG" ;;
+            o) sub_cert="$OPTARG" ;;
+            s) sign_cert="$OPTARG" ;;
+            *) exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    if [ $# -ne 2 ]; then
+        die "Incorrect number of positional parameters: $# (expected: 2)"
+    fi
+
+    local in_capsule=$1
+    local out_capsule=$2
+
+    assert_file_exists "$in_capsule"
+    assert_file_is_a_capsule "$in_capsule"
+    if [ -e "$out_capsule" ]; then
+        confirm "Overwrite already existing '$out_capsule'?"
+    fi
+    assert_command_exists jq
+
+    local tmp_dir
+    tmp_dir=$(mktemp --tmpdir --directory --suffix -cap XXXXXXXX)
+    trap "$(printf 'rm -r -- %q' "$tmp_dir")" EXIT
+
+    check_cert root "$root_cert"
+    check_cert sub "$sub_cert"
+    check_cert sign "$sign_cert"
+
+    local -A metadata
+    decode_capsule "$tmp_dir" "$in_capsule" metadata
+    metadata[sign_cert]=$sign_cert
+    metadata[sub_cert]=$sub_cert
+    metadata[root_cert]=$root_cert
+    encode_capsule "$tmp_dir" "$out_capsule" metadata
+}
+
 function create_cabinet_subcommand() {
     if [ $# -ne 1 ]; then
         die "Incorrect number of input parameters specified: $# (expected: 1)"
@@ -636,7 +739,7 @@ subcommand=$1
 shift
 
 case "$subcommand" in
-    box|help|keygen|make|create_cabinet|upload_lvfs)
+    box|help|keygen|make|resign|create_cabinet|upload_lvfs)
         "$subcommand"_subcommand "$@" ;;
 
     *)
