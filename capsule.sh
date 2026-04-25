@@ -364,6 +364,31 @@ EOF
     echo "Created the capsule at '$cap_file'"
 }
 
+function assert_file_exists() {
+    local path=$1
+
+    if [ ! -f "$path" ]; then
+        die "File '$path' not found"
+    fi
+}
+
+function assert_file_is_a_capsule() {
+    local path=$1
+
+    local fmp_guid_bytes_hex=edd5cb6d2de8444cbda17194199ad92a
+    if [ "$(xxd -l 16 -ps "$path")" != "$fmp_guid_bytes_hex" ]; then
+        die "'$path' is not an FMP capsule file"
+    fi
+}
+
+function assert_command_exists() {
+    local cmd=$1
+
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        die "'$cmd' not found in PATH"
+    fi
+}
+
 function create_cabinet_subcommand() {
     if [ $# -ne 1 ]; then
         die "Incorrect number of input parameters specified: $# (expected: 1)"
@@ -376,18 +401,9 @@ function create_cabinet_subcommand() {
         die "No input capsule specified"
     fi
 
-    if [ ! -f "$capsule" ]; then
-        die "File $capsule not found"
-    fi
-
-    if ! command -v fwupdtool >/dev/null 2>&1; then
-        die "fwupdtool not found in PATH"
-    fi
-
-    local fmp_guid_bytes_hex=edd5cb6d2de8444cbda17194199ad92a
-    if [ "$(xxd -l 16 -ps "$capsule")" != "$fmp_guid_bytes_hex" ]; then
-        die "'$capsule' is not an FMP capsule file"
-    fi
+    assert_file_exists "$capsule"
+    assert_file_is_a_capsule "$capsule"
+    assert_command_exists fwupdtool
 
     source_coreboot_config
     require_capsule_support
@@ -577,9 +593,7 @@ function upload_lvfs_subcommand() {
         cabinet="$1"
     fi
 
-    if [ ! -f "$cabinet" ]; then
-        die "File '$cabinet' not found"
-    fi
+    assert_file_exists "$cabinet"
 
     if [ -z "$email" ]; then
         die "LVFS email is not set. Put LVFS_EMAIL into '$creds_file' or pass -e"
@@ -588,9 +602,7 @@ function upload_lvfs_subcommand() {
         die "LVFS token is not set. Put LVFS_TOKEN into '$creds_file' or pass -t"
     fi
 
-    if ! command -v curl >/dev/null 2>&1; then
-        die "curl not found in PATH"
-    fi
+    assert_command_exists curl
 
     url="${base_url%/}/lvfs/upload/token"
 
