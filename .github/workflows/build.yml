@@ -215,6 +215,26 @@ jobs:
             build/coreboot.rom
             build/coreboot.cap
           retention-days: 30
+  flash_protectli_vp66xx:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dasharo-25.12'
+    needs: build_protectli
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          path: src
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: dasharo-protectli-vp66xx
+          path: artifact
+      - name: Flash via SnipeIT-managed RTE
+        env:
+          SNIPEIT_IP: ${{ secrets.SNIPEIT_IP }}
+          SNIPEIT_API_KEY: ${{ secrets.SNIPEIT_API_KEY }}
+          SNIPEIT_UID: ${{ secrets.SNIPEIT_UID }}
+        run: python3 src/.github/scripts/flash_via_snipeit.py artifact/coreboot.rom "VP66xx"
   build_pcengines:
     runs-on: ubuntu-24.04
     strategy:
