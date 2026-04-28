@@ -40,6 +40,9 @@ static void stoneyridge_fch_apmc_smi_handler(void)
 		if (CONFIG(SMMSTORE))
 			handle_smi_store();
 		break;
+	case APM_CNT_TPM_PPI:
+		handle_smi_tpm_ppi();
+		break;
 	}
 
 	mainboard_smi_apmc(cmd);

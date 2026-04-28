@@ -7,6 +7,7 @@
 #include <arch/io.h>
 #include <cpu/amd/amd64_save_state.h>
 #include <cpu/x86/smm.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <elog.h>
 #include <smmstore.h>
 #include <types.h>
@@ -110,6 +111,23 @@ static void handle_smi_rom_armor(void)
 	io_smi->rax = rom_armor_exec(sub_command, (void *)(uintptr_t)reg_ebx);
 }
 
+static void handle_smi_tpm_ppi(void)
+{
+	amd64_smm_state_save_area_t *io_smi;
+	u32 reg_ebx;
+
+	io_smi = find_save_state(APM_CNT_TPM_PPI);
+	if (!io_smi)
+		return;
+
+	/* Parameter buffer in EBX */
+	reg_ebx = io_smi->rbx;
+
+	/* drivers/tpm/ppi_smm.c  */
+	tpm_ppi_process_request_smm(reg_ebx);
+	io_smi->rax = 0;
+}
+
 __weak void soc_apmc_finalize(void) {}
 
 void fch_apmc_smi_handler(void)
@@ -138,6 +156,10 @@ void fch_apmc_smi_handler(void)
 	break;
 	case APM_CNT_SMMINFO:
 		psp_notify_smm();
+		break;
+	case APM_CNT_TPM_PPI:
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			handle_smi_tpm_ppi();
 		break;
 	case APM_CNT_FINALIZE:
 		soc_apmc_finalize();
