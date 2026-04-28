@@ -126,6 +126,7 @@ int smmstore_rawclear_region(uint32_t block_id);
 int smmstore_get_info(struct smmstore_params_info *info);
 #endif
 struct region_device;
+void smmstore_lookup_region_reinit(void);
 int smmstore_lookup_region(struct region_device *rstore);
 /* Returns 0 if normal parsing should continue, 1 otherwise */
 int smmstore_preprocess_cmd(uint8_t *cmd, void *param);
