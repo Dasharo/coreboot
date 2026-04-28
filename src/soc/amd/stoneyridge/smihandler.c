@@ -11,6 +11,7 @@
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <cpu/x86/smm.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <elog.h>
 #include <soc/smi.h>
 #include <soc/southbridge.h>
@@ -39,6 +40,10 @@ static void stoneyridge_fch_apmc_smi_handler(void)
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
 			handle_smi_store();
+		break;
+	case APM_CNT_TPM_PPI:
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			handle_smi_tpm_ppi();
 		break;
 	}
 
