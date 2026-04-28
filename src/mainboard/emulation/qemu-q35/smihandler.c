@@ -4,6 +4,7 @@
 #include <cpu/x86/legacy_save_state.h>
 #include <cpu/x86/save_state.h>
 #include <cpu/x86/smm.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <elog.h>
 #include <smmstore.h>
 #include <southbridge/intel/common/pmbase.h>
@@ -282,6 +283,26 @@ static void mainboard_smi_store(void)
 	set_save_state_reg(RAX, node, &ret, sizeof(ret));
 }
 
+static void handle_smi_tpm_ppi(void)
+{
+	u32 ret;
+	uintptr_t reg_rbx;
+	int node = get_apmc_node(APM_CNT_TPM_PPI);
+
+	if (node < 0)
+		return;
+
+	/* Parameter buffer in EBX */
+	if (get_save_state_reg(RBX, node, &reg_rbx, sizeof(reg_rbx)))
+		return;
+
+	/* drivers/tpm/ppi_smm.c */
+	tpm_ppi_process_request_smm(reg_rbx);
+	ret = 0;
+
+	set_save_state_reg(RAX, node, &ret, sizeof(ret));
+}
+
 static int mainboard_finalized = 0;
 
 void cpu_smi_handler(void)
@@ -312,6 +333,10 @@ void cpu_smi_handler(void)
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
 			mainboard_smi_store();
+		break;
+	case APM_CNT_TPM_PPI:
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			handle_smi_tpm_ppi();
 		break;
 	}
 }
