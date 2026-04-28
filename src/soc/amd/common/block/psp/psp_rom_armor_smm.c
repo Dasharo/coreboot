@@ -5,6 +5,7 @@
 #include <boot_device.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
+#include <smmstore.h>
 #include <spi_flash.h>
 #include <spi-generic.h>
 #include <stdint.h>
@@ -320,6 +321,9 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 		 * Once ROM Armor is enforced, it cannot be deactivated until reset.
 		 */
 		rom_armor_enforced = true;
+
+		if (CONFIG(SMMSTORE))
+			smmstore_lookup_region_reinit();
 
 		printk(BIOS_INFO, "%s: Initialized with flash size 0x%zx\n", __func__, flash_size);
 		if (region_device_sz(&rom_armor_smm_rw) != flash_size) {
