@@ -14,6 +14,15 @@ static inline void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 }
 #endif
 
+#define TPM_PPI_GET_PHYSICAL_PRESENCE_INTERFACE_VERSION		1
+#define TPM_PPI_SUBMIT_REQUEST_TO_BIOS				2
+#define TPM_PPI_GET_PENDING_REQUEST_BY_OS			3
+#define TPM_PPI_GET_PLATFORM_ACTION_TO_TRANSITION_TO_BIOS	4
+#define TPM_PPI_RETURN_REQUEST_RESPONSE_TO_OS			5
+#define TPM_PPI_SUBMIT_PREFERRED_USER_LANGUAGE			6
+#define TPM_PPI_SUBMIT_REQUEST_TO_BIOS_2			7
+#define TPM_PPI_GET_USER_CONFIRMATION_STATUS_FOR_REQUEST	8
+
 /* Return codes */
 /* Function 2 */
 #define PPI2_RET_SUCCESS 0
@@ -71,6 +80,7 @@ static inline void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 #define TPM_SETOWNERINSTALL_FALSE 9
 #define TPM_ENABLE_ACTIVATE_SETOWNERINSTALL_TRUE 10
 #define TPM_SETOWNERINSTALL_FALSE_DEACTIVATE_DISABLE 11
+#define TPM_DEFERRED_PP_UNOWNERED_FIELD_UPGRADE 12
 #define TPM_CLEAR_ENABLE_ACTIVATE 14
 #define TPM_SET_NOPPIPROVISION_FALSE 15
 #define TPM_SET_NOPPIPROVISION_TRUE 16
@@ -80,6 +90,12 @@ static inline void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 #define TPM_SET_NOPPIMAINTAINANCE_TRUE 20
 #define TPM_ENABLE_ACTIVE_CLEAR 21
 #define TPM_ENABLE_ACTIVE_CLEAR_ENABLE_ACTIVE 22
+
+/* The definition bit of the BIOS TPM Management Flags */
+#define TCG_FLAG_NO_PPI_PROVISION		(1 << 0)
+#define TCG_FLAG_NO_PPI_CLEAR		(1 << 1)
+#define TCG_FLAG_NO_PPI_MAINTENANCE		(1 << 2)
+#define TCG_VENDOR_LIB_FLAG_RESET_TRACK				(1 << 3)
 
 /*
  * Physical Presence Interface Specification Version 1.30 Revision 00.52
@@ -115,6 +131,19 @@ static inline void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 
 #define VENDOR_SPECIFIC_OFFSET 0x80
 
+/* UEFI TCG2 library definition bit of the BIOS TPM Management Flags */
+#define TCG2_FLAG_PP_REQUIRED_FOR_CLEAR			(1 << 1)
+#define TCG2_LIB_PP_FLAG_RESET_TRACK			(1 << 3)
+#define TCG2_FLAG_PP_REQUIRED_FOR_TURN_ON		(1 << 4)
+#define TCG2_FLAG_PP_REQUIRED_FOR_TURN_OFF		(1 << 5)
+#define TCG2_FLAG_PP_REQUIRED_FOR_CHANGE_EPS		(1 << 6)
+#define TCG2_FLAG_PP_REQUIRED_FOR_CHANGE_PCRS		(1 << 7)
+#define TCG2_FLAG_HIERARCHY_CONTROL_STORAGE_DISABLE	(1 << 8)
+#define TCG2_FLAG_HIERARCHY_CONTROL_ENDORSEMENT_DISABLE	(1 << 9)
+#define TCG2_FLAG_PP_REQUIRED_FOR_ENABLE_BLOCK_SID	(1 << 16)
+#define TCG2_FLAG_PP_REQUIRED_FOR_DISABLE_BLOCK_SID	(1 << 17)
+#define TCG2_FLAG_ENABLE_BLOCK_SID			(1 << 18)
+
  /*
   * The layout of the buffer matches the QEMU virtual memory device that is generated
   * by QEMU. See files 'hw/i386/acpi-build.c' and 'include/hw/acpi/tpm.h' for details.
@@ -136,11 +165,22 @@ struct cb_tpm_ppi_payload_handshake {
 	uint32_t lppr;		/* Last executed operation request number.
 				 * Copied from pprq field by firmware. */
 	uint32_t fret;		/* Result code from SMM function. Not supported. */
-	uint8_t res1[0x040];	/* Reserved */
+	uint8_t  mcin;		/* Software SMI for Memory Clear Interface. Not supported. */
+	uint32_t mcip;		/* Used for save the Mor parameter. Not supported. */
+	uint32_t mord;		/* Memory Overwrite Request Data. Not supported. */
+	uint32_t mret;		/* Memory Overwrite function return code. Not supported. */
+	uint32_t ucrq;		/* Physical Presence request operation to Get User Confirmation Status */
+	uint8_t res1[0x02f];	/* Reserved */
 	uint8_t next_step;	/* Operation to execute after reboot by firmware.
 				 * Used by firmware. */
 } __packed;
 
 void lb_tpm_ppi(struct lb_header *header);
+
+#if CONFIG(TPM_PPI_UEFIVAR_BACKED)
+void tpm_ppi_process_request_smm(uint32_t ppi_address);
+#else
+static inline void tpm_ppi_process_request_smm(uint32_t ppi_address) { }
+#endif
 
 #endif /* _TPM_PPI_H_ */
