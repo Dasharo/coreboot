@@ -9,6 +9,7 @@
 void *get_smi_source_handler(int source);
 void handle_smi_gsmi(void);
 void handle_smi_store(void);
+void handle_smi_tpm_ppi(void);
 void fch_apmc_smi_handler(void);
 void fch_power_button_handler(void);
 void fch_slp_typ_handler(void);
