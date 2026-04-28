@@ -19,6 +19,7 @@
 #include <cpu/amd/microcode.h>
 #include <cpu/cpu.h>
 #include <cpu/x86/smm.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <soc/aoac_defs.h>
 #include <soc/iomap.h>
@@ -258,6 +259,7 @@ static void configure_fch_acpi(void)
 	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilId_FchHwAcpiP, 0);
 	FCHCLASS_INPUT_BLK *fch_data = SilFindStructure(SilId_FchClass, 0);
 	struct device *smb = DEV_PTR(smbus);
+	uint8_t pwr_fail_state = dasharo_get_power_on_after_fail();
 
 	fch_data->Smbus.SmbusSsid = smb->subsystem_vendor |
 				    ((uint32_t)smb->subsystem_device << 16);
@@ -278,8 +280,12 @@ static void configure_fch_acpi(void)
 	/* Servers usually don't have KBC on SIO */
 	fch_data->Misc.NoneSioKbcSupport = true;
 
-	fch_hwacpi_data->PwrFailShadow = (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 2) ?
-						3 : CONFIG_MAINBOARD_POWER_FAILURE_STATE;
+	if (pwr_fail_state == 2)
+		fch_hwacpi_data->PwrFailShadow = UsePrevious;
+	else if (pwr_fail_state == 1)
+		fch_hwacpi_data->PwrFailShadow = AlwaysOn;
+	else
+		fch_hwacpi_data->PwrFailShadow = AlwaysOff;
 
 	fch_data->FchRunTime.FchDeviceEnableMap = (1 << FCH_AOAC_DEV_AMBA) |
 						  (1 << FCH_AOAC_DEV_ESPI);
