@@ -10,6 +10,7 @@
 #include <soc/smi.h>
 #include <arch/io.h>
 #include <cpu/x86/smm.h>
+#include <drivers/tpm/tpm_ppi.h>
 
 static void fch_apmc_smi_handler_no_psp(void)
 {
@@ -26,6 +27,10 @@ static void fch_apmc_smi_handler_no_psp(void)
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
 			handle_smi_store();
+		break;
+	case APM_CNT_TPM_PPI:
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			handle_smi_tpm_ppi();
 		break;
 	}
 
