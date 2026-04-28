@@ -3,6 +3,7 @@
 #include <amdblocks/psp.h>
 #include <bootstate.h>
 #include <cpu/x86/smm.h>
+#include <smmstore.h>
 #include <smm_call.h>
 #include "psp_rom_armor_apmc.h"
 
@@ -118,6 +119,7 @@ void psp_rom_armor_init(bool allow_capsule_update)
 	struct rom_armor_params_init params = {
 		.capsule_update = allow_capsule_update,
 	};
+
 	ret = call_smm(APM_CNT_ROM_ARMOR, ROM_ARMOR_APM_CMD_INIT, &params);
 	if (ret != ROM_ARMOR_RET_SUCCESS)
 		printk(BIOS_EMERG, "Failed to initialize ROM Armor. ret=%u\n", ret);
@@ -126,6 +128,9 @@ void psp_rom_armor_init(bool allow_capsule_update)
 
 	if (rom_armor_enforced)
 		printk(BIOS_INFO, "AMD ROM Armor initialized\n");
+
+	if (CONFIG(SMMSTORE))
+		smmstore_lookup_region_reinit();
 }
 
 static void rom_armor_finalize(void *unused)
