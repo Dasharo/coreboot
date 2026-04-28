@@ -9,6 +9,7 @@
 #include <cpu/x86/mp.h>
 #include <cpu/x86/mtrr.h>
 #include <cpu/x86/smm.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <drivers/efi/capsules.h>
 #include <types.h>
@@ -17,6 +18,7 @@ void mp_init_cpus(struct bus *cpu_bus)
 {
 	uintptr_t capsules_base;
 	size_t capsules_size;
+	bool smm_bwp_enabled = is_smm_bwp_permitted();
 
 	extern const struct mp_ops amd_mp_ops_with_smm;
 	if (mp_init_with_smm(cpu_bus, &amd_mp_ops_with_smm) != CB_SUCCESS)
@@ -38,7 +40,7 @@ void mp_init_cpus(struct bus *cpu_bus)
 		}
 	}
 
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3)) {
+	if (smm_bwp_enabled && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3)) {
 		efi_parse_capsules(&capsules_base, &capsules_size);
 		psp_rom_armor_init(get_boot_mode() == LB_BOOT_MODE_FLASH_UPDATE);
 	}
@@ -47,7 +49,7 @@ void mp_init_cpus(struct bus *cpu_bus)
 		apm_control(APM_CNT_SMMINFO);
 
 	/* For ROM Armor 1, enabling SMM-only mode must happen after SMM_INFO */
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
+	if (smm_bwp_enabled && CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1)) {
 		/* Parse EFI capsules */
 		efi_parse_capsules(&capsules_base, &capsules_size);
 		psp_rom_armor_init(capsules_base && capsules_size);
