@@ -3,9 +3,11 @@
 #include <types.h>
 #include <acpi/acpigen.h>
 #include <acpi/acpi_device.h>
+#include <cpu/x86/smm.h>
 #include <cbmem.h>
 #include <console/console.h>
 #include <security/tpm/tss.h>
+#include <smm_call.h>
 
 #include "tpm_ppi.h"
 
@@ -153,7 +155,14 @@ static void tpm_ppi_func2_cb(void *arg)
 	acpigen_write_store_op_to_namestr(ZERO_OP, "^OARG");
 	acpigen_write_store_op_to_namestr(ZERO_OP, "^USER");
 
-	acpigen_write_return_integer(PPI2_RET_SUCCESS);
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		acpigen_write_store_op_to_namestr(ARG2_OP, "^PPIP");
+		acpigen_write_store_namestr_to_namestr( "^PPIN", "^SMI");
+		acpigen_write_return_namestr("^FRET");
+	} else {
+		acpigen_write_return_integer(PPI2_RET_SUCCESS);
+	}
+
 	acpigen_pop_len();
 
 	acpigen_write_return_integer(PPI2_RET_GENERAL_FAILURE);
@@ -289,6 +298,11 @@ static void tpm_ppi_func5_cb(void *arg)
 	acpigen_emit_byte(LOCAL1_OP);
 	set_package_element_op("^TPM3", 0, LOCAL1_OP);
 
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		acpigen_write_store_op_to_namestr(ARG2_OP, "^PPIP");
+		acpigen_write_store_namestr_to_namestr( "^PPIN", "^SMI");
+	}
+
 	/* ^TPM3 [1] = ^LCMD */
 	set_package_element_name("^TPM3", 1, "^LCMD");
 
@@ -345,12 +359,13 @@ static void tpm_ppi_func7_cb(void *arg)
 	acpigen_emit_byte(LOCAL1_OP);
 	acpigen_write_if_lequal_op_int(LOCAL1_OP, 3);
 
-	/* Enforce use of Revision 1 that doesn't take an optional argument. */
-
-	/* Local0 = One */
-	acpigen_write_store();
-	acpigen_emit_byte(ONE_OP);
-	acpigen_emit_byte(LOCAL0_OP);
+	if (!CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		/* Enforce use of Revision 1 that doesn't take an optional argument. */
+		/* Local0 = One */
+		acpigen_write_store();
+		acpigen_emit_byte(ONE_OP);
+		acpigen_emit_byte(LOCAL0_OP);
+	}
 
 	acpigen_pop_len();
 
@@ -365,7 +380,14 @@ static void tpm_ppi_func7_cb(void *arg)
 	/* ^OARG = Zero */
 	acpigen_write_store_op_to_namestr(ZERO_OP, "^OARG");
 
-	acpigen_write_return_byte(PPI7_RET_SUCCESS);
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		acpigen_write_store_op_to_namestr(ARG2_OP, "^PPIP");
+		acpigen_write_store_namestr_to_namestr( "^PPIN", "^SMI");
+		acpigen_write_return_namestr("^FRET");
+	} else {
+		acpigen_write_return_byte(PPI7_RET_SUCCESS);
+	}
+
 	acpigen_pop_len();
 
 	/* Revision 2 */
@@ -379,7 +401,14 @@ static void tpm_ppi_func7_cb(void *arg)
 	acpigen_emit_byte(LOCAL3_OP);
 	acpigen_emit_namestring("^OARG");
 
-	acpigen_write_return_byte(PPI7_RET_SUCCESS);
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		acpigen_write_store_op_to_namestr(ARG2_OP, "^PPIP");
+		acpigen_write_store_namestr_to_namestr( "^PPIN", "^SMI");
+		acpigen_write_return_namestr("^FRET");
+	} else {
+		acpigen_write_return_byte(PPI7_RET_SUCCESS);
+	}
+
 	acpigen_pop_len();
 
 	acpigen_write_return_byte(PPI7_RET_GENERAL_FAILURE);
@@ -430,9 +459,9 @@ static void tpm_ppi_func8_cb(void *arg)
 		 */
 		static const u32 tpm1_funcs[] = {
 			TPM_NOOP,
-			TPM_SET_NOPPICLEAR_TRUE,
-			TPM_SET_NOPPIMAINTAINANCE_TRUE,
-			TPM_SET_NOPPIPROVISION_TRUE,
+			TPM_SET_NOPPIPROVISION_FALSE,
+			TPM_SET_NOPPICLEAR_FALSE,
+			TPM_SET_NOPPIMAINTAINANCE_FALSE,
 		};
 		for (size_t i = 0; i < ARRAY_SIZE(tpm1_funcs); i++) {
 			acpigen_write_if_lequal_op_int(LOCAL2_OP, tpm1_funcs[i]);
@@ -460,7 +489,15 @@ static void tpm_ppi_func8_cb(void *arg)
 			acpigen_pop_len();	/* Pop : If */
 		}
 	}
-	acpigen_write_return_integer(PPI8_RET_ALLOWED_WITH_PP);
+
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		acpigen_write_store_op_to_namestr(ARG2_OP, "^PPIP");
+		acpigen_write_store_op_to_namestr(LOCAL2_OP, "^UCRQ");
+		acpigen_write_store_namestr_to_namestr( "^PPIN", "^SMI");
+		acpigen_write_return_namestr("^FRET");
+	} else {
+		acpigen_write_return_integer(PPI8_RET_ALLOWED_WITH_PP);
+	}
 
 	acpigen_pop_len();
 
@@ -501,13 +538,18 @@ void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 
 	static const struct fieldlist list[] = {
 		FIELDLIST_OFFSET(0x100),// FIXME: Add support for func
-		FIELDLIST_NAMESTR("PPIN", 8),// Not used
-		FIELDLIST_NAMESTR("PPIP", 32),// Not used
+		FIELDLIST_NAMESTR("PPIN", 8), // SMI interrupt to use
+		FIELDLIST_NAMESTR("PPIP", 32),// ACPI function index to pass to SMM code
 		FIELDLIST_NAMESTR("RESU", 32),// Result of the last operation (TPM error code)
 		FIELDLIST_NAMESTR("CMDR", 32),// The command requested by OS. 0 for NOP
 		FIELDLIST_NAMESTR("OARG", 32),// The command optional argument requested by OS
 		FIELDLIST_NAMESTR("LCMD", 32),// The last command requested by OS.
-		FIELDLIST_NAMESTR("FRET", 32),// Not used
+		FIELDLIST_NAMESTR("FRET", 32),// Result code from SMM function
+		FIELDLIST_NAMESTR("MCIN", 8), // SMI interrupt for Memory Clear Interface
+		FIELDLIST_NAMESTR("MCIP", 32),// Used for save the Mor parameter
+		FIELDLIST_NAMESTR("MORD", 32),// Memory Overwrite Request Data
+		FIELDLIST_NAMESTR("MRET", 32),// Memory Overwrite function return code
+		FIELDLIST_NAMESTR("UCRQ", 32),// Physical Presence request operation to Get User Confirmation Status
 	};
 	static const u8 tpm1_funcs[] = {
 		TPM_NOOP,
@@ -577,7 +619,8 @@ void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 
 	/* Clear unsupported fields */
 	ppib->next_step = 0;
-	ppib->ppin = 1; // Not used by ACPI. Read by EDK-2, must be 1.
+	/* Read by EDK-2, must be non-zero. */
+	ppib->ppin = CONFIG(TPM_PPI_UEFIVAR_BACKED) ? APM_CNT_TPM_PPI : 1;
 	ppib->ppip = 0;
 	ppib->fret = 0;
 
@@ -611,6 +654,19 @@ void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 	acpigen_write_opregion(&opreg);
 	acpigen_write_field(opreg.name, list, ARRAY_SIZE(list),
 			    FIELD_ANYACC | FIELD_NOLOCK | FIELD_PRESERVE);
+
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED)) {
+		const struct opregion smi_opreg = OPREGION("TSMI", SYSTEMIO,
+							   pm_acpi_smi_cmd_port(),
+							   sizeof(uint16_t));
+		const struct fieldlist smi_port[] = {
+			FIELDLIST_NAMESTR("SMI", 16),
+		};
+
+		acpigen_write_opregion(&smi_opreg);
+		acpigen_write_field(smi_opreg.name, smi_port, ARRAY_SIZE(smi_port),
+				    FIELD_WORDACC | FIELD_NOLOCK | FIELD_PRESERVE);
+	}
 
 	acpigen_write_name("TPM2");
 	acpigen_write_package(2);
@@ -732,8 +788,11 @@ void lb_tpm_ppi(struct lb_header *header)
 	void *ppib;
 
 	ppib = cbmem_find(CBMEM_ID_TPM_PPI);
-	if (!ppib)
+	if (!ppib) {
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			call_smm(APM_CNT_TPM_PPI, 0, NULL);
 		return;
+	}
 
 	family = tlcl_get_family();
 	if (family == TPM_UNKNOWN) {
@@ -749,4 +808,7 @@ void lb_tpm_ppi(struct lb_header *header)
 		LB_TPM_VERSION_TPM_VERSION_2;
 
 	tpm_ppi->ppi_version = BCD(1, 3);
+
+	if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+		call_smm(APM_CNT_TPM_PPI, 0, (void *)ppib);
 }

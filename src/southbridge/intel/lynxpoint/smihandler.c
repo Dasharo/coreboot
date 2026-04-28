@@ -6,6 +6,7 @@
 #include <console/console.h>
 #include <cpu/x86/cache.h>
 #include <device/pci_def.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <cpu/x86/smm.h>
 #include <cpu/intel/em64t101_save_state.h>
 #include <elog.h>
@@ -243,6 +244,31 @@ static void southbridge_smi_store(void)
 	io_smi->rax = ret;
 }
 
+static void southbridge_smi_tpm_ppi(void)
+{
+	em64t101_smm_state_save_area_t *io_smi =
+		smi_apmc_find_state_save(APM_CNT_TPM_PPI);
+	uint32_t reg_rbx;
+	bool wp_enabled;
+
+	if (!io_smi)
+		return;
+
+	/* Parameter buffer in EBX */
+	reg_rbx = (uint32_t)io_smi->rbx;
+
+	wp_enabled = spi_get_wp();
+
+	spi_set_wp(false);
+
+	/* drivers/tpm/ppi_smm.c */
+	tpm_ppi_process_request_smm(reg_rbx);
+	io_smi->rax = 0;
+
+	if (wp_enabled)
+		spi_set_wp(true);
+}
+
 static void southbridge_smi_apmc(void)
 {
 	u8 reg8;
@@ -277,6 +303,10 @@ static void southbridge_smi_apmc(void)
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
 			southbridge_smi_store();
+		break;
+	case APM_CNT_TPM_PPI:
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			southbridge_smi_tpm_ppi();
 		break;
 	}
 
