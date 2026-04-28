@@ -48,7 +48,7 @@ const char *smbios_mainboard_product_name(void)
 	else if (strstr(str, "i5-10310U") != NULL)
 	{
 		if (CONFIG(ENABLE_EMMC))
-			die("VP4651 has no eMMC variant. Rebuild with ENABLE_EMMC=n\n");
+			printk(BIOS_WARNING, "VP4651 has no eMMC variant. Rebuild with ENABLE_EMMC=n\n");
 		return "VP4651";
 	}
 	else if (strstr(str, "i7-10810U") != NULL)
