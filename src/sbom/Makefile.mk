@@ -63,6 +63,9 @@ ifneq ($(payload-git-dir-y),)
 ifeq ($(CONFIG_PAYLOAD_EDK2), y)
 payload-swid          = $(build-dir)/payload-edk2.json
 payload-swid-template = $(src-dir)/payload-edk2.json
+# W/A for multijob build:
+# Rule to ensure the EDK2 repo is cloned, if not available at the time of SBOM creation
+$(payload-git-dir-y)/.git: $(obj)/UEFIPAYLOAD.fd
 else
 payload-swid = $(build-dir)/payload-$(subst /,,$(dir $(patsubst payloads/external/%,%,$(payload-git-dir-y)))).json
 payload-swid-template = $(patsubst $(build-dir)/%.json,$(src-dir)/%.json,$(payload-swid))
