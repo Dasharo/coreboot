@@ -15,6 +15,7 @@
 #include <device/mmio.h>
 #include <device/pci_def.h>
 #include <device/pci_ops.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <elog.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/fast_spi.h>
@@ -297,6 +298,44 @@ static void southbridge_smi_store(
 	}
 }
 
+static void southbridge_smi_tpm_ppi(
+	const struct smm_save_state_ops *save_state_ops)
+{
+	int node;
+	uint32_t reg_ebx;
+	uint32_t ret;
+
+	node = save_state_ops->apmc_node(APM_CNT_TPM_PPI);
+	if (node < 0)
+		return;
+
+	/* Parameter buffer in EBX */
+	if (save_state_ops->get_reg(RBX, node, &reg_ebx, sizeof(reg_ebx)) != 0)
+		return;
+
+	const bool wp_enabled = !fast_spi_wpd_status();
+	if (wp_enabled) {
+		set_insmm_sts(true);
+		/*
+		 * As per BWG, clearing "SPI_BIOS_CONTROL_SYNC_SS"
+		 * bit is a must prior setting SPI_BIOS_CONTROL_WPD" bit
+		 * to avoid 3-strike error.
+		 */
+		fast_spi_clear_sync_smi_status();
+		fast_spi_disable_wp();
+	}
+
+	/* drivers/tpm/ppi_smm.c */
+	tpm_ppi_process_request_smm(reg_ebx);
+	ret = 0;
+	save_state_ops->set_reg(RAX, node, &ret, sizeof(ret));
+
+	if (wp_enabled) {
+		fast_spi_enable_wp();
+		set_insmm_sts(false);
+	}
+}
+
 __weak const struct gpio_lock_config *soc_gpio_lock_config(size_t *num)
 {
 	*num = 0;
@@ -378,6 +417,10 @@ void smihandler_southbridge_apmc(
 	case APM_CNT_SMMSTORE:
 		if (CONFIG(SMMSTORE))
 			southbridge_smi_store(save_state_ops);
+		break;
+	case APM_CNT_TPM_PPI:
+		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
+			southbridge_smi_tpm_ppi(save_state_ops);
 		break;
 	case APM_CNT_FINALIZE:
 		finalize();
