@@ -19,3 +19,13 @@ config TPM_PPI
 	  This driver automatically generates ACPI tables for the Physical
 	  Presence Interface defined by the TCG. If not activated only a stub
 	  will be generated without any functionality.
+
+config TPM_PPI_UEFIVAR_BACKED
+	bool "Use EFI variables to convey TPM PPI request"
+	depends on TPM_PPI
+	depends on DRIVERS_EFI_VARIABLE_STORE && SMMSTORE_V2
+	help
+	  Select this option to use UEFI variables to convey TPM PPI request
+	  information from ACPI to pre-OS environement. Sometimes the request
+	  may not survive warm reboto in CBMEM memory on certain platforms.
+	  That is when this option becomes helpful.
