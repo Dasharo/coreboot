@@ -68,10 +68,12 @@ ifeq ($(CONFIG_HAVE_PSP_WHITELIST_FILE),y)
 PSP_WHITELIST_FILE=$(CONFIG_PSP_WHITELIST_FILE)
 endif
 
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_PSP_RPMC),y)
 # type = 0x54
 # The flashmap section used for this is expected to be named PSP_RPMC_NVRAM
 PSP_RPMC_NVRAM_BASE=$(call get_fmap_value,FMAP_SECTION_PSP_RPMC_NVRAM_START)
 PSP_RPMC_NVRAM_SIZE=$(call get_fmap_value,FMAP_SECTION_PSP_RPMC_NVRAM_SIZE)
+endif
 
 # type = 0x55
 SPL_TABLE_FILE=$(CONFIG_SPL_TABLE_FILE)
@@ -79,12 +81,9 @@ SPL_TABLE_FILE=$(CONFIG_SPL_TABLE_FILE)
 ifeq ($(CONFIG_AMD_SEV_SNP_ENABLE),y)
 # type = 0x38
 # The flashmap section used for this is expected to be named PSP_SEV_NVRAM
+# The section should be at least 32KiB (0x8000)
 PSP_SEV_NVRAM_BASE=$(call get_fmap_value,FMAP_SECTION_PSP_SEV_NVRAM_START)
 PSP_SEV_NVRAM_SIZE=$(call get_fmap_value,FMAP_SECTION_PSP_SEV_NVRAM_SIZE)
-# The section should be at least 32KiB (0x8000)
-ifeq ($(call int-lt, $(PSP_SEV_NVRAM_SIZE) 0x8000), 1)
-$(error Error: PSP_SEV_NVRAM must be at least 32KiB (0x8000) in size)
-endif
 endif
 
 #
