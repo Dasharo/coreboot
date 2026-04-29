@@ -171,6 +171,25 @@ static uint16_t get_log_footprint(const struct tpm_2_log_table *tclt)
 		le16toh(get_log_bottom(tclt)->next_offset);
 }
 
+/* Populates `num_of_algorithms` and `digest_sizes[]` in the header from the active banks. */
+static void fill_digest_sizes(struct tcg_efi_spec_id_event *hdr,
+			      const struct pcr_banks_info *info)
+{
+	int i, j;
+
+	hdr->num_of_algorithms = htole32(info->active_count);
+	for (i = 0, j = -1; i < info->active_count; ++i) {
+		/* Find the next active bank. */
+		while (!info->is_active[++j])
+			continue;
+
+		hdr->digest_sizes[i].alg_id =
+			htole16(tpm2_alg_from_vb2_hash(enabled_tpm_algs[j]));
+		hdr->digest_sizes[i].digest_size =
+			htole16(vb2_digest_size(enabled_tpm_algs[j]));
+	}
+}
+
 void *tpm2_log_cbmem_init(void)
 {
 	static struct tpm_2_log_table *tclt;
@@ -178,9 +197,7 @@ void *tpm2_log_cbmem_init(void)
 		return tclt;
 
 	if (ENV_HAS_CBMEM) {
-		int i, j;
 		struct tcg_efi_spec_id_event *hdr;
-		const struct pcr_banks_info *pcr_banks_info;
 		struct tpm_2_log_bottom *bottom;
 
 		tclt = cbmem_find(CBMEM_ID_TPM2_TCG_LOG);
@@ -191,34 +208,49 @@ void *tpm2_log_cbmem_init(void)
 		if (!tclt)
 			return NULL;
 
-		pcr_banks_info = get_pcr_banks_info();
-
 		memset(tclt, 0, TPM_LOG_SIZE);
 		hdr = &tclt->header;
 
-		hdr->event_type = htole32(EV_NO_ACTION);
-		hdr->event_size = htole32(28 +
-					  pcr_banks_info->active_count * sizeof(hdr->digest_sizes[0]) +
-					  1 +
-					  TPM_20_VENDOR_INFO_SIZE);
 		strcpy((char *)hdr->signature, TPM_20_SPEC_ID_EVENT_SIGNATURE);
+		hdr->event_type = htole32(EV_NO_ACTION);
 		hdr->platform_class = htole32(0x00); // client platform
 		hdr->spec_version_minor = 0x00;
 		hdr->spec_version_major = 0x02;
 		hdr->spec_errata = 0x00;
 		hdr->uintn_size = 0x02; // 64-bit UINT
 
-		hdr->num_of_algorithms = htole32(pcr_banks_info->active_count);
-		for (i = 0, j = -1; i < le32toh(hdr->num_of_algorithms); ++i) {
-			/* Find the next active bank. */
-			while (!pcr_banks_info->is_active[++j])
-				continue;
+		/*
+		 * The CBMEM log is only created in the stage that creates CBMEM (where
+		 * the pre-RAM log buffer `_tpm_log` is also linked).  In that stage,
+		 * mirror the pre-RAM header's algorithm list so events copied in by
+		 * `recover_tpm_log()` parse consistently against this header.  Other
+		 * stages have already returned via `cbmem_find()` above.
+		 */
+		if (ENV_CREATES_CBMEM) {
+			const struct tpm_2_log_table *preram =
+				(const struct tpm_2_log_table *)_tpm_log;
+			uint32_t preram_nalg =
+				le32toh(preram->header.num_of_algorithms);
 
-			hdr->digest_sizes[i].alg_id =
-				htole16(tpm2_alg_from_vb2_hash(enabled_tpm_algs[j]));
-			hdr->digest_sizes[i].digest_size =
-				htole16(vb2_digest_size(enabled_tpm_algs[j]));
+			if (preram_nalg != 0) {
+				uint32_t i;
+				hdr->num_of_algorithms =
+					preram->header.num_of_algorithms;
+				for (i = 0; i < preram_nalg; ++i)
+					hdr->digest_sizes[i] =
+						preram->header.digest_sizes[i];
+			} else {
+				fill_digest_sizes(hdr, get_pcr_banks_info());
+			}
+		} else {
+			fill_digest_sizes(hdr, get_pcr_banks_info());
 		}
+
+		hdr->event_size = htole32(28 +
+					  le32toh(hdr->num_of_algorithms) *
+						sizeof(hdr->digest_sizes[0]) +
+					  1 +
+					  TPM_20_VENDOR_INFO_SIZE);
 
 		bottom = get_log_bottom(tclt);
 		bottom->vendor_info_size = TPM_20_VENDOR_INFO_SIZE;
@@ -474,7 +506,7 @@ void tpm2_preram_log_clear(void)
 	 * is not fully initialized.
 	 */
 	struct tpm_2_log_table *tclt = (struct tpm_2_log_table *)_tpm_log;
-	tclt->header.num_of_algorithms = htole32(get_pcr_banks_info()->active_count);
+	fill_digest_sizes(&tclt->header, get_pcr_banks_info());
 
 	struct tpm_2_log_bottom *bottom = get_log_bottom(tclt);
 	bottom->num_entries = 0;
