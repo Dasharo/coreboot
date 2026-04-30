@@ -3,6 +3,7 @@
 #include <cbmem.h>
 #include <device/device.h>
 #include <device/pci_def.h>
+#include <GFX/GfxClass-api.h>
 #include <Mpio/MpioClass-api.h>
 #include <Nbio/NbioClass-api.h>
 #include <RcMgr/DfX/RcManager-api.h>
@@ -96,6 +97,7 @@ WEAK_DEV_PTR(usb4_pcie_bridge_1);
 static void nbio_params_config(SIL_CONTEXT *SilContext)
 {
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilContext, SilId_NbioClass, 0);
+	GFXCLASS_INPUT_BLK *gfx_data = SilFindStructure(SilContext, SilId_GfxClass, 0);
 	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;	
 	input->EsmEnableAllRootPorts      = false;
 	input->EsmTargetSpeed             = 16;
@@ -105,6 +107,8 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 	input->Usb4Rt0PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_0));
 	input->Usb4Rt1En                  = is_dev_enabled(DEV_PTR(usb4_router_1));
 	input->Usb4Rt1PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_1));
+	gfx_data->Usb4Rt0En               = input->Usb4Rt0En;
+	gfx_data->Usb4Rt1En               = input->Usb4Rt1En;
 }
 
 #ifndef MPIO_ENGINE_DATA_INITIALIZER
