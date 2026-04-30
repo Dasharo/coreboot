@@ -10,7 +10,6 @@ CONFIG_LINUX_COMMAND_LINE="console=ttyS0,115200 "
 CONFIG_AMD_SME_ENABLE=y
 CONFIG_PCIEXP_COMMON_CLOCK=y
 CONFIG_ALWAYS_ALLOW_ABOVE_4G_ALLOCATION=y
-CONFIG_SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1=y
 CONFIG_AMD_OPENSIL_PATH="/home/coreboot/coreboot/src/vendorcode/amd/opensil/turin_poc/opensil"
 CONFIG_AMD_OPENSIL_MPIO_CHIP_H_FILE="/home/coreboot/coreboot/src/vendorcode/amd/opensil/turin_poc/mpio/chip.h"
 CONFIG_GENERIC_LINEAR_FRAMEBUFFER=y
