@@ -63,6 +63,10 @@ config D3COLD_SUPPORT
 config DIMM_SPD_SIZE
 	default 1024
 
+# A terrible workaround for SMI issues when BWP is on until a better solution is found.
+config DEBUG_SMI
+	default y if BOOTMEDIA_SMM_BWP
+
 config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/variants/\$(CONFIG_VARIANT_DIR)/board.fmd"
 
