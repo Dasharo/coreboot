@@ -233,7 +233,15 @@ chip soc/amd/phoenix
 		end
 
 		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
-			device ref gfx on end # Internal GPU (GFX)
+			device ref gfx on
+				chip drivers/amd/opensil/mpio
+					register "type" = "IFTYPE_DDI"
+					register "ddi_connector" = "ConnHDMI"
+					register "aux" = "DdiAux1"
+					register "hdp" = "DdiHdp1"
+					device generic 0 on end
+				end
+			end # Internal GPU (GFX)
 			device ref gfx_hda on end # Display HD Audio Controller (GFXAZ)
 			device ref crypto on end # Crypto Coprocessor
 			device ref xhci_0 on
