@@ -2,8 +2,18 @@
 
 #include <dasharo/options.h>
 #include <device/smbus_host.h>
+#include <intelblocks/cse.h>
 #include <mainboard/gpio.h>
 #include <soc/ramstage.h>
+
+static int mainboard_smbios_data(struct device *dev, int *handle, unsigned long *current)
+{
+	int len = 0;
+
+	len += cse_write_smbios_type14(handle, current);
+
+	return len;
+}
 
 static void mainboard_init(void *chip_info)
 {
@@ -20,6 +30,14 @@ void mainboard_update_soc_chip_config(struct soc_intel_meteorlake_config *config
 		config->s0ix_enable = 1;
 }
 
+static void mainboard_enable(struct device *dev)
+{
+#if CONFIG(GENERATE_SMBIOS_TABLES)
+	dev->ops->get_smbios_data = mainboard_smbios_data;
+#endif
+}
+
 struct chip_operations mainboard_ops = {
+	.enable_dev = mainboard_enable,
 	.init = mainboard_init,
 };
