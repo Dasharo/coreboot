@@ -13,6 +13,8 @@
 
 #include "chip.h"
 
+MPIO_DDI_DESCRIPTOR ddi_descriptor_list[MAX_DDI_PORTS];
+
 static void mpio_params_config(SIL_CONTEXT *SilContext)
 {
 	MPIOCLASS_COMMON_INPUT_BLK *mpio_data = SilFindStructure(SilContext, SilId_MpioClass, 0);
@@ -87,6 +89,8 @@ static void mpio_params_config(SIL_CONTEXT *SilContext)
 	/* TODO handle this differently on multisocket */
 	mpio_data->PcieTopologyData.PlatformData[0].Flags = DESCRIPTOR_TERMINATE_LIST;
 	mpio_data->PcieTopologyData.PlatformData[0].PciePortList = mpio_data->PcieTopologyData.PortList;
+	ddi_descriptor_list[0].Flags = DESCRIPTOR_TERMINATE_LIST;
+	mpio_data->PcieTopologyData.PlatformData[0].DdiLinkList = ddi_descriptor_list;
 }
 
 WEAK_DEV_PTR(usb4_router_0);
@@ -112,32 +116,42 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 }
 
 #ifndef MPIO_ENGINE_DATA_INITIALIZER
-#define  MPIO_ENGINE_DATA_INITIALIZER(mType, mStartLane, mEndLane, mHotplug, mGpioGroupId) \
-        { .EngineType = mType, \
-          .HotPluggable = mHotplug, \
-          .StartLane = mStartLane, \
-          .EndLane = mEndLane, \
-          .GpioGroupId = mGpioGroupId, \
-        }
+#define MPIO_ENGINE_DATA_INITIALIZER(mType, mStartLane, mEndLane, mHotplug, mGpioGroupId) \
+	{ \
+		.EngineType = mType, \
+		.HotPluggable = mHotplug, \
+		.StartLane = mStartLane, \
+		.EndLane = mEndLane, \
+		.GpioGroupId = mGpioGroupId, \
+	}
 #endif
 #ifndef MPIO_PORT_DATA_INITIALIZER_PCIE
-#define  MPIO_PORT_DATA_INITIALIZER_PCIE(mPortPresent, mDevAddress, mDevFunction, mHotplug, mMaxLinkSpeed, \
-          mMaxLinkCap, mAspm, mAspmL1_1, mAspmL1_2, mClkPmSupport) \
-        { \
-          .PortPresent = mPortPresent, \
-          .DeviceNumber = mDevAddress, \
-          .FunctionNumber = mDevFunction, \
-          .LinkSpeedCapability = mMaxLinkSpeed, \
-          .LinkAspm = mAspm, \
-          .LinkAspmL1_1 = mAspmL1_1, \
-          .LinkAspmL1_2 = mAspmL1_2, \
-          .LinkHotplug = mHotplug, \
-          .MiscControls = { \
-            .LinkSafeMode = mMaxLinkCap, \
-            .ClkPmSupport = mClkPmSupport, \
-            .TurnOffUnusedLanes = 1, \
-          }, \
-        }
+#define MPIO_PORT_DATA_INITIALIZER_PCIE(mPortPresent, mDevAddress, mDevFunction, mHotplug, \
+					mMaxLinkSpeed, mMaxLinkCap, mAspm, mAspmL1_1, \
+					mAspmL1_2, mClkPmSupport) \
+	{ \
+		.PortPresent = mPortPresent, \
+		.DeviceNumber = mDevAddress, \
+		.FunctionNumber = mDevFunction, \
+		.LinkSpeedCapability = mMaxLinkSpeed, \
+		.LinkAspm = mAspm, \
+		.LinkAspmL1_1 = mAspmL1_1, \
+		.LinkAspmL1_2 = mAspmL1_2, \
+		.LinkHotplug = mHotplug, \
+		.MiscControls = { \
+			.LinkSafeMode = mMaxLinkCap, \
+			.ClkPmSupport = mClkPmSupport, \
+			.TurnOffUnusedLanes = 1, \
+		}, \
+	}
+#endif
+#ifndef MPIO_DDI_DATA_INITIALIZER
+#define MPIO_DDI_DATA_INITIALIZER(mConnectorType, mAuxIndex, mHdpIndex) \
+	{ \
+		.ConnectorType = mConnectorType, \
+		.AuxIndex = mAuxIndex, \
+		.HdpIndex = mHdpIndex, \
+	}
 #endif
 
 void opensil_mpio_per_device_config(struct device *dev)
@@ -157,12 +171,15 @@ void opensil_mpio_per_device_config(struct device *dev)
 		}
 	}
 
-	static uint32_t slot_num;
 	const uint32_t domain = dev_get_domain_id(dev);
 	const uint32_t devfn = dev->path.pci.devfn;
 	const struct drivers_amd_opensil_mpio_config *const config = dev->chip_info;
-	printk(BIOS_DEBUG, "Setting MPIO port for domain 0x%x, PCI %d:%d\n",
-	       domain, PCI_SLOT(devfn), PCI_FUNC(devfn));
+	static int ddi_port = 0;
+	if (is_pci(dev))
+		printk(BIOS_DEBUG, "Setting MPIO port for domain 0x%x, PCI %d:%d\n",
+		       domain, PCI_SLOT(devfn), PCI_FUNC(devfn));
+	else if (config->type == IFTYPE_DDI)
+		printk(BIOS_DEBUG, "Setting DDI port %u\n", ddi_port);
 
 	if (config->type == IFTYPE_UNUSED) {
 		if (is_dev_enabled(dev)) {
@@ -174,9 +191,11 @@ void opensil_mpio_per_device_config(struct device *dev)
 		return;
 	}
 
-	static int mpio_port = 0;
-	MPIO_PORT_DESCRIPTOR port = { .Flags = DESCRIPTOR_TERMINATE_LIST };
 	if (config->type == IFTYPE_PCIE) {
+		static uint32_t slot_num;
+		static int mpio_port = 0;
+
+		MPIO_PORT_DESCRIPTOR port = { .Flags = DESCRIPTOR_TERMINATE_LIST };
 		const MPIO_ENGINE_DATA engine_data =
 			MPIO_ENGINE_DATA_INITIALIZER(MpioPcieEngine,
 						     config->start_lane, config->end_lane,
@@ -198,14 +217,32 @@ void opensil_mpio_per_device_config(struct device *dev)
 
 		port.Port = port_data;
 		port.Port.MiscControls.SbLink = config->sb_link;
+
+		port.Port.AlwaysExpose = 1;
+		port.Port.SlotNum = ++slot_num;
+		mpio_data->PcieTopologyData.PortList[mpio_port] = port;
+		/* Update TERMINATE list */
+		if (mpio_port > 0)
+			mpio_data->PcieTopologyData.PortList[mpio_port - 1].Flags = 0;
+		mpio_port++;
+	} else if (config->type == IFTYPE_DDI) {
+		MPIO_DDI_DESCRIPTOR ddi = { .Flags = DESCRIPTOR_TERMINATE_LIST };
+		const MPIO_DDI_DATA ddi_data = MPIO_DDI_DATA_INITIALIZER(config->ddi_connector,
+									 config->aux,
+									 config->hdp);
+
+		if (ddi_port >= MAX_DDI_PORTS) {
+			printk(BIOS_WARNING, "Exceeded maximum number of DDI ports.\n");
+			return;
+		}
+
+		ddi.Ddi = ddi_data;
+		ddi_descriptor_list[ddi_port] = ddi;
+		/* Update TERMINATE list */
+		if (ddi_port > 0)
+			ddi_descriptor_list[ddi_port - 1].Flags = 0;
+		ddi_port++;
 	}
-	port.Port.AlwaysExpose = 1;
-	port.Port.SlotNum = ++slot_num;
-	mpio_data->PcieTopologyData.PortList[mpio_port] = port;
-	/* Update TERMINATE list */
-	if (mpio_port > 0)
-		mpio_data->PcieTopologyData.PortList[mpio_port - 1].Flags = 0;
-	mpio_port++;
 }
 
 void opensil_mpio_global_config(void)
