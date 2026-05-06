@@ -45,22 +45,22 @@ config ECAM_MMCONF_BASE_ADDRESS
 	default 0xb0000000
 
 config EFS_SPI_READ_MODE
-	default 0	# Normal read 33MHz
+	default 0	# Normal read
 
 config EFS_SPI_SPEED
-	default 0	# 66MHz
+	default 2	# 22MHz
 
 config EFS_SPI_MICRON_FLAG
 	default 0
 
 config NORMAL_READ_SPI_SPEED
-	default 1	# 33MHz
+	default 2	# 22MHz
 
 config ALT_SPI_SPEED
-	default 1	# 33MHz
+	default 2	# 22MHz
 
 config TPM_SPI_SPEED
-	default 1	# 33MHz
+	default 2	# 22MHz
 
 config EFS_ESPI0_CONFIG
 	default 0x0e
