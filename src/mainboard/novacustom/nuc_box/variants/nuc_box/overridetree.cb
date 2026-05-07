@@ -3,7 +3,7 @@ chip soc/intel/meteorlake
 	# set EPP to 45%: 45 * 256/100 = 115 = 0x73
 	register "enable_energy_perf_pref" = "true"
 	register "energy_perf_pref_value" = "0x73"
-	
+
 	device domain 0 on
 		#TODO: all the devices have different subsystem product IDs
 		#subsystemid 0x1849 TODO inherit
