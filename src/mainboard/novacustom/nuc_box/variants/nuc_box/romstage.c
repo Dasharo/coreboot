@@ -16,9 +16,7 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 			[1] = { .addr_dimm[0] = 0x52, },
 		},
 	};
-	const bool half_populated = false;
-
 	mupd->FspmConfig.DmiMaxLinkSpeed = 4;
 
-	memcfg_init(mupd, &board_cfg, &spd_info, half_populated);
+	memcfg_init(mupd, &board_cfg, &spd_info, false);
 }
