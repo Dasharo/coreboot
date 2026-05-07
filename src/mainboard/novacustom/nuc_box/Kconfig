@@ -90,6 +90,10 @@ config UART_FOR_CONSOLE
 config USE_PM_ACPI_TIMER
 	default n
 
+# 8254 timer must be disabled for s0ix compatibility
+config USE_LEGACY_8254_TIMER
+	default n
+
 config VBOOT
 	select GBB_FLAG_DISABLE_EC_SOFTWARE_SYNC
 	select GBB_FLAG_DISABLE_FWMP
