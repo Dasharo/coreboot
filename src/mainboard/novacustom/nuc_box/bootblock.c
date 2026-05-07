@@ -25,10 +25,10 @@ static void superio_init(void)
 	//TODO: use superio driver?
 	pnp_devfn_t dev = PNP_DEV(0x2E, 0x00);
 
-	printk(BIOS_DEBUG, "entering PNP config mode\n");
+	printk(BIOS_DEBUG, "SIO: Entering config mode\n");
 	pnp_enter_conf_state(dev);
 
-	printk(BIOS_DEBUG, "configure global PNP\n");
+	printk(BIOS_DEBUG, "SIO: Configuring global registers\n");
 	//TODO: document these
 	pnp_write_config(dev, 0x1A, 0x88); // Default is 0x03
 	pnp_write_config(dev, 0x1B, 0x00); // Default is 0x03
@@ -36,7 +36,7 @@ static void superio_init(void)
 	pnp_write_config(dev, 0x2C, 0x03); // Default is 0x0F
 	pnp_write_config(dev, 0x2F, 0xE4); // Default is 0x74
 
-	printk(BIOS_DEBUG, "configure GPIO (logical device 7)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring GPIO (LDN7)\n");
 	dev = PNP_DEV(0x2E, 0x07);
 	pnp_set_logical_device(dev);
 	// Enable GPIO 0, 5, and 6
@@ -50,7 +50,7 @@ static void superio_init(void)
 	// Set GPIO 53-53 high
 	pnp_write_config(dev, 0xF9, 0x18); // Default is 0x00
 
-	printk(BIOS_DEBUG, "configure GPIO (logical device 8)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring GPIO (LDN8)\n");
 	dev = PNP_DEV(0x2E, 0x08);
 	pnp_set_logical_device(dev);
 	// Disable WDT1
@@ -60,7 +60,7 @@ static void superio_init(void)
 	pnp_write_config(dev, 0xE9, 0x00); // Default is 0xFF TODO?
 	pnp_write_config(dev, 0xEA, 0x00); // Default is 0xFF TODO?
 
-	printk(BIOS_DEBUG, "configure GPIO (logical device 9)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring GPIO (LDN9)\n");
 	dev = PNP_DEV(0x2E, 0x09);
 	pnp_set_logical_device(dev);
 	// Enable GPIO 8 and 9
@@ -70,7 +70,7 @@ static void superio_init(void)
 	// GPIO 87 set high
 	pnp_write_config(dev, 0xF1, 0x80); // Default is 0xFF
 
-	printk(BIOS_DEBUG, "configure ACPI (logical device A)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring ACPI (LDNA)\n");
 	dev = PNP_DEV(0x2E, 0x0A);
 	pnp_set_logical_device(dev);
 	// User-defined resume state after power loss
@@ -85,7 +85,7 @@ static void superio_init(void)
 	}
 	pnp_write_config(dev, 0xE6, cre6);
 
-	printk(BIOS_DEBUG, "configure hardware monitor (logical device B)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring hardware monitor (LDNB)\n");
 	dev = PNP_DEV(0x2E, 0x0B);
 	pnp_set_logical_device(dev);
 	// Enable hardware monitor
@@ -94,7 +94,7 @@ static void superio_init(void)
 	pnp_write_config(dev, 0x60, 0x02);
 	pnp_write_config(dev, 0x61, 0x90);
 
-	printk(BIOS_DEBUG, "configure GPIO (logical device F)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring GPIO (LDNF)\n");
 	dev = PNP_DEV(0x2E, 0x0F);
 	pnp_set_logical_device(dev);
 	// Set GPIO 00, 01, and 07 as open drain, and 2-6 as push-pull
@@ -106,19 +106,19 @@ static void superio_init(void)
 	// Set GPIO 80-86 as open drain, and 87 as push-pull
 	pnp_write_config(dev, 0xE8, 0x7F); // Default is 0xFF
 
-	printk(BIOS_DEBUG, "configure fading LED (logical device 15)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring fading LED (LDN15)\n");
 	dev = PNP_DEV(0x2E, 0x15);
 	pnp_set_logical_device(dev);
 	// Configure fading LED (divide by 4, frequency 1 Khz, off)
 	pnp_write_config(dev, 0xE5, 0x42);
 
-	printk(BIOS_DEBUG, "configure deep sleep (logical device 16)\n");
+	printk(BIOS_DEBUG, "SIO: Configuring deep sleep (LDN16)\n");
 	dev = PNP_DEV(0x2E, 0x16);
 	pnp_set_logical_device(dev);
 	// Set deep sleep delay time to 0s
 	pnp_write_config(dev, 0xE2, 0x00);
 
-	printk(BIOS_DEBUG, "exiting PNP config mode\n");
+	printk(BIOS_DEBUG, "SIO: Exiting config mode\n");
 	pnp_exit_conf_state(dev);
 }
 
@@ -190,7 +190,6 @@ void bootblock_mainboard_early_init(void)
 {
 	uint8_t fan_curve = get_fan_curve_option();
 	mainboard_configure_early_gpios();
-	mainboard_configure_gpios();
 	superio_init();
 	hm_init(fan_curve);
 }
