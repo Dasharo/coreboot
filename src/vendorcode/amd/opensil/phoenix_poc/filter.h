@@ -13,6 +13,7 @@
 #define DEBUG_FILTER_CXL        0x00000200UL
 #define DEBUG_FILTER_RCMGR      0x00000800UL
 #define DEBUG_FILTER_GFX        0x00001000UL
+#define DEBUG_FILTER_PROM       0x00002000UL
 
 #define SIL_DEBUG(topic) (CONFIG(OPENSIL_DEBUG_##topic) ? DEBUG_FILTER_##topic : 0)
 
@@ -28,4 +29,5 @@
 	  SIL_DEBUG(RAS) | \
 	  SIL_DEBUG(CXL) | \
 	  SIL_DEBUG(RCMGR) | \
-	  SIL_DEBUG(GFX))
+	  SIL_DEBUG(GFX) | \
+	  SIL_DEBUG(PROM))
