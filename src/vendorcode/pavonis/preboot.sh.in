@@ -1,0 +1,67 @@
+#!/bbin/gosh
+# preboot.sh — installed as /bin/uinit; u-root init exec's it before
+# we hand off to /bbin/boot to kexec Ubuntu.
+#
+# Generated from src/vendorcode/pavonis/preboot.sh.in by
+# src/vendorcode/pavonis/Makefile.mk. Do not edit the generated
+# preboot.sh directly; edit preboot.sh.in instead.
+#
+# 1. Probe TTY_GLOB for the SP (faux-ipcc ensure-ready, fast timeout).
+#    ensure-ready does Status -> AckSpStart-if-restarted -> Identity.
+# 2. If found, sync the APOB. apob-sync reads the SP-side active slot via
+#    IPCC and compares against the in-DRAM APOB. On full match it locks the
+#    SP state machine via a no-write ApobCommit; on size/signature/byte
+#    mismatch (or NoValidApob on first boot) it falls back to a full
+#    apob-flash cycle. All three values below are baked in at build time —
+#    APOB_ADDR/APOB_MAX from CONFIG_PSP_APOB_DRAM_ADDRESS /
+#    CONFIG_PSP_APOB_DRAM_SIZE, TTY_GLOB from CONFIG_PAVONIS_PREBOOT_TTY_GLOB.
+# 3. Always exec /bbin/boot at the end so a probe/sync failure does not
+#    block boot.
+
+APOB_ADDR=@APOB_ADDR@
+APOB_MAX=@APOB_MAX@
+TTY_GLOB='@TTY_GLOB@'
+PROBE_TIMEOUT=2000
+USB_WAIT_SECS=10
+
+# Runtime escape hatch: any of the above can be overridden without
+# rebuilding via uroot.uinitargs="key=val ..." in CONFIG_LINUX_COMMAND_LINE.
+for kv in "$@"; do
+    case "$kv" in
+        tty_glob=*)  TTY_GLOB=${kv#tty_glob=}   ;;
+        apob_addr=*) APOB_ADDR=${kv#apob_addr=} ;;
+        apob_max=*)  APOB_MAX=${kv#apob_max=}   ;;
+    esac
+done
+
+# uinit can fire before USB enumeration finishes. Poll for the first
+# match of TTY_GLOB to appear, with a hard timeout so we still kexec
+# on systems that have no SP attached.
+i=0
+while [ "$i" -lt "$USB_WAIT_SECS" ]; do
+    set -- $TTY_GLOB
+    [ -e "$1" ] && break
+    sleep 1
+    i=$((i + 1))
+done
+if [ "$i" -ge "$USB_WAIT_SECS" ]; then
+    echo "preboot: no $TTY_GLOB after ${USB_WAIT_SECS}s, skipping APOB sync"
+    exec /bbin/boot
+fi
+
+PORT=
+for p in $TTY_GLOB; do
+    [ -e "$p" ] || continue
+    /bin/faux-ipcc --timeout-ms $PROBE_TIMEOUT --port "$p" ensure-ready \
+        && { PORT=$p; break; }
+done
+
+if [ -n "$PORT" ]; then
+    echo "preboot: SP at $PORT, syncing APOB from $APOB_ADDR (max $APOB_MAX)"
+    /bin/faux-ipcc --port "$PORT" apob-sync --from-mem $APOB_ADDR --max-size $APOB_MAX \
+        || echo "preboot: APOB sync failed (continuing)"
+else
+    echo "preboot: SP not found on $TTY_GLOB, skipping APOB sync"
+fi
+
+exec /bbin/boot

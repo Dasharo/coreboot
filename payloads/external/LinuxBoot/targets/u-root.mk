@@ -20,6 +20,15 @@ ifneq (CONFIG_LINUXBOOT_UROOT_FILES,)
 uroot_args += $(foreach file,$(CONFIG_LINUXBOOT_UROOT_FILES),-files $(PWD)/$(file))
 endif
 
+# Extra src:dest entries injected by the coreboot build itself (e.g.
+# src/vendorcode/pavonis); already absolute, no $(PWD) prefix. Track the
+# source half of each entry as a cpio dependency so rebuilt/regenerated
+# files retrigger the initramfs.
+ifneq ($(LINUXBOOT_UROOT_EXTRA_FILES),)
+uroot_args += $(foreach file,$(LINUXBOOT_UROOT_EXTRA_FILES),-files $(file))
+uroot_extra_deps += $(foreach file,$(LINUXBOOT_UROOT_EXTRA_FILES),$(firstword $(subst :, ,$(file))))
+endif
+
 uroot_cmds = $(CONFIG_LINUXBOOT_UROOT_COMMANDS)
 
 version:
@@ -48,7 +57,7 @@ $(uroot_build)/u-root: | $(uroot_build)
 	cd $(uroot_build); \
 	go build -o u-root .
 
-build/initramfs_u-root.cpio: $(uroot_build)/u-root
+build/initramfs_u-root.cpio: $(uroot_build)/u-root $(uroot_extra_deps)
 	cd $(uroot_build); \
 	echo "GOARCH=$(UROOT_ARCH-y) ./u-root $(uroot_args) -o initramfs_u-root.cpio $(uroot_cmds)"
 	cd $(uroot_build); \

@@ -85,3 +85,7 @@
 [submodule "3rdparty/dasharo-blobs"]
 	path = 3rdparty/dasharo-blobs
 	url = https://github.com/Dasharo/dasharo-blobs.git
+[submodule "3rdparty/ipcc-rs"]
+	path = 3rdparty/ipcc-rs
+	url = ssh://git@git.3mdeb.com:2222/pavonis/ipcc-rs.git
+	update = none

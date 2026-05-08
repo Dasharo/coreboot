@@ -1,0 +1,33 @@
+## SPDX-License-Identifier: GPL-2.0-only
+## 3MDEB CONFIDENTIAL
+
+config PAVONIS_LINUXBOOT_APOB_SYNC
+	bool "Bundle faux-ipcc APOB sync uinit into the LinuxBoot initramfs"
+	depends on PAYLOAD_LINUXBOOT && LINUXBOOT_UROOT
+	help
+	  Build faux-ipcc (from the 3rdparty/ipcc-rs submodule) as a
+	  static musl binary and generate the preboot uinit script, then
+	  inject both into the u-root initramfs (bin/faux-ipcc,
+	  bin/uinit). The uinit probes for an attached SP over USB serial
+	  and syncs the in-DRAM APOB with the SP-side copy via IPCC
+	  before handing off to /bbin/boot.
+
+	  The ipcc-rs submodule is marked update=none (private repo);
+	  populate it before building with
+	  git submodule update --init --checkout 3rdparty/ipcc-rs.
+
+	  Requires a Rust toolchain with the x86_64-unknown-linux-musl
+	  target (rustup target add x86_64-unknown-linux-musl) in the
+	  build environment.
+
+if PAVONIS_LINUXBOOT_APOB_SYNC
+
+config PAVONIS_PREBOOT_TTY_GLOB
+	string "TTY glob to probe for the SP"
+	default "/dev/ttyUSB*"
+	help
+	  Glob of serial devices the preboot uinit probes for the SP.
+	  Can be overridden at runtime without rebuilding via
+	  uroot.uinitargs="tty_glob=..." on the kernel command line.
+
+endif # PAVONIS_LINUXBOOT_APOB_SYNC

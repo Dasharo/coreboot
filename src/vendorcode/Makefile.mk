@@ -6,3 +6,4 @@ subdirs-y += cavium
 subdirs-y += eltan
 subdirs-y += mediatek
 subdirs-y += dasharo
+subdirs-y += pavonis
