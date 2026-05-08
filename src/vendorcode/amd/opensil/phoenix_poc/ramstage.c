@@ -5,7 +5,9 @@
 #include <FCH/Common/FchCommon.h>
 #include <FCH/FchUsb-api.h>
 #include <FCH/Tacoma/FchCore/FchUsb/FchUsbOemTc.h>
+#include <PROM/PromClass-api.h>
 #include <RcMgr/DfX/RcManager-api.h>
+#include <amdblocks/psp_efs.h>
 #include <amdblocks/reset.h>
 #include <bootstate.h>
 #include <cbmem.h>
@@ -286,7 +288,7 @@ WEAK_DEV_PTR(lpc_bridge);
 
 static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 {
-	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilContext, SilId_FchHwAcpiP, 0);
+	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilContext, SilId_FchHwAcpi, 0);
 	FCHCLASS_INPUT_BLK *fch_data = SilFindStructure(SilContext, SilId_FchClass, 0);
 	struct device *smb = DEV_PTR(smbus);
 
@@ -340,6 +342,30 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	FCH_DEV_ENABLE(hid, 31);
 }
 
+static void configure_promontory(SIL_CONTEXT *SilContext)
+{
+	PROMCLASS_DATA_BLK *prom_data = SilFindStructure(SilContext, SilId_PromClass, 0);
+	size_t prom_fw_size;
+
+	if (!prom_data)
+		return;
+
+	prom_data->PromInputBlk.PT21ClkPMEnable = CONFIG(PCIEXP_CLK_PM);
+	prom_data->PromInputBlk.PT21L1Enable = CONFIG(PCIEXP_ASPM);
+	prom_data->PromInputBlk.PT21L1ssEnable = CONFIG(PCIEXP_L1_SUB_STATE);
+	prom_data->PromInputBlk.PT21DisableUnusedPciePort = 1;
+
+	prom_fw_size = efs_read_promontory_fw((void *)CONFIG_PROMONTORY_FW_ADDR);
+	if (prom_fw_size) {
+		prom_data->PromInputBlk.PT21FwInRamAddress = CONFIG_PROMONTORY_FW_ADDR;
+		prom_data->PromInputBlk.PT21FWLoading = 0;
+		prom_data->PromInputBlk.PT21RuninRam = 1;
+	} else {
+		prom_data->PromInputBlk.PT21FwInRamAddress = CONFIG_PROMONTORY_FW_ADDR;
+		prom_data->PromInputBlk.PT21FWLoading = 1;
+	}
+}
+
 void setup_opensil(void)
 {
 	SIL_CONTEXT SilContext;
@@ -362,6 +388,8 @@ void setup_opensil(void)
 	configure_usb(&SilContext);
 	configure_ccx(&SilContext);
 	configure_fch_acpi(&SilContext);
+	if (CONFIG(SOC_AMD_PHOENIX_AM5))
+		configure_promontory(&SilContext);
 }
 
 static void opensil_entry(SIL_TIMEPOINT timepoint)
