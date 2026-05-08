@@ -707,6 +707,7 @@ static int dump_efw(const embedded_firmware *fw_header)
 	printf("\nMisc info");
 	printf("\n  Promontory FW:         %08x", fw_header->promontory_fw_ptr);
 	printf("\n  LP Promontory FW:      %08x", fw_header->lp_promontory_fw_ptr);
+	printf("\n  Promontory19 FW:       %08x", fw_header->promontory19_fw_ptr);
 	printf("\n  Vendor ID:             %04x", fw_header->vendor_id);
 	printf("\n  Board ID:              %04x", fw_header->board_id);
 	printf("\n  ESPI0 Config:          %02x", fw_header->espi0_config);
