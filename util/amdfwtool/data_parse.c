@@ -413,6 +413,14 @@ static uint8_t find_register_fw_filename_psp_dir(char *fw_name, char *filename,
 		fw_type = AMD_FW_PROM21;
 		subprog = 0;
 		instance = 1;
+	} else if (strcmp(fw_name, "PROM19_FW_FILE") == 0) {
+		fw_type = AMD_FW_PROM19;
+		subprog = 0;
+		instance = 0;
+	} else if (strcmp(fw_name, "PROM19_FW_INS1_FILE") == 0) {
+		fw_type = AMD_FW_PROM19;
+		subprog = 0;
+		instance = 1;
 	} else if (strcmp(fw_name, "LSDMA_FILE") == 0) {
 		fw_type = AMD_FW_LSDMA;
 		subprog = 0;

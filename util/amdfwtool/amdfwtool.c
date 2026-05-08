@@ -291,6 +291,8 @@ amd_fw_entry amd_psp_fw_table[] = {
 	{ .type = AMD_FW_USBDP, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_USBSS, .level = PSP_LVL2 | PSP_LVL2_AB },
 	{ .type = AMD_FW_USB4, .level = PSP_LVL2 | PSP_LVL2_AB },
+	{ .type = AMD_FW_PROM19, .inst = 0, .level = PSP_LVL2 | PSP_LVL2_AB},
+	{ .type = AMD_FW_PROM19, .inst = 1, .level = PSP_LVL2 | PSP_LVL2_AB},
 	{ .type = AMD_FW_INVALID },
 };
 
@@ -838,6 +840,14 @@ static void integrate_firmwares(context *ctx,
 			case AMD_FW_XHCI:
 				romsig->xhci_entry = RUN_CURRENT(*ctx);
 				break;
+			case AMD_FW_PROM21:
+				if (fw_table[i].inst == 0)
+					romsig->promontory_fw_ptr = RUN_BASE(*ctx);
+				break;
+			case AMD_FW_PROM19:
+				if (fw_table[i].inst == 0)
+					romsig->promontory19_fw_ptr = RUN_BASE(*ctx);
+				break;
 			default:
 				/* Error */
 				break;
@@ -1241,6 +1251,15 @@ static void integrate_psp_firmwares(context *ctx,
 				pspdir->entries[count].addr = RUN_CURRENT(*ctx);
 				pspdir->entries[count].address_mode =
 							SET_ADDR_MODE_BY_TABLE(pspdir);
+
+				/* Save as offsets in flash */
+				if (fw_table[i].type == AMD_FW_PROM21 && fw_table[i].inst == 0)
+					ctx->amd_romsig_ptr->promontory_fw_ptr =
+						(uint32_t)RUN_OFFSET_MODE(*ctx, ctx->current, AMD_ADDR_REL_BIOS);
+				if (fw_table[i].type == AMD_FW_PROM19 && fw_table[i].inst == 0)
+					ctx->amd_romsig_ptr->promontory19_fw_ptr =
+						(uint32_t)RUN_OFFSET_MODE(*ctx, ctx->current, AMD_ADDR_REL_BIOS);
+
 				adjust_current_pointer(ctx, bytes, BLOB_ALIGNMENT);
 			}
 
@@ -1882,6 +1901,7 @@ int main(int argc, char **argv)
 	ctx.amd_romsig_ptr->psp_bak_directory = 0;
 	ctx.amd_romsig_ptr->promontory_fw_ptr = 0;
 	ctx.amd_romsig_ptr->lp_promontory_fw_ptr = 0;
+	ctx.amd_romsig_ptr->promontory19_fw_ptr = 0;
 	ctx.amd_romsig_ptr->vendor_id = 0;
 	ctx.amd_romsig_ptr->board_id = 0;
 	ctx.amd_romsig_ptr->ubu_table = 0;

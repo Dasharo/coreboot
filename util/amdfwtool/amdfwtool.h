@@ -133,6 +133,7 @@ typedef enum _amd_fw_type {
 	AMD_FW_USBDP = 0xa4,
 	AMD_FW_USBSS = 0xa5,
 	AMD_FW_USB4 = 0xa6,
+	AMD_FW_PROM19 = 0xa7,
 	AMD_FW_IMC = 0x200,	/* Large enough to be larger than the top BHD entry type. */
 	AMD_FW_GEC,
 	AMD_FW_XHCI,
@@ -193,7 +194,7 @@ typedef struct _embedded_firmware {
 	uint32_t psp_bak_directory;
 	uint32_t promontory_fw_ptr;
 	uint32_t lp_promontory_fw_ptr;
-	uint32_t reserved_38h;
+	uint32_t promontory19_fw_ptr;
 	uint32_t reserved_3Ch;
 	uint8_t spi_readmode_f15_mod_60_6f;
 	uint8_t fast_speed_new_f15_mod_60_6f;
