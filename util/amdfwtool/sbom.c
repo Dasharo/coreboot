@@ -303,6 +303,7 @@ static const char *psp_fw_type_name(amd_fw_entry *entry)
 	case AMD_FW_PSP_GMI3_PHY:          return "AMD GMI3 PHY Firmware";
 	case AMD_FW_PSP_MPDMA_PM:          return "AMD MPDMA PM Firmware";
 	case AMD_FW_PSP_PROM21:            return "AMD Promontory 21 Firmware";
+	case AMD_FW_PSP_PROM19:            return "AMD Promontory 19 Firmware";
 	case AMD_FW_PSP_LSDMA:             return "AMD LSDMA Firmware";
 	case AMD_FW_PSP_C20_MP:            return "AMD C20 MP Firmware";
 	case AMD_FW_PSP_MINIMSMU:          return "AMD Mini-SMU Firmware";
