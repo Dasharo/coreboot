@@ -10,6 +10,7 @@ smm-y += psp_smm.c
 
 bootblock-y += psp_efs.c
 verstage-y += psp_efs.c
+ramstage-y += psp_efs.c
 
 all-y += ftpm.c
 
