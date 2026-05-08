@@ -119,7 +119,7 @@ static void print_version(void)
 
 static void print_usage(const char *name)
 {
-	printf("usage: %s [-vh?gicspGlMAa]\n", name);
+	printf("usage: %s [-vh?gicspGlMAaPa]\n", name);
 	printf("\n"
 	     "   -v | --version:                   print the version\n"
 	     "   -h | --help:                      print this help\n\n"
@@ -133,6 +133,7 @@ static void print_usage(const char *name)
 	     "   -A | --acpimmio:                  dump southbridge ACPI MMIO registers\n"
 	     "   -R | --ahci:                      dump southbridge AHCI registers\n"
 	     "   -p | --psb:                       dump Platform Secure Boot state\n"
+	     "   -P | --promontory:                dump Promontory 21 chipset registers\n"
 	     "   -a | --all:                       dump all known (safe) registers\n"
 	     "\n");
 	exit(1);
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
 
 	int dump_gpios = 0, dump_coremsrs = 0, dump_acpimmio = 0, dump_cpu = 0;
 	int dump_spi = 0, dump_lpc = 0, show_gpio_diffs = 0, dump_psb = 0, dump_irq = 0;
-	int dump_ahci = 0;
+	int dump_ahci = 0, dump_promontory = 0;
 
 	static struct option long_options[] = {
 		{"version", 0, 0, 'v'},
@@ -200,11 +201,12 @@ int main(int argc, char *argv[])
 		{"ahci", 0, 0, 'R'},
 		{"psb", 0, 0, 'p'},
 		{"spi", 0, 0, 's'},
+		{"promontory", 0, 0, 'P'},
 		{"all", 0, 0, 'a'},
 		{0, 0, 0, 0}
 	};
 
-	while ((opt = getopt_long(argc, argv, "vh?gGilcMARpsa",
+	while ((opt = getopt_long(argc, argv, "vh?gGilcMARpsPa",
 				  long_options, &option_index)) != EOF) {
 		switch (opt) {
 		case 'v':
@@ -241,6 +243,9 @@ int main(int argc, char *argv[])
 		case 's':
 			dump_spi = 1;
 			break;
+		case 'P':
+			dump_promontory = 1;
+			break;
 		case 'a':
 			dump_gpios = 1;
 			show_gpio_diffs = 1;
@@ -252,6 +257,7 @@ int main(int argc, char *argv[])
 			dump_spi = 1;
 			dump_psb = 1;
 			dump_ahci = 1;
+			dump_promontory = 1;
 			break;
 		case 'h':
 		case '?':
@@ -410,6 +416,11 @@ int main(int argc, char *argv[])
 
 	if (dump_ahci) {
 		print_ahci_devs(pacc, nb);
+		printf("\n\n");
+	}
+
+	if (dump_promontory) {
+		print_promontory(pacc);
 		printf("\n\n");
 	}
 
