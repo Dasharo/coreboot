@@ -9,6 +9,7 @@ smm-y += psp_smm.c
 
 bootblock-y += psp_efs.c
 verstage-y += psp_efs.c
+ramstage-y += psp_efs.c
 
 ramstage-$(CONFIG_AMD_CRB_FTPM) += ftpm.c
 
