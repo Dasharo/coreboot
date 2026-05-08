@@ -45,6 +45,10 @@ BOOTBLOCK_END = CONFIG_ROMSTAGE_ADDR + CONFIG_ROMSTAGE_SIZE;
  *                     |          (VERSTAGE_SIZE)       |
  *                     +--------------------------------+ VERSTAGE_ADDR
  *                     |                                |
+ *                     |     Promontory FW (if reqd)    |
+ *                     |              (256K)            |
+ *                     +--------------------------------+ PROMONTORY_FW_ADDR
+ *                     |                                |
  *                     |            FSP-M               |
  *                     |         (FSP_M_SIZE)           |
  *                     +--------------------------------+ FSP_M_ADDR
@@ -110,6 +114,10 @@ SECTIONS
 #endif
 #if CONFIG(PLATFORM_USES_FSP2_0)
 	REGION(fspm, CONFIG_FSP_M_ADDR, CONFIG_FSP_M_SIZE, 1)
+#endif
+
+#if CONFIG_PROMONTORY_FW_ADDR > 0
+	REGION(promontory, CONFIG_PROMONTORY_FW_ADDR, 256K, 4K)
 #endif
 
 #if CONFIG(VBOOT_SEPARATE_VERSTAGE) && !CONFIG(VBOOT_STARTS_BEFORE_BOOTBLOCK)
