@@ -150,4 +150,6 @@ int psp_ab_recovery_toggle_bootpartition(void);
  */
 bool read_efs_spi_settings(uint8_t *mode, uint8_t *speed);
 
+size_t efs_read_promontory_fw(void *buf);
+
 #endif /* AMD_BLOCK_PSP_H */
