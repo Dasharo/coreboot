@@ -228,6 +228,15 @@ config VERSTAGE_ADDR
 	  Sets the address in DRAM where verstage should be loaded if running
 	  as a separate stage on x86.
 
+config PROMONTORY_FW_ADDR
+	hex
+	default 0x21A0000 if SOC_AMD_PHOENIX_AM5
+	default 0x0
+	help
+	  Sets the address in DRAM where Promontory FW should be loaded on AM5.
+	  Promontory needs ~160KB of space. We allocate 256KB between romstage
+	  and verstage, so that it will be placed in early reserved DRAM.
+
 config VERSTAGE_SIZE
 	hex
 	depends on VBOOT_SEPARATE_VERSTAGE
