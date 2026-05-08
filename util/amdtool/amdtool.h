@@ -99,6 +99,19 @@ static inline void outl(uint32_t value, uint16_t port)
 #define PCI_DEVICE_ID_AMD_PHX_DATA_FABRIC_6	0x14f6
 #define PCI_DEVICE_ID_AMD_PHX_DATA_FABRIC_7	0x14f7
 
+/* Promontory 21 external PCIe chipset */
+#define PCI_DEVICE_ID_AMD_PT21_USP		0x43F4
+#define PCI_DEVICE_ID_AMD_PT21_DSP		0x43F5
+#define PCI_DEVICE_ID_AMD_PT21_SATA		0x43F6
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L1		0x43F7
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L2		0x43F8
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L3		0x43F9
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L4		0x43FA
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L5		0x43FB
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L6		0x43FC
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L7		0x43FD
+#define PCI_DEVICE_ID_AMD_PT21_XHCI_L8		0x43FE
+
 #define CPUID_TURIN_C1				0x00b00f21
 #define CPUID_PHOENIX_A1			0x00a70f41
 #define CPUID_PHOENIX_A2			0x00a70f52
@@ -140,5 +153,6 @@ int print_acpimmio(struct pci_dev *sb);
 void print_psb(struct pci_dev *nb);
 int print_irq_routing(struct pci_dev *sb, struct pci_dev *nb);
 int print_ahci_devs(struct pci_access *pacc, struct pci_dev *nb);
+int print_promontory(struct pci_access *pacc);
 
 #endif
