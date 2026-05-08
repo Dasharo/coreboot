@@ -83,6 +83,8 @@ static const struct psp_fw_name_entry psp_fw_name_table[] = {
 	{ "MPCCX_FILE_SUB1_FILE",		AMD_FW_MPCCX,			1, 0 },
 	{ "PROM21_FW_FILE",			AMD_FW_PROM21,			0, 0 },
 	{ "PROM21_FW_INS1_FILE",		AMD_FW_PROM21,			0, 1 },
+	{ "PROM19_FW_FILE",			AMD_FW_PROM19,			0, 0 },
+	{ "PROM19_FW_INS1_FILE",		AMD_FW_PROM19,			0, 1 },
 	{ "LSDMA_FILE",				AMD_FW_LSDMA,			0, 0 },
 	{ "MINIMSMU_FILE",			AMD_FW_MINIMSMU,		0, 0 },
 	{ "MINIMSMU_FILE_SUB1_FILE",		AMD_FW_MINIMSMU,		1, 0 },
