@@ -646,7 +646,7 @@ static void parse_tpm2_log(const struct tcg_efi_spec_id_event *tpm2_log, size_t 
 }
 
 /* Dump the TPM log table in format defined by specifications */
-static void dump_tpm_std_log(void *buf)
+static void dump_tpm_std_log(void *buf, size_t size)
 {
 	const struct tcpa_spec_entry *tspec_entry;
 	const struct tcg_efi_spec_id_event *tcg_spec_entry;
@@ -704,10 +704,13 @@ static void dump_tpm_cb_log(void)
 static void dump_tpm_log(void)
 {
 	uint8_t *buf;
+	size_t size;
 
-	if (cbmem_drv_get_cbmem_entry(CBMEM_ID_TCPA_TCG_LOG, &buf, NULL, NULL) ||
-	    cbmem_drv_get_cbmem_entry(CBMEM_ID_TPM2_TCG_LOG, &buf, NULL, NULL)) {
-		dump_tpm_std_log(buf);
+	if (cbmem_drv_get_cbmem_entry(CBMEM_ID_TCPA_TCG_LOG, &buf, &size, NULL)) {
+		dump_tpm_std_log(buf, size);
+		free(buf);
+	} else if (cbmem_drv_get_cbmem_entry(CBMEM_ID_TPM2_TCG_LOG, &buf,  &size, NULL)) {
+		dump_tpm_std_log(buf, size);
 		free(buf);
 	} else
 		dump_tpm_cb_log();
