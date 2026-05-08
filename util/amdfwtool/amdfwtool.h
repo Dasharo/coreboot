@@ -139,6 +139,7 @@ typedef enum _amd_fw_type {
 	AMD_FW_PSP_USBDP = 0xa4,
 	AMD_FW_PSP_USBSS = 0xa5,
 	AMD_FW_PSP_USB4 = 0xa6,
+	AMD_FW_PSP_PROM19 = 0xa7,
 	AMD_FW_PSP_IMC = 0x200,	/* Large enough to be larger than the top BHD entry type. */
 	AMD_FW_PSP_GEC,
 	AMD_FW_PSP_XHCI,
