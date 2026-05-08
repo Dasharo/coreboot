@@ -96,6 +96,12 @@ config OPENSIL_DEBUG_GFX
 	help
 	  Enable printing graphics related messages.
 
+config OPENSIL_DEBUG_PROM
+	bool "Enable Promontory messages"
+	default y
+	help
+	  Enable printing Promontory related messages.
+
 config OPENSIL_DEBUG_XUSL_CMN
 	bool "Enable xUSL CommonLib messages"
 	default y
