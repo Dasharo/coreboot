@@ -47,7 +47,7 @@ struct embedded_firmware {
 	uint32_t reserved_2Ch;
 	uint32_t promontory_fw_ptr;
 	uint32_t lp_promontory_fw_ptr;
-	uint32_t reserved_38h;
+	uint32_t promontory19_fw_ptr;
 	uint32_t reserved_3Ch;
 	uint8_t spi_readmode_f15_mod_60_6f;
 	uint8_t fast_speed_new_f15_mod_60_6f;
@@ -65,5 +65,6 @@ struct embedded_firmware {
 } __packed __aligned(16);
 
 bool read_efs_spi_settings(uint8_t *mode, uint8_t *speed);
+size_t efs_read_promontory_fw(void *buf);
 
 #endif  /* AMD_COMMON_PSP_EFS_H */
