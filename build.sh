@@ -40,9 +40,10 @@ usage() {
   echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
   echo -e "\todroid_h4_netcard      - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
   echo -e "\tasrock_spc741d8        - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
+  echo -e "\tmz33_ar1               - build Dasharo compatible with Gigabyte MZ33-AR1"
 }
 
-DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.1"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
@@ -334,6 +335,30 @@ function build_asrock_rack {
   fi
 }
 
+function build_gigabyte_mz33_ar1 {
+  DEFCONFIG="configs/config.gigabyte_mz33-ar1"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  build_prep
+
+  echo "Building Dasharo compatible with Gigabyte MZ33-AR1 (version $FW_VERSION)"
+
+  build_start
+
+  cp build/coreboot.rom gigabyte_mz33_ar1_${FW_VERSION}.rom
+  cp build/coreboot.rbu gigabyte_mz33_ar1_${FW_VERSION}.rbu
+
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/gigabyte_mz33-ar1_${FW_VERSION}.rom"
+    sha256sum gigabyte_mz33_ar1_${FW_VERSION}.rom > gigabyte_mz33_ar1_${FW_VERSION}.rom.sha256
+    echo "Result RBU binary placed in $PWD/gigabyte_mz33_ar1_${FW_VERSION}.rbu"
+    sha256sum gigabyte_mz33_ar1_${FW_VERSION}.rbu > gigabyte_mz33_ar1_${FW_VERSION}.rbu.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
 if [ $# -lt 1 ]; then
   usage
   exit
@@ -468,6 +493,9 @@ case "$CMD" in
         ;;
     "asrock_spc741d8")
         build_asrock_rack
+        ;;
+    "mz33_ar1")
+        build_gigabyte_mz33_ar1
         ;;
     *)
         echo "Invalid command: \"$CMD\""
