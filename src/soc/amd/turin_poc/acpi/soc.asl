@@ -33,6 +33,7 @@ Scope(\_SB) {
 	Scope(S0B0) {
 		#include "resources.asl"
 		#include <soc/amd/common/acpi/lpc.asl>
+		#include <soc/amd/common/acpi/thermal_zone_smu.asl>
 	} /* End S0B0 scope */
 
 	#include "ioapic_routing.asl"
