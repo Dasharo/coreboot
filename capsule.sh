@@ -230,6 +230,12 @@ function make_subcommand() {
     cap_file+=_${CONFIG_LOCALVERSION}
     cap_file+=.cap
 
+    local cap_flags="--capflag PersistAcrossReset"
+    # Capsules on AMD boards do not survive resets
+    if [ "$CONFIG_BOARD_GIGABYTE_MZ33_AR1" == y ]; then
+        cap_flags=""
+    fi
+
     if [ -e "$cap_file" ]; then
         confirm "Overwrite already existing '$cap_file'?"
     fi
@@ -285,7 +291,7 @@ EOF
     # Linux doesn't support InitiateReset flag, omitting it to rely on manual
     # warm reset
     if ! "${edk_tools}/GenerateCapsule" --encode \
-                                        --capflag PersistAcrossReset \
+                                        $cap_flags \
                                         --json-file "$json_file" \
                                         --output "$cap_file"; then
         die "GenerateCapsule failed"
