@@ -37,6 +37,7 @@ CONFIG_INTEL_TXT_CBFS_SINIT_ACM  := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS
 CONFIG_SBOM_COMPILER_PATH  := $(call strip_quotes, $(CONFIG_SBOM_COMPILER_PATH))
 CONFIG_EDK2_REPOSITORY     := $(call strip_quotes, $(CONFIG_EDK2_REPOSITORY))
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
+CONFIG_PAYLOAD_FILE        := $(call strip_quotes, $(CONFIG_PAYLOAD_FILE))
 
 # Select the correct payload directory for the used payload. Ideally we could just make this
 # a one-liner, but since the payload is generated externally (with an extra make command), we
@@ -54,32 +55,22 @@ payload-git-dir-$(CONFIG_PAYLOAD_IPXE)        = payloads/external/iPXE/ipxe
 # edk2 workspace is nested: payloads/external/edk2/workspace/<org>/
 # The repo directory name is word 3 of the repository URL (after splitting on '/'),
 # matching the logic in payloads/external/edk2/Makefile.
-ifeq ($(CONFIG_PAYLOAD_EDK2), y)
-payload-git-dir-y = payloads/external/edk2/workspace/$(word 3,$(subst /, ,$(CONFIG_EDK2_REPOSITORY)))
-endif
+payload-git-dir-$(CONFIG_PAYLOAD_EDK2)        = payloads/external/edk2/workspace/$(word 3,$(subst /, ,$(CONFIG_EDK2_REPOSITORY)))
 ifneq ($(payload-git-dir-y),)
+# W/A for multijob build:
+# Rule to ensure the payload repo is cloned, if not available at the time of SBOM creation
+$(payload-git-dir-y)/.git: $(CONFIG_PAYLOAD_FILE)
 # only proceed with payload sbom data, if one of the above payloads were selected (should be guarded by Kconfig as well)
 # e.g. payload-git-dir-y=payloads/external/SeaBIOS/seabios -> payload-json-file=$(build-dir)/payload-SeaBIOS.json
 ifeq ($(CONFIG_PAYLOAD_EDK2), y)
 payload-swid          = $(build-dir)/payload-edk2.json
 payload-swid-template = $(src-dir)/payload-edk2.json
-# W/A for multijob build:
-# Rule to ensure the EDK2 repo is cloned, if not available at the time of SBOM creation
-$(payload-git-dir-y)/.git: $(obj)/UEFIPAYLOAD.fd
 else
 payload-swid = $(build-dir)/payload-$(subst /,,$(dir $(patsubst payloads/external/%,%,$(payload-git-dir-y)))).json
 payload-swid-template = $(patsubst $(build-dir)/%.json,$(src-dir)/%.json,$(payload-swid))
+endif # ifneq ($(payload-git-dir-y),)
 endif
-endif
-endif
-
-# edk2 payload: also set swid variables when SBOM_PAYLOAD_GENERATE is not yet
-# enabled in .config (e.g. configs predating edk2 support in SBOM_PAYLOAD_GENERATE).
-ifeq ($(CONFIG_SBOM_PAYLOAD)$(CONFIG_PAYLOAD_EDK2), yy)
-payload-git-dir-y     := payloads/external/edk2/workspace/$(word 3,$(subst /, ,$(CONFIG_EDK2_REPOSITORY)))
-payload-swid          := $(build-dir)/payload-edk2.json
-payload-swid-template := $(src-dir)/payload-edk2.json
-endif
+endif # ifeq ($(CONFIG_SBOM_PAYLOAD_GENERATE), y)
 
 # Add all SBOM files into the swid-files-y target. This target contains all
 # .json, .ini, .uswid, .xml, .pc SBOM files that are later merged into one uSWID SBOM file.
