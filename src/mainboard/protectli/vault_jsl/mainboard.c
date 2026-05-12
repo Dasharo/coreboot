@@ -102,8 +102,7 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	 * Disable ASPM L1 for SSD slot, as it does not work reliably with Samsung
 	 * NVMe SSDs.
 	 */
-	params->PcieRpAspm[CONFIG(BOARD_PROTECTLI_V1210) || CONFIG(BOARD_PROTECTLI_V1211) ? 0 : 2]
-		= FSP_PCH_PCIE_ASPM_L0S;
+	params->PcieRpAspm[0] = FSP_PCH_PCIE_ASPM_L0S;
 
 	/*
 	 * HWP is too aggressive in power savings and does not let using full
