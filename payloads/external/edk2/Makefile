@@ -457,6 +457,11 @@ ifneq ($(CONFIG_EDK2_FUM_AUTO_IPXE_BOOT),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdFumAutoIpxeBoot=FALSE
 endif
 
+BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString=$(CONFIG_EDK2_FW_VERSION)
+BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor=$(CONFIG_EDK2_FW_VENDOR)
+BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareReleaseDateString=$(CONFIG_EDK2_FW_RELEASE_DATE)
+BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareRevision=$(CONFIG_EDK2_FW_REVISION)
+
 endif # !CONFIG_EDK2_REPO_OFFICIAL
 
 #
