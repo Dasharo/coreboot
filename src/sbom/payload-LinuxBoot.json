@@ -13,7 +13,20 @@
       "summary": "LinuxBoot is a firmware for modern servers that replaces specific firmware functionality like the UEFI DXE phase with a Linux kernel and runtime"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/GPL-2.0-only.html"
+    }
+  ],
   "entity": [
+    {
+      "entity-name": "LinuxBoot",
+      "reg-id": "linuxboot.org",
+      "role": [
+        "softwareCreator"
+      ]
+    },
     {
       "entity-name": "coreboot",
       "reg-id": "coreboot.org",

@@ -405,6 +405,15 @@ $(payload-swid): $(payload-swid-template) | $(build-dir)
 		sed -i \
 			-e "s/<colloquial_version>/$$git_tree_hash/" \
 			-e "s/<software_version>/$$git_comm_hash/" $@; \
+	elif [ -n "$(CONFIG_LINUXBOOT_KERNEL_VERSION)" ]; then \
+		lb_ver="linux-$(CONFIG_LINUXBOOT_KERNEL_VERSION)"; \
+		if [ -n "$(CONFIG_LINUXBOOT_UROOT_VERSION)" ]; then \
+			lb_ver="$$lb_ver+u-root-$(CONFIG_LINUXBOOT_UROOT_VERSION)"; \
+		fi; \
+		sed -i \
+			-e "s/<software_version>/$$lb_ver/" \
+			-e "/<colloquial.version>/d" \
+			$@; \
 	else \
 		sed -i -e "/<colloquial.version>/d" -e "/software-version/d" $@; \
 	fi
