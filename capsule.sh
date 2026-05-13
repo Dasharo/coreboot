@@ -232,7 +232,7 @@ function make_subcommand() {
 
     local cap_flags="--capflag PersistAcrossReset"
     # Capsules on AMD boards do not survive resets
-    if [ "$CONFIG_BOARD_GIGABYTE_MZ33_AR1" == y ]; then
+    if [ "$CONFIG_EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET" == y ]; then
         cap_flags=""
     fi
 
