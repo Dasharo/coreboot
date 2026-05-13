@@ -448,6 +448,19 @@ config EDK2_CAPSULE_ON_DISK_SUPPORT
 	  `/EFI/UpdateCapsule/`, setting the third bit in `OsIndications` EFI
 	  variable and rebooting.
 
+config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
+	bool "Capsules do not survive reset"
+	default n
+	depends on DRIVERS_EFI_UPDATE_CAPSULES
+	select EDK2_CAPSULE_ON_DISK_SUPPORT
+	help
+	  Select this option if your platform does not retain memory contents
+	  after resets and capsule are lost. The option will select the
+	  Capsule on Disk option to enable at least one working Capsule Update
+	  method. Note that the Capsule Updates produced for platforms that
+	  select this option, must not set CAPSULE_FLAGS_PERSIST_ACROSS_RESET
+	  in the Capsule flags field.
+
 config EDK2_SHOW_CAPSULE_REPORT
 	bool "Report firmware update status at the end"
 	default n
