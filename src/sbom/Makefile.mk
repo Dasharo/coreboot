@@ -353,7 +353,19 @@ $(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-micro
 	year=$$$$(hexdump --skip 0 --length 2 --format '"%04x"' $(1)); \
 	day=$$$$(hexdump --skip 2 --length 1 --format '"%02x"' $(1)); \
 	month=$$$$(hexdump --skip 3 --length 1 --format '"%02x"' $(1)); \
-	sed -i "s/<software_version>/$$$$year-$$$$month-$$$$day/" $$@
+	tag_id=$$$$(python3 -c "import uuid; print(uuid.uuid5(uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8'), 'amd-microcode-$(notdir $(1))'))" 2>/dev/null \
+		|| uuidgen --sha1 --name "amd-microcode-$(notdir $(1))" \
+			--namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8" 2>/dev/null); \
+	sha256=$$$$(sha256sum $(1) | awk '{print $$$$1}'); \
+	sed -i \
+		-e "s/<software_version>/$$$$year-$$$$month-$$$$day/" \
+		-e "s/<sha256>/$$$$sha256/" \
+		$$@; \
+	if [ -n "$$$$tag_id" ]; then \
+		sed -i "s/<tag_id>/$$$$tag_id/" $$@; \
+	else \
+		sed -i "/tag-id/d" $$@; \
+	fi
 endef
 # amd_microcode_bins is populated in src/soc/amd/common/block/cpu/Makefile.mk,
 # which is included several rounds after src/sbom (breadth-first traversal).
@@ -381,11 +393,21 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir)
 # to read it.  We do NOT depend on the payload binary ($(CONFIG_PAYLOAD_FILE))
 # because: (a) the recipe never reads the binary, only .git; (b) with make -B
 # an order-only dep on the binary would still force a full payload rebuild.
-$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-git-dir-y)/.git
-	cp $< $@;\
-	git_tree_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%T);\
-	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%H);\
-	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;
+# NOTE: the order-only dep on .git is intentionally absent for payloads whose
+# source tree is not a git repo (e.g. LinuxBoot: kernel fetched as tarball,
+# no persistent linuxboot/.git directory).  The recipe degrades gracefully
+# when no git repo is found, mirroring the pattern used for IFD and AGESA.
+$(payload-swid): $(payload-swid-template) | $(build-dir)
+	cp $< $@; \
+	if [ -d "$(payload-git-dir-y)/.git" ] || [ -f "$(payload-git-dir-y)/.git" ]; then \
+		git_tree_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%T); \
+		git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%H); \
+		sed -i \
+			-e "s/<colloquial_version>/$$git_tree_hash/" \
+			-e "s/<software_version>/$$git_comm_hash/" $@; \
+	else \
+		sed -i -e "/<colloquial.version>/d" -e "/software-version/d" $@; \
+	fi
 
 ## Standalone SBOM regeneration target
 ## Rebuilds build/sbom/sbom.uswid from existing build artifacts without
