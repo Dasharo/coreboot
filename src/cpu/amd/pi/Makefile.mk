@@ -6,3 +6,5 @@ romstage-y += ../../../soc/amd/common/block/cpu/smm/smm_helper.c
 postcar-y += ../../../soc/amd/common/block/cpu/smm/smm_helper.c
 ramstage-y += ../../../soc/amd/common/block/cpu/smm/smm_helper.c
 ramstage-y += ../../../soc/amd/common/block/cpu/smm/smm_relocate.c
+
+CPPFLAGS_common += -I$(src)/cpu/amd/pi/include
