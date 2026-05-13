@@ -6,7 +6,14 @@
   "software-name": "GCC",
   "software-meta": [
     {
-      "persistent-id": "org.gnu.gcc"
+      "persistent-id": "org.gnu.gcc",
+      "summary": "GNU Compiler Collection — C/C++ toolchain used to build coreboot firmware"
+    }
+  ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/GPL-3.0-or-later.html"
     }
   ],
   "entity": [

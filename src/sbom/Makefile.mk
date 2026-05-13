@@ -58,6 +58,7 @@ swid-files-$(CONFIG_SBOM_PAYLOAD) += $(if $(CONFIG_SBOM_PAYLOAD_GENERATE), $(pay
 # TODO think about just using one CoSWID tag for all intel-microcode instead of one for each. maybe put each microcode into files entity of CoSWID tag?
 swid-files-$(CONFIG_SBOM_MICROCODE) += $(patsubst 3rdparty/intel-microcode/intel-ucode/%, $(build-dir)/intel-microcode-%.json, $(filter 3rdparty/intel-microcode/intel-ucode/%, $(cpu_microcode_bins)))
 swid-files-$(CONFIG_SBOM_MICROCODE) += $(patsubst ${FIRMWARE_LOCATION}/UcodePatch_%.bin, $(build-dir)/amd-microcode-%.json, $(filter ${FIRMWARE_LOCATION}/UcodePatch_%.bin, $(cpu_microcode_bins)))
+swid-files-$(CONFIG_SBOM_OPENSIL) += $(build-dir)/amd-opensil.json
 swid-files-$(CONFIG_SBOM_FSP) += $(CONFIG_SBOM_FSP_PATH)
 swid-files-$(CONFIG_SBOM_EC) += $(CONFIG_SBOM_EC_PATH)
 swid-files-$(CONFIG_SBOM_BIOS_ACM) += $(CONFIG_BIOS_ACM_PATH)
@@ -153,7 +154,20 @@ $(build-dir)/amd-microcode-%.json: $(src-dir)/amd-microcode.json ${FIRMWARE_LOCA
 	year=$$(hexdump --skip 0 --length 2 --format '"%04x"' $(word 2,$^));\
 	day=$$(hexdump --skip 2 --length 1 --format '"%02x"' $(word 2,$^));\
 	month=$$(hexdump --skip 3 --length 1 --format '"%02x"' $(word 2,$^));\
-	sed -i "s/<software_version>/$$year-$$month-$$day/" $@
+	tag_id=$$(uuidgen --sha1 --name "amd-microcode-$$(basename $(word 2,$^))" \
+		--namespace "6ba7b810-9dad-11d1-80b4-00c04fd430c8");\
+	sha256=$$(sha256sum $(word 2,$^) | awk '{print $$1}');\
+	sed -i \
+		-e "s/<software_version>/$$year-$$month-$$day/" \
+		-e "s/<tag_id>/$$tag_id/" \
+		-e "s/<sha256>/$$sha256/" \
+		$@
+
+$(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json | $(build-dir)
+	cp $< $@
+	git_comm_hash=$$(git --git-dir src/vendorcode/amd/opensil/genoa_poc/opensil/.git \
+		log -n 1 --format=%H 2>/dev/null || echo "unknown");\
+	sed -i "s/<software_version>/$$git_comm_hash/" $@
 
 $(payload-swid): $(payload-swid-template) $(CONFIG_PAYLOAD_FILE) | $(build-dir)
 	cp $< $@;\

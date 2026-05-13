@@ -150,6 +150,16 @@ config SBOM_MICROCODE
 	  microcode firmware into the SBOM (Software Bill of Materials)
 	  File in your build
 
+config SBOM_OPENSIL
+	bool "Include AMD openSIL metadata in SBOM"
+	default n
+	depends on SOC_AMD_OPENSIL
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the
+	  AMD openSIL silicon initialization library into the
+	  SBOM (Software Bill of Materials) File in your build
+
 config SBOM_FSP
 	bool "Include Intel FSP metadata in SBOM"
 	default n

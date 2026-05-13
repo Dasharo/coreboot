@@ -1,22 +1,21 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 {
   "lang": "en-US",
-  "tag-id": "<tag_id>",
+  "tag-id": "a6bb55ce-b6d4-55a6-a936-96396c723439",
   "tag-version": 0,
-  "software-name": "AMD-Microcode",
+  "software-name": "AMD openSIL",
   "software-version": "<software_version>",
-  "version-scheme": "alphanumeric",
   "software-meta": [
     {
-      "persistent-id": "com.amd.microcode",
-      "summary": "Microcode updates for AMD Processors",
-      "sha256": "<sha256>"
+      "product": "AMD openSIL",
+      "persistent-id": "com.amd.opensil",
+      "summary": "AMD openSIL (open Silicon Initialization Library) is an open-source silicon initialization library for AMD platforms, serving the same role as Intel FSP"
     }
   ],
   "link": [
     {
       "rel": "license",
-      "href": "https://spdx.org/licenses/LicenseRef-amd-firmware.html"
+      "href": "https://spdx.org/licenses/MIT.html"
     }
   ],
   "entity": [
