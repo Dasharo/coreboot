@@ -48,10 +48,11 @@ BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
 function sdk_run {
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+  docker run --rm -t -u $UID \
+    -v $PWD:/build/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
-    -w /home/coreboot/coreboot ${DASHARO_SDK} \
+    -w /build/coreboot ${DASHARO_SDK} \
     "$@"
 }
 
@@ -221,11 +222,9 @@ function build_novacustom_v5x0tu {
   wget -O novacustom_v54x_mtl_v0.9.0.rom https://dl.3mdeb.com/open-source-firmware/Dasharo/novacustom_v54x_mtl/v0.9.0/novacustom_v54x_mtl_v0.9.0.rom
 
   # Extract and transfer LAN ROM blob
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
-    -w /home/coreboot/coreboot ${DASHARO_SDK}  \
-    /bin/bash -c "make -C util/cbfstool && \
-    util/cbfstool/cbfstool novacustom_v54x_mtl_v0.9.0.rom extract -r COREBOOT -f payload -n fallback/payload -m x86"
+  sdk_run /bin/bash -c "make -C util/cbfstool && \
+      util/cbfstool/cbfstool novacustom_v54x_mtl_v0.9.0.rom extract \
+      -r COREBOOT -f payload -n fallback/payload -m x86"
 
   ./uefiextract payload DEB917C0-C56A-4860-A05B-BF2F22EBB717
   mkdir -p 3rdparty/blobs/mainboard/novacustom/mtl-h
