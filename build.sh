@@ -48,7 +48,7 @@ BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
 function sdk_run {
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
+  docker run --rm -t -u $(id -u) -v $PWD:/home/coreboot/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -w /home/coreboot/coreboot ${DASHARO_SDK} \
@@ -56,10 +56,11 @@ function sdk_run {
 }
 
 function build_prep {
+  ls -al;
   if [ "${AIRGAP}" -eq 1 ]; then
-    sdk_run /bin/bash -c "make clean -d"
+    sdk_run /bin/bash -c "ls -al; make clean -d"
   else
-    sdk_run /bin/bash -c "make distclean -d"
+    sdk_run /bin/bash -c "ls -al; make distclean -d"
   fi
 
   cp "${DEFCONFIG}" .config
