@@ -60,7 +60,6 @@ CONFIG_EDK2_GOP_FILE="3rdparty/dasharo-blobs/novacustom/v5x0tu/IntelGopDriver.ef
 CONFIG_EDK2_USE_LAPTOP_LID_LIB=y
 CONFIG_EDK2_CUSTOM_BUILD_PARAMS="--pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSetupVideoHorizontalResolution=1920 --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSetupVideoVerticalResolution=1080"
 CONFIG_EDK2_ENABLE_IPXE=y
-CONFIG_IPXE_STABLE=y
 CONFIG_IPXE_ADD_SCRIPT=y
 CONFIG_IPXE_SCRIPT="3rdparty/dasharo-blobs/dasharo/dasharo.ipxe"
 CONFIG_IPXE_CUSTOM_BUILD_ID="0123456789"
