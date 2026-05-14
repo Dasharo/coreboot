@@ -57,9 +57,9 @@ function sdk_run {
 
 function build_prep {
   if [ "${AIRGAP}" -eq 1 ]; then
-    sdk_run /bin/bash -c "make clean"
+    sdk_run /bin/bash -c "make clean -d"
   else
-    sdk_run /bin/bash -c "make distclean"
+    sdk_run /bin/bash -c "make distclean -d"
   fi
 
   cp "${DEFCONFIG}" .config
@@ -83,13 +83,13 @@ function build_start {
       chmod -R 755 "$TARGET_DIR"
       sdk_run --network none \
         ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/coreboot/${TARGET_DIR}} \
-        /bin/bash -c "make olddefconfig && make -j$(nproc)"
+        /bin/bash -c "make olddefconfig -d && make -j$(nproc) -d"
     else
       echo "EDK2_REPO_PATH is not defined in AIRGAP!"
       exit 1
     fi
   else
-    sdk_run /bin/bash -c "make olddefconfig && make -j$(nproc)"
+    sdk_run /bin/bash -c "make olddefconfig -d && make -j$(nproc) -d"
   fi
 }
 
