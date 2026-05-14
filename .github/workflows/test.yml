@@ -64,9 +64,10 @@ jobs:
           GH_USERNAME: ${{ secrets.OSFV_SCRIPTS_USERNAME }}
           GH_TOKEN: ${{ secrets.OSFV_SCRIPTS_TOKEN }}
         run: |
-          sed -i "s/https:\/\/github\.com\/Dasharo\/osfv-scripts\.git/https:\/\/${{ env.GH_USERNAME }}:${{ secrets.GH_TOKEN }}@github\.com\/Dasharo\/osfv-scripts\.git/g" requirements.txt
+          sed -i "s/https:\/\/github\.com\/Dasharo\/osfv-scripts\.git/https:\/\/$GH_USERNAME:$GH_TOKEN@github\.com\/Dasharo\/osfv-scripts\.git/g" requirements.txt
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          git checkout -- requirements.txt
 
       - name: Start custom-boot-menu-key.robot, test case CBK001.001 and CBK002.001
         run: |
