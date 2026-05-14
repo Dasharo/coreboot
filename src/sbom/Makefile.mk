@@ -142,9 +142,12 @@ coreboot-licenses = $(foreach license, $(patsubst %.txt, %, $(filter-out retaine
 
 # only include CBFS SBOM section if there is any data for it
 ifeq ($(CONFIG_SBOM),y)
-cbfs-files-y += sbom
-sbom-file = $(build-dir)/sbom.uswid
-sbom-type = raw
+# Use intermediate so that $(build-dir)/sbom.uswid will be evaluated
+# after all files are built, so all repos should be available
+$(call add_intermediate, add_sbom_cbfs, $(CBFSTOOL) $(build-dir)/sbom.uswid)
+	$(foreach region,$(all-regions), \
+		$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n sbom 2>/dev/null) \
+		$(CBFSTOOL) $< add -r $(region) -n sbom -t raw -f $(build-dir)/sbom.uswid)
 endif
 
 ## Build final SBOM (Software Bill of Materials) file in uswid format
@@ -321,10 +324,13 @@ $(build-dir)/amd-agesa.json: $(src-dir)/amd-agesa.json $(CONFIG_AGESA_BINARY_PI_
 		sed -i "/software-version/d" $@; \
 	fi
 
+$(CONFIG_AMD_OPENSIL_PATH)/.git:
+	git submodule update --init --checkout $(patsubst $(top)/%,%,$(CONFIG_AMD_OPENSIL_PATH))
+
 # Record the git commit of the openSIL source tree as the SBOM version.
 # openSIL is an open-source library checked out as a submodule or external
 # repo, so the commit hash is the canonical version identifier.
-$(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json | $(build-dir)
+$(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json $(CONFIG_AMD_OPENSIL_PATH)/.git
 	cp $< $@
 	set -e; \
 	opensil_path='$(CONFIG_AMD_OPENSIL_PATH)'; \
@@ -344,7 +350,7 @@ $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json | $(build-dir)
 		sed -i "/software-version/d" $@; \
 	fi
 
-$(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/intel-microcode/intel-ucode/% | $(build-dir) $(build-dir)/goswid
+$(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/intel-microcode/intel-ucode/%
 	cp $< $@
 	year=$$(hexdump --skip 8 --length 2 --format '"%04x"' $(word 2,$^));\
 	day=$$(hexdump --skip 10 --length 1 --format '"%02x"' $(word 2,$^));\
@@ -365,7 +371,7 @@ $(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/in
 #   offset 0x03, 1 byte:     month (BCD)
 #   offset 0x04, 4 bytes:    patch ID (HEX)
 define amd-ucode-sbom-rule
-$(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-microcode.json $(1) | $(build-dir)
+$(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-microcode.json $(1)
 	cp $$< $$@
 	year=$$$$(hexdump --skip 0 --length 2 --format '"%04x"' $(1)); \
 	day=$$$$(hexdump --skip 2 --length 1 --format '"%02x"' $(1)); \
@@ -379,17 +385,27 @@ endef
 # Makefile.mks have been processed and amd_microcode_bins is fully populated.
 postinclude-hooks += $$(foreach ucode,$$(amd_microcode_bins),$$(eval $$(call amd-ucode-sbom-rule,$$(ucode))))
 
-vboot-gitdir := $(shell git -C 3rdparty/vboot rev-parse --absolute-git-dir 2>/dev/null)
+vboot-gitdir := 3rdparty/vboot/.git
 
-$(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitdir)/HEAD,) | $(build-dir)
+$(vboot-gitdir):
+	git submodule update --init --checkout 3rdparty/vboot
+
+$(build-dir)/vboot.json: $(src-dir)/vboot.json $(vboot-gitdir)
 	cp $< $@
 	git_tree_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%T); \
 	git_comm_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
 
-ipxe-gitdir := $(shell git -C payloads/external/iPXE/ipxe rev-parse --absolute-git-dir 2>/dev/null)
+ifeq ($(CONFIG_BUILD_IPXE),y)
+ipxe-gitdir := payloads/external/iPXE/ipxe/.git
+ifeq ($(CONFIG_EDK2_ENABLE_IPXE),y)
+$(ipxe-gitdir): $(CONFIG_PAYLOAD_FILE)
+else
+$(ipxe-gitdir): ipxe
+endif
+endif
 
-$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir),$(ipxe-gitdir)/HEAD,) | $(build-dir)
+$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(ipxe-gitdir)
 	cp $< $@
 	git_tree_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%T); \
 	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
