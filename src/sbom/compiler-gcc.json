@@ -4,9 +4,18 @@
   "tag-id": "8e0d0fd3-1116-50ad-ba5f-599c8117c42b",
   "tag-version": 0,
   "software-name": "GCC",
+  "software-version": "<software_version>",
+  "version-scheme": "semver",
   "software-meta": [
     {
-      "persistent-id": "org.gnu.gcc"
+      "persistent-id": "org.gnu.gcc",
+      "summary": "GNU Compiler Collection — C/C++ toolchain used to build coreboot firmware"
+    }
+  ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/GPL-3.0-or-later.html"
     }
   ],
   "entity": [
