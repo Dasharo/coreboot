@@ -53,6 +53,7 @@ function sdk_run {
     -v $PWD:/build/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
+    -e GOCACHE=/tmp/go-build \
     -w /build/coreboot ${DASHARO_SDK} \
     "$@"
 }
