@@ -86,6 +86,15 @@ struct bpm_hash_list {
 	struct hash_struct hashes[];
 } __packed;
 
+/*
+ * GCC 13+ rejects flex-array members that are not at the end of a containing
+ * struct. The hash_struct fields below are deprecated since CBnT BWG v1.2.0
+ * and are always written with size=0 (no data bytes), but their position is
+ * fixed by the hardware spec, so we suppress the diagnostic here.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wflex-array-member-not-at-end"
+
 /* IBB Segment Element (upper part) */
 struct bpm_ibbs {
 	char structure_id[8];  /* "__IBBS__" */
@@ -116,6 +125,8 @@ struct bpm_ibbs_bottom {
 	uint8_t segment_count;
 	/* ibb_segments[segment_count]; */
 } __packed;
+
+#pragma GCC diagnostic pop
 
 /* KMHASH_STRUCT */
 struct km_hash {
