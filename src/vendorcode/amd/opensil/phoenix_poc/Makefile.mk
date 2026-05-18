@@ -1,6 +1,7 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
 subdirs-y += mpio
+subdirs-$(CONFIG_DRIVERS_AMD_PROMONTORY21) += prom21
 
 CPPFLAGS_common += -I$(opensil_dir)/Include -I$(opensil_dir)/xUSL -I$(opensil_dir)/xUSL/Include -I$(opensil_dir)/xUSL/FCH -I$(opensil_dir)/xUSL/FCH/Common -I$(opensil_dir)/xSIM -I$(opensil_dir)/xPRF
 
