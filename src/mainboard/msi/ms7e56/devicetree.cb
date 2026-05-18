@@ -222,7 +222,352 @@ chip soc/amd/phoenix
 			register "start_lane" = "20"
 			register "end_lane" = "23"
 			register "sb_link" = "1"
-			device ref gpp_bridge_2_1 on end
+			device ref gpp_bridge_2_1 on
+				chip drivers/amd/promontory21
+					device pci 00.0 alias prom21_usp on # Upstream Port
+						register "pcie.report_small_ltr" = "Enable"
+						register "pcie.gen1_swing_enable" = "true"
+
+						register "pcie.pcie_gen1_swing" = "{
+							0x3f, 0x3f, 0x3f, 0x3f,
+							0x13, 0x13, 0x13, 0x13,
+							0x3f, 0x3f, 0x3f, 0x3f
+						}"
+
+						register "pcie.clkreq_pin_select" = "{
+							ClkreqPort2,
+							ClkreqPort0,
+							ClkreqPort8,
+							ClkreqPort10,
+							ClkreqPort11,
+							ClkreqPort3
+						}"
+
+						register "pcie.port_target_speed[0]" = "4"
+						register "pcie.port_target_speed[2]" = "3"
+						register "pcie.port_target_speed[3]" = "3"
+						register "pcie.port_target_speed[8]" = "4"
+						register "pcie.port_target_speed[10]" = "3"
+						register "pcie.port_target_speed[11]" = "3"
+
+						register "pcie.msi" = "Enable"
+						register "pcie.msix" = "Enable"
+
+						device pci 00.0 alias prom21_dsp_pcie_1  on # PCI_E3
+							ops amd_prom21_dsp_ops
+						end
+						device pci 01.0 alias prom21_dsp_pcie_2  off
+							ops amd_prom21_dsp_ops
+						end
+						device pci 02.0 alias prom21_dsp_pcie_3  on  # PCI_E2
+							ops amd_prom21_dsp_ops
+						end
+						device pci 03.0 alias prom21_dsp_pcie_4  on  # PCI_E4
+							ops amd_prom21_dsp_ops
+						end
+						device pci 04.0 alias prom21_dsp_pcie_5  off  # used as SATA
+							ops amd_prom21_dsp_ops
+						end
+						device pci 05.0 alias prom21_dsp_pcie_6  off  # used as SATA
+							ops amd_prom21_dsp_ops
+						end
+						device pci 06.0 alias prom21_dsp_pcie_7  off  # used as SATA
+							ops amd_prom21_dsp_ops
+						end
+						device pci 07.0 alias prom21_dsp_pcie_8  off  # used as SATA
+							ops amd_prom21_dsp_ops
+						end
+						device pci 08.0 alias prom21_dsp_pcie_9  on  # M2_3
+							ops amd_prom21_dsp_ops
+						end
+						device pci 09.0 alias prom21_dsp_pcie_10 off
+							ops amd_prom21_dsp_ops
+						end
+						device pci 0a.0 alias prom21_dsp_pcie_11 on  # Ethernet Realtek
+							ops amd_prom21_dsp_ops
+						end
+						device pci 0b.0 alias prom21_dsp_pcie_12 on  # WiFi Qualcomm
+							ops amd_prom21_dsp_ops
+						end
+						device pci 0c.0 alias prom21_dsp_xhci    on
+							device pci 00.0 alias prom21_xhci on
+								ops xhci_pci_ops
+
+								register "usb.hw_lpm" = "Enable"
+								register "usb.dbc" = "Enable"
+								register "usb.usb3_gen" = "XhciGen2x2"
+								register "usb.port_gen" = "{
+									XhciPortGen1,
+									XhciPortGen1,
+									XhciPortGen1,
+									XhciPortGen1,
+									XhciPortGen1
+								}"
+
+								register "usb3_phy[0]" = "{
+									.override = true,
+									.gen1_swing = 0xf,
+									.gen1_emp_level_en = 0x1,
+									.gen1_emp_level = 0x3,
+									.gen1_preshoot_en = 0x0,
+									.gen1_preshoot = 0x0,
+									.gen2_swing = 0xc,
+									.gen2_cp0_emp_level_en = 0x1,
+									.gen2_cp0_emp_level = 0x3,
+									.gen2_cp0_preshoot_en = 0x1,
+									.gen2_cp0_preshoot = 0x1,
+									.gen2_cp13_emp_level_en = 0x0,
+									.gen2_cp13_emp_level = 0x3,
+									.gen2_cp13_preshoot_en = 0x1,
+									.gen2_cp13_preshoot = 0x1,
+									.gen2_cp14_emp_level_en = 0x1,
+									.gen2_cp14_emp_level = 0x3,
+									.gen2_cp14_preshoot_en = 0x0,
+									.gen2_cp14_preshoot = 0x1,
+									.gen2_cp15_emp_level_en = 0x1,
+									.gen2_cp15_emp_level = 0x3,
+									.gen2_cp15_preshoot_en = 0x1,
+									.gen2_cp15_preshoot = 0x1,
+									.gen2_cp16_emp_level_en = 0x0,
+									.gen2_cp16_emp_level = 0x3,
+									.gen2_cp16_preshoot_en = 0x0,
+									.gen2_cp16_preshoot = 0x1
+								}"
+
+								register "usb3_phy[1]" = "{
+									.override = true,
+									.gen1_swing = 0xf,
+									.gen1_emp_level_en = 0x1,
+									.gen1_emp_level = 0x3,
+									.gen1_preshoot_en = 0x0,
+									.gen1_preshoot = 0x0,
+									.gen2_swing = 0xc,
+									.gen2_cp0_emp_level_en = 0x1,
+									.gen2_cp0_emp_level = 0x3,
+									.gen2_cp0_preshoot_en = 0x1,
+									.gen2_cp0_preshoot = 0x1,
+									.gen2_cp13_emp_level_en = 0x0,
+									.gen2_cp13_emp_level = 0x3,
+									.gen2_cp13_preshoot_en = 0x1,
+									.gen2_cp13_preshoot = 0x1,
+									.gen2_cp14_emp_level_en = 0x1,
+									.gen2_cp14_emp_level = 0x3,
+									.gen2_cp14_preshoot_en = 0x0,
+									.gen2_cp14_preshoot = 0x1,
+									.gen2_cp15_emp_level_en = 0x1,
+									.gen2_cp15_emp_level = 0x3,
+									.gen2_cp15_preshoot_en = 0x1,
+									.gen2_cp15_preshoot = 0x1,
+									.gen2_cp16_emp_level_en = 0x0,
+									.gen2_cp16_emp_level = 0x3,
+									.gen2_cp16_preshoot_en = 0x0,
+									.gen2_cp16_preshoot = 0x1
+								}"
+
+								register "usb3_phy[2]" = "{
+									.override = true,
+									.gen1_swing = 0xf,
+									.gen1_emp_level_en = 0x1,
+									.gen1_emp_level = 0x3,
+									.gen1_preshoot_en = 0x0,
+									.gen1_preshoot = 0x0,
+									.gen2_swing = 0xc,
+									.gen2_cp0_emp_level_en = 0x1,
+									.gen2_cp0_emp_level = 0x3,
+									.gen2_cp0_preshoot_en = 0x1,
+									.gen2_cp0_preshoot = 0x1,
+									.gen2_cp13_emp_level_en = 0x0,
+									.gen2_cp13_emp_level = 0x3,
+									.gen2_cp13_preshoot_en = 0x1,
+									.gen2_cp13_preshoot = 0x1,
+									.gen2_cp14_emp_level_en = 0x1,
+									.gen2_cp14_emp_level = 0x3,
+									.gen2_cp14_preshoot_en = 0x0,
+									.gen2_cp14_preshoot = 0x1,
+									.gen2_cp15_emp_level_en = 0x1,
+									.gen2_cp15_emp_level = 0x3,
+									.gen2_cp15_preshoot_en = 0x1,
+									.gen2_cp15_preshoot = 0x1,
+									.gen2_cp16_emp_level_en = 0x0,
+									.gen2_cp16_emp_level = 0x3,
+									.gen2_cp16_preshoot_en = 0x0,
+									.gen2_cp16_preshoot = 0x1
+								}"
+
+								register "usb3_phy[3]" = "{
+									.override = true,
+									.gen1_swing = 0xf,
+									.gen1_emp_level_en = 0x1,
+									.gen1_emp_level = 0x3,
+									.gen1_preshoot_en = 0x0,
+									.gen1_preshoot = 0x0,
+									.gen2_swing = 0xc,
+									.gen2_cp0_emp_level_en = 0x1,
+									.gen2_cp0_emp_level = 0x3,
+									.gen2_cp0_preshoot_en = 0x1,
+									.gen2_cp0_preshoot = 0x1,
+									.gen2_cp13_emp_level_en = 0x0,
+									.gen2_cp13_emp_level = 0x3,
+									.gen2_cp13_preshoot_en = 0x1,
+									.gen2_cp13_preshoot = 0x1,
+									.gen2_cp14_emp_level_en = 0x1,
+									.gen2_cp14_emp_level = 0x3,
+									.gen2_cp14_preshoot_en = 0x0,
+									.gen2_cp14_preshoot = 0x1,
+									.gen2_cp15_emp_level_en = 0x1,
+									.gen2_cp15_emp_level = 0x3,
+									.gen2_cp15_preshoot_en = 0x1,
+									.gen2_cp15_preshoot = 0x1,
+									.gen2_cp16_emp_level_en = 0x0,
+									.gen2_cp16_emp_level = 0x3,
+									.gen2_cp16_preshoot_en = 0x0,
+									.gen2_cp16_preshoot = 0x1
+								}"
+
+								register "usb3_phy[4]" = "{
+									.override = true,
+									.gen1_swing = 0xf,
+									.gen1_emp_level_en = 0x1,
+									.gen1_emp_level = 0x3,
+									.gen1_preshoot_en = 0x0,
+									.gen1_preshoot = 0x0,
+									.gen2_swing = 0xc,
+									.gen2_cp0_emp_level_en = 0x1,
+									.gen2_cp0_emp_level = 0x3,
+									.gen2_cp0_preshoot_en = 0x1,
+									.gen2_cp0_preshoot = 0x1,
+									.gen2_cp13_emp_level_en = 0x0,
+									.gen2_cp13_emp_level = 0x3,
+									.gen2_cp13_preshoot_en = 0x1,
+									.gen2_cp13_preshoot = 0x1,
+									.gen2_cp14_emp_level_en = 0x1,
+									.gen2_cp14_emp_level = 0x3,
+									.gen2_cp14_preshoot_en = 0x0,
+									.gen2_cp14_preshoot = 0x1,
+									.gen2_cp15_emp_level_en = 0x1,
+									.gen2_cp15_emp_level = 0x3,
+									.gen2_cp15_preshoot_en = 0x1,
+									.gen2_cp15_preshoot = 0x1,
+									.gen2_cp16_emp_level_en = 0x0,
+									.gen2_cp16_emp_level = 0x3,
+									.gen2_cp16_preshoot_en = 0x0,
+									.gen2_cp16_preshoot = 0x1
+								}"
+
+								register "usb3_phy[5]" = "{
+									.override = true,
+									.gen1_swing = 0xf,
+									.gen1_emp_level_en = 0x1,
+									.gen1_emp_level = 0x3,
+									.gen1_preshoot_en = 0x0,
+									.gen1_preshoot = 0x0,
+									.gen2_swing = 0xc,
+									.gen2_cp0_emp_level_en = 0x1,
+									.gen2_cp0_emp_level = 0x3,
+									.gen2_cp0_preshoot_en = 0x1,
+									.gen2_cp0_preshoot = 0x1,
+									.gen2_cp13_emp_level_en = 0x0,
+									.gen2_cp13_emp_level = 0x3,
+									.gen2_cp13_preshoot_en = 0x1,
+									.gen2_cp13_preshoot = 0x1,
+									.gen2_cp14_emp_level_en = 0x1,
+									.gen2_cp14_emp_level = 0x3,
+									.gen2_cp14_preshoot_en = 0x0,
+									.gen2_cp14_preshoot = 0x1,
+									.gen2_cp15_emp_level_en = 0x1,
+									.gen2_cp15_emp_level = 0x3,
+									.gen2_cp15_preshoot_en = 0x1,
+									.gen2_cp15_preshoot = 0x1,
+									.gen2_cp16_emp_level_en = 0x0,
+									.gen2_cp16_emp_level = 0x3,
+									.gen2_cp16_preshoot_en = 0x0,
+									.gen2_cp16_preshoot = 0x1
+								}"
+
+								chip drivers/usb/acpi
+									register "type" = "UPC_TYPE_HUB"
+									device usb 0.0 alias prom_21_xhci_root_hub on
+										chip drivers/usb/acpi
+											device usb 2.0 alias prom21_usb2_port1 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.1 alias prom21_usb2_port2 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.2 alias prom21_usb2_port3 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.3 alias prom21_usb2_port4 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.4 alias prom21_usb2_port5 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.5 alias prom21_usb2_port6 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.6 alias prom21_usb2_port7 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.7 alias prom21_usb2_port8 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.8 alias prom21_usb2_port9 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.9 alias prom21_usb2_port10 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.a alias prom21_usb2_port11 on end
+										end
+										chip drivers/usb/acpi
+											device usb 2.b alias prom21_usb2_port12 on end
+										end
+										chip drivers/usb/acpi
+											device usb 3.0 alias prom21_usb3_port1 on end
+										end
+										chip drivers/usb/acpi
+											device usb 3.1 alias prom21_usb3_port2 on end
+										end
+										chip drivers/usb/acpi
+											device usb 3.2 alias prom21_usb3_port3 on end
+										end
+										chip drivers/usb/acpi
+											device usb 3.3 alias prom21_usb3_port4 on end
+										end
+										chip drivers/usb/acpi
+											device usb 3.4 alias prom21_usb3_port5 on end
+										end
+										chip drivers/usb/acpi
+											device usb 3.5 alias prom21_usb3_port6 on end
+										end
+									end
+								end
+							end
+						end
+						device pci 0d.0 alias prom21_dsp_sata on
+							device pci 00.0 alias prom21_sata on
+								ops prom21_sata_ops
+
+								register "sata.port_enable" = "{ 1, 1, 1, 1 }"
+								register "sata.aggressive_dev_slp" = "{
+									Disable,
+									Disable,
+									Disable,
+									Disable
+								}"
+
+								register "sata.aggresive_link_pm_cap" = "Enable"
+								register "sata.psc_cap" = "Enable"
+								register "sata.ssc_cap" = "Enable"
+								register "sata.hot_plug" = "Disable"
+								register "sata.cccs_cap" = "Disable"
+								register "sata.msi_cap" = "Enable"
+							end
+						end
+					end
+				end
+			end
 		end
 		# M2_2: x4 M.2 slot, DXIO lanes 24-27
 		chip drivers/amd/opensil/mpio
