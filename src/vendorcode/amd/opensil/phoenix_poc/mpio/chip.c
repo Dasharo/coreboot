@@ -12,6 +12,7 @@
 #include <static.h>
 
 #include "chip.h"
+#include "../prom21/prom21.h"
 
 MPIO_DDI_DESCRIPTOR ddi_descriptor_list[MAX_DDI_PORTS];
 
@@ -217,6 +218,9 @@ void opensil_mpio_per_device_config(struct device *dev)
 
 		port.Port = port_data;
 		port.Port.MiscControls.SbLink = config->sb_link;
+
+		if (CONFIG(DRIVERS_AMD_PROMONTORY21) && config->sb_link)
+			opensil_promontory21_config(&SilContext, dev);
 
 		port.Port.AlwaysExpose = 1;
 		port.Port.SlotNum = ++slot_num;
