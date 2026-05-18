@@ -34,9 +34,8 @@ void mainboard_update_soc_chip_config(struct soc_intel_meteorlake_config *config
 
 static void mainboard_enable(struct device *dev)
 {
-#if CONFIG(GENERATE_SMBIOS_TABLES)
-	dev->ops->get_smbios_data = mainboard_smbios_data;
-#endif
+	if (CONFIG(GENERATE_SMBIOS_TABLES))
+		dev->ops->get_smbios_data = mainboard_smbios_data;
 }
 
 struct chip_operations mainboard_ops = {
