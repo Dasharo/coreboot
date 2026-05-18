@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config DRIVERS_AMD_PROMONTORY21
+	bool
+	help
+	  Enable AMD Promontory21 chip driver.
