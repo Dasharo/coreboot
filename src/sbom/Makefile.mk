@@ -82,8 +82,8 @@ endif
 # use already checked-out repositories for version extraction and avoid
 # re-triggering payload fetch/build targets (especially with `make -B sbom`).
 ifeq ($(filter sbom,$(MAKECMDGOALS)),sbom)
-payload-swid-ready-dep := $(if $(wildcard $(payload-git-dir-y)/.git),$(payload-git-dir-y)/.git,)
-ipxe-swid-ready-dep := $(if $(wildcard payloads/external/iPXE/ipxe/.git),payloads/external/iPXE/ipxe/.git,)
+payload-swid-ready-dep := $(wildcard $(payload-git-dir-y)/.git)
+ipxe-swid-ready-dep := $(wildcard payloads/external/iPXE/ipxe/.git)
 else
 payload-swid-ready-dep := $(CONFIG_PAYLOAD_FILE)
 ipxe-swid-ready-dep := payloads/external/iPXE/ipxe/ipxe.rom
