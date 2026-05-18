@@ -1,0 +1,92 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+# This file is a template. Mainboards should replicate this structure
+# under the root port where the Promontory 21 chipset is located at.
+# Placing the below topology under the root port is required for the driver
+# to correctly parse the topology and apply settings based on the devicetree.
+
+chip drivers/amd/promontory21
+	device pci 00.0 alias prom21_usp on # Upstream Port
+		device pci 00.0 alias prom21_dsp_pcie_1  off end
+		device pci 01.0 alias prom21_dsp_pcie_2  off end
+		device pci 02.0 alias prom21_dsp_pcie_3  off end
+		device pci 03.0 alias prom21_dsp_pcie_4  off end
+		device pci 04.0 alias prom21_dsp_pcie_5  off end
+		device pci 05.0 alias prom21_dsp_pcie_6  off end
+		device pci 06.0 alias prom21_dsp_pcie_7  off end
+		device pci 07.0 alias prom21_dsp_pcie_8  off end
+		device pci 08.0 alias prom21_dsp_pcie_9  off end
+		device pci 09.0 alias prom21_dsp_pcie_10 off end
+		device pci 0a.0 alias prom21_dsp_pcie_11 off end
+		device pci 0b.0 alias prom21_dsp_pcie_12 off end
+		device pci 0c.0 alias prom21_dsp_xhci    off
+			device pci 00.0 alias prom21_xhci off
+				ops xhci_pci_ops
+				chip drivers/usb/acpi
+					register "type" = "UPC_TYPE_HUB"
+					device usb 0.0 alias prom_21_xhci_root_hub off
+						chip drivers/usb/acpi
+							device usb 2.0 alias prom21_usb2_port1 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.1 alias prom21_usb2_port2 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.2 alias prom21_usb2_port3 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.3 alias prom21_usb2_port4 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.4 alias prom21_usb2_port5 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.5 alias prom21_usb2_port6 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.6 alias prom21_usb2_port7 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.7 alias prom21_usb2_port8 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.8 alias prom21_usb2_port9 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.9 alias prom21_usb2_port10 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.a alias prom21_usb2_port11 off end
+						end
+						chip drivers/usb/acpi
+							device usb 2.b alias prom21_usb2_port12 off end
+						end
+						chip drivers/usb/acpi
+							device usb 3.0 alias prom21_usb3_port1 off end
+						end
+						chip drivers/usb/acpi
+							device usb 3.1 alias prom21_usb3_port2 off end
+						end
+						chip drivers/usb/acpi
+							device usb 3.2 alias prom21_usb3_port3 off end
+						end
+						chip drivers/usb/acpi
+							device usb 3.3 alias prom21_usb3_port4 off end
+						end
+						chip drivers/usb/acpi
+							device usb 3.4 alias prom21_usb3_port5 off end
+						end
+						chip drivers/usb/acpi
+							device usb 3.5 alias prom21_usb3_port6 off end
+						end
+					end
+				end
+			end
+		end
+		device pci 0d.0 alias prom21_dsp_sata off
+			device pci 00.0 alias prom21_sata off
+				ops prom21_sata_ops
+			end
+		end
+	end
+end
