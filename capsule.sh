@@ -290,7 +290,8 @@ EOF
     local opt_root_cert=$root_cert
     local opt_sub_cert=$sub_cert
     local opt_sign_cert=$sign_cert
-    if [ "$CONFIG_EDK2_CAPSULES_V2" = y ]; then
+    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
+        echo "nested capsules"
         # The inner capsule is always signed with the test key.  Not signing it
         # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
         # least due to Image->AuthInfo.Hdr.wRevision check in
@@ -323,7 +324,7 @@ EOF
 }
 EOF
 
-    if [ "$CONFIG_EDK2_CAPSULES_V2" = y ]; then
+    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
         # The capsule created above is the inner capsule.  Make it and then
         # update JSON file to point at it as a payload.
         if ! "${edk_tools}/GenerateCapsule" --encode \
