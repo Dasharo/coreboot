@@ -124,6 +124,8 @@ struct espi_config {
 
 	/* Use ESPI_VW_IRQ_* above */
 	uint32_t vw_irq_polarity;
+
+	uint32_t irq_mask;
 };
 
 /*
