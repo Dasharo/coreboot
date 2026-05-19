@@ -27,7 +27,8 @@ config DEVICETREE
 
 config MAINBOARD_PART_NUMBER
 	string
-	default "VP2410"
+	default "VP2410" if ENABLE_EMMC
+	default "VP2410e"
 
 config MAINBOARD_FAMILY
 	default "Vault Pro"
@@ -50,6 +51,12 @@ config USE_LEGACY_8254_TIMER
 config FMDFILE
 	string
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/board.fmd" if !VBOOT
+
+config ENABLE_EMMC
+	bool "Enable eMMC support"
+	default y
+	help
+	  Enable the eMMC storage controller
 
 config BEEP_ON_BOOT
 	bool "Beep on successful boot"
