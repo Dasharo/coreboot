@@ -422,6 +422,10 @@ case "$CMD" in
         BOARD="vp2410"
         build_protectli_vault
         ;;
+    "vp2410_noemmc" | "VP2410_noemmc" | "vp2410e" | "VP2410e")
+        BOARD="vp2410"
+        build_protectli_vault _no_emmc
+        ;;
     "vp2420" | "VP2420")
         BOARD="vp2420"
         build_protectli_vault
