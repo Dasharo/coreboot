@@ -6,6 +6,7 @@
 #include <device/device.h>
 #include <pc80/i8254.h>
 #include <smbios.h>
+#include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <superio/ite/it8659e/chip.h>
 #include <superio/ite/it8659e/it8659e.h>
@@ -39,9 +40,9 @@ const char *smbios_mainboard_product_name(void)
 	}
 
 	if (strstr(str, "N100") != NULL)
-		return "VP3210";
+		return CONFIG(ENABLE_EMMC) ? "VP3210" : "VP3210e";
 	else if (strstr(str, "N305") != NULL)
-		return "VP3230";
+		return CONFIG(ENABLE_EMMC) ? "VP3230" : "VP3230e";
 	else
 		return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
 }
@@ -55,6 +56,9 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	memset(params->CpuPcieClockGating, 0, sizeof(params->CpuPcieClockGating));
 	memset(params->CpuPciePowerGating, 0, sizeof(params->CpuPciePowerGating));
 	memset(params->CpuPcieRpPmSci, 0, sizeof(params->CpuPcieRpPmSci));
+
+	if (!CONFIG(ENABLE_EMMC))
+		params->ScsEmmcEnabled = 0;
 
 	// Max payload 256B
 	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
@@ -121,6 +125,12 @@ static void mainboard_enable(struct device *dev)
 	struct superio_ite_it8659e_config *ite_cfg;
 	struct device *ite_ec = dev_find_slot_pnp(0x2e, IT8659E_EC);
 	uint8_t fan_curve = get_fan_curve_option();
+
+	if (!CONFIG(ENABLE_EMMC)) {
+		struct device *emmc = pcidev_path_on_root(PCH_DEVFN_EMMC);
+		if (emmc)
+			emmc->enabled = 0;
+	}
 
 	if (ite_ec && ite_ec->chip_info) {
 		ite_cfg = (struct superio_ite_it8659e_config *)ite_ec->chip_info;
