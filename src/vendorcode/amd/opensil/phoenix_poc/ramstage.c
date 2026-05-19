@@ -147,6 +147,9 @@ static void configure_usb(SIL_CONTEXT *SilContext)
 	if (!fch_usb_data)
 		return;
 
+	fch_usb_data->XhciSsid = usb_ctrlr[0]->subsystem_vendor |
+				 ((uint32_t)usb_ctrlr[0]->subsystem_device << 16);
+
 	fch_usb_data->Xhci0Enable = is_dev_enabled(usb_ctrlr[0]);
 	fch_usb_data->Xhci1Enable = is_dev_enabled(usb_ctrlr[1]);
 	fch_usb_data->Usb4Host[0].Usb3HCDisable = !is_dev_enabled(usb_ctrlr[2]);
@@ -290,6 +293,8 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilContext, SilId_FchHwAcpi, 0);
 	FCHCLASS_INPUT_BLK *fch_data = SilFindStructure(SilContext, SilId_FchClass, 0);
 	struct device *smb = DEV_PTR(smbus);
+	struct device *xhci = DEV_PTR(xhci_0);
+	struct device *hda = DEV_PTR(hda);
 
 	if (!fch_hwacpi_data) {
 		printk(BIOS_ERR, "OpenSIL: FCH HW ACPI data not found\n");
@@ -307,8 +312,19 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 		return;
 	}
 
-	fch_data->Smbus.SmbusSsid = smb->subsystem_vendor |
-				    ((uint32_t)smb->subsystem_device << 16);
+	if (smb) {
+		fch_data->Smbus.SmbusSsid = smb->subsystem_vendor |
+					    ((uint32_t)smb->subsystem_device << 16);
+		fch_data->FchBldCfg.CfgSmbusSsid = fch_data->Smbus.SmbusSsid;
+	}
+
+	if (hda)
+		fch_data->FchBldCfg.CfgAzaliaSsid = hda->subsystem_vendor |
+						    ((uint32_t)hda->subsystem_device << 16);
+
+	if (xhci)
+		fch_data->FchBldCfg.CfgXhciSsid = xhci->subsystem_vendor |
+						  ((uint32_t)xhci->subsystem_device << 16);
 
 	fch_data->FchBldCfg.CfgSioPmeBaseAddress = 0;
 	fch_data->FchBldCfg.CfgAcpiPm1EvtBlkAddr = ACPI_PM_EVT_BLK;
