@@ -7,19 +7,21 @@
 
 chip drivers/amd/promontory21
 	device pci 00.0 alias prom21_usp on # Upstream Port
-		device pci 00.0 alias prom21_dsp_pcie_1  off end
-		device pci 01.0 alias prom21_dsp_pcie_2  off end
-		device pci 02.0 alias prom21_dsp_pcie_3  off end
-		device pci 03.0 alias prom21_dsp_pcie_4  off end
-		device pci 04.0 alias prom21_dsp_pcie_5  off end
-		device pci 05.0 alias prom21_dsp_pcie_6  off end
-		device pci 06.0 alias prom21_dsp_pcie_7  off end
-		device pci 07.0 alias prom21_dsp_pcie_8  off end
-		device pci 08.0 alias prom21_dsp_pcie_9  off end
-		device pci 09.0 alias prom21_dsp_pcie_10 off end
-		device pci 0a.0 alias prom21_dsp_pcie_11 off end
-		device pci 0b.0 alias prom21_dsp_pcie_12 off end
+		ops amd_prom21_usp_ops
+		device pci 00.0 alias prom21_dsp_pcie_1  off ops amd_prom21_dsp_ops end
+		device pci 01.0 alias prom21_dsp_pcie_2  off ops amd_prom21_dsp_ops end
+		device pci 02.0 alias prom21_dsp_pcie_3  off ops amd_prom21_dsp_ops end
+		device pci 03.0 alias prom21_dsp_pcie_4  off ops amd_prom21_dsp_ops end
+		device pci 04.0 alias prom21_dsp_pcie_5  off ops amd_prom21_dsp_ops end
+		device pci 05.0 alias prom21_dsp_pcie_6  off ops amd_prom21_dsp_ops end
+		device pci 06.0 alias prom21_dsp_pcie_7  off ops amd_prom21_dsp_ops end
+		device pci 07.0 alias prom21_dsp_pcie_8  off ops amd_prom21_dsp_ops end
+		device pci 08.0 alias prom21_dsp_pcie_9  off ops amd_prom21_dsp_ops end
+		device pci 09.0 alias prom21_dsp_pcie_10 off ops amd_prom21_dsp_ops end
+		device pci 0a.0 alias prom21_dsp_pcie_11 off ops amd_prom21_dsp_ops end
+		device pci 0b.0 alias prom21_dsp_pcie_12 off ops amd_prom21_dsp_ops end
 		device pci 0c.0 alias prom21_dsp_xhci    off
+			ops amd_prom21_dsp_ops
 			device pci 00.0 alias prom21_xhci off
 				ops xhci_pci_ops
 				chip drivers/usb/acpi
@@ -84,6 +86,7 @@ chip drivers/amd/promontory21
 			end
 		end
 		device pci 0d.0 alias prom21_dsp_sata off
+			ops amd_prom21_dsp_ops
 			device pci 00.0 alias prom21_sata off
 				ops prom21_sata_ops
 			end
