@@ -129,14 +129,11 @@ BUILD_STR += -D CAPSULE_MAIN_FW_GUID=$(CONFIG_DRIVERS_EFI_MAIN_FW_GUID)
 ifeq ($(CONFIG_EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET),y)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSupportUpdateCapsuleReset=FALSE
 endif
-ifeq ($(CONFIG_EDK2_CAPSULE_ON_DISK_SUPPORT),y)
-BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport=TRUE
-# Ensure the maximum capsule size on disk is big enough to hld whle image
+ifeq ($(CONFIG_EDK2_CAPSULES_V2),y)
+BUILD_STR += -D CAPSULES_V2=TRUE
+# Ensure the maximum capsule size on disk is big enough to hold whole image
 # Currently we give a safe value of 1.5 x CONFIG_ROM_SZE
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizeNonPopulateCapsule=$(CONFIG_EDK2_CAPSULE_ON_DISK_SIZE)
-endif
-ifeq ($(CONFIG_EDK2_SHOW_CAPSULE_REPORT),y)
-BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.PcdShowCapsuleReport=TRUE
 endif
 endif
 # QEMU_PLATFORM			= FALSE
