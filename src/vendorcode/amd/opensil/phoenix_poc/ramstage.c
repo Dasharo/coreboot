@@ -292,6 +292,7 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 {
 	FCHHWACPI_INPUT_BLK *fch_hwacpi_data = SilFindStructure(SilContext, SilId_FchHwAcpi, 0);
 	FCHCLASS_INPUT_BLK *fch_data = SilFindStructure(SilContext, SilId_FchClass, 0);
+	struct soc_amd_phoenix_config *cfg = config_of_soc();
 	struct device *smb = DEV_PTR(smbus);
 	struct device *xhci = DEV_PTR(xhci_0);
 	struct device *hda = DEV_PTR(hda);
@@ -336,7 +337,10 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 		fch_data->FchIoApicId = 32;
 	}
 
-	fch_data->WdtEnable = false;
+	if(cfg && !(cfg->common_config.fadt_boot_arch & ACPI_FADT_8042))
+		fch_data->Misc.NoneSioKbcSupport = true;
+
+	fch_data->WdtEnable = true;
 
 	/* eSPI always enabled (bit 27) */
 	fch_data->FchRunTime.FchDeviceEnableMap = (1 << 27);
