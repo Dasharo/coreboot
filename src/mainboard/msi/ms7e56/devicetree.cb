@@ -209,14 +209,18 @@ chip soc/amd/phoenix
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "0"
 			register "end_lane" = "7"
-			device ref gpp_bridge_1_1 on end
+			device ref gpp_bridge_1_1 on
+				smbios_slot_desc "SlotTypePciExpressGen4x16" "SlotLengthLong" "PCIE_E1" "SlotDataBusWidth8X"
+			end
 		end
 		# M2_1: x4 M.2 slot, DXIO lanes 16-19
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "16"
 			register "end_lane" = "19"
-			device ref gpp_bridge_1_2 on end
+			device ref gpp_bridge_1_2 on
+				smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M2_1" "SlotDataBusWidth4X"
+			end
 		end
 		# Promontory B850 chipset: x4 link, DXIO lanes 20-23
 		chip drivers/amd/opensil/mpio
@@ -259,18 +263,22 @@ chip soc/amd/phoenix
 
 						device pci 00.0 alias prom21_dsp_pcie_1  on # PCI_E3
 							ops amd_prom21_dsp_ops
+							smbios_slot_desc "SlotTypePciExpressGen4x16" "SlotLengthLong" "PCI_E3" "SlotDataBusWidth4X"
 						end
 						device pci 01.0 alias prom21_dsp_pcie_2  off
 							ops amd_prom21_dsp_ops
 						end
 						device pci 02.0 alias prom21_dsp_pcie_3  on  # PCI_E2
 							ops amd_prom21_dsp_ops
+							smbios_slot_desc "SlotTypePciExpressGen3X16" "SlotLengthLong" "PCI_E2" "SlotDataBusWidth1X"
 						end
 						device pci 03.0 alias prom21_dsp_pcie_4  on  # PCI_E4
 							ops amd_prom21_dsp_ops
+							smbios_slot_desc "SlotTypePciExpressGen3X16" "SlotLengthLong" "PCI_E4" "SlotDataBusWidth1X"
 						end
 						device pci 04.0 alias prom21_dsp_pcie_5  off  # used as SATA
 							ops amd_prom21_dsp_ops
+							smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M2_3" "SlotDataBusWidth4X"
 						end
 						device pci 05.0 alias prom21_dsp_pcie_6  off  # used as SATA
 							ops amd_prom21_dsp_ops
@@ -283,6 +291,7 @@ chip soc/amd/phoenix
 						end
 						device pci 08.0 alias prom21_dsp_pcie_9  on  # M2_3
 							ops amd_prom21_dsp_ops
+							smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M2_3" "SlotDataBusWidth4X"
 						end
 						device pci 09.0 alias prom21_dsp_pcie_10 off
 							ops amd_prom21_dsp_ops
@@ -614,7 +623,9 @@ chip soc/amd/phoenix
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "24"
 			register "end_lane" = "27"
-			device ref gpp_bridge_2_2 on end
+			device ref gpp_bridge_2_2 on
+				smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M2_2" "SlotDataBusWidth4X"
+			end
 		end
 
 		device ref gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
