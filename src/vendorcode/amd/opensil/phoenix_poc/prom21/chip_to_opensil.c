@@ -117,11 +117,6 @@ static void config_usb_port_enables(struct device *xhci_dev,
 	}
 }
 
-static uint32_t get_pci_ssid(struct device *dev)
-{
-	return (uint32_t)(dev->subsystem_vendor | ((uint32_t)dev->subsystem_device << 16));
-}
-
 void opensil_promontory21_config(SIL_CONTEXT *SilContext, struct device *root_port)
 {
 	PROMCLASS_DATA_BLK *prom_data = SilFindStructure(SilContext, SilId_PromClass, 0);
@@ -168,9 +163,9 @@ void opensil_promontory21_config(SIL_CONTEXT *SilContext, struct device *root_po
 	cfg = usp->chip_info;
 	primary = &input_blk->Primary;
 
-	if (get_pci_ssid(usp)) {
+	if (pcidev_get_ssid(usp)) {
 		primary->PT21SsidOverride = 1;
-		primary->PT21PcieUspSsid = get_pci_ssid(usp);
+		primary->PT21PcieUspSsid = pcidev_get_ssid(usp);
 	}
 
 	/*
@@ -192,22 +187,22 @@ void opensil_promontory21_config(SIL_CONTEXT *SilContext, struct device *root_po
 			/* DSP PCIe port: slot 0-11 maps to port index 0-11 */
 			primary->PT21PciePortEnable[slot] = dsp->enabled;
 			if (dsp->enabled)
-				primary->PT21PcieDspSsid = get_pci_ssid(dsp);
+				primary->PT21PcieDspSsid = pcidev_get_ssid(dsp);
 		} else if (dsp->path.pci.devfn == PROM21_XHCI_DEVFN) {
 			struct device *xhci = dsp->downstream ? dsp->downstream->children :
 								NULL;
-			primary->PT21PcieDspXhciSsid = get_pci_ssid(dsp);
+			primary->PT21PcieDspXhciSsid = pcidev_get_ssid(dsp);
 			if (xhci) {
 				config_usb_port_enables(xhci, primary);
-				primary->PT21XhciSsid = get_pci_ssid(xhci);
+				primary->PT21XhciSsid = pcidev_get_ssid(xhci);
 			}
 		} else if (dsp->path.pci.devfn == PROM21_SATA_DEVFN) {
 			primary->PT21SataEnable = dsp->enabled ? 1 : 0;
 			struct device *ahci = dsp->downstream ? dsp->downstream->children :
 								NULL;
-			primary->PT21PcieDspAhciSsid = get_pci_ssid(dsp);
+			primary->PT21PcieDspAhciSsid = pcidev_get_ssid(dsp);
 			if (ahci)
-				primary->PT21AhciSsid = get_pci_ssid(ahci);
+				primary->PT21AhciSsid = pcidev_get_ssid(ahci);
 		}
 	}
 
