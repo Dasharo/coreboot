@@ -143,6 +143,10 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;	
 	input->IoApicMMIOAddressReservedEnable = false;
 	input->CfgGnbIoapicAddress        = GNB_IO_APIC_ADDR;
+	if (CONFIG(IOAPIC_PREDEFINED_ID)) {
+		input->IoApicIdPreDefineEn = 1;
+		input->IoApicIdBase        = 33;
+	}
 	input->EsmEnableAllRootPorts      = false;
 	input->EsmTargetSpeed             = 16;
 	input->CfgRxMarginPersistenceMode = 1;
