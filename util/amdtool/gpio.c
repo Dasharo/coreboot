@@ -130,6 +130,7 @@ const char *const tacoma_iomux_gpio_names[] = {
 	[ 23 * 4] = "AC_PRES",			"GPIO23",		"GPIO23",		"GPIO23",
 	[ 24 * 4] = "USB_OC3_L",		"GPIO24",		"GPIO24",		"GPIO24",
 	[ 26 * 4] = "PCIE_RST0_L",		"GPIO26",		"GPIO26",		"GPIO26",
+	[ 27 * 4] = "GPIO27",			"PCIE_RST1_L",		"GPIO27",		"GPIO27",
 	[ 29 * 4] = "SPI_TPM_CS_L",		"GPIO29",		"GPIO29",		"GPIO29",
 	[ 30 * 4] = "SPI_CS2_L",		"ESPI_CS_L",		"GPIO30",		"GPIO30",
 	[ 31 * 4] = "SPI_CS3_L",		"GPIO31",		"GPIO31",		"GPIO31",
