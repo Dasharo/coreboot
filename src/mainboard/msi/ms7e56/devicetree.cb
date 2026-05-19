@@ -200,6 +200,8 @@ chip soc/amd/phoenix
 	register "usb3_oc_pins[3]" = "{ 0x1, 0xf, 0xf, 0xf }"
 
 	device domain 0 on
+		subsystemid 0x1462 0x7e56 inherit
+
 		device ref iommu on end
 
 		# PCIE_E1: x8 PCIe slot, DXIO lanes 0-7
@@ -225,6 +227,8 @@ chip soc/amd/phoenix
 			device ref gpp_bridge_2_1 on
 				chip drivers/amd/promontory21
 					device pci 00.0 alias prom21_usp on # Upstream Port
+						ops amd_prom21_usp_ops
+
 						register "pcie.report_small_ltr" = "Enable"
 						register "pcie.gen1_swing_enable" = "true"
 
@@ -289,7 +293,9 @@ chip soc/amd/phoenix
 						device pci 0b.0 alias prom21_dsp_pcie_12 on  # WiFi Qualcomm
 							ops amd_prom21_dsp_ops
 						end
-						device pci 0c.0 alias prom21_dsp_xhci    on
+						device pci 0c.0 alias prom21_dsp_xhci on
+							ops amd_prom21_dsp_ops
+
 							device pci 00.0 alias prom21_xhci on
 								ops xhci_pci_ops
 
@@ -546,6 +552,8 @@ chip soc/amd/phoenix
 							end
 						end
 						device pci 0d.0 alias prom21_dsp_sata on
+							ops amd_prom21_dsp_ops
+
 							device pci 00.0 alias prom21_sata on
 								ops prom21_sata_ops
 
