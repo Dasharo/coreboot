@@ -37,30 +37,22 @@ static void mpio_params_config(SIL_CONTEXT *SilContext)
 	phx_data->CfgHdAudioEnable = is_dev_enabled(hda);
 	phx_data->CfgSensorHubEnable = is_dev_enabled(mp2);
 
-	if (acp)
-		phx_data->CfgAcpSsid = acp->subsystem_vendor |
-				       ((uint32_t)acp->subsystem_device << 16);
-	if (gfx)
-		phx_data->AmdCfgGnbIGPUSSID = gfx->subsystem_vendor |
-					      ((uint32_t)gfx->subsystem_device << 16);
-	if (gfx_hda)
-		phx_data->AmdCfgGnbIGPUAudioSSID = gfx_hda->subsystem_vendor |
-						   ((uint32_t)gfx_hda->subsystem_device << 16);
-	if (nbifrc)
-		phx_data->CfgNbifRCSsid = nbifrc->subsystem_vendor |
-					  ((uint32_t)nbifrc->subsystem_device << 16);
-	if (gnb)
-		mpio_data->CfgNbioSsid   = gnb->subsystem_vendor |
-					  ((uint32_t)gnb->subsystem_device << 16);
-	if (iommu)
-		mpio_data->CfgIommuSsid  = iommu->subsystem_vendor |
-					  ((uint32_t)iommu->subsystem_device << 16);
-	if (psp)
-		mpio_data->CfgPspccpSsid = psp->subsystem_vendor |
-					  ((uint32_t)psp->subsystem_device << 16);
-	if (nbif)
-		mpio_data->CfgNbifF0Ssid = nbif->subsystem_vendor |
-					  ((uint32_t)nbif->subsystem_device << 16);
+	if (pcidev_get_ssid(acp))
+		phx_data->CfgAcpSsid = pcidev_get_ssid(acp);
+	if (pcidev_get_ssid(gfx))
+		phx_data->AmdCfgGnbIGPUSSID = pcidev_get_ssid(gfx);
+	if (pcidev_get_ssid(gfx_hda))
+		phx_data->AmdCfgGnbIGPUAudioSSID = pcidev_get_ssid(gfx_hda);
+	if (pcidev_get_ssid(nbifrc))
+		phx_data->CfgNbifRCSsid = pcidev_get_ssid(nbifrc);
+	if (pcidev_get_ssid(gnb))
+		mpio_data->CfgNbioSsid = pcidev_get_ssid(gnb);
+	if (pcidev_get_ssid(iommu))
+		mpio_data->CfgIommuSsid  = pcidev_get_ssid(iommu);
+	if (pcidev_get_ssid(psp))
+		mpio_data->CfgPspccpSsid = pcidev_get_ssid(psp);
+	if (pcidev_get_ssid(nbif))
+		mpio_data->CfgNbifF0Ssid = pcidev_get_ssid(nbif);
 
 	mpio_data->CfgDxioClockGating                  = 1;
 	mpio_data->PcieDxioTimingControlEnable         = 0;
@@ -262,7 +254,7 @@ void opensil_mpio_per_device_config(struct device *dev)
 		port.Port = port_data;
 		port.Port.MiscControls.SbLink = config->sb_link;
 
-		if (dev->subsystem_vendor && dev->subsystem_device) {
+		if (pcidev_get_ssid(dev)) {
 			mpio_data->AmdPcieSubsystemVendorID = dev->subsystem_vendor;
 			mpio_data->AmdPcieSubsystemDeviceID = dev->subsystem_device;
 		}
