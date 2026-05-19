@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <amdblocks/acpimmio.h>
 #include <amdblocks/chip.h>
 #include <amdblocks/espi.h>
 #include <amdblocks/lpc.h>
@@ -1102,6 +1103,9 @@ enum cb_err espi_setup(void)
 		ctrl |= ESPI_ALERT_ENABLE;
 
 	espi_write32(ESPI_GLOBAL_CONTROL_1, ctrl);
+
+	if (cfg->irq_mask)
+		pm_write32(PM_ESPI_INTR_CTRL, cfg->irq_mask);
 
 	printk(BIOS_SPEW, "Finished initializing ESPI.\n");
 
