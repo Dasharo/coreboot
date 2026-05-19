@@ -508,6 +508,14 @@ static inline bool is_root_device(const struct device *dev)
 	       (dev->upstream->dev == dev);
 }
 
+static inline uint32_t pcidev_get_ssid(const struct device *dev)
+{
+	if (!dev)
+		return 0;
+
+	return (dev->subsystem_vendor | ((uint32_t)dev->subsystem_device << 16));
+}
+
 void enable_static_device(struct device *dev);
 void enable_static_devices(struct device *bus);
 void scan_smbus(struct device *bus);
