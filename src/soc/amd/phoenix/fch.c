@@ -105,6 +105,7 @@ static void fch_init_acpi_ports(void)
 		   response of the I/O write. */
 		reg = pm_read32(PM_PCI_CTRL);
 		reg |= FORCE_SLPSTATE_RETRY;
+		reg &= ~FORCE_STPCLK_RETRY;
 		pm_write32(PM_PCI_CTRL, reg);
 
 		/* Disable SlpTyp feature */
