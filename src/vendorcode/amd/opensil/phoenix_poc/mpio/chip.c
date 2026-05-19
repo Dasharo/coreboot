@@ -140,9 +140,13 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 {
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilContext, SilId_NbioClass, 0);
 	GFXCLASS_INPUT_BLK *gfx_data = SilFindStructure(SilContext, SilId_GfxClass, 0);
-	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;	
+	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;
 	input->IoApicMMIOAddressReservedEnable = false;
 	input->CfgGnbIoapicAddress        = GNB_IO_APIC_ADDR;
+	if (CONFIG(IOAPIC_USE_PRESET_ID)) {
+		input->IoApicIdPreDefineEn = 1;
+		input->IoApicIdBase        = 33;
+	}
 	input->EsmEnableAllRootPorts      = false;
 	input->EsmTargetSpeed             = 16;
 	input->CfgRxMarginPersistenceMode = 1;
