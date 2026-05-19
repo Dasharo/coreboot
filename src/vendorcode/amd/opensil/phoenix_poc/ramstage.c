@@ -300,6 +300,8 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	if (!fch_hwacpi_data) {
 		printk(BIOS_ERR, "OpenSIL: FCH HW ACPI data not found\n");
 	} else {
+		fch_hwacpi_data->Xtal48MPadPowerSaving = true;
+
 		if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 2)
 			fch_hwacpi_data->PwrFailShadow = UsePrevious;
 		else if (CONFIG_MAINBOARD_POWER_FAILURE_STATE == 1)
