@@ -440,6 +440,16 @@ config EDK2_CAPSULES_V2
 	  Enables capsule-specific functionality added during the second round of
 	  implementing it.
 
+config EDK2_CAPSULES_V2_TRANSITION
+	bool "Capsules Update: transitioning from v1 to v2"
+	default n
+	depends on EDK2_CAPSULES_V2
+	help
+	  Indicates that this is the first time EDK2_CAPSULES_V2 is enabled for a
+	  release of a board which has been using capsules before.  This enables
+	  compatibility between this and prior releases when it comes to building
+	  capsules.
+
 config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
 	bool "Capsules do not survive reset"
 	default n
