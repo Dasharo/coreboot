@@ -595,7 +595,9 @@ chip soc/amd/phoenix
 					device generic 0 on end
 				end
 			end # Internal GPU (GFX)
-			device ref gfx_hda on end # Display HD Audio Controller (GFXAZ)
+			device ref gfx_hda on
+				ops default_azalia_audio_ops
+			end # Display HD Audio Controller (GFXAZ)
 			device ref crypto on end # Crypto Coprocessor
 			device ref xhci_0 on
 				chip drivers/usb/acpi
@@ -641,7 +643,9 @@ chip soc/amd/phoenix
 					end
 				end
 			end
-			device ref acp on end # Audio Processor (ACP)
+			device ref acp on
+				ops default_azalia_audio_ops
+			end # Audio Processor (ACP)
 		end
 		device ref gpp_bridge_c on  # Internal GPP Bridge 2 to Bus C
 			device ref usb4_xhci_0 on
