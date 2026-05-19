@@ -561,7 +561,7 @@ bool get_ibecc_option(bool ibecc_default)
 
 bool dasharo_is_disk_capsules_boot(void)
 {
-	if (!CONFIG(EDK2_CAPSULE_ON_DISK_SUPPORT))
+	if (!CONFIG(EDK2_CAPSULES_V2))
 		return false;
 
 	bool disk_capsules_boot = false;
