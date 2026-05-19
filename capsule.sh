@@ -6,6 +6,10 @@ edk_workspace=payloads/external/edk2/workspace
 edk_basetools=${edk_workspace}/Dasharo/BaseTools
 edk_tools=${edk_basetools}/BinWrappers/PosixLike
 edk_scripts=${edk_basetools}/Scripts
+# gets overwritten with gencap/GenerateCapsule if it exists and is executable,
+# that directory is created by `box` subcommand and allows not depending on
+# EDK2's repository for resigning
+generate_capsule=${edk_tools}/GenerateCapsule
 
 function die() {
     echo error: "$@" 1>&2
@@ -212,6 +216,17 @@ function check_cert() {
     fi
 }
 
+function check_generate_capsule() {
+    if [ -x gencap/GenerateCapsule ]; then
+        info "found 'gencap/GenerateCapsule'"
+        generate_capsule=gencap/GenerateCapsule
+    fi
+
+    if [ ! -x "$generate_capsule" ]; then
+        die "'${generate_capsule}' can't be executed"
+    fi
+}
+
 function make_subcommand() {
     if [ ! -f .config ]; then
         die "no '.config' file in current directory"
@@ -222,9 +237,8 @@ function make_subcommand() {
     if [ ! build/coreboot.rom -nt .config ]; then
         die "'build/coreboot.rom' is not newer than .config'; need a re-build?"
     fi
-    if [ ! -x "${edk_tools}/GenerateCapsule" ]; then
-        die "'${edk_tools}/GenerateCapsule' can't be executed"
-    fi
+
+    check_generate_capsule
 
     source_coreboot_config
     require_capsule_support
@@ -331,10 +345,10 @@ EOF
     if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
         # The capsule created above is the inner capsule.  Make it and then
         # update JSON file to point at it as a payload.
-        if ! "${edk_tools}/GenerateCapsule" --encode \
-                                            $cap_flags \
-                                            --json-file "$json_file" \
-                                            --output "$cap_file.inner"; then
+        if ! "$generate_capsule" --encode \
+                                 $cap_flags \
+                                 --json-file "$json_file" \
+                                 --output "$cap_file.inner"; then
             die "GenerateCapsule failed"
         fi
 
@@ -359,10 +373,10 @@ EOF
 
     # Linux doesn't support InitiateReset flag, omitting it to rely on manual
     # warm reset
-    if ! "${edk_tools}/GenerateCapsule" --encode \
-                                        $cap_flags \
-                                        --json-file "$json_file" \
-                                        --output "$cap_file"; then
+    if ! "$generate_capsule" --encode \
+                             $cap_flags \
+                             --json-file "$json_file" \
+                             --output "$cap_file"; then
         die "GenerateCapsule failed"
     fi
 
@@ -399,8 +413,8 @@ function decode_capsule() {
     local capsule=$2
     local -n result=$3
 
-    "${edk_tools}/GenerateCapsule" --decode "$capsule" \
-                                   --output "$tmp_dir/decoded"
+    "$generate_capsule" --decode "$capsule" \
+                        --output "$tmp_dir/decoded"
 
     local json_file="$tmp_dir/decoded.json"
     result["fw_version"]=$(jq -r '.Payloads[0].FwVersion' "$json_file")
@@ -445,16 +459,14 @@ EOF
         cap_flags=()
     fi
 
-    "${edk_tools}/GenerateCapsule" --encode \
-                                   "${cap_flags[@]}" \
-                                   --json-file "$tmp_dir/cap.json" \
-                                   --output "$cap_out"
+    "$generate_capsule" --encode \
+                        "${cap_flags[@]}" \
+                        --json-file "$tmp_dir/cap.json" \
+                        --output "$cap_out"
 }
 
 function resign_subcommand() {
-    if [ ! -x "${edk_tools}/GenerateCapsule" ]; then
-        die "'${edk_tools}/GenerateCapsule' can't be executed"
-    fi
+    check_generate_capsule
 
     local root_cert sub_cert sign_cert
     OPTIND=1
@@ -740,7 +752,6 @@ function upload_lvfs_subcommand() {
 
     echo "$body"
 }
-
 
 if [ $# -eq 0 ]; then
     print_usage
