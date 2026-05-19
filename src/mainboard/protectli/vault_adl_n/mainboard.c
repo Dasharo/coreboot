@@ -42,9 +42,9 @@ const char *smbios_mainboard_product_name(void)
 	}
 
 	if (strstr(str, "N100") != NULL)
-		return "VP3210";
+		return CONFIG(ENABLE_EMMC) ? "VP3210" : "VP3210e";
 	else if (strstr(str, "N305") != NULL)
-		return "VP3230";
+		return CONFIG(ENABLE_EMMC) ? "VP3230" : "VP3230e";
 	else
 		return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
 }
