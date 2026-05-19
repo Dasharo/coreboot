@@ -18,7 +18,8 @@ config MAINBOARD_DIR
 	default "protectli/vault_ehl"
 
 config MAINBOARD_PART_NUMBER
-	default "VP2420"
+	default "VP2420" if ENABLE_EMMC
+	default "VP2420e"
 
 config MAINBOARD_FAMILY
 	default "Vault Pro"
@@ -54,6 +55,12 @@ config VBOOT_SLOTS_RW_A
 
 config FMDFILE
 	default "src/mainboard/\$(CONFIG_MAINBOARD_DIR)/vboot-rwa.fmd" if VBOOT && VBOOT_SLOTS_RW_A
+
+config ENABLE_EMMC
+	bool "Enable eMMC support"
+	default y
+	help
+	  Enable the eMMC storage controller
 
 if PAYLOAD_EDK2
 
