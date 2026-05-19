@@ -698,6 +698,9 @@ chip soc/amd/phoenix
 				smbios_dev_info 2 "Onboard Audio"
 			end
 		end
+		device ref gpp_bridge_b on # Internal GPP Bridge 1 to Bus B
+			device ref ipu on end
+		end
 		device ref gpp_bridge_c on  # Internal GPP Bridge 2 to Bus C
 			device ref usb4_xhci_0 on
 				chip drivers/usb/acpi
