@@ -334,6 +334,11 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	fch_data->FchBldCfg.CfgAcpiGpe0BlkAddr = ACPI_GPE0_BLK;
 	fch_data->FchBldCfg.CfgSmiCmdPortAddr = APM_CNT;
 
+	if (CONFIG(IOAPIC_PREDEFINED_ID)) {
+		fch_data->CfgIoApicIdPreDefEnable = 1;
+		fch_data->FchIoApicId = 32;
+	}
+
 	fch_data->WdtEnable = false;
 
 	/* eSPI always enabled (bit 27) */
