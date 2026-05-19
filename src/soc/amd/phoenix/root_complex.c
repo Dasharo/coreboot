@@ -2,8 +2,12 @@
 
 /* TODO: Update for Phoenix */
 
+#include <acpi/acpi.h>
 #include <acpi/acpigen.h>
+#include <acpi/acpigen_pci.h>
+#include <acpi/acpi_device.h>
 #include <amdblocks/alib.h>
+#include <amdblocks/amd_pci_util.h>
 #include <amdblocks/data_fabric.h>
 #include <amdblocks/ioapic.h>
 #include <amdblocks/root_complex.h>
@@ -85,10 +89,104 @@ static void acipgen_dptci(void)
 		sizeof(no_battery_input));
 }
 
+struct pci_dev_int_routes {
+	unsigned int devfn;
+	unsigned int num_irqs;
+	unsigned int irq_base;
+};
+
+static const struct pci_dev_int_routes iohc_devs[] = {
+	{ .devfn = PCI_DEVFN(0x14, 0), .num_irqs = 4, .irq_base = 16 },
+	{ .devfn = PCI_DEVFN(0x08, 0), .num_irqs = 1, .irq_base = 28 },
+};
+
+static void acpigen_write_PRT_GSI(const struct device *rb)
+{
+	char *pkg_count;
+	const struct device *dev;
+
+	pkg_count = acpigen_write_package(0); /* Package - APIC Routing */
+
+	for (unsigned int d = 0; d < ARRAY_SIZE(iohc_devs); d++) {
+		dev = pcidev_path_behind(rb->upstream, iohc_devs[d].devfn);
+		if (!dev || !dev->enabled)
+			continue;
+
+		for (unsigned int i = 0; i < iohc_devs[d].num_irqs; ++i) {
+			(*pkg_count)++;
+			acpigen_write_PRT_GSI_entry(
+				PCI_SLOT(iohc_devs[d].devfn),
+				i, /* pin */
+				iohc_devs[d].irq_base + i);
+		}
+	}
+
+	acpigen_pop_len(); /* Package - APIC Routing */
+}
+
+static void acpigen_write_PRT_PIC(const struct device *rb)
+{
+	char link_template[] = "\\_SB.INTX";
+	char *pkg_count;
+	const struct device *dev;
+
+	pkg_count = acpigen_write_package(0); /* Package - PIC Routing */
+	for (unsigned int d = 0; d < ARRAY_SIZE(iohc_devs); d++) {
+		dev = pcidev_path_behind(rb->upstream, iohc_devs[d].devfn);
+		if (!dev || !dev->enabled)
+			continue;
+
+		for (unsigned int i = 0; i < iohc_devs[d].num_irqs; i++) {
+			link_template[8] = 'A' + ((iohc_devs[d].irq_base + i) % 8);
+			(*pkg_count)++;
+			acpigen_write_PRT_source_entry(
+				PCI_SLOT(iohc_devs[d].devfn),
+				i, /* pin */
+				link_template /* Source */,
+				0 /* Source Index */);
+		}
+	}
+
+	acpigen_pop_len(); /* Package - PIC Routing */
+}
+
+static void acpigen_write_host_bridge_PRT(const struct device *dev)
+{
+	acpigen_write_method("_PRT", 0);
+
+	/* If (PICM) */
+	acpigen_write_if();
+	acpigen_emit_namestring("PICM");
+
+	/* Return (Package{...}) */
+	acpigen_emit_byte(RETURN_OP);
+	acpigen_write_PRT_GSI(dev);
+
+	/* Else */
+	acpigen_write_else();
+
+	/* Return (Package{...}) */
+	acpigen_emit_byte(RETURN_OP);
+	acpigen_write_PRT_PIC(dev);
+
+	acpigen_pop_len(); /* End Else */
+
+	acpigen_pop_len(); /* Method */
+}
+
 static void root_complex_fill_ssdt(const struct device *device)
 {
+	const char *acpi_scope = acpi_device_path(dev_get_domain(device));
+
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_ACPI_DPTC))
 		acipgen_dptci();
+
+	acpigen_write_scope(acpi_scope);
+
+	printk(BIOS_DEBUG, "%s: writing _PRT\n", acpi_scope);
+	acpigen_write_host_bridge_PRT(device);
+
+	acpigen_pop_len(); /* Scope */
 }
 
 static const char *gnb_acpi_name(const struct device *dev)
