@@ -118,7 +118,7 @@ static void send_ivrs_to_psp(struct acpi_rsdp *rsdp)
 	buffer.info.ivrs_table_buffer = (uint64_t)hdr;
 	buffer.info.ivrs_table_size = hdr->length;
 
-	printk(BIOS_DEBUG, "PSP: Sending IVRS ACPI table\n");
+	printk(BIOS_DEBUG, "PSP: Sending IVRS ACPI table ");
 
 	cmd_status = send_psp_command(MBOX_BIOS_CMD_SEND_IVRS_ACPI_TABLE, &buffer);
 
