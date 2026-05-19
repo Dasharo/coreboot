@@ -3,6 +3,7 @@
 #include <device/device.h>
 #include <fsp/api.h>
 #include <pc80/i8254.h>
+#include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 
 static void mainboard_final(void *chip_info)
@@ -20,6 +21,11 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *silconfig)
 	 * intel_pstate by disabling HWP.
 	 */
 	silconfig->Hwp = 0;
+
+	if (!CONFIG(ENABLE_EMMC)) {
+		silconfig->ScsEmmcEnabled = 0;
+		pcidev_path_on_root(PCH_DEVFN_EMMC)->enabled = 0;
+	}
 }
 
 struct chip_operations mainboard_ops = {
