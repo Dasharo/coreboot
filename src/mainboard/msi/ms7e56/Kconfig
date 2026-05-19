@@ -21,6 +21,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select MEMORY_MAPPED_TPM
 	select HAVE_X86_64_SUPPORT
 	select USE_X86_64_SUPPORT
+	select IOAPIC_8BIT_ID
+	select IOAPIC_PREDEFINED_ID
 
 config FMDFILE
 	default "src/mainboard/msi/ms7e56/board.fmd"
