@@ -5,8 +5,10 @@
 #include <device/pci_def.h>
 #include <GFX/GfxClass-api.h>
 #include <Mpio/MpioClass-api.h>
+#include <Mpio/Phx/MpioPhxData.h>
 #include <Nbio/NbioClass-api.h>
 #include <RcMgr/DfX/RcManager-api.h>
+#include <soc/iomap.h>
 #include <vendorcode/amd/opensil/opensil.h>
 #include <xSIM-api.h>
 #include <static.h>
@@ -19,6 +21,47 @@ MPIO_DDI_DESCRIPTOR ddi_descriptor_list[MAX_DDI_PORTS];
 static void mpio_params_config(SIL_CONTEXT *SilContext)
 {
 	MPIOCLASS_COMMON_INPUT_BLK *mpio_data = SilFindStructure(SilContext, SilId_MpioClass, 0);
+	MPIOCLASS_PHX_INPUT_BLK *phx_data = SilFindStructure(SilContext, SilId_MpioClass, 1);
+	struct device *gnb = DEV_PTR(gnb);
+	struct device *iommu = DEV_PTR(iommu);
+	struct device *psp = DEV_PTR(crypto);
+	struct device *nbif = pcidev_on_root(8, 0);
+	struct device *acp = DEV_PTR(acp);
+	struct device *hda = DEV_PTR(hda);
+	struct device *mp2 = DEV_PTR(mp2);
+	struct device *gfx = DEV_PTR(gfx);
+	struct device *gfx_hda = DEV_PTR(gfx_hda);
+	struct device *nbifrc = DEV_PTR(gpp_bridge_a);
+
+	phx_data->AcpController = is_dev_enabled(acp);
+	phx_data->CfgHdAudioEnable = is_dev_enabled(hda);
+	phx_data->CfgSensorHubEnable = is_dev_enabled(mp2);
+
+	if (acp)
+		phx_data->CfgAcpSsid = acp->subsystem_vendor |
+				       ((uint32_t)acp->subsystem_device << 16);
+	if (gfx)
+		phx_data->AmdCfgGnbIGPUSSID = gfx->subsystem_vendor |
+					      ((uint32_t)gfx->subsystem_device << 16);
+	if (gfx_hda)
+		phx_data->AmdCfgGnbIGPUAudioSSID = gfx_hda->subsystem_vendor |
+						   ((uint32_t)gfx_hda->subsystem_device << 16);
+	if (nbifrc)
+		phx_data->CfgNbifRCSsid = nbifrc->subsystem_vendor |
+					  ((uint32_t)nbifrc->subsystem_device << 16);
+	if (gnb)
+		mpio_data->CfgNbioSsid   = gnb->subsystem_vendor |
+					  ((uint32_t)gnb->subsystem_device << 16);
+	if (iommu)
+		mpio_data->CfgIommuSsid  = iommu->subsystem_vendor |
+					  ((uint32_t)iommu->subsystem_device << 16);
+	if (psp)
+		mpio_data->CfgPspccpSsid = psp->subsystem_vendor |
+					  ((uint32_t)psp->subsystem_device << 16);
+	if (nbif)
+		mpio_data->CfgNbifF0Ssid = nbif->subsystem_vendor |
+					  ((uint32_t)nbif->subsystem_device << 16);
+
 	mpio_data->CfgDxioClockGating                  = 1;
 	mpio_data->PcieDxioTimingControlEnable         = 0;
 	mpio_data->PCIELinkReceiverDetectionPolling    = 0;
@@ -54,14 +97,8 @@ static void mpio_params_config(SIL_CONTEXT *SilContext)
 	mpio_data->CfgPcieAriSupport                   = 1;
 	mpio_data->CfgNbioCTOtoSC                      = 0;
 	mpio_data->CfgNbioCTOIgnoreError               = 1;
-	mpio_data->CfgNbioSsid                         = 0;
-	mpio_data->CfgIommuSsid                        = 0;
-	mpio_data->CfgPspccpSsid                       = 0;
 	mpio_data->CfgNtbccpSsid                       = 0;
-	mpio_data->CfgNbifF0Ssid                       = 0;
 	mpio_data->CfgNtbSsid                          = 0;
-	mpio_data->AmdPcieSubsystemDeviceID            = 0x1453;
-	mpio_data->AmdPcieSubsystemVendorID            = 0x1022;
 	mpio_data->GppAtomicOps                        = 1;
 	mpio_data->GfxAtomicOps                        = 1;
 	mpio_data->AmdNbioReportEdbErrors              = 0;
@@ -104,6 +141,8 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 	NBIOCLASS_DATA_BLOCK *nbio_data = SilFindStructure(SilContext, SilId_NbioClass, 0);
 	GFXCLASS_INPUT_BLK *gfx_data = SilFindStructure(SilContext, SilId_GfxClass, 0);
 	NBIO_CONFIG_DATA *input = &nbio_data->NbioConfigData;	
+	input->IoApicMMIOAddressReservedEnable = false;
+	input->CfgGnbIoapicAddress        = GNB_IO_APIC_ADDR;
 	input->EsmEnableAllRootPorts      = false;
 	input->EsmTargetSpeed             = 16;
 	input->CfgRxMarginPersistenceMode = 1;
@@ -218,6 +257,11 @@ void opensil_mpio_per_device_config(struct device *dev)
 
 		port.Port = port_data;
 		port.Port.MiscControls.SbLink = config->sb_link;
+
+		if (dev->subsystem_vendor && dev->subsystem_device) {
+			mpio_data->AmdPcieSubsystemVendorID = dev->subsystem_vendor;
+			mpio_data->AmdPcieSubsystemDeviceID = dev->subsystem_device;
+		}
 
 		if (CONFIG(DRIVERS_AMD_PROMONTORY21) && config->sb_link)
 			opensil_promontory21_config(&SilContext, dev);
