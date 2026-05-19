@@ -265,7 +265,7 @@ const uint32_t tacoma_gpio_group_defaults[] = {
 	[0x0240 / 4] = 0x00240000, 0x00000000, 0x00060000, 0x00000000,
 	[0x0250 / 4] = 0x00060000, 0x00000000, 0x00000000, 0x00000000,
 	[0x0260 / 4] = 0x00000000, 0x00240000, 0x00140000, 0x00240000,
-	[0x0260 / 4] = 0x00140000, 0x00240000, 0x00000000, 0x00000000,
+	[0x0270 / 4] = 0x00140000, 0x00240000, 0x00000000, 0x00000000
 };
 
 #pragma GCC diagnostic pop
@@ -357,16 +357,16 @@ const char * const trigger_type[] = {
 
 static void print_iomux_reg(uint16_t addr, uint8_t reg, const char *const *gpio_names)
 {
-	printf("IOMUXx%02x: 0x%02x       (%s)\n",
-		addr, reg, gpio_names[addr * 4 + reg]);
+	printf("IOMUXx%02x (GPIO%03u): 0x%02x       (%s)\n",
+		addr, addr, reg, gpio_names[addr * 4 + reg]);
 }
 
 static void print_iomux_diff(const uint8_t reg, const uint8_t def, const uint8_t diff,
 			     const char *const *gpio_names)
 {
-	printf("IOMUXx%02x: 0x%02x       (%s) DEFAULT\n",
-		reg, def, gpio_names[reg * 4 + def]);
-	printf("IOMUXx%02x: 0x%02x       DIFF\n", reg, diff);
+	printf("IOMUXx%02x (GPIO%03u): 0x%02x       (%s) DEFAULT\n",
+		reg, reg, def, gpio_names[reg * 4 + def]);
+	printf("IOMUXx%02x (GPIO%03u): 0x%02x       DIFF\n", reg, reg, diff);
 }
 
 static void print_gpio_reg(uint16_t addr, uint32_t reg, bool verbose)
@@ -374,7 +374,7 @@ static void print_gpio_reg(uint16_t addr, uint32_t reg, bool verbose)
 	size_t i;
 	const char *attr;
 
-	printf("GPIOx%04x: 0x%08"PRIx32"\n", addr * 4, reg);
+	printf("GPIOx%04x (GPIO%03u): 0x%08"PRIx32"\n", addr * 4, addr, reg);
 
 	if (!verbose)
 		return;
@@ -398,8 +398,8 @@ static void print_gpio_reg(uint16_t addr, uint32_t reg, bool verbose)
 
 static void print_gpio_diff(const uint16_t reg, const uint32_t def, const uint32_t diff)
 {
-	printf("GPIOx%04x: 0x%08x       DEFAULT\n", reg * 4, def);
-	printf("GPIOx%04x: 0x%08x       DIFF\n", reg * 4, diff);
+	printf("GPIOx%04x (GPIO%03u): 0x%08x       DEFAULT\n", reg * 4, reg, def);
+	printf("GPIOx%04x (GPIO%03u): 0x%08x       DIFF\n", reg * 4, reg, diff);
 }
 
 static bool is_special_gpio_register(uint16_t reg, const struct gpio_group *sb_gpio_group)
