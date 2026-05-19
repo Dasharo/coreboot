@@ -147,8 +147,8 @@ static void configure_usb(SIL_CONTEXT *SilContext)
 	if (!fch_usb_data)
 		return;
 
-	fch_usb_data->XhciSsid = usb_ctrlr[0]->subsystem_vendor |
-				 ((uint32_t)usb_ctrlr[0]->subsystem_device << 16);
+	if (pcidev_get_ssid(usb_ctrlr[0]))
+		fch_usb_data->XhciSsid = pcidev_get_ssid(usb_ctrlr[0]);
 
 	fch_usb_data->Xhci0Enable = is_dev_enabled(usb_ctrlr[0]);
 	fch_usb_data->Xhci1Enable = is_dev_enabled(usb_ctrlr[1]);
@@ -312,19 +312,16 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 		return;
 	}
 
-	if (smb) {
-		fch_data->Smbus.SmbusSsid = smb->subsystem_vendor |
-					    ((uint32_t)smb->subsystem_device << 16);
-		fch_data->FchBldCfg.CfgSmbusSsid = fch_data->Smbus.SmbusSsid;
+	if (pcidev_get_ssid(smb)) {
+		fch_data->Smbus.SmbusSsid = pcidev_get_ssid(smb);
+		fch_data->FchBldCfg.CfgSmbusSsid = pcidev_get_ssid(smb);
 	}
 
-	if (hda)
-		fch_data->FchBldCfg.CfgAzaliaSsid = hda->subsystem_vendor |
-						    ((uint32_t)hda->subsystem_device << 16);
+	if (pcidev_get_ssid(hda))
+		fch_data->FchBldCfg.CfgAzaliaSsid = pcidev_get_ssid(hda);
 
-	if (xhci)
-		fch_data->FchBldCfg.CfgXhciSsid = xhci->subsystem_vendor |
-						  ((uint32_t)xhci->subsystem_device << 16);
+	if (pcidev_get_ssid(xhci))
+		fch_data->FchBldCfg.CfgXhciSsid = pcidev_get_ssid(xhci);
 
 	fch_data->FchBldCfg.CfgSioPmeBaseAddress = 0;
 	fch_data->FchBldCfg.CfgAcpiPm1EvtBlkAddr = ACPI_PM_EVT_BLK;
