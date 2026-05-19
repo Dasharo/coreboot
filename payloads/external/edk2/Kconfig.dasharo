@@ -439,20 +439,19 @@ config EDK2_FUM_AUTO_IPXE_BOOT
 	  alternative provides a way to disable all flash locks on the next boot
 	  but otherwise boot the platform as usual.
 
-config EDK2_CAPSULE_ON_DISK_SUPPORT
-	bool "Support \"immediate\" on-disk capsules"
+config EDK2_CAPSULES_V2
+	bool "Capsule Update v2 features"
 	default n
 	depends on DRIVERS_EFI_UPDATE_CAPSULES
 	help
-	  Permit submitting update capsules by putting them in
-	  `/EFI/UpdateCapsule/`, setting the third bit in `OsIndications` EFI
-	  variable and rebooting.
+	  Enables capsule-specific functionality added during the second round of
+	  implementing it.
 
 config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
 	bool "Capsules do not survive reset"
 	default n
 	depends on DRIVERS_EFI_UPDATE_CAPSULES
-	select EDK2_CAPSULE_ON_DISK_SUPPORT
+	select EDK2_CAPSULES_V2
 	help
 	  Select this option if your platform does not retain memory contents
 	  after resets and capsule are lost. The option will select the
@@ -460,13 +459,5 @@ config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
 	  method. Note that the Capsule Updates produced for platforms that
 	  select this option, must not set CAPSULE_FLAGS_PERSIST_ACROSS_RESET
 	  in the Capsule flags field.
-
-config EDK2_SHOW_CAPSULE_REPORT
-	bool "Report firmware update status at the end"
-	default n
-	depends on DRIVERS_EFI_UPDATE_CAPSULES
-	help
-	  Display a dialog reporting status of the update after processing
-	  capsules.
 
 endif
