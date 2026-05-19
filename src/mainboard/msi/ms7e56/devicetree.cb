@@ -40,9 +40,18 @@ chip soc/amd/phoenix
 		.vw_ch_en = 1,
 		.oob_ch_en = 1,
 		.flash_ch_en = 1,
+		.irq_mask = 0xffe107,
 	}"
 
 	register "s0ix_enable" = "false"
+
+	register "gpp_clk_config[0]" = "GPP_CLK_ON"
+	register "gpp_clk_config[1]" = "GPP_CLK_ON"
+	register "gpp_clk_config[2]" = "GPP_CLK_ON"
+	register "gpp_clk_config[3]" = "GPP_CLK_ON"
+	register "gpp_clk_config[4]" = "GPP_CLK_ON"
+	register "gpp_clk_config[5]" = "GPP_CLK_ON"
+	register "gpp_clk_config[6]" = "GPP_CLK_ON"
 
 	register "pspp_policy" = "DXIO_PSPP_DISABLED"
 
@@ -923,8 +932,6 @@ chip soc/amd/phoenix
 		end
 	end
 
-	device ref i2c_0 on end
-	device ref i2c_1 on end
-	device ref i2c_2 on end
-	device ref i2c_3 on end
+	device ref i2c_0 hidden end
+	device ref i2c_1 hidden end
 end
