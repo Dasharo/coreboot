@@ -1,0 +1,140 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+
+#include <device/azalia_device.h>
+
+#define AC_VERB_SET_PROC_COEF			0x400
+#define AC_VERB_SET_COEF_INDEX			0x500
+
+#define ALC_WRITE_COEF(codec, idx, val)								\
+	AZALIA_VERB_12B(codec, 0x20, AC_VERB_SET_COEF_INDEX, (idx) & 0xffff),	\
+	AZALIA_VERB_12B(codec, 0x20, AC_VERB_SET_PROC_COEF, (val) & 0xffff)	\
+
+static const u32 realtek_alc897_verbs[] = {
+	AZALIA_RESET(0x1),
+	AZALIA_SUBVENDOR(0, 0x14629e56),
+	AZALIA_PIN_CFG(0, 0x11, 0x4033c040),
+	AZALIA_PIN_CFG(0, 0x12, AZALIA_PIN_CFG_NC(0)),
+	AZALIA_PIN_CFG(0, 0x14, 0x01011010),
+	AZALIA_PIN_CFG(0, 0x15, AZALIA_PIN_CFG_NC(0)),
+	AZALIA_PIN_CFG(0, 0x16, AZALIA_PIN_CFG_NC(0)),
+	AZALIA_PIN_CFG(0, 0x17, AZALIA_PIN_CFG_NC(0)),
+	AZALIA_PIN_CFG(0, 0x18, 0x01a11040),
+	AZALIA_PIN_CFG(0, 0x19, 0x02a19050),
+	AZALIA_PIN_CFG(0, 0x1a, AZALIA_PIN_CFG_NC(0)),
+	AZALIA_PIN_CFG(0, 0x1b, 0x02214020),
+	AZALIA_PIN_CFG(0, 0x1c, AZALIA_PIN_CFG_NC(0)),
+	AZALIA_PIN_CFG(0, 0x1d, 0x4027c26b),
+	AZALIA_PIN_CFG(0, 0x1e, 0x01451130),
+	AZALIA_PIN_CFG(0, 0x1f, AZALIA_PIN_CFG_NC(0)),
+
+	/* TODO: confirm below */
+	// ALC_WRITE_COEF(0, 0x3b, 0x80),
+	// ALC_WRITE_COEF(0, 0x39, 0x4031),
+
+	// ALC_WRITE_COEF(0, 0x13, 0x53),
+	// ALC_WRITE_COEF(0, 0x30, 0x92D1),
+
+	// ALC_WRITE_COEF(0, 0x21, 0x00),
+	// ALC_WRITE_COEF(0, 0x23, 0x00),
+
+	// ALC_WRITE_COEF(0, 0x25, 0x00),
+	// ALC_WRITE_COEF(0, 0x27, 0x00),
+
+	// ALC_WRITE_COEF(0, 0x29, 0x00),
+	// ALC_WRITE_COEF(0, 0x2A, 0x1640),
+
+	// ALC_WRITE_COEF(0, 0x2B, 0x1640),
+	// ALC_WRITE_COEF(0, 0x21, 0xC00),
+
+	// ALC_WRITE_COEF(0, 0x23, 0xC00),
+	// ALC_WRITE_COEF(0, 0x25, 0xC00),
+
+	// ALC_WRITE_COEF(0,0x027, 0xC00),
+	// ALC_WRITE_COEF(0,0x029, 0xC00),
+
+	// ALC_WRITE_COEF(0, 0x2A, 0x1641),
+	// ALC_WRITE_COEF(0, 0x2B, 0x1641),
+
+	// ALC_WRITE_COEF(0, 0x30, 0x9251),
+	// ALC_WRITE_COEF(0, 0x2A, 0x1649),
+
+	// ALC_WRITE_COEF(0, 0x2B, 0x1649),
+	// ALC_WRITE_COEF(0, 0xC, 0x3F06),
+
+	// ALC_WRITE_COEF(0, 0x7, 0xF808),
+	// ALC_WRITE_COEF(0, 0x7, 0xF808),
+};
+
+static const u32 amd_display_audio_verbs[] = {
+	AZALIA_RESET(0x1),
+	AZALIA_SUBVENDOR(0, 0x00aa0100),
+	AZALIA_PIN_CFG(0, 0x03, AZALIA_PIN_DESC(
+		AZALIA_JACK,
+		AZALIA_DIGITAL_DISPLAY,
+		AZALIA_DIGITAL_OTHER_OUT,
+		AZALIA_OTHER_DIGITAL,
+		AZALIA_COLOR_UNKNOWN,
+		AZALIA_JACK_PRESENCE_DETECT,
+		15, 0
+	)),
+	AZALIA_PIN_CFG(0, 0x05, AZALIA_PIN_DESC(
+		AZALIA_JACK,
+		AZALIA_DIGITAL_DISPLAY,
+		AZALIA_DIGITAL_OTHER_OUT,
+		AZALIA_OTHER_DIGITAL,
+		AZALIA_COLOR_UNKNOWN,
+		AZALIA_JACK_PRESENCE_DETECT,
+		15, 0
+	)),
+	AZALIA_PIN_CFG(0, 0x07, AZALIA_PIN_DESC(
+		AZALIA_JACK,
+		AZALIA_DIGITAL_DISPLAY,
+		AZALIA_DIGITAL_OTHER_OUT,
+		AZALIA_OTHER_DIGITAL,
+		AZALIA_COLOR_UNKNOWN,
+		AZALIA_JACK_PRESENCE_DETECT,
+		15, 0
+	)),
+	AZALIA_PIN_CFG(0, 0x09, AZALIA_PIN_DESC(
+		AZALIA_JACK,
+		AZALIA_DIGITAL_DISPLAY,
+		AZALIA_DIGITAL_OTHER_OUT,
+		AZALIA_OTHER_DIGITAL,
+		AZALIA_COLOR_UNKNOWN,
+		AZALIA_JACK_PRESENCE_DETECT,
+		15, 0
+	)),
+	AZALIA_PIN_CFG(0, 0x0b, AZALIA_PIN_DESC(
+		AZALIA_NC,
+		AZALIA_DIGITAL_DISPLAY,
+		AZALIA_DIGITAL_OTHER_OUT,
+		AZALIA_OTHER_DIGITAL,
+		AZALIA_COLOR_UNKNOWN,
+		AZALIA_JACK_PRESENCE_DETECT,
+		15, 0
+	))
+};
+
+const u32 pc_beep_verbs[] = {};
+
+struct azalia_codec mainboard_azalia_codecs[] = {
+	{
+		.name         = "Realtek ALC897",
+		.vendor_id    = 0x10ec0897,
+		.subsystem_id = 0x14629e56,
+		.address      = 0,
+		.verbs        = realtek_alc897_verbs,
+		.verb_count   = ARRAY_SIZE(realtek_alc897_verbs),
+	},
+	{
+		.name         = "AMD Display Audio (HDMI/DP)",
+		.vendor_id    = 0x1002aa01,
+		.subsystem_id = 0x00aa0100,
+		.address      = 0,
+		.verbs        = amd_display_audio_verbs,
+		.verb_count   = ARRAY_SIZE(amd_display_audio_verbs),
+	},
+	{ /* terminator */ }
+};
+
+AZALIA_ARRAY_SIZES;
