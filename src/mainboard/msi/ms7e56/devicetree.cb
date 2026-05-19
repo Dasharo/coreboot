@@ -494,54 +494,86 @@ chip soc/amd/phoenix
 									register "type" = "UPC_TYPE_HUB"
 									device usb 0.0 alias prom_21_xhci_root_hub on
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB3""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.0 alias prom21_usb2_port1 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB3""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.1 alias prom21_usb2_port2 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB4""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.2 alias prom21_usb2_port3 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB4""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.3 alias prom21_usb2_port4 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSBC5""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.4 alias prom21_usb2_port5 on end
 										end
 										chip drivers/usb/acpi
 											device usb 2.5 alias prom21_usb2_port6 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB1""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.6 alias prom21_usb2_port7 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB1""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.7 alias prom21_usb2_port8 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB2""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.8 alias prom21_usb2_port9 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB2""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.9 alias prom21_usb2_port10 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""WIFI/BT""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.a alias prom21_usb2_port11 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""MSI MYSTIC LIGHT""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 2.b alias prom21_usb2_port12 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB3""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 3.0 alias prom21_usb3_port1 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB3""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 3.1 alias prom21_usb3_port2 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB4""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 3.2 alias prom21_usb3_port3 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSB4""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 3.3 alias prom21_usb3_port4 on end
 										end
 										chip drivers/usb/acpi
+											register "desc" = ""JUSBC5""
+											register "type" = "UPC_TYPE_INTERNAL"
 											device usb 3.4 alias prom21_usb3_port5 on end
 										end
 										chip drivers/usb/acpi
