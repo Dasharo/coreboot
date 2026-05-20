@@ -25,7 +25,11 @@
 #define FTB_SIZE 105
 #define FIB_SIZE 512
 #define FDP_SIZE 1024
+#ifndef MSI_ROMHOLE_BUV_SIZE
 #define BUV_SIZE 1024
+#else
+#define BUV_SIZE MSI_ROMHOLE_BUV_SIZE
+#endif
 #define NUM_VOLUMES 7
 
 struct uuid_structure {
@@ -73,7 +77,11 @@ struct us_entry {
 
 struct ucsc_structure {
 	uint8_t			magic[4];	// always uCsC
-	uint16_t		length;		// structure length
+#ifndef MSI_ROMHOLE_32BIT_LENGTHS
+	uint16_t		length;		// length of the structure
+#else
+	uint32_t		length;		// length of the structure
+#endif
 	struct us_entry		entries[NUM_US_ENTRIES];
 } __packed;
 
@@ -140,7 +148,11 @@ struct ris_structure {
 /* Place the following struct in the ROMHOLE flash region with 64K/128K alignment */
 struct msi_romhole {
 	uint32_t		magic0;		// 0x10012501
+#ifndef MSI_ROMHOLE_32BIT_LENGTHS
 	uint16_t		length;		// length of the structure
+#else
+	uint32_t		length;		// length of the structure
+#endif
 	char			magic1[4];	// always SYSD
 	uint32_t		address;	// romhole address in flash
 	uint32_t		size;		// romhole total size
@@ -152,7 +164,9 @@ struct msi_romhole {
 	struct type2_rw 	t2rw;
 	struct ftb_structure	ftb;
 	struct fib_structure	fib;
+#ifndef MSI_ROMHOLE_NO_FDP
 	struct fdp_structure	fdp;
+#endif
 	struct buv_structure	buv;
 	struct ris_structure	ris;
 	// the rest is padded with 0xff by cbfstool
@@ -326,11 +340,7 @@ int main(int argc, char **argv)
 	romhole->address = romhole_addr;
 	romhole->size = romhole_size;
 	memset(romhole->pad0, 0xff, 48);
-	romhole->length = (uint16_t)sizeof(*romhole);
-
-	// For some reason the actual data size is reduced by 64K
-	if (romhole_size > 0x10000)
-		romhole->length -= 0x10000;
+	romhole->length = sizeof(*romhole);
 
 	// Structures
 
@@ -365,7 +375,7 @@ int main(int argc, char **argv)
 
 	// UCSC
 	strncpy(romhole->ucsc.magic, "uCsC", 4);
-	romhole->ucsc.length = (uint16_t)sizeof(struct ucsc_structure);
+	romhole->ucsc.length = sizeof(struct ucsc_structure);
 	for (i = 0; i < NUM_US_ENTRIES; i++) {
 		strncpy(romhole->ucsc.entries[i].magic, "$uS", 3);
 		// The first 6 entries are in order
@@ -403,12 +413,14 @@ int main(int argc, char **argv)
 	strncpy(romhole->fib.magic1, "$MFX", 4);
 	memset(romhole->fib.data, 0xfa, FIB_SIZE);
 
+#ifndef MSI_ROMHOLE_NO_FDP
 	// FDP
 	strncpy(romhole->fdp.magic0, "$FDP", 4);
 	romhole->fdp.length = (uint16_t)sizeof(struct fdp_structure);
 	strncpy(romhole->fdp.magic1, "$Fd", 3);
 	romhole->fdp.number = 1;
 	memset(romhole->fdp.data, 0xff, FDP_SIZE);
+#endif
 
 	// BUV
 	strncpy(romhole->buv.magic0, "$BuV", 4);
