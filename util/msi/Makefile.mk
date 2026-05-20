@@ -2,6 +2,8 @@ TOOLCPPFLAGS += -include $(top)/src/commonlib/bsd/include/commonlib/bsd/compiler
 
 MSIROMHOLETOOL:= $(objutil)/msi/romholetool
 
+TOOLCPPFLAGS += $(call strip_quotes, $(CONFIG_MSI_ROMHOLE_TOOL_FLAGS))
+
 $(MSIROMHOLETOOL): $(dir)/romholetool/romholetool.c
 	printf "    HOSTCC     Creating MSI ROMHOLE tool\n"
 	mkdir -p $(objutil)/msi
