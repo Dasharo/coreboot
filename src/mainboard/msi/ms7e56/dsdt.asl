@@ -13,4 +13,12 @@ DefinitionBlock (
 	#include <acpi/dsdt_top.asl>
 
 	#include <soc.asl>
+
+
+	Scope (\_SB.PCI0.LPCB)
+	{
+		#include "acpi/superio.asl"
+	}
+
+	#include "acpi/mainboard.asl"
 }
