@@ -23,6 +23,7 @@ config BOARD_SPECIFIC_OPTIONS
 	select USE_X86_64_SUPPORT
 	select IOAPIC_8BIT_ID
 	select IOAPIC_PREDEFINED_ID
+	select BOARD_HAS_MSI_ROMHOLE
 
 config FMDFILE
 	default "src/mainboard/msi/ms7e56/board.fmd"
@@ -38,6 +39,9 @@ config MAINBOARD_VENDOR
 
 config MAINBOARD_FAMILY
 	default "Default string"
+
+config MAINBOARD_VERSION
+	default "2.0"
 
 config UART_FOR_CONSOLE
 	default 0
@@ -91,5 +95,9 @@ config MRC_SETTINGS_CACHE_SIZE
 # Do not move this address. It has to match APCB.
 config ECAM_MMCONF_BASE_ADDRESS
 	default 0xe0000000
+
+config MSI_ROMHOLE_TOOL_FLAGS
+	string
+	default "-DMSI_ROMHOLE_NO_FDP -DMSI_ROMHOLE_32BIT_LENGTHS -DMSI_ROMHOLE_BUV_SIZE=2048"
 
 endif # BOARD_MSI_PRO_B850_P
