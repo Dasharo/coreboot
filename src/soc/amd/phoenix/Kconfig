@@ -116,6 +116,7 @@ config SOC_AMD_PHOENIX_OPENSIL
 	select SOC_AMD_PHOENIX_BASE
 	select SOC_AMD_OPENSIL
 	select SOC_AMD_OPENSIL_PHOENIX_POC
+	select SOC_AMD_COMMON_BLOCK_APOB_MEMCTX_CMOS
 	select UDK_2017_BINDING
 	help
 	 AMD Phoenix support using OpenSIL (Proof of Comcept)
