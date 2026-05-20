@@ -1,13 +1,23 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootblock_common.h>
+#include <device/pnp_ops.h>
 #include <soc/gpio.h>
 #include <superio/ite/common/ite.h>
+#include <superio/ite/common/ite_gpio.h>
 #include <superio/ite/it8784e/it8784e.h>
 #include "gpio.h"
 
 #define UART_DEV PNP_DEV(0x2e, IT8784E_SP1)
 #define GPIO_DEV PNP_DEV(0x2e, IT8784E_GPIO)
+
+static void ite_set_gpio_iobase(u16 iobase)
+{
+	pnp_enter_conf_state(GPIO_DEV);
+	pnp_set_logical_device(GPIO_DEV);
+	pnp_set_iobase(GPIO_DEV, PNP_IDX_IO1, iobase);
+	pnp_exit_conf_state(GPIO_DEV);
+}
 
 void bootblock_mainboard_early_init(void)
 {
@@ -25,6 +35,8 @@ void bootblock_mainboard_early_init(void)
 	ite_delay_pwrgd3(GPIO_DEV);
 	ite_kill_watchdog(GPIO_DEV);
 	ite_enable_serial(UART_DEV, CONFIG_TTYS0_BASE);
+	ite_gpio_setup(GPIO_DEV, 80 , ITE_GPIO_INPUT, ITE_GPIO_SIMPLE_IO_MODE, ITE_GPIO_PULLUP_ENABLE);
+	ite_set_gpio_iobase(0xa00);
 }
 
 void bootblock_mainboard_init(void)
