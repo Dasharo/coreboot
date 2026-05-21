@@ -6,6 +6,7 @@
 #include <device/device.h>
 #include <pc80/i8254.h>
 #include <smbios.h>
+#include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <superio/ite/it8659e/chip.h>
 #include <superio/ite/it8659e/it8659e.h>
@@ -18,7 +19,7 @@ const char *smbios_mainboard_product_name(void)
 		return "VP2430";
 
 	if (CONFIG(BOARD_PROTECTLI_VP2440))
-		return "VP2440";
+		return CONFIG(ENABLE_EMMC) ? "VP2440" : "VP2440e";
 
 	u32 tmp[13];
 	const char *str = "Unknown Processor Name";
@@ -110,6 +111,11 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	if (!CONFIG(BOARD_PROTECTLI_VP2440)) {
 		params->IomTypeCPortPadCfg[2] = 0x0902000F; // GPP_A15
 		params->IomTypeCPortPadCfg[3] = 0x0902000E; // GPP_A14
+	}
+
+	if (!CONFIG(ENABLE_EMMC)) {
+		params->ScsEmmcEnabled = 0;
+		pcidev_path_on_root(PCH_DEVFN_EMMC)->enabled = 0;
 	}
 
 	// PMC-PD controller
