@@ -16,7 +16,7 @@
 const char *smbios_mainboard_product_name(void)
 {
 	if (CONFIG(BOARD_PROTECTLI_VP2430))
-		return "VP2430";
+		return CONFIG(ENABLE_EMMC) ? "VP2430" : "VP2430e";
 
 	if (CONFIG(BOARD_PROTECTLI_VP2440))
 		return CONFIG(ENABLE_EMMC) ? "VP2440" : "VP2440e";
