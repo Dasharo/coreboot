@@ -92,4 +92,10 @@ config BEEP_ON_BOOT
 	  May serve as a useful indicator in headless mode that platform is
 	  properly booting.
 
+config ENABLE_EMMC
+	bool "Enable eMMC support"
+	default y
+	help
+	  Enable the eMMC storage controller
+
 endif

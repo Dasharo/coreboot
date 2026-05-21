@@ -14,6 +14,7 @@ usage() {
   echo -e "\tvp46xx_noemmc- build Dasharo for Protectli VP46xx variants without eMMC (VP46xxe, VP4651)"
   echo -e "\tvp32xx                 - build Dasharo for Protectli VP32xx"
   echo -e "\tvp2440                 - build Dasharo for Protectli VP2440"
+  echo -e "\tvp2440_noemmc          - build Dasharo for Protectli VP2440 without eMMC (VP2440e)"
   echo -e "\tvp2430                 - build Dasharo for Protectli VP2430"
   echo -e "\tvp2420                 - build Dasharo for Protectli VP2420"
   echo -e "\tvp2410                 - build Dasharo for Protectli VP2410"
@@ -391,6 +392,10 @@ case "$CMD" in
     "vp2440" | "VP2440")
         BOARD="vp2440"
         build_protectli_vault
+        ;;
+    "vp2440_noemmc" | "VP2440_noemmc" | "vp2440e" | "VP2440e")
+        BOARD="vp2440"
+        build_protectli_vault _no_emmc
         ;;
     "v1210" | "V1210" )
         build_v1x10 "v1210"
