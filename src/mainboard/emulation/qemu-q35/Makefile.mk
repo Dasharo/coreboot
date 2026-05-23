@@ -14,8 +14,10 @@ ramstage-y += cpu.c
 
 all-y += ../qemu-i440fx/bootmode.c
 all-y += memmap.c
+all-y += timer.c
 
 ramstage-$(CONFIG_CHROMEOS) += chromeos.c
 
 smm-y += ../qemu-i440fx/rom_media.c
 smm-y += smihandler.c
+smm-y += timer.c
