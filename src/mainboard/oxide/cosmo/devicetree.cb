@@ -47,6 +47,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "80"
 			register "end_lane" = "83"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_3_0_a on end
 		end
 		# G3 lanes 4-7 (abs 84-87) - CEM H
@@ -54,6 +55,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "84"
 			register "end_lane" = "87"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_3_1_a on end
 		end
 		# G3 lanes 8-11 (abs 88-91) - CEM G
@@ -61,6 +63,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "88"
 			register "end_lane" = "91"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_3_2_a on end
 		end
 	end
@@ -71,6 +74,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "64"
 			register "end_lane" = "79"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_4_0_a on end
 		end
 	end
@@ -82,6 +86,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "96"
 			register "end_lane" = "99"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_0_a on end
 		end
 		# G0 lanes 4-7 (abs 100-103) - CEM C
@@ -89,6 +94,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "100"
 			register "end_lane" = "103"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_1_a on end
 		end
 		# G0 lanes 8-11 (abs 104-107) - CEM B
@@ -96,6 +102,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "104"
 			register "end_lane" = "107"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_2_a on end
 		end
 		# G0 lanes 12-15 (abs 108-111) - CEM A
@@ -103,6 +110,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "108"
 			register "end_lane" = "111"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_3_a on end
 		end
 		# G2 lanes 0-3 (abs 112-115) - CEM J
@@ -110,6 +118,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "112"
 			register "end_lane" = "115"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_0_b on end
 		end
 		# G2 lanes 4-7 (abs 116-119) - CEM F
@@ -117,6 +126,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "116"
 			register "end_lane" = "119"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_1_b on end
 		end
 		# G2 lanes 8-11 (abs 120-123) - CEM E
@@ -124,6 +134,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "120"
 			register "end_lane" = "123"
+			register "rx_inverted" = "1"
 			device ref gpp_bridge_5_2_b on end
 		end
 		# P4 and P5 unused
