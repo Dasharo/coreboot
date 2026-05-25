@@ -47,18 +47,21 @@ ifeq ($(CONFIG_RESET_VECTOR_IN_RAM),y)
 # but the name is mandatory for the 'add_bootblock' directive below.
 # On AMD the bootblock resides within the AMD FW as part of the
 # Bios Directory Tables (BDT), thus about 1% of this file is actually the bootblock.
-$(objcbfs)/bootblock.bin: $(obj)/amdfw.rom $(obj)/fmap_config.h
-	cp $< $@
 
 amdfw_region_start=$(subst $(spc),,FMAP_SECTION_$(call regions-for-file,apu/amdfw)_START)
 amdfw_offset=$(call int-subtract, \
 	$(CONFIG_AMD_FWM_POSITION) \
 	$(call get_fmap_value,$(amdfw_region_start)))
 
+ifneq ($(CONFIG_BOOTBLOCK_IN_CBFS),y)
+$(objcbfs)/bootblock.bin: $(obj)/amdfw.rom $(obj)/fmap_config.h
+	cp $< $@
+
 add_bootblock = \
 	$(CBFSTOOL) $(1) add -f $(2) -n apu/amdfw -t amdfw \
 	-b $(amdfw_offset) -r $(call regions-for-file,apu/amdfw) \
 	$(CBFSTOOL_ADD_CMD_OPTIONS)
+endif
 
 endif # ifeq ($(CONFIG_RESET_VECTOR_IN_RAM),y)
 
