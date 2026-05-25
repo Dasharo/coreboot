@@ -1594,6 +1594,9 @@ static void integrate_bios_firmwares(context *ctx,
 			break;
 		case AMD_BIOS_APOB_NV:
 		case AMD_BIOS_NV_ST:
+			if (!fw_table[i].size)
+				continue;
+
 			if (has_apob_nv_quirk(cb_config->soc_id)) {
 				/*
 				 * once ROM3 mapping (>16MiB) is used on any SOC that
