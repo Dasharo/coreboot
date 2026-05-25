@@ -66,6 +66,8 @@ struct drivers_amd_opensil_mpio_config {
 	uint8_t aspm_l1_2 : 1;
 	uint8_t clock_pm : 1;
 	uint8_t bmc : 1;
+	uint8_t tx_inverted : 1;
+	uint8_t rx_inverted : 1;
 };
 
 #endif /* OPENSIL_TURIN_POC_MPIO_CHIP_H */
