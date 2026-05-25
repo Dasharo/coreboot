@@ -21,9 +21,11 @@
 #define ESPI1_SMN_BASE		0x02DCA000
 
 static const io_register_t espi_cfg_registers[] = {
+	{0x20, 4, "ZSTATE_S0I3_VW"},
 	{0x2C, 4, "MASTER_CAP"},
-	{0x30, 4, "GLBL_CTL0"},
-	{0x34, 4, "GLBL_CTL1"},
+	{0x30, 4, "GLOBAL_CONTROL0"},
+	{0x34, 4, "GLOBAL_CONTROL1"},
+	{0x38, 4, "MISC_CONTROL0"},
 	{0x40, 4, "SLAVE0_DECODE_EN"},
 	{0x44, 2, "IO_BASE[0]"},
 	{0x46, 2, "IO_BASE[1]"},
@@ -60,6 +62,10 @@ static const io_register_t espi_cfg_registers[] = {
 	{0x95, 1, "IO_SIZE[9]"},
 	{0x96, 1, "IO_SIZE[10]"},
 	{0x97, 1, "IO_SIZE[11]"},
+	{0x98, 4, "RXVW_IRQ_INACTIVE_POALRITY"},
+	{0x9C, 4, "SLAVE0_RXVW"},
+	{0xA0, 4, "SLAVE0_RXVW_DATA"},
+	{0xA4, 4, "SLAVE0_RXVW_INDEX"},
 	{0xA8, 4, "SLAVE0_RXVW_MISC_CNTL"},
 	{0xAC, 4, "SLAVE0_RXVW_POLARITY"},
 	{0xB0, 2, "IO_BASE[12]"},
