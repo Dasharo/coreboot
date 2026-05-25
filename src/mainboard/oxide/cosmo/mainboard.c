@@ -58,19 +58,22 @@ const struct fch_irq_routing *mb_get_fch_irq_mapping(size_t *length)
 
 void smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17 *t)
 {
-	char locator[40];
+	char locator[10];
 
-	/*
-	 * DIMM slots are anemd by channel number and dimm number:
-	 * Channels: A, B, C, D, etc.
-	 * DIMMs: A0, A1, B0, B1, etc.
-	 */
-	snprintf(locator, sizeof(locator), "DIMM %c%u",
-		'A' + dimm->channel_num, dimm->dimm_num);
+	snprintf(locator, sizeof(locator), "J10%u", 1 + dimm->channel_num);
 	t->device_locator = smbios_add_string(t->eos, locator);
 
 	snprintf(locator, sizeof(locator), "BANK %d", dimm->bank_locator);
 	t->bank_locator = smbios_add_string(t->eos, locator);
+}
+
+bool mainboard_dimm_slot_exists(uint8_t socket, uint8_t channel, uint8_t slot)
+{
+	/* Single socket, one DIMM per channel, all channels populated */
+	if (socket > 0 || slot > 0)
+		return false;
+
+	return true;
 }
 
 static void mainboard_init(void *chip_info)
@@ -80,12 +83,12 @@ static void mainboard_init(void *chip_info)
 	/*
 	 * Update maximum memory capacity for SMBIOS type 16 for this board.
 	 * Turin can support up to 6TB of memory on 24 DIMMS per socket. This
-	 * board populates all 12 channels with 2 DIMMs per channel on one
-	 * socket.
+	 * board populates all 12 channels with 1 DIMM per channel on one
+	 * socket, so max memory is 3TB.
 	 */
 	mem_info = cbmem_find(CBMEM_ID_MEMINFO);
 	if (mem_info)
-		mem_info->max_capacity_mib = 6 * 1024 * (GiB / MiB);
+		mem_info->max_capacity_mib = 3 * 1024 * (GiB / MiB);
 }
 
 struct chip_operations mainboard_ops = {

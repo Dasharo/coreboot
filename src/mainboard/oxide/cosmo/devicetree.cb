@@ -165,12 +165,10 @@ chip soc/amd/turin_poc
 		end
 	end
 
-	device ref i3c_0 on end
-	device ref i3c_1 on end
-	device ref i3c_2 on end
-	device ref i3c_3 on end
+	device ref i2c_0 on end
+	device ref i2c_1 on end
+	device ref i2c_2 on end
 	device ref i2c_4 on end
-	device ref i2c_5 on end
 	device ref uart_0 on end
 	device ref uart_1 on end
 end

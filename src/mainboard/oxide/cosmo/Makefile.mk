@@ -4,20 +4,10 @@ bootblock-y += bootblock.c
 
 ifneq ($(wildcard $(src)/mainboard/$(MAINBOARDDIR)/data.apcb),)
 ifeq ($(CONFIG_BUILD_WITH_DEBUG_APCB),y)
-APCB_SOURCES = $(src)/mainboard/$(MAINBOARDDIR)/data_debug.apcb
-APCB_SOURCES1 = $(src)/mainboard/$(MAINBOARDDIR)/data1_debug.apcb
+APCB_SOURCES_68 = $(src)/mainboard/$(MAINBOARDDIR)/data_debug.apcb
 else
-ifeq ($(CONFIG_AMD_SEV_SNP_ENABLE),y)
-APCB_SOURCES = $(src)/mainboard/$(MAINBOARDDIR)/data_snp.apcb
-APCB_SOURCES1 = $(src)/mainboard/$(MAINBOARDDIR)/data_snp1.apcb
-else
-APCB_SOURCES = $(src)/mainboard/$(MAINBOARDDIR)/data.apcb
-APCB_SOURCES1 = $(src)/mainboard/$(MAINBOARDDIR)/data1.apcb
+APCB_SOURCES_68 = $(src)/mainboard/$(MAINBOARDDIR)/data.apcb
 endif
-endif
-APCB_SOURCES_RECOVERY = $(src)/mainboard/$(MAINBOARDDIR)/data_rec.apcb
-APCB_SOURCES_RECOVERY1 = $(src)/mainboard/$(MAINBOARDDIR)/data_rec1.apcb
-APCB_SOURCES_RECOVERY2 = $(src)/mainboard/$(MAINBOARDDIR)/data_rec2.apcb
 else
 show_notices:: warn_no_apcb
 endif
