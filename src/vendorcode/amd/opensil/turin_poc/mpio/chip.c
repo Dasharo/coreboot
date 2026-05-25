@@ -219,6 +219,10 @@ void opensil_mpio_per_device_config(struct device *dev)
 							config->aspm_l1_2,
 							config->clock_pm);
 		port.Port = port_data;
+
+		port.Port.InvertPolarity = config->rx_inverted;
+		port.Port.InvertPolarity2 = config->tx_inverted;
+
 	} else if (config->type == IFTYPE_SATA) {
 		const MPIO_ENGINE_DATA engine_data =
 			MPIO_ENGINE_DATA_INITIALIZER(MpioSATAEngine,
