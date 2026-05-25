@@ -34,7 +34,7 @@ CPPFLAGS_common += -I$(src)/soc/amd/turin_poc/acpi
 CPPFLAGS_common += -I$(src)/soc/amd/turin_poc/include
 
 ifeq ($(call int-gt, $(CONFIG_ROM_SIZE) 0x1000000), 1)
-CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0x1000000:0xff000000:0x1000000
+CBFSTOOL_ADD_CMD_OPTIONS+= --mmap 0x0000000:0xff000000:0x1000000
 endif
 
 ifneq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),)
@@ -97,8 +97,22 @@ PSP_APOB_BASE=$(CONFIG_PSP_APOB_DRAM_ADDRESS)
 # type = 0x62
 PSP_BIOSBIN_FILE=$(obj)/amd_biospsp.img
 PSP_ELF_FILE=$(objcbfs)/bootblock_fixed_data.elf
-PSP_BIOSBIN_SIZE=$(shell $(READELF_bootblock) -Wl $(PSP_ELF_FILE) | grep LOAD | awk '{print $$5}')
 PSP_BIOSBIN_DEST=$(shell $(READELF_bootblock) -Wl $(PSP_ELF_FILE) | grep LOAD | awk '{print $$3}')
+
+ifeq ($(CONFIG_BOOTBLOCK_IN_CBFS),y)
+COREBOOT_START=$(call get_fmap_value,FMAP_SECTION_COREBOOT_START)
+COREBOOT_SIZE=$(call get_fmap_value,FMAP_SECTION_COREBOOT_SIZE)
+
+PSP_BIOSBIN_SRC=$(shell printf "0x%x" \
+			$(call int-subtract, \
+				$(call int-add, $(COREBOOT_START) $(COREBOOT_SIZE)) \
+				$(CONFIG_C_ENV_BOOTBLOCK_SIZE)))
+PSP_BIOSBIN_SIZE=$(CONFIG_C_ENV_BOOTBLOCK_SIZE)
+PSP_BIOSBIN_FILE=$(space)
+else
+PSP_BIOSBIN_SRC=$(space)
+PSP_BIOSBIN_SIZE=$(shell $(READELF_bootblock) -Wl $(PSP_ELF_FILE) | grep LOAD | awk '{print $$5}')
+endif
 
 ifneq ($(CONFIG_SOC_AMD_COMMON_BLOCK_APOB_NV_DISABLE),y)
 # type = 0x63 - construct APOB NV base/size from flash map
@@ -108,10 +122,12 @@ APOB_NV_SIZE=$(call get_fmap_value,FMAP_SECTION_RW_MRC_CACHE_SIZE)
 APOB_NV_BASE=$(call get_fmap_value,FMAP_SECTION_RW_MRC_CACHE_START)
 endif # !CONFIG_SOC_AMD_COMMON_BLOCK_APOB_NV_DISABLE
 
-ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3)$(CONFIG_SMMSTORE),yy)
+ifeq ($(CONFIG_SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3),y)
+ifeq ($(CONFIG_SMMSTORE),yy)
 # Rom Armor needs the SMM Store region to be whitelisted
 PSP_BIOS_NV_ST_BASE=$(call get_fmap_value,FMAP_SECTION_SMMSTORE_START)
 PSP_BIOS_NV_ST_SIZE=$(call get_fmap_value,FMAP_SECTION_SMMSTORE_SIZE)
+endif
 endif
 
 # Helper function to return a value with given bit set
@@ -139,7 +155,15 @@ OPT_PSP_APCB_FILES= $(if $(APCB_SOURCES), --instance 0 --apcb $(APCB_SOURCES)) \
                     $(if $(APCB_SOURCES_68), --instance 18 --apcb $(APCB_SOURCES_68))
 
 OPT_APOB_ADDR=$(call add_opt_prefix, $(PSP_APOB_BASE), --apob-base)
+
+ifeq ($(CONFIG_BOOTBLOCK_IN_CBFS),y)
+OPT_PSP_BIOSBIN_SRC=$(call add_opt_prefix, $(PSP_BIOSBIN_SRC), --bios-bin-uncomp --bios-bin-src)
+OPT_PSP_BIOSBIN_FILE=$(space)
+else
+OPT_PSP_BIOSBIN_SRC=$(space)
 OPT_PSP_BIOSBIN_FILE=$(call add_opt_prefix, $(PSP_BIOSBIN_FILE), --bios-bin)
+endif
+
 OPT_PSP_BIOSBIN_DEST=$(call add_opt_prefix, $(PSP_BIOSBIN_DEST), --bios-bin-dest)
 OPT_PSP_BIOSBIN_SIZE=$(call add_opt_prefix, $(PSP_BIOSBIN_SIZE), --bios-uncomp-size)
 
@@ -194,6 +218,7 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_BIOS_NV_ST_SIZE) \
 		$(OPT_DEBUG_AMDFWTOOL) \
 		$(OPT_PSP_BIOSBIN_FILE) \
+		$(OPT_PSP_BIOSBIN_SRC) \
 		$(OPT_PSP_BIOSBIN_DEST) \
 		$(OPT_PSP_BIOSBIN_SIZE) \
 		$(OPT_PSP_SOFTFUSE) \
@@ -234,11 +259,18 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(PSP_BIOSBIN_FILE)) \
 # with a maximum size of PSP_BIOSBIN_SIZE. The entrypoint is fixed at
 # PSP_BIOSBIN_DEST + PSP_BIOSBIN_SIZE - 0x10.
 #
+ifneq ($(CONFIG_BOOTBLOCK_IN_CBFS),y)
 $(PSP_BIOSBIN_FILE): $(PSP_ELF_FILE) $(AMDCOMPRESS)
 	rm -f $@
 	@printf "    AMDCOMPRS  $(subst $(obj)/,,$(@))\n"
 	$(AMDCOMPRESS) --infile $(PSP_ELF_FILE) --outfile $@ --compress \
 		--maxsize $(PSP_BIOSBIN_SIZE)
+else
+cbfs-files-y += apu/amdfw
+apu/amdfw-file := $(obj)/amdfw.rom
+apu/amdfw-position := $(call int-add, 0xff000000 $(CONFIG_AMD_FWM_POSITION))
+apu/amdfw-type := raw
+endif
 
 else
 # Set FIRMWARE_LOCATION to get the microcode files
