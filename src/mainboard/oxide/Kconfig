@@ -1,0 +1,17 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if VENDOR_OXIDE
+
+choice
+	prompt "Mainboard model"
+
+source "src/mainboard/oxide/*/Kconfig.name"
+
+endchoice
+
+source "src/mainboard/oxide/*/Kconfig"
+
+config MAINBOARD_VENDOR
+	default "OXIDE"
+
+endif # VENDOR_OXIDE

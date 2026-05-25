@@ -1,0 +1,59 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_OXIDE_COSMO
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_65536
+	select HAVE_CMOS_DEFAULT
+	select HAVE_OPTION_TABLE
+	select SOC_AMD_TURIN_POC
+	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE
+	select SYSTEM_TYPE_SERVER
+
+config FMDFILE
+	default "src/mainboard/oxide/cosmo/board.fmd"
+
+config MAINBOARD_DIR
+	default "oxide/cosmo"
+
+config MAINBOARD_PART_NUMBER
+	default "Cosmo"
+
+config BUILD_WITH_DEBUG_APCB
+	bool "Build with debug APCB blobs"
+	default n
+	help
+	  Build coreboot image with debug APCB blobs. When selected, the
+	  APCBs with debug output on serial port will be used during build.
+
+	  Enabel it when debugging pre-reset vector issues.
+
+config ECAM_MMCONF_BASE_ADDRESS
+	default 0xb0000000
+
+config EFS_SPI_READ_MODE
+	default 0	# Normal read 33MHz
+
+config EFS_SPI_SPEED
+	default 0	# 66MHz
+
+config EFS_SPI_MICRON_FLAG
+	default 0
+
+config NORMAL_READ_SPI_SPEED
+	default 1	# 33MHz
+
+config ALT_SPI_SPEED
+	default 1	# 33MHz
+
+config TPM_SPI_SPEED
+	default 1	# 33MHz
+
+config EFS_ESPI0_CONFIG
+	default 0x0e
+
+config EFS_ESPI1_CONFIG
+	default 0x2c
+
+endif

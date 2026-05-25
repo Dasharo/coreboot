@@ -1,0 +1,165 @@
+chip soc/amd/turin_poc
+
+	# eSPI configuration
+	register "common_config.espi_config" = "{
+		.io_mode = ESPI_IO_MODE_QUAD,
+		.op_freq_mhz = ESPI_OP_FREQ_16_MHZ,
+		.crc_check_enable = 1,
+		.alert_pin = ESPI_ALERT_PIN_PUSH_PULL,
+		.periph_ch_en = 1,
+		.vw_ch_en = 1,
+		.oob_ch_en = 1,
+		.flash_ch_en = 1,
+	}"
+
+	device domain 0 on
+		device ref iommu_0 on end
+		device ref rcec_0 on end
+
+		# P2 lanes 0-3 (abs 48-51) - M.2 A
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "48"
+			register "end_lane" = "51"
+			device ref gpp_bridge_0_0_a on end
+		end
+	end
+
+	device domain 1 on
+		device ref rcec_1 on end
+
+		# P3 lanes 0-3 (abs 16-19) - M.2 B
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "16"
+			register "end_lane" = "19"
+			device ref gpp_bridge_1_0_a on end
+		end
+	end
+
+	device domain 2 on
+		device ref iommu_2 on end
+	end
+
+	device domain 3 on
+		# G3 lanes 0-3 (abs 80-83) - CEM I
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "80"
+			register "end_lane" = "83"
+			device ref gpp_bridge_3_0_a on end
+		end
+		# G3 lanes 4-7 (abs 84-87) - CEM H
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "84"
+			register "end_lane" = "87"
+			device ref gpp_bridge_3_1_a on end
+		end
+		# G3 lanes 8-11 (abs 88-91) - CEM G
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "88"
+			register "end_lane" = "91"
+			device ref gpp_bridge_3_2_a on end
+		end
+	end
+
+	device domain 4 on
+		# G1 lane 0-15 (abs 64-79) - MCIO P0
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "64"
+			register "end_lane" = "79"
+			device ref gpp_bridge_4_0_a on end
+		end
+	end
+
+	device domain 5 on
+		device ref iommu_5 on end
+		# G0 lanes 0-3 (abs 96-99) - CEM D
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "96"
+			register "end_lane" = "99"
+			device ref gpp_bridge_5_0_a on end
+		end
+		# G0 lanes 4-7 (abs 100-103) - CEM C
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "100"
+			register "end_lane" = "103"
+			device ref gpp_bridge_5_1_a on end
+		end
+		# G0 lanes 8-11 (abs 104-107) - CEM B
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "104"
+			register "end_lane" = "107"
+			device ref gpp_bridge_5_2_a on end
+		end
+		# G0 lanes 12-15 (abs 108-111) - CEM A
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "108"
+			register "end_lane" = "111"
+			device ref gpp_bridge_5_3_a on end
+		end
+		# G2 lanes 0-3 (abs 112-115) - CEM J
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "112"
+			register "end_lane" = "115"
+			device ref gpp_bridge_5_0_b on end
+		end
+		# G2 lanes 4-7 (abs 116-119) - CEM F
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "116"
+			register "end_lane" = "119"
+			device ref gpp_bridge_5_1_b on end
+		end
+		# G2 lanes 8-11 (abs 120-123) - CEM E
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "120"
+			register "end_lane" = "123"
+			device ref gpp_bridge_5_2_b on end
+		end
+		# P4 and P5 unused
+	end
+
+	device domain 6 on
+		device ref rcec_6 on end
+
+		# P1 lanes 0-15 (abs 32-47) - Ethernet NIC
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "32"
+			register "end_lane" = "47"
+			device ref gpp_bridge_6_0_a on end
+		end
+	end
+
+	device domain 7 on
+		device ref iommu_7 on end
+		device ref rcec_7 on end
+
+		# P0 lanes 0-3 (abs 0-3) - Rack switch
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "0"
+			register "end_lane" = "3"
+			device ref gpp_bridge_7_0_a on end
+		end
+	end
+
+	device ref i3c_0 on end
+	device ref i3c_1 on end
+	device ref i3c_2 on end
+	device ref i3c_3 on end
+	device ref i2c_4 on end
+	device ref i2c_5 on end
+	device ref uart_0 on end
+	device ref uart_1 on end
+end
