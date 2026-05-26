@@ -180,6 +180,10 @@ OPT_PSP_RPMC_NVRAM_SIZE=$(call add_opt_prefix, $(PSP_RPMC_NVRAM_SIZE), --rpmc-nv
 OPT_BIOS_NV_ST_BASE=$(call add_opt_prefix, $(PSP_BIOS_NV_ST_BASE), --variable-nvram-base)
 OPT_BIOS_NV_ST_SIZE=$(call add_opt_prefix, $(PSP_BIOS_NV_ST_SIZE), --variable-nvram-size)
 
+ifeq ($(CONFIG_PSP_DIR_MULTILEVEL),y)
+OPT_PSP_DIR_MULTILEVEL=--multilevel
+endif
+
 AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_APOB_ADDR) \
 		$(OPT_APOB_NV_SIZE) \
@@ -207,6 +211,7 @@ AMDFW_COMMON_ARGS=$(OPT_PSP_APCB_FILES) \
 		$(OPT_EFS_SPI_MICRON_FLAG) \
 		$(OPT_EFS_ESPI_CONFIG) \
 		$(OPT_VGA_IMAGE) \
+		$(OPT_PSP_DIR_MULTILEVEL) \
 		--config $(CONFIG_AMDFW_CONFIG_FILE) \
 		--flashsize $(call strip_quotes, $(CONFIG_ROM_SIZE)) \
 		$(OPT_SBOM_DIR)

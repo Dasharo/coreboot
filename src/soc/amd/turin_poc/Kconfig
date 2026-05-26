@@ -239,6 +239,17 @@ config PSP_EARLY_VGA_IMAGE
 	  Path to the optional early VGA image to be displayed by PSP before
 	  x86 reset vector.
 
+config PSP_DIR_MULTILEVEL
+	bool "PSP directory multilevel structure"
+	default y
+	help
+	  Instruct amdfwtool to build multilevel PSP directories.
+	  The platform can also boot without multilevel directories,
+	  at the cost of PSP recovery mechanism, but reduces the blobs
+	  footprint.
+
+	  If unsure, answer 'y'.
+
 endmenu
 
 config CONSOLE_UART_BASE_ADDRESS
