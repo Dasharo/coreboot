@@ -11,7 +11,8 @@ config BOARD_SPECIFIC_OPTIONS
 	select DISABLE_KEYBOARD_RESET_PIN
 	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE
 	select SYSTEM_TYPE_SERVER
-	select BOOTBLOCK_IN_CBFS
+	select AMD_SOC_CONSOLE_UART
+	select CONSOLE_SERIAL_3000000
 
 config FMDFILE
 	default "src/mainboard/oxide/cosmo/board.fmd"
