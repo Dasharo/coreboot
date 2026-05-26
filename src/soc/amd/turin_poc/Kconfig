@@ -182,6 +182,9 @@ config DISABLE_KEYBOARD_RESET_PIN
 config CPU_PT_ROM_MAP_GB
 	default 1024
 
+config MAX_ACPI_TABLE_SIZE_KB
+	default 512
+
 menu "PSP Configuration Options"
 
 config AMDFW_CONFIG_FILE
