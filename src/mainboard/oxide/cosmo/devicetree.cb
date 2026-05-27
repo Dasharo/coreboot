@@ -61,6 +61,15 @@ chip soc/amd/turin_poc
 			register "end_lane" = "123"
 			device ref gpp_bridge_2_2_a on end
 		end
+
+		device ref gpp_bridge_2_a on
+			device ref xhci_0 on end
+		end
+
+		device ref gpp_bridge_2_b on
+			device ref sata_2_0 on end
+			device ref sata_2_1 on end
+		end
 	end
 
 	device domain 3 on
@@ -158,6 +167,15 @@ chip soc/amd/turin_poc
 			register "start_lane" = "0"
 			register "end_lane" = "3"
 			device ref gpp_bridge_7_0_a on end
+		end
+
+		device ref gpp_bridge_7_a on
+			device ref xhci_1 on end
+		end
+
+		device ref gpp_bridge_7_b on
+			device ref sata_7_0 on end
+			device ref sata_7_1 on end
 		end
 	end
 
