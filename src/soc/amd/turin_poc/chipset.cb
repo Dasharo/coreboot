@@ -166,6 +166,7 @@ chip soc/amd/turin_poc
 			device pci 00.1 alias sdxi_2 off end # Smart Data Accelerator Interface
 			device pci 00.3 alias secondry_NTB_2 off end # Secondary vNTB
 			device pci 00.4 alias xhci_0 off end # USB
+			device pci 00.6 alias acp off end # Audio Coprocessor (ACP)
 			device pci 00.7 alias hda off end # HD Audio Controller (AZ)
 		end
 		device pci 07.2 alias gpp_bridge_2_b on # Internal GPP Bridge 0 to Bus D1
