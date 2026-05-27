@@ -49,8 +49,8 @@ BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
 function sdk_run {
-  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot \
-    -v $HOME/.ssh:/home/coreboot/.ssh \
+  docker run --rm -t -u $UID -v $PWD:/home/coreboot/coreboot:Z \
+    -v $HOME/.ssh:/home/coreboot/.ssh:Z \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -w /home/coreboot/coreboot ${DASHARO_SDK} \
     "$@"
