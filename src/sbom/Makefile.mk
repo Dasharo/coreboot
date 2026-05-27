@@ -355,7 +355,7 @@ $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json $(CONFIG_AMD_OPENSIL_
 		sed -i "/software-version/d" $@; \
 	fi
 
-$(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/intel-microcode/intel-ucode/%
+$(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/intel-microcode/intel-ucode/% | $(build-dir)
 	cp $< $@
 	year=$$(hexdump --skip 8 --length 2 --format '"%04x"' $(word 2,$^));\
 	day=$$(hexdump --skip 10 --length 1 --format '"%02x"' $(word 2,$^));\
