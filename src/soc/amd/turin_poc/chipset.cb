@@ -150,13 +150,13 @@ chip soc/amd/turin_poc
 
 		device pci 05.0 on end # Dummy device function, do not disable
 		chip drivers/amd/opensil/mpio
-			device pci 05.1 alias gpp_bridge_2_0_c off end
+			device pci 05.1 alias gpp_bridge_2_0_c hidden ops amd_external_pcie_gpp_ops end
 		end
 		chip drivers/amd/opensil/mpio
-			device pci 05.2 alias gpp_bridge_2_1_c off end
+			device pci 05.2 alias gpp_bridge_2_1_c hidden ops amd_external_pcie_gpp_ops end
 		end
 		chip drivers/amd/opensil/mpio
-			device pci 05.3 alias gpp_bridge_2_2_c off end
+			device pci 05.3 alias gpp_bridge_2_2_c hidden ops amd_external_pcie_gpp_ops end
 		end
 
 		device pci 07.0 on end # Dummy device function, do not disable
@@ -313,15 +313,14 @@ chip soc/amd/turin_poc
 
 		device pci 05.0 on end # Dummy device function, do not disable
 		chip drivers/amd/opensil/mpio
-			device pci 05.1 alias gpp_bridge_5_0_c off end
+			device pci 05.1 alias gpp_bridge_5_0_c hidden ops amd_external_pcie_gpp_ops end
 		end
 		chip drivers/amd/opensil/mpio
-			device pci 05.2 alias gpp_bridge_5_1_c off end
+			device pci 05.2 alias gpp_bridge_5_1_c hidden ops amd_external_pcie_gpp_ops end
 		end
 		chip drivers/amd/opensil/mpio
-			device pci 05.3 alias gpp_bridge_5_2_c off end
+			device pci 05.3 alias gpp_bridge_5_2_c hidden ops amd_external_pcie_gpp_ops end
 		end
-
 
 		device pci 07.0 on end # Dummy device function, do not disable
 		device pci 07.1 alias gpp_bridge_3_a on # Internal GPP Bridge 0 to Bus C2
