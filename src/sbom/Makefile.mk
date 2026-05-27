@@ -142,12 +142,17 @@ coreboot-licenses = $(foreach license, $(patsubst %.txt, %, $(filter-out retaine
 
 # only include CBFS SBOM section if there is any data for it
 ifeq ($(CONFIG_SBOM),y)
+# This captures newline in a variable for use as a separator of recipe lines.
+define newline
+
+
+endef
 # Use intermediate so that $(build-dir)/sbom.uswid will be evaluated
 # after all files are built, so all repos should be available
 $(call add_intermediate, add_sbom_cbfs, $(CBFSTOOL) $(build-dir)/sbom.uswid)
 	$(foreach region,$(all-regions), \
 		$(if $(CONFIG_UPDATE_IMAGE),-$(CBFSTOOL) $< remove -n sbom 2>/dev/null) \
-		$(CBFSTOOL) $< add -r $(region) -n sbom -t raw -f $(build-dir)/sbom.uswid)
+		$(CBFSTOOL) $< add -r $(region) -n sbom -t raw -f $(build-dir)/sbom.uswid $(newline))
 endif
 
 ## Build final SBOM (Software Bill of Materials) file in uswid format
