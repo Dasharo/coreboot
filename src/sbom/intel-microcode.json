@@ -9,7 +9,7 @@
   "software-meta": [
     {
       "persistent-id": "com.intel.microcode",
-      "summary": "Micrcode Updates for Intel Processors"
+      "summary": "Microcode Updates for Intel Processors"
     }
   ],
   "entity": [
