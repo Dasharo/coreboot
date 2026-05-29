@@ -171,9 +171,14 @@ static void configure_usb(void)
 
 	FCHUSB_INPUT_BLK *fch_usb_data = SilFindStructure(SilId_FchUsb, 0);
 
-	fch_usb_data->Xhci0Enable = usb->xhci0_enable;
-	fch_usb_data->Xhci1Enable = usb->xhci1_enable;
-	fch_usb_data->Xhci2Enable = false; /* there's no XHCI2 on this SoC */
+	fch_usb_data->Xhci0Enable = is_dev_enabled(DEV_PTR(xhci_0));
+	fch_usb_data->Xhci1Enable = is_dev_enabled(DEV_PTR(xhci_1));
+	/*
+	 * There's no XHCI2/3 on this SoC, but these refer to XHCI on 2nd socket.
+	 * But we do not support two socket platforms yet, so force disable.
+	 */
+	fch_usb_data->Xhci2Enable = false;
+	fch_usb_data->Xhci3Enable = false;
 	for (int i = 0; i < NUM_XHCI_CONTROLLERS; i++) {
 		memcpy(&fch_usb_data->XhciOCpinSelect[i].Usb20OcPin, &usb->usb2_oc_pins[i],
 		       sizeof(fch_usb_data->XhciOCpinSelect[i].Usb20OcPin));
