@@ -12,6 +12,18 @@ chip soc/amd/turin_poc
 		.flash_ch_en = 1,
 	}"
 
+	# Shutdown all SATA ports
+	register "sata.shutdown_ports[0].raw" = "0xff"
+	register "sata.shutdown_ports[1].raw" = "0xff"
+	register "sata.shutdown_ports[2].raw" = "0xff"
+	register "sata.shutdown_ports[3].raw" = "0xff"
+
+	# Configure all SATA ports as eSATA
+	register "sata.enable_esata[0].raw" = "0xff"
+	register "sata.enable_esata[1].raw" = "0xff"
+	register "sata.enable_esata[2].raw" = "0xff"
+	register "sata.enable_esata[3].raw" = "0xff"
+
 	device domain 0 on
 		device ref iommu_0 on end
 		device ref rcec_0 on end
@@ -166,15 +178,6 @@ chip soc/amd/turin_poc
 			}"
 			device ref gpp_bridge_2_2_a on end
 		end
-
-		device ref gpp_bridge_2_a on
-			device ref xhci_0 on end
-		end
-
-		device ref gpp_bridge_2_b on
-			device ref sata_2_0 on end
-			device ref sata_2_1 on end
-		end
 	end
 
 	device domain 3 on
@@ -246,6 +249,17 @@ chip soc/amd/turin_poc
 						 PCIE_HP_FUNC_EMILS,
 			}"
 			device ref gpp_bridge_3_2_a on end
+		end
+	end
+
+	device domain 4 on
+		# G1 lanes 0-15 (abs 64-79) - MCIO
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "64"
+			register "end_lane" = "79"
+			register "gpio_group" = "1"
+			device ref gpp_bridge_4_0_a on end
 		end
 	end
 
@@ -401,15 +415,6 @@ chip soc/amd/turin_poc
 						 PCIE_HP_FUNC_PWRFLT,
 			}"
 			device ref gpp_bridge_7_0_a on end
-		end
-
-		device ref gpp_bridge_7_a on
-			device ref xhci_1 on end
-		end
-
-		device ref gpp_bridge_7_b on
-			device ref sata_7_0 on end
-			device ref sata_7_1 on end
 		end
 	end
 
