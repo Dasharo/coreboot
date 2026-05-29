@@ -16,23 +16,80 @@ chip soc/amd/turin_poc
 		device ref iommu_0 on end
 		device ref rcec_0 on end
 
+		# Dummy allocations for reversed core
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "56"
+			register "end_lane" = "63"
+			device ref gpp_bridge_0_0_a off end
+		end
+
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "52"
+			register "end_lane" = "55"
+			device ref gpp_bridge_0_1_a off end
+		end
+
 		# P2 lanes 0-3 (abs 48-51) - M.2 A
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "48"
 			register "end_lane" = "51"
+			register "gpio_group" = "1"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 0,
+				.i2c_gpio_dev_addr = 0x22,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_0_2_a on end
 		end
 	end
 
 	device domain 1 on
 		device ref rcec_1 on end
+		# Dummy allocations for reversed core
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "24"
+			register "end_lane" = "31"
+			device ref gpp_bridge_0_0_a off end
+		end
+
+		chip drivers/amd/opensil/mpio
+			register "type" = "IFTYPE_PCIE"
+			register "start_lane" = "20"
+			register "end_lane" = "23"
+			device ref gpp_bridge_0_1_a off end
+		end
 
 		# P3 lanes 0-3 (abs 16-19) - M.2 B
 		chip drivers/amd/opensil/mpio
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "16"
 			register "end_lane" = "19"
+			register "gpio_group" = "1"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 1,
+				.i2c_gpio_dev_addr = 0x22,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_1_2_a on end
 		end
 	end
@@ -45,7 +102,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "112"
 			register "end_lane" = "115"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 4,
+				.i2c_gpio_dev_addr = 0x21,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_2_0_a on end
 		end
 		# G2 lanes 4-7 (abs 116-119) - CEM F
@@ -53,7 +125,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "116"
 			register "end_lane" = "119"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 0,
+				.i2c_gpio_dev_addr = 0x21,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_2_1_a on end
 		end
 		# G2 lanes 8-11 (abs 120-123) - CEM E
@@ -61,7 +148,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "120"
 			register "end_lane" = "123"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 4,
+				.i2c_gpio_dev_addr = 0x20,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_2_2_a on end
 		end
 
@@ -81,7 +183,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "80"
 			register "end_lane" = "83"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 3,
+				.i2c_gpio_dev_addr = 0x21,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_3_0_a on end
 		end
 		# G3 lanes 4-7 (abs 84-87) - CEM H
@@ -89,7 +206,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "84"
 			register "end_lane" = "87"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 2,
+				.i2c_gpio_dev_addr = 0x21,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_3_1_a on end
 		end
 		# G3 lanes 8-11 (abs 88-91) - CEM G
@@ -97,7 +229,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "88"
 			register "end_lane" = "91"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 1,
+				.i2c_gpio_dev_addr = 0x21,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_3_2_a on end
 		end
 	end
@@ -111,6 +258,21 @@ chip soc/amd/turin_poc
 			register "start_lane" = "108"
 			register "end_lane" = "111"
 			register "speed" = "Gen4"
+			register "gpio_group" = "1"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 0,
+				.i2c_gpio_dev_addr = 0x20,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_5_0_a on end
 		end
 		# G0 lanes 8-11 (abs 104-107) - CEM B
@@ -118,7 +280,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "104"
 			register "end_lane" = "107"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 1,
+				.i2c_gpio_dev_addr = 0x20,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_5_1_a on end
 		end
 		# G0 lanes 4-7 (abs 100-103) - CEM C
@@ -126,7 +303,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "100"
 			register "end_lane" = "103"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 2,
+				.i2c_gpio_dev_addr = 0x20,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_5_2_a on end
 		end
 		# G0 lanes 0-3 (abs 96-99) - CEM D
@@ -134,7 +326,22 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "96"
 			register "end_lane" = "99"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 3,
+				.i2c_gpio_dev_addr = 0x20,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT |
+						 PCIE_HP_FUNC_ATTNLED |
+						 PCIE_HP_FUNC_EMILS,
+			}"
 			device ref gpp_bridge_5_3_a on end
 		end
 
@@ -153,7 +360,20 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "32"
 			register "end_lane" = "47"
+			register "gpio_group" = "1"
 			register "speed" = "Gen1"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 2,
+				.i2c_gpio_dev_addr = 0x22,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWREN |
+						 PCIE_HP_FUNC_PWRFLT,
+			}"
 			device ref gpp_bridge_6_0_a on end
 		end
 	end
@@ -167,7 +387,19 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "0"
 			register "end_lane" = "3"
+			register "gpio_group" = "1"
 			register "speed" = "Gen4"
+			register "hotplug" = "ServerExpress"
+			register "hotplug_format" = "ExpressModule"
+			register "hp_func" = "{
+				.i2c_gpio_bit = 0,
+				.i2c_gpio_byte_map = 3,
+				.i2c_gpio_dev_addr = 0x22,
+				.i2c_dev_type = PCA9506,
+				.i2c_bus_segment = ApuDirectBus,
+				.function_mask = PCIE_HP_FUNC_OOB_PRSNT |
+						 PCIE_HP_FUNC_PWRFLT,
+			}"
 			device ref gpp_bridge_7_0_a on end
 		end
 
