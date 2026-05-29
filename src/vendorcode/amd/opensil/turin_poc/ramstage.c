@@ -12,6 +12,7 @@
 #include <Mpio/MpioClass-api.h>
 #include <RcMgr/DfX/RcManager4-api.h>
 #include <Sdxi/SdxiClass-api.h>
+#include <SMU/SmuClass-api.h>
 #include <amdblocks/aoac.h>
 #include <amdblocks/reset.h>
 #include <bootstate.h>
@@ -351,6 +352,18 @@ static void configure_ccx(void)
 	ucode_info->UcodePatchEntryAddress = (uint64_t)ucode;
 }
 
+static void configure_smu(void)
+{
+	SMUCLASS_INPUT_BLK *smu_data = SilFindStructure(SilId_SmuClass, 0);
+	const struct soc_amd_turin_poc_config *soc_config = config_of_soc();
+
+	smu_data->CfgPlatformTDP = soc_config->platform_TDP;
+	smu_data->CfgPlatformPPT = soc_config->platform_PPT;
+	smu_data->CfgPlatformTDC = soc_config->platform_TDC;
+	smu_data->CfgPlatformEDC = soc_config->platform_EDC;
+
+}
+
 void setup_opensil(void)
 {
 	const SIL_STATUS debug_ret = SilDebugSetup(HostDebugService);
@@ -370,6 +383,7 @@ void setup_opensil(void)
 	configure_usb();
 	configure_sata();
 	configure_sdxi();
+	configure_smu();
 }
 
 static void opensil_entry(SIL_TIMEPOINT timepoint)

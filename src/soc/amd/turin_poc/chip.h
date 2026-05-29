@@ -86,6 +86,11 @@ struct soc_amd_turin_poc_config {
 
 	struct soc_usb_config usb;
 	struct soc_sata_config sata;
+
+	uint32_t platform_TDP;
+	uint32_t platform_PPT;
+	uint32_t platform_TDC;
+	uint32_t platform_EDC;
 };
 
 #endif /* __TURIN_POC_CHIP_H__ */
