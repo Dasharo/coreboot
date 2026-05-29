@@ -12,6 +12,12 @@ chip soc/amd/turin_poc
 		.flash_ch_en = 1,
 	}"
 
+	# Power limits for SMU
+	register "platform_TDP" = "500"
+	register "platform_PPT" = "500"
+	register "platform_TDC" = "235"
+	register "platform_EDC" = "330"
+
 	# Shutdown all SATA ports
 	register "sata.shutdown_ports[0].raw" = "0xff"
 	register "sata.shutdown_ports[1].raw" = "0xff"
