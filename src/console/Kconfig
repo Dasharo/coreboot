@@ -43,6 +43,18 @@ config CONSOLE_SERIAL
 	  shown on the following menu line. Supporting multiple different types
 	  of UARTs in one build is not supported.
 
+config CONSOLE_SERIAL_DELAY
+	int "Serial port console delay after each line"
+	default 0
+	depends on CONSOLE_SERIAL
+	help
+	  Send coreboot debug output to a serial port but sleep for a specified
+	  amount of miliseconds after each line.
+
+	  Use this option if you encounter problems on the receiver side losing
+	  the coonsoel content, e.g. due to overflowing ringbuffers, if the port
+	  is implemented via software, FPGA or other means.
+
 config FIXED_UART_FOR_CONSOLE
 	bool
 	help

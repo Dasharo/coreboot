@@ -8,6 +8,7 @@
 #include <console/console.h>
 #include <console/streams.h>
 #include <console/vtxprintf.h>
+#include <delay.h>
 #include <smp/spinlock.h>
 #include <smp/node.h>
 #include <timer.h>
@@ -105,6 +106,9 @@ static void line_end(union log_state state)
 {
 	if (CONFIG(CONSOLE_USE_ANSI_ESCAPES) && !LOG_FAST(state))
 		wrap_interactive_printf(BIOS_LOG_ESCAPE_RESET);
+
+	if (CONFIG_CONSOLE_SERIAL_DELAY)
+		mdelay(CONFIG_CONSOLE_SERIAL_DELAY);
 }
 
 static void wrap_putchar(unsigned char byte, void *data)

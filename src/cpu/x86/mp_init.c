@@ -520,7 +520,8 @@ static enum cb_err bsp_do_flight_plan(struct mp_params *mp_params)
 	 * resources such as UART, so scale the time out up by increments of
 	 * 100ms if needed.
 	 */
-	const int timeout_us = MAX(1000000, 100000 * mp_params->num_cpus);
+	const int timeout_us = MAX(1000000,
+		(CONFIG_CONSOLE_SERIAL_DELAY + 1) * 100000 * mp_params->num_cpus);
 	const int step_us = 100;
 	int num_aps = mp_params->num_cpus - 1;
 	struct stopwatch sw;
