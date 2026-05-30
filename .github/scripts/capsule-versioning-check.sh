@@ -75,7 +75,11 @@ fail=0
 mapfile -t configs < <(grep -l 'EFI_UPDATE_CAPSULE' configs/config.*)
 for config in "${configs[@]}"; do
     new_config=$(git show "$new_tag:$config")
-    old_config=$(git show "$old_tag:$config")
+    if ! old_config=$(git show "$old_tag:$config"); then
+        # `git show revision:path` fails if the revision doesn't contain the
+        # path and we also have nothing to do in this case
+        continue
+    fi
 
     # check that `CONFIG_EDK2_CAPSULES_V2=y` is not added to
     # `CONFIG_DRIVERS_EFI_UPDATE_CAPSULES=y` without
