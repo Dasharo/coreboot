@@ -180,8 +180,8 @@ static const struct superio_registers reg_table[] = {
 			 NANA,NANA,NANA,NANA,NANA,NANA,NANA,NANA,NANA,NANA,
 			 0x01,EOT}},
 		{0x08, "PORT80 UART",
-			{0xe0,0xe1,0xe2,0xe3,0xe4,EOT},
-			{0x80,0x00,0x00,0x10,0x00,EOT}},
+			{0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,EOT},
+			{0x80,0x00,0x00,0x10,0x00,0x00,EOT}},
 		{0x09, "GPIO8-9, GPIO1-8 Alternate Function",
 			{0x30,0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,
 			 0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,EOT},
@@ -984,6 +984,7 @@ void probe_idregs_nuvoton(uint16_t port)
 	uint16_t chip_id = 0;
 	uint8_t chip_rev = 0;
 	uint16_t iobase = 0;
+	uint8_t val;
 	int i;
 
 	/* Probe for the 16bit IDs first to avoid collisions */
@@ -1055,6 +1056,12 @@ extra:
 				dump_data(iobase + 5, i);
 			break;
 		case 0xd590: /* NCT6687D-W */
+			val = regval(port, 0x1d);
+			regwrite(port, 0x1d, val | 8);
+			printf("IRQ Type: 0x%02x%02x\n", regval(port, 0x10), regval(port, 0x11));
+			printf("IRQ polarity: 0x%02x%02x\n", regval(port, 0x13), regval(port, 0x14));
+			regwrite(port, 0x1d, val);
+
 			dump_nct6687d_gpios(port);
 			/* One can use the APCI/BIOS register set, although the
 			 * resulting data is still the same when using software
