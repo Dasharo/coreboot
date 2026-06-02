@@ -6,7 +6,6 @@
 #include <device/device.h>
 #include <types.h>
 #include "gpio.h"
-#include "update_devicetree.h"
 
 /* The IRQ mapping in fch_irq_map ends up getting written to the indirect address space that is
    accessed via I/O ports 0xc00/0xc01. */
@@ -59,10 +58,8 @@ const struct fch_irq_routing *mb_get_fch_irq_mapping(size_t *length)
 static void mainboard_init(void *chip_info)
 {
 	mainboard_program_gpios();
-
-	mainboard_update_devicetree_opensil();
 }
 
 struct chip_operations mainboard_ops = {
-	.init = mainboard_init,
+	.init = mainboard_init
 };
