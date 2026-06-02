@@ -122,7 +122,8 @@ void pci_domain_fill_ssdt(const struct device *domain)
 	if (domain->downstream->bridge_ctrl & PCI_BRIDGE_CTL_VGA) {
 		printk(BIOS_DEBUG, "%s _CRS: adding VGA resource\n", acpi_device_name(domain));
 		acpigen_resource_producer_io(VGA_IO_BASE, VGA_IO_LIMIT);
-		acpigen_resource_producer_mmio(VGA_MMIO_BASE, VGA_MMIO_LIMIT,
+		/* Report VGA MMIO + extra 128K for VGA OptionROM in legacy C segment */
+		acpigen_resource_producer_mmio(VGA_MMIO_BASE, VGA_MMIO_LIMIT + 0x20000,
 			MEM_RSRC_FLAG_MEM_READ_WRITE | MEM_RSRC_FLAG_MEM_ATTR_CACHE);
 	}
 
