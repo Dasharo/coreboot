@@ -25,6 +25,7 @@
 #define  ESPI_WDG_EN				(1 << 0)
 
 #define ESPI_GLOBAL_CONTROL_1			0x34
+#define  ESPI_REQ_NOTWITH_VW_REQ	(1 << 21)
 #define  ESPI_ALERT_ENABLE			(1 << 20) /* Mendocino and later SoCs */
 #define  ESPI_RGCMD_INT_MAP_SHIFT		13
 #define  ESPI_RGCMD_INT_MAP_MASK		(0x1f << ESPI_RGCMD_INT_MAP_SHIFT)
@@ -80,6 +81,8 @@
 #define ESPI_MMIO_BASE_REG4			0xbc
 #define ESPI_MMIO_SIZE_REG2			0xc0
 
+#define ESPI_RXVW_INDEX 			0xa4
+#define ESPI_RXVW_MISC_CNTL		0xa8
 #define ESPI_RXVW_POLARITY			0xac
 
 #define ESPI_DECODE_RANGES_PER_REG_GROUP	4
