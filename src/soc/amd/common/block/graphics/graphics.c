@@ -131,7 +131,7 @@ static void graphics_fill_ssdt(const struct device *dev)
 	acpi_device_write_pci_dev(dev);
 
 	/* Use the VFCT copy when using GOP */
-	if (!CONFIG(RUN_FSP_GOP))
+	if (!CONFIG(RUN_FSP_GOP) && !CONFIG(SOC_AMD_OPENSIL))
 		pci_rom_ssdt(dev);
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_GRAPHICS_ATIF))
