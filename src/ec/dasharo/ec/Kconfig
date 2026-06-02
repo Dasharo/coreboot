@@ -19,6 +19,7 @@ config EC_DASHARO_EC_DGPU
 config EC_DASHARO_EC_UPDATE
 	bool "Update the embedded controller firmware"
 	default n
+	depends on DRIVERS_EFI_EC_FW_GUID = ""
 
 config EC_DASHARO_EC_UPDATE_FILE
 	depends on EC_DASHARO_EC_UPDATE
