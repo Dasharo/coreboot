@@ -29,6 +29,7 @@ Scope(\_SB) {
 
 	#include "acp.asl"
 
+	#include "ioapic_routing.asl"
 } /* End \_SB scope */
 
 #include <soc/amd/common/acpi/alib.asl>
