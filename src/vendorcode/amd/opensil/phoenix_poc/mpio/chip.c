@@ -3,6 +3,7 @@
 #include <cbmem.h>
 #include <device/device.h>
 #include <device/pci_def.h>
+#include <CCX/Common/CcxApic.h>
 #include <GFX/GfxClass-api.h>
 #include <Mpio/MpioClass-api.h>
 #include <Mpio/Phx/MpioPhxData.h>
@@ -143,12 +144,21 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 	input->EsmTargetSpeed             = 16;
 	input->CfgRxMarginPersistenceMode = 1;
 	input->SevSnpSupport              = false;
+	input->IommuAvicSupport           = true;
+	input->IommuSupport               = is_dev_enabled(DEV_PTR(iommu));
 	input->Usb4Rt0En                  = is_dev_enabled(DEV_PTR(usb4_router_0));
 	input->Usb4Rt0PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_0));
 	input->Usb4Rt1En                  = is_dev_enabled(DEV_PTR(usb4_router_1));
 	input->Usb4Rt1PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_1));
 	gfx_data->Usb4Rt0En               = input->Usb4Rt0En;
 	gfx_data->Usb4Rt1En               = input->Usb4Rt1En;
+
+	if (CONFIG(XAPIC_ONLY) || CONFIG(X2APIC_LATE_WORKAROUND))
+		input->AmdApicMode = xApicMode;
+	else if (CONFIG(X2APIC_ONLY))
+		input->AmdApicMode = x2ApicMode;
+	else
+		input->AmdApicMode = ApicAutoMode;
 }
 
 #ifndef MPIO_ENGINE_DATA_INITIALIZER
