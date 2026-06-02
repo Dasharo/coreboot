@@ -192,6 +192,19 @@ static int smbios_write_type43_tpm(struct device *dev, int *handle, unsigned lon
 }
 #endif
 
+static bool should_publish_tpm_log(void)
+{
+	/*
+	 * EDK will publish its own version of the log after parsing and
+	 * importing coreboot's log discovered through CBMEM.
+	 *
+	 * Publishing is done by appending a table, so coreboot must avoid
+	 * adding corresponding log tables to let OS find a more complete one
+	 * from EDK.
+	 */
+	return !CONFIG(PAYLOAD_EDK2) || CONFIG(EDK2_DISABLE_TPM);
+}
+
 static unsigned long acpi_create_tpm2(const struct device *device,
 				      unsigned long current,
 				      struct acpi_rsdp *rsdp)
@@ -201,6 +214,9 @@ static unsigned long acpi_create_tpm2(const struct device *device,
 		return current;
 
 	if (!crb_tpm_is_active())
+		return current;
+
+	if (!should_publish_tpm_log())
 		return current;
 
 	acpi_tpm2_t *tpm2 = (acpi_tpm2_t *)(uintptr_t)current;
