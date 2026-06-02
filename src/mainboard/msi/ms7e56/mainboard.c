@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi_device.h>
 #include <amdblocks/acpi.h>
 #include <amdblocks/amd_pci_util.h>
 #include <commonlib/helpers.h>
+#include <device/azalia_device.h>
 #include <device/device.h>
+#include <static.h>
 #include <types.h>
 #include "gpio.h"
 
@@ -57,9 +60,50 @@ const struct fch_irq_routing *mb_get_fch_irq_mapping(size_t *length)
 	return fch_irq_map;
 }
 
+static const char *hda_acpi_name(const struct device *dev)
+{
+	return "AZAL";
+}
+
+static const char *gfx_hda_acpi_name(const struct device *dev)
+{
+	return "HDAU";
+}
+
+static const char *crypto_acpi_name(const struct device *dev)
+{
+	return "APSP";
+}
+
+#define SET_AUDIO_DEV_OPS(dev) \
+	struct device *dev = (struct device *)DEV_PTR(dev); \
+	if (is_dev_enabled(dev)) { \
+		(dev)->ops = &phx_ ## dev ## _audio_ops; \
+		(dev)->ops->acpi_name = dev ## _acpi_name; \
+		(dev)->ops->acpi_fill_ssdt = acpi_device_write_pci_dev; \
+	}
+
+static struct device_operations phx_hda_audio_ops;
+static struct device_operations phx_gfx_hda_audio_ops;
+
 static void mainboard_init(void *chip_info)
 {
+	struct device *psp = (struct device *)DEV_PTR(crypto);
+
 	mainboard_program_gpios();
+
+	memcpy(&phx_hda_audio_ops, &default_azalia_audio_ops,
+	       sizeof(default_azalia_audio_ops));
+	memcpy(&phx_gfx_hda_audio_ops, &default_azalia_audio_ops,
+	       sizeof(default_azalia_audio_ops));
+
+	SET_AUDIO_DEV_OPS(gfx_hda);
+	SET_AUDIO_DEV_OPS(hda);
+
+	if (is_dev_enabled(psp)) {
+		psp->ops->acpi_name = crypto_acpi_name;
+		psp->ops->acpi_fill_ssdt = acpi_device_write_pci_dev;
+	}
 }
 
 struct chip_operations mainboard_ops = {
