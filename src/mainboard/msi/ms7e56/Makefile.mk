@@ -5,7 +5,6 @@ bootblock-y += early_gpio.c
 
 ramstage-y += gpio.c
 ramstage-y += smbios.c
-ramstage-y += update_devicetree.c
 
 ifneq ($(wildcard $(src)/mainboard/$(MAINBOARDDIR)/data*.apcb),)
 APCB_SOURCES = $(src)/mainboard/$(MAINBOARDDIR)/data.apcb
