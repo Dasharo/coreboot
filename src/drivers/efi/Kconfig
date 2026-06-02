@@ -39,6 +39,37 @@ config DRIVERS_EFI_MAIN_FW_LSV
 	  that is allowed to replace the current one.  Can be used to forbid
 	  bugged versions.
 
+config DRIVERS_EFI_EC_FW_GUID
+	string "GUID of the EC firmware"
+	default ""
+	# version of an EC can't be hard-coded, hence must depend on a way to query it
+	depends on DRIVERS_EFI_FW_INFO && EC_DASHARO_EC
+	help
+	  GUID used to identify EC firmware kind for the purposes of updates.
+	  An empty value implies there is no EC or it's not updated via a dedicated
+	  capsule.
+
+config DRIVERS_EFI_EC_FW_LSV
+	hex "Lowest supported EC firmware version"
+	range 0x00000000 0xFFFFFFFF
+	default 0x00000000
+	depends on DRIVERS_EFI_EC_FW_GUID != ""
+	help
+	  32-bit unsigned integer representing lowest EC firmware version number
+	  that is allowed to replace the current one.  Can be used to forbid
+	  bugged versions.
+
+config DRIVERS_EFI_EC_FW_SIZE
+	hex "Size of the EC firmware"
+	# the upper limit is chosen at random merely to exclude obviously wrong values,
+	# the lower limit and default value are zero because nothing in coreboot depends on
+	# knowing the size
+	range 0x00000000 0x00100000
+	default 0x00000000
+	depends on DRIVERS_EFI_EC_FW_GUID != ""
+	help
+	  Size of EC firmware image in bytes.
+
 config DRIVERS_EFI_UPDATE_CAPSULES
 	bool "Include EFI update capsules driver"
 	depends on DRIVERS_EFI_VARIABLE_STORE && SMMSTORE_V2 && DRIVERS_EFI_FW_INFO
