@@ -21,4 +21,5 @@ DefinitionBlock (
 	}
 
 	#include "acpi/mainboard.asl"
+	#include <drivers/amd/promontory21/acpi/prom21_gpio.asl>
 }
