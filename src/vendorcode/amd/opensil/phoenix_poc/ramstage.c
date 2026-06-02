@@ -7,6 +7,7 @@
 #include <FCH/Tacoma/FchCore/FchUsb/FchUsbOemTc.h>
 #include <PROM/PromClass-api.h>
 #include <RcMgr/DfX/RcManager-api.h>
+#include <amdblocks/iomap.h>
 #include <amdblocks/reset.h>
 #include <bootstate.h>
 #include <cbmem.h>
@@ -72,8 +73,7 @@ static void setup_rc_manager_default(SIL_CONTEXT *SilContext)
 	rc_mgr_input_block->PciExpressBaseAddress = CONFIG_ECAM_MMCONF_BASE_ADDRESS;
 	rc_mgr_input_block->MmioSizePerRbForNonPciDevice = 16 * MiB;
 	rc_mgr_input_block->BottomMmioReservedForPrimaryRb = 4ull * GiB - 32 * MiB;
-	/* MmioAbove4GLimit will be adjusted down in openSIL */
-	rc_mgr_input_block->MmioAbove4GLimit = POWER_OF_2(cpu_phys_address_size());
+	rc_mgr_input_block->MmioAbove4GLimit = IOMMU_RESERVED_MMIO_BASE;
 	rc_mgr_input_block->Above4GMmioSizePerRbForNonPciDevice = 0;
 	/* Enforce remapping and address space reduction, as this is what AGESA does */
 	rc_mgr_input_block->AmdFabric1TbRemap = 1;
