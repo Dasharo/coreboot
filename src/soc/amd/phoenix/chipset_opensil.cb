@@ -66,7 +66,7 @@ chip soc/amd/phoenix
 		device pci 08.1 alias gpp_bridge_a on  # Internal GPP Bridge 0 to Bus A
 			ops amd_internal_pcie_gpp_ops_exp
 			device pci 0.0 alias gfx off ops amd_graphics_ops end # Internal GPU (GFX)
-			device pci 0.1 alias gfx_hda off end # Display HD Audio Controller (GFXAZ)
+			device pci 0.1 alias gfx_hda off ops default_azalia_audio_ops end # Display HD Audio Controller (GFXAZ)
 			device pci 0.2 alias crypto off end # Crypto Coprocessor
 			device pci 0.3 alias xhci_0 off
 				ops xhci_pci_ops
