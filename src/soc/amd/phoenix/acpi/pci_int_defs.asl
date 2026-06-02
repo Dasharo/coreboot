@@ -22,6 +22,27 @@ IndexField(PRQI, PRQD, ByteAcc, NoLock, Preserve) {
 	PIRG, 0x00000008,	/* Index 6: INTG */
 	PIRH, 0x00000008,	/* Index 7: INTH */
 
+	Offset (0x0C),
+	SIRA, 0x00000008,	/* Index 0x0C: Serial IRQA */
+	SIRB, 0x00000008,	/* Index 0x0D: Serial IRQB */
+	SIRC, 0x00000008,	/* Index 0x0E: Serial IRQC */
+	SIRD, 0x00000008,	/* Index 0x0F: Serial IRQD */
+	PIRS, 0x00000008,	/* Index 0x10: SCI */
+	Offset (0x13),
+	HDAD, 0x00000008,	/* Index 0x13: HDA */
+	Offset (0x17),
+	SDCL, 0x00000008,	/* Index 0x17: SD */
+	Offset (0x1A),
+	SDIO, 0x00000008,	/* Index 0x1A: SDIO */
+	Offset (0x30),
+	USB1, 0x00000008,	/* Index 0x30: XHCI1 */
+	Offset (0x34),
+	USB3, 0x00000008,	/* Index 0x34: XHCI3 */
+	Offset (0x41),
+	SATA, 0x00000008,	/* Index 0x41: SATA */
+	Offset (0x43),
+	EMMC, 0x00000008,	/* Index 0x43: EMMC */
+
 	Offset (0x60),
 	PGSC, 0x00000008,	/* Index 0x60: GEventSci */
 	PGSM, 0x00000008,	/* Index 0x61: GEventSmi */
@@ -68,4 +89,28 @@ IndexField(PRQI, PRQD, ByteAcc, NoLock, Preserve) {
 	IUA4, 0x00000008,	/* Index 0xF7: UART4 */
 	IUA2, 0x00000008,	/* Index 0xF8: UART2 */
 	IUA3, 0x00000008,	/* Index 0xF9: UART3 */
+}
+
+Method (DSPI, 0, NotSerialized)
+{
+	PIRA = 0x1F
+	HDAD = 0x1F
+	PIRB = 0x1F
+	PIRC = 0x1F
+	USB1 = 0x1F
+	USB3 = 0x1F
+	PIRD = 0x1F
+	SATA = 0x1F
+	PIRE = 0x1F
+	PIRF = 0x1F
+	PIRG = 0x1F
+	PIRH = 0x1F
+	IORA = 0x10
+	IORB = 0x11
+	IORC = 0x12
+	IORD = 0x13
+	IORE = 0x14
+	IORF = 0x15
+	IORG = 0x16
+	IORH = 0x17
 }
