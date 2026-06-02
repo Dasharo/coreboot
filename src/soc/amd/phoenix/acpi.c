@@ -15,6 +15,7 @@
 #include <amdblocks/psp.h>
 #include <arch/ioapic.h>
 #include <arch/smp/mpspec.h>
+#include <cbmem.h>
 #include <console/console.h>
 #include <cpu/amd/cpuid.h>
 #include <device/device.h>
@@ -25,6 +26,10 @@
 #include <static.h>
 #include <types.h>
 #include "chip.h"
+
+#if CONFIG(SOC_AMD_PHOENIX_OPENSIL)
+#include <xPRF-api.h>
+#endif
 
 unsigned long soc_acpi_fill_ivrs40(unsigned long current, acpi_ivrs_ivhd40_t *ivhd,
 				   struct device *nb_dev, struct device *iommu_dev)
@@ -165,3 +170,37 @@ const acpi_cstate_t *get_cstate_config_data(size_t *size)
 	*size = ARRAY_SIZE(cstate_cfg_table);
 	return cstate_cfg_table;
 }
+
+#if CONFIG(SOC_AMD_PHOENIX_OPENSIL)
+enum cb_err get_ccx_cppc_min_frequency(uint32_t *freq)
+{
+	SIL_CONTEXT SilContext = {
+		.ApobBaseAddress = CONFIG_PSP_APOB_DRAM_ADDRESS,
+		.SilMemBaseAddress = (uintptr_t)cbmem_find(CBMEM_ID_AMD_OPENSIL)
+	};
+
+	if (SilContext.SilMemBaseAddress == 0)
+		return CB_ERR;
+
+	if (xPrfGetCppcMinFrequency(&SilContext, freq) != SilPass)
+		return CB_ERR;
+
+	return CB_SUCCESS;
+}
+
+enum cb_err get_ccx_cppc_nom_frequency(uint32_t *freq)
+{
+	SIL_CONTEXT SilContext = {
+		.ApobBaseAddress = CONFIG_PSP_APOB_DRAM_ADDRESS,
+		.SilMemBaseAddress = (uintptr_t)cbmem_find(CBMEM_ID_AMD_OPENSIL)
+	};
+
+	if (SilContext.SilMemBaseAddress == 0)
+		return CB_ERR;
+
+	if (xPrfGetCppcNomFrequency(&SilContext, freq) != SilPass)
+		return CB_ERR;
+
+	return CB_SUCCESS;
+}
+#endif
