@@ -71,6 +71,16 @@ struct device_operations amd_internal_pcie_gpp_ops = {
 	.acpi_fill_ssdt		= acpi_device_write_gpp_pci_dev,
 };
 
+struct device_operations amd_internal_pcie_gpp_ops_exp = {
+	.read_resources		= pci_bus_read_resources,
+	.set_resources		= pci_dev_set_resources,
+	.enable_resources	= pci_bus_enable_resources,
+	.scan_bus		= pciexp_scan_bridge,
+	.reset_bus		= pci_bus_reset,
+	.acpi_name		= pcie_gpp_acpi_name,
+	.acpi_fill_ssdt		= acpi_device_write_gpp_pci_dev,
+};
+
 struct device_operations amd_external_pcie_gpp_ops = {
 	.read_resources		= pci_bus_read_resources,
 	.set_resources		= pci_dev_set_resources,
