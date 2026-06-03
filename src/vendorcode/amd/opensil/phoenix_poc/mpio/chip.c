@@ -146,6 +146,7 @@ static void nbio_params_config(SIL_CONTEXT *SilContext)
 	input->SevSnpSupport              = false;
 	input->IommuAvicSupport           = true;
 	input->IommuSupport               = is_dev_enabled(DEV_PTR(iommu));
+	input->CfgAzaliaEnable            = is_dev_enabled(DEV_PTR(gfx_hda));
 	input->Usb4Rt0En                  = is_dev_enabled(DEV_PTR(usb4_router_0));
 	input->Usb4Rt0PcieTnlEn           = is_dev_enabled(DEV_PTR(usb4_pcie_bridge_0));
 	input->Usb4Rt1En                  = is_dev_enabled(DEV_PTR(usb4_router_1));
