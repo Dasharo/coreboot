@@ -27,7 +27,7 @@ enum cb_err fill_lb_pcie(struct lb_pcie *pcie);
 /* Define this in mainboard.c to add board-specific table entries. */
 void lb_board(struct lb_header *header);
 
-/* Adds LB_TAG_EFI_FW_INFO table entry. */
+/* Adds LB_TAG_EFI_FW_INFO and LB_TAG_EFI_EC_FW_INFO table entries. */
 void lb_efi_fw_info(struct lb_header *header);
 
 /* Adds LB_TAG_CAPSULE table entries. */
