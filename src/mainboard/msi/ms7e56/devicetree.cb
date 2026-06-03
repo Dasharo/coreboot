@@ -41,6 +41,7 @@ chip soc/amd/phoenix
 		.oob_ch_en = 1,
 		.flash_ch_en = 1,
 		.irq_mask = 0xffe107,
+		.vw_irq_polarity = ESPI_VW_IRQ_LEVEL_LOW(4),
 	}"
 
 	register "s0ix_enable" = "false"
