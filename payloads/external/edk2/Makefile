@@ -487,6 +487,9 @@ endif
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId="COREv4"
 BUILD_STR += --pcd gUefiCpuPkgTokenSpaceGuid.PcdFirstTimeWakeUpAPsBySipi=FALSE
 
+BUILD_STR += --pcd gUefiCpuPkgTokenSpaceGuid.PcdCpuApInitTimeOutInMicroSeconds=$(CONFIG_EDK2_AP_INIT_TIMEOUT)
+BUILD_STR += -D MAX_LOGICAL_PROCESSORS=$(CONFIG_EDK2_MAX_CPUS)
+
 # coreboot produces SMBIOS 3.0.0 tables
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion=0x0308
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosDocRev=0x0

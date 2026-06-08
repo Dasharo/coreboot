@@ -308,7 +308,9 @@ $(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
 		CONFIG_EDK2_VGA_BIOS_VENDOR_ID=0x$(word 1,$(subst $(comma),$(spc),$(call strip_quotes,$(CONFIG_VGA_BIOS_ID)))) \
 		CONFIG_EDK2_VGA_BIOS_DEVICE_ID=0x$(word 2,$(subst $(comma),$(spc),$(call strip_quotes,$(CONFIG_VGA_BIOS_ID)))) \
 		CONFIG_VGA_BIOS_FILE=$(CONFIG_VGA_BIOS_FILE) \
-		CONFIG_BOOTSPLASH_REGION_LOGO_FILE=$(CONFIG_BOOTSPLASH_REGION_LOGO_FILE)
+		CONFIG_BOOTSPLASH_REGION_LOGO_FILE=$(CONFIG_BOOTSPLASH_REGION_LOGO_FILE) \
+		CONFIG_EDK2_AP_INIT_TIMEOUT=$(call int-multiply, $(CONFIG_MAX_CPUS) 100000) \
+		CONFIG_EDK2_MAX_CPUS=$(CONFIG_MAX_CPUS)
 
 $(obj)/ShimmedUniversalPayload.elf: $(DOTCONFIG)
 	$(MAKE) -C payloads/external/edk2 UniversalPayload \
