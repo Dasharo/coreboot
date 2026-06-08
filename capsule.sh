@@ -299,19 +299,17 @@ function make_subcommand() {
     json_file=$(mktemp --tmpdir --suffix -cap.json XXXXXXXX)
     trap "$(printf 'rm -f -- %q %q' "$json_file" "$cap_file.inner")" EXIT
 
-    cat > "$json_file" << EOF
-{
-    "EmbeddedDrivers": [
-EOF
+    local build_dir=${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64
 
     # Ensure the charger check driver module is first
+    local drivers=()
     if [ "$include_battery_check" = 1 ]; then
-      cat >> "$json_file" << EOF
-        {
-            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/CapsuleChargerCheckDxe.efi"
-        },
-EOF
+        drivers+=( "${build_dir}/CapsuleChargerCheckDxe.efi" )
     fi
+    drivers+=(
+        "${build_dir}/CapsuleSplashDxe.efi"
+        "${build_dir}/FmpDxe.efi"
+    )
 
     local opt_root_cert=$root_cert
     local opt_sub_cert=$sub_cert
@@ -326,13 +324,10 @@ EOF
         opt_sign_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestCert.pem
     fi
 
-    cat >> "$json_file" << EOF
-        {
-            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/CapsuleSplashDxe.efi"
-        },
-        {
-            "Driver": "${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64/FmpDxe.efi"
-        }
+    cat > "$json_file" << EOF
+{
+    "EmbeddedDrivers": [
+$(printf '        { "Driver": "%s" },\n' "${drivers[@]}" | sed '$s/,$//')
     ],
     "Payloads": [
         {
