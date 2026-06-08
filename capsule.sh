@@ -290,6 +290,11 @@ function make_subcommand() {
         build_type=DEBUG
     fi
 
+    local v2_capsule=no
+    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
+        v2_capsule=yes
+    fi
+
     local json_file
     json_file=$(mktemp --tmpdir --suffix -cap.json XXXXXXXX)
     trap "$(printf 'rm -f -- %q %q' "$json_file" "$cap_file.inner")" EXIT
@@ -311,7 +316,7 @@ EOF
     local opt_root_cert=$root_cert
     local opt_sub_cert=$sub_cert
     local opt_sign_cert=$sign_cert
-    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
+    if [ "$v2_capsule" = yes ]; then
         # The inner capsule is always signed with the test key.  Not signing it
         # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
         # least due to Image->AuthInfo.Hdr.wRevision check in
@@ -344,7 +349,7 @@ EOF
 }
 EOF
 
-    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
+    if [ "$v2_capsule" = yes ]; then
         # The capsule created above is the inner capsule.  Make it and then
         # update JSON file to point at it as a payload.
         if ! "$generate_capsule" --encode \
