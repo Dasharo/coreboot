@@ -236,7 +236,8 @@ function build_capsule() {
     local version=$3
     local lsv=$4
     local -n drivers=$5
-    local cap_file=$6
+    local -n certs=$6
+    local cap_file=$7
 
     local cap_flags=( --capflag PersistAcrossReset )
     # Capsules on AMD boards do not survive resets
@@ -253,9 +254,9 @@ function build_capsule() {
     json_file=$(mktemp --tmpdir --suffix -cap.json XXXXXXXX)
     trap "$(printf 'rm -f -- %q %q' "$json_file" "$cap_file.inner")" EXIT
 
-    local opt_root_cert=$root_cert
-    local opt_sub_cert=$sub_cert
-    local opt_sign_cert=$sign_cert
+    local opt_root_cert=${certs[root]}
+    local opt_sub_cert=${certs[sub]}
+    local opt_sign_cert=${certs[sign]}
     if [ "$v2_capsule" = yes ]; then
         # The inner capsule is always signed with the test key.  Not signing it
         # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
@@ -296,6 +297,7 @@ EOF
             die "GenerateCapsule failed"
         fi
 
+        # The outer capsule is signed with the key passed by the user.
         cat > "$json_file" << EOF
 {
     "EmbeddedDrivers": [],
@@ -306,9 +308,9 @@ EOF
             "FwVersion": "${version}",
             "LowestSupportedVersion": "${lsv}",
 
-            "OpenSslSignerPrivateCertFile": "${sign_cert}",
-            "OpenSslOtherPublicCertFile": "${sub_cert}",
-            "OpenSslTrustedPublicCertFile": "${root_cert}"
+            "OpenSslSignerPrivateCertFile": "${certs[sign]}",
+            "OpenSslOtherPublicCertFile": "${certs[sub]}",
+            "OpenSslTrustedPublicCertFile": "${certs[root]}"
         }
     ]
 }
@@ -347,20 +349,21 @@ function make_subcommand() {
     #  * o - other
     #  * s - signer
 
-    local root_cert sub_cert sign_cert include_battery_check
+    local -A cap_certs
+    local include_battery_check
     while getopts "t:o:s:b" OPTION; do
         case $OPTION in
-            t) root_cert="$OPTARG" ;;
-            o) sub_cert="$OPTARG" ;;
-            s) sign_cert="$OPTARG" ;;
+            t) cap_certs[root]="$OPTARG" ;;
+            o) cap_certs[sub]="$OPTARG" ;;
+            s) cap_certs[sign]="$OPTARG" ;;
             b) include_battery_check=1 ;;
             *) exit 1 ;;
         esac
     done
 
-    check_cert root "$root_cert"
-    check_cert sub "$sub_cert"
-    check_cert sign "$sign_cert"
+    check_cert root "${cap_certs[root]}"
+    check_cert sub "${cap_certs[sub]}"
+    check_cert sign "${cap_certs[sign]}"
 
     local cap_file=${CONFIG_MAINBOARD_DIR//[\/-]/_}
     if [[ ${CONFIG_MAINBOARD_PART_NUMBER} =~ DDR4 ]]; then
@@ -397,6 +400,7 @@ function make_subcommand() {
                   "$CONFIG_DRIVERS_EFI_MAIN_FW_VERSION" \
                   "$CONFIG_DRIVERS_EFI_MAIN_FW_LSV" \
                   embedded_drivers \
+                  cap_certs \
                   "$cap_file"
 
     echo "Created the capsule at '$cap_file'"
