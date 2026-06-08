@@ -229,6 +229,102 @@ function check_generate_capsule() {
     fi
 }
 
+# This function assumes .config has been sourced.
+function build_capsule() {
+    local payload=$1
+    local guid=$2
+    local version=$3
+    local lsv=$4
+    local -n drivers=$5
+    local cap_file=$6
+
+    local cap_flags=( --capflag PersistAcrossReset )
+    # Capsules on AMD boards do not survive resets
+    if [ "$CONFIG_EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET" = y ]; then
+        cap_flags=()
+    fi
+
+    local v2_capsule=no
+    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
+        v2_capsule=yes
+    fi
+
+    local json_file
+    json_file=$(mktemp --tmpdir --suffix -cap.json XXXXXXXX)
+    trap "$(printf 'rm -f -- %q %q' "$json_file" "$cap_file.inner")" EXIT
+
+    local opt_root_cert=$root_cert
+    local opt_sub_cert=$sub_cert
+    local opt_sign_cert=$sign_cert
+    if [ "$v2_capsule" = yes ]; then
+        # The inner capsule is always signed with the test key.  Not signing it
+        # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
+        # least due to Image->AuthInfo.Hdr.wRevision check in
+        # AuthenticateFmpImage().
+        opt_root_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestRoot.pub.pem
+        opt_sub_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestSub.pub.pem
+        opt_sign_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestCert.pem
+    fi
+
+    cat > "$json_file" << EOF
+{
+    "EmbeddedDrivers": [
+$(printf '        { "Driver": "%s" },\n' "${drivers[@]}" | sed '$s/,$//')
+    ],
+    "Payloads": [
+        {
+            "Payload": "${payload}",
+            "Guid": "${guid}",
+            "FwVersion": "${version}",
+            "LowestSupportedVersion": "${lsv}",
+
+            "OpenSslSignerPrivateCertFile": "${opt_sign_cert}",
+            "OpenSslOtherPublicCertFile": "${opt_sub_cert}",
+            "OpenSslTrustedPublicCertFile": "${opt_root_cert}"
+        }
+    ]
+}
+EOF
+
+    if [ "$v2_capsule" = yes ]; then
+        # The capsule created above is the inner capsule.  Make it and then
+        # update JSON file to point at it as a payload.
+        if ! "$generate_capsule" --encode \
+                                 "${cap_flags[@]}" \
+                                 --json-file "$json_file" \
+                                 --output "$cap_file.inner"; then
+            die "GenerateCapsule failed"
+        fi
+
+        cat > "$json_file" << EOF
+{
+    "EmbeddedDrivers": [],
+    "Payloads": [
+        {
+            "Payload": "$cap_file.inner",
+            "Guid": "${guid}",
+            "FwVersion": "${version}",
+            "LowestSupportedVersion": "${lsv}",
+
+            "OpenSslSignerPrivateCertFile": "${sign_cert}",
+            "OpenSslOtherPublicCertFile": "${sub_cert}",
+            "OpenSslTrustedPublicCertFile": "${root_cert}"
+        }
+    ]
+}
+EOF
+    fi
+
+    # Linux doesn't support InitiateReset flag, omitting it to rely on manual
+    # warm reset
+    if ! "$generate_capsule" --encode \
+                             "${cap_flags[@]}" \
+                             --json-file "$json_file" \
+                             --output "$cap_file"; then
+        die "GenerateCapsule failed"
+    fi
+}
+
 function make_subcommand() {
     if [ ! -f .config ]; then
         die "no '.config' file in current directory"
@@ -273,12 +369,6 @@ function make_subcommand() {
     cap_file+=_${CONFIG_LOCALVERSION}
     cap_file+=.cap
 
-    local cap_flags="--capflag PersistAcrossReset"
-    # Capsules on AMD boards do not survive resets
-    if [ "$CONFIG_EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET" == y ]; then
-        cap_flags=""
-    fi
-
     if [ -e "$cap_file" ]; then
         confirm "Overwrite already existing '$cap_file'?"
     fi
@@ -290,97 +380,24 @@ function make_subcommand() {
         build_type=DEBUG
     fi
 
-    local v2_capsule=no
-    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
-        v2_capsule=yes
-    fi
-
-    local json_file
-    json_file=$(mktemp --tmpdir --suffix -cap.json XXXXXXXX)
-    trap "$(printf 'rm -f -- %q %q' "$json_file" "$cap_file.inner")" EXIT
-
     local build_dir=${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64
 
     # Ensure the charger check driver module is first
-    local drivers=()
+    local embedded_drivers=()
     if [ "$include_battery_check" = 1 ]; then
-        drivers+=( "${build_dir}/CapsuleChargerCheckDxe.efi" )
+        embedded_drivers+=( "${build_dir}/CapsuleChargerCheckDxe.efi" )
     fi
-    drivers+=(
+    embedded_drivers+=(
         "${build_dir}/CapsuleSplashDxe.efi"
         "${build_dir}/FmpDxe.efi"
     )
 
-    local opt_root_cert=$root_cert
-    local opt_sub_cert=$sub_cert
-    local opt_sign_cert=$sign_cert
-    if [ "$v2_capsule" = yes ]; then
-        # The inner capsule is always signed with the test key.  Not signing it
-        # at all doesn't work because FmpDxe doesn't accept unsigned payloads at
-        # least due to Image->AuthInfo.Hdr.wRevision check in
-        # AuthenticateFmpImage().
-        opt_root_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestRoot.pub.pem
-        opt_sub_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestSub.pub.pem
-        opt_sign_cert=${edk_basetools}/Source/Python/Pkcs7Sign/TestCert.pem
-    fi
-
-    cat > "$json_file" << EOF
-{
-    "EmbeddedDrivers": [
-$(printf '        { "Driver": "%s" },\n' "${drivers[@]}" | sed '$s/,$//')
-    ],
-    "Payloads": [
-        {
-            "Payload": "build/coreboot.rom",
-            "Guid": "${CONFIG_DRIVERS_EFI_MAIN_FW_GUID}",
-            "FwVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_VERSION}",
-            "LowestSupportedVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_LSV}",
-
-            "OpenSslSignerPrivateCertFile": "${opt_sign_cert}",
-            "OpenSslOtherPublicCertFile": "${opt_sub_cert}",
-            "OpenSslTrustedPublicCertFile": "${opt_root_cert}"
-        }
-    ]
-}
-EOF
-
-    if [ "$v2_capsule" = yes ]; then
-        # The capsule created above is the inner capsule.  Make it and then
-        # update JSON file to point at it as a payload.
-        if ! "$generate_capsule" --encode \
-                                 $cap_flags \
-                                 --json-file "$json_file" \
-                                 --output "$cap_file.inner"; then
-            die "GenerateCapsule failed"
-        fi
-
-        cat > "$json_file" << EOF
-{
-    "EmbeddedDrivers": [],
-    "Payloads": [
-        {
-            "Payload": "$cap_file.inner",
-            "Guid": "${CONFIG_DRIVERS_EFI_MAIN_FW_GUID}",
-            "FwVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_VERSION}",
-            "LowestSupportedVersion": "${CONFIG_DRIVERS_EFI_MAIN_FW_LSV}",
-
-            "OpenSslSignerPrivateCertFile": "${sign_cert}",
-            "OpenSslOtherPublicCertFile": "${sub_cert}",
-            "OpenSslTrustedPublicCertFile": "${root_cert}"
-        }
-    ]
-}
-EOF
-    fi
-
-    # Linux doesn't support InitiateReset flag, omitting it to rely on manual
-    # warm reset
-    if ! "$generate_capsule" --encode \
-                             $cap_flags \
-                             --json-file "$json_file" \
-                             --output "$cap_file"; then
-        die "GenerateCapsule failed"
-    fi
+    build_capsule 'build/coreboot.rom' \
+                  "$CONFIG_DRIVERS_EFI_MAIN_FW_GUID" \
+                  "$CONFIG_DRIVERS_EFI_MAIN_FW_VERSION" \
+                  "$CONFIG_DRIVERS_EFI_MAIN_FW_LSV" \
+                  embedded_drivers \
+                  "$cap_file"
 
     echo "Created the capsule at '$cap_file'"
 }
