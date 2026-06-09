@@ -50,6 +50,7 @@ function print_usage() {
     echo '                 -o subroot-certificate-file'
     echo '                 -s signing-certificate-file'
     echo '                 -b (the flag adds battery check DXE into the capsule)'
+    echo '                 [-e ec-rom-file] (make an EC firmware capsule)'
     echo '  resign         resign an existing capsule with a different key'
     echo '                 -t root-certificate-file'
     echo '                 -o subroot-certificate-file'
@@ -327,6 +328,28 @@ EOF
     fi
 }
 
+# Prints version of an EC ROM derived from the file or dies.
+# The implementation of version conversion must be kept in sync with
+# parse_ec_version() in src/drivers/efi/info.c
+function extract_ec_version() {
+    local ec_rom_file=$1
+
+    local ver
+    ver=$(strings "$ec_rom_file" | \
+          sed -n '/^76EC_VERSION/s/.*=\([0-9]\{4\}\(-[0-9][0-9]\)\{2\}\).*/\1/p' | \
+          head -1)
+
+    if [ -z "$ver" ]; then
+        die "Failed to extract 76EC_VERSION from '$ec_rom_file'"
+    fi
+
+    local y=${ver::4}
+    local m=${ver:5:2}
+    local d=${ver:8:2}
+
+    echo $(( ((10#$y & 0xffff) << 16) | ((10#$m & 0xff) << 8) | (10#$d & 0xff) ))
+}
+
 function make_subcommand() {
     if [ ! -f .config ]; then
         die "no '.config' file in current directory"
@@ -343,20 +366,21 @@ function make_subcommand() {
     source_coreboot_config
     require_capsule_support
 
-    # Option names match terminology of GenerateCapsule which conveniently start
-    # with different letters:
+    # Option names for key files match terminology of GenerateCapsule which,
+    # conveniently, has words starting with different letters:
     #  * t - trusted
     #  * o - other
     #  * s - signer
 
     local -A cap_certs
-    local include_battery_check
-    while getopts "t:o:s:b" OPTION; do
+    local include_battery_check ec_rom_file
+    while getopts "t:o:s:be:" OPTION; do
         case $OPTION in
             t) cap_certs[root]="$OPTARG" ;;
             o) cap_certs[sub]="$OPTARG" ;;
             s) cap_certs[sign]="$OPTARG" ;;
             b) include_battery_check=1 ;;
+            e) ec_rom_file="$OPTARG" ;;
             *) exit 1 ;;
         esac
     done
@@ -365,9 +389,45 @@ function make_subcommand() {
     check_cert sub "${cap_certs[sub]}"
     check_cert sign "${cap_certs[sign]}"
 
+    # Assuming a coreboot capsule at first.
+    local rom_file=build/coreboot.rom
+    local guid=$CONFIG_DRIVERS_EFI_MAIN_FW_GUID
+    local splash_guid=E1CBE3CC-3D32-44CF-8DB9-2A78BA16F2F6
+    local version=$CONFIG_DRIVERS_EFI_MAIN_FW_VERSION
+    local lsv=$CONFIG_DRIVERS_EFI_MAIN_FW_LSV
+
+    if [ -n "$ec_rom_file" ]; then
+        if [ -z "$CONFIG_DRIVERS_EFI_EC_FW_GUID" ]; then
+            die '-e is passed but CONFIG_DRIVERS_EFI_EC_FW_GUID is empty'
+        fi
+
+        assert_file_exists "$ec_rom_file"
+
+        local ec_rom_version
+        ec_rom_version=$(extract_ec_version "$ec_rom_file")
+
+        local size
+        size=$(stat --printf %s "$ec_rom_file")
+        if [ "$size" -ne $(( $CONFIG_DRIVERS_EFI_EC_FW_SIZE )) ]; then
+            die "$(printf "'%s' is 0x%x bytes in size instead of 0x%x" \
+                          "$ec_rom_file" \
+                          "$size" \
+                          "$CONFIG_DRIVERS_EFI_EC_FW_SIZE")"
+        fi
+
+        rom_file=$ec_rom_file
+        guid=$CONFIG_DRIVERS_EFI_EC_FW_GUID
+        splash_guid=8C675702-A60D-462C-B950-12F00FFDFFF3
+        version=$ec_rom_version
+        lsv=$CONFIG_DRIVERS_EFI_EC_FW_LSV
+    fi
+
     local cap_file=${CONFIG_MAINBOARD_DIR//[\/-]/_}
     if [[ ${CONFIG_MAINBOARD_PART_NUMBER} =~ DDR4 ]]; then
         cap_file+=_ddr4
+    fi
+    if [ -n "$ec_rom_file" ]; then
+        cap_file+=_ec
     fi
     cap_file+=_${CONFIG_LOCALVERSION}
     cap_file+=.cap
@@ -391,16 +451,15 @@ function make_subcommand() {
         embedded_drivers+=( "${build_dir}/CapsuleChargerCheckDxe.efi" )
     fi
     embedded_drivers+=(
-        "${build_dir}/CapsuleSplashDxe.efi"
-        "${build_dir}/FmpDxe.efi"
+        # Can't use the same GUID more than once and can't easily derive it
+        # either, so CapsuleSplashDxe has hard-coded GUIDs for main/EC firmware
+        # and one of them is selected above.
+        "${build_dir}/DasharoPayloadPkg/CapsuleSplashDxe/${splash_guid}/OUTPUT/CapsuleSplashDxe.efi"
+        "${build_dir}/FmpDevicePkg/FmpDxe/${guid}/OUTPUT/FmpDxe.efi"
     )
 
-    build_capsule 'build/coreboot.rom' \
-                  "$CONFIG_DRIVERS_EFI_MAIN_FW_GUID" \
-                  "$CONFIG_DRIVERS_EFI_MAIN_FW_VERSION" \
-                  "$CONFIG_DRIVERS_EFI_MAIN_FW_LSV" \
-                  embedded_drivers \
-                  cap_certs \
+    build_capsule "$rom_file" "$guid" "$version" "$lsv" \
+                  embedded_drivers cap_certs \
                   "$cap_file"
 
     echo "Created the capsule at '$cap_file'"
