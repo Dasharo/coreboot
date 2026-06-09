@@ -52,6 +52,7 @@ function print_usage() {
     echo '                 [-b] (include battery check DXE in the capsule)'
     echo '                 [-y] (overwrite destination without prompting)'
     echo '                 [-e ec-rom-file] (make an EC firmware capsule)'
+    echo '                 [-c cap-file] (destination file name, generated if omitted)'
     echo '  resign         resign an existing capsule with a different key'
     echo '                 -t root-certificate-file'
     echo '                 -o subroot-certificate-file'
@@ -374,8 +375,8 @@ function make_subcommand() {
     #  * s - signer
 
     local -A cap_certs
-    local include_battery_check overwrite_output ec_rom_file
-    while getopts "t:o:s:be:y" OPTION; do
+    local include_battery_check overwrite_output ec_rom_file cap_file
+    while getopts "t:o:s:be:yc:" OPTION; do
         case $OPTION in
             t) cap_certs[root]="$OPTARG" ;;
             o) cap_certs[sub]="$OPTARG" ;;
@@ -383,6 +384,7 @@ function make_subcommand() {
             b) include_battery_check=1 ;;
             y) overwrite_output=1 ;;
             e) ec_rom_file="$OPTARG" ;;
+            c) cap_file="$OPTARG" ;;
             *) exit 1 ;;
         esac
     done
@@ -424,15 +426,17 @@ function make_subcommand() {
         lsv=$CONFIG_DRIVERS_EFI_EC_FW_LSV
     fi
 
-    local cap_file=${CONFIG_MAINBOARD_DIR//[\/-]/_}
-    if [[ ${CONFIG_MAINBOARD_PART_NUMBER} =~ DDR4 ]]; then
-        cap_file+=_ddr4
+    if [ -z "$cap_file" ]; then
+        cap_file=${CONFIG_MAINBOARD_DIR//[\/-]/_}
+        if [[ ${CONFIG_MAINBOARD_PART_NUMBER} =~ DDR4 ]]; then
+            cap_file+=_ddr4
+        fi
+        if [ -n "$ec_rom_file" ]; then
+            cap_file+=_ec
+        fi
+        cap_file+=_${CONFIG_LOCALVERSION}
+        cap_file+=.cap
     fi
-    if [ -n "$ec_rom_file" ]; then
-        cap_file+=_ec
-    fi
-    cap_file+=_${CONFIG_LOCALVERSION}
-    cap_file+=.cap
 
     if [ "$overwrite_output" != 1 ] && [ -e "$cap_file" ]; then
         confirm "Overwrite already existing '$cap_file'?"
