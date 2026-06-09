@@ -33,7 +33,6 @@ void amd_opensil_add_memmap(struct device *dev, unsigned long *idx)
 		reserved_ram_from_to(dev, (*idx)++, mem_usable, top_mem);
 
 	/* Holes in upper DRAM */
-	/* This assumes all the holes in upper DRAM are continuous */
 	opensil_get_hole_info(&n_holes, &top_of_mem, &hole_info);
 	if (hole_info == NULL)
 		return;
@@ -46,6 +45,7 @@ void amd_opensil_add_memmap(struct device *dev, unsigned long *idx)
 
 	uint64_t lowest_upper_hole_base = top_of_mem;
 	uint64_t highest_upper_hole_end = 4ULL * GiB;
+	uint64_t prev_hole_end;
 	for (size_t hole = 0; hole < n_holes; hole++) {
 		if (!strcmp(opensil_get_hole_info_type(holes[hole].type), "MMIO"))
 			continue;
@@ -53,10 +53,22 @@ void amd_opensil_add_memmap(struct device *dev, unsigned long *idx)
 			continue;
 		lowest_upper_hole_base = MIN(lowest_upper_hole_base, holes[hole].base);
 		highest_upper_hole_end = MAX(highest_upper_hole_end, holes[hole].base + holes[hole].size);
+
 		if (!strcmp(opensil_get_hole_info_type(holes[hole].type), "UMA"))
 			mmio_range(dev, (*idx)++, holes[hole].base, holes[hole].size);
 		else
 			reserved_ram_range(dev, (*idx)++, holes[hole].base, holes[hole].size);
+
+		/* Report RAM in ranges between hole that are non-continuous */
+		if (hole > 0) {
+			prev_hole_end = holes[hole - 1].base + holes[hole - 1].size;
+			/* Skip this hole, it will be reported with lowest_upper_hole_base */
+			if (prev_hole_end <= 4ULL * GiB)
+				continue;
+
+			if (prev_hole_end < holes[hole].base)
+				ram_from_to(dev, (*idx)++, prev_hole_end, holes[hole].base);
+		}
 	}
 
 	ram_from_to(dev, (*idx)++, 4ULL * GiB, lowest_upper_hole_base);
