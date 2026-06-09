@@ -50,6 +50,7 @@ function print_usage() {
     echo '                 -o subroot-certificate-file'
     echo '                 -s signing-certificate-file'
     echo '                 [-b] (include battery check DXE in the capsule)'
+    echo '                 [-y] (overwrite destination without prompting)'
     echo '                 [-e ec-rom-file] (make an EC firmware capsule)'
     echo '  resign         resign an existing capsule with a different key'
     echo '                 -t root-certificate-file'
@@ -373,13 +374,14 @@ function make_subcommand() {
     #  * s - signer
 
     local -A cap_certs
-    local include_battery_check ec_rom_file
-    while getopts "t:o:s:be:" OPTION; do
+    local include_battery_check overwrite_output ec_rom_file
+    while getopts "t:o:s:be:y" OPTION; do
         case $OPTION in
             t) cap_certs[root]="$OPTARG" ;;
             o) cap_certs[sub]="$OPTARG" ;;
             s) cap_certs[sign]="$OPTARG" ;;
             b) include_battery_check=1 ;;
+            y) overwrite_output=1 ;;
             e) ec_rom_file="$OPTARG" ;;
             *) exit 1 ;;
         esac
@@ -432,7 +434,7 @@ function make_subcommand() {
     cap_file+=_${CONFIG_LOCALVERSION}
     cap_file+=.cap
 
-    if [ -e "$cap_file" ]; then
+    if [ "$overwrite_output" != 1 ] && [ -e "$cap_file" ]; then
         confirm "Overwrite already existing '$cap_file'?"
     fi
 
