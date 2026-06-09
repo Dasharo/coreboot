@@ -34,6 +34,9 @@ const char *opensil_get_hole_info_type(uint32_t type)
 		{ReservedCxlAlignment, "ReservedCxlAlignment"},
 		{ReservedCpuTmr, "ReservedCpuTmr"},
 		{ReservedRasEinj, "ReservedRasEinj"},
+		{ReservedBelow4GB, "ReservedBelow4GB"},
+		{ReservedPspTrustedOs, "ReservedPspTrustedOs"},
+		{ReservedBdat, "ReservedBdat"},
 		{MaxMemoryHoleTypes, "MaxMemoryHoleTypes"},
 	};
 
