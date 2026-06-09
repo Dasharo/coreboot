@@ -49,7 +49,7 @@ function print_usage() {
     echo '                 -t root-certificate-file'
     echo '                 -o subroot-certificate-file'
     echo '                 -s signing-certificate-file'
-    echo '                 -b (the flag adds battery check DXE into the capsule)'
+    echo '                 [-b] (include battery check DXE in the capsule)'
     echo '                 [-e ec-rom-file] (make an EC firmware capsule)'
     echo '  resign         resign an existing capsule with a different key'
     echo '                 -t root-certificate-file'
