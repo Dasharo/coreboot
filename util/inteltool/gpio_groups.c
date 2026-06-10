@@ -244,6 +244,7 @@ const struct gpio_community *const *get_gpio_communities(struct pci_dev *const s
 		*pad_stepping = 16;
 		return alderlake_pch_p_communities;
 	case PCI_DEVICE_ID_INTEL_ADL_N:
+	case PCI_DEVICE_ID_INTEL_ADL_N_2:
 		*community_count = ARRAY_SIZE(alderlake_pch_n_communities);
 		*pad_stepping = 16;
 		return alderlake_pch_n_communities;

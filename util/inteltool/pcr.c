@@ -157,6 +157,7 @@ void pcr_init(struct pci_dev *const sb)
 	case PCI_DEVICE_ID_INTEL_JSL:
 	case PCI_DEVICE_ID_INTEL_EBG:
 	case PCI_DEVICE_ID_INTEL_ADL_N:
+	case PCI_DEVICE_ID_INTEL_ADL_N_2:
 		sbbar_phys = 0xfd000000;
 		use_p2sb = false;
 		break;
