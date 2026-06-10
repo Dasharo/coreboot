@@ -353,6 +353,7 @@ static int print_bioscntl(struct pci_dev *sb)
 		size = ARRAY_SIZE(pch_bios_cntl_registers);
 		break;
 	case PCI_DEVICE_ID_INTEL_ADL_N:
+	case PCI_DEVICE_ID_INTEL_ADL_N_2:
 	case PCI_DEVICE_ID_INTEL_HM470:
 	case PCI_DEVICE_ID_INTEL_Q470:
 		bios_cntl = pci_read_byte(sb, 0xdc);
@@ -556,6 +557,7 @@ static int print_spibar(struct pci_dev *sb, struct pci_access *pacc) {
 	case PCI_DEVICE_ID_INTEL_ICH4M:
 	case PCI_DEVICE_ID_INTEL_ICH5:
 	case PCI_DEVICE_ID_INTEL_ADL_N:
+	case PCI_DEVICE_ID_INTEL_ADL_N_2:
 		printf("This southbridge does not have RCBA.\n");
 		return 1;
 	default:
