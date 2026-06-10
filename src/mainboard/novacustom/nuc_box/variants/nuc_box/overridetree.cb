@@ -81,10 +81,11 @@ chip soc/intel/meteorlake
 			# M.2 Key-M1
 			# XXX: Schematics show RP[13:16] used
 			register "pcie_rp[PCH_RP(10)]" = "{
-				.clk_src = 8,
-				.clk_req = 8,
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED | PCIE_RP_CLK_SRC_UNUSED,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
 			}"
+			register "pcie_clk_config_flag[8]" = "PCIE_CLK_FREE_RUNNING"
 		end
 		device ref pcie_rp11 on
 			# M.2 Key-M2
