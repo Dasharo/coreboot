@@ -327,6 +327,7 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_ADL_M		0x5187
 #define PCI_DEVICE_ID_INTEL_RPL_P		0x519d
 #define PCI_DEVICE_ID_INTEL_ADL_N		0x5481
+#define PCI_DEVICE_ID_INTEL_ADL_N_2		0x5482
 
 #define PCI_DEVICE_ID_INTEL_MTL_P		0x7e27
 #define PCI_DEVICE_ID_INTEL_ARL_H		0x7727
@@ -433,6 +434,7 @@ static inline uint32_t inl(unsigned port)
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_P_4_8	0x4621 /* Alderlake P 4+8 */
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_P_2_8	0x4601 /* Alderlake P 2+8 */
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_N_0_8	0x4617 /* Alderlake N 0+8 */
+#define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_N_0_8_1	0x4618 /* Alderlake N 0+8 */
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_N_0_4	0x461b /* Alderlake N 0+4 */
 #define PCI_DEVICE_ID_INTEL_CORE_ADL_ID_N_0_4_1	0x461c /* Alderlake N 0+4 */
 #define PCI_DEVICE_ID_INTEL_CORE_MTL_ID_M	0x7D00 /* Meteorlake M */
