@@ -222,6 +222,7 @@ int print_lpc(struct pci_dev *sb, struct pci_access *pacc)
 		break;
 	case PCI_DEVICE_ID_INTEL_ADL_M:
 	case PCI_DEVICE_ID_INTEL_ADL_N:
+	case PCI_DEVICE_ID_INTEL_ADL_N_2:
 	case PCI_DEVICE_ID_INTEL_ADL_P:
 	case PCI_DEVICE_ID_INTEL_RPL_P:
 		dev = pci_get_dev(pacc, sb->domain, sb->bus, sb->dev, 0);
