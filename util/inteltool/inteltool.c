@@ -190,6 +190,8 @@ static const struct {
 	  "12th generation (Alder Lake N family) Intel Processor"},
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_ADL_ID_N_0_4_1,
 	  "12th generation (Alder Lake N family) Intel Processor"},
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_ADL_ID_N_0_8_1,
+	  "12th generation (Alder Lake N family) Intel Processor"},
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_RPL_ID_H_8_6,
 	  "13th generation (Raptor Lake H family) Core Processor"},
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_CORE_MTL_ID_M,
@@ -464,6 +466,7 @@ static const struct {
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_EHL, "Elkhart Lake" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_JSL, "Jasper Lake" },
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ADL_N, "Alder Lake-N"},
+	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ADL_N_2, "Alder Lake-N"},
 	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_RPL_P, "Raptor Lake" },
 
 	/* Intel GPUs */
