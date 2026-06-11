@@ -120,6 +120,10 @@ config MAX_CPUS
 	int
 	default 384
 
+config MAX_ACPI_TABLE_SIZE_KB
+	int
+	default 512
+
 config PSP_APOB_DRAM_ADDRESS
 	hex
 	default 0x7010000
