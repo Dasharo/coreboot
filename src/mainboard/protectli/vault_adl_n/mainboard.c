@@ -118,6 +118,17 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		pcidev_path_on_root(PCH_DEVFN_EMMC)->enabled = 0;
 	}
 
+	if (CONFIG(BOARD_PROTECTLI_AP2110)) {
+		/*
+		 * Right stacked Type-A uses TCSS port 1 (second TCSS, 0-indexed).
+		 * IOM must be told this is Type-A or it waits for CC assertion
+		 * indefinitely, leaving SS02 at Rx.Detect.
+		 * USB2 companion is usb2_port6 (usb2_ports[5]).
+		 */
+		params->EnableTcssCovTypeA[1] = 1;
+		params->MappingPchXhciUsbA[1] = 6;
+	}
+
 	// PMC-PD controller
 	params->PmcPdEnable = 1;
 
