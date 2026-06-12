@@ -15,4 +15,9 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	// XXX: Enabling C10 reporting causes system to constantly enter and
 	// exit opportunistic suspend when idle.
 	params->PchEspiHostC10ReportEnable = 1;
+
+	// Disable PCIe power gating on the RP that does not have a clock request
+	// connected. Otherwise, the connected device will fail after exiting D3.
+	params->PciePowerGating[9] = false;
+	params->PcieClockGating[9] = false;
 }
