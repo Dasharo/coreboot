@@ -7,6 +7,8 @@ SKL_TARGET := $(SKL_SOURCE)/skl.bin
 
 SKL := $(obj)/skl.bin
 
+CPPFLAGS_common += -I$(SKL_SOURCE)/include
+
 $(SKL): $(obj)/build.h
 	printf "    MAKE       $(subst $(obj)/,,$(@))\n"
 	$(MAKE) -C $(SKL_SOURCE) $(SKL_MAKEARGS) CC=$(HOSTCC) DEBUG=y
