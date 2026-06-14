@@ -71,3 +71,6 @@
 [submodule "3rdparty/dasharo-blobs"]
 	path = 3rdparty/dasharo-blobs
 	url = https://github.com/Dasharo/dasharo-blobs.git
+[submodule "3rdparty/secure-kernel-loader"]
+	path = 3rdparty/secure-kernel-loader
+	url = https://github.com/hanetzer/trenchboot-secure-kernel-loader
