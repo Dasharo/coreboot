@@ -879,13 +879,13 @@ static void dasharo_ec_fw_sync(void *unused)
 
 	image = malloc(CONFIG_EC_DASHARO_EC_FLASH_SIZE);
 	if (image == NULL) {
-		printk(BIOS_ERR, "EC: failed to allocate memory for update.");
+		printk(BIOS_ERR, "EC: failed to allocate memory for update.\n");
 		return;
 	}
 
 	image_sz = cbfs_load("ec.rom", image, CONFIG_EC_DASHARO_EC_FLASH_SIZE);
 	if (!image_sz) {
-		printk(BIOS_ERR, "EC: failed to load update from CBFS.");
+		printk(BIOS_ERR, "EC: failed to load update from CBFS.\n");
 		goto cleanup;
 	}
 
@@ -956,7 +956,7 @@ static void dasharo_ec_fw_sync(void *unused)
 			/* EC is now in an unknown state. It may still boot from backup. */
 			printk(BIOS_ALERT, "EC: update failed!\n");
 		} else {
-			printk(BIOS_INFO, "EC: wrote %x bytes\n", rv);
+			printk(BIOS_INFO, "EC: wrote 0x%x bytes\n", rv);
 		}
 
 		rv = ec_spi_image_verify((uint8_t *)image, image_sz);
