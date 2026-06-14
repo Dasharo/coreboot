@@ -232,9 +232,12 @@ static int firmware_str(char *data, int data_len, const char *key, char *dest, i
 /* Reset the EC SPI bus */
 static uint8_t ec_spi_reset(void)
 {
-	uint8_t reset_cmd = CMD_SPI_FLAG_DISABLE | CMD_SPI_FLAG_SCRATCH;
+	uint8_t reset_cmd[2] = {
+		[0] = CMD_SPI_FLAG_DISABLE | CMD_SPI_FLAG_SCRATCH,
+		[1] = 0,
+	};
 
-	return dasharo_ec_smfi_cmd(CMD_SPI, sizeof(reset_cmd), &reset_cmd);
+	return dasharo_ec_smfi_cmd(CMD_SPI, sizeof(reset_cmd), reset_cmd);
 }
 
 /*
@@ -863,7 +866,7 @@ static void dasharo_ec_fw_sync(void *unused)
 	char img_version_str[64];
 	char cur_board_str[64];
 	char cur_version_str[64];
-	uint8_t smfi_cmd;
+	uint8_t smfi_cmd[2] = { 0, 0 };
 	int rv;
 
 	if (!CONFIG(EC_DASHARO_EC_UPDATE))
@@ -936,8 +939,8 @@ static void dasharo_ec_fw_sync(void *unused)
 	}
 
 	/* Jump to Scratch ROM */
-	smfi_cmd = CMD_SPI_FLAG_SCRATCH;
-	if (dasharo_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd), &smfi_cmd)) {
+	smfi_cmd[0] = CMD_SPI_FLAG_SCRATCH;
+	if (dasharo_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd), smfi_cmd)) {
 		/* If we failed to jump to scratch ROM, then we can probably continue booting. */
 		printk(BIOS_ERR, "EC: failed to jump to scratch ROM!\n");
 		if (CONFIG(VBOOT))
@@ -977,14 +980,14 @@ static void dasharo_ec_fw_sync(void *unused)
 		goto cleanup;
 	}
 
-	smfi_cmd = CMD_SPI_FLAG_DISABLE;
-	if (dasharo_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd), &smfi_cmd)) {
+	smfi_cmd[0] = CMD_SPI_FLAG_DISABLE;
+	if (dasharo_ec_smfi_cmd(CMD_SPI, sizeof(smfi_cmd), smfi_cmd)) {
 		printk(BIOS_ERR, "EC: failed to disable SPI bus!\n");
 		goto cleanup;
 	}
 
-	smfi_cmd = 0;
-	if (dasharo_ec_smfi_cmd(CMD_RESET, sizeof(smfi_cmd), &smfi_cmd))
+	smfi_cmd[0] = 0;
+	if (dasharo_ec_smfi_cmd(CMD_RESET, sizeof(smfi_cmd[0]), &smfi_cmd[0]))
 		printk(BIOS_ERR, "EC: failed to trigger reset!\n");
 
 cleanup:
