@@ -769,8 +769,15 @@ static int ec_spi_image_write(uint8_t *image, size_t size)
 		erase_addr += SPI_SECTOR_SIZE;
 	}
 
+	/* If we got here, it's a success. */
+	rv = 0;
+
 cleanup:
 	free(sector);
+
+	/* Some functions return a positive value on error. */
+	if (rv > 0)
+		rv = -rv;
 
 	return rv ? rv : addr;
 }
