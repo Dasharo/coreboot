@@ -736,6 +736,18 @@ static int ec_spi_image_write(uint8_t *image, size_t size)
 			goto cleanup;
 		}
 
+		rv = ec_spi_verify_erased_sector(addr);
+		if (rv) {
+			printk(BIOS_ERR,
+			       "%s: ec_spi_verify_erased_sector failed, addr 0x%06x\n",
+			       __func__, addr);
+			if (CONFIG(VBOOT))
+				vboot_fail_and_reboot(vboot_get_context(),
+						      VB2_RECOVERY_EC_SOFTWARE_SYNC,
+						      EC_UPDATE_ERR_ERASE);
+			goto cleanup;
+		}
+
 		rv = ec_spi_write_at(addr, image, length);
 		if (rv < 0) {
 			printk(BIOS_ERR, "%s: ec_spi_write_at failed, addr 0x%06x (%d)\n",
