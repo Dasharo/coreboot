@@ -577,7 +577,7 @@ static struct memory_range pick_buffer(uint64_t total_data_size)
 {
 	struct memory_range buffer = {0};
 
-	/* 4 * KiB is the alignment set by memranges_init(). */
+	/* 4 * KiB is the alignment used in get_usable_memory(). */
 	total_data_size = ALIGN_UP(total_data_size, 4 * KiB);
 
 	const struct range_entry *r;
@@ -675,6 +675,59 @@ static void coalesce_capsules(struct block_descr block_chain, uint8_t *target)
 	printk(BIOS_INFO, "capsules: found %d capsule(s).\n", uefi_capsule_count);
 }
 
+/* A variation on search_global_resources() that builds an accurate memory map.
+   The crucial difference is that subtractive and reserved resources are
+   excluded from the map and position of such resources doesn't matter. */
+static struct memranges get_usable_memory(void)
+{
+	const unsigned long usable_ram_mask =
+		IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_CACHEABLE;
+	const unsigned long exclusion_mask = IORESOURCE_SUBTRACTIVE | IORESOURCE_RESERVE;
+
+	struct memranges ranges;
+	memranges_init_empty_with_alignment(&ranges, NULL, 0, 12);
+
+	for (int pass = 1; pass <= 2; ++pass) {
+		for (struct device *curdev = all_devices; curdev; curdev = curdev->next) {
+			/* Ignore disabled devices. */
+			if (!curdev->enabled)
+				continue;
+
+			struct resource *res;
+			for (res = curdev->resource_list; res; res = res->next) {
+				/* If it isn't the right kind of resource ignore it. */
+				if ((res->flags & usable_ram_mask) != usable_ram_mask)
+					continue;
+
+				/* If the resource is not assigned ignore it. */
+				if (!(res->flags & IORESOURCE_ASSIGNED))
+					continue;
+
+				/* Ignore empty resources. */
+				if (res->size == 0)
+					continue;
+
+				if (!(res->flags & exclusion_mask)) {
+					if (pass == 1) {
+						/* First pass: adding ranges. */
+						memranges_insert(&ranges,
+								 res->base, res->size,
+								 BM_MEM_RAM);
+					}
+				} else {
+					if (pass == 2) {
+						/* Second pass: excluding ranges. */
+						memranges_create_hole(&ranges,
+								      res->base, res->size);
+					}
+				}
+			}
+		}
+	}
+
+	return ranges;
+}
+
 void efi_parse_capsules(uintptr_t *base, size_t *size)
 {
 	/* EDK2 starts with 20 items and then grows the list, but it's unlikely
@@ -705,10 +758,7 @@ void efi_parse_capsules(uintptr_t *base, size_t *size)
 	if (smmstore_lookup_region(&rdev))
 		printk(BIOS_INFO, "capsules: no SMMSTORE region, no update capsules.\n");
 
-	memranges_init(&memory_map, IORESOURCE_MEM | IORESOURCE_FIXED | IORESOURCE_STORED |
-		       IORESOURCE_ASSIGNED | IORESOURCE_CACHEABLE, IORESOURCE_MEM |
-		       IORESOURCE_FIXED | IORESOURCE_STORED | IORESOURCE_ASSIGNED |
-		       IORESOURCE_CACHEABLE, BM_MEM_RAM);
+	memory_map = get_usable_memory();
 
 	if (!ENV_X86_64)
 		init_pae_pagetables(&pae_page_tables);
