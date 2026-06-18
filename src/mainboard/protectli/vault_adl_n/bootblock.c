@@ -29,18 +29,34 @@ void bootblock_mainboard_early_init(void)
 {
 	/* Internal VCC_OK */
 	ite_reg_write(GPIO_DEV, 0x23, 0x00);
-	/* Set pin native functions */
-	ite_reg_write(GPIO_DEV, 0x26, 0xc0);
+
+	/* Set pin native functions. AP2110 uses pin 10 as GP12. */
+	ite_reg_write(GPIO_DEV, 0x26,
+		      CONFIG(BOARD_PROTECTLI_AP2110) ? 0xc4 : 0xc0);
+
 	/* Pin28 as GP41 - PC speaker */
 	ite_reg_write(GPIO_DEV, 0x28, 0x02);
+
 	/* Set GPIOs exposed on pin header as GPIO functions */
 	ite_reg_write(GPIO_DEV, 0x29, 0xc0);
+
 	/* Sets a reserved bit6 to reflect original FW configuration */
 	ite_reg_write(GPIO_DEV, 0x2c, 0xc9);
+
 	ite_kill_watchdog(GPIO_DEV);
+
 	/* GP41 - PC Speaker configuration */
 	ite_gpio_setup(GPIO_DEV, 41,
-		       ITE_GPIO_OUTPUT, ITE_GPIO_SIMPLE_IO_MODE, ITE_GPIO_CONTROL_DEFAULT);
+		       ITE_GPIO_OUTPUT, ITE_GPIO_SIMPLE_IO_MODE,
+		       ITE_GPIO_CONTROL_DEFAULT);
+
+	if (CONFIG(BOARD_PROTECTLI_AP2110)) {
+		/* Configure GP12 direction/mode as required by AP2110. */
+		ite_gpio_setup(GPIO_DEV, 12,
+			       ITE_GPIO_INPUT, ITE_GPIO_SIMPLE_IO_MODE,
+			       ITE_GPIO_CONTROL_DEFAULT);
+	}
+
 	ite_set_gpio_iobase(0xa00);
 	ite_enable_serial(UART_DEV, CONFIG_TTYS0_BASE);
 }
