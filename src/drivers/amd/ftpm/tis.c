@@ -71,6 +71,8 @@ static void crb_tpm_init_mailbox(struct device *dev)
 	 */
 	if (!CONFIG(TPM2))
 		crb_tpm_init();
+
+	dev->path.mmio.addr = psp_ftpm_base_address();
 }
 
 #define TPM_START_UUID   "6bbf6cab-5463-4714-b7cd-f0203c0368d4"
