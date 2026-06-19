@@ -932,6 +932,10 @@ chip soc/amd/phoenix
 		end
 	end
 
+	chip drivers/amd/ftpm
+		device mmio 0x0 on end
+	end
+
 	device ref i2c_0 hidden end
 	device ref i2c_1 hidden end
 end
