@@ -79,5 +79,17 @@ chip soc/intel/alderlake
 				end
 			end
 		end
+
+		device ref pmc hidden
+			chip drivers/intel/pmc_mux
+				device generic 0 on
+					chip drivers/intel/pmc_mux/conn
+						use usb2_port6 as usb2_port
+						use tcss_usb3_port2 as usb3_port
+						device generic 1 alias conn1 on end
+					end
+				end
+			end
+		end
 	end
 end
