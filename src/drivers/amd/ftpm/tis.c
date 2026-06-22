@@ -212,13 +212,18 @@ static unsigned long acpi_create_tpm2(const struct device *device,
 				      struct acpi_rsdp *rsdp)
 {
 	/* When TPM2 is enabled table is written by common code */
-	if (CONFIG(TPM2))
-		return current;
+	if (CONFIG(TPM2)) {
+		/*
+		 * Ensure the TPM2 table is always published.
+		 * We depend on it to retrieve control area address in EDK2.
+		 * EDK2 will install own instance of TPM2 ACPI table anwyays,
+		 * so we don't have to worry about event log.
+		 */
+		if (should_publish_tpm_log())
+			return current;
+	}
 
 	if (!crb_tpm_is_active())
-		return current;
-
-	if (!should_publish_tpm_log())
 		return current;
 
 	acpi_tpm2_t *tpm2 = (acpi_tpm2_t *)(uintptr_t)current;
