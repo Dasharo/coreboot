@@ -114,6 +114,9 @@ static void fch_init_acpi_ports(void)
 		pm_write8(PM_RST_CTRL1, reg);
 
 		configure_smi(SMITYPE_SLP_TYP, SMI_MODE_SMI);
+
+		/* Enable power button SMI */
+		configure_smi(SMITYPE_PWRBUTTON_UP, SMI_MODE_SMI);
 	} else {
 		pm_write16(PM_ACPI_SMI_CMD, 0);
 	}
