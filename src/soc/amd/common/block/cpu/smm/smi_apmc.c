@@ -141,6 +141,7 @@ void fch_apmc_smi_handler(void)
 		fch_disable_power_button_smi();
 		acpi_clear_pm_gpe_status();
 		acpi_enable_sci();
+		configure_smi(SMITYPE_PWRBUTTON_UP, SMI_MODE_DISABLE);
 		break;
 	case APM_CNT_ACPI_DISABLE:
 		acpi_disable_sci();
