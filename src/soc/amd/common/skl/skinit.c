@@ -23,70 +23,19 @@ void platform_segment_loaded(uintptr_t start, size_t size, int flags)
 	payload_size = size;
 }
 
-/* TODO: include tags.h from SKL somehow */
-#define SKL_TAG_CLASS_MASK       0xF0
-
-/* Tags with no particular class */
-#define SKL_TAG_NO_CLASS         0x00
-#define SKL_TAG_END              0x00
-#define SKL_TAG_SETUP_INDIRECT   0x01
-#define SKL_TAG_TAGS_SIZE        0x0F    /* Always first */
-
-/* Tags specifying kernel type */
-#define SKL_TAG_BOOT_CLASS       0x10
-#define SKL_TAG_BOOT_LINUX       0x10
-#define SKL_TAG_BOOT_MB2         0x11
-#define SKL_TAG_BOOT_SIMPLE      0x12
-
-struct skl_tag_hdr {
-	uint8_t type;
-	uint8_t len;
-} __packed;
-
-struct skl_tag_tags_size {
-	struct skl_tag_hdr hdr;
-	uint16_t size;
-} __packed;
-
-struct skl_tag_boot_simple_payload {
-	struct skl_tag_hdr hdr;
-	uint32_t base;
-	uint32_t size;
-	uint32_t entry;
-	uint32_t arg;
-} __packed;
-
-struct skl_tag_evtlog {
-	struct skl_tag_hdr hdr;
-	uint32_t address;
-	uint32_t size;
-} __packed;
-
-struct skl_tag_hash {
-	struct skl_tag_hdr hdr;
-	uint16_t algo_id;
-	uint8_t digest[];
-} __packed;
-
-static inline void *next_tag(void* t)
-{
-	void *x = t + ((struct skl_tag_hdr*)t)->len;
-	return x;
-}
-
 void platform_prog_run(struct prog *prog)
 {
 	void *skl = NULL;
 	uint16_t bootloader_data_offset;
-	struct skl_tag_tags_size *tags;
-	struct skl_tag_boot_simple_payload *sp;
-	struct skl_tag_hdr *end;
+	struct slr_table *slrt;
+	struct slr_entry_dl_info *dl_info;
+	struct slr_entry_hdr *end;
 
 	/*
 	 * Check if we're on 32b platform.
 	 * TODO: add support for 64b?
 	 */
-	assert(sizeof(skl) == 4);
+	_Static_assert(sizeof(skl) == 4);
 
 	hexdump(prog, sizeof(*prog));
 
@@ -101,30 +50,32 @@ void platform_prog_run(struct prog *prog)
 
 	cbfs_load(CONFIG_CBFS_PREFIX "/drtm_payload", skl, 64*KiB);
 
-	bootloader_data_offset = ((uint16_t *)skl)[1];
-	tags = (struct skl_tag_tags_size *)(skl + bootloader_data_offset);
+	bootloader_data_offset = ((struct sl_header *)skl)->bootloader_data_offset;
+	slrt = (struct slr_table *)(skl + bootloader_data_offset);
 
-	memset(tags, 0, 64*KiB - (skl - (void *)tags));
+	memset(slrt, 0, 64*KiB - (skl - (void *)slrt));
 
-	tags->hdr.type = SKL_TAG_TAGS_SIZE;
-	tags->hdr.len = sizeof(struct skl_tag_tags_size);
-	tags->size += tags->hdr.len;
+	slrt->magic = SLR_TABLE_MAGIC;
+	slrt->revision = SLR_TABLE_REVISION;
+	slrt->architecture = SLR_AMD_SKINIT;
+	slrt->size = sizeof(*slrt);
+	slrt->max_size = 64*KiB - bootloader_data_offset;
 
-	sp = next_tag(tags);
-	sp->hdr.type = SKL_TAG_BOOT_SIMPLE;
-	sp->hdr.len = sizeof(struct skl_tag_boot_simple_payload);
-	sp->base = payload_start;
-	sp->size = payload_size;
-	sp->entry = (uint32_t)prog->entry;
-	sp->arg = (uint32_t)prog->arg;
-	tags->size += sp->hdr.len;
+	dl_info = (struct slr_entry_dl_info *)slrt->entries;
+	dl_info->hdr.tag = SLR_ENTRY_DL_INFO;
+	dl_info->hdr.size = sizeof(struct slr_entry_dl_info);
+	dl_info->dlme_base = payload_start;
+	dl_info->dlme_size = payload_size;
+	dl_info->dlme_entry = (uint32_t)prog->entry - payload_start;
+	dl_info->bl_context.bootloader = SLR_BOOTLOADER_GRUB; // TODO: BOOTLOADER_COREBOOT?
+	slrt->size += dl_info->hdr.size;
+
+	end = next_entry(dl_info);
+	end->tag = SLR_ENTRY_END;
+	end->size = sizeof(struct slr_entry_hdr);
+	slrt->size += end->size;
 
 	/* TODO: DRTM TPM event log and SKL hash(es) */
-
-	end = next_tag(sp);
-	end->type = SKL_TAG_END;
-	end->len = sizeof(struct skl_tag_hdr);
-	tags->size += end->len;
 
 	msr_t msr;
 
