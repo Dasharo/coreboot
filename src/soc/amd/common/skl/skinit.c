@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <security/tpm/tis.h>
 #include <cpu/amd/msr.h>
+#include <slrt.h>
 
 #include <lib.h>
 
