@@ -3,10 +3,13 @@
 #include <acpi/acpi_device.h>
 #include <amdblocks/acpi.h>
 #include <amdblocks/amd_pci_util.h>
+#include <cbmem.h>
 #include <commonlib/helpers.h>
 #include <device/azalia_device.h>
 #include <device/device.h>
+#include <drivers/amd/opensil/opensil.h>
 #include <static.h>
+#include <stdio.h>
 #include <types.h>
 #include "gpio.h"
 
@@ -89,6 +92,7 @@ static struct device_operations phx_gfx_hda_audio_ops;
 static void mainboard_init(void *chip_info)
 {
 	struct device *psp = (struct device *)DEV_PTR(crypto);
+	struct memory_info *mem_info;
 
 	mainboard_program_gpios();
 
@@ -104,8 +108,43 @@ static void mainboard_init(void *chip_info)
 		psp->ops->acpi_name = crypto_acpi_name;
 		psp->ops->acpi_fill_ssdt = acpi_device_write_pci_dev;
 	}
+
+	/*
+	 * Update maximum memory capacity for SMBIOS type 16 for this board.
+	 * Phoenix can support up to 256GB of memory on 4 DIMMs. This
+	 * board populates all 2 channels with 2 DIMMs per channel.
+	 */
+	mem_info = cbmem_find(CBMEM_ID_MEMINFO);
+	if (mem_info)
+		mem_info->max_capacity_mib = 256 * (GiB / MiB);
 }
 
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init
 };
+
+bool mainboard_dimm_slot_exists(uint8_t socket, uint8_t channel, uint8_t slot)
+{
+	if (socket > 0 || channel > 1)
+		return false;
+
+	/* First 2 channels fully populated */
+	return true;
+}
+
+void smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17 *t)
+{
+	char locator[40];
+
+	/*
+	 * DIMM slots are named by channel number and dimm number:
+	 * Channels: A, B.
+	 * DIMMs: A1, A2, B1, B2.
+	 */
+	snprintf(locator, sizeof(locator), "DIMM%c%u",
+		'A' + dimm->channel_num, dimm->dimm_num + 1);
+	t->device_locator = smbios_add_string(t->eos, locator);
+
+	snprintf(locator, sizeof(locator), "BANK %d", dimm->bank_locator);
+	t->bank_locator = smbios_add_string(t->eos, locator);
+}
