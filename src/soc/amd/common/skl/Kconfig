@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config LAUNCH_DRTM_PAYLOAD
+	bool "Launch DRTM payload before the real one"
+	default n
+	depends on MEMORY_MAPPED_TPM && ARCH_RAMSTAGE_X86_32
+	help
+	  Launch DRTM payload before the real one. This makes it possible to
+	  put root of trust in hardware for platforms that don't support SRTM.
