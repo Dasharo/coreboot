@@ -582,7 +582,9 @@ endif
 # SKL
 
 payloads/external/skl/secure-kernel-loader/skl.bin:
-	$(MAKE) -C payloads/external/skl CC="$(HOSTCC)"
+	$(MAKE) -C payloads/external/skl CC="$(HOSTCC)" \
+		CONFIG_SKL_REPOSITORY=$(CONFIG_SKL_REPOSITORY) \
+		CONFIG_SKL_TAG_OR_REV=$(CONFIG_SKL_TAG_OR_REV)
 
 cbfs-files-$(CONFIG_LAUNCH_DRTM_PAYLOAD) += $(CONFIG_CBFS_PREFIX)/drtm_payload
 $(CONFIG_CBFS_PREFIX)/drtm_payload-file := payloads/external/skl/secure-kernel-loader/skl.bin

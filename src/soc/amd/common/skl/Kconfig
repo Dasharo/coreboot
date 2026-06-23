@@ -7,3 +7,21 @@ config LAUNCH_DRTM_PAYLOAD
 	help
 	  Launch DRTM payload before the real one. This makes it possible to
 	  put root of trust in hardware for platforms that don't support SRTM.
+
+if LAUNCH_DRTM_PAYLOAD
+
+config SKL_REPOSITORY
+	string "URL to git repository for secure-kernel-loader"
+	default "https://github.com/TrenchBoot/secure-kernel-loader.git"
+	help
+	  TODO
+
+config SKL_TAG_OR_REV
+	string "Insert a commit's SHA-1 or a branch name"
+	default "de1899007d038eeacf5edb8e63c0f0a4b3e265c4"
+	help
+	  The commit's SHA-1 or branch name of the revision to use. This must exist in
+	  SKL_REPOSITORY, and in the case of a branch name, prefixed with origin i.e.
+	  "origin/skl-loader-amdsl-v11"
+
+endif # LAUNCH_DRTM_PAYLOAD
