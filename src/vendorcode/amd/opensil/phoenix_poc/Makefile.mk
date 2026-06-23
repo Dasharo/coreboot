@@ -9,6 +9,7 @@ romstage-y += opensil_console.c
 romstage-y += romstage.c
 
 ramstage-y += acpi.c
+ramstage-y += dmi.c
 ramstage-y += memmap.c
 ramstage-y += opensil_console.c
 ramstage-y += ramstage.c
