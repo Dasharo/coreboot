@@ -3,12 +3,14 @@
 #include <acpi/acpi.h>
 #include <amdblocks/acpi.h>
 #include <amdblocks/psp.h>
+#include <amdblocks/smi.h>
 #include <amdblocks/smm.h>
 #include <arch/io.h>
 #include <cpu/amd/amd64_save_state.h>
 #include <cpu/x86/smm.h>
 #include <drivers/tpm/tpm_ppi.h>
 #include <elog.h>
+#include <soc/smi.h>
 #include <smmstore.h>
 #include <types.h>
 
@@ -138,6 +140,7 @@ void fch_apmc_smi_handler(void)
 	case APM_CNT_ACPI_ENABLE:
 		acpi_clear_pm_gpe_status();
 		acpi_enable_sci();
+		configure_smi(SMITYPE_PWRBUTTON_UP, SMI_MODE_DISABLE);
 		break;
 	case APM_CNT_ACPI_DISABLE:
 		acpi_disable_sci();
