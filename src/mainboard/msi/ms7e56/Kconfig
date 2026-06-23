@@ -92,7 +92,7 @@ config CPU_PT_ROM_MAP_GB
 	default 1024
 
 config MRC_SETTINGS_CACHE_SIZE
-	default 0x1000000
+	default 0x100000
 
 config DIMM_MAX
 	default 4
