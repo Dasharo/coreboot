@@ -171,6 +171,33 @@ const acpi_cstate_t *get_cstate_config_data(size_t *size)
 	return cstate_cfg_table;
 }
 
+const struct acpi_lpi_state cstate_lpi_cfg_table[] = {
+	[0] = {
+		.min_residency_us = 0,
+		.worst_case_wakeup_latency_us = 1,
+		.flags = 1,
+		.state_name = "C1"
+	},
+	[1] = {
+		.min_residency_us = 0x3c,
+		.worst_case_wakeup_latency_us = 0x12,
+		.flags = 1,
+		.state_name = "C2"
+	},
+	[2] = {
+		.min_residency_us = 1000,
+		.worst_case_wakeup_latency_us = 350,
+		.flags = 1,
+		.state_name = "C3"
+	},
+};
+
+const struct acpi_lpi_state *get_cstate_lpi_config_data(size_t *size)
+{
+	*size = ARRAY_SIZE(cstate_lpi_cfg_table);
+	return cstate_lpi_cfg_table;
+}
+
 #if CONFIG(SOC_AMD_PHOENIX_OPENSIL)
 enum cb_err get_ccx_cppc_min_frequency(uint32_t *freq)
 {
