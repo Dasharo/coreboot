@@ -22,6 +22,7 @@ uint32_t get_pstate_latency(void);
 uint32_t get_pstate_core_freq(union pstate_msr pstate_reg);
 uint32_t get_pstate_core_uvolts(union pstate_msr pstate_reg);
 const acpi_cstate_t *get_cstate_config_data(size_t *size);
+const struct acpi_lpi_state *get_cstate_lpi_config_data(size_t *size);
 void amd_cpu_init(struct device *dev);
 
 #endif /* AMD_BLOCK_CPU_H */
