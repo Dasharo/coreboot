@@ -93,3 +93,9 @@ const acpi_cstate_t *get_cstate_config_data(size_t *size)
 	*size = ARRAY_SIZE(cstate_cfg_table);
 	return cstate_cfg_table;
 }
+
+const struct acpi_lpi_state *get_cstate_lpi_config_data(size_t *size)
+{
+	*size = 0;
+	return NULL;
+}
