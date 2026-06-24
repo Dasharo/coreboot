@@ -269,6 +269,12 @@ const acpi_cstate_t *get_cstate_config_data(size_t *size)
 	return cstate_cfg_table;
 }
 
+const struct acpi_lpi_state *get_cstate_lpi_config_data(size_t *size)
+{
+	*size = 0;
+	return NULL;
+}
+
 enum cb_err get_ccx_cppc_min_frequency(uint32_t *freq)
 {
 	if (xPrfGetCppcMinFrequency(freq) != SilPass)
