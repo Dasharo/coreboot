@@ -158,11 +158,62 @@ static size_t get_cstate_info(acpi_cstate_t *cstate_values)
 	return i;
 }
 
+static void write_cstate_lpi_entry(size_t state, struct acpi_lpi_state *entry, const struct acpi_lpi_state *data)
+{
+	entry->min_residency_us = data->min_residency_us;
+	entry->worst_case_wakeup_latency_us = data->worst_case_wakeup_latency_us;
+	entry->flags = data->flags;
+	entry->arch_context_lost_flags = data->arch_context_lost_flags;
+	entry->residency_counter_frequency_hz = data->flags;
+	entry->enabled_parent_state = data->enabled_parent_state;
+	entry->state_name = data->state_name;
+
+	if (state == 0) {
+		entry->entry_method = (acpi_addr_t){
+			.space_id = ACPI_ADDRESS_SPACE_FIXED,
+			.bit_width = 2,
+			.bit_offset = ACPI_FFIXEDHW_CLASS_MWAIT,
+			.addrl = 0,
+			.addrh = 0,
+		};
+	} else {
+		entry->entry_method = (acpi_addr_t){
+			.space_id = ACPI_ADDRESS_SPACE_IO,
+			.bit_width = 8,
+			.bit_offset = 0,
+			.addrl = get_cstate_io_base_address() + (uint16_t)state,
+			.addrh = 0,
+			.access_size = ACPI_ACCESS_SIZE_BYTE_ACCESS,
+		};
+	}
+}
+
+static size_t get_cstate_lpi_info(struct acpi_lpi_state *lpi_cstate_values)
+{
+	size_t i;
+	size_t cstate_count;
+	const struct acpi_lpi_state *lpi_cstate_config = get_cstate_lpi_config_data(&cstate_count);
+
+	if (cstate_count > MAX_CSTATE_COUNT) {
+		printk(BIOS_WARNING, "cstate_lpi_info array has too many entries. "
+			"Skipping last %zu entries.\n",
+			cstate_count - MAX_CSTATE_COUNT);
+		cstate_count = MAX_CSTATE_COUNT;
+	}
+
+	for (i = 0; i < cstate_count; i++) {
+		write_cstate_lpi_entry(i, &lpi_cstate_values[i], &lpi_cstate_config[i]);
+	}
+
+	return i;
+}
+
 void generate_cpu_entries(const struct device *device)
 {
 	int logical_cores;
-	size_t cstate_count, pstate_count, cpu;
+	size_t cstate_count, cstate_lpi_count, pstate_count, cpu;
 	acpi_cstate_t cstate_values[MAX_CSTATE_COUNT] = { {0} };
+	struct acpi_lpi_state cstate_lpi_values[MAX_CSTATE_COUNT] = { {0} };
 	struct acpi_sw_pstate pstate_values[MAX_PSTATES] = { {0} };
 	struct acpi_xpss_sw_pstate pstate_xpss_values[MAX_PSTATES] = { {0} };
 	uint32_t threads_per_core;
@@ -180,6 +231,7 @@ void generate_cpu_entries(const struct device *device)
 
 	threads_per_core = get_threads_per_core();
 	cstate_count = get_cstate_info(cstate_values);
+	cstate_lpi_count = get_cstate_lpi_info(cstate_lpi_values);
 	pstate_count = get_pstate_info(pstate_values, pstate_xpss_values);
 	logical_cores = get_cpu_count();
 
@@ -204,6 +256,9 @@ void generate_cpu_entries(const struct device *device)
 
 		acpigen_write_CSD_package(cpu / threads_per_core, threads_per_core,
 					  CSD_HW_ALL, 0);
+
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_ACPI_LPI))
+			acpigen_write_LPI_package(0, cstate_lpi_values, cstate_lpi_count);
 
 		if (CONFIG(SOC_AMD_COMMON_BLOCK_ACPI_CPPC))
 			generate_cppc_entries(cpu);
