@@ -240,6 +240,7 @@ static void configure_ccx(SIL_CONTEXT *SilContext)
 {
 	CCXCLASS_DATA_BLK *ccx_data = SilFindStructure(SilContext, SilId_CcxClass, 0);
 	UCODEPATCH_BIOSENTRYINFO *ucode_info;
+	PSPBIOSBIN_BIOSENTRYINFO *bios_info;
 	void *ucode;
 
 	if (!ccx_data)
@@ -255,6 +256,10 @@ static void configure_ccx(SIL_CONTEXT *SilContext)
 	ccx_data->CcxInputBlock.EnableSvmX2AVIC = true;
 	ccx_data->CcxInputBlock.EnableSvmAVIC = true;
 	ccx_data->CcxInputBlock.AmdCStateIoBaseAddress = ACPI_CSTATE_CONTROL;
+
+	bios_info = &ccx_data->CcxInputBlock.PspBiosBinEntryInfo;
+	bios_info->PspBiosBinBase = CONFIG_ROMSTAGE_ADDR - CONFIG_C_ENV_BOOTBLOCK_SIZE;
+	bios_info->PspBiosBinSize = CONFIG_C_ENV_BOOTBLOCK_SIZE;
 
 	ucode = amd_microcode_find();
 	if (!ucode) {
