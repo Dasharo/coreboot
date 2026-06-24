@@ -330,7 +330,7 @@ static void configure_fch_acpi(SIL_CONTEXT *SilContext)
 	fch_data->FchBldCfg.CfgAcpiPm1EvtBlkAddr = ACPI_PM_EVT_BLK;
 	fch_data->FchBldCfg.CfgAcpiPm1CntBlkAddr = ACPI_PM1_CNT_BLK;
 	fch_data->FchBldCfg.CfgAcpiPmTmrBlkAddr = ACPI_PM_TMR_BLK;
-	fch_data->FchBldCfg.CfgCpuControlBlkAddr = ACPI_CSTATE_CONTROL;
+	fch_data->FchBldCfg.CfgCpuControlBlkAddr = ACPI_CPU_CONTROL;
 	fch_data->FchBldCfg.CfgAcpiGpe0BlkAddr = ACPI_GPE0_BLK;
 	fch_data->FchBldCfg.CfgSmiCmdPortAddr = APM_CNT;
 
