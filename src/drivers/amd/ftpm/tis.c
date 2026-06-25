@@ -15,7 +15,7 @@
 
 static const char *tis_get_dev_name(void)
 {
-	return "fTPM";
+	return "AMD fTPM";
 }
 
 static tpm_result_t crb_tpm_sendrecv(const uint8_t *sendbuf, size_t sbuf_size, uint8_t *recvbuf,
