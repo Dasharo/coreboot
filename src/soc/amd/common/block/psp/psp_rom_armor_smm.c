@@ -307,6 +307,9 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 
 		fch_spi_lock();
 
+		/* Initialize BIOS mmap for SMM, before LPC registers become inaccessible */
+		boot_device_ro();
+
 		/* For ROM Armor 1 we have to pass the transfer buffer used to talk to PSP */
 		params->operation_buf = (uint64_t)&transfer_buffer[0];
 		params->chip_select = spi_cs;
