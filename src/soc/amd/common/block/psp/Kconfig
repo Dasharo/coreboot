@@ -105,7 +105,7 @@ config PSP_PLATFORM_SECURE_BOOT
 	  only available with NDA customers.
 
 config SOC_AMD_COMMON_BLOCK_PSP_SMI
-	bool
+	bool "Add PSP SMI handler for SPI flash access"
 	select SPI_FLASH_SMM if BOOT_DEVICE_SPI_FLASH_RW_NOMMAP
 	help
 	  Add PSP SMI handler for SPI flash access.
@@ -121,6 +121,17 @@ config SOC_AMD_COMMON_BLOCK_PSP_SMI
 	  writes with small data sizes are less problematic. This is AMD
 	  specific design and should be enabled when PSP requires to access the
 	  SPI flash after the BOOT_DONE PSP command.
+
+config PSP_ENABLE_AMD_CRB_FTPM
+	bool "Enable AMD PSP fTPM"
+	default n
+	depends on !CRB_TPM
+	depends on SOC_AMD_COMMON_BLOCK_PSP_GEN2
+	# The fTPM needs to access the SPI flash, either directly when
+	# ROM Armor is used, or via PSP SMI when ROM Armor is not used.
+	depends on SOC_AMD_COMMON_BLOCK_PSP_SMI || SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3
+	select AMD_CRB_FTPM
+	select MAINBOARD_HAS_TPM2
 
 config PSP_INCLUDES_HSP
 	bool
