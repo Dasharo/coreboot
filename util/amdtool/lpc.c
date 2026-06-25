@@ -6,9 +6,6 @@
 #include <inttypes.h>
 #include <commonlib/helpers.h>
 #include "amdtool.h"
-#include "smn.h"
-
-#define AMD_LPC_CFG_SMN		0x02dc6000
 
 static const io_register_t lpc_cfg_registers[] = {
 	{0x00, 4, "ID"},
@@ -116,35 +113,6 @@ int print_lpc(struct pci_dev *sb)
 			printf("0x%04x: 0x%02x       (%s)\n",
 				cfg_registers[i].addr,
 				pci_read_byte(sb, cfg_registers[i].addr),
-				cfg_registers[i].name);
-			break;
-		default:
-			printf("Error: register size %d not implemented.\n",
-				cfg_registers[i].size);
-			break;
-		}
-	}
-
-	printf("\n======== LPC (SMN) =======\n\n");
-
-	for (i = 0; i < cfg_registers_size; i++) {
-		switch (cfg_registers[i].size) {
-		case 4:
-			printf("0x%04x: 0x%08x (%s)\n",
-				cfg_registers[i].addr,
-				smn_read32(AMD_LPC_CFG_SMN + cfg_registers[i].addr),
-				cfg_registers[i].name);
-			break;
-		case 2:
-			printf("0x%04x: 0x%04x     (%s)\n",
-				cfg_registers[i].addr,
-				smn_read16(AMD_LPC_CFG_SMN + cfg_registers[i].addr),
-				cfg_registers[i].name);
-			break;
-		case 1:
-			printf("0x%04x: 0x%02x       (%s)\n",
-				cfg_registers[i].addr,
-				smn_read8(AMD_LPC_CFG_SMN + cfg_registers[i].addr),
 				cfg_registers[i].name);
 			break;
 		default:
