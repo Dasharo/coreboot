@@ -2,8 +2,10 @@
 
 #include <amdblocks/psp.h>
 #include <amdblocks/spi.h>
+#include <boot_device.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
+#include <smmstore.h>
 #include <stdint.h>
 #include <string.h>
 #include <types.h>
@@ -19,9 +21,6 @@ static ssize_t psp_rom_armor_spi_readat(const struct region_device *rd, void *bu
 	uint32_t byte_counter;
 	int ret;
 
-	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3))
-		return -1;
-
 	printk(BIOS_DEBUG, "PSP RomArmor rdev_ops: read offset=0x%zx, len=0x%zx\n",
 	       offset, len);
 
@@ -35,6 +34,21 @@ static ssize_t psp_rom_armor_spi_readat(const struct region_device *rd, void *bu
 		printk(BIOS_ERR, "PSP RomArmor rdev_ops: read range exceeds flash size\n");
 		return -1;
 	}
+
+	/* Try to read from MMIO flash space first */
+	const struct region_device *ro_dev = boot_device_ro();
+	if (ro_dev) {
+		printk(BIOS_ERR, "PSP RomArmor rdev_ops: Attempting RO rdev\n");
+		if (len > region_device_sz(ro_dev) ||
+		    offset > region_device_sz(ro_dev) ||
+		    (offset + len) > region_device_sz(ro_dev)) {
+			printk(BIOS_ERR, "PSP RomArmor rdev_ops: read range exceeds flash size\n");
+			return -1;
+		}
+
+		return ro_dev->ops->readat(ro_dev, buf, offset, len);
+	}
+
 
 	cmd.transaction = READ_ACCESS;
 	cmd.buffer_ptr = (uintptr_t)transfer_buffer;
@@ -232,6 +246,9 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 
 		fch_spi_lock();
 
+		/* Initialize BIOS mmap for SMM, before LPC registers become inaccessible */
+		boot_device_ro();
+
 		if (psp_rom_armor_enter_smm_mode(params, &flash_size) != 0) {
 			printk(BIOS_ERR, "%s: Failed to enter SMM mode\n", __func__);
 			return ROM_ARMOR_RET_FAILURE;
@@ -240,7 +257,14 @@ uint32_t rom_armor_exec(uint8_t command, void *param)
 		if (!psp_get_hsti_state_rom_armor_enforced())
 			return ROM_ARMOR_RET_FAILURE;
 
+		/*
+		 * Cache the state of ROM Armor, to avoid querying HSTI over and over.
+		 * Once ROM Armor is enforced, it cannot be deactivated until reset.
+		 */
 		rom_armor_enforced = true;
+
+		if (CONFIG(SMMSTORE))
+			smmstore_lookup_region_reinit();
 
 		printk(BIOS_INFO, "%s: Initialized with flash size 0x%zx\n", __func__, flash_size);
 		if (region_device_sz(&rom_armor_smm_rw) != flash_size) {
