@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <amdblocks/psp.h>
+#include <amdblocks/spi.h>
 #include <console/console.h>
 #include <cpu/x86/smm.h>
 #include <stdint.h>
