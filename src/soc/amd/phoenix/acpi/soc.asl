@@ -23,6 +23,7 @@ Scope(\_SB) {
 
 	Scope(PCI0) {
 		#include <soc/amd/common/acpi/lpc.asl>
+		#include <soc/amd/common/acpi/thermal_zone_smu.asl>
 
 		#include "pci.asl"
 	} /* End PCI0 scope */
