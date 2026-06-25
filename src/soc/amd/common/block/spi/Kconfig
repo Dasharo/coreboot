@@ -155,10 +155,10 @@ config SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR1
 	select SPI_FLASH
 	select SPI_FLASH_SMM
 	select BOOTMEDIA_SMM_BWP
+	select SOC_AMD_COMMON_BLOCK_PSP_SMI
 	depends on HAVE_SMI_HANDLER
 	depends on SOC_AMD_COMMON_BLOCK_PSP
 	depends on SOC_AMD_COMMON_BLOCK_SPI
-	depends on SOC_AMD_COMMON_BLOCK_PSP_SMI
 	help
 	  Select this option to use PSP ROM Armor1 protocol for SPI flash
 	  operations. This routes SPI read/write/erase operations through
@@ -182,7 +182,6 @@ config SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3
 	depends on HAVE_SMI_HANDLER
 	depends on SOC_AMD_COMMON_BLOCK_PSP
 	depends on SOC_AMD_COMMON_BLOCK_SPI
-	depends on !SOC_AMD_COMMON_BLOCK_PSP_SMI
 	help
 	  Select this option to use PSP ROM Armor3 protocol for SPI flash
 	  operations. This routes SPI read/write/erase operations through
