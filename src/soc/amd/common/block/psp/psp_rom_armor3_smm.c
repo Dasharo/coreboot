@@ -21,8 +21,9 @@ static ssize_t psp_rom_armor_spi_readat(const struct region_device *rd, void *bu
 	uint32_t byte_counter;
 	int ret;
 
-	printk(BIOS_DEBUG, "PSP RomArmor rdev_ops: read offset=0x%zx, len=0x%zx\n",
-	       offset, len);
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "PSP RomArmor rdev_ops: read offset=0x%zx, len=0x%zx\n",
+		       offset, len);
 
 	if (!buf || !len) {
 		printk(BIOS_ERR, "PSP RomArmor rdev_ops: Invalid read parameters\n");
@@ -62,8 +63,9 @@ static ssize_t psp_rom_armor_spi_readat(const struct region_device *rd, void *bu
 		if (cmd.size > sizeof(transfer_buffer))
 			cmd.size = sizeof(transfer_buffer);
 
-		printk(BIOS_SPEW, "  Read chunk: addr=0x%x, len=0x%x\n",
-		       cmd.offset, cmd.size);
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+			printk(BIOS_SPEW, "  Read chunk: addr=0x%x, len=0x%x\n",
+			       cmd.offset, cmd.size);
 
 		ret = psp_rom_armor3_spi_transaction(&cmd);
 		if (ret < 0) {
@@ -77,7 +79,9 @@ static ssize_t psp_rom_armor_spi_readat(const struct region_device *rd, void *bu
 		byte_counter += cmd.size;
 	}
 
-	printk(BIOS_DEBUG, "PSP RomArmor rdev_ops: Read complete\n");
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "PSP RomArmor rdev_ops: Read complete\n");
+
 	return len;
 }
 
@@ -99,8 +103,9 @@ static ssize_t psp_rom_armor_spi_writeat(const struct region_device *rd, const v
 	uint32_t byte_counter;
 	const uint8_t *current_buffer;
 
-	printk(BIOS_DEBUG, "ROM Armor rdev_ops: Write offset=0x%zx, len=0x%zx\n",
-	       offset, len);
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "ROM Armor rdev_ops: Write offset=0x%zx, len=0x%zx\n",
+		       offset, len);
 
 	if (!buf || len == 0) {
 		printk(BIOS_ERR, "ROM Armor rdev_ops: Invalid write parameters\n");
@@ -134,7 +139,9 @@ static ssize_t psp_rom_armor_spi_writeat(const struct region_device *rd, const v
 		cmd.offset += cmd.size;
 	}
 
-	printk(BIOS_DEBUG, "ROM Armor rdev_ops: Write complete\n");
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "ROM Armor rdev_ops: Write complete\n");
+
 	return len;
 }
 
@@ -154,8 +161,9 @@ static ssize_t psp_rom_armor_spi_eraseat(const struct region_device *rd,
 		.read_back = 0,
 	};
 
-	printk(BIOS_DEBUG, "ROM Armor rdev_ops: Erase offset=0x%zx, len=0x%zx\n",
-	       offset, len);
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "ROM Armor rdev_ops: Erase offset=0x%zx, len=0x%zx\n",
+		       offset, len);
 
 	if (len == 0 || !IS_ALIGNED(len, 4 * KiB) || !IS_ALIGNED(offset, 4 * KiB)) {
 		printk(BIOS_ERR, "ROM Armor rdev_ops: Invalid erase parameters\n");
@@ -179,11 +187,15 @@ static ssize_t psp_rom_armor_spi_eraseat(const struct region_device *rd,
 		    IS_ALIGNED(cmd.offset, 64 * KiB) &&
 		    (remaining >= (64 * KiB))) {
 			cmd.size = 64 * KiB;
-			printk(BIOS_SPEW, "ROM Armor rdev_ops: Erase 64KB at 0x%x\n", cmd.offset);
+			if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+				printk(BIOS_SPEW, "ROM Armor rdev_ops: Erase 64KB at 0x%x\n",
+				       cmd.offset);
 		} else {
 			/* TODO: Figure out when 4KiB is an architecture-specific limitation. */
 			cmd.size = 4 * KiB;
-			printk(BIOS_SPEW, "ROM Armor rdev_ops: Erase 4KB at 0x%x\n", cmd.offset);
+			if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+				printk(BIOS_SPEW, "ROM Armor rdev_ops: Erase 4KB at 0x%x\n",
+				       cmd.offset);
 		}
 
 		int ret = psp_rom_armor3_spi_transaction(&cmd);
@@ -195,7 +207,9 @@ static ssize_t psp_rom_armor_spi_eraseat(const struct region_device *rd,
 		remaining -= cmd.size;
 	}
 
-	printk(BIOS_DEBUG, "ROM Armor rdev_ops: Erase complete\n");
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_DEBUG))
+		printk(BIOS_DEBUG, "ROM Armor rdev_ops: Erase complete\n");
+
 	return len;
 }
 
