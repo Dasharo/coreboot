@@ -7,6 +7,7 @@
 #include <console/console.h>
 #include <amdblocks/psp.h>
 #include <amdblocks/smi.h>
+#include <dasharo/options.h>
 #include <soc/iomap.h>
 #include <spi_flash.h>
 #include <string.h>
@@ -87,11 +88,17 @@ int psp_notify_smm(void)
 #endif
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_SMI)) {
-		configure_psp_smi();
-		enable_psp_smi();
+		/*
+		 * If ROM Armor 3 is compiled but disabled by variable, we have to configure
+		 * PSP SMIs so that other things will work, like fTPM.
+		 */
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3) && !is_smm_bwp_permitted()) {
+			configure_psp_smi();
+			enable_psp_smi();
 
-		/* Probe for SPI flash now as it's likely not busy */
-		assert(boot_device_spi_flash());
+			/* Probe for SPI flash now as it's likely not busy */
+			assert(boot_device_spi_flash());
+		}
 	}
 
 	printk(BIOS_DEBUG, "PSP: Notify SMM info... ");
