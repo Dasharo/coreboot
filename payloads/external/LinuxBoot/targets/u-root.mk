@@ -1,6 +1,6 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
-uroot_package = github.com/u-root/u-root
+uroot_package = github.com/Dasharo/u-root
 uroot_build = build/go/src/$(uroot_package)
 
 UROOT_ARCH-$(CONFIG_LINUXBOOT_X86_64)      = amd64
