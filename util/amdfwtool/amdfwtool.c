@@ -1734,6 +1734,7 @@ integrate_bios_firmwares(context *ctx, struct amd_bios_entry *fw_table,
 			biosdir->entries[count].size = (uint32_t)bytes;
 			biosdir->entries[count].source = RUN_CURRENT(*ctx);
 			biosdir->entries[count].address_mode = SET_ADDR_MODE_BY_TABLE(biosdir);
+			biosdir->entries[count].writable = (fw_table[i].type == AMD_BIOS_APCB);
 
 			adjust_current_pointer(ctx, bytes, 0x100U);
 			break;
