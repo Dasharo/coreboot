@@ -129,7 +129,9 @@ config PSP_ENABLE_AMD_CRB_FTPM
 	depends on SOC_AMD_COMMON_BLOCK_PSP_GEN2
 	# The fTPM needs to access the SPI flash, either directly when
 	# ROM Armor is used, or via PSP SMI when ROM Armor is not used.
-	depends on SOC_AMD_COMMON_BLOCK_PSP_SMI || SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3
+	# Ensure that PSP SMI is enabled if we use EFI variables, because
+	# ROM Armor may be disabled runtime and fTPM may not work then.
+	select SOC_AMD_COMMON_BLOCK_PSP_SMI if SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3 && DRIVERS_EFI_VARIABLE_STORE
 	select AMD_CRB_FTPM
 	select MAINBOARD_HAS_TPM2
 
