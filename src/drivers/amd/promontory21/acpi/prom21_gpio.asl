@@ -3,28 +3,6 @@
 Scope (\_SB)
 {
 	Name (TGPI, 0x0F)
-	Device (PTIO)
-	{
-		Name (_HID, "AMDIF031")
-		Name (_CID, "AMDIF031")
-		Name (_UID, 0)
-		Method (_CRS, 0, NotSerialized)
-		{
-			Name (RBUF, ResourceTemplate ()
-			{
-				Memory32Fixed (ReadWrite,
-					0xFEC40000,
-					0x00001000,
-					)
-			})
-			Return (RBUF)
-		}
-
-		Method (_STA, 0, NotSerialized)
-		{
-			Return (0x0F)
-		}
-	}
 
 	Device (ASMT)
 	{
