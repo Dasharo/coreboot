@@ -287,17 +287,16 @@ chip soc/amd/phoenix
 							ops amd_prom21_dsp_ops
 							smbios_slot_desc "SlotTypePciExpressGen3X16" "SlotLengthLong" "PCI_E4" "SlotDataBusWidth1X"
 						end
-						device pci 04.0 alias prom21_dsp_pcie_5  off  # used as SATA
-							ops amd_prom21_dsp_ops
-							smbios_slot_desc "SlotTypeM2Socket3" "SlotLengthOther" "M2_3" "SlotDataBusWidth4X"
-						end
-						device pci 05.0 alias prom21_dsp_pcie_6  off  # used as SATA
+						device pci 04.0 alias prom21_dsp_pcie_5  on  # used as SATA
 							ops amd_prom21_dsp_ops
 						end
-						device pci 06.0 alias prom21_dsp_pcie_7  off  # used as SATA
+						device pci 05.0 alias prom21_dsp_pcie_6  on  # used as SATA
 							ops amd_prom21_dsp_ops
 						end
-						device pci 07.0 alias prom21_dsp_pcie_8  off  # used as SATA
+						device pci 06.0 alias prom21_dsp_pcie_7  on  # used as SATA
+							ops amd_prom21_dsp_ops
+						end
+						device pci 07.0 alias prom21_dsp_pcie_8  on  # used as SATA
 							ops amd_prom21_dsp_ops
 						end
 						device pci 08.0 alias prom21_dsp_pcie_9  on  # M2_3
