@@ -12,6 +12,7 @@
 #define PROM21_MAX_SATA_PORTS		4
 #define PROM21_XHCI_MAX_USB3_PORTS	6
 #define PROM21_XHCI_MAX_USB2_PORTS	12
+#define PROM21_MAX_GPIOS		24
 
 #define PROM21_XHCI_DEVFN		PCI_DEVFN(0xc, 0)
 #define PROM21_SATA_DEVFN		PCI_DEVFN(0xd, 0)
@@ -142,6 +143,41 @@ struct prom21_pcie_config {
 	uint8_t port_target_speed[PROM21_MAX_PCIE_LANES];
 };
 
+union prom21_gpio_common_setting {
+	struct {
+		uint16_t debounce_timer:3;
+		uint16_t debounce_timeout_th:3;
+		uint16_t int_output_en:1;
+		uint16_t int_act_level:1;
+		uint16_t int_mode:1;
+		uint16_t reserved:7;
+	} common;
+	uint16_t raw;
+};
+
+union prom21_gpio_setting {
+	struct {
+		uint16_t out_en:1;
+		uint16_t out:1;
+		uint16_t int_enable:1;
+		uint16_t int_level_trig_type:1;
+		uint16_t int_type:2;
+		uint16_t int_mask:1;
+		uint16_t reserved:9;
+	} gpio;
+	uint16_t raw;
+};
+
+struct prom21_gpio_item {
+	uint16_t pin;
+	union prom21_gpio_setting setting;
+} ;
+
+struct prom21_gpio_init_table {
+	union prom21_gpio_common_setting gpiocommon;
+	struct prom21_gpio_item          gpio_list[PROM21_MAX_GPIOS * 2 + 1];
+};
+
 struct drivers_amd_promontory21_config {
 	enum prom21_boolean si_prog_enable;
 	struct prom21_usb3_phy usb3_phy[PROM21_XHCI_MAX_USB3_PORTS];
@@ -151,6 +187,7 @@ struct drivers_amd_promontory21_config {
 	struct prom21_usb_config usb;
 	struct prom21_sata_config sata;
 	struct prom21_pcie_config pcie;
+	struct prom21_gpio_init_table gpio;
 };
 
 #endif /* OPENSIL_PHOENIX_POC_MPIO_CHIP_H */
