@@ -1,0 +1,18 @@
+diff --git a/pkg/boot/syslinux/syslinux.go b/pkg/boot/syslinux/syslinux.go
+index 7fcd0a1e..1f393a0c 100644
+--- a/pkg/boot/syslinux/syslinux.go
++++ b/pkg/boot/syslinux/syslinux.go
+@@ -276,7 +276,12 @@ func (c *parser) appendFile(ctx context.Context, url string) error {
+ 	if err != nil {
+ 		return err
+ 	}
+-	log.Printf("Got config file %s:\n%s\n", r, string(config))
++	if len(config) > 500 {
++		// Avoid flooding the console on real systems.
++		log.Printf("Got config file %s", r)
++	} else {
++		log.Printf("Got config file %s:\n%s\n", r, string(config))
++	}
+ 	return c.append(ctx, string(config))
+ }
+ 
