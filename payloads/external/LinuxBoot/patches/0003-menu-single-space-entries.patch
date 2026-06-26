@@ -1,0 +1,13 @@
+diff --git a/pkg/boot/menu/menu.go b/pkg/boot/menu/menu.go
+index f9f829f0..ac315952 100644
+--- a/pkg/boot/menu/menu.go
++++ b/pkg/boot/menu/menu.go
+@@ -85,7 +85,7 @@ func Choose(term MenuTerminal, allowEdit bool, entries ...Entry) Entry {
+ 	w := bufio.NewWriter(os.Stdout)
+ 	fmt.Fprintln(w, "")
+ 	for i, e := range entries {
+-		fmt.Fprintf(w, "%02d. %s\r\n\n", i+1, e.Label())
++		fmt.Fprintf(w, "%02d. %s\r\n", i+1, e.Label())
+ 	}
+ 	fmt.Fprintln(w, "\r")
+ 	w.Flush()
