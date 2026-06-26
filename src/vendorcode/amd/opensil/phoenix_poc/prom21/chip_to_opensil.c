@@ -117,6 +117,24 @@ static void config_usb_port_enables(struct device *xhci_dev,
 	}
 }
 
+static void fill_promontory21_gpio(PROM21_GPIO_INIT_TABLE *GpioTable,
+				   const struct prom21_gpio_init_table *chip_gpio)
+{
+	uint8_t gpio;
+
+	for (gpio = 0; gpio < PROM21_MAX_GPIO_PIN_NUMBER * 2; gpio++) {
+		if (chip_gpio->gpio_list[gpio].pin == 0xff)
+			break;
+
+		GpioTable->GpioList[gpio].Pin = chip_gpio->gpio_list[gpio].pin;
+		GpioTable->GpioList[gpio].Setting.Raw = chip_gpio->gpio_list[gpio].setting.raw;
+	}
+
+	/* Put terminator */
+	GpioTable->GpioList[gpio].Pin = 0xff;
+	GpioTable->GpioList[gpio].Setting.Raw = 0xffff;
+}
+
 void opensil_promontory21_config(SIL_CONTEXT *SilContext, struct device *root_port)
 {
 	PROMCLASS_DATA_BLK *prom_data = SilFindStructure(SilContext, SilId_PromClass, 0);
@@ -273,4 +291,6 @@ void opensil_promontory21_config(SIL_CONTEXT *SilContext, struct device *root_po
 		prom21_boolean_to_opensil(sata->aggressive_dev_slp[i],
 				   &primary->PT21SataAggressiveDevSlp[i]);
 	}
+
+	fill_promontory21_gpio(&input_blk->PT21GpioInitTable, &cfg->gpio);
 }
