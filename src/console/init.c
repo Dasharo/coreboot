@@ -40,7 +40,7 @@ int console_log_level(int msg_level)
 	if (msg_level <= log_level)
 		return CONSOLE_LOG_ALL;
 
-	if (CONFIG(CONSOLE_CBMEM) && (msg_level <= BIOS_DEBUG))
+	if (CONFIG(CONSOLE_CBMEM) && (msg_level <= BIOS_SPEW))
 		return CONSOLE_LOG_FAST;
 
 	return 0;
