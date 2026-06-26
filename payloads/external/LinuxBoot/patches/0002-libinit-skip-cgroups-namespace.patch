@@ -1,0 +1,30 @@
+diff --git a/pkg/libinit/root_linux.go b/pkg/libinit/root_linux.go
+index de2ec84f..45630c46 100644
+--- a/pkg/libinit/root_linux.go
++++ b/pkg/libinit/root_linux.go
+@@ -14,7 +14,6 @@ import (
+ 	"os"
+ 	"path/filepath"
+ 	"runtime"
+-	"strconv"
+ 	"strings"
+ 
+ 	"github.com/u-root/u-root/pkg/cmdline"
+@@ -231,14 +230,9 @@ func CreateRootfs() {
+ 
+ 	Create(Namespace, false)
+ 
+-	// systemd gets upset when it discovers something has already setup cgroups
+-	// We have to do this after the base namespace is created, so we have /proc
+-	initFlags := cmdline.GetInitFlagMap()
+-	systemd, present := initFlags["systemd"]
+-	systemdEnabled, boolErr := strconv.ParseBool(systemd)
+-	if !present || boolErr != nil || !systemdEnabled {
+-		Create(CgroupsNamespace, true)
+-	}
++	// Skip CgroupsNamespace: cgroups are optional for LinuxBoot, and mounting
++	// the cgroup v1 controllers this kernel lacks floods the serial console with
++	// "Unknown subsys name" messages. The final kexec'd OS sets up its own.
+ }
+ 
+ // InitModuleLoader wraps the resources we need for early module loading
