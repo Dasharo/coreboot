@@ -244,14 +244,51 @@ chip soc/amd/phoenix
 					device pci 00.0 alias prom21_usp on # Upstream Port
 						ops amd_prom21_usp_ops
 
-						register "pcie.report_small_ltr" = "Enable"
-						register "pcie.gen1_swing_enable" = "true"
-
-						register "pcie.pcie_gen1_swing" = "{
-							0x3f, 0x3f, 0x3f, 0x3f,
-							0x13, 0x13, 0x13, 0x13,
-							0x3f, 0x3f, 0x3f, 0x3f
+						register "gpio.gpio_list[0]" = "{
+							.pin = 8,
+							.setting.gpio = {
+								.out_en = 1,
+								.out = 1,
+							}
 						}"
+						register "gpio.gpio_list[1]" = "{
+							.pin = 9,
+							.setting.gpio = {
+								.out_en = 1,
+								.out = 1,
+							}
+						}"
+						register "gpio.gpio_list[2]" = "{
+							.pin = 10,
+							.setting.gpio = {
+								.out_en = 1,
+								.out = 1,
+							}
+						}"
+						register "gpio.gpio_list[3]" = "{
+							.pin = 11,
+							.setting.gpio = {
+								.out_en = 1,
+								.out = 1,
+							}
+						}"
+						register "gpio.gpio_list[4]" = "{
+							.pin = 12,
+							.setting.gpio = {
+								.out_en = 1,
+								.out = 1,
+							}
+						}"
+						register "gpio.gpio_list[5]" = "{
+							.pin = 13,
+							.setting.gpio = {
+								.out_en = 1,
+								.out = 1,
+							}
+						}"
+						register "gpio.gpio_list[6].pin" = "0xff"
+
+						register "pcie.report_small_ltr" = "Enable"
 
 						register "pcie.clkreq_pin_select" = "{
 							ClkreqPort2,
@@ -326,7 +363,7 @@ chip soc/amd/phoenix
 
 								register "usb.hw_lpm" = "Enable"
 								register "usb.dbc" = "Enable"
-								register "usb.usb3_gen" = "XhciGen2x2"
+								register "usb.usb3_gen" = "XhciGen2x1"
 								register "usb.port_gen" = "{
 									XhciPortGen1,
 									XhciPortGen1,
@@ -602,7 +639,7 @@ chip soc/amd/phoenix
 											device usb 3.4 alias prom21_usb3_port5 on end
 										end
 										chip drivers/usb/acpi
-											device usb 3.5 alias prom21_usb3_port6 off end
+											device usb 3.5 alias prom21_usb3_port6 on end
 										end
 									end
 								end
