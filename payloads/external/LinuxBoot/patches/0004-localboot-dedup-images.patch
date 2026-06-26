@@ -1,0 +1,33 @@
+diff --git a/pkg/boot/localboot/localboot.go b/pkg/boot/localboot/localboot.go
+index ca776889..b9894739 100644
+--- a/pkg/boot/localboot/localboot.go
++++ b/pkg/boot/localboot/localboot.go
+@@ -105,6 +105,28 @@ func Localboot(l ulog.Logger, blockDevs block.BlockDevices, mp *mount.Pool) ([]b
+ 		}
+ 	}
+ 
++	images = dedupImages(images)
+ 	sort.Sort(byRank(images))
+ 	return images, nil
+ }
++
++// dedupImages removes images with a duplicate menu label, keeping the first.
++// Installer media often ship both a GRUB and a syslinux/isolinux config for the
++// same kernels, so parse() collects each entry more than once. The two parsers
++// produce slightly different kernel/initrd paths and cmdlines for the same
++// boot, so a content-based key (String()) fails to match them. Key on Label()
++// instead: it is the text shown in the menu, so entries the user cannot tell
++// apart collapse to a single option.
++func dedupImages(images []boot.OSImage) []boot.OSImage {
++	seen := make(map[string]struct{}, len(images))
++	deduped := images[:0]
++	for _, img := range images {
++		key := img.Label()
++		if _, ok := seen[key]; ok {
++			continue
++		}
++		seen[key] = struct{}{}
++		deduped = append(deduped, img)
++	}
++	return deduped
++}
