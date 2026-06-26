@@ -38,6 +38,11 @@ endif
 $(uroot_build): | build/
 	git clone https://$(uroot_package) $(uroot_build)
 	git -C $(uroot_build) checkout --quiet $(CONFIG_LINUXBOOT_UROOT_VERSION)
+	for p in $(CURDIR)/patches/*.patch; do \
+		[ -e "$$p" ] || continue; \
+		echo "  applying u-root patch: $$p"; \
+		git -C $(uroot_build) apply "$$p" || exit 1; \
+	done
 
 $(uroot_build)/u-root: | $(uroot_build)
 	cd $(uroot_build); \
