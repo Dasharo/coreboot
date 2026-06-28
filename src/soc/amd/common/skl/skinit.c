@@ -29,6 +29,7 @@ void platform_prog_run(struct prog *prog)
 	uint16_t bootloader_data_offset;
 	struct slr_table *slrt;
 	struct slr_entry_dl_info *dl_info;
+	struct slr_entry_amd_info *amd_info;
 	struct slr_entry_hdr *end;
 
 	/*
@@ -70,7 +71,12 @@ void platform_prog_run(struct prog *prog)
 	dl_info->bl_context.bootloader = SLR_BOOTLOADER_GRUB; // TODO: BOOTLOADER_COREBOOT?
 	slrt->size += dl_info->hdr.size;
 
-	end = next_entry(dl_info);
+	amd_info = next_entry(dl_info);
+	amd_info->hdr.tag = SLR_ENTRY_AMD_INFO;
+	amd_info->hdr.size = sizeof(*amd_info);
+	slrt->size += amd_info->hdr.size;
+
+	end = next_entry(amd_info);
 	end->tag = SLR_ENTRY_END;
 	end->size = sizeof(struct slr_entry_hdr);
 	slrt->size += end->size;
