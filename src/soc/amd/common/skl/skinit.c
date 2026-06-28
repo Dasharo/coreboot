@@ -41,8 +41,6 @@ void platform_prog_run(struct prog *prog)
 	 */
 	_Static_assert(sizeof(skl) == 4);
 
-	hexdump(prog, sizeof(*prog));
-
 	/*
 	 * APs have to be in wait-for-SIPI state for at least 1000 cycles before
 	 * SKINIT. Send INIT now and assume that loading SKL from CBFS is long
@@ -51,13 +49,16 @@ void platform_prog_run(struct prog *prog)
 	lapic_send_ipi_others(LAPIC_INT_LEVELTRIG | LAPIC_INT_ASSERT | LAPIC_MT_INIT);
 
 	skl = memalign(64*KiB, 64*KiB);
+	if (!skl)
+		die("Could not reserve memory for DRTM\n");
 
-	cbfs_load(CONFIG_CBFS_PREFIX "/drtm_payload", skl, 64*KiB);
+	memset(slrt, 0, 64*KiB - (skl - (void *)slrt));
+
+	if (!cbfs_load(CONFIG_CBFS_PREFIX "/drtm_payload", skl, 64*KiB))
+		die("Could not load DRTM payload\n");
 
 	bootloader_data_offset = ((struct sl_header *)skl)->bootloader_data_offset;
 	slrt = (struct slr_table *)(skl + bootloader_data_offset);
-
-	memset(slrt, 0, 64*KiB - (skl - (void *)slrt));
 
 	slrt->magic = SLR_TABLE_MAGIC;
 	slrt->revision = SLR_TABLE_REVISION;
