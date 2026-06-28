@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cbfs.h>
+#include <cbmem.h>
 #include <cpu/x86/lapic.h>
 #include <program_loading.h>
 #include <stdlib.h>
@@ -30,7 +31,9 @@ void platform_prog_run(struct prog *prog)
 	struct slr_table *slrt;
 	struct slr_entry_dl_info *dl_info;
 	struct slr_entry_amd_info *amd_info;
+	struct slr_entry_log_info *log_info;
 	struct slr_entry_hdr *end;
+	const struct cbmem_entry *ce;
 
 	/*
 	 * Check if we're on 32b platform.
@@ -76,7 +79,19 @@ void platform_prog_run(struct prog *prog)
 	amd_info->hdr.size = sizeof(*amd_info);
 	slrt->size += amd_info->hdr.size;
 
-	end = next_entry(amd_info);
+	log_info = next_entry(amd_info);
+	log_info->hdr.tag = SLR_ENTRY_LOG_INFO;
+	log_info->hdr.size = sizeof(*log_info);
+	slrt->size += log_info->hdr.size;
+	ce = cbmem_entry_find(CBMEM_ID_TPM2_TCG_LOG);
+	if (ce) {
+		log_info->addr = (uintptr_t)cbmem_entry_start(ce);
+		log_info->size = cbmem_entry_size(ce);
+		log_info->format = SLR_DRTM_TPM20_LOG; // TODO: Support 1.2?
+	} else
+		printk(BIOS_ERR, "Could not find TPM2 CBMEM Entry\n");
+
+	end = next_entry(log_info);
 	end->tag = SLR_ENTRY_END;
 	end->size = sizeof(struct slr_entry_hdr);
 	slrt->size += end->size;
