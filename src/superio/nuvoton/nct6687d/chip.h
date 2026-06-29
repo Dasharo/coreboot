@@ -190,6 +190,7 @@ struct nct6687d_smbus_sensor {
 	uint8_t	sensor_cmd;
 	uint8_t	dev_addr;
 	uint8_t	dev_cmd;
+	uint8_t protocol;
 };
 
 struct nct6687d_dts_sensor_config {
