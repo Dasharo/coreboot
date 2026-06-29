@@ -184,6 +184,9 @@ static void init_smbus_master(const struct nct6687d_smbus_sensor *smbus_sensor)
 		hwm_reg_write(SMBUS_MASTER_DEV_ADDR_REG, smbus_sensor->dev_addr);
 		hwm_reg_write(SMBUS_MASTER_CMD_REG, smbus_sensor->dev_cmd);
 	}
+
+	hwm_reg_write(SMBUS_MASTER_PROTOCOL_SEL_REG, smbus_sensor->protocol);
+
 	hwm_reg_set_bits(SMBUS_MASTER_CFG1_REG, SMB_MASTER_EN);
 }
 
