@@ -86,6 +86,15 @@ struct bpm_hash_list {
 	struct hash_struct hashes[];
 } __packed;
 
+/*
+ * post_ibb_hash and obb_hash below are deprecated and per the spec always carry
+ * a zero-length digest ({ TPM_ALG_NULL, 0 }), so embedding the hash_struct (which
+ * ends in a flexible array) mid-structure is safe here.  Silence GCC's
+ * flex-array-member-not-at-end for these two spec layouts.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wflex-array-member-not-at-end"
+
 /* IBB Segment Element (upper part) */
 struct bpm_ibbs {
 	char structure_id[8];  /* "__IBBS__" */
@@ -116,6 +125,8 @@ struct bpm_ibbs_bottom {
 	uint8_t segment_count;
 	/* ibb_segments[segment_count]; */
 } __packed;
+
+#pragma GCC diagnostic pop
 
 /* KMHASH_STRUCT */
 struct km_hash {
