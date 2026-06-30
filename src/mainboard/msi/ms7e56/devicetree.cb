@@ -824,15 +824,15 @@ chip soc/amd/phoenix
 				register "sensor_filter_en[20]" = "true"
 				register "sensor_filter_en[23]" = "true"
 
-
 				register "smbus_sensor.sensor_idx" = "4"
 				register "smbus_sensor.sensor_en" = "true"
-				register "smbus_sensor.sensor_cmd" = "0x91"
+				register "smbus_sensor.sensor_cmd" = "0x40"
 				register "smbus_sensor.sensor_addr" = "0x96"
 				register "smbus_sensor.baud_rate" = "BAUD_100K"
 				register "smbus_sensor.port_sel" = "3"
 				register "smbus_sensor.dev_addr" = "0x78"
 				register "smbus_sensor.dev_cmd" = "0xe"
+				register "smbus_sensor.protocol" = "0x82"
 
 				register "fan_default_val" = "60"
 
@@ -933,7 +933,6 @@ chip soc/amd/phoenix
 				register "FAN6.smart_fan.cut_off_delay" = "5"
 				register "FAN6.smart_fan.step_up_time" = "1"
 				register "FAN6.smart_fan.step_down_time" = "1"
-
 
 				device pnp 4e.1 off end		# Parallel port
 				device pnp 4e.2 on		# COM1
