@@ -378,6 +378,17 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir)
 	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
 
+# The edk2 payload is cloned into its nested workspace (workspace/<org>/) only
+# as a side effect of building the payload binary (recursive make in
+# payloads/external/edk2).  On a fresh tree that .git does not exist yet and no
+# other rule produces it, so the order-only prerequisite below would fail with
+# "No rule to make target".  Tie it to the payload binary so building the
+# payload satisfies it.  The other payloads are submodules already checked out
+# at parse time, so they need no such rule.
+ifeq ($(CONFIG_PAYLOAD_EDK2),y)
+$(payload-git-dir-y)/.git: $(CONFIG_PAYLOAD_FILE) ;
+endif
+
 # Order-only dep on the .git dir ensures the payload is cloned before we try
 # to read it.  We do NOT depend on the payload binary ($(CONFIG_PAYLOAD_FILE))
 # because: (a) the recipe never reads the binary, only .git; (b) with make -B
