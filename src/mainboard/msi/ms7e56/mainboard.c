@@ -3,13 +3,18 @@
 #include <acpi/acpi_device.h>
 #include <amdblocks/acpi.h>
 #include <amdblocks/amd_pci_util.h>
+#include <bootstate.h>
 #include <cbmem.h>
 #include <commonlib/helpers.h>
 #include <device/azalia_device.h>
 #include <device/device.h>
+#include <device/pnp_def.h>
 #include <drivers/amd/opensil/opensil.h>
 #include <static.h>
 #include <stdio.h>
+#include <superio/nuvoton/nct6687d/nct6687d.h>
+#include <superio/nuvoton/nct6687d/nct6687d_gpio.h>
+#include <superio/nuvoton/nct6687d/nct6687d_hwm.h>
 #include <types.h>
 #include "gpio.h"
 
@@ -94,6 +99,7 @@ static void mainboard_init(void *chip_info)
 	struct device *psp = (struct device *)DEV_PTR(crypto);
 	struct memory_info *mem_info;
 
+
 	mainboard_program_gpios();
 
 	memcpy(&phx_hda_audio_ops, &default_azalia_audio_ops,
@@ -148,3 +154,47 @@ void smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17
 	snprintf(locator, sizeof(locator), "BANK %d", dimm->bank_locator);
 	t->bank_locator = smbios_add_string(t->eos, locator);
 }
+
+static void nct6687d_misc_init(void *unused)
+{
+	struct device *ec_dev = dev_find_slot_pnp(0x4e, NCT6687D_EC);
+	const struct resource *res;
+	uint16_t ec_iobase;
+
+	if (!ec_dev)
+		return;
+
+	res = probe_resource(ec_dev, PNP_IDX_IO0);
+	if (!res || !res->base)
+		return;
+
+	ec_iobase = (uint16_t)res->base;
+
+	hwm_reg_write(EC_PAGE_REG(2, 0x42), 0x40);
+	hwm_reg_write(EC_PAGE_REG(2, 0x43), 0x40);
+	hwm_reg_write(EC_PAGE_REG(2, 0x44), 0x40);
+	hwm_reg_write(EC_PAGE_REG(2, 0x45), 0x40);
+
+	hwm_reg_write(EC_PAGE_REG(2, 0x62), 0x99);
+	hwm_reg_write(EC_PAGE_REG(2, 0x63), 0x99);
+	hwm_reg_write(EC_PAGE_REG(2, 0x64), 0x99);
+	hwm_reg_write(EC_PAGE_REG(2, 0x65), 0x99);
+
+	hwm_reg_write(EC_PAGE_REG(2, 0xa8), 0x10);
+
+	hwm_reg_write(SENSOR_INT_CFG_REG(2), TMPIN_INT_OVT_COMP_MODE);
+	hwm_reg_write(TMPIN_HYSTERSIS_REG(2), 0x5a);
+	hwm_reg_write(TMPIN_OVERTEMP_REG(2), 0x7d);
+
+	hwm_reg_write(SENSOR_INT_CFG_REG(31), TMPIN_INT_OVT_COMP_MODE);
+	hwm_reg_write(TMPIN_HYSTERSIS_REG(31), 0x5a);
+	hwm_reg_write(TMPIN_OVERTEMP_REG(31), 0x7d);
+
+	hwm_reg_write(EC_PAGE_REG(3, 0xda), 0x04);
+	hwm_reg_write(EC_PAGE_REG(7, 0x63), 0x80);
+
+	/* Turn off GPIO54: EZ Debug LED - CPU */
+	nct6687d_gpio_set(ec_iobase, 54, 0, NCT6687D_GPIO_OPENDRAIN);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, nct6687d_misc_init, NULL);
