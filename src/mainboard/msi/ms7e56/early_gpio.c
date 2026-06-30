@@ -52,9 +52,6 @@ static const struct soc_amd_gpio gpio_set_stage_reset[] = {
 	PAD_NF(GPIO_19, SMBUS1_SCL, PULL_NONE),
 	/* SMBUS1_SDA */
 	PAD_NF(GPIO_20, SMBUS1_SDA, PULL_NONE),
-
-	/* EZ debug LED - DRAM */
-	PAD_GPO(GPIO_78, LOW),
 };
 
 void mainboard_program_early_gpios(void)
