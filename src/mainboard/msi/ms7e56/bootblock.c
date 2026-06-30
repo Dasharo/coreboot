@@ -10,6 +10,8 @@
 #include <superio/nuvoton/common/nuvoton.h>
 #include <superio/nuvoton/nct6687d/nct6687d.h>
 #include <superio/nuvoton/nct6687d/nct6687d_ec.h>
+#include <superio/nuvoton/nct6687d/nct6687d_gpio.h>
+#include <gpio.h>
 #include "gpio.h"
 
 #define GPIO_DEV PNP_DEV(0x4e, NCT6687D_GPIO_0_7)
@@ -70,13 +72,14 @@ void bootblock_mainboard_early_init(void)
 
 	/* Replicate vendor settings for multi-function pins in global config LDN */
 	nuvoton_pnp_enter_conf_state(GPIO_DEV);
+	pnp_set_logical_device(GPIO_DEV);
 	pnp_write_config(GPIO_DEV, 0x10, 0xff); // IRQ8-15 level triggered, low
 	pnp_write_config(GPIO_DEV, 0x11, 0xff); // IRQ0-7 level triggered, low
 	pnp_write_config(GPIO_DEV, 0x13, 0xff); // IRQ8-15 level triggered, low
 	pnp_write_config(GPIO_DEV, 0x14, 0xff); // IRQ0-7 level triggered, low
 
 	/* Below are multi-pin function */
-	pnp_write_config(GPIO_DEV, 0x15, 0x0a);
+	pnp_write_config(GPIO_DEV, 0x15, 0xaa);
 	pnp_write_config(GPIO_DEV, 0x1a, 0x82);
 	pnp_write_config(GPIO_DEV, 0x1b, 0x02);
 	pnp_write_config(GPIO_DEV, 0x1d, 0x00);
@@ -102,6 +105,9 @@ void bootblock_mainboard_early_init(void)
 	/* Configure V_COMPn detection */
 	pnp_unset_and_set_config(POWER_DEV, 0xf0, 0xf2, 0x70);
 
+	/* Deep sleep delay time */
+	pnp_write_config(POWER_DEV, 0xe2, 0x06);
+
 	/* Configure yellow and green LED */
 	pnp_write_config(POWER_DEV, 0xe7, 0xa0);
 	pnp_write_config(POWER_DEV, 0xe8, 0x07);
@@ -116,6 +122,17 @@ void bootblock_mainboard_early_init(void)
 	nct6687d_ec_and_or_page(EC_IO_BASE, 0, 0x34, 0xc0, 0x00);
 	nct6687d_ec_and_or_page_ff(EC_IO_BASE, 8, 0x00, 0xff, 0x01);
 
+	/* GPIO31: WIFI_BTDIS# */
+	nct6687d_gpio_set(EC_IO_BASE, 31, 1, NCT6687D_GPIO_OPENDRAIN);
+	/* Turn off GPIO50: EZ Debug LED - VGA */
+	nct6687d_gpio_set(EC_IO_BASE, 50, 1, NCT6687D_GPIO_OPENDRAIN);
+	/* Turn off GPIO51: EZ Debug LED - BOOT */
+	nct6687d_gpio_set(EC_IO_BASE, 51, 1, NCT6687D_GPIO_OPENDRAIN);
+	/* Turn on GPIO54: EZ Debug LED - CPU */
+	nct6687d_gpio_set(EC_IO_BASE, 54, 1, NCT6687D_GPIO_OPENDRAIN);
+	/* GPIO82: Set same configuration as vendor BIOS */
+	nct6687d_gpio_set(EC_IO_BASE, 82, 1, NCT6687D_GPIO_PUSHPULL);
+
 	nuvoton_pnp_exit_conf_state(EC_DEV);
 
 	if (CONFIG(CONSOLE_SERIAL))
@@ -124,4 +141,10 @@ void bootblock_mainboard_early_init(void)
 
 void bootblock_mainboard_init(void)
 {
+	static const struct soc_amd_gpio ez_debug_led[] = {
+		/* EZ debug LED - DRAM */
+		PAD_GPO(GPIO_78, LOW),
+	};
+
+	gpio_configure_pads(ez_debug_led, ARRAY_SIZE(ez_debug_led));
 }
