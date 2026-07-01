@@ -5,6 +5,7 @@
 cbfs-files-$(CONFIG_STM) += stm.bin
 stm.bin-file := $(CONFIG_STM_BINARY_FILE)
 stm.bin-type := raw
+stm.bin-compression := LZMA
 
 ramstage-$(CONFIG_STM) += SmmStm.c
 ramstage-$(CONFIG_STM) += StmPlatformSmm.c
