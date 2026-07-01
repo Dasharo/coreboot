@@ -336,4 +336,13 @@ bool get_ibecc_option(bool ibecc_default);
  */
 bool dasharo_is_disk_capsules_boot(void);
 
+/* Looks Dasharo/"STM" variable to check SMI Transfer Monitor (STM) should be
+ * enabled.
+ *
+ * Result:
+ *  - true  - STM enabled
+ *  - false - STM disabled
+ */
+bool get_stm_option(void);
+
 #endif /* DASHARO_OPTIONS_H */
