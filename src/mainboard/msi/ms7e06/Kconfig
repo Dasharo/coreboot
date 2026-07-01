@@ -94,5 +94,20 @@ config INTEL_FIT_LOC
 
 endif
 
+if STM
+
+config IED_REGION_SIZE
+	default 0x0
+
+config SMM_TSEG_SIZE
+	default 0x1000000
+
+config MSEG_SIZE
+	default 0xCD0000
+
+config STM_HEAPSIZE
+	default 0xB47000
+
+endif
 
 endif
