@@ -460,6 +460,10 @@ BUILD_STR += -D USE_AMD_PLATFORM_GOP=TRUE
 BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.AmdVbiosOptionRomVendorId=$(CONFIG_EDK2_VGA_BIOS_VENDOR_ID)
 BUILD_STR += --pcd gDasharoPayloadPkgTokenSpaceGuid.AmdVbiosOptionRomDeviceId=$(CONFIG_EDK2_VGA_BIOS_DEVICE_ID)
 endif
+# PcdShowSecurityStmOption = FALSE
+ifeq ($(CONFIG_STM),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSecurityStmOption=TRUE
+endif
 
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVersionString=$(CONFIG_EDK2_FW_VERSION)
 BUILD_STR += --pcd gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor=$(CONFIG_EDK2_FW_VENDOR)
