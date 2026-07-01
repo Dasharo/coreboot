@@ -559,6 +559,16 @@ bool get_ibecc_option(bool ibecc_default)
 	return ibecc_en;
 }
 
+bool get_stm_option(void)
+{
+	bool stm_enabled = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE) && CONFIG(STM))
+		read_bool_var("STM", &stm_enabled);
+
+	return stm_enabled;
+}
+
 bool dasharo_is_disk_capsules_boot(void)
 {
 	if (!CONFIG(EDK2_CAPSULES_V2))

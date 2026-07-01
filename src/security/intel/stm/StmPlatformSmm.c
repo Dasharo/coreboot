@@ -7,6 +7,7 @@
 #include <cpu/x86/gdt.h>
 #include <cpu/x86/smm.h>
 #include <cpu/x86/msr.h>
+#include <dasharo/options.h>
 
 #include <cbfs.h>
 #include <console/console.h>
@@ -142,8 +143,15 @@ void stm_setup(uintptr_t mseg, int cpu, uintptr_t smbase,
 	msr_t InitMseg;
 	msr_t MsegChk;
 	msr_t vmx_basic;
+	static int stm_en = -1;
 
 	uintptr_t addr_calc;  // used to calculate the stm resource heap area
+
+	if (stm_en == -1)
+		stm_en = (int)get_stm_option();
+
+	if (stm_en == 0)
+		return;
 
 	printk(BIOS_DEBUG, "STM: set up for cpu %d\n", cpu);
 
