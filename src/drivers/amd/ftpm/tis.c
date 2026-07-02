@@ -5,6 +5,7 @@
 #include <security/tpm/tis.h>
 #include <acpi/acpigen.h>
 #include <device/device.h>
+#include <drivers/tpm/tpm_ppi.h>
 #include <security/tpm/tss.h>
 #include <endian.h>
 #include <smbios.h>
@@ -114,6 +115,9 @@ static void crb_tpm_fill_ssdt(const struct device *dev)
 	};
 
 	acpigen_write_dsm_uuid_arr(ids, ARRAY_SIZE(ids));
+
+	if (!CONFIG(CHROMEOS) && CONFIG(TPM_PPI))
+		tpm_ppi_acpi_fill_ssdt(dev);
 
 	acpigen_pop_len(); /* Device */
 	acpigen_pop_len(); /* Scope */
