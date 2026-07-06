@@ -103,6 +103,6 @@ void stm_gen_4g_pagetable_ia32(uint32_t pagetable_base);
  *
  *  @param pagetable_base        The page table base in MSEG
  */
-void stm_gen_4g_pagetable_x64(uint32_t pagetable_base);
+void stm_gen_4g_pagetable_x64(uintptr_t pagetable_base);
 
 #endif
