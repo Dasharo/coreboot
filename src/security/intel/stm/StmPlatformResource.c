@@ -27,7 +27,7 @@ static STM_RSC_MEM_DESC rsc_tseg_memory = {{MEM_RANGE, sizeof(STM_RSC_MEM_DESC)}
 // Flash part
 static STM_RSC_MEM_DESC rsc_spi_memory = {
 				{MEM_RANGE, sizeof(STM_RSC_MEM_DESC)},
-				0xFE000000,
+				0xFF000000,
 				0x01000000,
 				FULL_ACCS};
 
