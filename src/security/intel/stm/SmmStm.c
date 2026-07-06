@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 
 #include <console/console.h>
+#include <cpu/cpu.h>
 #include <cpu/x86/cr.h>
 #include <cpu/x86/mp.h>
 #include <cpu/x86/msr.h>
@@ -580,38 +581,69 @@ static uint32_t get_vmcs_size(void)
 
 /*
  *  Create 4G page table for STM.
- *  2M PTEs for x86_64 or 2M PTEs for x86_32.
  *
  *  @param pageable_base        The page table base in MSEG
  */
 void stm_gen_4g_pagetable_x64(uintptr_t pagetable_base)
 {
+	uint32_t pml4_index;
 	uint32_t index;
 	uint64_t sub_index;
+	uint32_t num_pml4;
+	uint32_t num_pdp;
 	uint64_t *pde;
 	uint64_t *pte;
 	uint64_t *pml4;
+	uint64_t page_addr;
+	uint32_t addr_bits = cpu_phys_address_size();
+	bool page1G = false;
+
+	if (cpu_cpuid_extended_level() >= 0x80000001) {
+		if (cpuid_edx(0x80000001) & (1 << 26))
+			page1G = true;
+	}
+
+	/* Do not use 5-level paging for now */
+	if (addr_bits > 48)
+		addr_bits = 48;
+
+	num_pml4 = 1 << (addr_bits - 39);
+	addr_bits = 39;
+	num_pdp = 1 << (addr_bits - 30);
+
+	page_addr = 0;
 
 	pml4 = (uint64_t *)pagetable_base;
 	pagetable_base += PTP_SIZE;
-	*pml4 = pagetable_base | IA32_PG_RW | IA32_PG_P;
 
-	pde = (uint64_t *)pagetable_base;
-	pagetable_base += PTP_SIZE;
-	pte = (uint64_t *)pagetable_base;
+	for (pml4_index = 0; pml4_index < num_pml4; pml4_index++, pml4++) {
+		*pml4 = pagetable_base | IA32_PG_RW | IA32_PG_P;
 
-	for (index = 0; index < 4; index++) {
-		*pde = pagetable_base | IA32_PG_RW | IA32_PG_P;
-		pde++;
+		pde = (uint64_t *)pagetable_base;
 		pagetable_base += PTP_SIZE;
 
-		for (sub_index = 0; sub_index < SIZE_4KB / sizeof(*pte);
-		     sub_index++) {
-			*pte = (((index << 9) + sub_index) << 21) | IA32_PG_PS
-			       | IA32_PG_RW | IA32_PG_P;
-			pte++;
+		if (page1G) {
+			for (index = 0; index < (SIZE_4KB / sizeof(*pde));
+			    index++, pde++, page_addr += GiB) {
+				*pde = page_addr | IA32_PG_PS | IA32_PG_RW | IA32_PG_P;
+			}
+		} else {
+			for (index = 0;
+			     index < (num_pml4 == 1 ? num_pdp : SIZE_4KB / sizeof(*pde));
+			     index++, pde++) {
+				*pde = pagetable_base | IA32_PG_RW | IA32_PG_P;
+				pte = (uint64_t *)pagetable_base;
+				pagetable_base += PTP_SIZE;
+				for (sub_index = 0; sub_index < SIZE_4KB / sizeof(*pte);
+				     sub_index++, pte++, page_addr += (2 * MiB)) {
+					*pte = page_addr | IA32_PG_PS | IA32_PG_RW | IA32_PG_P;
+				}
+			}
+			memset(pde, 0, (512 - index) * sizeof(*pde));
 		}
 	}
+
+	memset(pml4, 0, (512 - pml4_index) * sizeof(*pml4));
 }
 
 /*
