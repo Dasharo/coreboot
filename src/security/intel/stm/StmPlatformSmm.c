@@ -49,8 +49,7 @@ int load_stm_image(uintptr_t mseg)
 
 	stm_header = mseg_base;
 
-	stm_gen_4g_pagetable_x64((uint32_t)mseg_base
-				 + stm_header->hw_stm_hdr.cr3_offset);
+	stm_gen_4g_pagetable_x64((uintptr_t)mseg_base + stm_header->hw_stm_hdr.cr3_offset);
 
 	// Debug stuff
 	printk(BIOS_DEBUG,
@@ -59,9 +58,9 @@ int load_stm_image(uintptr_t mseg)
 	       stm_header->hw_stm_hdr.monitor_features,
 	       stm_header->hw_stm_hdr.cr3_offset);
 	printk(BIOS_DEBUG,
-	       "STM: Header-StaticImageSize: %d  Cr3Location: 0x%08x\n",
+	       "STM: Header-StaticImageSize: %d  Cr3Location: 0x%08lx\n",
 	       stm_header->sw_stm_hdr.static_image_size,
-	       ((uint32_t)mseg_base + stm_header->hw_stm_hdr.cr3_offset));
+	       ((uintptr_t)mseg_base + stm_header->hw_stm_hdr.cr3_offset));
 
 	status = 0; // always return good for now
 

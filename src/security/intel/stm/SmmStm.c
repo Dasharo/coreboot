@@ -448,7 +448,7 @@ static uint32_t get_resource_size(STM_RSC *resource_list, uint32_t num_entries)
 		resource =
 			(STM_RSC *)((void *)resource + resource->header.length);
 	}
-	return (uint32_t)((uint32_t)resource - (uint32_t)resource_list);
+	return (uint32_t)((uintptr_t)resource - (uintptr_t)resource_list);
 }
 
 /*
@@ -584,21 +584,21 @@ static uint32_t get_vmcs_size(void)
  *
  *  @param pageable_base        The page table base in MSEG
  */
-void stm_gen_4g_pagetable_x64(uint32_t pagetable_base)
+void stm_gen_4g_pagetable_x64(uintptr_t pagetable_base)
 {
 	uint32_t index;
-	uint32_t sub_index;
+	uint64_t sub_index;
 	uint64_t *pde;
 	uint64_t *pte;
 	uint64_t *pml4;
 
-	pml4 = (uint64_t *)(uint32_t)pagetable_base;
+	pml4 = (uint64_t *)pagetable_base;
 	pagetable_base += PTP_SIZE;
 	*pml4 = pagetable_base | IA32_PG_RW | IA32_PG_P;
 
-	pde = (uint64_t *)(uint32_t)pagetable_base;
+	pde = (uint64_t *)pagetable_base;
 	pagetable_base += PTP_SIZE;
-	pte = (uint64_t *)(uint32_t)pagetable_base;
+	pte = (uint64_t *)pagetable_base;
 
 	for (index = 0; index < 4; index++) {
 		*pde = pagetable_base | IA32_PG_RW | IA32_PG_P;
