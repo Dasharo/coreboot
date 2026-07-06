@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <fsp/soc_binding.h>
+#include <fsp/fsp_status_x64_to_x86.h>
 #include <soc/intel/common/mma.h>
 
 #define FSP_SUCCESS	EFI_SUCCESS

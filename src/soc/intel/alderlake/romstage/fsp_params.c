@@ -526,8 +526,13 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	if (CONFIG(FSP_USES_CB_DEBUG_EVENT_HANDLER)) {
 		if (CONFIG(CONSOLE_SERIAL) && CONFIG(FSP_ENABLE_SERIAL_DEBUG)) {
 			enum fsp_log_level log_level = fsp_map_console_log_level();
+#if CONFIG(USE_X86_64_SUPPORT)
+			arch_upd->FspEventHandler = (UINT32)(EFI_PHYSICAL_ADDRESS)
+					fsp_debug_event_handler;
+#else
 			arch_upd->FspEventHandler = (UINT32)((FSP_EVENT_HANDLER *)
 					fsp_debug_event_handler);
+#endif
 			/* Set Serial debug message level */
 			m_cfg->PcdSerialDebugLevel = log_level;
 			/* Set MRC debug level */

@@ -771,8 +771,14 @@ static void fill_fsps_uart_params(FSP_S_CONFIG *s_cfg,
 {
 	if (CONFIG(FSP_USES_CB_DEBUG_EVENT_HANDLER) && CONFIG(CONSOLE_SERIAL) &&
 			 CONFIG(FSP_ENABLE_SERIAL_DEBUG))
-		s_cfg->FspEventHandler = (UINT32)((FSP_EVENT_HANDLER *)
-				fsp_debug_event_handler);
+#if CONFIG(USE_X86_64_SUPPORT)
+	s_cfg->FspEventHandler = (UINT32)(EFI_PHYSICAL_ADDRESS)
+			fsp_debug_event_handler;
+#else
+	s_cfg->FspEventHandler = (UINT32)((FSP_EVENT_HANDLER *)
+			fsp_debug_event_handler);
+#endif
+
 	/* PCH UART selection for FSP Debug */
 	s_cfg->SerialIoDebugUartNumber = CONFIG_UART_FOR_CONSOLE;
 	ASSERT(ARRAY_SIZE(s_cfg->SerialIoUartAutoFlow) > CONFIG_UART_FOR_CONSOLE);
@@ -1347,7 +1353,7 @@ static void wait_for_panel_power_cycle_done(const struct soc_intel_alderlake_con
 		return;
 
 	bar0 = pci_read_config32(SA_DEV_IGD, PCI_BASE_ADDRESS_0);
-	mmio = (void *)(bar0 & ~PCI_BASE_ADDRESS_MEM_ATTR_MASK);
+	mmio = (void *)((uintptr_t)bar0 & ~PCI_BASE_ADDRESS_MEM_ATTR_MASK);
 	if (!mmio)
 		return;
 
@@ -1434,10 +1440,11 @@ void soc_load_logo_by_fsp(FSPS_UPD *supd)
 	if (s_cfg->LidStatus == 0)
 		config->panel_orientation = LB_FB_ORIENTATION_NORMAL;
 
-	fsp_load_and_convert_bmp_to_gop_blt(&supd->FspsConfig.LogoPtr,
+	fsp_load_and_convert_bmp_to_gop_blt(
+			 (efi_uintn_t *)&supd->FspsConfig.LogoPtr,
 			 &supd->FspsConfig.LogoSize,
-			 &supd->FspsConfig.BltBufferAddress,
-			 &supd->FspsConfig.BltBufferSize,
+			 (efi_uintn_t *)&supd->FspsConfig.BltBufferAddress,
+			 (efi_uintn_t *)&supd->FspsConfig.BltBufferSize,
 			 &supd->FspsConfig.LogoPixelHeight,
 			 &supd->FspsConfig.LogoPixelWidth,
 			 config->panel_orientation);
