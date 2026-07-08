@@ -89,10 +89,13 @@ int psp_notify_smm(void)
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_SMI)) {
 		/*
-		 * If ROM Armor 3 is compiled but disabled by variable, we have to configure
-		 * PSP SMIs so that other things will work, like fTPM.
+		 * If ROM Armor 3 is compiled but disabled by variable, we
+		 * have to configure PSP SMIs so that other things will work,
+		 * like fTPM. PSP SMIs have to be configured in every other
+		 * case too.
 		 */
-		if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3) && !is_smm_bwp_permitted()) {
+		if (!(CONFIG(SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3) &&
+		      is_smm_bwp_permitted() && rom_armor_enforced)) {
 			configure_psp_smi();
 			enable_psp_smi();
 
