@@ -43,7 +43,7 @@ usage() {
   echo -e "\tasrock_spc741d8        - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
 }
 
-DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.6.0"}
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.1"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
