@@ -140,6 +140,9 @@ static void lpc_read_resources(struct device *dev)
 	/* FCH ALINK to AHB bridge and FCH AHB devices behind it */
 	mmio_range(dev, idx++, ALINK_AHB_ADDRESS, 0x20000);
 
+	/* Watchdog */
+	mmio_range(dev, idx++, 0xfeb00000, 8);
+
 	compact_resources(dev);
 }
 
