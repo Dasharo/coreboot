@@ -133,6 +133,9 @@ static void lpc_read_resources(struct device *dev)
 	/* HPET */
 	mmio_range(dev, idx++, HPET_BASE_ADDRESS, 4 * KiB);
 
+	/* Watchdog */
+	mmio_range(dev, idx++, 0xfeb00000, 8);
+
 	compact_resources(dev);
 }
 
