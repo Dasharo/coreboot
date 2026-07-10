@@ -114,10 +114,10 @@ static void crb_tpm_fill_ssdt(const struct device *dev)
 			ARRAY_SIZE(tpm_start_callbacks), NULL),
 	};
 
-	acpigen_write_dsm_uuid_arr(ids, ARRAY_SIZE(ids));
-
 	if (!CONFIG(CHROMEOS) && CONFIG(TPM_PPI))
-		tpm_ppi_acpi_fill_ssdt(dev);
+		tpm_ppi_acpi_fill_ssdt(dev, ids, ARRAY_SIZE(ids));
+	else
+		acpigen_write_dsm_uuid_arr(ids, ARRAY_SIZE(ids));
 
 	acpigen_pop_len(); /* Device */
 	acpigen_pop_len(); /* Scope */
