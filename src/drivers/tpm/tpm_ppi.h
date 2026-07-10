@@ -3,13 +3,18 @@
 #ifndef _TPM_PPI_H_
 #define _TPM_PPI_H_
 
+#include <acpi/acpigen.h>
 #include <device/device.h>
 #include <boot/coreboot_tables.h>
 
 #if CONFIG(HAVE_ACPI_TABLES)
-void tpm_ppi_acpi_fill_ssdt(const struct device *dev);
+void tpm_ppi_acpi_fill_ssdt(const struct device *dev,
+			    struct dsm_uuid *extra_dsm_uuid,
+			    size_t extra_dsm_uuid_count);
 #else
-static inline void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
+static inline void tpm_ppi_acpi_fill_ssdt(const struct device *dev,
+					  struct dsm_uuid *extra_dsm_uuid,
+					  size_t extra_dsm_uuid_count)
 {
 }
 #endif
