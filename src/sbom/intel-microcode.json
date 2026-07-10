@@ -12,6 +12,12 @@
       "summary": "Microcode Updates for Intel Processors"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files/blob/main/license"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",

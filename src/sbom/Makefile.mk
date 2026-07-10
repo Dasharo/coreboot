@@ -39,6 +39,7 @@ CONFIG_EDK2_REPOSITORY     := $(call strip_quotes, $(CONFIG_EDK2_REPOSITORY))
 CONFIG_SBOM_EDK2_PLATFORMS_PATH := $(call strip_quotes, $(CONFIG_SBOM_EDK2_PLATFORMS_PATH))
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
 CONFIG_PAYLOAD_FILE        := $(call strip_quotes, $(CONFIG_PAYLOAD_FILE))
+CONFIG_SBOM_MANUFACTURER   := $(call strip_quotes, $(CONFIG_SBOM_MANUFACTURER))
 
 # Select the correct payload directory for the used payload. Ideally we could just make this
 # a one-liner, but since the payload is generated externally (with an extra make command), we
@@ -217,10 +218,13 @@ $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $
 	git_comm_hash=$$(git log -n 1 --format=%H);\
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;\
 	$(build-dir)/goswid add-license -o $@ -i $@ $(coreboot-licenses)
+	if [ -n "$(CONFIG_SBOM_MANUFACTURER)" ]; then \
+		sed -i 's#"entity": \[#"entity": [ { "entity-name": "$(CONFIG_SBOM_MANUFACTURER)", "role": [ "softwareCreator", "maintainer" ] },#' $@; \
+	fi
 
 # Extract ME toolkit version from the ME binary. In Dasharo blobs the version
 # is stored as an ASCII string like: "ME16.1.40.2765".
-$(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(CONFIG_ME_BIN_PATH) | $(build-dir)
+$(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(CONFIG_ME_BIN_PATH) | $(build-dir) $(build-dir)/goswid
 	cp $< $@
 	set -e; \
 	me_ver=$$(strings -a "$(CONFIG_ME_BIN_PATH)" \
@@ -230,6 +234,11 @@ $(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(CONFIG_ME_BIN_PATH) | $(b
 		sed -i "s/<software_version>/$$me_ver/" $@; \
 	else \
 		sed -i "/software-version/d" $@; \
+	fi
+	if [ -s "$(CONFIG_ME_BIN_PATH)" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "$(notdir $(CONFIG_ME_BIN_PATH))" \
+			--hash "$$(sha256sum "$(CONFIG_ME_BIN_PATH)" | cut -d' ' -f1)"; \
 	fi
 
 
@@ -248,6 +257,11 @@ $(build-dir)/intel-ifd.json: $(src-dir)/intel-ifd.json $(CONFIG_IFD_BIN_PATH) | 
 		       -e "s/<colloquial_version>/$$ifd_tree_hash/" $@; \
 	else \
 		sed -i -e "/software-version/d" -e "/colloquial-version/d" $@; \
+	fi
+	if [ -s "$(CONFIG_IFD_BIN_PATH)" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "$(notdir $(CONFIG_IFD_BIN_PATH))" \
+			--hash "$$(sha256sum "$(CONFIG_IFD_BIN_PATH)" | cut -d' ' -f1)"; \
 	fi
 
 # Extract EC firmware version from the EC binary.  The version string is
@@ -321,15 +335,18 @@ else
 endif
 ifneq ($(CONFIG_FSP_S_FILE),)
 	echo "    SBOM      Adding FSP-S"
-	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-S"
+	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-S" \
+		$(if $(wildcard $(CONFIG_FSP_S_FILE)),--hash "$$(sha256sum "$(CONFIG_FSP_S_FILE)" | cut -d' ' -f1)")
 endif
 ifneq ($(CONFIG_FSP_T_FILE),)
 	echo "    SBOM      Adding FSP-T"
-	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-T"
+	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-T" \
+		$(if $(wildcard $(CONFIG_FSP_T_FILE)),--hash "$$(sha256sum "$(CONFIG_FSP_T_FILE)" | cut -d' ' -f1)")
 endif
 ifneq ($(CONFIG_FSP_M_FILE),)
 	echo "    SBOM      Adding FSP-M"
-	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-M"
+	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-M" \
+		$(if $(wildcard $(CONFIG_FSP_M_FILE)),--hash "$$(sha256sum "$(CONFIG_FSP_M_FILE)" | cut -d' ' -f1)")
 endif
 
 # Extract AGESA version from the binary blob. AGESA binaries often embed a
@@ -380,6 +397,11 @@ $(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/in
 	month=$$(hexdump --skip 11 --length 1 --format '"%02x"' $(word 2,$^));\
 	sed -i "s/<software_version>/$$year-$$month-$$day/" $@
 	#TODO add cpuid (processor family, model, stepping) as extra attribute
+	if [ -s "$(word 2,$^)" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "$(notdir $(word 2,$^))" \
+			--hash "$$(sha256sum "$(word 2,$^)" | cut -d' ' -f1)"; \
+	fi
 
 # Generate per-file SBOM rules for AMD microcode patches.
 # AMD microcode filenames vary widely across SoCs:
@@ -410,14 +432,19 @@ postinclude-hooks += $$(foreach ucode,$$(amd_microcode_bins),$$(eval $$(call amd
 
 vboot-gitdir := 3rdparty/vboot/.git
 
-$(vboot-gitdir):
-	git submodule update --init --checkout 3rdparty/vboot
-
-$(build-dir)/vboot.json: $(src-dir)/vboot.json $(vboot-gitdir)
+$(build-dir)/vboot.json: $(src-dir)/vboot.json $(vboot-gitdir) | $(build-dir) $(build-dir)/goswid
 	cp $< $@
 	git_tree_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%T); \
 	git_comm_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
+	# vboot is built from source as a per-stage static library rather than a
+	# single blob; hash the ramstage vboot_fw.a as the representative artifact
+	# so the component carries integrity info (CRA Annex I hash carry-through).
+	if [ -s "$(VBOOT_LIB_ramstage)" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "$(notdir $(VBOOT_LIB_ramstage))" \
+			--hash "$$(sha256sum "$(VBOOT_LIB_ramstage)" | cut -d' ' -f1)"; \
+	fi
 
 ifeq ($(CONFIG_BUILD_IPXE),y)
 ipxe-gitdir := payloads/external/iPXE/ipxe/.git
@@ -428,27 +455,32 @@ $(ipxe-gitdir): ipxe
 endif
 endif
 
-$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(ipxe-gitdir)
+$(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(ipxe-gitdir) | $(build-dir) $(build-dir)/goswid $(ipxe-swid-ready-dep)
 	cp $< $@
 	git_tree_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%T); \
 	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
+	# Hash the built iPXE ROM image (the artifact linked into CBFS) so the
+	# component carries integrity info (CRA Annex I hash carry-through).
+	if [ -s "payloads/external/iPXE/ipxe/ipxe.rom" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "ipxe.rom" \
+			--hash "$$(sha256sum "payloads/external/iPXE/ipxe/ipxe.rom" | cut -d' ' -f1)"; \
+	fi
 
-<<<<<<< HEAD
-# Order-only dep on the .git dir ensures the payload is cloned before we try
-# to read it.  We do NOT depend on the payload binary ($(CONFIG_PAYLOAD_FILE))
-# because: (a) the recipe never reads the binary, only .git; (b) with make -B
-# an order-only dep on the binary would still force a full payload rebuild.
-$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-git-dir-y)/.git
-=======
 # edk2-platforms is a separate git repository compiled into the edk2 payload.
 # Record its commit hash (source-version) and tree hash (colloquial-version),
 # mirroring the iPXE/payload git-backed component rules.  The checkout lives at
 # a deterministic path created during the edk2 payload build.
+ifeq ($(CONFIG_EDK2_USE_EDK2_PLATFORMS),y)
 edk2-platforms-git-dir := payloads/external/edk2/workspace/edk2-platforms
 edk2-platforms-gitdir := $(shell git -C $(edk2-platforms-git-dir) rev-parse --absolute-git-dir 2>/dev/null)
+else 
+edk2-platforms-git-dir :=
+edk2-platforms-gitdir :=
+endif
 
-$(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json $(if $(edk2-platforms-gitdir),$(edk2-platforms-gitdir)/HEAD,) | $(build-dir) $(build-dir)/goswid $(edk2-platforms-swid-ready-dep)
+$(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json $(edk2-platforms-gitdir) | $(build-dir) $(build-dir)/goswid $(edk2-platforms-swid-ready-dep)
 	cp $< $@
 	set -e; \
 	if [ -e "$(edk2-platforms-git-dir)/.git" ]; then \
@@ -461,12 +493,16 @@ $(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json
 
 # Build payload SBOM metadata only after the payload is ready in regular builds.
 # For standalone `make sbom`, use an existing checkout only.
-$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-swid-ready-dep)
->>>>>>> b75fa7e56a34 (sbom: add edk2-platforms metadata)
+$(payload-swid): $(payload-swid-template) | $(build-dir) $(build-dir)/goswid $(payload-swid-ready-dep)
 	cp $< $@;\
 	git_tree_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%T);\
 	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%H);\
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;
+	if [ -s "$(CONFIG_PAYLOAD_FILE)" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "$(notdir $(CONFIG_PAYLOAD_FILE))" \
+			--hash "$$(sha256sum "$(CONFIG_PAYLOAD_FILE)" | cut -d' ' -f1)"; \
+	fi
 
 ## Standalone SBOM regeneration target
 ## Rebuilds build/sbom/sbom.uswid from existing build artifacts without
