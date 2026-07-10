@@ -306,10 +306,18 @@ static void lpc_enable_children_resources(struct device *dev)
 			continue;
 		if (child->path.type != DEVICE_PATH_PNP)
 			continue;
-		if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI))
-			configure_child_espi_windows(child);
-		else
+		if (CONFIG(SOC_AMD_COMMON_BLOCK_USE_ESPI)) {
+			/*
+			 * On platforms where the PSP/ABL already configured the
+			 * eSPI decodes, reprogramming them from the assigned
+			 * resources disrupts the firmware setup (e.g. knocks a
+			 * SuperIO off the bus), so leave them intact.
+			 */
+			if (!CONFIG(SOC_AMD_COMMON_BLOCK_ESPI_DECODES_BY_PSP))
+				configure_child_espi_windows(child);
+		} else {
 			configure_child_lpc_windows(dev, child);
+		}
 	}
 }
 
