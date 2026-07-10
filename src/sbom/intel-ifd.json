@@ -12,6 +12,12 @@
       "summary": "The Intel Flash Descriptor defines the flash layout and hardware strap settings for Intel platforms"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://github.com/Dasharo/dasharo-blobs/blob/main/LICENSE"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
