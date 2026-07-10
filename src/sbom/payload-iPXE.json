@@ -13,6 +13,12 @@
       "summary": "iPXE is an open source network boot firmware. It provides a full PXE implementation enhanced with additional features"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/GPL-2.0-only.html"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
