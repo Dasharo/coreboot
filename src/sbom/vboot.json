@@ -13,6 +13,12 @@
       "summary": "Chromium OS Verified Boot reference implementation, used by coreboot for firmware verification and anti-rollback protection."
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/BSD-3-Clause.html"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
