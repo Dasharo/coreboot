@@ -10,6 +10,17 @@ config SBOM
 
 if SBOM
 
+config SBOM_MANUFACTURER
+	string "Product manufacturer for SBOM (CRA manufacturer identification)"
+	default ""
+	help
+	  Organization identified as the product manufacturer in the SBOM. When
+	  set, it is added to the coreboot (parent) CoSWID tag as an entity with
+	  the softwareCreator and maintainer roles, and surfaces in the decoded
+	  CycloneDX as metadata.manufacture - satisfying CRA Art. 13(15)
+	  manufacturer identification. Set this to the entity placing the product
+	  on the market (e.g. the board vendor or integrator). Leave empty to omit.
+
 config SBOM_COMPILER
 	bool "Include compiler metadata in SBOM"
 	default n
