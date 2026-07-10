@@ -880,7 +880,7 @@ static void lpc_tpm_fill_ssdt(const struct device *dev)
 	acpigen_write_resourcetemplate_footer();
 
 	if (!CONFIG(CHROMEOS))
-		tpm_ppi_acpi_fill_ssdt(dev);
+		tpm_ppi_acpi_fill_ssdt(dev, NULL, 0);
 
 	acpigen_pop_len(); /* Device */
 	acpigen_pop_len(); /* Scope */
