@@ -12,6 +12,12 @@
       "summary": "Intel Management Engine firmware"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://github.com/Dasharo/dasharo-blobs/blob/main/LICENSE"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
