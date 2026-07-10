@@ -12,6 +12,12 @@
       "summary": "Intel Firmware Support Package (FSP) is a binary blob providing memory initialization and silicon bring-up for Intel platforms"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://github.com/intel/FSP/blob/master/LICENSE"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
