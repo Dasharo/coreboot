@@ -532,7 +532,9 @@ static void (*tpm_mci_callbacks[])(void *) = {
 	tpm_mci_func1_cb,
 };
 
-void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
+void tpm_ppi_acpi_fill_ssdt(const struct device *dev,
+			    struct dsm_uuid *extra_dsm_uuid,
+			    size_t extra_dsm_uuid_count)
 {
 	struct cb_tpm_ppi_payload_handshake *ppib;
 
@@ -778,7 +780,26 @@ void tpm_ppi_acpi_fill_ssdt(const struct device *dev)
 			ARRAY_SIZE(tpm_mci_callbacks), NULL),
 	};
 
-	acpigen_write_dsm_uuid_arr(ids, ARRAY_SIZE(ids));
+	if (extra_dsm_uuid != NULL && extra_dsm_uuid_count > 0) {
+		size_t all_ids_count = (extra_dsm_uuid_count + ARRAY_SIZE(ids));
+		size_t all_ids_size = all_ids_count * sizeof(struct dsm_uuid);
+		struct dsm_uuid *all_ids = (struct dsm_uuid *)malloc(all_ids_size);
+
+		if (!all_ids) {
+			acpigen_write_dsm_uuid_arr(ids, ARRAY_SIZE(ids));
+			return;
+		}
+
+		memcpy(all_ids, ids, sizeof(ids));
+		memcpy(&all_ids[ARRAY_SIZE(ids)], extra_dsm_uuid,
+		       extra_dsm_uuid_count * sizeof(struct dsm_uuid));
+
+		acpigen_write_dsm_uuid_arr(all_ids, all_ids_count);
+
+		free(all_ids);
+	} else {
+		acpigen_write_dsm_uuid_arr(ids, ARRAY_SIZE(ids));
+	}
 }
 
 void lb_tpm_ppi(struct lb_header *header)
