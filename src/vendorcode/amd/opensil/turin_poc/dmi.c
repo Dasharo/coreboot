@@ -98,6 +98,9 @@ static void transfer_memory_info(const SIL_TYPE17_DMI_INFO *dmi17, struct dimm_i
 	dimm->vdd_min_voltage = dmi17->MinimumVoltage ? dmi17->MinimumVoltage : dimm->vdd_voltage;
 	dimm->vdd_max_voltage = dmi17->MaximumVoltage ? dmi17->MaximumVoltage : dimm->vdd_voltage;
 
+	strncpy((char *)dimm->module_part_number, dmi17->PartNumber,
+		sizeof(dimm->module_part_number) - 1);
+
 	/* Added in SMBIOS v3.2 */
 	dimm->memory_technology = dmi17->MemoryTechnology;
 	dimm->memory_operating_mode_capability = dmi17->MemoryOperatingModeCapability.AsUint16;
