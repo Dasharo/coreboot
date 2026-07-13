@@ -25,7 +25,10 @@ config MAINBOARD_DIR
 	default "asrock/turind8ud-2t"
 
 config MAINBOARD_PART_NUMBER
-	default "FIXME"
+	default "TURIND8UD-2T/X550"
+
+config MAINBOARD_SMBIOS_MANUFACTURER
+	default "ASRockRack"
 
 config BUILD_WITH_DEBUG_APCB
 	bool "Build with debug APCB blobs"
