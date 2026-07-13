@@ -20,6 +20,13 @@ const char *smbios_mainboard_bios_version(void)
 			return "Dasharo (coreboot+UEFI)";
 	}
 
+	if (CONFIG(PAYLOAD_LINUXBOOT)) {
+		if (strlen(CONFIG_LOCALVERSION) != 0)
+			return "Dasharo (coreboot+LinuxBoot) " CONFIG_LOCALVERSION;
+		else
+			return "Dasharo (coreboot+LinuxBoot)";
+	}
+
 	if (strlen(CONFIG_LOCALVERSION) != 0)
 		return "Dasharo " CONFIG_LOCALVERSION;
 
