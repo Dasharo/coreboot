@@ -219,8 +219,15 @@ $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;\
 	$(build-dir)/goswid add-license -o $@ -i $@ $(coreboot-licenses)
 	if [ -n "$(CONFIG_SBOM_MANUFACTURER)" ]; then \
-		sed -i 's#"entity": \[#"entity": [ { "entity-name": "$(CONFIG_SBOM_MANUFACTURER)", "role": [ "softwareCreator", "maintainer" ] },#' $@; \
+		sed -i 's#"entity":[[:space:]]*\[#"entity":[ { "entity-name": "$(CONFIG_SBOM_MANUFACTURER)", "role": [ "softwareCreator", "maintainer" ] },#' $@; \
 	fi
+	# CRA Art. 13(6)/13(7) link injection removed: rel=advisories and
+	# rel=security-contact are not IANA-registered CoSWID link relationships,
+	# and upstream python-uswid (used by LVFS) crashes with KeyError on them
+	# because uSwidLinkRel.from_string() does a bare dict lookup with no
+	# UNKNOWN fallback. The same CVD/security-contact facts are carried by the
+	# CRA sidecar instead, so the CoSWID stays LVFS-ingestable. Re-enable only
+	# once uswid tolerates unknown rels (or a standard rel exists).
 
 # Extract ME toolkit version from the ME binary. In Dasharo blobs the version
 # is stored as an ASCII string like: "ME16.1.40.2765".
