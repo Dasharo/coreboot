@@ -30,15 +30,6 @@ config MAINBOARD_PART_NUMBER
 config MAINBOARD_SMBIOS_MANUFACTURER
 	default "ASRockRack"
 
-config BUILD_WITH_DEBUG_APCB
-	bool "Build with debug APCB blobs"
-	default n
-	help
-	  Build coreboot image with debug APCB blobs. When selected, the
-	  APCBs with debug output on serial port will be used during build.
-
-	  Enabel it when debugging pre-reset vector issues.
-
 config ECAM_MMCONF_BASE_ADDRESS
 	default 0xb0000000
 
