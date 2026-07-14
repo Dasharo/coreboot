@@ -42,6 +42,7 @@ usage() {
   echo -e "\tasrock_spc741d8            - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
   echo -e "\tasrock_turind8ud_linuxboot - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (LinuxBoot payload)"
   echo -e "\tmz33_ar1                   - build Dasharo compatible with Gigabyte MZ33-AR1"
+  echo -e "\tcosmo                      - build Dasharo compatible with Oxide Cosmo"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.2"}
@@ -360,6 +361,34 @@ function build_gigabyte_mz33_ar1 {
   fi
 }
 
+function build_oxide_cosmo {
+  DEFCONFIG="configs/config.oxide_cosmo_linuxboot"
+  FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
+
+  build_prep
+
+  if [ ! -d 3rdparty/blobs/soc/amd/Turin ]; then
+    wget https://dl.3mdeb.com/open-source-firmware/Dasharo/gigabyte_mz33_ar1/uefi/v0.9.0/Turin.zip && \
+      unzip Turin.zip -d 3rdparty/blobs/soc/amd/ || echo "Failed to download and extract blobs"; exit 1
+  fi
+
+  echo "Building Dasharo compatible with Oxide Cosmo (version $FW_VERSION)"
+
+  build_start
+
+  cp build/coreboot.rom oxide_cosmo_${FW_VERSION}.rom
+
+  rm -rf 3rdparty/blobs/soc/amd/Turin
+
+  if [ $? -eq 0 ]; then
+    echo "Result binary placed in $PWD/oxide_cosmo_${FW_VERSION}.rom"
+    sha256sum oxide_cosmo_${FW_VERSION}.rom > oxide_cosmo_${FW_VERSION}.rom.sha256
+  else
+    echo "Build failed!"
+    exit 1
+  fi
+}
+
 if [ $# -lt 1 ]; then
   usage
   exit
@@ -500,6 +529,9 @@ case "$CMD" in
         ;;
     "mz33_ar1")
         build_gigabyte_mz33_ar1
+        ;;
+    "cosmo")
+        build_oxide_cosmo
         ;;
     *)
         echo "Invalid command: \"$CMD\""
