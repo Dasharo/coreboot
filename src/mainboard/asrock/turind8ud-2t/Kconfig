@@ -37,19 +37,19 @@ config EFS_SPI_READ_MODE
 	default 0	# Normal read
 
 config EFS_SPI_SPEED
-	default 2	# 22MHz
+	default 3	# 16MHz
 
 config EFS_SPI_MICRON_FLAG
 	default 0
 
 config NORMAL_READ_SPI_SPEED
-	default 2	# 22MHz
+	default 3	# 16MHz
 
 config ALT_SPI_SPEED
-	default 2	# 22MHz
+	default 3	# 16MHz
 
 config TPM_SPI_SPEED
-	default 2	# 22MHz
+	default 3	# 16MHz
 
 config EFS_ESPI0_CONFIG
 	default 0x0e
