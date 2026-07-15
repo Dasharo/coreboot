@@ -5,49 +5,48 @@ set -euo pipefail
 usage() {
   echo "${0} CMD"
   echo "Available CMDs:"
-  echo -e "\tz690a_ddr4             - build Dasharo image compatible with MSI PRO Z690-A (WIFI) DDR4"
-  echo -e "\tz690a_ddr5             - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
-  echo -e "\tz790p_ddr4             - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
-  echo -e "\tz790p_ddr5             - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
-  echo -e "\tb850p                  - build Dasharo image compatible with MSI PRO B850-P WIFI"
-  echo -e "\tvp66xx                 - build Dasharo for Protectli VP66xx"
-  echo -e "\tvp46xx                 - build Dasharo for Protectli VP46xx"
-  echo -e "\tvp46xx_noemmc- build Dasharo for Protectli VP46xx variants without eMMC (VP46xxe, VP4651)"
-  echo -e "\tvp32xx                 - build Dasharo for Protectli VP32xx"
-  echo -e "\tvp32xx_noemmc          - build Dasharo for Protectli VP32xx variants without eMMC (VP3210e, VP3230e)"
-  echo -e "\tvp2440                 - build Dasharo for Protectli VP2440"
-  echo -e "\tvp2440_noemmc          - build Dasharo for Protectli VP2440 without eMMC (VP2440e)"
-  echo -e "\tvp2430                 - build Dasharo for Protectli VP2430"
-  echo -e "\tvp2430_noemmc          - build Dasharo for Protectli VP2430 without eMMC (VP2430e)"
-  echo -e "\tvp2420                 - build Dasharo for Protectli VP2420"
-  echo -e "\tvp2420_noemmc          - build Dasharo for Protectli VP2420 without eMMC (VP2420e)"
-  echo -e "\tvp2410                 - build Dasharo for Protectli VP2410"
-  echo -e "\tap2110                 - build Dasharo for Protectli AP2110"
-  echo -e "\tV1210                  - build Dasharo for Protectli V1210"
-  echo -e "\tV1211                  - build Dasharo for Protectli V1211"
-  echo -e "\tV1410                  - build Dasharo for Protectli V1410"
-  echo -e "\tV1610                  - build Dasharo for Protectli V1610"
-  echo -e "\tns5x_adl               - build Dasharo for Novacustom NS5x_ADL"
-  echo -e "\tns5x_tgl               - build Dasharo for Novacustom NS5x_TGL"
-  echo -e "\tnv4x_adl               - build Dasharo for Novacustom NV4x_ADL"
-  echo -e "\tnv4x_tgl               - build Dasharo for Novacustom NV4x_TGL"
-  echo -e "\tv540tnx                - build Dasharo for Novacustom V540TNx"
-  echo -e "\tv540tu                 - build Dasharo for Novacustom V540TU"
-  echo -e "\tv560tnx                - build Dasharo for Novacustom V560TNx"
-  echo -e "\tv560tu                 - build Dasharo for Novacustom V560TU"
-  echo -e "\tnuc_box                - build Dasharo for Novacustom NUC BOX"
-  echo -e "\tapu2                   - build Dasharo for PC Engines APU2"
-  echo -e "\tapu3                   - build Dasharo for PC Engines APU3"
-  echo -e "\tapu4                   - build Dasharo for PC Engines APU4"
-  echo -e "\tapu6                   - build Dasharo for PC Engines APU6"
-  echo -e "\toptiplex_9010_uefi     - build Dasharo compatible with Dell OptiPlex 7010/9010 (UEFI)"
-  echo -e "\toptiplex_9010_seabios  - build Dasharo compatible with Dell OptiPlex 7010/9010 (SeaBIOS)"
-  echo -e "\tqemu                   - build Dasharo for QEMU Q35"
-  echo -e "\tqemu_full              - build Dasharo for QEMU Q35 with all menus available"
-  echo -e "\todroid_h4              - build Dasharo compatible with Hardkernel ODROID H4"
-  echo -e "\todroid_h4_netcard      - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
-  echo -e "\tasrock_spc741d8        - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
-  echo -e "\tmz33_ar1               - build Dasharo compatible with Gigabyte MZ33-AR1"
+  echo -e "\tz690a_ddr4                 - build Dasharo image compatible with MSI PRO Z690-A (WIFI) DDR4"
+  echo -e "\tz690a_ddr5                 - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
+  echo -e "\tz790p_ddr4                 - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
+  echo -e "\tz790p_ddr5                 - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
+  echo -e "\tvp66xx                     - build Dasharo for Protectli VP66xx"
+  echo -e "\tvp46xx                     - build Dasharo for Protectli VP46xx"
+  echo -e "\tvp46xx_noemmc              - build Dasharo for Protectli VP46xx variants without eMMC (VP46xxe, VP4651)"
+  echo -e "\tvp32xx                     - build Dasharo for Protectli VP32xx"
+  echo -e "\tvp32xx_noemmc              - build Dasharo for Protectli VP32xx variants without eMMC (VP3210e, VP3230e)"
+  echo -e "\tvp2440                     - build Dasharo for Protectli VP2440"
+  echo -e "\tvp2440_noemmc              - build Dasharo for Protectli VP2440 without eMMC (VP2440e)"
+  echo -e "\tvp2430                     - build Dasharo for Protectli VP2430"
+  echo -e "\tvp2430_noemmc              - build Dasharo for Protectli VP2430 without eMMC (VP2430e)"
+  echo -e "\tvp2420                     - build Dasharo for Protectli VP2420"
+  echo -e "\tvp2420_noemmc              - build Dasharo for Protectli VP2420 without eMMC (VP2420e)"
+  echo -e "\tvp2410                     - build Dasharo for Protectli VP2410"
+  echo -e "\tV1210                      - build Dasharo for Protectli V1210"
+  echo -e "\tV1211                      - build Dasharo for Protectli V1211"
+  echo -e "\tV1410                      - build Dasharo for Protectli V1410"
+  echo -e "\tV1610                      - build Dasharo for Protectli V1610"
+  echo -e "\tns5x_adl                   - build Dasharo for Novacustom NS5x_ADL"
+  echo -e "\tns5x_tgl                   - build Dasharo for Novacustom NS5x_TGL"
+  echo -e "\tnv4x_adl                   - build Dasharo for Novacustom NV4x_ADL"
+  echo -e "\tnv4x_tgl                   - build Dasharo for Novacustom NV4x_TGL"
+  echo -e "\tv540tnx                    - build Dasharo for Novacustom V540TNx"
+  echo -e "\tv540tu                     - build Dasharo for Novacustom V540TU"
+  echo -e "\tv560tnx                    - build Dasharo for Novacustom V560TNx"
+  echo -e "\tv560tu                     - build Dasharo for Novacustom V560TU"
+  echo -e "\tnuc_box                    - build Dasharo for Novacustom NUC BOX"
+  echo -e "\tapu2                       - build Dasharo for PC Engines APU2"
+  echo -e "\tapu3                       - build Dasharo for PC Engines APU3"
+  echo -e "\tapu4                       - build Dasharo for PC Engines APU4"
+  echo -e "\tapu6                       - build Dasharo for PC Engines APU6"
+  echo -e "\toptiplex_9010_uefi         - build Dasharo compatible with Dell OptiPlex 7010/9010 (UEFI)"
+  echo -e "\toptiplex_9010_seabios      - build Dasharo compatible with Dell OptiPlex 7010/9010 (SeaBIOS)"
+  echo -e "\tqemu                       - build Dasharo for QEMU Q35"
+  echo -e "\tqemu_full                  - build Dasharo for QEMU Q35 with all menus available"
+  echo -e "\todroid_h4                  - build Dasharo compatible with Hardkernel ODROID H4"
+  echo -e "\todroid_h4_netcard          - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
+  echo -e "\tasrock_spc741d8            - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
+  echo -e "\tasrock_turind8ud_linuxboot - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (LinuxBoot payload)"
+  echo -e "\tmz33_ar1                   - build Dasharo compatible with Gigabyte MZ33-AR1"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.4"}
@@ -334,20 +333,20 @@ function build_odroid_h4 {
 }
 
 function build_asrock_rack {
-  DEFCONFIG="configs/config.asrock_spc741d8"
+  DEFCONFIG="configs/config.asrock_$1"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   build_prep
 
-  echo "Building Dasharo for ASRock Rack SPC741D8-2L2T/BCM (version $FW_VERSION)"
+  echo "Building Dasharo for ASRock Rack $1 (version $FW_VERSION)"
 
   build_start
 
-  cp build/coreboot.rom asrock_spc741d8_${FW_VERSION}.rom
+  cp build/coreboot.rom asrock_$1_${FW_VERSION}.rom
 
   if [ $? -eq 0 ]; then
-    echo "Result binary placed in $PWD/asrock_spc741d8_${FW_VERSION}.rom"
-    sha256sum asrock_spc741d8_${FW_VERSION}.rom > asrock_spc741d8_${FW_VERSION}.rom.sha256
+    echo "Result binary placed in $PWD/asrock_$1_${FW_VERSION}.rom"
+    sha256sum asrock_$1_${FW_VERSION}.rom > asrock_$1_${FW_VERSION}.rom.sha256
   else
     echo "Build failed!"
     exit 1
@@ -543,7 +542,10 @@ case "$CMD" in
         build_odroid_h4 "odroid_h4_netcard"
         ;;
     "asrock_spc741d8")
-        build_asrock_rack
+        build_asrock_rack "spc741d8"
+        ;;
+    "asrock_turind8ud_linuxboot")
+        build_asrock_rack "turind8ud_linuxboot"
         ;;
     "mz33_ar1")
         build_gigabyte_mz33_ar1
