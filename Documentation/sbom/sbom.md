@@ -154,3 +154,37 @@ avoids duplication in case the BMC or EC is updated (without updating
 coreboot). The distinction is not always easy and this problem is
 currently not considered in the implementation, since none of the
 software components currently create a SBOM file on their own.
+
+
+## Covered components
+
+Each component has a `CONFIG_SBOM_<name>` switch to include it, a
+`CONFIG_SBOM_<name>_GENERATE` suboption to auto-extract basic data, and a
+`CONFIG_SBOM_<name>_PATH` to point at a vendor-supplied SWID/CoSWID/uSWID file
+instead. Components with a git-backed source tree (coreboot, vboot, iPXE, the
+edk2 payload, edk2-platforms, openSIL) record the commit hash as the version;
+binary blobs (ME, IFD, FSP, AGESA, microcode, ACMs, EC) record an extracted
+version and/or a sha256 hash. Git-backed components that ship no standalone
+binary (e.g. edk2-platforms, which is linked into the edk2 payload) additionally
+record a sha256 over their source tree (`git archive HEAD`) as the component
+integrity hash.
+
+Proprietary graphics and network binary blobs are also covered:
+
+  - `SBOM_VGA_BIOS`, `SBOM_VGA_BIOS_SECOND`, `SBOM_VGA_BIOS_DGPU` - the primary,
+    secondary and discrete-GPU VGA BIOS OptionROMs (`VGA_BIOS_FILE` and
+    friends). In GENERATE mode the entry records the blob's sha256 hash and the
+    target PCI vendor:device ID (`VGA_BIOS_ID`).
+  - `SBOM_EDK2_GOP` - the external Intel GOP driver (`EDK2_GOP_FILE`) compiled
+    into the edk2 payload.
+  - `SBOM_EDK2_LAN_ROM` - the external LAN Option ROM network driver
+    (`EDK2_LAN_ROM_DRIVER`) compiled into the edk2 payload.
+
+These blobs carry no extractable semantic version, so GENERATE mode only records
+name + hash (+ PCI ID for VGA BIOS). As with any closed-source blob, supplying a
+full vendor SBOM through the matching `_PATH` option is strongly preferred.
+
+For Intel FSP (`SBOM_INTEL_FSP`) the GENERATE path additionally records the FSP
+release version, the BIOS build number (`colloquial-version`), and the target
+edition (Edge/IoT/Client, from the FD path) so the entry is not limited to a
+single opaque version token.
