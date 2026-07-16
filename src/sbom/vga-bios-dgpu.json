@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "0d97e9f1-fd3f-571e-9570-057738da3ea7",
+  "tag-version": 0,
+  "software-name": "VGA Option ROM (discrete GPU)",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "product": "VGA BIOS Option ROM",
+      "summary": "Proprietary VGA BIOS OptionROM used for legacy graphics initialization of a discrete GPU. software-version records the target PCI vendor:device ID. Prefer a vendor-supplied SBOM via CONFIG_SBOM_VGA_BIOS_DGPU_PATH."
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
