@@ -423,4 +423,147 @@ config SBOM_IPXE_PATH
 	  The path of the SBOM file describing the Software included in the build
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
+config SBOM_VGA_BIOS
+	bool "Include primary VGA BIOS Option ROM metadata in SBOM"
+	depends on VGA_BIOS
+	default n
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the primary VGA BIOS
+	  Option ROM (VGA_BIOS_FILE) into the SBOM (Software Bill of Materials)
+	  File in your build.
+
+config SBOM_VGA_BIOS_GENERATE
+	bool "Auto-generate primary VGA BIOS Option ROM info in SBOM"
+	depends on SBOM_VGA_BIOS
+	default y
+	help
+	  When enabled, coreboot records the sha256 hash of the VGA BIOS Option
+	  ROM binary and its target PCI vendor:device ID (VGA_BIOS_ID) in the
+	  SBOM.  VGA BIOS blobs carry no extractable semantic version, so a
+	  vendor-supplied SBOM (SBOM_VGA_BIOS_PATH) is strongly preferred.
+	  If disabled, set SBOM_VGA_BIOS_PATH to a custom file.
+
+config SBOM_VGA_BIOS_PATH
+	string "Path to SBOM file for the primary VGA BIOS Option ROM"
+	depends on SBOM_VGA_BIOS && !SBOM_VGA_BIOS_GENERATE
+	default "src/sbom/vga-bios.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
+config SBOM_VGA_BIOS_SECOND
+	bool "Include second VGA BIOS Option ROM metadata in SBOM"
+	depends on VGA_BIOS_SECOND
+	default n
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the second VGA BIOS
+	  Option ROM (VGA_BIOS_SECOND_FILE) into the SBOM (Software Bill of
+	  Materials) File in your build.
+
+config SBOM_VGA_BIOS_SECOND_GENERATE
+	bool "Auto-generate second VGA BIOS Option ROM info in SBOM"
+	depends on SBOM_VGA_BIOS_SECOND
+	default y
+	help
+	  When enabled, coreboot records the sha256 hash of the second VGA BIOS
+	  Option ROM binary and its target PCI vendor:device ID
+	  (VGA_BIOS_SECOND_ID) in the SBOM.
+	  If disabled, set SBOM_VGA_BIOS_SECOND_PATH to a custom file.
+
+config SBOM_VGA_BIOS_SECOND_PATH
+	string "Path to SBOM file for the second VGA BIOS Option ROM"
+	depends on SBOM_VGA_BIOS_SECOND && !SBOM_VGA_BIOS_SECOND_GENERATE
+	default "src/sbom/vga-bios-second.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
+config SBOM_VGA_BIOS_DGPU
+	bool "Include discrete-GPU VGA BIOS Option ROM metadata in SBOM"
+	depends on VGA_BIOS_DGPU
+	default n
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the discrete-GPU VGA
+	  BIOS Option ROM (VGA_BIOS_DGPU_FILE) into the SBOM (Software Bill of
+	  Materials) File in your build.
+
+config SBOM_VGA_BIOS_DGPU_GENERATE
+	bool "Auto-generate discrete-GPU VGA BIOS Option ROM info in SBOM"
+	depends on SBOM_VGA_BIOS_DGPU
+	default y
+	help
+	  When enabled, coreboot records the sha256 hash of the discrete-GPU VGA
+	  BIOS Option ROM binary and its target PCI vendor:device ID
+	  (VGA_BIOS_DGPU_ID) in the SBOM.
+	  If disabled, set SBOM_VGA_BIOS_DGPU_PATH to a custom file.
+
+config SBOM_VGA_BIOS_DGPU_PATH
+	string "Path to SBOM file for the discrete-GPU VGA BIOS Option ROM"
+	depends on SBOM_VGA_BIOS_DGPU && !SBOM_VGA_BIOS_DGPU_GENERATE
+	default "src/sbom/vga-bios-dgpu.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
+config SBOM_EDK2_GOP
+	bool "Include Intel GOP driver metadata in SBOM"
+	depends on SBOM_PAYLOAD && EDK2_GOP_DRIVER
+	default n
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the external Intel GOP
+	  (Graphics Output Protocol) driver (EDK2_GOP_FILE) compiled into the
+	  edk2 payload into the SBOM (Software Bill of Materials) File.
+
+config SBOM_EDK2_GOP_GENERATE
+	bool "Auto-generate Intel GOP driver info in SBOM"
+	depends on SBOM_EDK2_GOP
+	default y
+	help
+	  When enabled, coreboot records the sha256 hash of the GOP driver
+	  binary (EDK2_GOP_FILE) in the SBOM.  The proprietary GOP driver carries
+	  no extractable semantic version, so a vendor-supplied SBOM
+	  (SBOM_EDK2_GOP_PATH) is strongly preferred.
+	  If disabled, set SBOM_EDK2_GOP_PATH to a custom file.
+
+config SBOM_EDK2_GOP_PATH
+	string "Path to SBOM file for the Intel GOP driver"
+	depends on SBOM_EDK2_GOP && !SBOM_EDK2_GOP_GENERATE
+	default "src/sbom/edk2-gop.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
+config SBOM_EDK2_LAN_ROM
+	bool "Include LAN Option ROM driver metadata in SBOM"
+	depends on SBOM_PAYLOAD && PAYLOAD_EDK2 && EDK2_LAN_ROM_DRIVER != ""
+	default n
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the external LAN Option
+	  ROM network driver (EDK2_LAN_ROM_DRIVER) compiled into the edk2 payload
+	  into the SBOM (Software Bill of Materials) File.
+
+config SBOM_EDK2_LAN_ROM_GENERATE
+	bool "Auto-generate LAN Option ROM driver info in SBOM"
+	depends on SBOM_EDK2_LAN_ROM
+	default y
+	help
+	  When enabled, coreboot records the sha256 hash of the LAN Option ROM
+	  driver binary (EDK2_LAN_ROM_DRIVER) in the SBOM.  The proprietary
+	  network driver carries no extractable semantic version, so a
+	  vendor-supplied SBOM (SBOM_EDK2_LAN_ROM_PATH) is strongly preferred.
+	  If disabled, set SBOM_EDK2_LAN_ROM_PATH to a custom file.
+
+config SBOM_EDK2_LAN_ROM_PATH
+	string "Path to SBOM file for the LAN Option ROM driver"
+	depends on SBOM_EDK2_LAN_ROM && !SBOM_EDK2_LAN_ROM_GENERATE
+	default "src/sbom/edk2-lan-rom.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
 endif
