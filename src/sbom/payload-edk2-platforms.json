@@ -1,0 +1,31 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "c062f4db-917e-533a-8b42-c704759ec6d8",
+  "tag-version": 0,
+  "software-name": "edk2-platforms",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "colloquial-version": "<colloquial_version>",
+      "persistent-id": "org.tianocore.edk2-platforms",
+      "summary": "edk2-platforms provides sample platform and silicon support packages for EDK II. This build uses the Dasharo fork (github.com/Dasharo/edk2-platforms), a fork of tianocore/edk2-platforms, integrated into the edk2 UEFI payload build."
+    }
+  ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/BSD-2-Clause-Patent.html"
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
