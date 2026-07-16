@@ -5,9 +5,13 @@
   "tag-version": 0,
   "software-name": "Intel Firmware Support Package",
   "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
   "software-meta": [
     {
       "product": "Intel Firmware Support Package",
+      "product-family": "<fsp_package>",
+      "edition": "<fsp_target>",
+      "colloquial-version": "<colloquial_version>",
       "persistent-id": "com.intel.fsp",
       "summary": "Intel Firmware Support Package (FSP) is a binary blob providing memory initialization and silicon bring-up for Intel platforms"
     }
