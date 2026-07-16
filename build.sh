@@ -51,6 +51,7 @@ AIRGAP=${AIRGAP:-0}
 
 function sdk_run {
   docker run --rm -t -u $UID \
+    ${CONTAINER_NAME:+--name "${CONTAINER_NAME}"} \
     -v $PWD:/build/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
