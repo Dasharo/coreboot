@@ -114,6 +114,16 @@ endif
 # binary files in order to give more complete/detailed information inside the SBOM file.
 # These files are either in src/sbom/ or build/sbom (if they are generated).
 swid-files-$(CONFIG_SBOM_ME) += $(if $(CONFIG_SBOM_ME_GENERATE), $(build-dir)/intel-me.json, $(CONFIG_SBOM_ME_PATH))
+# ME/TXE on IFWI platforms (Apollo Lake/Gemini Lake): SBOM_ME cannot be
+# enabled there through Kconfig, because it depends on HAVE_ME_BIN and the
+# TXE is stitched inside the IFWI image instead of being a standalone
+# binary. Include the generated ME/TXE tag whenever an SBOM is built on
+# such platforms (same approach as the edk2 payload override above).
+ifeq ($(CONFIG_NEED_IFWI),y)
+ifneq ($(CONFIG_SBOM_ME),y)
+swid-files-y += $(build-dir)/intel-me.json
+endif
+endif
 swid-files-$(CONFIG_SBOM_PAYLOAD) += $(if $(CONFIG_SBOM_PAYLOAD_GENERATE),$(payload-swid),$(if $(CONFIG_PAYLOAD_EDK2),$(payload-swid),$(CONFIG_SBOM_PAYLOAD_PATH)))
 swid-files-$(CONFIG_SBOM_EDK2_PLATFORMS) += $(if $(CONFIG_SBOM_EDK2_PLATFORMS_GENERATE),$(build-dir)/payload-edk2-platforms.json,$(CONFIG_SBOM_EDK2_PLATFORMS_PATH))
 # TODO think about just using one CoSWID tag for all intel-microcode instead of one for each. maybe put each microcode into files entity of CoSWID tag?
@@ -227,14 +237,59 @@ $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $
 	# CRA sidecar instead, so the CoSWID stays LVFS-ingestable. Re-enable only
 	# once uswid tolerates unknown rels (or a standard rel exists).
 
-# Extract ME toolkit version from the ME binary. In Dasharo blobs the version
-# is stored as an ASCII string like: "ME16.1.40.2765".
-$(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(CONFIG_ME_BIN_PATH) | $(build-dir) $(build-dir)/goswid
+# Extract ME/TXE version from the firmware binary. Some versions
+# store it as an ASCII string like: "ME16.1.40.2765".
+# When the string is missing, try to extract it from the CSE Main program
+# (NFTP) partition manifest: the version is 4x2 byte LE fields, 8 bytes after
+# the $MN2 magic string.
+# How NFTP is located depends on the image layout:
+# 1. When NEED_IFWI & CONFIG_IFWI_FILE_NAME,
+#    => image has no BPDT, NFTP is located in the IFWI image, extract NFTP from
+#       CONFIG_IFWI_FILE_NAME with ifwitool
+# 2. CONFIG_SOC_INTEL_CSE_HAVE_SPEC_SUPPORT=y, image has BPDT, ME_SPEC versioned
+#    => placed at the last non-empty BPDT partition, extract with cse_serger
+#    1. CONFIG_ME_SPEC >= 15 => version is 1.7
+#    2. 15 > CONFIG_ME_SPEC >= 12 => version is 1.6
+#    3. 12 > CONFIG_ME_SPEC => not possible in such case
+#       CONFIG_SOC_INTEL_CSE_HAVE_SPEC_SUPPORT must be "=n"
+# 3. CONFIG_SOC_INTEL_CSE_HAVE_SPEC_SUPPORT=n
+#    => ME_SPEC <= 11, no BPDT, use cse_fpt to extract NFTP
+ifeq ($(CONFIG_NEED_IFWI),y)
+    sbom-me-bin := $(call strip_quotes,$(CONFIG_IFWI_FILE_NAME))
+else
+    sbom-me-bin := $(CONFIG_ME_BIN_PATH)
+endif
+
+$(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(sbom-me-bin) | $(build-dir) $(build-dir)/goswid $(IFWITOOL) $(CSE_SERGER) $(CSE_FPT)
 	cp $< $@
-	set -e; \
-	me_ver=$$(strings -a "$(CONFIG_ME_BIN_PATH)" \
+	me='$(sbom-me-bin)'; \
+	me_ver=$$(strings -a "$$me" \
 		| grep -m1 -Eo 'ME[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
 		| sed 's/^ME//'); \
+	if [ -z "$$me_ver" ]; then \
+		tmp=$$(mktemp -d); \
+		if [ "$(CONFIG_NEED_IFWI)" = "y" ]; then \
+			$(IFWITOOL) "$$me" extract -f "$$tmp/NFTP" -n NFTP >/dev/null 2>&1; \
+		elif [ "$(CONFIG_SOC_INTEL_CSE_HAVE_SPEC_SUPPORT)" = "y" ]; then \
+			layout=$$($(CSE_SERGER) "$$me" print-layout -v $(CONFIG_CSE_BPDT_VERSION) 2>/dev/null || true); \
+			last_bpdt=$$(printf '%s\n' "$$layout" | sed -n 's/^BP\([0-9]\+\) offset.*/\1/p' | sort -n | tail -1); \
+			for bpdt in $$(seq "$$last_bpdt" -1 1); do \
+				offset=$$(printf '%s\n' "$$layout" | awk "/BP$$bpdt offset/{print \$$NF}"); \
+				size=$$(printf '%s\n' "$$layout" | awk "/BP$$bpdt size/{print \$$NF}"); \
+				[ $$((size)) -ne 0 ] && break; \
+			done; \
+			dd if="$$me" of="$$tmp/bpdt.bin" bs=$$((size)) skip=$$((offset)) count=1 iflag=skip_bytes 2>/dev/null; \
+			$(CSE_SERGER) "$$tmp/bpdt.bin" dump -o "$$tmp" -n NFTP >/dev/null 2>&1; \
+		else \
+			$(CSE_FPT) "$$me" dump -o "$$tmp" -n NFTP >/dev/null 2>&1;\
+		fi; \
+		manifest=$$(grep -aboF -m1 '$$MN2' "$$tmp/NFTP" 2>/dev/null | cut -d: -f1); \
+		if [ -n "$$manifest" ]; then \
+			me_ver=$$(dd if="$$tmp/NFTP" skip=$$((manifest + 8)) bs=1 count=8 2>/dev/null \
+				| od -A n -t u2 | xargs | tr ' ' .); \
+		fi; \
+		rm -rf "$$tmp"; \
+	fi; \
 	if [ -n "$$me_ver" ]; then \
 		sed -i "s/<software_version>/$$me_ver/" $@; \
 	else \
