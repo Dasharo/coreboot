@@ -45,7 +45,7 @@ usage() {
   echo -e "\tcosmo                      - build Dasharo compatible with Oxide Cosmo"
 }
 
-DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.2"}
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.3"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
