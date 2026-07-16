@@ -1,15 +1,18 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 {
   "lang": "en-US",
-  "tag-id": "23edb84c-5d68-544e-b389-8a67f6c80247",
+  "tag-id": "<tag_id>",
   "tag-version": 0,
-  "software-name": "Intel-Microcode",
+  "software-name": "Intel-Microcode-<ucode_name>",
   "software-version": "<software_version>",
   "version-scheme": "alphanumeric",
   "software-meta": [
     {
+      "product": "Intel Microcode",
+      "edition": "<cpuid>",
+      "colloquial-version": "<colloquial_version>",
       "persistent-id": "com.intel.microcode",
-      "summary": "Micrcode Updates for Intel Processors"
+      "summary": "Microcode Updates for Intel Processors"
     }
   ],
   "entity": [

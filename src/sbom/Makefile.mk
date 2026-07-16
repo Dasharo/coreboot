@@ -95,7 +95,6 @@ swid-files-y += $(build-dir)/intel-me.json
 endif
 endif
 swid-files-$(CONFIG_SBOM_PAYLOAD) += $(if $(CONFIG_SBOM_PAYLOAD_GENERATE),$(payload-swid),$(if $(CONFIG_PAYLOAD_EDK2),$(payload-swid),$(CONFIG_SBOM_PAYLOAD_PATH)))
-# TODO think about just using one CoSWID tag for all intel-microcode instead of one for each. maybe put each microcode into files entity of CoSWID tag?
 swid-files-$(CONFIG_SBOM_INTEL_MICROCODE) += $(patsubst 3rdparty/intel-microcode/intel-ucode/%, $(build-dir)/intel-microcode-%.json, $(filter 3rdparty/intel-microcode/intel-ucode/%, $(cpu_microcode_bins)))
 swid-files-$(CONFIG_SBOM_AMD_MICROCODE) += $(foreach ucode,$(amd_microcode_bins),$(build-dir)/amd-microcode-$(basename $(notdir $(ucode))).json)
 swid-files-$(CONFIG_SBOM_INTEL_FSP) += $(if $(CONFIG_SBOM_INTEL_FSP_GENERATE), $(build-dir)/intel-fsp.json, $(CONFIG_SBOM_INTEL_FSP_PATH))
@@ -427,13 +426,25 @@ $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json | $(build-dir)
 		sed -i "/software-version/d" $@; \
 	fi
 
+
+# Each ucode file gets its own CoSWID tag, deterministic UUIDv5 generated
+# using gowswid from the microcode fileneame
 $(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/intel-microcode/intel-ucode/% | $(build-dir) $(build-dir)/goswid
 	cp $< $@
-	year=$$(hexdump --skip 8 --length 2 --format '"%04x"' $(word 2,$^));\
-	day=$$(hexdump --skip 10 --length 1 --format '"%02x"' $(word 2,$^));\
-	month=$$(hexdump --skip 11 --length 1 --format '"%02x"' $(word 2,$^));\
-	sed -i "s/<software_version>/$$year-$$month-$$day/" $@
-	#TODO add cpuid (processor family, model, stepping) as extra attribute
+	set -e; \
+	rev=$$(hexdump --skip 4 --length 4 --format '"0x%x"' $(word 2,$^)); \
+	year=$$(hexdump --skip 8 --length 2 --format '"%04x"' $(word 2,$^)); \
+	day=$$(hexdump --skip 10 --length 1 --format '"%02x"' $(word 2,$^)); \
+	month=$$(hexdump --skip 11 --length 1 --format '"%02x"' $(word 2,$^)); \
+	cpuid=$$(hexdump --skip 12 --length 4 --format '"0x%x"' $(word 2,$^)); \
+	tag_id=$$($(build-dir)/goswid generate-tag-id -n "Intel-Microcode-$*"); \
+	sed -i \
+		-e "s/<tag_id>/$$tag_id/" \
+		-e "s/<ucode_name>/$*/" \
+		-e "s/<software_version>/$$rev/" \
+		-e "s/<colloquial_version>/$$year-$$month-$$day/" \
+		-e "s/<cpuid>/$$cpuid/" \
+		$@
 
 # Generate per-file SBOM rules for AMD microcode patches.
 # AMD microcode filenames vary widely across SoCs:
