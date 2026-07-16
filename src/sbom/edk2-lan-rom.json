@@ -1,0 +1,24 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "0c9962a8-a3c4-5037-a3b6-77fad31b0d68",
+  "tag-version": 0,
+  "software-name": "UEFI LAN Option ROM",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "product": "UEFI LAN Option ROM driver",
+      "summary": "Proprietary network controller UEFI driver (LAN Option ROM) integrated into the edk2 payload for network boot support. Prefer a vendor-supplied SBOM via CONFIG_SBOM_EDK2_LAN_ROM_PATH."
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
