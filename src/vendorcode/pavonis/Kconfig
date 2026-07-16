@@ -6,11 +6,17 @@ config PAVONIS_LINUXBOOT_APOB_SYNC
 	depends on PAYLOAD_LINUXBOOT && LINUXBOOT_UROOT
 	help
 	  Build faux-ipcc (from the 3rdparty/ipcc-rs submodule) as a
-	  static musl binary and generate the preboot uinit script, then
-	  inject both into the u-root initramfs (bin/faux-ipcc,
-	  bin/uinit). The uinit probes for an attached SP over USB serial
-	  and syncs the in-DRAM APOB with the SP-side copy via IPCC
-	  before handing off to /bbin/boot.
+	  static musl binary and generate the preboot script, then inject
+	  both into the u-root initramfs (bin/faux-ipcc, bin/preboot).
+	  The preboot probes for an attached SP over USB serial and syncs
+	  the in-DRAM APOB with the SP-side copy via IPCC before handing
+	  off to /bbin/boot.
+
+	  The script is chained from the u-root console multiplexer
+	  (cmds/exp/uinit in LINUXBOOT_UROOT_COMMANDS): add
+	  uroot.uinitargs=-bootcmd=/bin/preboot to LINUX_COMMAND_LINE so
+	  conmux runs it, mirrored on all consoles, in place of the plain
+	  boot command.
 
 	  The ipcc-rs submodule is marked update=none (private repo);
 	  populate it before building with

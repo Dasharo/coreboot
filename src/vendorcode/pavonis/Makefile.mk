@@ -64,8 +64,21 @@ pavonis-faux-ipcc: $(pavonis-dir)/faux-ipcc
 # Inject both artifacts into the u-root cpio. The list is handed to the
 # LinuxBoot sub-make (payloads/external/Makefile.mk) which forwards it to
 # targets/u-root.mk; entries are absolute src:dest pairs.
+#
+# preboot.sh lands at bin/preboot, NOT bin/uinit: the u-root fork's console
+# multiplexer (cmds/exp/uinit -> /bbin/uinit) is the autostart on this
+# platform and would shadow a /bin/uinit anyway (init runs /bbin/uinit
+# first and it never exits). Instead conmux chains into us via its
+# -bootcmd flag, wired up through uroot.uinitargs=-bootcmd=/bin/preboot
+# on the kernel command line.
 LINUXBOOT_UROOT_EXTRA_FILES += $(abspath $(pavonis-dir)/faux-ipcc):bin/faux-ipcc
-LINUXBOOT_UROOT_EXTRA_FILES += $(abspath $(pavonis-dir)/preboot.sh):bin/uinit
+LINUXBOOT_UROOT_EXTRA_FILES += $(abspath $(pavonis-dir)/preboot.sh):bin/preboot
+
+# Without the conmux hook on the kernel command line nothing ever runs
+# /bin/preboot; catch that drift at build time.
+ifeq ($(findstring -bootcmd=/bin/preboot,$(CONFIG_LINUX_COMMAND_LINE)),)
+$(warning pavonis: CONFIG_LINUX_COMMAND_LINE lacks uroot.uinitargs=-bootcmd=/bin/preboot; the APOB sync preboot will never be executed)
+endif
 
 # Make sure both exist before the LinuxBoot payload (and its initramfs)
 # is built.

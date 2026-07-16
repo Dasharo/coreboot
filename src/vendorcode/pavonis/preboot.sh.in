@@ -1,6 +1,10 @@
 #!/bbin/gosh
-# preboot.sh — installed as /bin/uinit; u-root init exec's it before
-# we hand off to /bbin/boot to kexec Ubuntu.
+# preboot.sh — installed as /bin/preboot; the u-root console multiplexer
+# (cmds/exp/uinit, running as /bbin/uinit) runs it as its boot command —
+# wired via uroot.uinitargs=-bootcmd=/bin/preboot on the kernel command
+# line — so its output is mirrored to every console. We hand off to
+# /bbin/boot at the end; if boot returns, conmux drops to a muxed shell
+# and re-runs this script on shell exit.
 #
 # Generated from src/vendorcode/pavonis/preboot.sh.in by
 # src/vendorcode/pavonis/Makefile.mk. Do not edit the generated
@@ -25,7 +29,8 @@ PROBE_TIMEOUT=2000
 USB_WAIT_SECS=10
 
 # Runtime escape hatch: any of the above can be overridden without
-# rebuilding via uroot.uinitargs="key=val ..." in CONFIG_LINUX_COMMAND_LINE.
+# rebuilding by baking the args into the conmux bootcmd (shlex quoting),
+# e.g. uroot.uinitargs="-bootcmd='/bin/preboot tty_glob=/dev/ttyS*'".
 for kv in "$@"; do
     case "$kv" in
         tty_glob=*)  TTY_GLOB=${kv#tty_glob=}   ;;
