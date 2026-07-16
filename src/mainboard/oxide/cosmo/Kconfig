@@ -12,7 +12,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select SPI_FLASH_FORCE_4_BYTE_ADDR_MODE
 	select SYSTEM_TYPE_SERVER
 	select AMD_SOC_CONSOLE_UART
-	select CONSOLE_SERIAL_3000000
 
 config FMDFILE
 	default "src/mainboard/oxide/cosmo/board.fmd"
@@ -32,6 +31,8 @@ config BUILD_WITH_DEBUG_APCB
 
 	  Enabel it when debugging pre-reset vector issues.
 
+config CONSOLE_SERIAL_3000000
+	default y
 
 config ECAM_MMCONF_BASE_ADDRESS
 	default 0xb0000000
