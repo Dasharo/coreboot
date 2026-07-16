@@ -220,11 +220,15 @@ $(build-dir)/compiler-%.json: $(src-dir)/compiler-%.json | $(build-dir)/goswid
 	done
 
 coreboot-gitdir := $(shell git rev-parse --git-dir)
+# coreboot version, format like "<commit-date>_<hash>"
+# colloquial_version is latest coreboot release. Assumes static release tag format, might break.
 $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $(build-dir)/goswid
-	cp $< $@
-	git_tree_hash=$$(git log -n 1 --format=%T);\
-	git_comm_hash=$$(git log -n 1 --format=%H);\
-	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;\
+	cp $< $@; \
+	git_comm_hash=$$(git log -n 1 --format="%cs_%H"); \
+	git_latest_rel=$$(git tag --merged HEAD | grep -E '^[0-9]{1,2}\.[0-9]{1,2}$$' | sort -V | tail -n1); \
+	sed -i -e "s/<software_version>/$$git_comm_hash/" \
+		-e "s/<colloquial_version>/$$git_latest_rel/" \
+		$@;\
 	$(build-dir)/goswid add-license -o $@ -i $@ $(coreboot-licenses)
 	if [ -n "$(CONFIG_SBOM_MANUFACTURER)" ]; then \
 		sed -i 's#"entity":[[:space:]]*\[#"entity":[ { "entity-name": "$(CONFIG_SBOM_MANUFACTURER)", "role": [ "softwareCreator", "maintainer" ] },#' $@; \
@@ -306,15 +310,22 @@ $(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(sbom-me-bin) | $(build-di
 # For Dasharo builds this is 3rdparty/dasharo-blobs.  The IFD binary itself
 # carries no embedded version string, so the enclosing repo commit hash is
 # used as a proxy, matching the same approach used for coreboot and payloads.
+# 3rdparty/dasharo-blobs keeps ifd version number in README.md.
 $(build-dir)/intel-ifd.json: $(src-dir)/intel-ifd.json $(CONFIG_IFD_BIN_PATH) | $(build-dir)/goswid
 	cp $< $@
 	set -e; \
 	ifd_git_root=$$(git -C "$$(dirname "$(CONFIG_IFD_BIN_PATH)")" rev-parse --show-toplevel 2>/dev/null); \
+	ifd_readme="$$(dirname "$(CONFIG_IFD_BIN_PATH)")/README.md"; \
+	ifd_version=""; \
 	if [ -n "$$ifd_git_root" ]; then \
-		ifd_comm_hash=$$(git -C "$$ifd_git_root" log -n 1 --format=%H); \
-		ifd_tree_hash=$$(git -C "$$ifd_git_root" log -n 1 --format=%T); \
+		if [ -f "$$ifd_readme" ]; then \
+			ifd_version=$$(grep -A1 -E 'Intel Flash Descriptor' "$$ifd_readme" \
+				| grep -i 'Version:' \
+				| grep -Eo 'v([^,]+)'); \
+		fi; \
+		ifd_comm_hash=$$(git -C "$$ifd_git_root" log -n 1 --format="%cs_%H"); \
 		sed -i -e "s/<software_version>/$$ifd_comm_hash/" \
-		       -e "s/<colloquial_version>/$$ifd_tree_hash/" $@; \
+			-e "s/<colloquial_version>/$$ifd_version/" $@; \
 	else \
 		sed -i -e "/software-version/d" -e "/colloquial-version/d" $@; \
 	fi
@@ -499,9 +510,9 @@ vboot-gitdir := $(shell git -C 3rdparty/vboot rev-parse --absolute-git-dir 2>/de
 
 $(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitdir)/HEAD,) | $(build-dir) $(build-dir)/goswid
 	cp $< $@
-	git_tree_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%T); \
-	git_comm_hash=$$(git -C 3rdparty/vboot log -n 1 --format=%H); \
-	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
+	git_comm_hash=$$(git --git-dir 3rdparty/vboot/.git log -n 1 --format="%cs_%H"); \
+	git_latest_rel=$$(git --git-dir 3rdparty/vboot/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@
 	# vboot is built from source as a per-stage static library rather than a
 	# single blob; hash the ramstage vboot_fw.a as the representative artifact
 	# so the component carries integrity info (CRA Annex I hash carry-through).
@@ -513,12 +524,12 @@ $(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitd
 
 ipxe-gitdir := $(shell git -C payloads/external/iPXE/ipxe rev-parse --absolute-git-dir 2>/dev/null)
 
+# iPXE
 $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir),$(ipxe-gitdir)/HEAD,) | $(build-dir) $(build-dir)/goswid $(ipxe-swid-ready-dep)
 	cp $< $@
-	set -e; \
-	git_tree_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%T); \
-	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
-	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
+	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format="%cs_%H"); \
+	git_latest_rel=$$(git --git-dir payloads/external/iPXE/ipxe/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@
 	# Hash the built iPXE ROM image (the artifact linked into CBFS) so the
 	# component carries integrity info (CRA Annex I hash carry-through).
 	if [ -s "payloads/external/iPXE/ipxe/ipxe.rom" ]; then \
@@ -635,10 +646,9 @@ $(build-dir)/edk2-lan-rom.json: $(src-dir)/edk2-lan-rom.json $(wildcard $(CONFIG
 # For standalone `make sbom`, use an existing checkout only.
 $(payload-swid): $(payload-swid-template) | $(build-dir) $(build-dir)/goswid $(payload-swid-ready-dep)
 	cp $< $@;\
-	set -e; \
-	git_tree_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%T);\
-	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%H);\
-	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;
+	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format="%cs_%H");\
+	git_latest_rel=$$(git --git-dir $(payload-git-dir-y)/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@;
 	if [ -s "$(CONFIG_PAYLOAD_FILE)" ]; then \
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
 			--name "$(notdir $(CONFIG_PAYLOAD_FILE))" \
