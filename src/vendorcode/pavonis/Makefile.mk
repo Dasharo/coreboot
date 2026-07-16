@@ -77,7 +77,7 @@ LINUXBOOT_UROOT_EXTRA_FILES += $(abspath $(pavonis-dir)/preboot.sh):bin/preboot
 # Without the conmux hook on the kernel command line nothing ever runs
 # /bin/preboot; catch that drift at build time.
 ifeq ($(findstring -bootcmd=/bin/preboot,$(CONFIG_LINUX_COMMAND_LINE)),)
-$(warning pavonis: CONFIG_LINUX_COMMAND_LINE lacks uroot.uinitargs=-bootcmd=/bin/preboot; the APOB sync preboot will never be executed)
+$(error pavonis: CONFIG_LINUX_COMMAND_LINE lacks uroot.uinitargs=-bootcmd=/bin/preboot; the APOB sync preboot will never be executed)
 endif
 
 # Make sure both exist before the LinuxBoot payload (and its initramfs)
