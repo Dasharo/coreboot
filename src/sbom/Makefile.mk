@@ -36,6 +36,7 @@ CONFIG_INTEL_TXT_CBFS_BIOS_ACM   := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS
 CONFIG_INTEL_TXT_CBFS_SINIT_ACM  := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS_SINIT_ACM))
 CONFIG_SBOM_COMPILER_PATH  := $(call strip_quotes, $(CONFIG_SBOM_COMPILER_PATH))
 CONFIG_EDK2_REPOSITORY     := $(call strip_quotes, $(CONFIG_EDK2_REPOSITORY))
+CONFIG_SBOM_EDK2_PLATFORMS_PATH := $(call strip_quotes, $(CONFIG_SBOM_EDK2_PLATFORMS_PATH))
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
 
 # Select the correct payload directory for the used payload. Ideally we could just make this
@@ -84,9 +85,13 @@ endif
 ifeq ($(filter sbom,$(MAKECMDGOALS)),sbom)
 payload-swid-ready-dep := $(wildcard $(payload-git-dir-y)/.git)
 ipxe-swid-ready-dep := $(wildcard payloads/external/iPXE/ipxe/.git)
+edk2-platforms-swid-ready-dep := $(wildcard payloads/external/edk2/workspace/edk2-platforms/.git)
 else
 payload-swid-ready-dep := $(CONFIG_PAYLOAD_FILE)
 ipxe-swid-ready-dep := payloads/external/iPXE/ipxe/ipxe.rom
+# edk2-platforms is checked out as part of the edk2 payload build, so gate its
+# SBOM extraction on the built payload file being ready.
+edk2-platforms-swid-ready-dep := $(CONFIG_PAYLOAD_FILE)
 endif
 
 # Add all SBOM files into the swid-files-y target. This target contains all
@@ -96,6 +101,7 @@ endif
 # These files are either in src/sbom/ or build/sbom (if they are generated).
 swid-files-$(CONFIG_SBOM_ME) += $(if $(CONFIG_SBOM_ME_GENERATE), $(build-dir)/intel-me.json, $(CONFIG_SBOM_ME_PATH))
 swid-files-$(CONFIG_SBOM_PAYLOAD) += $(if $(CONFIG_SBOM_PAYLOAD_GENERATE),$(payload-swid),$(if $(CONFIG_PAYLOAD_EDK2),$(payload-swid),$(CONFIG_SBOM_PAYLOAD_PATH)))
+swid-files-$(CONFIG_SBOM_EDK2_PLATFORMS) += $(if $(CONFIG_SBOM_EDK2_PLATFORMS_GENERATE),$(build-dir)/payload-edk2-platforms.json,$(CONFIG_SBOM_EDK2_PLATFORMS_PATH))
 # TODO think about just using one CoSWID tag for all intel-microcode instead of one for each. maybe put each microcode into files entity of CoSWID tag?
 swid-files-$(CONFIG_SBOM_INTEL_MICROCODE) += $(patsubst 3rdparty/intel-microcode/intel-ucode/%, $(build-dir)/intel-microcode-%.json, $(filter 3rdparty/intel-microcode/intel-ucode/%, $(cpu_microcode_bins)))
 swid-files-$(CONFIG_SBOM_AMD_MICROCODE) += $(foreach ucode,$(amd_microcode_bins),$(build-dir)/amd-microcode-$(basename $(notdir $(ucode))).json)
@@ -389,6 +395,24 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir)
 	git_tree_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%T); \
 	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
+
+# edk2-platforms is a separate git repository compiled into the edk2 payload.
+# Record its commit hash (source-version) and tree hash (colloquial-version),
+# mirroring the iPXE/payload git-backed component rules.  The checkout lives at
+# a deterministic path created during the edk2 payload build.
+edk2-platforms-git-dir := payloads/external/edk2/workspace/edk2-platforms
+edk2-platforms-gitdir := $(shell git -C $(edk2-platforms-git-dir) rev-parse --absolute-git-dir 2>/dev/null)
+
+$(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json $(if $(edk2-platforms-gitdir),$(edk2-platforms-gitdir)/HEAD,) | $(build-dir) $(build-dir)/goswid $(edk2-platforms-swid-ready-dep)
+	cp $< $@
+	set -e; \
+	if [ -e "$(edk2-platforms-git-dir)/.git" ]; then \
+		git_tree_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git log -n 1 --format=%T); \
+		git_comm_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git log -n 1 --format=%H); \
+		sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@; \
+	else \
+		sed -i -e "/<colloquial_version>/d" -e "/<software_version>/d" $@; \
+	fi
 
 # Build payload SBOM metadata only after the payload is ready in regular builds.
 # For standalone `make sbom`, use an existing checkout only.
