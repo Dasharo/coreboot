@@ -386,6 +386,13 @@ config ME_SPEC
 	help
 	  This config holds the ME spec version if defined.
 
+config CSE_BPDT_VERSION
+	string
+	default "1.6" if ME_SPEC < 15
+	default "1.7" if ME_SPEC >= 15
+	help
+	  This config indicates the BPDT version used by CSE for a given SoC.
+
 endif # SOC_INTEL_CSE_HAVE_SPEC_SUPPORT
 
 if STITCH_ME_BIN
