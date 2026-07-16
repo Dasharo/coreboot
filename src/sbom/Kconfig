@@ -58,6 +58,36 @@ config SBOM_PAYLOAD_PATH
 	  The path of the SBOM file describing the Software included in the build
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
+config SBOM_EDK2_PLATFORMS
+	bool "Include edk2-platforms metadata in SBOM"
+	depends on SBOM_PAYLOAD && PAYLOAD_EDK2 && EDK2_USE_EDK2_PLATFORMS
+	default n
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the edk2-platforms
+	  source tree into the SBOM (Software Bill of Materials) File in your
+	  build. edk2-platforms is a separate git repository compiled into the
+	  edk2 UEFI payload, so it needs its own SBOM entry in addition to the
+	  edk2 payload itself.
+
+config SBOM_EDK2_PLATFORMS_GENERATE
+	bool "Auto-generate edk2-platforms revision in SBOM"
+	depends on SBOM_EDK2_PLATFORMS
+	default y
+	help
+	  When enabled, coreboot reads the git commit hash of the edk2-platforms
+	  source tree (payloads/external/edk2/workspace/edk2-platforms) and records
+	  it as the SBOM version, with the tree hash stored as colloquial-version.
+	  If disabled, set SBOM_EDK2_PLATFORMS_PATH to a custom file.
+
+config SBOM_EDK2_PLATFORMS_PATH
+	string "Path to SBOM file for edk2-platforms"
+	depends on SBOM_EDK2_PLATFORMS && !SBOM_EDK2_PLATFORMS_GENERATE
+	default "src/sbom/payload-edk2-platforms.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
 config SBOM_ME
 	bool "Include ME metadata in SBOM"
 	depends on HAVE_ME_BIN
