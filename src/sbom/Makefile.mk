@@ -328,22 +328,54 @@ $(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json | $(build-dir
 	fi; \
 	rm -f $$acm_tmp
 
-$(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_S_FILE) $(CONFIG_FSP_T_FILE) $(CONFIG_FSP_M_FILE) | $(build-dir)/goswid
+# The FSP version is embedded in the binary, FSP spec 5.1,
+# FSP_INFO_HEADER, it lives in the firmware file with
+# guid 912740be-2284-4734-b971-84b027353f0c
+# In the header, ImageRevision (4 bytes LE at +12) decodes as
+# Major.Minor.Revision.Build, one byte each. When HeaderRevision (+11) is >= 6,
+# ExtendedImageRevision (2 bytes LE at +76) holds additional bytes:
+#	Revision = ExtendedImageRevision[15:8] << 8 | ImageRevision[15:8]
+#	Build = ExtendedImageRevision[7:0] << 8 | ImageRevision[7:0]
+$(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_FD_PATH) $(CONFIG_FSP_S_FILE) $(CONFIG_FSP_T_FILE) $(CONFIG_FSP_M_FILE) | $(build-dir)/goswid
 	cp $< $@
-ifeq ($(CONFIG_FSP_USE_REPO),y)
 	set -e; \
-	fsp_git_root=$$(git -C "$$(dirname "$(CONFIG_FSP_FD_PATH)")" rev-parse --show-toplevel 2>/dev/null); \
-	fsp_fd_abs=$$(realpath "$(CONFIG_FSP_FD_PATH)" 2>/dev/null || printf '%s\n' "$(CONFIG_FSP_FD_PATH)"); \
-	fsp_rel=$${fsp_fd_abs#$$fsp_git_root/}; \
-	fsp_version=$$(git -C "$$fsp_git_root" log --format=%s -- "$$fsp_rel" 2>/dev/null | grep -o -m1 -E '\([0-9]+_[0-9]+\)|[A-Z]\.[0-9]+\.[A-Fa-f0-9]+\.[0-9]+'); \
-	if [ -n "$$fsp_version" ]; then \
-		sed -i "s|<software_version>|$$fsp_version|" $@; \
-	else \
-		sed -i "/software-version/d" $@; \
-	fi
-else
-	sed -i "/software-version/d" $@
-endif
+	fsp_bin="$(CONFIG_FSP_FD_PATH)"; \
+	fsp_version=""; fsph=""; \
+	for offset in $$(grep -abo 'FSPH' "$$fsp_bin" 2>/dev/null | cut -d: -f1); do \
+		ffs_guid=$$(hexdump --skip $$((offset - 28)) --length 16 --format '16/1 "%02x"' "$$fsp_bin"); \
+		if [ "$$ffs_guid" = "be40279184223447b97184b027353f0c" ]; then \
+			fsph=$$offset; \
+			break; \
+		fi; \
+	done; \
+	if [ -n "$$fsph" ]; then \
+		header_rev=$$(hexdump --skip $$((fsph + 11)) --length 1 --format '"%u"' "$$fsp_bin"); \
+		build=$$(hexdump --skip $$((fsph + 12)) --length 1 --format '"%u"' "$$fsp_bin"); \
+		rev=$$(hexdump --skip $$((fsph + 13)) --length 1 --format '"%u"' "$$fsp_bin"); \
+		minor=$$(hexdump --skip $$((fsph + 14)) --length 1 --format '"%u"' "$$fsp_bin"); \
+		major=$$(hexdump --skip $$((fsph + 15)) --length 1 --format '"%u"' "$$fsp_bin"); \
+		if [ "$$header_rev" -ge 6 ]; then \
+			build_hi=$$(hexdump --skip $$((fsph + 76)) --length 1 --format '"%u"' "$$fsp_bin"); \
+			rev_hi=$$(hexdump --skip $$((fsph + 77)) --length 1 --format '"%u"' "$$fsp_bin"); \
+			build=$$(( (build_hi << 8) | build )); \
+			rev=$$(( (rev_hi << 8) | rev )); \
+		fi; \
+		fsp_version=$$(printf '%X.%X.%X.%X' "$$major" "$$minor" "$$rev" "$$build"); \
+	fi; \
+	fsp_bios_version=""; sku_type=""; \
+	if [ "$(CONFIG_FSP_USE_REPO)" = "y" ]; then \
+		fsp_git_root=$$(git -C "$$(dirname "$(CONFIG_FSP_FD_PATH)")" rev-parse --show-toplevel 2>/dev/null); \
+		fsp_fd_abs=$$(realpath "$(CONFIG_FSP_FD_PATH)" 2>/dev/null || printf '%s\n' "$(CONFIG_FSP_FD_PATH)"); \
+		fsp_rel=$${fsp_fd_abs#$$fsp_git_root/}; \
+		sku_type=$${fsp_rel%/*}; \
+		sku_type=$${sku_type##*/}; \
+		fsp_bios_version=$$(git -C "$$fsp_git_root" log --format=%s -- "$$fsp_rel" 2>/dev/null \
+			| grep -o -m1 -E '\([0-9]+_[0-9]+\)' | tr -d '()'); \
+	fi; \
+	sed -i "s|<software_version>|$$fsp_version|" $@; \
+	sed -i "s|<colloquial_version>|$$fsp_version Bios: $$fsp_bios_version|" $@; \
+	sed -i "s|<sku_type>|$$sku_type|" $@;
+
 ifneq ($(CONFIG_FSP_S_FILE),)
 	echo "    SBOM      Adding FSP-S"
 	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-S"

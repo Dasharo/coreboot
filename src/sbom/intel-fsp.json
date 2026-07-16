@@ -8,6 +8,7 @@
   "software-meta": [
     {
       "product": "Intel Firmware Support Package",
+      "edition": "<sku_type>",
       "persistent-id": "com.intel.fsp",
       "summary": "Intel Firmware Support Package (FSP) is a binary blob providing memory initialization and silicon bring-up for Intel platforms"
     }
