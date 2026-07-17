@@ -89,15 +89,6 @@ static void amd_external_pcie_gpp_scan_bridge(struct device *dev)
 		return pciexp_scan_bridge(dev);
 }
 
-
-static void amd_external_pcie_gpp_scan_bridge(struct device *dev)
-{
-	if (CONFIG(PCIEXP_HOTPLUG) && pciexp_dev_is_slot_hot_plug_cap(dev))
-		return pciexp_hotplug_scan_bridge(dev);
-	else
-		return pciexp_scan_bridge(dev);
-}
-
 struct device_operations amd_external_pcie_gpp_ops = {
 	.read_resources		= pci_bus_read_resources,
 	.set_resources		= pci_dev_set_resources,
