@@ -722,6 +722,34 @@ $(build-dir)/edk2-lan-rom.json: $(src-dir)/edk2-lan-rom.json $(wildcard $(CONFIG
 			--hash "$$(sha256sum "$(CONFIG_EDK2_LAN_ROM_DRIVER)" | cut -d' ' -f1)"; \
 	fi
 
+ifeq ($(CONFIG_PAYLOAD_LINUXBOOT),y)
+# LinuxBoot is not a single git checkout; it is a Linux kernel plus a u-root
+# initramfs.  There is no payloads/external/LinuxBoot/linuxboot repo to read a
+# commit hash from, so the generic git-based rule below would leave both version
+# fields empty.  Instead, use the configured Linux kernel version as the software
+# version and record the u-root revision (resolved to the checked-out commit hash
+# when the u-root clone is available) as the colloquial version.
+$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-git-dir-y)/.git
+	cp $< $@
+	set -e; \
+	kernel_ver='$(call strip_quotes,$(CONFIG_LINUXBOOT_KERNEL_VERSION))'; \
+	uroot_ver='$(call strip_quotes,$(CONFIG_LINUXBOOT_UROOT_VERSION))'; \
+	uroot_git=$$(find payloads/external/LinuxBoot/build/go/src -type d \
+		-path '*/u-root/.git' 2>/dev/null | head -n 1); \
+	if [ -n "$$uroot_git" ]; then \
+		uroot_ver=$$(git --git-dir "$$uroot_git" log -n 1 --format=%H 2>/dev/null || echo "$$uroot_ver"); \
+	fi; \
+	if [ -n "$$kernel_ver" ]; then \
+		sed -i "s/<software_version>/$$kernel_ver/" $@; \
+	else \
+		sed -i "/software-version/d" $@; \
+	fi; \
+	if [ -n "$$uroot_ver" ]; then \
+		sed -i "s|<colloquial_version>|u-root $$uroot_ver|" $@; \
+	else \
+		sed -i "/colloquial-version/d" $@; \
+	fi
+else
 # Build payload SBOM metadata only after the payload is ready in regular builds.
 # For standalone `make sbom`, use an existing checkout only.
 $(payload-swid): $(payload-swid-template) | $(build-dir) $(build-dir)/goswid $(payload-swid-ready-dep)
@@ -734,6 +762,7 @@ $(payload-swid): $(payload-swid-template) | $(build-dir) $(build-dir)/goswid $(p
 			--name "$(notdir $(CONFIG_PAYLOAD_FILE))" \
 			--hash "$$(sha256sum "$(CONFIG_PAYLOAD_FILE)" | cut -d' ' -f1)"; \
 	fi
+endif
 
 ## Standalone SBOM regeneration target
 ## Rebuilds build/sbom/sbom.uswid from existing build artifacts without
