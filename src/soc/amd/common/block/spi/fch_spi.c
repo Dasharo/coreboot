@@ -49,10 +49,7 @@ void show_spi_speeds_and_modes(void)
 
 	uint16_t val16 = spi_read16(SPI100_SPEED_CONFIG);
 	uint32_t val32 = spi_read32(SPI_CNTRL0);
-	uint8_t val8;
-
-	/* Do not check return value. When reached here return value is always 0. */
-	fch_spi_rom_remapping(&val8);
+	uint8_t val8 = fch_spi_rom_remapping() & SPI_ROM_PAGE_SEL;
 
 	printk(BIOS_DEBUG, "SPI normal read speed: %s\n",
 	       spi_speed_str[DECODE_SPI_NORMAL_SPEED(val16)]);
@@ -66,8 +63,8 @@ void show_spi_speeds_and_modes(void)
 	       spi_read16(SPI100_ENABLE) & SPI_USE_SPI100 ? "Enabled" : "Disabled");
 	printk(BIOS_DEBUG, "SPI Read Mode: %s\n", read_mode_str[DECODE_SPI_READ_MODE(val32)]);
 	printk(BIOS_DEBUG, "SPI ROM mapping: %s\n", remapping[val8]);
-	printk(BIOS_DEBUG, "SPI ROM address: %ubit\n",
-		spi_read8(SPI_ADDR32_CTRL0) & SPI_ROM_ADDR_32BIT ? 32 : 24);
+	printk(BIOS_DEBUG, "SPI ROM address: %ubit\n", fch_spi_rom_32bit() ? 32 : 24);
+	printk(BIOS_DEBUG, "SPI ROM2 override: %x\n", spi_read16(SPI_ROM2_OVERRIDE));
 }
 
 void __weak mainboard_spi_cfg_override(uint8_t *fast_speed, uint8_t *read_mode)
@@ -97,8 +94,10 @@ static void fch_spi_set_spi100(uint8_t norm, uint8_t fast, uint8_t alt, uint8_t 
 	spi_write16(SPI100_ENABLE, SPI_USE_SPI100 | spi_read16(SPI100_ENABLE));
 }
 
-static void fch_spi_configure_4dw_burst(void)
+void fch_spi_configure_4dw_burst(void)
 {
+	assert(!rom_armor_enforced);
+
 	uint16_t val = spi_read16(SPI100_HOST_PREF_CONFIG);
 
 	if (CONFIG(SOC_AMD_COMMON_BLOCK_SPI_4DW_BURST))
@@ -116,13 +115,60 @@ static void fch_spi_set_read_mode(u32 mode)
 	spi_write32(SPI_CNTRL0, val | SPI_READ_MODE(mode));
 }
 
-int fch_spi_rom_remapping(uint8_t *mapping)
+uint8_t fch_spi_rom_remapping(void)
 {
-	if (rom_armor_enforced)
-		return -1;
+	assert(!rom_armor_enforced);
 
-	*mapping = spi_read8(SPI_ROM_PAGE) & SPI_ROM_PAGE_SEL;
-	return 0;
+	return spi_read8(SPI_ROM_PAGE);
+}
+
+uint32_t fch_spi_get_rom2_page(uint32_t rom2_base)
+{
+	assert(!rom_armor_enforced);
+
+	uint32_t page = rom2_base >> 24;
+	uint8_t rom2_override = spi_read8(SPI_ROM2_OVERRIDE);
+
+	if (rom2_override & SPI_ROM2_ADDR_BIT24_MASK){
+		page &= ~SPI_ROM2_ADDR_BIT24_VAL;
+		page |= rom2_override & SPI_ROM2_ADDR_BIT24_VAL;
+	}
+
+	if (rom2_override & SPI_ROM2_ADDR_BIT25_MASK){
+		page &= ~SPI_ROM2_ADDR_BIT25_VAL;
+		page |= rom2_override & SPI_ROM2_ADDR_BIT25_VAL;
+	}
+
+	if (fch_spi_rom_32bit())
+		page ^= (uint32_t)fch_spi_rom_remapping();
+
+	return (page << 24);
+}
+
+uint64_t fch_spi_get_rom3_page(uint64_t rom3_base)
+{
+	assert(!rom_armor_enforced);
+
+	uint64_t page = rom3_base >> 24;
+
+	if (fch_spi_rom_32bit())
+		page ^= (uint64_t)fch_spi_rom_remapping();
+
+	return (page << 24);
+}
+
+bool fch_spi_rom_32bit(void)
+{
+	assert(!rom_armor_enforced);
+
+	return !!(spi_read8(SPI_ROM_ADDR32_CTRL0) & SPI_ROM_ADDR32);
+}
+
+bool fch_spi_rom3_maps_to_bank3(void)
+{
+	assert(!rom_armor_enforced);
+
+	return !!(spi_read8(SPI_ROM2_OVERRIDE) & SPI_FORCE_ROM3_MAP_TO_BANK3);
 }
 
 void fch_spi_config_modes(void)
