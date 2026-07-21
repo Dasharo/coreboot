@@ -71,8 +71,10 @@ function help_subcommand() {
 }
 
 function source_coreboot_config() {
-    if [ ! -f .config ]; then
-        die "no '.config' file in current directory"
+    local config_file=${1-.config}
+
+    if [ ! -f "$config_file" ]; then
+            die "config file '$config_file' doesn't exist"
     fi
 
     local line
@@ -81,7 +83,7 @@ function source_coreboot_config() {
         if ! eval "$line"; then
             die "failed to source '.config'"
         fi
-    done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' .config)"
+    done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' $config_file)"
 }
 
 function require_capsule_support() {
@@ -493,6 +495,7 @@ function resign_subcommand() {
         confirm "Overwrite already existing '$out_capsule'?"
     fi
     assert_command_exists jq
+    assert_command_exists cbfstool
 
     local tmp_dir
     tmp_dir=$(mktemp --tmpdir --directory --suffix -cap XXXXXXXX)
@@ -507,6 +510,13 @@ function resign_subcommand() {
     metadata[sign_cert]=$sign_cert
     metadata[sub_cert]=$sub_cert
     metadata[root_cert]=$root_cert
+
+    local -A metadata_inner
+    mkdir "$tmp_dir/inner"
+    decode_capsule "$tmp_dir/inner" "${metadata[payload]}" metadata_inner
+    cbfstool "${metadata_inner[payload]}" extract -f "$tmp_dir/inner/.config" -n config 2>/dev/null
+    source_coreboot_config "$tmp_dir/inner/.config"
+
     encode_capsule "$tmp_dir" "$out_capsule" metadata
 }
 
