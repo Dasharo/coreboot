@@ -60,7 +60,7 @@
 	branch = stmpe
 [submodule "util/goswid"]
 	path = util/goswid
-	url = https://review.coreboot.org/goswid
+	url = https://github.com/dasharo/goswid
 	branch = trunk
 [submodule "src/vendorcode/amd/opensil/genoa_poc/opensil"]
 	path = src/vendorcode/amd/opensil/genoa_poc/opensil
