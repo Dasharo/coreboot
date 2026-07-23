@@ -40,7 +40,8 @@ usage() {
   echo -e "\todroid_h4                  - build Dasharo compatible with Hardkernel ODROID H4"
   echo -e "\todroid_h4_netcard          - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
   echo -e "\tasrock_spc741d8            - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
-  echo -e "\tasrock_turind8ud_linuxboot - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (LinuxBoot payload)"
+  echo -e "\tasrock_turind8ud_uefi      - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (UEFI)"
+  echo -e "\tasrock_turind8ud_linuxboot - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (LinuxBoot)"
   echo -e "\tmz33_ar1                   - build Dasharo compatible with Gigabyte MZ33-AR1"
 }
 
@@ -494,6 +495,9 @@ case "$CMD" in
         ;;
     "asrock_spc741d8")
         build_asrock_rack "spc741d8"
+        ;;
+    "asrock_turind8ud_uefi")
+        build_asrock_rack "turind8ud_uefi"
         ;;
     "asrock_turind8ud_linuxboot")
         build_asrock_rack "turind8ud_linuxboot"
