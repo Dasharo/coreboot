@@ -584,6 +584,7 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir)
 # given commit (git sets entry mtimes to the commit time and prepends the commit
 # id), so this is a stable, reproducible digest of what was actually built.  It
 # lets the component carry a CRA payload.file[].hash like the binary blobs do.
+ifeq ($(CONFIG_SBOM_EDK2_PLATFORMS_GENERATE),y)
 edk2-platforms-git-dir := payloads/external/edk2/workspace/edk2-platforms
 edk2-platforms-gitdir := $(shell git -C $(edk2-platforms-git-dir) rev-parse --absolute-git-dir 2>/dev/null)
 
@@ -601,6 +602,7 @@ $(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json
 	else \
 		sed -i -e "/<colloquial_version>/d" -e "/<software_version>/d" $@; \
 	fi
+endif
 
 # VGA BIOS OptionROMs and edk2 GOP/LAN drivers are proprietary binary blobs with
 # no extractable semantic version.  Record a sha256 hash of each blob (and, for
