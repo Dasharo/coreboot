@@ -14,13 +14,11 @@ config SBOM_MANUFACTURER
 	string "Product manufacturer for SBOM (CRA manufacturer identification)"
 	default BIOS_VENDOR
 	help
-	  Organization identified as the product manufacturer in the SBOM.
-	  When set, it is added to the coreboot (parent) CoSWID tag as an
-	  entity with the softwareCreator and maintainer roles, and surfaces
-	  in the decoded CycloneDX as metadata.manufacture - satisfying CRA
-	  Art. 13(15) manufacturer identification. Set this to the entity
-	  placing the product on the market (e.g. the board vendor or
-	  integrator). Defaults to BIOS_VENDOR.
+	  Organization identified as the product manufacturer in the SBOM. When
+	  set, it is added to the coreboot (parent) CoSWID tag as an entity with
+	  the softwareCreator and maintainer roles, and surfaces in the decoded
+	  CycloneDX as metadata.manufacture - satisfying CRA Art. 13(15)
+	  manufacturer identification. Defaults to BIOS_VENDOR.
 
 config SBOM_COMPILER
 	bool "Include compiler metadata in SBOM"
