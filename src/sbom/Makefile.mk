@@ -638,7 +638,6 @@ $(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json
 	else \
 		sed -i -e "/<colloquial_version>/d" -e "/<software_version>/d" $@; \
 	fi
-endif
 
 # VGA BIOS OptionROMs and edk2 GOP/LAN drivers are proprietary binary blobs with
 # no extractable semantic version.  Record a sha256 hash of each blob (and, for
