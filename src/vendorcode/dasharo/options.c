@@ -635,3 +635,43 @@ static void set_descriptor_lockdown_option(void *unused)
 			  sizeof(descriptor_writeable));
 }
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, set_descriptor_lockdown_option, NULL);
+
+bool __weak dasharo_dgpu_present(void)
+{
+	return true;
+}
+
+/*
+ * This function sets an EFI variable to signal to EDK2 whether a discrete GPU is
+ * present.
+ */
+static void set_dgpu_present_option(void *unused)
+{
+	struct region_device smmstore_rdev;
+	enum cb_err ret;
+	uint8_t dgpu_present;
+
+	if (!CONFIG(EDK2_DGPU_POWER_OPTION))
+		return;
+
+	dgpu_present = dasharo_dgpu_present();
+
+	if (!CONFIG(SMMSTORE)) {
+		printk(BIOS_DEBUG, "Failed to set DGPUPresent, SMMSTORE disabled");
+		return;
+	}
+
+	if (smmstore_lookup_region(&smmstore_rdev)) {
+		printk(BIOS_WARNING, "Failed to set DGPUPresent, SMMSTORE enabled but couldn't be found");
+		return;
+	}
+
+	ret = efi_fv_set_option(&smmstore_rdev,
+			  &dasharo_system_features_guid,
+			  "DGPUPresent",
+			  &dgpu_present,
+			  sizeof(dgpu_present));
+	printk(BIOS_DEBUG, "DGPU: wrote DGPUPresent=%u to SMMSTORE (ret=%d)\n",
+	       dgpu_present, ret);
+}
+BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, set_dgpu_present_option, NULL);

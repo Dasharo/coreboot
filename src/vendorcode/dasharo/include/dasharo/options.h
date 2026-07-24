@@ -336,4 +336,21 @@ bool get_ibecc_option(bool ibecc_default);
  */
 bool dasharo_is_disk_capsules_boot(void);
 
+/* Sets Dasharo/"DGPUPresent" EFI variable so the payload can hide the dGPU power
+ * option on units without a discrete GPU. Meant to be called from mainboard code
+ * on boards that share a single image between iGPU and dGPU variants.
+ *
+ * Arguments:
+ *  - present - true if a discrete GPU is present
+ */
+void dasharo_set_dgpu_present(bool present);
+
+/*
+ * Boards that can detect whether a discrete GPU is populated override this. The
+ * default assumes a dGPU is present, so the option stays available on platforms
+ * that do not implement detection. Useful for mainboards which contain variants
+ * with and without a dGPU.
+ */
+bool dasharo_dgpu_present(void);
+
 #endif /* DASHARO_OPTIONS_H */
