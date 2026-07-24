@@ -3,14 +3,14 @@
   "lang": "en-US",
   "tag-id": "dbdf7a7b-9e65-56e1-afc2-733f8808e044",
   "tag-version": 0,
-  "software-name": "Intel GOP driver",
+  "software-name": "<gop_vendor> GOP driver",
   "software-version": "<software_version>",
   "version-scheme": "alphanumeric",
   "software-meta": [
     {
-      "product": "Intel Graphics Output Protocol driver",
+      "product": "<gop_vendor> Graphics Output Protocol driver",
       "colloquial-version": "<colloquial_version>",
-      "summary": "Proprietary Intel GOP (Graphics Output Protocol) UEFI driver used by the edk2 payload for display initialization. Prefer a vendor-supplied SBOM via CONFIG_SBOM_EDK2_GOP_PATH."
+      "summary": "Proprietary <gop_vendor> GOP (Graphics Output Protocol) UEFI driver used by the edk2 payload for display initialization. Prefer a vendor-supplied SBOM via CONFIG_SBOM_EDK2_GOP_PATH."
     }
   ],
   "entity": [
