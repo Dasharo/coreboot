@@ -688,6 +688,11 @@ $(build-dir)/vga-bios-dgpu.json: $(src-dir)/vga-bios-dgpu.json $(wildcard $(CONF
 
 $(build-dir)/edk2-gop.json: $(src-dir)/edk2-gop.json $(wildcard $(CONFIG_EDK2_GOP_FILE)) | $(build-dir) $(build-dir)/goswid
 	cp $< $@
+	# Label the component by the actual GOP driver vendor (Intel vs AMD), since
+	# the same template and rule serve both EDK2_GOP_DRIVER and
+	# EDK2_AMD_GOP_DRIVER builds.
+	if [ "$(CONFIG_EDK2_AMD_GOP_DRIVER)" = "y" ]; then gop_vendor="AMD"; else gop_vendor="Intel"; fi; \
+	sed -i -e "s/<gop_vendor>/$$gop_vendor/g" $@
 	# The GOP driver blob carries no embedded version; use the enclosing git
 	# repo's HEAD as a proxy: "<commit-date>_<hash>" (software-version) and the
 	# latest release tag (colloquial-version), mirroring the Intel Flash
