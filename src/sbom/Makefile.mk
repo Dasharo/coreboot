@@ -494,9 +494,10 @@ $(build-dir)/amd-agesa.json: $(src-dir)/amd-agesa.json $(CONFIG_AGESA_BINARY_PI_
 $(CONFIG_AMD_OPENSIL_PATH)/.git:
 	git submodule update --init --checkout $(patsubst $(top)/%,%,$(CONFIG_AMD_OPENSIL_PATH))
 
-# Record the git commit of the openSIL source tree as the SBOM version.
+# Record the git commit of the openSIL source tree as the SBOM version, in the
+# human-readable "<commit-date>_<hash>" form used for the other git-backed deps.
 # openSIL is an open-source library checked out as a submodule or external
-# repo, so the commit hash is the canonical version identifier.
+# repo, so the commit is the canonical version identifier.
 $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json $(CONFIG_AMD_OPENSIL_PATH)/.git
 	cp $< $@
 	set -e; \
@@ -507,7 +508,7 @@ $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json $(CONFIG_AMD_OPENSIL_
 		done; \
 	fi; \
 	if [ -n "$$opensil_path" ] && [ -d "$$opensil_path" ]; then \
-		comm_hash=$$(git -c safe.directory='*' -C "$$opensil_path" log -n 1 --format=%H 2>/dev/null); \
+		comm_hash=$$(git -c safe.directory='*' -C "$$opensil_path" log -n 1 --format="%cs_%H" 2>/dev/null); \
 		if [ -n "$$comm_hash" ]; then \
 			sed -i -e "s/<software_version>/$$comm_hash/" $@; \
 		else \
@@ -609,9 +610,10 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(ipxe-gitdir) | $(
 	fi
 
 # edk2-platforms is a separate git repository compiled into the edk2 payload.
-# Record its commit hash (source-version) and tree hash (colloquial-version),
-# mirroring the iPXE/payload git-backed component rules.  The checkout lives at
-# a deterministic path created during the edk2 payload build.
+# Record its "<commit-date>_<hash>" (software-version) and latest release tag
+# (colloquial-version), mirroring the iPXE/payload git-backed component rules.
+# The checkout lives at a deterministic path created during the edk2 payload
+# build.
 #
 # edk2-platforms has no standalone binary artifact (it is linked into the edk2
 # payload FD), so for a component-integrity hash we record a sha256 over its
@@ -628,9 +630,9 @@ $(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json
 	cp $< $@
 	set -e; \
 	if [ -e "$(edk2-platforms-git-dir)/.git" ]; then \
-		git_tree_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git log -n 1 --format=%T); \
-		git_comm_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git log -n 1 --format=%H); \
-		sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@; \
+		git_comm_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git log -n 1 --format="%cs_%H"); \
+		git_latest_rel=$$(git --git-dir $(edk2-platforms-git-dir)/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+		sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@; \
 		src_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git archive HEAD | sha256sum | cut -d' ' -f1); \
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
 			--name "edk2-platforms-source.tar" \
@@ -687,15 +689,16 @@ $(build-dir)/vga-bios-dgpu.json: $(src-dir)/vga-bios-dgpu.json $(wildcard $(CONF
 $(build-dir)/edk2-gop.json: $(src-dir)/edk2-gop.json $(wildcard $(CONFIG_EDK2_GOP_FILE)) | $(build-dir) $(build-dir)/goswid
 	cp $< $@
 	# The GOP driver blob carries no embedded version; use the enclosing git
-	# repo's HEAD commit hash as a proxy (tree hash as colloquial-version),
-	# mirroring the Intel Flash Descriptor rule.
+	# repo's HEAD as a proxy: "<commit-date>_<hash>" (software-version) and the
+	# latest release tag (colloquial-version), mirroring the Intel Flash
+	# Descriptor rule.
 	set -e; \
 	gop_git_root=$$(git -C "$$(dirname "$(CONFIG_EDK2_GOP_FILE)")" rev-parse --show-toplevel 2>/dev/null); \
 	if [ -n "$$gop_git_root" ]; then \
-		gop_comm_hash=$$(git -C "$$gop_git_root" log -n 1 --format=%H); \
-		gop_tree_hash=$$(git -C "$$gop_git_root" log -n 1 --format=%T); \
+		gop_comm_hash=$$(git -C "$$gop_git_root" log -n 1 --format="%cs_%H"); \
+		gop_latest_rel=$$(git -C "$$gop_git_root" tag --merged HEAD --sort=-creatordate | head -n1); \
 		sed -i -e "s/<software_version>/$$gop_comm_hash/" \
-		       -e "s/<colloquial_version>/$$gop_tree_hash/" $@; \
+		       -e "s/<colloquial_version>/$$gop_latest_rel/" $@; \
 	else \
 		sed -i -e "/<software_version>/d" -e "/<colloquial_version>/d" $@; \
 	fi
