@@ -15,6 +15,16 @@
 #define DGPU_RST_N GPP_U4
 #define DGPU_PWR_EN GPP_U5
 
+/*
+ * GPP_D11/GPP_D12 yield BOARD_ID signal:
+ * 0/0: NV4xME
+ * 0/1: NV4xMZ
+ * 1/0: NV4xMB
+ * 1/1: reserved
+ */
+#define BOARD_ID_0 GPP_D11
+#define BOARD_ID_1 GPP_D12
+
 void variant_configure_fsps(FSP_S_CONFIG *params)
 {
 	/*
@@ -47,6 +57,17 @@ static void mainboard_pre_device(void *unused) {
 }
 
 BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, mainboard_pre_device, NULL);
+
+bool dasharo_dgpu_present(void) {
+	int id0 = gpio_get(BOARD_ID_0);
+	int id1 = gpio_get(BOARD_ID_1);
+	// dGPU not present only on NV4xMZ
+	bool present = !(id0 == 0 && id1 == 1);
+
+	printk(BIOS_DEBUG, "DGPU %spresent (board_id %d/%d)\n",
+	       present ? "" : "not ", id0, id1);
+	return present;
+}
 
 void variant_init(void) {
 	config_t *cfg = config_of_soc();
