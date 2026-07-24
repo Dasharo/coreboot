@@ -530,17 +530,18 @@ config SBOM_VGA_BIOS_DGPU_PATH
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
 config SBOM_EDK2_GOP
-	bool "Include Intel GOP driver metadata in SBOM"
-	depends on SBOM_PAYLOAD && EDK2_GOP_DRIVER
+	bool "Include GOP driver metadata in SBOM"
+	depends on SBOM_PAYLOAD && (EDK2_GOP_DRIVER || EDK2_AMD_GOP_DRIVER)
 	default n
 	help
 	  Select this option if you want to include a
-	  coswid (Concise Software Identification Tag) of the external Intel GOP
+	  coswid (Concise Software Identification Tag) of the external GOP
 	  (Graphics Output Protocol) driver (EDK2_GOP_FILE) compiled into the
-	  edk2 payload into the SBOM (Software Bill of Materials) File.
+	  edk2 payload into the SBOM (Software Bill of Materials) File.  Covers
+	  both the Intel (EDK2_GOP_DRIVER) and AMD (EDK2_AMD_GOP_DRIVER) drivers.
 
 config SBOM_EDK2_GOP_GENERATE
-	bool "Auto-generate Intel GOP driver info in SBOM"
+	bool "Auto-generate GOP driver info in SBOM"
 	depends on SBOM_EDK2_GOP
 	default y
 	help
@@ -551,7 +552,7 @@ config SBOM_EDK2_GOP_GENERATE
 	  If disabled, set SBOM_EDK2_GOP_PATH to a custom file.
 
 config SBOM_EDK2_GOP_PATH
-	string "Path to SBOM file for the Intel GOP driver"
+	string "Path to SBOM file for the GOP driver"
 	depends on SBOM_EDK2_GOP && !SBOM_EDK2_GOP_GENERATE
 	default "src/sbom/edk2-gop.json"
 	help
