@@ -10,6 +10,9 @@ void mainboard_silicon_init_params(FSPS_UPD *params)
 {
 	/* configure Emmitsburg PCH GPIO controller after FSP-M */
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
+
+	/* Enable SMX */
+	params->FspsConfig.ProcessorSmxEnable = 1;
 }
 
 void smm_mainboard_pci_resource_store_init(struct smm_pci_resource_info *slots, size_t size)

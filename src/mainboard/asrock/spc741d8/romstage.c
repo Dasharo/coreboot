@@ -6,6 +6,7 @@
 #include <defs_cxl.h>
 #include <defs_iio.h>
 #include <mainboard_iio.h>
+#include <security/intel/txt/txt.h>
 
 void mainboard_ewl_check(void)
 {
@@ -66,3 +67,9 @@ bool mainboard_dimm_slot_exists(uint8_t socket, uint8_t channel, uint8_t dimm)
 
 	return true;
 }
+
+bool skip_intel_txt_lockdown(void)
+{
+	return false;
+}
+
