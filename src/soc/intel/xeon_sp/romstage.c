@@ -5,6 +5,7 @@
 #include <console/console.h>
 #include <fsp/util.h>
 #include <smbios.h>
+#include <security/intel/txt/txt.h>
 #include <soc/ddr.h>
 #include <soc/intel/common/smbios.h>
 #include <soc/romstage.h>
@@ -19,6 +20,9 @@ void mainboard_romstage_entry(void)
 	rtc_init();
 	if (soc_get_rtc_failed())
 		mainboard_rtc_failed();
+
+	if (CONFIG(INTEL_TXT))
+		intel_txt_romstage_init();
 
 	fsp_memory_init(false);
 	printk(BIOS_DEBUG, "coreboot fsp_memory_init finished...\n");

@@ -45,6 +45,14 @@ static void config_upd(FSPM_UPD *mupd)
 		mupd->FspmConfig.DfxCxlType3LegacyEn = 0;
 
 	if (CONFIG(INTEL_TXT)) {
+		/*
+		 * Enable Intel TXT (LT/SX) in FSP-M. Without this, FSP-M skips TXT
+		 * pre-mem init and FSP-S programs IA32_FEATURE_CONTROL without the
+		 * VMX-in-SMX and SENTER global enable bits, no matter what
+		 * ProcessorSmxEnable is set to in FSP-S.
+		 */
+		mupd->FspmConfig.ProcessorLtsxEnable = 1;
+
 		/* Configure for error injection test */
 		mupd->FspmConfig.DFXEnable = skip_intel_txt_lockdown() ? 1 : 0;
 	}
