@@ -74,6 +74,11 @@
 #define PT21_SATA_HOTPLUG0   0x2E0C8	/* +PortNum for ports 0-3, bit3=hotplug enabled */
 #define PT21_AHCI_MSI_CAP    0x23C34	/* 0x50=MSI enabled, 0x70=disabled */
 
+/* GPIO_R */
+#define PT21_GPIO_R_CTRL      0x2E350
+#define PT21_GPIO_R_OUT_VAL   0x2E354
+#define PT21_GPIO_R_IN_VAL    0x2E358
+
 /* eFUSE / silicon revision */
 #define PT21_EFUSE_REG       0x2E37B	/* bit3=1 - A2, else A0/A1 */
 
@@ -525,6 +530,14 @@ static void dump_sata_settings(uint8_t *mmio)
 	}
 }
 
+static void dump_gpio_r(uint8_t* mmio)
+{
+	printf("\n--- GPIO_R ---\n");
+	printf("  Control: 0x%04x\n", pt21_read_word(mmio, PT21_GPIO_R_CTRL));
+	printf("  Output:  0x%04x\n", pt21_read_word(mmio, PT21_GPIO_R_OUT_VAL));
+	printf("  Input:   0x%04x\n", pt21_read_word(mmio, PT21_GPIO_R_IN_VAL));
+}
+
 static void dump_gpio(uint64_t gpio_phys)
 {
 	const uint8_t *gpio_mmio;
@@ -635,6 +648,7 @@ int print_promontory(struct pci_access *pacc)
 	dump_usb3_phy(xhci_mmio);
 	dump_usb2_phy(xhci_mmio);
 	dump_sata_settings(xhci_mmio);
+	dump_gpio_r(xhci_mmio);
 
 	unmap_physical((void *)xhci_mmio, PT21_XHCI_MMIO_SIZE);
 
