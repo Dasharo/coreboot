@@ -17,7 +17,7 @@ $(call add_intermediate, add_acm_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r $(BB_FIT_REGION) -a -n $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM) -t 2 \
 		-s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
 
-ifneq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
+ifeq ($(CONFIG_INTEL_TOP_SWAP_SEPARATE_REGIONS),y)
 $(call add_intermediate, add_acm_ts_fit, $(IFITTOOL) set_fit_ptr)
 	$(IFITTOOL) -r TOPSWAP -a -n $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM) -t 2 \
 		-s $(CONFIG_CPU_INTEL_NUM_FIT_ENTRIES) -f $<
