@@ -21,6 +21,10 @@ config BOARD_SPECIFIC_OPTIONS
 config FMDFILE
 	default "src/mainboard/asrock/turind8ud-2t/board.fmd"
 
+config BUILD_WITH_DEBUG_APCB
+	def_bool n
+	prompt "Build with debug APCB"
+
 config MAINBOARD_DIR
 	default "asrock/turind8ud-2t"
 
