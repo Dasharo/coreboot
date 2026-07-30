@@ -7,7 +7,6 @@ ramstage-y += gpio.c
 ramstage-y += smbios.c
 
 ifneq ($(wildcard $(src)/mainboard/$(MAINBOARDDIR)/data*.apcb),)
-APCB_SOURCES = $(src)/mainboard/$(MAINBOARDDIR)/data.apcb
 APCB_SOURCES_RECOVERY = $(src)/mainboard/$(MAINBOARDDIR)/data_rec.apcb
 APCB_SOURCES_68 = $(src)/mainboard/$(MAINBOARDDIR)/data_rec68.apcb
 else
