@@ -44,7 +44,7 @@ usage() {
   echo -e "\tmz33_ar1               - build Dasharo compatible with Gigabyte MZ33-AR1"
 }
 
-DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.1"}
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.4"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
