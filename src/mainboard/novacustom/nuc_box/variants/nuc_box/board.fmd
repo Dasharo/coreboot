@@ -4,7 +4,7 @@ FLASH 32M {
 #if CONFIG_MAINBOARD_USES_IFD_GBE_REGION
 		SI_GBE 0x1000      # 4K (overlaps with PD)
 #endif
-		SI_ME 0x009ec000   # 10,137,600 bytes = matches IFD exactly
+		SI_ME 0x009fc000   # 10,137,600 bytes = matches IFD exactly
 	}
 
 	SI_BIOS@0x01000000 16M {
