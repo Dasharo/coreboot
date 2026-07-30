@@ -454,7 +454,6 @@ config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
 	bool "Capsules do not survive reset"
 	default n
 	depends on DRIVERS_EFI_UPDATE_CAPSULES
-	depends on EDK2_CAPSULES_V2
 	help
 	  Select this option if your platform does not retain memory contents
 	  after resets and capsule are lost. The option will select the
