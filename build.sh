@@ -9,6 +9,7 @@ usage() {
   echo -e "\tz690a_ddr5             - build Dasharo image compatible with MSI PRO Z690-A (WIFI)"
   echo -e "\tz790p_ddr4             - build Dasharo image compatible with MSI PRO Z790-P (WIFI) DDR4"
   echo -e "\tz790p_ddr5             - build Dasharo image compatible with MSI PRO Z790-P (WIFI)"
+  echo -e "\tb850p                  - build Dasharo image compatible with MSI PRO B850-P WIFI"
   echo -e "\tvp66xx                 - build Dasharo for Protectli VP66xx"
   echo -e "\tvp46xx                 - build Dasharo for Protectli VP46xx"
   echo -e "\tvp32xx                 - build Dasharo for Protectli VP32xx"
@@ -127,19 +128,30 @@ function build_optiplex_9010 {
 }
 
 function build_msi {
-  DEFCONFIG="configs/config.${BOARD}_$1"
+  if [ $# -lt 2 ]; then
+    DEFCONFIG="configs/config.${BOARD}"
+  else
+    DEFCONFIG="configs/config.${BOARD}_$1"
+  fi
+
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
 
   build_prep
 
-  echo "Building Dasharo compatible with MSI PRO $2(WIFI) (version $FW_VERSION)"
+  if [ $# -lt 2 ]; then
+    echo "Building Dasharo compatible with MSI PRO $1 (version $FW_VERSION)"
+    RESULT_ROM=${BOARD}_${FW_VERSION}.rom
+  else
+    echo "Building Dasharo compatible with MSI PRO $2(WIFI) (version $FW_VERSION)"
+    RESULT_ROM=${BOARD}_${FW_VERSION}_$1.rom
+  fi
 
   build_start
 
-  cp build/coreboot.rom ${BOARD}_${FW_VERSION}_$1.rom
+  cp build/coreboot.rom ${RESULT_ROM}
   if [ $? -eq 0 ]; then
-    echo "Result binary placed in $PWD/${BOARD}_${FW_VERSION}_$1.rom"
-    sha256sum ${BOARD}_${FW_VERSION}_$1.rom > ${BOARD}_${FW_VERSION}_$1.rom.sha256
+    echo "Result binary placed in $PWD/${RESULT_ROM}"
+    sha256sum ${RESULT_ROM} > ${RESULT_ROM}.sha256
   else
     echo "Build failed!"
     exit 1
@@ -382,6 +394,10 @@ case "$CMD" in
     "z790p_ddr5" | "ms7e06_ddr5")
         BOARD="msi_ms7e06"
         build_msi ddr5 "Z790-P DDR5 "
+        ;;
+    "b850p" | "ms7e56")
+        BOARD="msi_ms7e56"
+        build_msi "B850-P WIFI"
         ;;
     "vp66xx" | "VP66XX")
         BOARD="vp66xx"
