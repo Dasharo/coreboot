@@ -29,6 +29,7 @@ chip soc/intel/meteorlake
 		device ref system_agent on end
 		device ref igpu on
 			register "ddi_port_A_config" = "1"
+			register "gfx" = "GMA_DEFAULT_PANEL(0)"
 		end
 		device ref dtt on end
 		device ref pcie_rp10 on # M.2 2280 #2
