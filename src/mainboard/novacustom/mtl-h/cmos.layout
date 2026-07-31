@@ -23,6 +23,9 @@ entries
 
 984	16	h	0	check_sum
 
+1024	8	h	0	kbl_brightness
+1032	32	h	0	kbl_color
+
 enumerations
 
 2	0	Enable
