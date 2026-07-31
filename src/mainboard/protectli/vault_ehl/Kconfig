@@ -66,4 +66,10 @@ config EDK2_CPU_THROTTLING_THRESHOLD_DEFAULT
 
 endif
 
+config ENABLE_EMMC
+	bool "Enable eMMC support"
+	default y
+	help
+	  Enable the eMMC storage controller
+
 endif # BOARD_PROTECTLI_VP2420
