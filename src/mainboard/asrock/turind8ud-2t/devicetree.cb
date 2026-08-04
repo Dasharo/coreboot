@@ -241,7 +241,7 @@ chip soc/amd/turin_poc
 			register "type" = "IFTYPE_PCIE"
 			register "start_lane" = "132"
 			register "end_lane" = "132"
-			device ref gpp_bridge_5_4_b on end
+			device ref gpp_bridge_5_1_b on end
 		end
 	end
 
@@ -267,6 +267,10 @@ chip soc/amd/turin_poc
 			register "start_lane" = "0"
 			register "end_lane" = "15"
 			device ref gpp_bridge_7_0_a on end
+		end
+
+		device ref gpp_bridge_7_a on
+			device ref xhci_1 on end
 		end
 	end
 
