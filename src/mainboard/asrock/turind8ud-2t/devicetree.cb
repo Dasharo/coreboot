@@ -98,17 +98,6 @@ chip soc/amd/turin_poc
 					end
 				end
 			end
-			chip superio/common
-				register "acpi_name" = ""SIO1""
-				device pnp 2e.0 on
-					chip superio/nuvoton/nct6796d
-						device pnp 2e.2 on	# UART A
-							io 0x60 = 0x3e8
-							irq 0x70 = 4
-						end
-					end
-				end
-			end
 		end
 	end
 
