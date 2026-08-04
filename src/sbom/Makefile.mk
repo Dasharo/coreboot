@@ -53,6 +53,31 @@ CONFIG_SBOM_EDK2_LAN_ROM_PATH    := $(call strip_quotes, $(CONFIG_SBOM_EDK2_LAN_
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
 CONFIG_SBOM_MANUFACTURER   := $(call strip_quotes, $(CONFIG_SBOM_MANUFACTURER))
 
+# Shared git accessors for the git-backed components below. $(1) is the
+# repository directory (a path inside it for sbom-git-toplevel-of). They expand
+# to a command and are meant to be used in a shell command substitution:
+#
+#	git_comm_hash=$$($(call sbom-git-comm-hash,3rdparty/vboot)); \
+#	git_latest_rel=$$($(call sbom-git-latest-rel,3rdparty/vboot)); \
+#
+# safe.directory is relaxed because checkouts are frequently owned by another
+# user than the one running the build (containerized builds).
+#
+# software-version is the "<commit-date>_<hash>" of the repository HEAD. Errors
+# are deliberately not silenced: a missing checkout would otherwise silently
+# produce a component without a version. Callers that expect a miss append
+# "2>/dev/null" themselves.
+sbom-git-comm-hash = git -c safe.directory='*' -C "$(1)" log -n 1 --format="%cs_%H"
+# colloquial-version is the most recent release tag reachable from HEAD.
+# --tags is required, some of these repositories (iPXE) only carry lightweight
+# tags, which git describe ignores by default. Repositories without any tag
+# (3rdparty/vboot) make git describe fail, "|| true" keeps that from aborting
+# recipes running under "set -e"; the placeholder is then substituted with an
+# empty string and goswid omits the field.
+sbom-git-latest-rel = git -c safe.directory='*' -C "$(1)" describe --tags --abbrev=0 2>/dev/null || true
+# Repository enclosing a blob, for blobs whose repository is not known statically.
+sbom-git-toplevel-of = git -C "$$(dirname "$(1)")" rev-parse --show-toplevel 2>/dev/null
+
 # Select the correct payload directory for the used payload. Ideally we could just make this
 # a one-liner, but since the payload is generated externally (with an extra make command), we
 # have to hard code the paths here.
@@ -220,10 +245,13 @@ $(build-dir)/compiler-%.json: $(src-dir)/compiler-%.json | $(build-dir)/goswid
 
 coreboot-gitdir := $(shell git rev-parse --git-dir)
 # coreboot version, format like "<commit-date>_<hash>"
-# colloquial_version is latest coreboot release. Assumes static release tag format, might break.
+# colloquial_version is the latest coreboot release, which is why this is the one
+# component not using sbom-git-latest-rel: forks carry their own release tags
+# (e.g. novacustom_nuc_box_v0.9.2), and git describe would return those instead
+# of the coreboot release. Assumes static release tag format, might break.
 $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $(build-dir)/goswid
 	cp $< $@; \
-	git_comm_hash=$$(git log -n 1 --format="%cs_%H"); \
+	git_comm_hash=$$($(call sbom-git-comm-hash,.)); \
 	git_latest_rel=$$(git tag --merged HEAD | grep -E '^[0-9]{1,2}\.[0-9]{1,2}$$' | sort -V | tail -n1); \
 	sed -i -e "s/<software_version>/$$git_comm_hash/" \
 		-e "s/<colloquial_version>/$$git_latest_rel/" \
@@ -313,7 +341,7 @@ $(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(sbom-me-bin) | $(build-di
 $(build-dir)/intel-ifd.json: $(src-dir)/intel-ifd.json $(CONFIG_IFD_BIN_PATH) | $(build-dir)/goswid
 	cp $< $@
 	set -e; \
-	ifd_git_root=$$(git -C "$$(dirname "$(CONFIG_IFD_BIN_PATH)")" rev-parse --show-toplevel 2>/dev/null); \
+	ifd_git_root=$$($(call sbom-git-toplevel-of,$(CONFIG_IFD_BIN_PATH))); \
 	ifd_readme="$$(dirname "$(CONFIG_IFD_BIN_PATH)")/README.md"; \
 	ifd_version=""; \
 	if [ -n "$$ifd_git_root" ]; then \
@@ -322,7 +350,7 @@ $(build-dir)/intel-ifd.json: $(src-dir)/intel-ifd.json $(CONFIG_IFD_BIN_PATH) | 
 				| grep -i 'Version:' \
 				| grep -Eo 'v([^,]+)'); \
 		fi; \
-		ifd_comm_hash=$$(git -C "$$ifd_git_root" log -n 1 --format="%cs_%H"); \
+		ifd_comm_hash=$$($(call sbom-git-comm-hash,$$ifd_git_root)); \
 		sed -i -e "s/<software_version>/$$ifd_comm_hash/" \
 			-e "s/<colloquial_version>/$$ifd_version/" $@; \
 	else \
@@ -423,7 +451,7 @@ $(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_FD_PATH) $(C
 	fi; \
 	fsp_bios_version=""; sku_type=""; \
 	if [ "$(CONFIG_FSP_USE_REPO)" = "y" ]; then \
-		fsp_git_root=$$(git -C "$$(dirname "$(CONFIG_FSP_FD_PATH)")" rev-parse --show-toplevel 2>/dev/null); \
+		fsp_git_root=$$($(call sbom-git-toplevel-of,$(CONFIG_FSP_FD_PATH))); \
 		fsp_fd_abs=$$(realpath "$(CONFIG_FSP_FD_PATH)" 2>/dev/null || printf '%s\n' "$(CONFIG_FSP_FD_PATH)"); \
 		fsp_rel=$${fsp_fd_abs#$$fsp_git_root/}; \
 		sku_type=$${fsp_rel%/*}; \
@@ -482,7 +510,7 @@ $(build-dir)/amd-opensil.json: $(src-dir)/amd-opensil.json | $(build-dir)
 		done; \
 	fi; \
 	if [ -n "$$opensil_path" ] && [ -d "$$opensil_path" ]; then \
-		comm_hash=$$(git -c safe.directory='*' -C "$$opensil_path" log -n 1 --format="%cs_%H" 2>/dev/null); \
+		comm_hash=$$($(call sbom-git-comm-hash,$$opensil_path) 2>/dev/null); \
 		if [ -n "$$comm_hash" ]; then \
 			sed -i -e "s/<software_version>/$$comm_hash/" $@; \
 		else \
@@ -546,8 +574,8 @@ vboot-gitdir := $(shell git -C 3rdparty/vboot rev-parse --absolute-git-dir 2>/de
 
 $(build-dir)/vboot.json: $(src-dir)/vboot.json $(if $(vboot-gitdir),$(vboot-gitdir)/HEAD,) | $(build-dir) $(build-dir)/goswid
 	cp $< $@
-	git_comm_hash=$$(git --git-dir 3rdparty/vboot/.git log -n 1 --format="%cs_%H"); \
-	git_latest_rel=$$(git --git-dir 3rdparty/vboot/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	git_comm_hash=$$($(call sbom-git-comm-hash,3rdparty/vboot)); \
+	git_latest_rel=$$($(call sbom-git-latest-rel,3rdparty/vboot)); \
 	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@
 	# vboot is built from source as a per-stage static library rather than a
 	# single blob; hash the ramstage vboot_fw.a as the representative artifact
@@ -563,8 +591,8 @@ ipxe-gitdir := $(shell git -C payloads/external/iPXE/ipxe rev-parse --absolute-g
 # iPXE
 $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(if $(ipxe-gitdir),$(ipxe-gitdir)/HEAD,) | $(build-dir) $(build-dir)/goswid $(ipxe-swid-ready-dep)
 	cp $< $@
-	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format="%cs_%H"); \
-	git_latest_rel=$$(git --git-dir payloads/external/iPXE/ipxe/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	git_comm_hash=$$($(call sbom-git-comm-hash,payloads/external/iPXE/ipxe)); \
+	git_latest_rel=$$($(call sbom-git-latest-rel,payloads/external/iPXE/ipxe)); \
 	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@
 	# Hash the built iPXE ROM image (the artifact linked into CBFS) so the
 	# component carries integrity info (CRA Annex I hash carry-through).
@@ -595,10 +623,10 @@ $(build-dir)/payload-edk2-platforms.json: $(src-dir)/payload-edk2-platforms.json
 	cp $< $@
 	set -e; \
 	if [ -e "$(edk2-platforms-git-dir)/.git" ]; then \
-		git_comm_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git log -n 1 --format="%cs_%H"); \
-		git_latest_rel=$$(git --git-dir $(edk2-platforms-git-dir)/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+		git_comm_hash=$$($(call sbom-git-comm-hash,$(edk2-platforms-git-dir))); \
+		git_latest_rel=$$($(call sbom-git-latest-rel,$(edk2-platforms-git-dir))); \
 		sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@; \
-		src_hash=$$(git --git-dir $(edk2-platforms-git-dir)/.git archive HEAD | sha256sum | cut -d' ' -f1); \
+		src_hash=$$(git -C $(edk2-platforms-git-dir) archive HEAD | sha256sum | cut -d' ' -f1); \
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
 			--name "edk2-platforms-source.tar" \
 			--hash "$$src_hash"; \
@@ -658,12 +686,12 @@ $(build-dir)/edk2-gop.json: $(src-dir)/edk2-gop.json $(wildcard $(CONFIG_EDK2_GO
 	# latest release tag (colloquial-version), mirroring the Intel Flash
 	# Descriptor rule.
 	set -e; \
-	gop_git_root=$$(git -C "$$(dirname "$(CONFIG_EDK2_GOP_FILE)")" rev-parse --show-toplevel 2>/dev/null); \
+	gop_git_root=$$($(call sbom-git-toplevel-of,$(CONFIG_EDK2_GOP_FILE))); \
 	if [ -n "$$gop_git_root" ]; then \
-		gop_comm_hash=$$(git -C "$$gop_git_root" log -n 1 --format="%cs_%H"); \
-		gop_latest_rel=$$(git -C "$$gop_git_root" tag --merged HEAD --sort=-creatordate | head -n1); \
-		sed -i -e "s/<software_version>/$$gop_comm_hash/" \
-		       -e "s/<colloquial_version>/$$gop_latest_rel/" $@; \
+		gop_comm_hash=$$($(call sbom-git-comm-hash,$$gop_git_root)); \
+		gop_latest_rel=$$($(call sbom-git-latest-rel,$$gop_git_root)); \
+		sed -i -e "s/<colloquial_version>/$$gop_latest_rel/" \
+		       -e "s/<software_version>/$$gop_comm_hash/" $@; \
 	else \
 		sed -i -e "/<software_version>/d" -e "/<colloquial_version>/d" $@; \
 	fi
@@ -686,8 +714,8 @@ $(build-dir)/edk2-lan-rom.json: $(src-dir)/edk2-lan-rom.json $(wildcard $(CONFIG
 # For standalone `make sbom`, use an existing checkout only.
 $(payload-swid): $(payload-swid-template) | $(build-dir) $(build-dir)/goswid $(payload-swid-ready-dep)
 	cp $< $@;\
-	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format="%cs_%H");\
-	git_latest_rel=$$(git --git-dir $(payload-git-dir-y)/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	git_comm_hash=$$($(call sbom-git-comm-hash,$(payload-git-dir-y)));\
+	git_latest_rel=$$($(call sbom-git-latest-rel,$(payload-git-dir-y))); \
 	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@;
 	if [ -s "$(CONFIG_PAYLOAD_FILE)" ]; then \
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
