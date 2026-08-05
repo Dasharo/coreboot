@@ -358,7 +358,13 @@ static void setup_smihandler_params(struct smm_runtime *mod_params,
 			return;
 		}
 
-		void *ptr = cbmem_add(CBMEM_ID_SMM_COMBUFFER, info.block_size);
+		/*
+		 * Add additional 4KiB for parameters, so that arguments can be in the same
+		 * communication buffer, instead of arbitrary memory allocated by the caller.
+		 * It helps with STM resource reporting and keeping the SMI handlers from
+		 * accessing memory it doesn't have to access.
+		 */
+		void *ptr = cbmem_add(CBMEM_ID_SMM_COMBUFFER, info.block_size + 4 * KiB);
 		if (!ptr) {
 			printk(BIOS_ERR, "SMMSTORE: Failed to add com buffer\n");
 			return;
