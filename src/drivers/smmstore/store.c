@@ -419,7 +419,7 @@ static void *mmap_com_buf(struct region_device *com_buf, uint32_t offset, uint32
 
 	void *ptr = rdev_mmap(com_buf, offset, bufsize);
 	if (!ptr)
-		printk(BIOS_ERR, "smm store: not enough space for new data\n");
+		printk(BIOS_ERR, "smm store: could not mmap com buffer\n");
 
 	return ptr;
 }
@@ -478,7 +478,7 @@ int smmstore_rawwrite_region(uint32_t block_id, uint32_t offset, uint32_t bufsiz
 		return -1;
 
 	if (rdev_chain(&store, &store, block_id * SMM_BLOCK_SIZE + offset, bufsize)) {
-		printk(BIOS_ERR, "smm store: not enough space for new data\n");
+		printk(BIOS_ERR, "smm store: could not create subregion rdev\n");
 		return -1;
 	}
 
