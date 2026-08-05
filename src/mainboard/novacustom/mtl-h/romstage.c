@@ -10,6 +10,13 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	static const struct mb_cfg mem_config = {
 		.type = MEM_TYPE_DDR5,
 
+		.rcomp = {
+			/* Values for MTL-H DDR5 2R */
+			.resistor = 100,
+
+			.targets = {70, 30, 25, 25, 25},
+		},
+
 		.ect = true, /* Early Command Training */
 
 		.UserBd = BOARD_TYPE_ULT_ULX,
@@ -37,6 +44,8 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	mupd->FspmConfig.DcLoadline[0] = 190;
 	mupd->FspmConfig.DcLoadline[1] = 310;
 	mupd->FspmConfig.DcLoadline[2] = 490;
+
+	mupd->FspmConfig.MmioSize = 2560; /* 2.5 GiB */
 
 	memcfg_init(mupd, &mem_config, &dimm_module_spd_info, half_populated);
 }
