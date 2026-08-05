@@ -248,11 +248,25 @@ coreboot-gitdir := $(shell git rev-parse --git-dir)
 # colloquial_version is the latest coreboot release, which is why this is the one
 # component not using sbom-git-latest-rel: forks carry their own release tags
 # (e.g. novacustom_nuc_box_v0.9.2), and git describe would return those instead
-# of the coreboot release. Assumes static release tag format, might break.
+# of the coreboot release. Releases are matched by tag name rather than by tag
+# message ("coreboot version <X.Y>"), the less stable of the two: the name has
+# kept its <X.Y>[.<Z>] shape since 4.0, while the message wording changed to
+# "coreboot release <X.Y>" in 26.03. The optional third component covers point
+# releases (24.02.01, 4.20.1); those only exist on release branches, so they are
+# reachable only from a fork based on one.
+#
+# An empty result means the checkout carries no release tag at all, i.e. a
+# shallow or blobless clone made without --tags. That is an error rather than an
+# omitted field, unlike the tagless third-party repositories handled by
+# sbom-git-latest-rel: for coreboot itself the release is always there to find.
 $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $(build-dir)/goswid
 	cp $< $@; \
 	git_comm_hash=$$($(call sbom-git-comm-hash,.)); \
-	git_latest_rel=$$(git tag --merged HEAD | grep -E '^[0-9]{1,2}\.[0-9]{1,2}$$' | sort -V | tail -n1); \
+	git_latest_rel=$$(git tag --merged HEAD | grep -E '^[0-9]{1,2}\.[0-9]{1,2}(\.[0-9]{1,2})?$$' | sort -V | tail -n1); \
+	if [ -z "$$git_latest_rel" ]; then \
+		echo "ERROR: no coreboot release tag reachable from HEAD, cannot set colloquial-version; run 'git fetch --tags'" >&2; \
+		exit 1; \
+	fi; \
 	sed -i -e "s/<software_version>/$$git_comm_hash/" \
 		-e "s/<colloquial_version>/$$git_latest_rel/" \
 		$@;\
