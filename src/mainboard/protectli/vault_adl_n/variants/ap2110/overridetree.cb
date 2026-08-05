@@ -58,8 +58,14 @@ chip soc/intel/alderlake
 			end
 		end
 
+		# SATA port 1 shares PCH PCIe lane 12 with M.2 lane 0 (combo port).
+		# The lane owner is selected at runtime by SATAPCIE1_DET on GPP_A12;
+		# the port must be marked hot-pluggable to be probed when the lane
+		# was not assigned to the SATA controller at reset.
 		device ref sata on
+			register "sata_salp_support" = "1"
 			register "sata_ports_enable[1]" = "1"
+			register "sata_ports_hotplug[1]" = "1"
 		end
 
 		# LAN1
