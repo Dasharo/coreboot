@@ -4,6 +4,7 @@ subdirs-y += block
 subdirs-y += fsp
 subdirs-y += pi
 subdirs-y += vboot
+subdirs-$(CONFIG_LAUNCH_DRTM_PAYLOAD) += skl
 
 CPPFLAGS_common += -I$(src)/soc/amd/common/vboot/include
 

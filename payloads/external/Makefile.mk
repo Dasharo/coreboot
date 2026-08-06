@@ -579,3 +579,16 @@ doom.wad-file := $(strip $(CONFIG_COREDOOM_WAD_FILE))
 doom.wad-type := raw
 doom.wad-compression := $(CBFS_SECONDARY_PAYLOAD_COMPRESS_FLAG)
 endif
+
+# SKL
+
+payloads/external/skl/secure-kernel-loader/skl.bin:
+	$(MAKE) -C payloads/external/skl CC="$(HOSTCC)" \
+		CONFIG_SKL_REPOSITORY=$(CONFIG_SKL_REPOSITORY) \
+		CONFIG_SKL_TAG_OR_REV=$(CONFIG_SKL_TAG_OR_REV)
+
+cbfs-files-$(CONFIG_LAUNCH_DRTM_PAYLOAD) += $(CONFIG_CBFS_PREFIX)/drtm_payload
+$(CONFIG_CBFS_PREFIX)/drtm_payload-file := payloads/external/skl/secure-kernel-loader/skl.bin
+$(CONFIG_CBFS_PREFIX)/drtm_payload-type := raw
+$(CONFIG_CBFS_PREFIX)/drtm_payload-compression := $(CBFS_PAYLOAD_COMPRESS_FLAG)
+$(CONFIG_CBFS_PREFIX)/drtm_payload-options := $(ADDITIONAL_PAYLOAD_CONFIG)
