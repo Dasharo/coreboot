@@ -280,6 +280,8 @@ static void southbridge_smi_store(void)
 	ret = smmstore_exec(sub_command, (void *)reg_rbx);
 	io_smi->rax = ret;
 
+	smm_stm_restore_smram_to_vmcs(io_smi);
+
 	if (wp_enabled) {
 		pci_and_config16(lpc_dev, BIOS_CNTL, ~BIOS_CNTL_BIOSWE);
 		if (CONFIG(HAVE_INSMM_STS))
@@ -307,6 +309,8 @@ static void southbridge_smi_tpm_ppi(void)
 	/* drivers/tpm/ppi_smm.c */
 	tpm_ppi_process_request_smm(reg_rbx);
 	io_smi->rax = 0;
+
+	smm_stm_restore_smram_to_vmcs(io_smi);
 
 	if (wp_enabled)
 		spi_set_wp(true);
