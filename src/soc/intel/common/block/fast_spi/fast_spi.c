@@ -549,8 +549,21 @@ static void fast_spi_fill_ssdt(const struct device *dev)
 
 static void fast_spi_read_resources(struct device *dev)
 {
+	uintptr_t spi_bar = (uintptr_t)fast_spi_get_bar();
+
 	/* Read standard PCI resources. */
 	pci_dev_read_resources(dev);
+
+	/*
+	 * Do not move the SPI MMIO. Otherwise it will be impossible to pass
+	 * correct base address to STM, because CPU init with STM loading
+	 * happens before resource allocation in coreboot on FSP platforms.
+	 */
+	struct resource *res = probe_resource(dev, PCI_BASE_ADDRESS_0);
+	if (CONFIG(STM) && res && (spi_bar != 0)) {
+		res->base = spi_bar;
+		res->flags |= IORESOURCE_FIXED;
+	}
 
 	/* Add SPI flash MMIO window as a reserved resource. */
 	mmio_range(dev, 0, FLASH_BASE_ADDR, FLASH_MMIO_SIZE);
