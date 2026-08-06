@@ -9,6 +9,7 @@ romstage-y += romstage_fsp_params.c
 
 ramstage-y += mainboard.c
 ramstage-y += smbios.c
+ramstage-$(CONFIG_STM) += stm.c
 
 all-y += die.c
 smm-y += die.c
