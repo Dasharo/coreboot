@@ -141,6 +141,12 @@ void *smm_get_save_state(int cpu);
 /* Returns true if the region overlaps with the SMM */
 bool smm_region_overlaps_handler(const struct region *r);
 
+/*
+ * Sets the bit to restore modified SMRAM to VMCS when STM is enabled.
+ * Requird to be called by all SMI handler that modify save state.
+ */
+void smm_stm_restore_smram_to_vmcs(void *smm_save_state);
+
 /* Returns true if the memory pointed to overlaps with SMM reserved memory. */
 static inline bool smm_points_to_smram(const void *ptr, const size_t len)
 {

@@ -33,6 +33,9 @@
 #include <soc/smbus.h>
 #include <spi-generic.h>
 #include <stdint.h>
+#if CONFIG(STM)
+#include <security/intel/stm/StmApi.h>
+#endif
 
 /* SoC overrides. */
 
@@ -266,6 +269,7 @@ static void southbridge_smi_gsmi(
 	/* drivers/elog/gsmi.c */
 	ret = gsmi_exec(sub_command, &reg_ebx);
 	save_state_ops->set_reg(io_smi, RAX, ret);
+	smm_stm_restore_smram_to_vmcs(io_smi);
 }
 
 static void set_insmm_sts(const bool enable_writes)
@@ -314,6 +318,7 @@ static void southbridge_smi_store(
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)(uintptr_t)reg_ebx);
 	save_state_ops->set_reg(io_smi, RAX, ret);
+	smm_stm_restore_smram_to_vmcs(io_smi);
 
 	if (wp_enabled) {
 		fast_spi_enable_wp();
@@ -349,6 +354,7 @@ static void southbridge_smi_tpm_ppi(
 	/* drivers/tpm/ppi_smm.c */
 	tpm_ppi_process_request_smm(reg_ebx);
 	save_state_ops->set_reg(io_smi, RAX, 0);
+	smm_stm_restore_smram_to_vmcs(io_smi);
 
 	if (wp_enabled) {
 		fast_spi_enable_wp();
