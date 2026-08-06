@@ -266,6 +266,8 @@ static void southbridge_smi_store(void)
 	/* drivers/smmstore/smi.c */
 	ret = smmstore_exec(sub_command, (void *)reg_ebx);
 	io_smi->rax = ret;
+
+	smm_stm_restore_smram_to_vmcs(io_smi);
 }
 
 static void southbridge_smi_tpm_ppi(void)
@@ -282,6 +284,8 @@ static void southbridge_smi_tpm_ppi(void)
 	/* drivers/tpm/ppi_smm.c */
 	tpm_ppi_process_request_smm(reg_ebx);
 	io_smi->rax = 0;
+
+	smm_stm_restore_smram_to_vmcs(io_smi);
 }
 
 static void southbridge_smi_apmc(void)
