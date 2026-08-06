@@ -130,6 +130,25 @@ bool smm_region_overlaps_handler(const struct region *r)
 	return region_overlap(&r_smm, r) || region_overlap(&r_aseg, r);
 }
 
+void smm_stm_restore_smram_to_vmcs(void *smm_save_state)
+{
+	if (!CONFIG(STM))
+		return;
+
+	/*
+	 * Signal STM to propagate SMRAM save state changes back to the
+	 * interrupted guest VMCS on RSM. Required for return values written to
+	 * EAX (e.g. SMMSTORE result) to be visible in OS context after RSM.
+	 * Without this bit set, ReadSyncSmmStateSaveArea() in the STM runtime
+	 * skips the sync entirely, so the guest sees stale pre-SMI register
+	 * values instead of the handler's return code.
+	 */
+	TXT_PROCESSOR_SMM_DESCRIPTOR *psd =
+		(TXT_PROCESSOR_SMM_DESCRIPTOR *)
+		((uintptr_t)smm_save_state - STM_PSD_SIZE);
+	psd->smm_resume_state.smram_to_vmcs_restore_required = 1;
+}
+
 asmlinkage void smm_handler_start(void *arg)
 {
 	const struct smm_module_params *p;
