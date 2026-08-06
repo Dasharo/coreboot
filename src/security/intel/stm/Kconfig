@@ -89,7 +89,7 @@ config STM_HEAPSIZE
 
 config STM_TTYS0_BASE
 	hex "stm uart"
-	default TTYS0_BASE if TTYS0_BASE
+	default TTYS0_BASE if TTYS0_BASE != 0x0
 	default 0x000
 	help
 	  Defines the serial port for STM console output.  0x000 indicates
@@ -107,7 +107,7 @@ choice
 
 config STM_CONSOLE_DEBUG
 	bool "Debug output"
-	depends on STM_CBMEM_CONSOLE || STM_TTYS0_BASE
+	depends on STM_CBMEM_CONSOLE || STM_TTYS0_BASE != 0x0
 	help
 	  "Produces all STM console output"
 
