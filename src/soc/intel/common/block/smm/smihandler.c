@@ -40,6 +40,10 @@
 #include <string.h>
 #include <types.h>
 
+#if CONFIG(STM)
+#include <security/intel/stm/StmApi.h>
+#endif
+
 /* SoC overrides. */
 
 __weak const struct smm_save_state_ops *get_smm_save_state_ops(void)
@@ -260,6 +264,7 @@ static void southbridge_smi_gsmi(
 	/* drivers/elog/gsmi.c */
 	ret = gsmi_exec(sub_command, &reg_ebx);
 	save_state_ops->set_reg(RAX, node, &ret, sizeof(ret));
+	smm_stm_restore_smram_to_vmcs(smm_get_save_state(node));
 }
 
 static void set_insmm_sts(const bool enable_writes)
@@ -311,6 +316,7 @@ static void southbridge_smi_store(
 	ret = smmstore_exec(sub_command, (void *)(uintptr_t)reg_ebx);
 	smmstore_drain_sync_smi();
 	save_state_ops->set_reg(RAX, node, &ret, sizeof(ret));
+	smm_stm_restore_smram_to_vmcs(smm_get_save_state(node));
 
 	if (wp_enabled) {
 		fast_spi_enable_wp();
@@ -349,6 +355,7 @@ static void southbridge_smi_tpm_ppi(
 	tpm_ppi_process_request_smm(reg_ebx);
 	ret = 0;
 	save_state_ops->set_reg(RAX, node, &ret, sizeof(ret));
+	smm_stm_restore_smram_to_vmcs(smm_get_save_state(node));
 
 	if (wp_enabled) {
 		fast_spi_enable_wp();
