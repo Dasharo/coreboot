@@ -10,6 +10,7 @@
 
 #define LPC_DEVICE 31
 #define LPC_FUNCTION 0
+#define SPI_FUNCTION 5
 #define R_ACPI_PM_BASE 0x40
 #define ACPI_PM_BASE_MASK 0xFFF8
 
@@ -17,4 +18,6 @@
  *  Add resources to BIOS resource database.
  */
 void add_resources_cmd(void);
+int mainboard_stm_add_resources(void);
+
 #endif
