@@ -8,5 +8,9 @@ bootblock-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_gpio.c
 romstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_gpio.c
 ramstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_gpio.c
 
+bootblock-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_smbus.c
+romstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_smbus.c
+ramstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_smbus.c
+
 ramstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_hwm.c
 ramstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += superio.c
