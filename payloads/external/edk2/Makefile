@@ -35,8 +35,17 @@ else
 export PACKAGES_PATH := $(EDK2_PATH)
 endif
 
+OBJCOPY = $(GCC_IA32_PREFIX)objcopy
 EDK2_UEFIPAYLOAD_OUT ?= ../../../build/UEFIPAYLOAD.fd
 EDK2_UNIVERSAL_PAYLOAD_OUT ?= ../../../build/UniversalPayload.fit
+
+export GCC_IA32_PREFIX
+export GCC_X64_PREFIX
+export GCC_ARM_PREFIX
+export GCC_AARCH64_PREFIX
+# tools_def.txt maps GCC_IA32_PREFIX and GCC_X64_PREFIX both to ENV(GCC_BIN).
+# Use the X64 prefix as GCC_BIN since x86_64-elf-gcc handles IA32 (-m32) too.
+export GCC_BIN := $(GCC_X64_PREFIX)
 
 PAYLOAD_NAME=DasharoPayloadPkg
 
