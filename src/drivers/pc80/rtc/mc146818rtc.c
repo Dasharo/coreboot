@@ -62,6 +62,11 @@ int cmos_error(void)
 	return (cmos_read(RTC_VALID) & RTC_VRT) == 0;
 }
 
+__weak bool cmos_is_invalid(void)
+{
+	return cmos_read(RTC_CLK_ALTCENTURY) == 0xff;
+}
+
 #define RTC_CONTROL_DEFAULT (RTC_24H)
 #define RTC_FREQ_SELECT_DEFAULT (RTC_REF_CLCK_32KHZ | RTC_RATE_1024HZ)
 
