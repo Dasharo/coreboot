@@ -11,6 +11,16 @@
       "persistent-id": "org.gnu.gcc"
     }
   ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/GPL-3.0-or-later.html"
+    },
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/GCC-exception-3.1.html"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
