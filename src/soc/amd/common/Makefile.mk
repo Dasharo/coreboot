@@ -13,6 +13,13 @@ endif
 
 ifeq ($(CONFIG_SBOM_AMD_PSP_FW),y)
 OPT_SBOM_DIR = --sbom-dir $(obj)/sbom/amdfw
+# The PSP blobs have no SPDX license, so record the redistribution terms they
+# are covered by. Quoted because the href usually carries a '#' fragment, and
+# strip_quotes is idempotent whether or not src/sbom normalised it already.
+sbom-amd-blob-license := $(call strip_quotes, $(CONFIG_SBOM_AMD_BLOB_LICENSE))
+ifneq ($(sbom-amd-blob-license),)
+OPT_SBOM_DIR += --sbom-license "$(sbom-amd-blob-license)"
+endif
 endif
 
 ifneq ($(CONFIG_AMDFW_CONFIG_FILE), )
