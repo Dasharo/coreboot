@@ -512,6 +512,7 @@ typedef struct _amd_cb_config {
 	char *output, *config;
 	char *combo_config[MAX_COMBO_ENTRIES];
 	char *sbom_dir;		/* if set, generate CoSWID SBOM JSON files here */
+	char *sbom_license;	/* if set, license link recorded in those files */
 	int debug;
 } amd_cb_config;
 
@@ -543,8 +544,10 @@ void process_signed_psp_firmwares(const char *signed_rom,
 		uint64_t signed_start_addr,
 		enum platform soc_id);
 int find_bios_entry(amd_bios_type type);
-void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table);
-void generate_sbom_bios(const char *sbom_dir, amd_bios_entry *fw_table);
+void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table,
+		       const char *license_href);
+void generate_sbom_bios(const char *sbom_dir, amd_bios_entry *fw_table,
+			const char *license_href);
 
 #define EFS_FILE_SUFFIX ".efs"
 #define TMP_FILE_SUFFIX ".tmp"

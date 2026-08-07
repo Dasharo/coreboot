@@ -2113,9 +2113,11 @@ int main(int argc, char **argv)
 	}
 
 	if (cb_config.sbom_dir) {
-		generate_sbom_psp(cb_config.sbom_dir, amd_psp_fw_table);
+		generate_sbom_psp(cb_config.sbom_dir, amd_psp_fw_table,
+				  cb_config.sbom_license);
 		if (have_bios_tables(amd_bios_table))
-			generate_sbom_bios(cb_config.sbom_dir, amd_bios_table);
+			generate_sbom_bios(cb_config.sbom_dir, amd_bios_table,
+					   cb_config.sbom_license);
 	}
 
 	amdfwtool_cleanup(&ctx);
