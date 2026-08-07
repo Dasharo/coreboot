@@ -6,6 +6,7 @@
 #include <option.h>
 #include <pc80/mc146818rtc.h>
 #include <reset.h>
+#include <security/vboot/vbnv.h>
 #include <soc/pcr_ids.h>
 
 /* RTC PCR configuration */
@@ -27,6 +28,18 @@ void enable_rtc_upper_bank(void)
 __weak int soc_get_rtc_failed(void)
 {
 	return 0;
+}
+
+bool cmos_is_invalid(void)
+{
+	/*
+	 * GEN_PMCON_B.RTC_BATTERY_DEAD is sticky and is not cleared by coreboot
+	 * on most SoCs, so on its own it would keep reporting a failure on every
+	 * boot following a single RTC well power loss. Corroborate it with the
+	 * CMOS RAM VRT bit, which __cmos_init() re-arms during this same boot,
+	 * to keep the indication one-shot.
+	 */
+	return vbnv_cmos_failed() && cmos_error();
 }
 
 void rtc_init(void)
