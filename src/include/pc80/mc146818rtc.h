@@ -179,6 +179,7 @@ static inline void cmos_write32(u32 value, u8 offset)
 void cmos_init(bool invalid);
 void cmos_check_update_date(void);
 int cmos_error(void);
+bool cmos_is_invalid(void);
 int cmos_lb_cks_valid(void);
 
 int cmos_checksum_valid(int range_start, int range_end, int cks_loc);
