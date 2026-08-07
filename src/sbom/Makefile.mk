@@ -51,6 +51,8 @@ CONFIG_SBOM_VGA_BIOS_DGPU_PATH   := $(call strip_quotes, $(CONFIG_SBOM_VGA_BIOS_
 CONFIG_SBOM_EDK2_GOP_PATH        := $(call strip_quotes, $(CONFIG_SBOM_EDK2_GOP_PATH))
 CONFIG_SBOM_EDK2_LAN_ROM_PATH    := $(call strip_quotes, $(CONFIG_SBOM_EDK2_LAN_ROM_PATH))
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
+CONFIG_LINUXBOOT_KERNEL_VERSION := $(call strip_quotes, $(CONFIG_LINUXBOOT_KERNEL_VERSION))
+CONFIG_LINUXBOOT_UROOT_VERSION  := $(call strip_quotes, $(CONFIG_LINUXBOOT_UROOT_VERSION))
 CONFIG_PAYLOAD_FILE        := $(call strip_quotes, $(CONFIG_PAYLOAD_FILE))
 CONFIG_SBOM_MANUFACTURER   := $(call strip_quotes, $(CONFIG_SBOM_MANUFACTURER))
 
@@ -92,7 +94,13 @@ endif # ifeq ($(CONFIG_SBOM_PAYLOAD_GENERATE), y)
 # use already checked-out repositories for version extraction and avoid
 # re-triggering payload fetch/build targets (especially with `make -B sbom`).
 ifeq ($(filter sbom,$(MAKECMDGOALS)),sbom)
+# LinuxBoot has no payload repository; its version comes from the built kernel
+# image instead, so key the tag on an already built image.
+ifeq ($(CONFIG_PAYLOAD_LINUXBOOT),y)
+payload-swid-ready-dep := $(wildcard $(CONFIG_PAYLOAD_FILE))
+else
 payload-swid-ready-dep := $(wildcard $(payload-git-dir-y)/.git)
+endif
 ipxe-swid-ready-dep := $(wildcard payloads/external/iPXE/ipxe/.git)
 edk2-platforms-swid-ready-dep := $(wildcard payloads/external/edk2/workspace/edk2-platforms/.git)
 else
@@ -722,13 +730,56 @@ $(build-dir)/edk2-lan-rom.json: $(src-dir)/edk2-lan-rom.json $(wildcard $(CONFIG
 			--hash "$$(sha256sum "$(CONFIG_EDK2_LAN_ROM_DRIVER)" | cut -d' ' -f1)"; \
 	fi
 
+# Most payloads are a single git checkout: use "<commit-date>_<hash>" as the
+# software version and the newest release tag reachable from HEAD as the
+# colloquial version.
+payload-swid-version = \
+	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format="%cs_%H");\
+	git_latest_rel=$$(git --git-dir $(payload-git-dir-y)/.git tag --merged HEAD --sort=-creatordate | head -n1); \
+	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@
+
+ifeq ($(CONFIG_PAYLOAD_LINUXBOOT),y)
+# LinuxBoot has no payload repository to read a revision from: the payload is a
+# Linux kernel image plus a u-root initramfs, so payloads/external/LinuxBoot/
+# linuxboot never exists (it only names the tag file) and the generic version
+# above would leave both fields empty. Use the kernel version as the software
+# version, taken from Kconfig when coreboot compiles the kernel and read out of
+# the bzImage setup header when a prebuilt kernel is supplied: the "HdrS" magic
+# sits at 0x202 and the offset of the version string at 0x20e, itself relative
+# to 0x200. Record the u-root revision as the colloquial version; the clone
+# path mirrors payloads/external/LinuxBoot/targets/u-root.mk.
+linuxboot-uroot-gitdir = payloads/external/LinuxBoot/build/go/src/github.com/Dasharo/u-root/.git
+payload-swid-version = \
+	kernel_img='$(CONFIG_PAYLOAD_FILE)'; \
+	kernel_ver='$(CONFIG_LINUXBOOT_KERNEL_VERSION)'; \
+	if [ -z "$$kernel_ver" ] && [ -s "$$kernel_img" ] && \
+	   [ "$$(dd if="$$kernel_img" bs=1 skip=514 count=4 2>/dev/null | tr -d '\0')" = "HdrS" ]; then \
+		off=$$(od -An -tu1 -j 526 -N 2 "$$kernel_img" | awk '{print $$1 + $$2 * 256}'); \
+		kernel_ver=$$(dd if="$$kernel_img" bs=1 skip=$$((off + 512)) count=128 2>/dev/null \
+			| tr '\0' '\n' | head -n1 | cut -d' ' -f1); \
+	fi; \
+	uroot_ver='$(CONFIG_LINUXBOOT_UROOT_VERSION)'; \
+	if [ -d "$(linuxboot-uroot-gitdir)" ]; then \
+		uroot_rev=$$(git --git-dir $(linuxboot-uroot-gitdir) log -n 1 --format="%cs_%H"); \
+		uroot_ver="$${uroot_ver:+$$uroot_ver }$$uroot_rev"; \
+	fi; \
+	if [ -n "$$kernel_ver" ]; then \
+		sed -i "s|<software_version>|$$kernel_ver|" $@; \
+	else \
+		sed -i "/software-version/d" $@; \
+	fi; \
+	if [ -n "$$uroot_ver" ]; then \
+		sed -i "s|<colloquial_version>|u-root $$uroot_ver|" $@; \
+	else \
+		sed -i "/colloquial-version/d" $@; \
+	fi
+endif # ifeq ($(CONFIG_PAYLOAD_LINUXBOOT),y)
+
 # Build payload SBOM metadata only after the payload is ready in regular builds.
 # For standalone `make sbom`, use an existing checkout only.
 $(payload-swid): $(payload-swid-template) | $(build-dir) $(build-dir)/goswid $(payload-swid-ready-dep)
 	cp $< $@;\
-	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format="%cs_%H");\
-	git_latest_rel=$$(git --git-dir $(payload-git-dir-y)/.git tag --merged HEAD --sort=-creatordate | head -n1); \
-	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@;
+	$(payload-swid-version)
 	if [ -s "$(CONFIG_PAYLOAD_FILE)" ]; then \
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
 			--name "$(notdir $(CONFIG_PAYLOAD_FILE))" \
