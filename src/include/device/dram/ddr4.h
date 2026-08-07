@@ -62,11 +62,21 @@ struct dimm_attr_ddr4_st {
 	u16 manufacturer_id;
 	u16 vdd_voltage;
 	bool ecc_extension;
+	u8 dimms_per_channel;
+};
+
+
+enum ddr4_xmp_profile {
+	DDR4_XMP_PROFILE_1 = 0,
+	DDR4_XMP_PROFILE_2 = 1,
 };
 
 typedef u8 spd_ddr4_raw_data[SPD_SIZE_MAX_DDR4];
 
 int spd_decode_ddr4(struct dimm_attr_ddr4_st *dimm, spd_ddr4_raw_data spd);
+
+int spd_xmp_decode_ddr4(struct dimm_attr_ddr4_st *dimm, spd_ddr4_raw_data spd,
+			enum ddr4_xmp_profile profile);
 
 enum cb_err spd_add_smbios17_ddr4(const u8 channel, const u8 slot,
 				const u16 selected_freq,
