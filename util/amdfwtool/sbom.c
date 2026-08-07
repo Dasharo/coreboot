@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <limits.h>
+#include <openssl/evp.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -451,20 +452,101 @@ static char *read_file_as_hex(const char *filename)
 }
 
 /*
+ * Compute the SHA-256 digest of a file and return it base64 encoded, the form
+ * a CoSWID payload hash entry uses ("sha-256:<base64>").  Returns NULL on
+ * error; the caller frees the result.
+ */
+static char *file_sha256_base64(const char *filename)
+{
+	FILE *f;
+	long size;
+	uint8_t *data;
+	uint8_t digest[32];
+	unsigned int digest_len = sizeof(digest);
+	char *b64;
+	size_t n;
+
+	f = fopen(filename, "rb");
+	if (!f) {
+		fprintf(stderr, "SBOM: cannot open %s: %s\n",
+			filename, strerror(errno));
+		return NULL;
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+	/* Firmware components are well below this; guard against nonsense */
+	if (size <= 0 || size > 64 * 1024 * 1024) {
+		fprintf(stderr, "SBOM: unexpected size %ld for %s\n",
+			size, filename);
+		fclose(f);
+		return NULL;
+	}
+
+	data = malloc((size_t)size);
+	if (!data) {
+		fclose(f);
+		return NULL;
+	}
+
+	n = fread(data, 1, (size_t)size, f);
+	if (n != (size_t)size) {
+		fprintf(stderr, "SBOM: cannot read %s: %s\n",
+			filename, strerror(errno));
+		free(data);
+		fclose(f);
+		return NULL;
+	}
+	fclose(f);
+
+	if (!EVP_Digest(data, n, digest, &digest_len, EVP_sha256(), NULL)) {
+		fprintf(stderr, "SBOM: cannot hash %s\n", filename);
+		free(data);
+		return NULL;
+	}
+	free(data);
+
+	/* base64 is 4 characters per 3 input bytes, plus padding and NUL */
+	b64 = malloc(4 * ((digest_len + 2) / 3) + 1);
+	if (!b64)
+		return NULL;
+
+	EVP_EncodeBlock((unsigned char *)b64, digest, (int)digest_len);
+	return b64;
+}
+
+/*
  * Write a CoSWID SBOM JSON file.
  *
  * The emitted format matches the templates in src/sbom/ and is compatible
  * with the goswid tool used to assemble the final sbom.uswid.
+ *
+ * fs_name/src_file name the firmware binary this tag describes; its SHA-256 is
+ * recorded as a payload hash so the component can be integrity checked (CRA
+ * Annex I).  license_href, when set, is recorded as a license link (CRA
+ * Art. 13(5)); AMD firmware blobs have no SPDX identifier, so this is expected
+ * to point at the redistribution terms they are covered by.  Both are omitted
+ * when unavailable rather than emitted empty.
  */
 static bool write_sbom_json(const char *path, const char *tag_id,
 			    const char *sw_name, const char *sw_version,
-			    const char *persistent_id, const char *summary)
+			    const char *persistent_id, const char *summary,
+			    const char *fs_name, const char *src_file,
+			    const char *license_href)
 {
-	FILE *f = fopen(path, "w");
+	FILE *f;
+	char *hash_b64 = NULL;
 
+	if (src_file)
+		hash_b64 = file_sha256_base64(src_file);
+
+	f = fopen(path, "w");
 	if (!f) {
 		fprintf(stderr, "SBOM: cannot create %s: %s\n",
 			path, strerror(errno));
+		free(hash_b64);
 		return false;
 	}
 
@@ -491,10 +573,36 @@ static bool write_sbom_json(const char *path, const char *tag_id,
 		"        \"tagCreator\"\n"
 		"      ]\n"
 		"    }\n"
-		"  ]\n"
-		"}\n",
+		"  ]",
 		tag_id, sw_name, sw_version, persistent_id, summary);
 
+	if (license_href && license_href[0] != '\0')
+		fprintf(f,
+			",\n"
+			"  \"link\": [\n"
+			"    {\n"
+			"      \"rel\": \"license\",\n"
+			"      \"href\": \"%s\"\n"
+			"    }\n"
+			"  ]",
+			license_href);
+
+	if (hash_b64)
+		fprintf(f,
+			",\n"
+			"  \"payload\": {\n"
+			"    \"file\": [\n"
+			"      {\n"
+			"        \"fs-name\": \"%s\",\n"
+			"        \"hash\": \"sha-256:%s\"\n"
+			"      }\n"
+			"    ]\n"
+			"  }",
+			fs_name, hash_b64);
+
+	fprintf(f, "\n}\n");
+
+	free(hash_b64);
 	fclose(f);
 	return true;
 }
@@ -504,7 +612,8 @@ static bool write_sbom_json(const char *path, const char *tag_id,
  * Returns false on error; returns true (and does nothing) for entries that
  * should not appear in the SBOM.
  */
-static bool generate_entry_sbom(const char *sbom_dir, amd_fw_entry *entry)
+static bool generate_entry_sbom(const char *sbom_dir, amd_fw_entry *entry,
+				const char *license_href)
 {
 	char path[PATH_MAX];
 	char version[80];
@@ -551,7 +660,8 @@ static bool generate_entry_sbom(const char *sbom_dir, amd_fw_entry *entry)
 		tag_id = TAG_ID_WRAPPED_KEK;
 		summary = "AMD Wrapped Key Encryption Key";
 		ok = write_sbom_json(path, tag_id, sw_name, hex,
-				     persistent_id, summary);
+				     persistent_id, summary,
+				     bname, entry->filename, license_href);
 		free(hex);
 		free(tmp_fn);
 		return ok;
@@ -572,12 +682,14 @@ static bool generate_entry_sbom(const char *sbom_dir, amd_fw_entry *entry)
 	}
 
 	ok = write_sbom_json(path, tag_id, sw_name, version,
-			     persistent_id, summary);
+			     persistent_id, summary,
+			     bname, entry->filename, license_href);
 	free(tmp_fn);
 	return ok;
 }
 
-static bool generate_bios_entry_sbom(const char *sbom_dir, amd_bios_entry *entry)
+static bool generate_bios_entry_sbom(const char *sbom_dir, amd_bios_entry *entry,
+				     const char *license_href)
 {
 	char path[PATH_MAX];
 	char version[80];
@@ -629,7 +741,8 @@ static bool generate_bios_entry_sbom(const char *sbom_dir, amd_bios_entry *entry
 	}
 
 	ok = write_sbom_json(path, tag_id, sw_name, version,
-			     persistent_id, summary);
+			     persistent_id, summary,
+			     bname, entry->filename, license_href);
 	free(tmp_fn);
 	return ok;
 }
@@ -640,7 +753,8 @@ static bool generate_bios_entry_sbom(const char *sbom_dir, amd_bios_entry *entry
  *
  * Output files are written to sbom_dir as amd-pspfw-<filename>.json.
  */
-void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table)
+void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table,
+		       const char *license_href)
 {
 	amd_fw_entry *entry;
 
@@ -658,7 +772,7 @@ void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table)
 				== FW_SBOM_SKIP)
 			continue;
 
-		generate_entry_sbom(sbom_dir, entry);
+		generate_entry_sbom(sbom_dir, entry, license_href);
 	}
 }
 
@@ -668,7 +782,8 @@ void generate_sbom_psp(const char *sbom_dir, amd_fw_entry *fw_table)
  *
  * Output files are written to sbom_dir as amd-pspfw-<filename>.json.
  */
-void generate_sbom_bios(const char *sbom_dir, amd_bios_entry *fw_table)
+void generate_sbom_bios(const char *sbom_dir, amd_bios_entry *fw_table,
+			const char *license_href)
 {
 	amd_bios_entry *entry;
 
@@ -686,6 +801,6 @@ void generate_sbom_bios(const char *sbom_dir, amd_bios_entry *fw_table)
 				== FW_SBOM_SKIP)
 			continue;
 
-		generate_bios_entry_sbom(sbom_dir, entry);
+		generate_bios_entry_sbom(sbom_dir, entry, license_href);
 	}
 }
