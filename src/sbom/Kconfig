@@ -20,6 +20,18 @@ config SBOM_MANUFACTURER
 	  CycloneDX as metadata.manufacture - satisfying CRA Art. 13(15)
 	  manufacturer identification. Defaults to BIOS_VENDOR.
 
+config SBOM_AMD_BLOB_LICENSE
+	string "License link for AMD firmware blobs (CRA license information)"
+	default "https://www.dasharo.com/pages/terms/"
+	help
+	  Link recorded as the license of the redistributable AMD firmware blobs
+	  (PSP firmware and CPU microcode) in the SBOM, satisfying CRA Art. 13(5)
+	  license information. These blobs carry no SPDX license identifier, so
+	  this points at the redistribution terms they are covered by rather than
+	  at an spdx.org URL like the open source components use.
+
+	  Set to an empty string to omit the license link.
+
 config SBOM_COMPILER
 	bool "Include compiler metadata in SBOM"
 	default n
