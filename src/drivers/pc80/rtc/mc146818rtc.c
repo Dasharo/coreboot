@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <commonlib/bsd/bcd.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <fallback.h>
 #include <pc80/mc146818rtc.h>
 #include <rtc.h>
@@ -170,6 +171,9 @@ void cmos_init(bool invalid)
 		cmos_init_vbnv(invalid);
 	else
 		__cmos_init(invalid);
+
+	if (invalid)
+		dasharo_reset_options();
 }
 
 /*
