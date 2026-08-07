@@ -51,6 +51,7 @@ CONFIG_SBOM_VGA_BIOS_DGPU_PATH   := $(call strip_quotes, $(CONFIG_SBOM_VGA_BIOS_
 CONFIG_SBOM_EDK2_GOP_PATH        := $(call strip_quotes, $(CONFIG_SBOM_EDK2_GOP_PATH))
 CONFIG_SBOM_EDK2_LAN_ROM_PATH    := $(call strip_quotes, $(CONFIG_SBOM_EDK2_LAN_ROM_PATH))
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
+CONFIG_SBOM_AMD_BLOB_LICENSE    := $(call strip_quotes, $(CONFIG_SBOM_AMD_BLOB_LICENSE))
 CONFIG_LINUXBOOT_KERNEL_VERSION := $(call strip_quotes, $(CONFIG_LINUXBOOT_KERNEL_VERSION))
 CONFIG_LINUXBOOT_UROOT_VERSION  := $(call strip_quotes, $(CONFIG_LINUXBOOT_UROOT_VERSION))
 CONFIG_PAYLOAD_FILE        := $(call strip_quotes, $(CONFIG_PAYLOAD_FILE))
@@ -564,13 +565,17 @@ $(build-dir)/intel-microcode-%.json: $(src-dir)/intel-microcode.json 3rdparty/in
 #   offset 0x03, 1 byte:     month (BCD)
 #   offset 0x04, 4 bytes:    patch ID (HEX)
 define amd-ucode-sbom-rule
-$(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-microcode.json $(1)
+$(build-dir)/amd-microcode-$(basename $(notdir $(1))).json: $(src-dir)/amd-microcode.json $(1) | $(build-dir) $(build-dir)/goswid
 	cp $$< $$@
 	year=$$$$(hexdump --skip 0 --length 2 --format '"%04x"' $(1)); \
 	day=$$$$(hexdump --skip 2 --length 1 --format '"%02x"' $(1)); \
 	month=$$$$(hexdump --skip 3 --length 1 --format '"%02x"' $(1)); \
 	patch=$$$$(hexdump --skip 4 --length 4 --format '"0x%08x"' $(1)); \
 	sed -i "s/<software_version>/$$$$patch $$$$year-$$$$month-$$$$day/" $$@
+	$(build-dir)/goswid add-payload-file -o $$@ -i $$@ \
+		--name "$(notdir $(1))" \
+		--hash "$$$$(sha256sum "$(1)" | cut -d' ' -f1)"
+	$(if $(CONFIG_SBOM_AMD_BLOB_LICENSE),$(build-dir)/goswid add-license -o $$@ -i $$@ "$(CONFIG_SBOM_AMD_BLOB_LICENSE)",:)
 endef
 # amd_microcode_bins is populated in src/soc/amd/common/block/cpu/Makefile.mk,
 # which is included several rounds after src/sbom (breadth-first traversal).
