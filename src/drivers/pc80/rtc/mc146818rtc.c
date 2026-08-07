@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <commonlib/bsd/bcd.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <fallback.h>
 #include <pc80/mc146818rtc.h>
 #include <rtc.h>
@@ -163,13 +164,30 @@ static void cmos_init_vbnv(bool invalid)
 
 void cmos_init(bool invalid)
 {
+	bool reset_options;
+
 	if (ENV_SMM)
 		return;
+
+	/*
+	 * Sample before __cmos_init() re-arms the VRT bit. Do not use the
+	 * `invalid` parameter for this: on Intel SoCs it comes from
+	 * soc_get_rtc_failed(), i.e. the sticky RTC_BATTERY_DEAD bit, which
+	 * would keep wiping the options on every boot after a single RTC well
+	 * power loss.
+	 */
+	reset_options = cmos_is_invalid() && !(ENV_RAMSTAGE && acpi_is_wakeup_s3());
 
 	if (CONFIG(VBOOT_VBNV_CMOS))
 		cmos_init_vbnv(invalid);
 	else
 		__cmos_init(invalid);
+
+	if (reset_options) {
+		printk(BIOS_INFO, "RTC: CMOS was cleared, resetting firmware settings\n");
+		if (dasharo_reset_options() != CB_SUCCESS)
+			printk(BIOS_ERR, "RTC: Failed to reset firmware settings\n");
+	}
 }
 
 /*
