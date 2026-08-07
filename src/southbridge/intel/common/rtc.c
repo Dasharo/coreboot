@@ -39,3 +39,8 @@ int vbnv_cmos_failed(void)
 {
 	return rtc_failure();
 }
+
+bool cmos_is_invalid(void)
+{
+	return (bool)rtc_failure();
+}
