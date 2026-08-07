@@ -39,3 +39,14 @@ int vbnv_cmos_failed(void)
 {
 	return rtc_failure();
 }
+
+bool cmos_is_invalid(void)
+{
+	/*
+	 * rtc_init() above clears RTC_BATTERY_DEAD before calling cmos_init(),
+	 * so rtc_failure() alone already reads false by the time cmos_init()
+	 * samples this. Fall back to the CMOS RAM VRT bit, which __cmos_init()
+	 * only re-arms later during that same call.
+	 */
+	return rtc_failure() || cmos_error();
+}
