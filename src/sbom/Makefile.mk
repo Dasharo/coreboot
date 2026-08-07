@@ -416,34 +416,6 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(ipxe-gitdir)
 	git_comm_hash=$$(git --git-dir payloads/external/iPXE/ipxe/.git log -n 1 --format=%H); \
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@
 
-ifeq ($(CONFIG_PAYLOAD_LINUXBOOT),y)
-# LinuxBoot is not a single git checkout; it is a Linux kernel plus a u-root
-# initramfs.  There is no payloads/external/LinuxBoot/linuxboot repo to read a
-# commit hash from, so the generic git-based rule below would leave both version
-# fields empty.  Instead, use the configured Linux kernel version as the software
-# version and record the u-root revision (resolved to the checked-out commit hash
-# when the u-root clone is available) as the colloquial version.
-$(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-git-dir-y)/.git
-	cp $< $@
-	set -e; \
-	kernel_ver='$(call strip_quotes,$(CONFIG_LINUXBOOT_KERNEL_VERSION))'; \
-	uroot_ver='$(call strip_quotes,$(CONFIG_LINUXBOOT_UROOT_VERSION))'; \
-	uroot_git=$$(find payloads/external/LinuxBoot/build/go/src -type d \
-		-path '*/u-root/.git' 2>/dev/null | head -n 1); \
-	if [ -n "$$uroot_git" ]; then \
-		uroot_ver=$$(git --git-dir "$$uroot_git" log -n 1 --format=%H 2>/dev/null || echo "$$uroot_ver"); \
-	fi; \
-	if [ -n "$$kernel_ver" ]; then \
-		sed -i "s/<software_version>/$$kernel_ver/" $@; \
-	else \
-		sed -i "/software-version/d" $@; \
-	fi; \
-	if [ -n "$$uroot_ver" ]; then \
-		sed -i "s|<colloquial_version>|u-root $$uroot_ver|" $@; \
-	else \
-		sed -i "/colloquial-version/d" $@; \
-	fi
-else
 # Order-only dep on the .git dir ensures the payload is cloned before we try
 # to read it.  We do NOT depend on the payload binary ($(CONFIG_PAYLOAD_FILE))
 # because: (a) the recipe never reads the binary, only .git; (b) with make -B
@@ -453,7 +425,6 @@ $(payload-swid): $(payload-swid-template) | $(build-dir) $(payload-git-dir-y)/.g
 	git_tree_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%T);\
 	git_comm_hash=$$(git --git-dir $(payload-git-dir-y)/.git log -n 1 --format=%H);\
 	sed -i -e "s/<colloquial_version>/$$git_tree_hash/" -e "s/<software_version>/$$git_comm_hash/" $@;
-endif
 
 ## Standalone SBOM regeneration target
 ## Rebuilds build/sbom/sbom.uswid from existing build artifacts without
