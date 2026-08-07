@@ -63,6 +63,7 @@ enum {
 	AMDFW_OPT_RECOVERY_A_LOCATION,
 	AMDFW_OPT_RECOVERY_B_LOCATION,
 	AMDFW_OPT_SBOM_DIR,
+	AMDFW_OPT_SBOM_LICENSE,
 	/* begin after ASCII characters */
 	LONGOPT_SPI_READ_MODE	= 256,
 	LONGOPT_SPI_SPEED	= 257,
@@ -152,6 +153,7 @@ static struct option long_options[] = {
 	{"debug",            no_argument,       0, AMDFW_OPT_DEBUG },
 	{"help",             no_argument,       0, AMDFW_OPT_HELP },
 	{"sbom-dir",         required_argument, 0, AMDFW_OPT_SBOM_DIR },
+	{"sbom-license",     required_argument, 0, AMDFW_OPT_SBOM_LICENSE },
 	{NULL,               0,                 0,  0  }
 };
 
@@ -250,6 +252,8 @@ static void usage(void)
 	printf("-h|--help                       Show this help\n");
 	printf("--sbom-dir <DIR>                Generate CoSWID SBOM JSON files for\n");
 	printf("                                PSP firmware blobs into DIR\n");
+	printf("--sbom-license <HREF>           Record HREF as the license link in the\n");
+	printf("                                generated SBOM files\n");
 }
 
 extern amd_fw_entry amd_psp_fw_table[];
@@ -632,6 +636,9 @@ int amdfwtool_getopt(int argc, char *argv[], amd_cb_config *cb_config)
 			return 1;
 		case AMDFW_OPT_SBOM_DIR:
 			cb_config->sbom_dir = optarg;
+			break;
+		case AMDFW_OPT_SBOM_LICENSE:
+			cb_config->sbom_license = optarg;
 			break;
 		case AMDFW_OPT_BODY_LOCATION:
 			cb_config->body_location = (uint32_t)strtoul(optarg, &tmp, 16);
