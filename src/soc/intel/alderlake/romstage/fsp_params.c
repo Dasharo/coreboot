@@ -70,6 +70,13 @@ static void configure_cpu_rp_speed(FSP_M_CONFIG *m_cfg,
 		index + 1, speeds[m_cfg->CpuPcieRpPcieSpeed[index]]);
 }
 
+static void configure_cpu_rp_clkreq_msg(FSP_M_CONFIG *m_cfg,
+			const struct pcie_rp_config *cfg,
+			size_t index, bool enable)
+{
+	m_cfg->CpuPcieRpClockReqMsgEnable[index] = enable;
+}
+
 static void configure_rp_clocks(FSP_M_CONFIG *m_cfg, enum pcie_rp_type type,
 		const struct pcie_rp_config *rp_cfg, size_t index)
 {
@@ -105,12 +112,16 @@ static void configure_rp_clocks(FSP_M_CONFIG *m_cfg, enum pcie_rp_type type,
 static void pcie_rp_init(FSP_M_CONFIG *m_cfg, uint32_t en_mask, enum pcie_rp_type type,
 		const struct pcie_rp_config *cfg, size_t cfg_count)
 {
+	bool pciexp_clk_pm = get_uint_option("pciexp_clk_pm", CONFIG(PCIEXP_CLK_PM));
+
 	for (size_t i = 0; i < cfg_count; i++) {
 		if (!(en_mask & BIT(i)))
 			continue;
 		configure_rp_clocks(m_cfg, type, &cfg[i], i);
-		if (type == PCIE_RP_CPU)
+		if (type == PCIE_RP_CPU) {
 			configure_cpu_rp_speed(m_cfg, &cfg[i], i);
+			configure_cpu_rp_clkreq_msg(m_cfg, &cfg[i], i, pciexp_clk_pm);
+		}
 	}
 }
 
@@ -237,6 +248,55 @@ static void fill_fspm_cpu_params(FSP_M_CONFIG *m_cfg,
 		/* Invalid setting, enable all E-cores */
 		m_cfg->ActiveSmallCoreCount = ALL_CORES_ACTIVE;
 	}
+
+	m_cfg->IaCepEnable = get_uint_option("ia_cep", m_cfg->IaCepEnable);
+	m_cfg->GtCepEnable = get_uint_option("gt_cep", m_cfg->GtCepEnable);
+
+	m_cfg->OcLock = get_uint_option("oc_lock", m_cfg->OcLock);
+	m_cfg->OcSupport = get_uint_option("oc_support", m_cfg->OcSupport);
+
+	if (m_cfg->OcSupport) {
+		m_cfg->CoreVoltageMode = get_uint_option("core_volt_mode", m_cfg->CoreVoltageMode);
+		m_cfg->AtomL2VoltageMode = get_uint_option("atom_core_volt_mode", m_cfg->AtomL2VoltageMode);
+		m_cfg->GtVoltageMode = get_uint_option("gt_volt_mode", m_cfg->GtVoltageMode);
+
+		if (m_cfg->CoreVoltageMode == 0) /* Adaptive */
+			m_cfg->CoreVoltageAdaptive = get_uint_option("core_volt_adapt", m_cfg->CoreVoltageAdaptive);
+		else if (m_cfg->CoreVoltageMode == 1) /* Override */
+			m_cfg->CoreVoltageOverride = get_uint_option("core_volt_ovr", m_cfg->CoreVoltageOverride);
+		else if (m_cfg->CoreVoltageMode >= 2) /* Default: Adaptive, do not change any value */
+			m_cfg->CoreVoltageMode = 0;
+
+		m_cfg->CoreVoltageOffset = get_uint_option("core_volt_off", m_cfg->CoreVoltageOffset);
+		if (get_uint_option("core_volt_off_sign", 0) == 1) /* If negative, convert the value */
+			m_cfg->CoreVoltageOffset = (int16_t)(~m_cfg->CoreVoltageOffset + 1);
+
+		if (m_cfg->AtomL2VoltageMode == 0) /* Adaptive */
+			m_cfg->AtomL2VoltageAdaptive = get_uint_option("atom_core_volt_adapt", m_cfg->AtomL2VoltageAdaptive);
+		else if (m_cfg->AtomL2VoltageMode == 1) /* Override */
+			m_cfg->AtomL2VoltageOverride = get_uint_option("atom_core_volt_ovr", m_cfg->AtomL2VoltageOverride);
+		else if (m_cfg->AtomL2VoltageOverride >= 2) /* Default: Adaptive, do not change any value */
+			m_cfg->AtomL2VoltageOverride = 0;
+
+		m_cfg->AtomL2VoltageOffset = get_uint_option("atom_core_volt_off", m_cfg->AtomL2VoltageOffset);
+		if (get_uint_option("atom_core_volt_off_sign", 0) == 1) /* If negative, convert the value */
+			m_cfg->AtomL2VoltageOffset = (int16_t)(~m_cfg->AtomL2VoltageOffset + 1);
+
+		if (m_cfg->GtVoltageMode == 0) /* Adaptive */
+			m_cfg->GtExtraTurboVoltage = get_uint_option("gt_volt_adapt", m_cfg->GtExtraTurboVoltage);
+		else if (m_cfg->GtVoltageMode == 1) /* Override */
+			m_cfg->GtVoltageOverride = get_uint_option("gt_volt_ovr", m_cfg->GtVoltageOverride);
+		else if (m_cfg->GtVoltageOverride >= 2) /* Default: Adaptive, do not change any value */
+			m_cfg->GtVoltageOverride = 0;
+
+		m_cfg->GtVoltageOffset = get_uint_option("gt_volt_off", m_cfg->GtVoltageOffset);
+		if (get_uint_option("gt_volt_off_sign", 0) == 1) /* If negative, convert the value */
+			m_cfg->GtVoltageOffset = (int16_t)(~m_cfg->GtVoltageOffset + 1);
+
+		m_cfg->RingDownBin = get_uint_option("ring_downbin", m_cfg->RingDownBin);
+		m_cfg->UnderVoltProtection = get_uint_option("undervolt_prot", m_cfg->UnderVoltProtection);
+	}
+
 }
 
 static void fill_fspm_security_params(FSP_M_CONFIG *m_cfg,
@@ -405,7 +465,7 @@ static void fill_fspm_vtd_params(FSP_M_CONFIG *m_cfg,
 		m_cfg->VtdBaseAddress[VTD_TBT3] = TBT3_BASE_ADDRESS;
 
 	/* Change VmxEnable UPD value according to ENABLE_VMX Kconfig */
-	m_cfg->VmxEnable = CONFIG(ENABLE_VMX);
+	m_cfg->VmxEnable = get_uint_option("vmx", CONFIG(ENABLE_VMX));
 }
 
 static void fill_fspm_trace_params(FSP_M_CONFIG *m_cfg,

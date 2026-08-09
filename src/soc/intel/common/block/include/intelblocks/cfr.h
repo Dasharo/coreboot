@@ -133,4 +133,73 @@ static const struct sm_object pciexp_speed = SM_DECLARE_ENUM({
 				SM_ENUM_VALUE_END		},
 });
 
+#if !CONFIG(SOC_INTEL_DISABLE_POWER_LIMITS)
+
+static const struct sm_object pl1_override = SM_DECLARE_NUMBER({
+	.opt_name	= "pl1_override",
+	.ui_name	= "Power Limit PL1",
+	.ui_helptext	= "Power Limit 1 value in Watts. 0 means use the default HW value.",
+	.default_value	= 0,
+	.min		= 0,
+	.max		= 32767,
+	.step		= 1,
+});
+
+static const struct sm_object pl2_override = SM_DECLARE_NUMBER({
+	.opt_name	= "pl2_override",
+	.ui_name	= "Power Limit PL2",
+	.ui_helptext	= "Power Limit 2 value in Watts. 0 means use the default HW value.",
+	.default_value	= 0,
+	.min		= 0,
+	.max		= 32767,
+	.step		= 1,
+});
+
+static const struct sm_object pl4_override = SM_DECLARE_NUMBER({
+	.opt_name	= "tdp_pl4",
+	.ui_name	= "Power Limit PL4",
+	.ui_helptext	= "Power Limit 4 value in Watts. 0 means use the default HW value.",
+	.default_value	= 0,
+	.min		= 0,
+	.max		= 32767,
+	.step		= 1,
+});
+
+static const struct sm_object pl1_time = SM_DECLARE_ENUM({
+	.opt_name	= "pl1_time",
+	.ui_name	= "Power Limit PL1 Time Window",
+	.ui_helptext	= "Power Limit 1 Time Window value in seconds.\n\n"
+			  "Auto means use the default HW value (28s Mobile and 56s Desktop).",
+	.default_value	= 0,
+	.values		= (const struct sm_enum_value[]) {
+				{ "Auto",	0x00,	},
+				{ "1s",		0x0a,	},
+				{ "2s",		0x0b,	},
+				{ "3s",		0x4b,	},
+				{ "4s",		0x0c,	},
+				{ "5s",		0x2c,	},
+				{ "6s",		0x4c,	},
+				{ "7s",		0x6c,	},
+				{ "8s",		0x0d,	},
+				{ "10s",	0x2d,	},
+				{ "12s",	0x4d,	},
+				{ "14s",	0x6d,	},
+				{ "16s",	0x0e,	},
+				{ "20s",	0x2e,	},
+				{ "24s",	0x4e,	},
+				{ "28s",	0x6e,	},
+				{ "32s",	0x0f,	},
+				{ "40s",	0x2f,	},
+				{ "48s",	0x4f,	},
+				{ "56s",	0x6f,	},
+				{ "64s",	0x10,	},
+				{ "80s",	0x30,	},
+				{ "96s",	0x50,	},
+				{ "112s",	0x70,	},
+				{ "128s",	0x11,	},
+				SM_ENUM_VALUE_END	},
+});
+
+#endif
+
 #endif /* SOC_INTEL_CMN_CFR_H */

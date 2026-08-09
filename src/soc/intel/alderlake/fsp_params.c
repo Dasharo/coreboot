@@ -6,6 +6,7 @@
 #include <bootsplash.h>
 #include <console/console.h>
 #include <cpu/intel/microcode.h>
+#include <cpu/x86/msr.h>
 #include <dasharo/options.h>
 #include <delay.h>
 #include <device/device.h>
@@ -24,6 +25,7 @@
 #include <intelblocks/irq.h>
 #include <intelblocks/lpss.h>
 #include <intelblocks/mp_init.h>
+#include <intelblocks/msr.h>
 #include <intelblocks/pmclib.h>
 #include <intelblocks/xdci.h>
 #include <intelpch/lockdown.h>
@@ -1042,6 +1044,7 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
 	u32 cpu_id = cpu_get_cpuid();
+
 	/* Skip setting D0I3 bit for all HECI devices */
 	s_cfg->DisableD0I3SettingForHeci = 1;
 	/*
@@ -1067,6 +1070,21 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 	/* VrConfig Settings for IA and GT domains */
 	for (size_t i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
 		fill_vr_domain_config(s_cfg, i, &config->domain_vr_config[i]);
+
+	s_cfg->VrConfigEnable[VR_DOMAIN_IA] = get_uint_option("ia_vr_config_enable", s_cfg->VrConfigEnable[VR_DOMAIN_IA]);
+	s_cfg->VrConfigEnable[VR_DOMAIN_GT] = get_uint_option("gt_vr_config_enable", s_cfg->VrConfigEnable[VR_DOMAIN_GT]);
+
+	if (s_cfg->VrConfigEnable[VR_DOMAIN_IA]) {
+		s_cfg->AcLoadline[VR_DOMAIN_IA] = get_uint_option("ia_ac_ll", s_cfg->AcLoadline[VR_DOMAIN_IA]);
+		s_cfg->DcLoadline[VR_DOMAIN_IA] = get_uint_option("ia_dc_ll", s_cfg->DcLoadline[VR_DOMAIN_IA]);
+		s_cfg->VrVoltageLimit[VR_DOMAIN_IA] = get_uint_option("ia_vr_vlimit", s_cfg->VrVoltageLimit[VR_DOMAIN_IA]);
+	}
+
+	if (s_cfg->VrConfigEnable[VR_DOMAIN_GT]) {
+		s_cfg->AcLoadline[VR_DOMAIN_GT] = get_uint_option("gt_ac_ll", s_cfg->AcLoadline[VR_DOMAIN_GT]);
+		s_cfg->DcLoadline[VR_DOMAIN_GT] = get_uint_option("gt_dc_ll", s_cfg->DcLoadline[VR_DOMAIN_GT]);
+		s_cfg->VrVoltageLimit[VR_DOMAIN_GT] = get_uint_option("gt_vr_vlimit", s_cfg->VrVoltageLimit[VR_DOMAIN_GT]);
+	}
 
 	s_cfg->PmcLpmS0ixSubStateEnableMask = get_supported_lpm_mask();
 
@@ -1125,6 +1143,67 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 #if CONFIG(SOC_INTEL_RAPTORLAKE) && !CONFIG(FSP_TYPE_IOT)
 	s_cfg->EnableHwpScalabilityTracking = config->enable_hwp_scalability_tracking;
 #endif
+}
+
+static void fill_fsps_turbo_ratio_params(FSP_S_CONFIG *s_cfg,
+		const struct soc_intel_alderlake_config *config)
+{
+	uint8_t val;
+	char p_ratio_group_name[25] = "pcore_turbo_ratio_group0";
+	char p_ratio_limit_name[25] = "pcore_turbo_ratio_limit0";
+	char e_ratio_group_name[25] = "ecore_turbo_ratio_group0";
+	char e_ratio_limit_name[25] = "ecore_turbo_ratio_limit0";
+	size_t group_name_len = strlen(p_ratio_group_name);
+	size_t limit_name_len = strlen(p_ratio_limit_name);
+	uint8_t i;
+	msr_t msr;
+
+	/*
+	 * If OcLock is not set in FSP-M UPD, FSP-S UPD will take and program
+	 * zeroed turbo ratio limits. Avoid this by populating default values here.
+	 */
+	msr = rdmsr(MSR_TURBO_RATIO_LIMIT);
+	memcpy(&s_cfg->TurboRatioLimitRatio[0], &msr.lo, 4);
+	memcpy(&s_cfg->TurboRatioLimitRatio[4], &msr.hi, 4);
+
+	msr = rdmsr(MSR_TURBO_RATIO_LIMIT_CORES);
+	memcpy(&s_cfg->TurboRatioLimitNumCore[0], &msr.lo, 4);
+	memcpy(&s_cfg->TurboRatioLimitNumCore[4], &msr.hi, 4);
+
+	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT);
+	memcpy(&s_cfg->AtomTurboRatioLimitRatio[0], &msr.lo, 4);
+	memcpy(&s_cfg->AtomTurboRatioLimitRatio[4], &msr.hi, 4);
+
+	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT_CORES);
+	memcpy(&s_cfg->AtomTurboRatioLimitNumCore[0], &msr.lo, 4);
+	memcpy(&s_cfg->AtomTurboRatioLimitNumCore[4], &msr.hi, 4);
+
+	for (i = 0; i < 8; i++) {
+		p_ratio_group_name[group_name_len - 1] = '0' + i;
+		p_ratio_limit_name[limit_name_len - 1] = '0' + i;
+		val = get_uint_option(p_ratio_limit_name, 0);
+		if (val != 0)
+			s_cfg->TurboRatioLimitRatio[i] = val;
+
+		val = get_uint_option(p_ratio_group_name, 0);
+		if (val != 0)
+			s_cfg->TurboRatioLimitNumCore[i] = val;
+	}
+
+	group_name_len = strlen(e_ratio_group_name);
+	limit_name_len = strlen(e_ratio_limit_name);
+
+	for (i = 0; i < 8; i++) {
+		e_ratio_group_name[group_name_len - 1] = '0' + i;
+		e_ratio_limit_name[limit_name_len - 1] = '0' + i;
+		val = get_uint_option(e_ratio_limit_name, 0);
+		if (val != 0)
+			s_cfg->AtomTurboRatioLimitRatio[i] = val;
+
+		val = get_uint_option(e_ratio_group_name, 0);
+		if (val != 0)
+			s_cfg->AtomTurboRatioLimitNumCore[i] = val;
+	}
 }
 
 static void fill_fsps_irq_params(FSP_S_CONFIG *s_cfg,
@@ -1324,6 +1403,7 @@ static void soc_silicon_init_params(FSP_S_CONFIG *s_cfg,
 		fill_fsps_fivr_rfi_params,
 		fill_fsps_acoustic_params,
 		fill_fsps_pci_ssid_params,
+		fill_fsps_turbo_ratio_params,
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(fill_fsps_params); i++)
