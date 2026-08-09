@@ -3,20 +3,15 @@
 #include <acpi/acpi.h>
 #include <boot/coreboot_tables.h>
 #include <bootstate.h>
-#include <cpu/x86/msr.h>
 #include <dasharo/options.h>
 #include <device/device.h>
 #include <gpio.h>
+#include <option.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <smbios.h>
 #include <string.h>
 #include <superio/nuvoton/nct6687d/nct6687d.h>
-
-#define MSR_ATOM_TURBO_RATIO_LIMIT		0x650
-#define MSR_ATOM_TURBO_RATIO_LIMIT_CORES	0x651
-#define MSR_BIGCORE_TURBO_RATIO_LIMIT		0x1ad
-#define MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES	0x1ae
 
 void fill_lb_gpios(struct lb_gpios *gpios)
 {
@@ -56,31 +51,8 @@ static void mainboard_init(void *chip_info)
 	printk(BIOS_DEBUG, "PS2 Controller state: %d\n", ps2_en);
 }
 
-static void fill_turbo_ratio_limits(FSP_S_CONFIG *params)
-{
-	msr_t msr;
-
-	msr = rdmsr(MSR_BIGCORE_TURBO_RATIO_LIMIT);
-	memcpy(&params->TurboRatioLimitRatio[0], &msr.lo, 4);
-	memcpy(&params->TurboRatioLimitRatio[4], &msr.hi, 4);
-
-	msr = rdmsr(MSR_BIGCORE_TURBO_RATIO_LIMIT_CORES);
-	memcpy(&params->TurboRatioLimitNumCore[0], &msr.lo, 4);
-	memcpy(&params->TurboRatioLimitNumCore[4], &msr.hi, 4);
-
-	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT);
-	memcpy(&params->AtomTurboRatioLimitRatio[0], &msr.lo, 4);
-	memcpy(&params->AtomTurboRatioLimitRatio[4], &msr.hi, 4);
-
-	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT_CORES);
-	memcpy(&params->AtomTurboRatioLimitNumCore[0], &msr.lo, 4);
-	memcpy(&params->AtomTurboRatioLimitNumCore[4], &msr.hi, 4);
-}
-
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
-	uint8_t aspm, aspm_l1;
-
 	/*
 	 * Turn off the EZ LED DRAM, at this point, coreboot/FSP have
 	 * initialized the memory and it should be working properly.
@@ -92,24 +64,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	 * started initializing devices.
 	 */
 	gpio_set(GPP_H20, 0);
-
-	/* ASPM L1 sub-states require CLKREQ, so CLK_PM should be enabled as well */
-	if (CONFIG(PCIEXP_L1_SUB_STATE) && CONFIG(PCIEXP_CLK_PM))
-		aspm_l1 = 2; // 2 - L1.1 and L1.2
-	else
-		aspm_l1 = 0;
-
-	if (CONFIG(PCIEXP_ASPM)) {
-		aspm = CONFIG(PCIEXP_L1_SUB_STATE) ? 3 : 1; // 3 - L0sL1, 1 - L0s
-	} else {
-		aspm = 0;
-		aspm_l1 = 0;
-	}
-
-	memset(params->PcieRpEnableCpm, 0, sizeof(params->PcieRpEnableCpm));
-	memset(params->CpuPcieRpEnableCpm, 0, sizeof(params->CpuPcieRpEnableCpm));
-	memset(params->CpuPcieClockGating, 0, sizeof(params->CpuPcieClockGating));
-	memset(params->CpuPciePowerGating, 0, sizeof(params->CpuPciePowerGating));
 
 	params->UsbPdoProgramming = 1;
 	params->CpuPcieFiaProgramming = 1;
@@ -146,33 +100,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpTransmitterHalfSwing[20]   = 1; // M2_4
 	params->PcieRpTransmitterHalfSwing[24]   = 1; // M2_2
 
-	params->CpuPcieRpEnableCpm[0] = CONFIG(PCIEXP_CLK_PM); // M2_1
-	params->CpuPcieRpEnableCpm[1] = CONFIG(PCIEXP_CLK_PM); // PCI_E1
-	params->PcieRpEnableCpm[0]    = CONFIG(PCIEXP_CLK_PM); // PCI_E2
-	params->PcieRpEnableCpm[1]    = CONFIG(PCIEXP_CLK_PM); // PCI_E4
-	params->PcieRpEnableCpm[4]    = CONFIG(PCIEXP_CLK_PM); // PCI_E3
-	params->PcieRpEnableCpm[8]    = CONFIG(PCIEXP_CLK_PM); // M2_3
-	params->PcieRpEnableCpm[20]   = CONFIG(PCIEXP_CLK_PM); // M2_4
-	params->PcieRpEnableCpm[24]   = CONFIG(PCIEXP_CLK_PM); // M2_2
-
-	params->CpuPcieRpL1Substates[0] = aspm_l1; // M2_1
-	params->CpuPcieRpL1Substates[1] = aspm_l1; // PCI_E1
-	params->PcieRpL1Substates[0]    = aspm_l1; // PCI_E2
-	params->PcieRpL1Substates[1]    = aspm_l1; // PCI_E4
-	params->PcieRpL1Substates[4]    = aspm_l1; // PCI_E3
-	params->PcieRpL1Substates[8]    = aspm_l1; // M2_3
-	params->PcieRpL1Substates[20]   = aspm_l1; // M2_4
-	params->PcieRpL1Substates[24]   = aspm_l1; // M2_2
-
-	params->CpuPcieRpAspm[0] = aspm; // M2_1
-	params->CpuPcieRpAspm[1] = aspm; // PCI_E1
-	params->PcieRpAspm[0]    = aspm; // PCI_E2
-	params->PcieRpAspm[1]    = aspm; // PCI_E4
-	params->PcieRpAspm[4]    = aspm; // PCI_E3
-	params->PcieRpAspm[8]    = aspm; // M2_3
-	params->PcieRpAspm[20]   = aspm; // M2_4
-	params->PcieRpAspm[24]   = aspm; // M2_2
-
 	params->PcieRpAcsEnabled[0]  = 1; // PCI_E2
 	params->PcieRpAcsEnabled[1]  = 1; // PCI_E4
 	params->PcieRpAcsEnabled[2]  = 1; // Ethernet
@@ -181,15 +108,11 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->PcieRpAcsEnabled[20] = 1; // M2_4
 	params->PcieRpAcsEnabled[24] = 1; // M2_2
 
-	params->CpuPcieClockGating[0] = CONFIG(PCIEXP_CLK_PM);
-	params->CpuPciePowerGating[0] = CONFIG(PCIEXP_CLK_PM);
 	params->CpuPcieRpMultiVcEnabled[0] = 1;
 	params->CpuPcieRpPeerToPeerMode[0] = 1;
 	params->CpuPcieRpMaxPayload[0] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[0] = 1;
 
-	params->CpuPcieClockGating[1] = CONFIG(PCIEXP_CLK_PM);
-	params->CpuPciePowerGating[1] = CONFIG(PCIEXP_CLK_PM);
 	params->CpuPcieRpPeerToPeerMode[1] = 1;
 	params->CpuPcieRpMaxPayload[1] = 2; // 512B
 	params->CpuPcieRpAcsEnabled[1] = 1;
@@ -197,12 +120,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->SataPortsSolidStateDrive[6] = 1; // M2_3
 	params->SataPortsSolidStateDrive[7] = 1; // M2_4
 	params->SataLedEnable = 1;
-
-	/*
-	 * If OcLock is not set in FSP-M UPD, FSP-S UPD will take and program
-	 * zeroed turbo ratio limits. Avoid this by populating defautl values here.
-	 */
-	fill_turbo_ratio_limits(params);
 }
 
 #if CONFIG(GENERATE_SMBIOS_TABLES)
