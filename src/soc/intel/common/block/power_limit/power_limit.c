@@ -6,6 +6,7 @@
 #include <drivers/intel/dptf/chip.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/power_limit.h>
+#include <option.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
 #include <soc/soc_chip.h>
@@ -80,8 +81,8 @@ void set_power_limits(u8 power_limit_1_time,
 	msr_t msr;
 	msr_t limit;
 	unsigned int power_unit;
-	unsigned int tdp, min_power, max_power, max_time, tdp_pl2, tdp_pl1;
-	u8 power_limit_1_val;
+	unsigned int tdp, min_power, max_power, max_time, tdp_pl4, tdp_pl2, tdp_pl1;
+	u8 power_limit_1_val, pl1_time;
 	uint32_t value;
 
 	if (CONFIG(SOC_INTEL_DISABLE_POWER_LIMITS)) {
@@ -108,8 +109,12 @@ void set_power_limits(u8 power_limit_1_time,
 		return;
 	}
 
-	if (power_limit_1_time >= ARRAY_SIZE(power_limit_time_sec_to_msr))
-		power_limit_1_time = ARRAY_SIZE(power_limit_time_sec_to_msr) - 1;
+	pl1_time = get_uint_option("pl1_time", power_limit_1_time);
+	if (pl1_time == 0)
+		pl1_time = power_limit_1_time;
+
+	if (pl1_time >= ARRAY_SIZE(power_limit_time_sec_to_msr))
+		pl1_time = ARRAY_SIZE(power_limit_time_sec_to_msr) - 1;
 
 	msr = rdmsr(MSR_PLATFORM_INFO);
 	if (!(msr.lo & PLATFORM_INFO_SET_TDP))
@@ -128,8 +133,8 @@ void set_power_limits(u8 power_limit_1_time,
 
 	printk(BIOS_INFO, "CPU TDP = %u Watts\n", tdp / power_unit);
 
-	if (power_limit_time_msr_to_sec[max_time] > power_limit_1_time)
-		power_limit_1_time = power_limit_time_msr_to_sec[max_time];
+	if (power_limit_time_msr_to_sec[max_time] > pl1_time)
+		pl1_time = power_limit_time_msr_to_sec[max_time];
 
 	if (min_power > 0 && tdp < min_power)
 		tdp = min_power;
@@ -137,12 +142,17 @@ void set_power_limits(u8 power_limit_1_time,
 	if (max_power > 0 && tdp > max_power)
 		tdp = max_power;
 
-	power_limit_1_val = power_limit_time_sec_to_msr[power_limit_1_time];
+	power_limit_1_val = power_limit_time_sec_to_msr[pl1_time];
 
 	/* Set long term power limit to TDP */
 	limit.lo = 0;
-	tdp_pl1 = ((conf->tdp_pl1_override == 0) ?
-			tdp : (conf->tdp_pl1_override * power_unit));
+	tdp_pl1 = get_uint_option("pl1_override", conf->tdp_pl1_override);
+	if (tdp_pl1 == 0)
+		tdp_pl1 = ((conf->tdp_pl1_override == 0) ?
+				tdp : (conf->tdp_pl1_override * power_unit));
+	else
+		tdp_pl1 *= power_unit;
+
 	printk(BIOS_INFO, "CPU PL1 = %u Watts\n", tdp_pl1 / power_unit);
 	limit.lo |= (tdp_pl1 & PKG_POWER_LIMIT_MASK);
 
@@ -155,8 +165,13 @@ void set_power_limits(u8 power_limit_1_time,
 
 	/* Set short term power limit to 1.25 * TDP if no config given */
 	limit.hi = 0;
-	tdp_pl2 = (conf->tdp_pl2_override == 0) ?
-		(tdp * 125) / 100 : (conf->tdp_pl2_override * power_unit);
+	tdp_pl2 = get_uint_option("pl2_override", conf->tdp_pl2_override);
+	if (tdp_pl2 == 0)
+		tdp_pl2 = (conf->tdp_pl2_override == 0) ?
+			(tdp * 125) / 100 : (conf->tdp_pl2_override * power_unit);
+	else
+		tdp_pl2 *= power_unit;
+
 	printk(BIOS_INFO, "CPU PL2 = %u Watts\n", tdp_pl2 / power_unit);
 	limit.hi |= (tdp_pl2) & PKG_POWER_LIMIT_MASK;
 	limit.hi |= PKG_POWER_LIMIT_CLAMP;
@@ -204,12 +219,13 @@ void set_power_limits(u8 power_limit_1_time,
 	}
 
 	/* Set Pl4 */
-	if (conf->tdp_pl4) {
+	tdp_pl4 = get_uint_option("tdp_pl4", conf->tdp_pl4);
+	if (tdp_pl4) {
+		tdp_pl4 *= power_unit;
 		limit = rdmsr(MSR_VR_CURRENT_CONFIG);
 		limit.lo = 0;
-		printk(BIOS_INFO, "CPU PL4 = %u Watts\n", conf->tdp_pl4);
-		limit.lo |= (conf->tdp_pl4 * power_unit) &
-				PKG_POWER_LIMIT_MASK;
+		printk(BIOS_INFO, "CPU PL4 = %u Watts\n", tdp_pl4 / power_unit);
+		limit.lo |= tdp_pl4 & PKG_POWER_LIMIT_MASK;
 		wrmsr(MSR_VR_CURRENT_CONFIG, limit);
 	}
 
