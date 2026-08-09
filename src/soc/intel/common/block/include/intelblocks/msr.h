@@ -44,6 +44,7 @@
 #define MSR_DISABLE_SIGNALING_THREE_STRIKE_EVENT	0x1ab
 #define  THREE_STRIKE_COUNT		(1 << 0)
 #define MSR_TURBO_RATIO_LIMIT		0x1ad
+#define MSR_TURBO_RATIO_LIMIT_CORES	0x1ae
 #define MSR_PRMRR_PHYS_BASE		0x1f4
 #define MSR_PRMRR_PHYS_MASK		0x1f5
 #define  PRMRR_PHYS_MASK_LOCK		(1 << 10)
@@ -68,6 +69,7 @@
 #define MSR_C_STATE_LATENCY_CONTROL_1	0x60b
 #define MSR_C_STATE_LATENCY_CONTROL_2	0x60c
 #define MSR_PKG_POWER_LIMIT		0x610
+
 /*
  * For Mobile, RAPL default PL1 time window value set to 28 seconds.
  * RAPL time window calculation defined as follows:
@@ -101,6 +103,9 @@
 #define PKG_POWER_LIMIT_TIME_MASK	(0x7f)
 #define PKG_POWER_LIMIT_DUTYCYCLE_SHIFT 24
 #define PKG_POWER_LIMIT_DUTYCYCLE_MASK  (0x7f)
+
+#define MSR_ATOM_TURBO_RATIO_LIMIT		0x650
+#define MSR_ATOM_TURBO_RATIO_LIMIT_CORES	0x651
 
 #define MSR_CORE_MKTME_ACTIVATION	0x9ff
 /* SMM save state MSRs */
