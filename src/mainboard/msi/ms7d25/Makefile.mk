@@ -6,6 +6,7 @@ bootblock-y += msi_id.S
 
 romstage-y += romstage_fsp_params.c
 
+ramstage-$(CONFIG_DRIVERS_OPTION_CFR) += cfr.c
 ramstage-y += mainboard.c
 ramstage-y += smbios.c
 ramstage-$(CONFIG_STM) += stm.c
