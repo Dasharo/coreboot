@@ -3,6 +3,7 @@
 bootblock-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_ec.c
 romstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_ec.c
 ramstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_ec.c
+smm-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_ec.c
 
 bootblock-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_smbus.c
 romstage-$(CONFIG_SUPERIO_NUVOTON_NCT6687D) += nct6687d_smbus.c
