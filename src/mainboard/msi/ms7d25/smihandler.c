@@ -3,12 +3,15 @@
 #include <cpu/x86/smm.h>
 #include <device/pnp_ops.h>
 #include <superio/nuvoton/nct6687d/nct6687d.h>
+#include <superio/nuvoton/nct6687d/nct6687d_ec.h>
 
 #define POWER_DEV PNP_DEV(0x4e, NCT6687D_SLEEP_PWR)
 #define ACPI_DEV PNP_DEV(0x4e, NCT6687D_ACPI)
 
 #define NUVOTON_ENTRY_KEY 0x87
 #define NUVOTON_EXIT_KEY 0xAA
+
+#define EC_IO_BASE 0xa20
 
 static void nuvoton_pnp_enter_conf_state(pnp_devfn_t dev)
 {
@@ -52,6 +55,8 @@ void mainboard_smi_sleep(u8 slp_typ)
 		pnp_write_config(POWER_DEV, 0xe7, 0x88); /* Set AUTO_EN */
 		pnp_write_config(POWER_DEV, 0xe8, 0x07); /* LED to low */
 		disable_ps2_wake();
+		/* Disable USB port power */
+		nct6687d_ec_and_or_page(EC_IO_BASE, 0, 0x3d, 0xbf, 0x00);
 		break;
 	}
 
