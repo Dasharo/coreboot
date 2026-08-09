@@ -81,8 +81,8 @@ void set_power_limits(u8 power_limit_1_time,
 	msr_t msr;
 	msr_t limit;
 	unsigned int power_unit;
-	unsigned int tdp, min_power, max_power, max_time, tdp_pl2, tdp_pl1;
-	u8 power_limit_1_val;
+	unsigned int tdp, min_power, max_power, max_time, tdp_pl4, tdp_pl2, tdp_pl1;
+	u8 power_limit_1_val, pl1_time;
 	uint32_t value;
 
 	if (CONFIG(SOC_INTEL_DISABLE_POWER_LIMITS)) {
@@ -108,8 +108,12 @@ void set_power_limits(u8 power_limit_1_time,
 		return;
 	}
 
-	if (power_limit_1_time >= ARRAY_SIZE(power_limit_time_sec_to_msr))
-		power_limit_1_time = ARRAY_SIZE(power_limit_time_sec_to_msr) - 1;
+	pl1_time = get_uint_option("pl1_time", power_limit_1_time);
+	if (pl1_time == 0)
+		pl1_time = power_limit_1_time;
+
+	if (pl1_time >= ARRAY_SIZE(power_limit_time_sec_to_msr))
+		pl1_time = ARRAY_SIZE(power_limit_time_sec_to_msr) - 1;
 
 	msr = rdmsr(MSR_PLATFORM_INFO);
 	if (!(msr.lo & PLATFORM_INFO_SET_TDP))
@@ -129,14 +133,19 @@ void set_power_limits(u8 power_limit_1_time,
 	printk(BIOS_INFO, "CPU TDP = %u Watts\n", tdp / power_unit);
 
 	if (max_time < ARRAY_SIZE(power_limit_time_msr_to_sec) &&
-	    power_limit_time_msr_to_sec[max_time] > power_limit_1_time)
-		power_limit_1_time = power_limit_time_msr_to_sec[max_time];
+	    power_limit_time_msr_to_sec[max_time] > pl1_time)
+		pl1_time = power_limit_time_msr_to_sec[max_time];
 
-	power_limit_1_val = power_limit_time_sec_to_msr[power_limit_1_time];
+	power_limit_1_val = power_limit_time_sec_to_msr[pl1_time];
 
 	/* Set long term power limit to TDP */
 	limit.lo = 0;
-	const unsigned int tdp_pl1_override = get_uint_option("tdp_pl1_override", conf->tdp_pl1_override);
+	/* Dasharo setup option first, then the upstream CFR option, then devicetree */
+	unsigned int tdp_pl1_override = get_uint_option("pl1_override", 0);
+	if (!tdp_pl1_override)
+		tdp_pl1_override = get_uint_option("tdp_pl1_override", conf->tdp_pl1_override);
+	if (!tdp_pl1_override)
+		tdp_pl1_override = conf->tdp_pl1_override;
 	tdp_pl1 = tdp_pl1_override ? (tdp_pl1_override * power_unit) : tdp;
 	/* Validate against hardware limits */
 	if (min_power > 0 && tdp_pl1 < min_power) {
@@ -161,7 +170,12 @@ void set_power_limits(u8 power_limit_1_time,
 
 	/* Set short term power limit to 1.25 * TDP if no config given */
 	limit.hi = 0;
-	const unsigned int tdp_pl2_override = get_uint_option("tdp_pl2_override", conf->tdp_pl2_override);
+	/* Dasharo setup option first, then the upstream CFR option, then devicetree */
+	unsigned int tdp_pl2_override = get_uint_option("pl2_override", 0);
+	if (!tdp_pl2_override)
+		tdp_pl2_override = get_uint_option("tdp_pl2_override", conf->tdp_pl2_override);
+	if (!tdp_pl2_override)
+		tdp_pl2_override = conf->tdp_pl2_override;
 	tdp_pl2 = tdp_pl2_override ? (tdp_pl2_override * power_unit) : ((tdp * 125) / 100);
 	/* Ensure PL2 isn't less than PL1 */
 	if (tdp_pl2 < tdp_pl1)
@@ -218,14 +232,15 @@ void set_power_limits(u8 power_limit_1_time,
 	}
 
 	/* Set Pl4 */
-	if (conf->tdp_pl4) {
+	tdp_pl4 = get_uint_option("tdp_pl4", conf->tdp_pl4);
+	if (tdp_pl4) {
 		if (!CONFIG(SOC_HAS_MSR_VR_CURRENT_CONFIG)) {
 			printk(BIOS_INFO, "Skipping PL4 MSR programming on this SoC\n");
 		} else {
-			printk(BIOS_INFO, "CPU PL4 = %u Watts\n", conf->tdp_pl4);
+			printk(BIOS_INFO, "CPU PL4 = %u Watts\n", tdp_pl4);
 			limit = rdmsr(MSR_VR_CURRENT_CONFIG);
 			limit.lo = 0;
-			limit.lo |= (conf->tdp_pl4 * power_unit) &
+			limit.lo |= (tdp_pl4 * power_unit) &
 					PKG_POWER_LIMIT_MASK;
 			wrmsr(MSR_VR_CURRENT_CONFIG, limit);
 		}
