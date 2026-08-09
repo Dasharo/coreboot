@@ -5,6 +5,7 @@
 #include <device/dram/ddr4.h>
 #include <drivers/nuvoton/nct3933/nct3933.h>
 #include <fsp/api.h>
+#include <option.h>
 #include <soc/romstage.h>
 #include <soc/meminit.h>
 #include <superio/nuvoton/nct6687d/nct6687d_smbus.h>
@@ -162,6 +163,8 @@ static void boost_ddr4_dram_voltage(uint16_t requested_voltage)
 		.write_byte = nct6687d_smbus_write_byte
 	};
 
+	bool ram_ov_manual = get_uint_option("ram_ov_config", 0);
+
 	nct6687d_smbus_init(EC_IO_BASE);
 
 	if (nct3933_probe(&ops, NCT3933_DRAM_OV_ADDR)) {
@@ -170,17 +173,34 @@ static void boost_ddr4_dram_voltage(uint16_t requested_voltage)
 		return;
 	}
 
-	/* OUT1 is used for DRAM VDD OV */
-	set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(1),
-			 requested_voltage, 1200);
+	if (!ram_ov_manual) {
+		/* OUT1 is used for DRAM VDD OV */
+		set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(1),
+				 requested_voltage, 1200);
 
-	/* OUT2 is used for DRAM VTT OV */
-	set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(2),
-			 requested_voltage / 2, 600);
+		/* OUT2 is used for DRAM VTT OV */
+		set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(2),
+				 requested_voltage / 2, 600);
 
-	/* OUT3 is used for DRAM VPP OV */
-	set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(3),
-			 MIN(requested_voltage, 3300), 2500);
+		/* OUT3 is used for DRAM VPP OV */
+		set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(3),
+				 MIN(requested_voltage, 3300), 2500);
+	} else {
+		requested_voltage = get_uint_option("dram_voltage", 1200);
+		/* OUT1 is used for DRAM VDD OV */
+		set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(1),
+				 requested_voltage, 1200);
+
+		requested_voltage = get_uint_option("dram_vtt", 600);
+		/* OUT2 is used for DRAM VTT OV */
+		set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(2),
+				 requested_voltage / 2, 600);
+
+		requested_voltage = get_uint_option("dram_vpp", 2500);
+		/* OUT3 is used for DRAM VPP OV */
+		set_dram_voltage(&ops, NCT3933_DRAM_OV_ADDR, NCT3933_OUT_DAC_REG(3),
+				 MIN(requested_voltage, 3300), 2500);
+	}
 }
 
 static void check_ddr4_xmp_valid(FSPM_UPD *memupd)
@@ -241,9 +261,8 @@ static void check_ddr4_xmp_valid(FSPM_UPD *memupd)
 
 void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
-	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[0] = CONFIG(PCIEXP_CLK_PM);
-	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[1] = CONFIG(PCIEXP_CLK_PM);
-	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[2] = CONFIG(PCIEXP_CLK_PM);
+	bool pciexp_clk_pm = get_uint_option("pciexp_clk_pm", CONFIG(PCIEXP_CLK_PM));
+
 	memupd->FspmConfig.DmiMaxLinkSpeed = 4; // Gen4 speed, undocumented
 	memupd->FspmConfig.DmiAspm = 0;
 	memupd->FspmConfig.DmiAspmCtrl = 0;
@@ -253,7 +272,7 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.PchHdaSdiEnable[0] = 1;
 
 	memupd->FspmConfig.MmioSize = 0xb00; /* 2.75GB in MB */
-	memupd->FspmConfig.RealtimeMemoryTiming = 1;
+	memupd->FspmConfig.SpdProfileSelected = get_uint_option("spd_mem_profile", 0);
 
 	if (CONFIG(BOARD_MSI_Z790_P_PRO_WIFI_DDR4)) {
 		check_ddr4_xmp_valid(memupd);
@@ -264,6 +283,6 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
-	if (!CONFIG(PCIEXP_CLK_PM))
+	if (!pciexp_clk_pm)
 		disable_pcie_clock_requests(&memupd->FspmConfig);
 }
