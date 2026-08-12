@@ -44,6 +44,14 @@ static const struct mb_cfg memcfg_cfg = {
 
 static int get_spd_index(void)
 {
+	/*
+	 * TODO: add GPIO strap handling logic here, if not present fall back to
+	 * the old revision's SPD.
+	 *
+	 * Alternatively, add and select new BOARD_ variant for the new HW revision.
+	 *
+	 */
+
 	return (CONFIG(BOARD_PROTECTLI_V1410) || CONFIG(BOARD_PROTECTLI_V1610));
 }
 
