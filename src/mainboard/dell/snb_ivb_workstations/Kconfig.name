@@ -1,7 +1,7 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
 config BOARD_DELL_OPTIPLEX_9010
-	bool "OptiPlex 9010 SFF"
+	bool "OptiPlex 7010/9010 SFF"
 
 config BOARD_DELL_PRECISION_T1650
 	bool "Dell Precision T1650"
