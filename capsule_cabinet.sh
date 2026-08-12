@@ -3,6 +3,9 @@
 
 set -e
 
+edk_workspace=${EDK_WORKSPACE:-payloads/external/edk2/workspace/Dasharo}
+edk_tools=${edk_workspace}/BaseTools/BinWrappers/PosixLike
+
 function die() {
     echo error: "$@" 1>&2
     exit 1
@@ -22,17 +25,6 @@ fi
 
 if [ ! -f .config ]; then
     die "No '.config' file in current directory"
-fi
-
-# import coreboot's config file replacing $(...) with ${...}
-while read -r line; do
-    if ! eval "$line"; then
-        die "failed to source '.config'"
-    fi
-done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' .config)"
-
-if [ "$CONFIG_DRIVERS_EFI_UPDATE_CAPSULES" != y ]; then
-    die "Current board configuration lacks support of update capsules"
 fi
 
 capsule=$1
@@ -73,6 +65,25 @@ cat > "${archive_dir}/firmware.metainfo.xml" << EOF
 </component>
 
 EOF
+
+decode_dir=$(mktemp --tmpdir -d XXXXXXXX)
+if ! "${edk_tools}/GenerateCapsule" --decode $capsule --output $decode_dir/capsule; then
+  die "GenerateCapsule --decode failed!"
+fi
+cbfstool $decode_dir/capsule.Payload.1.bin extract -r COREBOOT -n config -f $decode_dir/config
+
+# import coreboot's config file replacing $(...) with ${...}
+while read -r line; do
+    if ! eval "$line"; then
+        die "failed to source 'config'"
+    fi
+done <<< "$(sed 's/\$(\([^)]\+\))/${\1}/g' $decode_dir/config)"
+
+rm -r $decode_dir
+
+if [ "$CONFIG_DRIVERS_EFI_UPDATE_CAPSULES" != y ]; then
+    die "Current board configuration lacks support of update capsules"
+fi
 
 cp $capsule $archive_dir/firmware.bin
 
