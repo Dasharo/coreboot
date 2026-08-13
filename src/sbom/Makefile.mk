@@ -255,10 +255,10 @@ coreboot-gitdir := $(shell git rev-parse --git-dir)
 # releases (24.02.01, 4.20.1); those only exist on release branches, so they are
 # reachable only from a fork based on one.
 #
-# An empty result means the checkout carries no release tag at all, i.e. a
-# shallow or blobless clone made without --tags. That is an error rather than an
-# omitted field, unlike the tagless third-party repositories handled by
-# sbom-git-latest-rel: for coreboot itself the release is always there to find.
+# An empty result means no release tag is reachable from HEAD: a shallow clone,
+# or one made with --no-tags. coreboot's own history always has one, so that is
+# a broken checkout rather than a genuinely absent field: fail instead of
+# silently dropping colloquial-version.
 $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $(build-dir)/goswid
 	cp $< $@; \
 	git_comm_hash=$$($(call sbom-git-comm-hash,.)); \
