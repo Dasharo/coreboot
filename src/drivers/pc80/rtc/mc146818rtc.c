@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <commonlib/bsd/bcd.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <fallback.h>
 #include <pc80/mc146818rtc.h>
 #include <rtc.h>
@@ -60,6 +61,11 @@ void cmos_set_checksum(int range_start, int range_end, int cks_loc)
 int cmos_error(void)
 {
 	return (cmos_read(RTC_VALID) & RTC_VRT) == 0;
+}
+
+__weak bool cmos_is_invalid(void)
+{
+	return cmos_read(RTC_CLK_ALTCENTURY) == 0xff;
 }
 
 #define RTC_CONTROL_DEFAULT (RTC_24H)
@@ -165,6 +171,9 @@ void cmos_init(bool invalid)
 		cmos_init_vbnv(invalid);
 	else
 		__cmos_init(invalid);
+
+	if (invalid)
+		dasharo_reset_options();
 }
 
 /*

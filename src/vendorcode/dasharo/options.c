@@ -7,6 +7,7 @@
 #include <drivers/efi/efivars.h>
 #include <fmap.h>
 #include <option.h>
+#include <pc80/mc146818rtc.h>
 #include <soc/intel/common/reset.h>
 #include <smmstore.h>
 #include <types.h>
@@ -40,6 +41,9 @@ static const EFI_GUID dasharo_apu_features_guid = {
 static enum cb_err read_u8_var(const char *var_name, uint8_t *var)
 {
 	struct region_device rdev;
+
+	if (cmos_is_invalid())
+		return CB_SUCCESS;
 
 	if (CONFIG(SMMSTORE_V2) && !smmstore_lookup_region(&rdev)) {
 		uint8_t tmp;
@@ -93,6 +97,11 @@ static struct apu_config_t get_apu_config(void)
 	};
 
 	cfg = val;
+
+	if (cmos_is_invalid()) {
+		init_done = true;
+		return cfg;
+	}
 
 	struct region_device rdev;
 	if (CONFIG(SMMSTORE_V2) && !smmstore_lookup_region(&rdev)) {
@@ -227,9 +236,13 @@ bool dma_protection_enabled(void)
 		return false;
 
 	size = sizeof(iommu_var);
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+		if (cmos_is_invalid())
+			return false;
+
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
 				&iommu_var, &size);
+	}
 
 	if (ret != CB_SUCCESS)
 		return false;
@@ -354,9 +367,13 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 		return;
 
 	size = sizeof(*wdt_cfg);
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+		if (cmos_is_invalid())
+			return;
+
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
 					wdt_cfg, &size);
+	}
 
 	if (ret != CB_SUCCESS || size != sizeof(*wdt_cfg)) {
 		wdt_cfg->wdt_enable = CONFIG(SOC_INTEL_COMMON_OC_WDT_ENABLE);
@@ -428,9 +445,13 @@ void get_battery_config(struct battery_config *bat_cfg)
 		return;
 
 	size = sizeof(*bat_cfg);
-	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
+		if (cmos_is_invalid())
+			return;
+
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "BatteryConfig",
 					bat_cfg, &size);
+	}
 
 	if (ret != CB_SUCCESS || size != sizeof(*bat_cfg)) {
 		bat_cfg->start_threshold = BATTERY_START_THRESHOLD_DEFAULT;

@@ -8,6 +8,7 @@
 #include <option.h>
 #include <pc80/mc146818rtc.h>
 #include <reset.h>
+#include <security/vboot/vbnv.h>
 #include <soc/pcr_ids.h>
 
 /* RTC PCR configuration */
@@ -29,6 +30,11 @@ void enable_rtc_upper_bank(void)
 __weak int soc_get_rtc_failed(void)
 {
 	return 0;
+}
+
+bool cmos_is_invalid(void)
+{
+	return (bool)vbnv_cmos_failed();
 }
 
 void rtc_init(void)
