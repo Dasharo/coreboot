@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <commonlib/bsd/bcd.h>
 #include <console/console.h>
+#include <dasharo/options.h>
 #include <fallback.h>
 #include <pc80/mc146818rtc.h>
 #include <rtc.h>
@@ -60,6 +61,20 @@ void cmos_set_checksum(int range_start, int range_end, int cks_loc)
 int cmos_error(void)
 {
 	return (cmos_read(RTC_VALID) & RTC_VRT) == 0;
+}
+
+__weak bool cmos_is_invalid(void)
+{
+	return cmos_read(RTC_CLK_ALTCENTURY) == 0xff;
+}
+
+/*
+ * Acknowledge the CMOS failure indication, so that it is reported only for the
+ * boot that follows the power loss. Platforms whose indication is sticky must
+ * override this.
+ */
+__weak void cmos_invalid_ack(void)
+{
 }
 
 #define RTC_CONTROL_DEFAULT (RTC_24H)
@@ -165,6 +180,25 @@ void cmos_init(bool invalid)
 		cmos_init_vbnv(invalid);
 	else
 		__cmos_init(invalid);
+
+	if (!CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR))
+		return;
+
+	/*
+	 * Use the `invalid` argument rather than cmos_is_invalid(): the caller
+	 * samples the platform indication early enough for it to be
+	 * trustworthy. On Intel SoCs it is the romstage snapshot of
+	 * GEN_PMCON_B, because the live bit does not survive into ramstage.
+	 */
+	if (invalid && !(ENV_RAMSTAGE && acpi_is_wakeup_s3())) {
+		printk(BIOS_INFO, "RTC: CMOS was cleared, resetting firmware settings\n");
+		/* Only acknowledge once the options really are gone, so that a
+		   failed erase is retried on the next boot. */
+		if (dasharo_reset_options() == CB_SUCCESS)
+			cmos_invalid_ack();
+		else
+			printk(BIOS_ERR, "RTC: Failed to reset firmware settings\n");
+	}
 }
 
 /*

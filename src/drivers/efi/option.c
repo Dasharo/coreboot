@@ -2,6 +2,7 @@
 
 #include <efi/efi_datatype.h>
 #include <option.h>
+#include <pc80/mc146818rtc.h>
 #include <smmstore.h>
 
 #include "efivars.h"
@@ -15,6 +16,9 @@ unsigned int get_uint_option(const char *name, const unsigned int fallback)
 	enum cb_err ret;
 	uint32_t var;
 	uint32_t size;
+
+	if (option_defaults_forced())
+		return fallback;
 
 	if (smmstore_lookup_region(&rdev))
 		return fallback;

@@ -104,6 +104,9 @@ config ONBOARD_VGA_IS_PRIMARY
 config POST_DEVICE
 	default n
 
+config RESET_OPTIONS_ON_CMOS_CLEAR
+	default y
+
 config UART_FOR_CONSOLE
 	default 0
 

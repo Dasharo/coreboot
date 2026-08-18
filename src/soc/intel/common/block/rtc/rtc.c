@@ -6,6 +6,7 @@
 #include <option.h>
 #include <pc80/mc146818rtc.h>
 #include <reset.h>
+#include <security/vboot/vbnv.h>
 #include <soc/pcr_ids.h>
 
 /* RTC PCR configuration */
@@ -27,6 +28,27 @@ void enable_rtc_upper_bank(void)
 __weak int soc_get_rtc_failed(void)
 {
 	return 0;
+}
+
+bool cmos_is_invalid(void)
+{
+	/*
+	 * Deliberately not corroborated with cmos_error(): RTC register D's VRT
+	 * bit is hardwired to 1 on at least Meteor Lake, so cmos_error() reads
+	 * false even immediately after the coin cell has been pulled, and
+	 * __cmos_init()'s write-back of RTC_VRT is a no-op there.
+	 *
+	 * GEN_PMCON_B.RTC_BATTERY_DEAD is therefore the only usable indication,
+	 * but the live bit does not survive into ramstage - no coreboot code
+	 * clears it, yet it reads back zero by the time the PMC device is
+	 * enabled. That is also why soc_get_rtc_failed() exists and consults the
+	 * romstage snapshot instead. Follow the same split here so that every
+	 * stage agrees on the answer.
+	 */
+	if (ENV_RAMSTAGE)
+		return (bool)soc_get_rtc_failed();
+
+	return (bool)vbnv_cmos_failed();
 }
 
 void rtc_init(void)
