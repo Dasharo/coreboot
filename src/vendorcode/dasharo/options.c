@@ -45,7 +45,7 @@ static enum cb_err read_u8_var(const char *var_name, uint8_t *var)
 	/* Report failure so that callers fall back to their default. Returning
 	 * CB_SUCCESS without touching *var would make read_bool_var() below
 	 * evaluate an uninitialized value. */
-	if (cmos_is_invalid())
+	if (option_defaults_forced())
 		return CB_ERR;
 
 	if (CONFIG(SMMSTORE_V2) && !smmstore_lookup_region(&rdev)) {
@@ -101,7 +101,7 @@ static struct apu_config_t get_apu_config(void)
 
 	cfg = val;
 
-	if (cmos_is_invalid()) {
+	if (option_defaults_forced()) {
 		init_done = true;
 		return cfg;
 	}
@@ -240,7 +240,7 @@ bool dma_protection_enabled(void)
 
 	size = sizeof(iommu_var);
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
-		if (cmos_is_invalid())
+		if (option_defaults_forced())
 			return false;
 
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
@@ -371,7 +371,7 @@ void get_watchdog_config(struct watchdog_config *wdt_cfg)
 
 	size = sizeof(*wdt_cfg);
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
-		if (cmos_is_invalid())
+		if (option_defaults_forced())
 			return;
 
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "WatchdogConfig",
@@ -449,7 +449,7 @@ void get_battery_config(struct battery_config *bat_cfg)
 
 	size = sizeof(*bat_cfg);
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
-		if (cmos_is_invalid())
+		if (option_defaults_forced())
 			return;
 
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "BatteryConfig",
