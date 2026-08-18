@@ -180,6 +180,7 @@ void cmos_init(bool invalid);
 void cmos_check_update_date(void);
 int cmos_error(void);
 bool cmos_is_invalid(void);
+void cmos_invalid_ack(void);
 int cmos_lb_cks_valid(void);
 
 int cmos_checksum_valid(int range_start, int range_end, int cks_loc);
