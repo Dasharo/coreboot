@@ -19,3 +19,22 @@ config PC_CMOS_BASE_PORT_BANK0
 config PC_CMOS_BASE_PORT_BANK1
 	hex
 	default 0x72
+
+config RESET_OPTIONS_ON_CMOS_CLEAR
+	bool "Reset firmware settings when the CMOS is cleared"
+	depends on DRIVERS_MC146818
+	depends on DRIVERS_EFI_VARIABLE_STORE
+	depends on SMMSTORE_V2
+	help
+	  Treat a loss of the CMOS contents, e.g. because the coin cell was
+	  removed, as a request to restore the default firmware settings.
+
+	  The option region is erased so that the payload repopulates it with
+	  its defaults, and until that has happened every option read falls
+	  back to its compiled-in default. Because the readers are guarded and
+	  not just the storage, this also covers the options consumed before
+	  ramstage, so a setting that prevents the platform from booting can be
+	  recovered by removing and reinserting the coin cell.
+
+	  Say n if the platform has no reliable indication that the RTC well
+	  lost power, as the settings would then be discarded on every boot.
