@@ -181,6 +181,9 @@ void cmos_init(bool invalid)
 	else
 		__cmos_init(invalid);
 
+	if (!CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR))
+		return;
+
 	/*
 	 * Use the `invalid` argument rather than cmos_is_invalid(): the caller
 	 * samples the platform indication early enough for it to be
