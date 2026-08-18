@@ -68,6 +68,15 @@ __weak bool cmos_is_invalid(void)
 	return cmos_read(RTC_CLK_ALTCENTURY) == 0xff;
 }
 
+/*
+ * Acknowledge the CMOS failure indication, so that it is reported only for the
+ * boot that follows the power loss. Platforms whose indication is sticky must
+ * override this.
+ */
+__weak void cmos_invalid_ack(void)
+{
+}
+
 #define RTC_CONTROL_DEFAULT (RTC_24H)
 #define RTC_FREQ_SELECT_DEFAULT (RTC_REF_CLCK_32KHZ | RTC_RATE_1024HZ)
 
@@ -164,28 +173,27 @@ static void cmos_init_vbnv(bool invalid)
 
 void cmos_init(bool invalid)
 {
-	bool reset_options;
-
 	if (ENV_SMM)
 		return;
-
-	/*
-	 * Sample before __cmos_init() re-arms the VRT bit. Do not use the
-	 * `invalid` parameter for this: on Intel SoCs it comes from
-	 * soc_get_rtc_failed(), i.e. the sticky RTC_BATTERY_DEAD bit, which
-	 * would keep wiping the options on every boot after a single RTC well
-	 * power loss.
-	 */
-	reset_options = cmos_is_invalid() && !(ENV_RAMSTAGE && acpi_is_wakeup_s3());
 
 	if (CONFIG(VBOOT_VBNV_CMOS))
 		cmos_init_vbnv(invalid);
 	else
 		__cmos_init(invalid);
 
-	if (reset_options) {
+	/*
+	 * Use the `invalid` argument rather than cmos_is_invalid(): the caller
+	 * samples the platform indication early enough for it to be
+	 * trustworthy. On Intel SoCs it is the romstage snapshot of
+	 * GEN_PMCON_B, because the live bit does not survive into ramstage.
+	 */
+	if (invalid && !(ENV_RAMSTAGE && acpi_is_wakeup_s3())) {
 		printk(BIOS_INFO, "RTC: CMOS was cleared, resetting firmware settings\n");
-		if (dasharo_reset_options() != CB_SUCCESS)
+		/* Only acknowledge once the options really are gone, so that a
+		   failed erase is retried on the next boot. */
+		if (dasharo_reset_options() == CB_SUCCESS)
+			cmos_invalid_ack();
+		else
 			printk(BIOS_ERR, "RTC: Failed to reset firmware settings\n");
 	}
 }
