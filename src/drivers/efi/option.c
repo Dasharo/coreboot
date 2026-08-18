@@ -17,7 +17,7 @@ unsigned int get_uint_option(const char *name, const unsigned int fallback)
 	uint32_t var;
 	uint32_t size;
 
-	if (cmos_is_invalid())
+	if (option_defaults_forced())
 		return fallback;
 
 	if (smmstore_lookup_region(&rdev))
