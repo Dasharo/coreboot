@@ -17,6 +17,7 @@
 #include <intelblocks/rtc.h>
 #include <intelblocks/tco.h>
 #include <intelpch/espi.h>
+#include <pc80/mc146818rtc.h>
 #include <security/vboot/vbnv.h>
 #include <soc/gpe.h>
 #include <soc/iomap.h>
@@ -191,6 +192,17 @@ int soc_get_rtc_failed(void)
 int vbnv_cmos_failed(void)
 {
 	return rtc_failed(read32(pmc_mmio_regs() + GEN_PMCON_B));
+}
+
+void cmos_invalid_ack(void)
+{
+	/*
+	 * RTC_BATTERY_DEAD is sticky and nothing else clears it, so clear it
+	 * here. A byte access is used on purpose: it keeps the write-1-to-clear
+	 * PWR_FLR and SUS_PWR_FLR bits in the upper halves of the register
+	 * untouched.
+	 */
+	clrbits8(pmc_mmio_regs() + GEN_PMCON_B, RTC_BATTERY_DEAD);
 }
 
 static inline int deep_s3_enabled(void)
