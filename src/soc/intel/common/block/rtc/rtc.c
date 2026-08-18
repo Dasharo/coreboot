@@ -33,13 +33,22 @@ __weak int soc_get_rtc_failed(void)
 bool cmos_is_invalid(void)
 {
 	/*
-	 * GEN_PMCON_B.RTC_BATTERY_DEAD is sticky and is not cleared by coreboot
-	 * on most SoCs, so on its own it would keep reporting a failure on every
-	 * boot following a single RTC well power loss. Corroborate it with the
-	 * CMOS RAM VRT bit, which __cmos_init() re-arms during this same boot,
-	 * to keep the indication one-shot.
+	 * Deliberately not corroborated with cmos_error(): RTC register D's VRT
+	 * bit is hardwired to 1 on at least Meteor Lake, so cmos_error() reads
+	 * false even immediately after the coin cell has been pulled, and
+	 * __cmos_init()'s write-back of RTC_VRT is a no-op there.
+	 *
+	 * GEN_PMCON_B.RTC_BATTERY_DEAD is therefore the only usable indication,
+	 * but the live bit does not survive into ramstage - no coreboot code
+	 * clears it, yet it reads back zero by the time the PMC device is
+	 * enabled. That is also why soc_get_rtc_failed() exists and consults the
+	 * romstage snapshot instead. Follow the same split here so that every
+	 * stage agrees on the answer.
 	 */
-	return vbnv_cmos_failed() && cmos_error();
+	if (ENV_RAMSTAGE)
+		return (bool)soc_get_rtc_failed();
+
+	return (bool)vbnv_cmos_failed();
 }
 
 void rtc_init(void)
