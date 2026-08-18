@@ -183,6 +183,18 @@ bool cmos_is_invalid(void);
 void cmos_invalid_ack(void);
 int cmos_lb_cks_valid(void);
 
+/*
+ * True when option readers must ignore the stored value and return their
+ * compiled-in default, because the CMOS contents were lost and the platform is
+ * configured to treat that as a request to restore the defaults. Readers use
+ * this rather than cmos_is_invalid() directly, so that the Kconfig guard cannot
+ * be forgotten at a new call site.
+ */
+static inline bool option_defaults_forced(void)
+{
+	return CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR) && cmos_is_invalid();
+}
+
 int cmos_checksum_valid(int range_start, int range_end, int cks_loc);
 void cmos_set_checksum(int range_start, int range_end, int cks_loc);
 
