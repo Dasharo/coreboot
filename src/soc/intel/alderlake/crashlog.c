@@ -47,6 +47,16 @@ static uintptr_t sram_get_bar(void)
 		return 0;
 	}
 
+	/*
+	 * Crashlog SRAM is accessed through a pointer, so it has to be
+	 * reachable.  crashlog_sram_read_resources() keeps the BAR below 4G on
+	 * 32-bit builds, this is only a safety net in case it could not.
+	 */
+	if (res->base != (uintptr_t)res->base) {
+		printk(BIOS_ERR, "PCH SRAM BAR at 0x%llx is not addressable!\n", res->base);
+		return 0;
+	}
+
 	/* Get the base address of the resource */
 	sram_bar = res->base;
 
@@ -55,7 +65,7 @@ static uintptr_t sram_get_bar(void)
 
 bool pmc_cl_discovery(void)
 {
-	u32 tmp_bar_addr = 0, desc_table_addr = 0;
+	uintptr_t tmp_bar_addr = 0, desc_table_addr = 0;
 
 	const struct pmc_ipc_buffer req = { 0 };
 	struct pmc_ipc_buffer res;
@@ -242,6 +252,13 @@ bool cpu_cl_discovery(void)
 
 	const struct resource *res = find_resource(SA_DEV_TMT, PCI_BASE_ADDRESS_0);
 	printk(BIOS_DEBUG, "cpu crashlog bar addr: 0x%llX\n", res->base);
+
+	/* cl_get_cpu_bar_addr() only reads the lower half of the 64-bit BAR. */
+	if (res->base != (uintptr_t)res->base) {
+		printk(BIOS_ERR, "CPU crashlog BAR is not addressable!\n");
+		m_cpu_crashLog_present = false;
+		return false;
+	}
 
 	if (!cpu_cl_gen_discovery_table()) {
 		printk(BIOS_ERR, "CPU crashlog discovery table not valid.\n");
