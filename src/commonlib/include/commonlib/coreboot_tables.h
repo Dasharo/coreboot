@@ -94,6 +94,7 @@ enum {
 	LB_TAG_LOGO			= 0x00a0,
 	LB_TAG_BOOT_INFO		= 0x00a1,
 	LB_TAG_EFI_EC_FW_INFO		= 0x00a2,
+	LB_TAG_FW_ROOT_KEY		= 0x00a3,
 	/* The following options are CMOS-related */
 	LB_TAG_CMOS_OPTION_TABLE	= 0x00c8,
 	LB_TAG_OPTION			= 0x00c9,
@@ -647,10 +648,9 @@ struct lb_boot_mode {
 };
 
 /*
- * Bootlogo header for TianoCore boot logo
- * * size   Contains the size of the BMP file
+ * Header for CBMEM data that needs to have its size specified.
  */
-struct bootlogo_header {
+struct sized_data_header {
 	uint64_t size;
 } __packed;
 

@@ -277,6 +277,7 @@ static void add_cbmem_pointers(struct lb_header *header)
 		{CBMEM_ID_TYPE_C_INFO, LB_TAG_TYPE_C_INFO},
 		{CBMEM_ID_RB_INFO, LB_TAG_ROOT_BRIDGE_INFO},
 		{CBMEM_ID_TIANOCORE_LOGO, LB_TAG_LOGO},
+		{CBMEM_ID_FW_ROOT_KEY, LB_TAG_FW_ROOT_KEY},
 	};
 	int i;
 
@@ -427,11 +428,11 @@ void __weak lb_spi_flash(struct lb_header *header) { /* NOOP */ }
 
 
 /*
- * Allocator for bootlogo that prepends a header to the logo CBMEM entry
+ * Allocator for CBMEM data that prepends a header indicating size of the data
  */
-static void *logo_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
+static void *sized_data_cbmem_allocator(void *arg, size_t size, const union cbfs_mdata *unused)
 {
-	struct bootlogo_header header;
+	struct sized_data_header header;
 	void *logo_loc;
 
 	header.size = size;
@@ -449,12 +450,27 @@ static void tianocore_logo_load(int ignored)
 
 	cbfs_unverified_area_alloc("BOOTSPLASH",
 				"logo.bmp",
-				logo_cbmem_allocator,
+				sized_data_cbmem_allocator,
 				(void *)CBMEM_ID_TIANOCORE_LOGO,
 				&logo_size);
 }
 
 CBMEM_READY_HOOK(tianocore_logo_load);
+
+/*
+ * Loads the root key file from the primary CBFS region into CBMEM
+ */
+static void firmware_root_key_load(int ignored)
+{
+	size_t size;
+	if (cbfs_alloc("root_key", sized_data_cbmem_allocator,
+		       (void *)(uintptr_t)CBMEM_ID_FW_ROOT_KEY, &size) != NULL)
+		printk(BIOS_DEBUG, "Published root_key of size %zu in CBMEM.\n", size);
+	else
+		printk(BIOS_DEBUG, "root_key file wasn't found in CBFS.\n");
+}
+
+CBMEM_READY_HOOK(firmware_root_key_load);
 
 static struct lb_forward *lb_forward(struct lb_header *header,
 	struct lb_header *next_header)
