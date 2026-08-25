@@ -5,6 +5,20 @@
 
 #include <intelblocks/msr.h>
 
+/*
+ * Force serialized SMM relocation. Xeon-SP enumerates SMM_CPU_SVRSTR in
+ * MSR_SMM_MCA_CAP (0x17d) but does not implement MSR_SMM_FEATURE_CONTROL
+ * (0x4e0) -- SMM feature control lives in UBOX DFX PCI config space instead,
+ * see SMM_FEATURE_CONTROL in soc/pci_devs.h and smihandler_soc_at_finalize().
+ * Taking the "save state in MSRs" path in
+ * soc/intel/common/block/cpu/smmrelocate.c therefore #GPs inside the SMM
+ * relocation handler, which has no IDT, and the platform dies.
+ */
+#ifdef SMM_CPU_SVRSTR_MASK
+#undef SMM_CPU_SVRSTR_MASK
+#endif
+#define SMM_CPU_SVRSTR_MASK 0
+
 #define MSR_FEATURE_CONFIG              0x13c
 #define   FEATURE_CONFIG_LOCK           BIT(0)
 
