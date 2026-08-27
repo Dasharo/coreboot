@@ -40,8 +40,13 @@
 
 /*
  * SPC741D8-2L2T IIO PCIe Port Table
+ *
+ * These are the board defaults. romstage.c patches PEXPHIDE, SLOTIMP and
+ * SLOTPSP of the IOU entries to match the bifurcation actually in effect
+ * before handing the tables to soc_config_iio(), so the two tables below do
+ * not have to be kept in sync by hand.
  */
-static const UPD_IIO_PCIE_PORT_CONFIG_ENTRY iio_pci_port[CONFIG_MAX_SOCKET][IIO_PORT_SETTINGS] = {
+static UPD_IIO_PCIE_PORT_CONFIG_ENTRY iio_pci_port[CONFIG_MAX_SOCKET][IIO_PORT_SETTINGS] = {
 	{
 	/* DMI port: array index 0 */
 	CFG_UPD_PCIE_PORT(0, 0, 0),
@@ -93,8 +98,8 @@ static const UPD_IIO_PCIE_PORT_CONFIG_ENTRY iio_pci_port[CONFIG_MAX_SOCKET][IIO_
 	},
 };
 
-static const UINT8 iio_bifur[CONFIG_MAX_SOCKET][5] = {
-	// Note: When changing, also update port configurations above.
+static UINT8 iio_bifur[CONFIG_MAX_SOCKET][5] = {
+	// Overridable at runtime through the iio_bifurcation_iouN CFR options.
 	{
 		IIO_BIFURCATE_xxxxxx16, /* physical slot PCIE3 */
 		IIO_BIFURCATE_xxxxxx16, /* physical slot PCIE5 */
