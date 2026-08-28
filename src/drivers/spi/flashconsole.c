@@ -98,6 +98,11 @@ void flashconsole_tx_flush(void)
 	if (!rdev_ptr)
 		return;
 
+	/* A zero-length rdev_writeat() is rejected as an invalid subregion,
+	   which would latch `busy` and silence the console for good. */
+	if (!len)
+		return;
+
 	busy = 1;
 	region_size = region_device_sz(rdev_ptr);
 	if (offset + len >= region_size)
