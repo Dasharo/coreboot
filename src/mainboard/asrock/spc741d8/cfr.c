@@ -36,8 +36,7 @@ static const struct sm_enum_value iio_bifurcation_values[] = {
 
 #define IIO_BIFURCATION_HELPTEXT(slot)						\
 	"Split the 16 lanes of " slot " into narrower links. The widths are "	\
-	"assigned to the root ports of the IOU in the order listed. Auto lets "	\
-	"the FSP pick the bifurcation based on the installed card."
+	"assigned to the root ports of the IOU in the order listed."
 
 static const struct sm_object iio_bifurcation_iou0 = SM_DECLARE_ENUM({
 	.opt_name	= "iio_bifurcation_iou0",
