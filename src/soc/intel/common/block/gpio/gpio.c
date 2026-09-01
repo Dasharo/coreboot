@@ -554,6 +554,29 @@ int gpio_tx_get(gpio_t gpio_num)
 	return !!(reg & PAD_CFG0_TX_STATE);
 }
 
+static int
+gpio_pad_config_lock_verify(const struct gpio_lock_config *pad_info,
+	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
+{
+	int ret = 0;
+
+	if ((pad_info->lock_action & GPIO_LOCK_CONFIG) == GPIO_LOCK_CONFIG &&
+	    !(pcr_read32(pid, offset) & bit_mask)) {
+		printk(BIOS_ERR, "%s: Error: pad %d configuration still unlocked!\n",
+				__func__, pad_info->pad);
+		ret = -1;
+	}
+
+	if ((pad_info->lock_action & GPIO_LOCK_TX) == GPIO_LOCK_TX &&
+	    !(pcr_read32(pid, offset + sizeof(uint32_t)) & bit_mask)) {
+		printk(BIOS_ERR, "%s: Error: pad %d Tx state still unlocked!\n",
+				__func__, pad_info->pad);
+		ret = -1;
+	}
+
+	return ret;
+}
+
 static void
 gpio_pad_config_lock_using_sbi(const struct gpio_lock_config *pad_info,
 	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
@@ -601,12 +624,32 @@ gpio_pad_config_lock_using_sbi(const struct gpio_lock_config *pad_info,
 	}
 }
 
+static void
+gpio_pad_config_lock_using_pcr(const struct gpio_lock_config *pad_info,
+	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
+{
+	if ((pad_info->lock_action & GPIO_LOCK_CONFIG) == GPIO_LOCK_CONFIG) {
+		if (CONFIG(DEBUG_GPIO))
+			printk(BIOS_INFO, "%s: Locking pad %d configuration\n",
+						__func__, pad_info->pad);
+		pcr_or32(pid, offset, bit_mask);
+	}
+
+	if ((pad_info->lock_action & GPIO_LOCK_TX) == GPIO_LOCK_TX) {
+		if (CONFIG(DEBUG_GPIO))
+			printk(BIOS_INFO, "%s: Locking pad %d TX state\n",
+				__func__, pad_info->pad);
+		pcr_or32(pid, offset + sizeof(uint32_t), bit_mask);
+	}
+}
+
 int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count)
 {
 	const struct pad_community *comm;
 	uint16_t offset;
 	size_t rel_pad;
 	gpio_t pad;
+	int ret = 0;
 
 	if (!CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_LOCK_GPIO_PADS))
 		return -1;
@@ -645,29 +688,21 @@ int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count)
 
 		const uint32_t bit_mask = gpio_bitmask_within_group(comm, rel_pad);
 
-		gpio_pad_config_lock_using_sbi(&pad_list[x], comm->port, offset, bit_mask);
+		/* Use the lock method the SoC selected, as done outside of SMM */
+		if (CONFIG(SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_USING_PCR))
+			gpio_pad_config_lock_using_pcr(&pad_list[x], comm->port, offset,
+						       bit_mask);
+		else
+			gpio_pad_config_lock_using_sbi(&pad_list[x], comm->port, offset,
+						       bit_mask);
+
+		if (gpio_pad_config_lock_verify(&pad_list[x], comm->port, offset, bit_mask))
+			ret = -1;
 	}
 
 	p2sb_hide();
-}
 
-static void
-gpio_pad_config_lock_using_pcr(const struct gpio_lock_config *pad_info,
-	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
-{
-	if ((pad_info->lock_action & GPIO_LOCK_CONFIG) == GPIO_LOCK_CONFIG) {
-		if (CONFIG(DEBUG_GPIO))
-			printk(BIOS_INFO, "%s: Locking pad %d configuration\n",
-						__func__, pad_info->pad);
-		pcr_or32(pid, offset, bit_mask);
-	}
-
-	if ((pad_info->lock_action & GPIO_LOCK_TX) == GPIO_LOCK_TX) {
-		if (CONFIG(DEBUG_GPIO))
-			printk(BIOS_INFO, "%s: Locking pad %d TX state\n",
-				__func__, pad_info->pad);
-		pcr_or32(pid, offset + sizeof(uint32_t), bit_mask);
-	}
+	return ret;
 }
 
 static int gpio_non_smm_lock_pad(const struct gpio_lock_config *pad_info)
@@ -710,9 +745,10 @@ static int gpio_non_smm_lock_pad(const struct gpio_lock_config *pad_info)
 	} else {
 		printk(BIOS_ERR, "%s: Error: No pad configuration lock method is selected!\n",
 						__func__);
+		return -1;
 	}
 
-	return 0;
+	return gpio_pad_config_lock_verify(pad_info, comm->port, offset, bit_mask);
 }
 
 int gpio_lock_pad(const gpio_t pad, enum gpio_lock_action lock_action)
@@ -726,7 +762,12 @@ int gpio_lock_pad(const gpio_t pad, enum gpio_lock_action lock_action)
 		.lock_action = lock_action
 	};
 
-	if (!ENV_SMM && !CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_LOCK_GPIO_PADS))
+	/*
+	 * gpio_lock_pads() only works in SMM. Pads locked while configuring
+	 * them, i.e. from the pad tables in ramstage, have to go through the
+	 * non-SMM path even when the SoC also locks pads from SMM.
+	 */
+	if (!ENV_SMM)
 		return gpio_non_smm_lock_pad(&pads);
 
 	return gpio_lock_pads(&pads, 1);

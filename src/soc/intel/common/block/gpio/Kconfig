@@ -55,6 +55,37 @@ config SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_USING_PCR
 	  Starting with MTL SoC, the recommendation is to use PCR for locking down the
 	  GPIO configuration.
 
+# Selected by SoCs that return the pad driving PLTRST# from
+# soc_gpio_lock_config().
+config SOC_INTEL_COMMON_BLOCK_GPIO_HAS_PLTRST_PAD
+	bool
+
+config SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_PLTRST_PAD
+	bool "Lock the PLTRST# pad configuration"
+	default y
+	depends on SOC_INTEL_COMMON_BLOCK_GPIO_HAS_PLTRST_PAD
+	depends on HAVE_SMI_HANDLER
+	depends on INTEL_CHIPSET_LOCKDOWN
+	depends on SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_USING_SBI || \
+		   SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_USING_PCR
+	select SOC_INTEL_COMMON_BLOCK_SMM_LOCK_GPIO_PADS
+	help
+	  PLTRST# is the native function of a GPIO pad. As long as that pad
+	  configuration stays writable, system software can switch the pad to
+	  GPIO mode and drive a platform reset edge. A discrete TPM is reset by
+	  that edge while the host keeps running, so its PCRs are cleared
+	  without restarting the measured boot chain and can be replayed with
+	  arbitrary values.
+
+	  Lock the pad configuration from the SMM finalize handler, i.e. after
+	  FSP has run its notify phases, so the pad mode can no longer be
+	  changed. Only the configuration is locked. The Tx state is left
+	  writable, as it has no effect while the pad drives PLTRST#.
+
+	  Say N on a board that does not use this pad for PLTRST#, or that uses
+	  it as a GPIO: locking the configuration of a pad that already is in
+	  GPIO mode does not keep software from driving it.
+
 # Indicate if SoC supports 4 bits Pad Mode with PAD_CFG_DW0 registers
 config SOC_INTEL_COMMON_BLOCK_GPIO_PMODE_4BITS
 	bool
