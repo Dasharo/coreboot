@@ -158,7 +158,8 @@ static enum cb_err validate_fv_header(const struct region_device *rdev,
 		return CB_EFI_CHECKSUM_INVALID;
 	}
 
-	printk(BIOS_SPEW, PREFIX "UEFI FV with size %lld found\n", fw_vol_hdr->FvLength);
+	if (CONFIG(DEBUG_EFIVARS))
+		printk(BIOS_SPEW, PREFIX "UEFI FV with size %lld found\n", fw_vol_hdr->FvLength);
 
 	return CB_SUCCESS;
 }
@@ -200,8 +201,9 @@ validate_variable_store_header(const EFI_FIRMWARE_VOLUME_HEADER  *fv_hdr,
 		return CB_EFI_ACCESS_ERROR;
 	}
 
-	printk(BIOS_SPEW, PREFIX "UEFI variable store with size %zu found\n",
-		region_device_sz(rdev));
+	if (CONFIG(DEBUG_EFIVARS))
+		printk(BIOS_SPEW, PREFIX "UEFI variable store with size %zu found\n",
+			region_device_sz(rdev));
 
 	return CB_SUCCESS;
 }
@@ -367,9 +369,11 @@ static enum cb_err walk_variables(struct region_device *rdev,
 			hdr.DataSize = 0;
 		}
 
-		printk(BIOS_SPEW, "Found variable with state %02x and ", hdr.State);
-		print_guid(BIOS_SPEW, &hdr.VendorGuid);
-		printk(BIOS_SPEW, "\n");
+		if (CONFIG(DEBUG_EFIVARS)) {
+			printk(BIOS_SPEW, "Found variable with state %02x and ", hdr.State);
+			print_guid(BIOS_SPEW, &hdr.VendorGuid);
+			printk(BIOS_SPEW, "\n");
+		}
 
 		stop = false;
 
@@ -393,12 +397,12 @@ static enum cb_err efi_fv_init(struct region_device *rdev, bool *auth_format)
 	ret = validate_fv_header(rdev, &fv_hdr);
 	if (ret != CB_SUCCESS) {
 		printk(BIOS_WARNING, PREFIX "Failed to validate firmware header\n");
-
 		return ret;
 	}
 	ret = validate_variable_store_header(&fv_hdr, rdev, auth_format);
-	if (ret != CB_SUCCESS)
+	if (ret != CB_SUCCESS) {
 		printk(BIOS_WARNING, PREFIX "Failed to validate variable store header\n");
+	}
 
 	return ret;
 }
