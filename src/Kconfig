@@ -1443,6 +1443,14 @@ config DEBUG_ACPICA_COMPATIBLE
 	  to extract all the tables. Then use 'iasl -d' on the .dat files
 	  to decompile the tables.
 
+config DEBUG_EFIVARS
+	bool "Debug EFI variable store"
+	depends on DRIVERS_EFI_VARIABLE_STORE
+	help
+	  Select this to print out verbose information about EFI variables.
+	  Additional information about the volumen and each variable state
+	  will be printed. Set the console loglevel to verbosity 'SPEW'.
+
 endmenu
 
 ###############################################################################
