@@ -35,8 +35,7 @@ static const struct sm_enum_value iio_bifurcation_values[] = {
 };
 
 #define IIO_BIFURCATION_HELPTEXT(slot)						\
-	"Split the 16 lanes of " slot " into narrower links. The widths are "	\
-	"assigned to the root ports of the IOU in the order listed."
+	"Split the 16 lanes of " slot " into narrower links."
 
 static const struct sm_object iio_bifurcation_iou0 = SM_DECLARE_ENUM({
 	.opt_name	= "iio_bifurcation_iou0",
@@ -79,7 +78,7 @@ static const struct sm_object iio_bifurcation_iou4 = SM_DECLARE_ENUM({
 });
 
 static struct sm_obj_form pcie = {
-	.ui_name = "PCI Express",
+	.ui_name = "PCIe Bifurcation",
 	.obj_list = (const struct sm_object *[]) {
 		&iio_bifurcation_iou2,
 		&iio_bifurcation_iou0,
