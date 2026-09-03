@@ -1545,3 +1545,35 @@ $(call add_intermediate, check-ramstage-overlaps)
 	done
 
 endif
+
+# root_key file isn't relevant without this option
+ifneq ($(CONFIG_EDK2_CAPSULES_ROOT),)
+
+root_key_inc := $(call strip_quotes,$(CONFIG_EDK2_CAPSULES_ROOT))
+ifneq ($(wildcard $(root_key_inc)),)
+    $(info capsules: using root keys from $(CONFIG_EDK2_CAPSULES_ROOT).)
+else
+    # analogous to the top of payloads/external/edk2/Makefile
+    edk2_repo := $(call strip_quotes,$(CONFIG_EDK2_REPOSITORY))
+    edk2_repo_dirname := $(word 3,$(subst /, ,$(edk2_repo)))
+    edk2_inc_rel := BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+    root_key_inc := payloads/external/edk2/workspace/$(edk2_repo_dirname)/$(edk2_inc_rel)
+endif
+
+cbfs-files-$(CONFIG_EDK2_CAPSULES_V2) += root_key
+root_key-file := $(obj)/root_key.bin
+root_key-type := raw
+# a single certificate can be under 1 KiB, not much to compress there
+root_key-compression := none
+
+# This file is temporary, yet marking it as .INTERMEDIATE doesn't remove it, so
+# rebuild it every time (it's cheap) to avoid it getting out of sync with its
+# source file.
+$(obj)/root_key.bin: $(root_key_inc) FORCE
+	# convert data in plain text EDK2's format to binary
+	sed 's/.*{\(.*\)}.*/\1/' $< | xxd -r -p > $@
+
+# Already defined in payloads/external/Makefile.mk
+.PHONY: FORCE
+
+endif # CONFIG_EDK2_CAPSULES_ROOT != ""
