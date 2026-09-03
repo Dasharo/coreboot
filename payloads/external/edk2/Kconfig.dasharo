@@ -433,6 +433,20 @@ config EDK2_CAPSULES_V2_TRANSITION
 	  compatibility between this and prior releases when it comes to building
 	  capsules.
 
+config EDK2_CAPSULES_ROOT
+	string "Location of an optional capsule root key file"
+	# This location was hard-coded in Makefile, but it's now used by the main
+	# build system.  The file is created while building release firmware.
+	default "payloads/external/edk2/CapsuleRootKey.inc"
+	depends on EDK2_CAPSULES_V2
+	help
+	  Points to a file that, if exists, provides a root key used to validate
+	  capsules.  The format is the same as of
+	  BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+	  That's also the key which is used by default, when this option doesn't
+	  name an existing file.  An empty value indicates that no key should be
+	  added (i.e., there are no trusted root keys).
+
 config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
 	bool "Capsules do not survive reset"
 	default n
