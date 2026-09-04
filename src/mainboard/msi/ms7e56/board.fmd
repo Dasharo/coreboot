@@ -1,5 +1,8 @@
 FLASH 32M {
 	BIOS 16M {
+		# The first 64K seem to be omitted by FlashBIOS.
+		# To avoid bricks, reserve the first 64K.
+		RESERVED 64K
 		FMAP 4K
 		COREBOOT(CBFS)
 		SMMSTORE(PRESERVE) 512K
