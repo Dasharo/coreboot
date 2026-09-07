@@ -33,6 +33,7 @@ static bool iio_bifurcation_valid(unsigned int bifurcation)
 		return false;
 	}
 }
+
 static uint8_t iio_bifurcation_port_mask(unsigned int bifurcation)
 {
 	switch (bifurcation) {
