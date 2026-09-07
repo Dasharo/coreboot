@@ -27,8 +27,8 @@ static bool iio_bifurcation_valid(unsigned int bifurcation)
 	case IIO_BIFURCATE_xxx8x4x4:
 	case IIO_BIFURCATE_xxx8xxx8:
 	case IIO_BIFURCATE_xxxxxx16:
-	case IIO_BIFURCATE_AUTO:
 		return true;
+	case IIO_BIFURCATE_AUTO:
 	default:
 		return false;
 	}
