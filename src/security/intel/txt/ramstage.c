@@ -408,6 +408,33 @@ __weak bool skip_intel_txt_lockdown(void)
 	return false;
 }
 
+/*
+ * Document Number: 558294
+ * Chapter 5.5.6.2 SINIT Memory Region
+ * Chapter 5.5.6.3 Intel TXT Heap Memory Region
+ *
+ * The server BIOS ACM locks these registers in LockConfig, so they have to be
+ * programmed before it runs, while client platforms also accept them after.
+ * Returns true if the registers hold the requested values.
+ */
+static bool txt_setup_device_memory(uintptr_t tseg_base)
+{
+	const uint64_t heap_size = CONFIG_INTEL_TXT_HEAP_SIZE;
+	const uint64_t sinit_size = CONFIG_INTEL_TXT_SINIT_SIZE;
+	const uint64_t heap_base = ALIGN_DOWN(tseg_base - heap_size, 4096);
+	const uint64_t sinit_base = ALIGN_DOWN(heap_base - sinit_size, 4096);
+
+	write64p(TXT_HEAP_SIZE, heap_size);
+	write64p(TXT_HEAP_BASE, heap_base);
+
+	/* Use the local values: a locked TXT.HEAP.BASE reads back as zero */
+	write64p(TXT_SINIT_SIZE, sinit_size);
+	write64p(TXT_SINIT_BASE, sinit_base);
+
+	return read64p(TXT_HEAP_BASE) == heap_base &&
+	       read64p(TXT_HEAP_SIZE) == heap_size;
+}
+
 /**
  * Finalize the TXT device.
  *
@@ -461,9 +488,14 @@ static void lockdown_intel_txt(void *unused)
 			return;
 		}
 
+		/* The server ACM locks these registers in LockConfig */
+		if (!txt_setup_device_memory(tseg_base))
+			printk(BIOS_INFO, "TEE-TXT: Retrying TXT device memory "
+			       "after LockConfig\n");
+
 		printk(BIOS_INFO, "TEE-TXT: Locking TEE...\n");
 
-		/* Lock TXT config, unlocks TXT_HEAP_BASE */
+		/* Lock TXT config */
 		if (intel_txt_run_bios_acm(ACMINPUT_LOCK_CONFIG) < 0) {
 			printk(BIOS_ERR, "TEE-TXT: Failed to lock registers.\n");
 			printk(BIOS_ERR, "TEE-TXT: SINIT won't be supported.\n");
@@ -526,22 +558,13 @@ static void lockdown_intel_txt(void *unused)
 		       read32p(TXT_DPR));
 	}
 
-	/*
-	 * Document Number: 558294
-	 * Chapter 5.5.6.3 Intel TXT Heap Memory Region
-	 */
-	write64p(TXT_HEAP_SIZE, CONFIG_INTEL_TXT_HEAP_SIZE);
-	write64p(TXT_HEAP_BASE,
-		ALIGN_DOWN(tseg_base - read64p(TXT_HEAP_SIZE), 4096));
-
-	/*
-	 * Document Number: 558294
-	 * Chapter 5.5.6.2 SINIT Memory Region
-	 */
-	write64p(TXT_SINIT_SIZE, CONFIG_INTEL_TXT_SINIT_SIZE);
-	write64p(TXT_SINIT_BASE,
-		ALIGN_DOWN(read64p(TXT_HEAP_BASE) -
-			   read64p(TXT_SINIT_SIZE), 4096));
+	if (!txt_setup_device_memory(tseg_base)) {
+		printk(BIOS_ERR, "TEE-TXT: TXT.HEAP.BASE 0x%llx SIZE 0x%llx "
+		       "not writable.\n", read64p(TXT_HEAP_BASE),
+		       read64p(TXT_HEAP_SIZE));
+		printk(BIOS_ERR, "TEE-TXT: SINIT won't be supported.\n");
+		return;
+	}
 
 	/*
 	 * FIXME: Server-TXT capable platforms need to install an STM in SMM and set up MSEG.
