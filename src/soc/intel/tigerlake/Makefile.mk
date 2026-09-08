@@ -37,6 +37,7 @@ ramstage-$(CONFIG_SOC_INTEL_CRASHLOG) += crashlog_lib.c
 smm-y += p2sb.c
 smm-y += pmutil.c
 smm-y += elog.c
+smm-$(CONFIG_SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_PLTRST_PAD) += gpio_lock.c
 smm-y += xhci.c
 
 ifeq ($(CONFIG_SOC_INTEL_TIGERLAKE_PCH_H),y)
