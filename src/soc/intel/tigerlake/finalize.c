@@ -55,6 +55,16 @@ static void soc_finalize(void *unused)
 	printk(BIOS_DEBUG, "Finalizing chipset.\n");
 
 	pch_finalize();
+
+	/*
+	 * Lock the pads the SoC asked to have locked. This has to happen after
+	 * FSP-S, which unlocks every pad, and before the payload is entered.
+	 * It cannot be left to APM_CNT_FINALIZE below, which is not issued on
+	 * every configuration.
+	 */
+	if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_LOCK_GPIO_PADS))
+		apm_control(APM_CNT_GPIO_LOCK);
+
 	if (CONFIG(INTEL_CHIPSET_LOCKDOWN) || acpi_is_wakeup_s3())
 		apm_control(APM_CNT_FINALIZE);
 
