@@ -403,11 +403,6 @@ static void txt_initialize_heap(void)
 	push_sinit_heap(&heap_struct, NULL, 0);
 }
 
-__weak bool skip_intel_txt_lockdown(void)
-{
-	return false;
-}
-
 /*
  * Document Number: 558294
  * Chapter 5.5.6.2 SINIT Memory Region
