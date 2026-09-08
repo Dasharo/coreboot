@@ -628,3 +628,8 @@ bool intel_txt_prepare_txt_env(void)
 
 	return failure;
 }
+
+__weak bool skip_intel_txt_lockdown(void)
+{
+	return false;
+}
