@@ -37,5 +37,7 @@ enum adl_cpu_type get_adl_cpu_type(void);
 uint8_t get_supported_lpm_mask(void);
 
 void get_num_core_types(uint8_t *num_e_cores, uint8_t *num_p_cores);
+void get_default_turbo_ratios(uint64_t *e_limit, uint64_t *e_group,
+			      uint64_t *p_limit, uint64_t *p_group);
 
 #endif
