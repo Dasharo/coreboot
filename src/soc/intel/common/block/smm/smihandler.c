@@ -445,6 +445,10 @@ void smihandler_southbridge_apmc(
 	case APM_CNT_FINALIZE:
 		finalize();
 		break;
+	case APM_CNT_GPIO_LOCK:
+		if (CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_LOCK_GPIO_PADS))
+			soc_lock_gpios();
+		break;
 	}
 
 	mainboard_smi_apmc(reg8);
