@@ -8,6 +8,8 @@
 
 #include <arch/ioapic.h>
 #include <console/console.h>
+#include <cpu/cpu.h>
+#include <cpu/intel/common/common.h>
 #include <cpu/x86/msr.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -21,6 +23,29 @@
 #include <spi_flash.h>
 #include <static.h>
 #include <stddef.h>
+
+static void add_tme_reserved_resource(struct device *dev, int *index)
+{
+	uint64_t top_address;
+	uint64_t tme_reserved_base;
+	unsigned int tme_keyid_bits = get_tme_max_keyid_bits();
+	static struct sa_mmio_descriptor soc_fixed_tme_resources[] = {
+		{ 0, 0, 0, "TME_RESERVED" },
+	};
+
+	if (tme_keyid_bits == 0)
+		return;
+
+	top_address = 1ULL << cpu_phys_address_size();
+	tme_reserved_base = 1ULL << (cpu_phys_address_size() - tme_keyid_bits);
+
+	soc_fixed_tme_resources->base = tme_reserved_base;
+	soc_fixed_tme_resources->size = top_address - tme_reserved_base;
+
+	sa_add_fixed_mmio_resources(dev, index,
+		(const struct sa_mmio_descriptor *)soc_fixed_tme_resources,
+		ARRAY_SIZE(soc_fixed_tme_resources));
+}
 
 /*
  * SoC implementation
@@ -51,6 +76,16 @@ void soc_add_fixed_mmio_resources(struct device *dev, int *index)
 
 	sa_add_fixed_mmio_resources(dev, index, soc_fixed_resources,
 			ARRAY_SIZE(soc_fixed_resources));
+
+	/*
+	 * If MK-TME is not active and the address space is not reduced, the MMIO access
+	 * to the TME stolen address space would still fail (reads return FFs).
+	 * To avoid allocating PCI resources to the TME stolen space with top-down allocation
+	 * and causing device init failures, reserve the MMIO space that would otherwise be
+	 * taken with TME physical address space reduction.
+	 */
+	if (is_tme_supported() && !is_tme_active())
+		add_tme_reserved_resource(dev, index);
 
 	/* Add Vt-d resources if VT-d is enabled */
 	if ((pci_read_config32(dev, CAPID0_A) & VTD_DISABLE))
