@@ -71,6 +71,13 @@ static const u8 power_limit_time_msr_to_sec[] = {
 	[0x11] = 128,
 };
 
+static struct soc_power_limits_config *default_conf = NULL;
+
+struct soc_power_limits_config *get_power_limits_default(void)
+{
+	return default_conf;
+}
+
 /*
  * Configure processor power limits if possible
  * This must be done AFTER set of BIOS_RESET_CPL
@@ -108,6 +115,8 @@ void set_power_limits(u8 power_limit_1_time,
 		}
 		return;
 	}
+
+	default_conf = conf;
 
 	pl1_time = get_uint_option("pl1_time", power_limit_1_time);
 	if (pl1_time == 0)
