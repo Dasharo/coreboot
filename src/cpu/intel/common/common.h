@@ -74,4 +74,14 @@ void enable_energy_perf_pref(void);
  */
 bool is_tme_supported(void);
 
+/*
+ * Get maxiumum Total Memory Encryption (TME) KeyID bits supported by the CPU
+ */
+unsigned int get_tme_max_keyid_bits(void);
+
+/*
+ * Check if Total Memory Encryption (TME) is active
+ */
+bool is_tme_active(void);
+
 #endif
