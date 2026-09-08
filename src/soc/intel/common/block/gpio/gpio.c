@@ -554,6 +554,29 @@ int gpio_tx_get(gpio_t gpio_num)
 	return !!(reg & PAD_CFG0_TX_STATE);
 }
 
+static int
+gpio_pad_config_lock_verify(const struct gpio_lock_config *pad_info,
+	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
+{
+	int ret = 0;
+
+	if ((pad_info->lock_action & GPIO_LOCK_CONFIG) == GPIO_LOCK_CONFIG &&
+	    !(pcr_read32(pid, offset) & bit_mask)) {
+		printk(BIOS_ERR, "%s: Error: pad %d configuration still unlocked!\n",
+				__func__, pad_info->pad);
+		ret = -1;
+	}
+
+	if ((pad_info->lock_action & GPIO_LOCK_TX) == GPIO_LOCK_TX &&
+	    !(pcr_read32(pid, offset + sizeof(uint32_t)) & bit_mask)) {
+		printk(BIOS_ERR, "%s: Error: pad %d Tx state still unlocked!\n",
+				__func__, pad_info->pad);
+		ret = -1;
+	}
+
+	return ret;
+}
+
 static void
 gpio_pad_config_lock_using_sbi(const struct gpio_lock_config *pad_info,
 	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
@@ -626,6 +649,7 @@ int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count)
 	uint16_t offset;
 	size_t rel_pad;
 	gpio_t pad;
+	int ret = 0;
 
 	if (!CONFIG(SOC_INTEL_COMMON_BLOCK_SMM_LOCK_GPIO_PADS))
 		return -1;
@@ -671,11 +695,14 @@ int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count)
 		else
 			gpio_pad_config_lock_using_sbi(&pad_list[x], comm->port, offset,
 						       bit_mask);
+
+		if (gpio_pad_config_lock_verify(&pad_list[x], comm->port, offset, bit_mask))
+			ret = -1;
 	}
 
 	p2sb_hide();
 
-	return 0;
+	return ret;
 }
 
 static int gpio_non_smm_lock_pad(const struct gpio_lock_config *pad_info)
@@ -718,9 +745,10 @@ static int gpio_non_smm_lock_pad(const struct gpio_lock_config *pad_info)
 	} else {
 		printk(BIOS_ERR, "%s: Error: No pad configuration lock method is selected!\n",
 						__func__);
+		return -1;
 	}
 
-	return 0;
+	return gpio_pad_config_lock_verify(pad_info, comm->port, offset, bit_mask);
 }
 
 int gpio_lock_pad(const gpio_t pad, enum gpio_lock_action lock_action)
