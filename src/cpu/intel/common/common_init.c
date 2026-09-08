@@ -256,6 +256,28 @@ static unsigned int get_tme_keyid_bits(void)
 	return msr.hi & TME_ACTIVATE_HI_KEYID_BITS_MASK;
 }
 
+unsigned int get_tme_max_keyid_bits(void)
+{
+	msr_t msr;
+
+	if (!is_tme_supported())
+		return 0;
+
+	msr = rdmsr(MSR_TME_CAPABILITY);
+	return msr.hi & TME_CAPABILITY_HI_KEYID_BITS_MASK;
+}
+
+bool is_tme_active(void)
+{
+	msr_t msr;
+
+	if (!is_tme_supported())
+		return false;
+
+	msr = rdmsr(MSR_TME_ACTIVATE);
+	return ((msr.lo & (TME_LOCK | TME_ACTIVE)) == (TME_LOCK | TME_ACTIVE));
+}
+
 unsigned int get_reserved_phys_addr_bits(void)
 {
 	if (!is_tme_supported())
