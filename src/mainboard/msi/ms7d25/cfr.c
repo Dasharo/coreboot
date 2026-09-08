@@ -11,6 +11,7 @@ static struct sm_obj_form cpu_features = {
 		&igd_enabled,
 		&vtd,
 		&vmx,
+		&tme,
 		NULL
 	},
 };
@@ -131,11 +132,12 @@ static const struct sm_object mem_refclk = SM_DECLARE_ENUM({
 				{"100 MHz",	1	},
 				SM_ENUM_VALUE_END		},
 });
+#endif
 
-static const struct sm_object ddr4_one_dpc = SM_DECLARE_ENUM({
-	.opt_name	= "ddr4_1dpc",
-	.ui_name	= "DDR4 1DPC",
-	.ui_helptext	= "DDR4 1DPC performance feature for 2R DIMMs.\n",
+static const struct sm_object ddr_one_dpc = SM_DECLARE_ENUM({
+	.opt_name	= "ddr_1dpc",
+	.ui_name	= "DDR 1DPC",
+	.ui_helptext	= "DDR 1DPC performance feature for 2R DIMMs.\n",
 	.default_value	= 1,
 	.values		= (const struct sm_enum_value[]) {
 				{"Disabled",			0	},
@@ -144,7 +146,7 @@ static const struct sm_object ddr4_one_dpc = SM_DECLARE_ENUM({
 				{"Enabled",			3	},
 				SM_ENUM_VALUE_END		},
 });
-#endif
+
 
 static const struct sm_object cpu_oc_comment = SM_DECLARE_COMMENT({
 	.flags		= CFR_OPTFLAG_READONLY | CFR_OPTFLAG_INACTIVE,
@@ -178,11 +180,9 @@ static struct sm_obj_form cpu_oc = {
 		&undervolt_protection,
 		&ia_cep,
 		&gt_cep,
-		&ia_vr_config,
 		&ia_ac_ll,
 		&ia_dc_ll,
 		&ia_vr_vlimit,
-		&gt_vr_config,
 		&gt_ac_ll,
 		&gt_dc_ll,
 		&gt_vr_vlimit,
@@ -205,8 +205,8 @@ static struct sm_obj_form mem_init = {
 		&oc_safe_mode,
 		&nmode,
 		&exit_on_failure,
+		&ddr_one_dpc,
 #if CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4)
-		&ddr4_one_dpc,
 		&mem_refclk,
 #endif
 		NULL

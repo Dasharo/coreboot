@@ -438,6 +438,21 @@ static void fill_vr_fast_vmode(FSP_S_CONFIG *s_cfg,
 #endif
 }
 
+static uint16_t default_ac_ll[NUM_VR_DOMAINS] = {0};
+static uint16_t default_dc_ll[NUM_VR_DOMAINS] = {0};
+
+void get_default_loadline(int domain, uint16_t *ac_ll, uint16_t *dc_ll)
+{
+	if (domain >= NUM_VR_DOMAINS)
+		return;
+
+	if (ac_ll)
+		*ac_ll = default_ac_ll[domain];
+
+	if (dc_ll)
+		*dc_ll = default_dc_ll[domain];
+}
+
 void fill_vr_domain_config(FSP_S_CONFIG *s_cfg,
 		int domain, const struct vr_config *chip_cfg)
 {
@@ -492,6 +507,9 @@ void fill_vr_domain_config(FSP_S_CONFIG *s_cfg,
 				s_cfg->TdcCurrentLimit[VR_DOMAIN_GT] = VR_CFG_AMP(19);
 		}
 	}
+
+	default_ac_ll[domain] = s_cfg->AcLoadline[domain];
+	default_dc_ll[domain] = s_cfg->DcLoadline[domain];
 
 	fill_vr_fast_vmode(s_cfg, domain, chip_cfg);
 

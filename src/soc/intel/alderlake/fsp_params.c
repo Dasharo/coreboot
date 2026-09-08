@@ -1067,20 +1067,13 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 	for (size_t i = 0; i < ARRAY_SIZE(config->domain_vr_config); i++)
 		fill_vr_domain_config(s_cfg, i, &config->domain_vr_config[i]);
 
-	s_cfg->VrConfigEnable[VR_DOMAIN_IA] = get_uint_option("ia_vr_config_enable", s_cfg->VrConfigEnable[VR_DOMAIN_IA]);
-	s_cfg->VrConfigEnable[VR_DOMAIN_GT] = get_uint_option("gt_vr_config_enable", s_cfg->VrConfigEnable[VR_DOMAIN_GT]);
+	s_cfg->AcLoadline[VR_DOMAIN_IA] = get_uint_option("ia_ac_ll", s_cfg->AcLoadline[VR_DOMAIN_IA]);
+	s_cfg->DcLoadline[VR_DOMAIN_IA] = get_uint_option("ia_dc_ll", s_cfg->DcLoadline[VR_DOMAIN_IA]);
+	s_cfg->VrVoltageLimit[VR_DOMAIN_IA] = get_uint_option("ia_vr_vlimit", s_cfg->VrVoltageLimit[VR_DOMAIN_IA]);
 
-	if (s_cfg->VrConfigEnable[VR_DOMAIN_IA]) {
-		s_cfg->AcLoadline[VR_DOMAIN_IA] = get_uint_option("ia_ac_ll", s_cfg->AcLoadline[VR_DOMAIN_IA]);
-		s_cfg->DcLoadline[VR_DOMAIN_IA] = get_uint_option("ia_dc_ll", s_cfg->DcLoadline[VR_DOMAIN_IA]);
-		s_cfg->VrVoltageLimit[VR_DOMAIN_IA] = get_uint_option("ia_vr_vlimit", s_cfg->VrVoltageLimit[VR_DOMAIN_IA]);
-	}
-
-	if (s_cfg->VrConfigEnable[VR_DOMAIN_GT]) {
-		s_cfg->AcLoadline[VR_DOMAIN_GT] = get_uint_option("gt_ac_ll", s_cfg->AcLoadline[VR_DOMAIN_GT]);
-		s_cfg->DcLoadline[VR_DOMAIN_GT] = get_uint_option("gt_dc_ll", s_cfg->DcLoadline[VR_DOMAIN_GT]);
-		s_cfg->VrVoltageLimit[VR_DOMAIN_GT] = get_uint_option("gt_vr_vlimit", s_cfg->VrVoltageLimit[VR_DOMAIN_GT]);
-	}
+	s_cfg->AcLoadline[VR_DOMAIN_GT] = get_uint_option("gt_ac_ll", s_cfg->AcLoadline[VR_DOMAIN_GT]);
+	s_cfg->DcLoadline[VR_DOMAIN_GT] = get_uint_option("gt_dc_ll", s_cfg->DcLoadline[VR_DOMAIN_GT]);
+	s_cfg->VrVoltageLimit[VR_DOMAIN_GT] = get_uint_option("gt_vr_vlimit", s_cfg->VrVoltageLimit[VR_DOMAIN_GT]);
 
 	s_cfg->PmcLpmS0ixSubStateEnableMask = get_supported_lpm_mask();
 
@@ -1141,6 +1134,12 @@ static void fill_fsps_misc_power_params(FSP_S_CONFIG *s_cfg,
 #endif
 }
 
+/* Save a copy of default values for the CFR */
+static uint64_t default_e_limit = 0;
+static uint64_t default_e_group = 0;
+static uint64_t default_p_limit = 0;
+static uint64_t default_p_group = 0;
+
 static void fill_fsps_turbo_ratio_params(FSP_S_CONFIG *s_cfg,
 		const struct soc_intel_alderlake_config *config)
 {
@@ -1162,17 +1161,25 @@ static void fill_fsps_turbo_ratio_params(FSP_S_CONFIG *s_cfg,
 	memcpy(&s_cfg->TurboRatioLimitRatio[0], &msr.lo, 4);
 	memcpy(&s_cfg->TurboRatioLimitRatio[4], &msr.hi, 4);
 
+	default_p_limit = msr.raw;
+
 	msr = rdmsr(MSR_TURBO_RATIO_LIMIT_CORES);
 	memcpy(&s_cfg->TurboRatioLimitNumCore[0], &msr.lo, 4);
 	memcpy(&s_cfg->TurboRatioLimitNumCore[4], &msr.hi, 4);
+
+	default_p_group = msr.raw;
 
 	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT);
 	memcpy(&s_cfg->AtomTurboRatioLimitRatio[0], &msr.lo, 4);
 	memcpy(&s_cfg->AtomTurboRatioLimitRatio[4], &msr.hi, 4);
 
+	default_e_limit = msr.raw;
+
 	msr = rdmsr(MSR_ATOM_TURBO_RATIO_LIMIT_CORES);
 	memcpy(&s_cfg->AtomTurboRatioLimitNumCore[0], &msr.lo, 4);
 	memcpy(&s_cfg->AtomTurboRatioLimitNumCore[4], &msr.hi, 4);
+
+	default_e_group = msr.raw;
 
 	for (i = 0; i < 8; i++) {
 		p_ratio_group_name[group_name_len - 1] = '0' + i;
@@ -1523,4 +1530,17 @@ void soc_load_logo_by_fsp(FSPS_UPD *supd)
 			 &supd->FspsConfig.LogoPixelHeight,
 			 &supd->FspsConfig.LogoPixelWidth,
 			 config->panel_orientation);
+}
+
+void get_default_turbo_ratios(uint64_t *e_limit, uint64_t *e_group,
+			      uint64_t *p_limit, uint64_t *p_group)
+{
+	if (e_limit)
+		*e_limit = default_e_limit;
+	if (e_group)
+		*e_group = default_e_group;
+	if (p_limit)
+		*p_limit = default_p_limit;
+	if (p_group)
+		*p_group = default_p_group;
 }
