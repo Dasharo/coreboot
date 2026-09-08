@@ -93,4 +93,5 @@ enum vr_domain {
 	}
 
 void fill_vr_domain_config(FSP_S_CONFIG *s_cfg, int domain, const struct vr_config *cfg);
+void get_default_loadline(int domain, uint16_t *ac_ll, uint16_t *dc_ll);
 #endif
