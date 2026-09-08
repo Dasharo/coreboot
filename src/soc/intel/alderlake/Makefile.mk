@@ -48,6 +48,7 @@ ramstage-y += xhci.c
 ramstage-$(CONFIG_SOC_INTEL_CRASHLOG) += crashlog.c
 
 smm-y += elog.c
+smm-$(CONFIG_SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_PLTRST_PAD) += gpio_lock.c
 smm-y += p2sb.c
 smm-y += pmutil.c
 smm-y += smihandler.c
