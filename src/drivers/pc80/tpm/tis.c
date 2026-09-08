@@ -719,7 +719,27 @@ static tpm_result_t pc80_tis_open(void)
 static tpm_result_t pc80_tpm_sendrecv(const uint8_t *sendbuf, size_t send_size,
 				      uint8_t *recvbuf, size_t *recv_len)
 {
-	tpm_result_t rc = tis_senddata(sendbuf, send_size);
+	tpm_result_t rc;
+
+	/*
+	 * tis_senddata() waits for 'command_ready' but never sets it: the driver
+	 * relies on the previous transaction having left the TPM ready. An Intel
+	 * TXT BIOS ACM transacts with the TPM in between, which breaks that, so
+	 * reopen the interface when it is not ready.
+	 */
+	if (!tis_has_access(0) || !(tpm_read_status(0) & TIS_STS_COMMAND_READY)) {
+		printk(BIOS_INFO, "TPM: sts 0x%02x access 0x%02x, reopening\n",
+		       tpm_read_status(0), tpm_read_access(0));
+
+		rc = pc80_tis_open();
+		if (rc) {
+			printf("%s:%d - failed to reopen the TPM interface, error %#x\n",
+			       __FILE__, __LINE__, rc);
+			return rc;
+		}
+	}
+
+	rc = tis_senddata(sendbuf, send_size);
 	if (rc) {
 		printf("%s:%d failed sending data to TPM with error %#x\n",
 		       __FILE__, __LINE__, rc);
