@@ -7,9 +7,12 @@
 #ifndef SOC_INTEL_CMN_CFR_H
 #define SOC_INTEL_CMN_CFR_H
 
+#include <cpu/x86/msr.h>
 #include <drivers/option/cfr_frontend.h>
+#include <intelblocks/msr.h>
 #include <intelblocks/pcie_rp.h>
 #include <intelblocks/pmclib.h>
+#include <intelblocks/power_limit.h>
 
 /* Intel ME State */
 static const struct sm_object me_state = SM_DECLARE_ENUM({
@@ -135,35 +138,75 @@ static const struct sm_object pciexp_speed = SM_DECLARE_ENUM({
 
 #if !CONFIG(SOC_INTEL_DISABLE_POWER_LIMITS)
 
+static void update_power_limits(struct sm_object *new)
+{
+	msr_t msr;
+	unsigned int power_unit, min_power, max_power;
+	struct soc_power_limits_config *default_conf = get_power_limits_default();
+
+	if (default_conf != NULL) {
+		if (strstr(new->sm_number.opt_name, "pl1"))
+			new->sm_number.default_value = default_conf->tdp_pl1_override;
+		else if (strstr(new->sm_number.opt_name, "pl2"))
+			new->sm_number.default_value = default_conf->tdp_pl2_override;
+		else if (strstr(new->sm_number.opt_name, "pl4"))
+			new->sm_number.default_value = default_conf->tdp_pl4;
+	}
+
+	/* Get units */
+	msr = rdmsr(MSR_PKG_POWER_SKU_UNIT);
+	power_unit = 1 << (msr.lo & 0xf);
+
+	/* Get power defaults for this SKU */
+	msr = rdmsr(MSR_PKG_POWER_SKU);
+	min_power = (msr.lo >> 16) & 0x7fff;
+	max_power = msr.hi & 0x7fff;
+
+	/* If unlimited, set to the maximum value allowed by bitfield width */
+	if (max_power == 0)
+		max_power = 0x7fff;
+
+	/* Convert to Watts */
+	min_power /= power_unit;
+	max_power /= power_unit;
+
+	/* If unlimited, set to 1, 0 will cause programming defaults */
+	if (min_power == 0)
+		min_power = 1;
+
+	new->sm_number.min = min_power;
+	new->sm_number.max = max_power;
+}
+
 static const struct sm_object pl1_override = SM_DECLARE_NUMBER({
 	.opt_name	= "pl1_override",
 	.ui_name	= "Power Limit PL1",
-	.ui_helptext	= "Power Limit 1 value in Watts. 0 means use the default HW value.",
+	.ui_helptext	= "Power Limit 1 value in Watts.",
 	.default_value	= 0,
 	.min		= 0,
-	.max		= 32767,
+	.max		= 0x7fff,
 	.step		= 1,
-});
+}, WITH_CALLBACK(update_power_limits));
 
 static const struct sm_object pl2_override = SM_DECLARE_NUMBER({
 	.opt_name	= "pl2_override",
 	.ui_name	= "Power Limit PL2",
-	.ui_helptext	= "Power Limit 2 value in Watts. 0 means use the default HW value.",
+	.ui_helptext	= "Power Limit 2 value in Watts.",
 	.default_value	= 0,
 	.min		= 0,
-	.max		= 32767,
+	.max		= 0x7fff,
 	.step		= 1,
-});
+}, WITH_CALLBACK(update_power_limits));
 
 static const struct sm_object pl4_override = SM_DECLARE_NUMBER({
 	.opt_name	= "tdp_pl4",
 	.ui_name	= "Power Limit PL4",
-	.ui_helptext	= "Power Limit 4 value in Watts. 0 means use the default HW value.",
+	.ui_helptext	= "Power Limit 4 value in Watts.",
 	.default_value	= 0,
 	.min		= 0,
-	.max		= 32767,
+	.max		= 0x7fff,
 	.step		= 1,
-});
+}, WITH_CALLBACK(update_power_limits));
 
 static const struct sm_object pl1_time = SM_DECLARE_ENUM({
 	.opt_name	= "pl1_time",

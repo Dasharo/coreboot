@@ -45,6 +45,8 @@ void set_power_limits(u8 power_limit_1_time,
 
 u8 get_cpu_tdp(void);
 
+struct soc_power_limits_config *get_power_limits_default(void);
+
 struct cpu_tdp_power_limits {
 	uint16_t mch_id;
 	uint8_t cpu_tdp;

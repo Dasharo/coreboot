@@ -8,7 +8,12 @@
 #define _ALDERLAKE_CFR_H_
 
 #include <drivers/option/cfr_frontend.h>
+#include <cpu/intel/common/common.h>
+#include <cpu/x86/name.h>
+#include <intelblocks/cpulib.h>
 #include <soc/soc_chip.h>
+#include <soc/cpu.h>
+#include <soc/vr_config.h>
 
 /* FSP hyperthreading */
 static const struct sm_object hyper_threading = SM_DECLARE_ENUM({
@@ -117,6 +122,26 @@ static const struct sm_object vtd = SM_DECLARE_ENUM({
 				SM_ENUM_VALUE_END		},
 });
 
+static void update_tme(struct sm_object *new)
+{
+	if (!is_tme_supported()) {
+		new->sm_enum.flags = CFR_OPTFLAG_SUPPRESS;
+		new->sm_enum.default_value = 0;
+	}
+}
+
+/* TME */
+static const struct sm_object tme = SM_DECLARE_ENUM({
+	.opt_name	= "tme",
+	.ui_name	= "Total Memory Encryption (TME)",
+	.ui_helptext	= "Enable or disable Intel Total Memory Encryption",
+	.default_value	= CONFIG(INTEL_TME),
+	.values		= (const struct sm_enum_value[]) {
+				{ "Disabled",		0	},
+				{ "Enabled",		1	},
+				SM_ENUM_VALUE_END		},
+}, WITH_CALLBACK(update_tme));
+
 static const struct sm_object oc_lock = SM_DECLARE_ENUM({
 	.opt_name	= "oc_lock",
 	.ui_name	= "OC Lock",
@@ -139,93 +164,87 @@ static const struct sm_object oc_support = SM_DECLARE_ENUM({
 				SM_ENUM_VALUE_END		},
 });
 
-static const struct sm_object ia_vr_config = SM_DECLARE_ENUM({
-	.opt_name	= "ia_vr_config_enable",
-	.ui_name	= "IA VR Configuration",
-	.ui_helptext	= "Configure Core/IA VR settings.\n\nDisabled means use HW default",
-	.default_value	= 1,
-	.values		= (const struct sm_enum_value[]) {
-				{ "Disabled",		0	},
-				{ "Enabled",		1	},
-				SM_ENUM_VALUE_END		},
-});
+static void update_loadline(struct sm_object *new)
+{
+	uint16_t ll_default = 0;
+
+	if (!strcmp(new->sm_number.opt_name, "ia_ac_ll"))
+		get_default_loadline(VR_DOMAIN_IA, &ll_default, NULL);
+	else if (!strcmp(new->sm_number.opt_name, "ia_dc_ll"))
+		get_default_loadline(VR_DOMAIN_IA, NULL, &ll_default);
+	else if (!strcmp(new->sm_number.opt_name, "gt_ac_ll"))
+		get_default_loadline(VR_DOMAIN_GT, &ll_default, NULL);
+	else if (!strcmp(new->sm_number.opt_name, "gt_dc_ll"))
+		get_default_loadline(VR_DOMAIN_GT, NULL, &ll_default);
+
+	new->sm_number.default_value = ll_default;
+}
 
 static const struct sm_object ia_ac_ll = SM_DECLARE_NUMBER({
 	.opt_name	= "ia_ac_ll",
 	.ui_name	= "IA AC LoadLine",
-	.ui_helptext	= "Configure Core/IA AC Loadline.\n\n0 means use HW default.\n\n"
+	.ui_helptext	= "Configure Core/IA AC Loadline.\n\n0 means use FSP CPU default.\n\n"
 			  "Unit is 1/100 mOhms, e.g 1250 means 12.50 mOhms",
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 6249,
 	.step		= 0,
-}, WITH_DEP_VALUES(&ia_vr_config, 1));
+}, WITH_CALLBACK(update_loadline));
 
 static const struct sm_object ia_dc_ll = SM_DECLARE_NUMBER({
 	.opt_name	= "ia_dc_ll",
 	.ui_name	= "IA DC LoadLine",
-	.ui_helptext	= "Configure Core/IA DC Loadline.\n\n0 means use HW default.\n\n"
+	.ui_helptext	= "Configure Core/IA DC Loadline.\n\n0 means use FSP CPU default.\n\n"
 			  "Unit is 1/100 mOhms, e.g 1250 means 12.50 mOhms",
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 6249,
 	.step		= 0,
-}, WITH_DEP_VALUES(&ia_vr_config, 1));
+}, WITH_CALLBACK(update_loadline));
 
 static const struct sm_object ia_vr_vlimit = SM_DECLARE_NUMBER({
 	.opt_name	= "ia_vr_vlimit",
 	.ui_name	= "IA VR Voltage Limit",
-	.ui_helptext	= "Configure Core/IA VR Voltage Limit.\n\n0 means use HW default.\n\n"
+	.ui_helptext	= "Configure Core/IA VR Voltage Limit.\n\n0 means use FSP CPU default.\n\n"
 			  "Unit is 1mV",
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 7999,
 	.step		= 0,
-}, WITH_DEP_VALUES(&ia_vr_config, 1));
-
-static const struct sm_object gt_vr_config = SM_DECLARE_ENUM({
-	.opt_name	= "gt_vr_config_enable",
-	.ui_name	= "GT VR Configuration",
-	.ui_helptext	= "Configure GT VR settings.\n\nDisabled means use HW default",
-	.default_value	= 1,
-	.values		= (const struct sm_enum_value[]) {
-				{ "Disabled",		0	},
-				{ "Enabled",		1	},
-				SM_ENUM_VALUE_END		},
 });
 
 static const struct sm_object gt_ac_ll = SM_DECLARE_NUMBER({
 	.opt_name	= "gt_ac_ll",
 	.ui_name	= "GT AC LoadLine",
-	.ui_helptext	= "Configure GT AC Loadline.\n\n0 means use HW default.\n\n"
+	.ui_helptext	= "Configure GT AC Loadline.\n\n0 means use FSP CPU default.\n\n"
 			  "Unit is 1/100 mOhms, e.g 1250 means 12.50 mOhms",
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 6249,
 	.step		= 0,
-}, WITH_DEP_VALUES(&gt_vr_config, 1));
+}, WITH_CALLBACK(update_loadline));
 
 static const struct sm_object gt_dc_ll = SM_DECLARE_NUMBER({
 	.opt_name	= "gt_dc_ll",
 	.ui_name	= "GT DC LoadLine",
-	.ui_helptext	= "Configure GT DC Loadline.\n\n0 means use HW default.\n\n"
+	.ui_helptext	= "Configure GT DC Loadline.\n\n0 means use FSP CPU default.\n\n"
 			  "Unit is 1/100 mOhms, e.g 1250 means 12.50 mOhms",
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 6249,
 	.step		= 0,
-}, WITH_DEP_VALUES(&gt_vr_config, 1));
+}, WITH_CALLBACK(update_loadline));
 
 static const struct sm_object gt_vr_vlimit = SM_DECLARE_NUMBER({
 	.opt_name	= "gt_vr_vlimit",
 	.ui_name	= "GT VR Voltage Limit",
-	.ui_helptext	= "Configure GT VR Voltage Limit.\n\n0 means use HW default.\n\n"
+	.ui_helptext	= "Configure GT VR Voltage Limit.\n\n0 means use FSP CPU default.\n\n"
 			  "Unit is 1mV",
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 7999,
 	.step		= 0,
-}, WITH_DEP_VALUES(&gt_vr_config, 1));
+});
 
 static const struct sm_object undervolt_protection = SM_DECLARE_ENUM({
 	.opt_name	= "undervolt_prot",
@@ -271,6 +290,65 @@ static const struct sm_object ring_downbin = SM_DECLARE_ENUM({
 				SM_ENUM_VALUE_END		},
 }, WITH_DEP_VALUES(&oc_support, 1));
 
+static void update_pcore_turbo_ratio_group(struct sm_object *new)
+{
+	uint64_t default_p_group = 0;
+	size_t opt_num = new->sm_number.opt_name[strlen(new->sm_number.opt_name) - 1] - '0';
+
+	get_default_turbo_ratios(NULL, NULL, NULL, &default_p_group);
+
+	new->sm_number.default_value = (default_p_group >> (opt_num * 8)) & 0xff;
+}
+
+static void update_pcore_turbo_ratio_limit(struct sm_object *new)
+{
+	uint64_t default_p_limit = 0;
+	size_t opt_num = new->sm_number.opt_name[strlen(new->sm_number.opt_name) - 1] - '0';
+	uint8_t max_ratio = cpu_get_max_non_turbo_ratio();
+
+	get_default_turbo_ratios(NULL, NULL, &default_p_limit, NULL);
+	new->sm_number.default_value = (default_p_limit >> (opt_num * 8)) & 0xff;
+	new->sm_number.min = max_ratio;
+}
+
+static void update_ecore_turbo_ratio_group(struct sm_object *new)
+{
+	uint64_t default_e_group = 0;
+	size_t opt_num = new->sm_number.opt_name[strlen(new->sm_number.opt_name) - 1] - '0';
+
+	get_default_turbo_ratios(NULL, &default_e_group, NULL, NULL);
+	new->sm_number.default_value = (default_e_group >> (opt_num * 8)) & 0xff;
+}
+
+static void update_ecore_turbo_ratio_limit(struct sm_object *new)
+{
+	uint64_t default_e_limit = 0;
+	size_t opt_num = new->sm_number.opt_name[strlen(new->sm_number.opt_name) - 1] - '0';
+	uint8_t max_ratio = cpu_get_max_non_turbo_ratio();
+	char processor_name[49];
+
+	get_default_turbo_ratios(&default_e_limit, NULL, NULL, NULL);
+	new->sm_number.default_value = (default_e_limit >> (opt_num * 8)) & 0xff;
+	/*
+	 * There is no info in any register about the max non-turbo ratio for E cores.
+	 * The P cores to E cores max ratio seems to be 75/100 (rounded down to nearest 100Mhz)
+	 * so the formula is: max P-core non-turbo ratio x 75 / 100
+	 * However, the values obtained with that formula do not always match values provided
+	 * in Intel ARK for all AlderLake-S/RaptorLake-S processors. The value that gives
+	 * the most accurate matching is 757/1000. The only SKUs with mismtaches are
+	 * i7-12700(F) and i5-13400T.
+	 */
+	new->sm_number.min = (((uint32_t)max_ratio * 757) / 1000);
+
+	fill_processor_name(processor_name);
+
+	/* Match only 12700 SKUs with max ratio 2.1 GHz */
+	if (strstr(processor_name, "i7-12700") != NULL && max_ratio == 21)
+		new->sm_number.min = 16;
+	else if (strstr(processor_name, "i5-13400T") != NULL)
+		new->sm_number.min = 10;
+}
+
 static const struct sm_object pcore_turbo_ratio_group0 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group0",
 	.ui_name	= "P-core Turbo Ratio Limit Group 0",
@@ -280,7 +358,7 @@ static const struct sm_object pcore_turbo_ratio_group0 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group1 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group1",
@@ -291,7 +369,7 @@ static const struct sm_object pcore_turbo_ratio_group1 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group2 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group2",
@@ -302,7 +380,7 @@ static const struct sm_object pcore_turbo_ratio_group2 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group3 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group3",
@@ -313,7 +391,7 @@ static const struct sm_object pcore_turbo_ratio_group3 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group4 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group4",
@@ -324,7 +402,7 @@ static const struct sm_object pcore_turbo_ratio_group4 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group5 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group5",
@@ -335,7 +413,7 @@ static const struct sm_object pcore_turbo_ratio_group5 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group6 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group6",
@@ -346,7 +424,7 @@ static const struct sm_object pcore_turbo_ratio_group6 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_group7 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_group7",
@@ -357,7 +435,7 @@ static const struct sm_object pcore_turbo_ratio_group7 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_group));
 
 static const struct sm_object pcore_turbo_ratio_limit0 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit0",
@@ -367,7 +445,7 @@ static const struct sm_object pcore_turbo_ratio_limit0 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit1 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit1",
@@ -377,7 +455,7 @@ static const struct sm_object pcore_turbo_ratio_limit1 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit2 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit2",
@@ -387,7 +465,7 @@ static const struct sm_object pcore_turbo_ratio_limit2 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit3 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit3",
@@ -397,7 +475,7 @@ static const struct sm_object pcore_turbo_ratio_limit3 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit4 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit4",
@@ -407,7 +485,7 @@ static const struct sm_object pcore_turbo_ratio_limit4 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit5 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit5",
@@ -417,7 +495,7 @@ static const struct sm_object pcore_turbo_ratio_limit5 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit6 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit6",
@@ -427,7 +505,7 @@ static const struct sm_object pcore_turbo_ratio_limit6 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object pcore_turbo_ratio_limit7 = SM_DECLARE_NUMBER({
 	.opt_name	= "pcore_turbo_ratio_limit7",
@@ -437,8 +515,7 @@ static const struct sm_object pcore_turbo_ratio_limit7 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
-
+}, WITH_CALLBACK(update_pcore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_group0 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group0",
@@ -449,7 +526,7 @@ static const struct sm_object ecore_turbo_ratio_group0 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group1 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group1",
@@ -460,7 +537,7 @@ static const struct sm_object ecore_turbo_ratio_group1 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group2 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group2",
@@ -471,7 +548,7 @@ static const struct sm_object ecore_turbo_ratio_group2 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group3 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group3",
@@ -482,7 +559,7 @@ static const struct sm_object ecore_turbo_ratio_group3 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group4 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group4",
@@ -493,7 +570,7 @@ static const struct sm_object ecore_turbo_ratio_group4 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group5 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group5",
@@ -504,7 +581,7 @@ static const struct sm_object ecore_turbo_ratio_group5 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group6 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group6",
@@ -515,7 +592,7 @@ static const struct sm_object ecore_turbo_ratio_group6 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_group7 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_group7",
@@ -526,7 +603,7 @@ static const struct sm_object ecore_turbo_ratio_group7 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_group));
 
 static const struct sm_object ecore_turbo_ratio_limit0 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit0",
@@ -536,7 +613,7 @@ static const struct sm_object ecore_turbo_ratio_limit0 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit1 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit1",
@@ -546,7 +623,7 @@ static const struct sm_object ecore_turbo_ratio_limit1 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit2 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit2",
@@ -556,7 +633,7 @@ static const struct sm_object ecore_turbo_ratio_limit2 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit3 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit3",
@@ -566,7 +643,7 @@ static const struct sm_object ecore_turbo_ratio_limit3 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit4 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit4",
@@ -576,7 +653,7 @@ static const struct sm_object ecore_turbo_ratio_limit4 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit5 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit5",
@@ -586,7 +663,7 @@ static const struct sm_object ecore_turbo_ratio_limit5 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit6 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit6",
@@ -596,7 +673,7 @@ static const struct sm_object ecore_turbo_ratio_limit6 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object ecore_turbo_ratio_limit7 = SM_DECLARE_NUMBER({
 	.opt_name	= "ecore_turbo_ratio_limit7",
@@ -606,7 +683,7 @@ static const struct sm_object ecore_turbo_ratio_limit7 = SM_DECLARE_NUMBER({
 	.default_value	= 0,
 	.min		= 0,
 	.max		= 255,
-});
+}, WITH_CALLBACK(update_ecore_turbo_ratio_limit));
 
 static const struct sm_object core_volt_mode = SM_DECLARE_ENUM({
 	.opt_name	= "core_volt_mode",

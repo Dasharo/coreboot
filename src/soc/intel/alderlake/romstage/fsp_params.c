@@ -299,7 +299,6 @@ static void fill_fspm_cpu_params(FSP_M_CONFIG *m_cfg,
 		m_cfg->RingDownBin = get_uint_option("ring_downbin", m_cfg->RingDownBin);
 		m_cfg->UnderVoltProtection = get_uint_option("undervolt_prot", m_cfg->UnderVoltProtection);
 	}
-
 }
 
 static void fill_fspm_security_params(FSP_M_CONFIG *m_cfg,
@@ -307,7 +306,7 @@ static void fill_fspm_security_params(FSP_M_CONFIG *m_cfg,
 {
 	/* Disable BIOS Guard */
 	m_cfg->BiosGuard = 0;
-	m_cfg->TmeEnable = CONFIG(INTEL_TME) && is_tme_supported();
+	m_cfg->TmeEnable = get_uint_option("tme", CONFIG(INTEL_TME) && is_tme_supported());
 }
 
 static void fill_fspm_uart_params(FSP_M_CONFIG *m_cfg,
