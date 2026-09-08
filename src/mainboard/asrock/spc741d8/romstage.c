@@ -127,6 +127,10 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	/* Set Promote Warnings to disable.
 	   Determines if warnings are promoted to system level. */
 	mupd->FspmConfig.promoteWarnings = 0x0;
+
+	/* Enable TXT */
+	mupd->FspmConfig.ProcessorLtsxEnable = true;
+
 	mainboard_config_iio_bifurcation();
 	soc_config_iio(mupd, iio_pci_port, iio_bifur);
 	mainboard_config_iio(mupd);
