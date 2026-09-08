@@ -42,7 +42,12 @@
 
 #define MSR_PKG_C10_RESIDENCY	0x632
 
+#define MSR_TME_CAPABILITY			0x981
+#define  TME_CAPABILITY_HI_KEYID_BITS_MASK	0xf
+
 #define MSR_TME_ACTIVATE			0x982
+#define  TME_LOCK				(1 << 0)
+#define  TME_ACTIVE				(1 << 1)
 #define  TME_ACTIVATE_HI_KEYID_BITS_MASK	0xf
 
 #endif /* CPU_INTEL_MSR_H */
