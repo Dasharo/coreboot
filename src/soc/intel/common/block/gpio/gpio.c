@@ -601,6 +601,25 @@ gpio_pad_config_lock_using_sbi(const struct gpio_lock_config *pad_info,
 	}
 }
 
+static void
+gpio_pad_config_lock_using_pcr(const struct gpio_lock_config *pad_info,
+	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
+{
+	if ((pad_info->lock_action & GPIO_LOCK_CONFIG) == GPIO_LOCK_CONFIG) {
+		if (CONFIG(DEBUG_GPIO))
+			printk(BIOS_INFO, "%s: Locking pad %d configuration\n",
+						__func__, pad_info->pad);
+		pcr_or32(pid, offset, bit_mask);
+	}
+
+	if ((pad_info->lock_action & GPIO_LOCK_TX) == GPIO_LOCK_TX) {
+		if (CONFIG(DEBUG_GPIO))
+			printk(BIOS_INFO, "%s: Locking pad %d TX state\n",
+				__func__, pad_info->pad);
+		pcr_or32(pid, offset + sizeof(uint32_t), bit_mask);
+	}
+}
+
 int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count)
 {
 	const struct pad_community *comm;
@@ -645,31 +664,18 @@ int gpio_lock_pads(const struct gpio_lock_config *pad_list, const size_t count)
 
 		const uint32_t bit_mask = gpio_bitmask_within_group(comm, rel_pad);
 
-		gpio_pad_config_lock_using_sbi(&pad_list[x], comm->port, offset, bit_mask);
+		/* Use the lock method the SoC selected, as done outside of SMM */
+		if (CONFIG(SOC_INTEL_COMMON_BLOCK_GPIO_LOCK_USING_PCR))
+			gpio_pad_config_lock_using_pcr(&pad_list[x], comm->port, offset,
+						       bit_mask);
+		else
+			gpio_pad_config_lock_using_sbi(&pad_list[x], comm->port, offset,
+						       bit_mask);
 	}
 
 	p2sb_hide();
 
 	return 0;
-}
-
-static void
-gpio_pad_config_lock_using_pcr(const struct gpio_lock_config *pad_info,
-	uint8_t pid, uint16_t offset, const uint32_t bit_mask)
-{
-	if ((pad_info->lock_action & GPIO_LOCK_CONFIG) == GPIO_LOCK_CONFIG) {
-		if (CONFIG(DEBUG_GPIO))
-			printk(BIOS_INFO, "%s: Locking pad %d configuration\n",
-						__func__, pad_info->pad);
-		pcr_or32(pid, offset, bit_mask);
-	}
-
-	if ((pad_info->lock_action & GPIO_LOCK_TX) == GPIO_LOCK_TX) {
-		if (CONFIG(DEBUG_GPIO))
-			printk(BIOS_INFO, "%s: Locking pad %d TX state\n",
-				__func__, pad_info->pad);
-		pcr_or32(pid, offset + sizeof(uint32_t), bit_mask);
-	}
 }
 
 static int gpio_non_smm_lock_pad(const struct gpio_lock_config *pad_info)
