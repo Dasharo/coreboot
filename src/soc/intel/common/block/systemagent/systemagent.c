@@ -102,8 +102,8 @@ void sa_add_fixed_mmio_resources(struct device *dev, int *resource_cnt,
 	int index = *resource_cnt;
 
 	for (i = 0; i < count; i++) {
-		uintptr_t base;
-		size_t size;
+		uint64_t base;
+		uint64_t size;
 
 		size = sa_fixed_resources[i].size;
 		base = sa_fixed_resources[i].base;
