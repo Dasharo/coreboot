@@ -289,9 +289,9 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.NModeSupport = get_uint_option("nmode", 0);
 	memupd->FspmConfig.ExitOnFailure = get_uint_option("exit_on_failure", 1);
 	memupd->FspmConfig.RefClk = get_uint_option("mem_refclk", 0);
+	memupd->FspmConfig.Ddr4OneDpc = get_uint_option("ddr_1dpc", 1);
 
 	if (CONFIG(BOARD_MSI_Z690_A_PRO_WIFI_DDR4)) {
-		memupd->FspmConfig.Ddr4OneDpc = get_uint_option("ddr4_1dpc", 1);
 		check_ddr4_xmp_valid(memupd);
 		memcfg_init(memupd, &ddr4_mem_config, &dimm_module_spd_info, false);
 	}
