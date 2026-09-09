@@ -45,6 +45,27 @@ config INTEL_TXT_BDR_VERSION
 	  Setting lower version may work around such issue. Allowed values
 	  currently range from 2 to 6.
 
+config INTEL_TXT_CLEAR_SECRETS_IN_ROMSTAGE
+	bool
+	help
+	  Invoke the BIOS ACM's Clear Secrets function from romstage, right
+	  after memory init, instead of from ramstage. Select this on
+	  platforms where memory init itself scrubs DRAM, for example by
+	  asking Intel FSP-M to do it with the CleanMemory UPD, rather than
+	  relying on the ramstage memory clearing code.
+
+	  This is not a matter of taste. GETSEC[ENTERACCS] requires INVD
+	  before entering the ACM for the Clear Secrets function, and INVD
+	  raises #GP(0) once firmware has set
+	  MSR_BIOS_DONE.ENABLE_IA_UNTRUSTED, which happens during FSP-S.
+	  Anything later than romstage therefore faults instead of clearing
+	  the flag. It also matches the CBnT specification, which has Startup
+	  BIOS scrub memory and then call this function.
+
+	  Note that the Clear Secrets function only exists on client platforms
+	  prior to Meteor Lake and on server platforms prior to Emerald
+	  Rapids. Do not select it elsewhere.
+
 config INTEL_TXT_TEST_BIOS_ACM_CALLING_CODE
 	bool "Test BIOS ACM calling code with NOP function"
 	help
