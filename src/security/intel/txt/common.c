@@ -357,6 +357,35 @@ void intel_txt_run_sclean(void)
 }
 
 /*
+ * Clear the "secrets in memory" flag. To be called from romstage, after memory
+ * init has scrubbed DRAM: the CBnT specification has Startup BIOS clear memory
+ * and then invoke this ACM function, and GETSEC[ENTERACCS] requires INVD for
+ * it, which raises #GP(0) once MSR_BIOS_DONE.ENABLE_IA_UNTRUSTED is set during
+ * FSP-S.
+ *
+ * Returns on failure to launch the ACM, in which case the flag remains set and
+ * CAR is untouched. Resets the platform on success.
+ */
+void intel_txt_run_clear_secrets(void)
+{
+	size_t acm_len;
+
+	void *acm_data = intel_txt_prepare_bios_acm(&acm_len);
+
+	if (!acm_data)
+		return;
+
+	printk(BIOS_INFO, "TEE-TXT: Running GETSEC[ENTERACCS] with input %d\n",
+	       ACMINPUT_CLEAR_SECRETS);
+
+	/*
+	 * Tears down CAR and does not return: no cbfs_unmap() and no console
+	 * output after this point, both would touch CAR.
+	 */
+	getsec_enteraccs_car_teardown(ACMINPUT_CLEAR_SECRETS, (uintptr_t)acm_data, acm_len);
+}
+
+/*
  * Test all bits for TXT execution.
  *
  * @return 0 on success
