@@ -555,4 +555,17 @@ config SOC_INTEL_COMMON_BLOCK_ACPI_SLP_S0_FREQ_HZ
 	help
 	  slp_s0_residency granularity in 122us ticks (i.e. ~8.2KHz).
 
+if INTEL_TXT
+
+config INTEL_TXT_DPR_SIZE
+	default 4
+
+config INTEL_TXT_SINIT_SIZE
+	default 0x50000
+
+config INTEL_TXT_HEAP_SIZE
+	default 0xf0000
+
+endif
+
 endif
