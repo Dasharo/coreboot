@@ -250,6 +250,16 @@ void mainboard_romstage_entry(void)
 
 	fsp_memory_init(s3wake);
 	pmc_set_disb();
+
+	/*
+	 * Clear the TXT secrets flag if a previous measured launch left it
+	 * set. FSP-M has just scrubbed DRAM for us (CleanMemory), and this is
+	 * the last point at which the ACM's mandatory INVD is still legal:
+	 * FSP-S sets MSR_BIOS_DONE.ENABLE_IA_UNTRUSTED in ramstage. Resets
+	 * the platform on success.
+	 */
+	if (CONFIG(INTEL_TXT_CLEAR_SECRETS_IN_ROMSTAGE) && !s3wake)
+		intel_txt_romstage_clear_secrets();
 	if (!s3wake)
 		save_dimm_info();
 
