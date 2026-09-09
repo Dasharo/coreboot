@@ -3,6 +3,8 @@
 #ifndef _SOC_IOMAP_H_
 #define _SOC_IOMAP_H_
 
+#include "p2sb.h"
+
 #define MAP_ENTRY(reg_, is_64_, is_limit_, mask_bits_, desc_) \
 	{                                                           \
 		.reg = reg_, .is_64_bit = is_64_, .is_limit = is_limit_,  \
