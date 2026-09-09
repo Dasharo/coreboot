@@ -20,7 +20,13 @@ void getsec_enteraccs(const uint32_t esi,
 		      const uint32_t acm_base,
 		      const uint32_t acm_size);
 
-void getsec_sclean(const uint32_t acm_base,
-		   const uint32_t acm_size);
+/*
+ * Runs the ACM functions that reset the platform: SCLEAN and CLEAR_SECRETS.
+ * Tears down CAR, as INVD is mandatory before entering the ACM for those
+ * functions. Does not return.
+ */
+void getsec_enteraccs_car_teardown(const uint32_t esi,
+				   const uint32_t acm_base,
+				   const uint32_t acm_size);
 
 #endif /* SECURITY_INTEL_TXT_REGISTER_H_ */

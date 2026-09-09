@@ -7,7 +7,7 @@ ifeq ($(CONFIG_INTEL_TXT),y)
 all-y += logging.c
 
 romstage-y += romstage.c
-romstage-y += getsec_sclean.S
+romstage-y += getsec_enteraccs_car.S
 romstage-y += getsec.c
 
 romstage-y += common.c
