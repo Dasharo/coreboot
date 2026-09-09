@@ -70,5 +70,6 @@ void soc_lockdown_config(int chipset_lockdown)
 	pmc_lockdown_config(chipset_lockdown);
 	/* SOC/PCH die lock down configuration */
 	soc_die_lockdown_cfg();
-	cpu_lockdown_cfg();
+	if (CONFIG(SOC_INTEL_METEORLAKE) || CONFIG(SOC_INTEL_ALDERLAKE))
+		cpu_lockdown_cfg();
 }
