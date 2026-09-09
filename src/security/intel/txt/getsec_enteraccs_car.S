@@ -12,10 +12,17 @@
 .text
 
 /*
- * void getsec_sclean(const uint32_t acm_base, const uint32_t acm_size);
+ * Invoke GETSEC[ENTERACCS] for the ACM functions that reset the platform:
+ * SCLEAN and CLEAR_SECRETS. Both require INVD before entering the ACM, which
+ * destroys CAR, so CAR is torn down here and the stack must not be touched
+ * afterwards. This function does not return.
+ *
+ * void getsec_enteraccs_car_teardown(const uint32_t esi,
+ *                                    const uint32_t acm_base,
+ *                                    const uint32_t acm_size);
  */
-.global getsec_sclean
-getsec_sclean:
+.global getsec_enteraccs_car_teardown
+getsec_enteraccs_car_teardown:
 	/*
 	 * At this point, it is certain that the BIOS ACM will be run.
 	 * This requires tearing down CAR, which cannot be undone.
@@ -32,8 +39,9 @@ getsec_sclean:
 	 * Save arguments into SSE registers. We need to tear down CAR
 	 * before launching the BIOS ACM, which will destroy the stack.
 	 */
-	movd	4(%esp), %xmm2			/* acm_base */
-	movd	8(%esp), %xmm3			/* acm_size */
+	movd	4(%esp), %xmm4			/* ACM function */
+	movd	8(%esp), %xmm2			/* acm_base */
+	movd	12(%esp), %xmm3			/* acm_size */
 
 	/* Disable cache */
 	movl	%cr0, %eax
@@ -164,14 +172,14 @@ cond_clear_var_mtrrs:
 	movd	%xmm3, %ecx			/* acm_size */
 	movl	$0, %edx			/* reserved, must be zero */
 	movl	$0, %edi			/* must be zero */
-	movl	$0, %esi			/* SCLEAN */
+	movd	%xmm4, %esi			/* ACM function */
 
 	getsec
 
 	/*
-	 * The platform state after SCLEAN is undefined. The only sane
-	 * thing to do afterwards is to reset the platform. Note that
-	 * the BIOS ACM should already reset the platform, so this code
+	 * The platform state after these ACM functions is undefined. The
+	 * only sane thing to do afterwards is to reset the platform. Note
+	 * that the BIOS ACM should already reset the platform, so this code
 	 * may not always be reached, but keep it here just to be sure.
 	 */
 #if 1
