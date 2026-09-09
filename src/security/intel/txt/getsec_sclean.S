@@ -58,6 +58,27 @@ getsec_sclean:
 	andl	$~1, %eax			/* Clear NEM Setup bit */
 	wrmsr
 
+#if CONFIG(INTEL_CAR_NEM_ENHANCED)
+	/*
+	 * Enhanced NEM holds CAR in protected L3 ways, selected through a
+	 * class of service. Release both, or the BIOS ACM does not get the
+	 * cache it needs to run in. This is the tail of
+	 * chipset_teardown_car(), which cannot be called from here as it is
+	 * only linked into the postcar stage.
+	 */
+	movl	$(IA32_PQR_ASSOC), %ecx
+	rdmsr
+	andl	$~(IA32_PQR_ASSOC_MASK), %edx
+	wrmsr
+
+#if CONFIG(CAR_HAS_L3_PROTECTED_WAYS)
+	movl	$(IA32_L3_PROTECTED_WAYS), %ecx
+	xorl	%eax, %eax
+	xorl	%edx, %edx
+	wrmsr
+#endif
+#endif
+
 	/* Invalidate the cache, again */
 	invd
 
