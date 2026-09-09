@@ -93,6 +93,20 @@ void pci_domain_fill_ssdt(const struct device *domain)
 			write_ssdt_domain_mmio_producer_range(acpi_device_name(domain),
 							      0xfed40000, 0xfed44fff);
 		}
+		/*
+		 * We do not move the SPI MMIO with STM. Otherwise it will be impossible
+		 * to pass correct base address to STM, because CPU init with STM
+		 * loading happens before resource allocation in coreboot on FSP
+		 * platforms.
+		 *
+		 * To avoid reallocation of SPI MMIO by OS, we declare the SPI MMIO
+		 * window for this domain.
+		 */
+		if (CONFIG(STM) && CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)) {
+			write_ssdt_domain_mmio_producer_range(acpi_device_name(domain),
+							      CONFIG_INTEL_SPI_BASE_ADDRESS,
+								  CONFIG_INTEL_SPI_BASE_ADDRESS + 0xffff);
+		}
 	}
 
 	struct resource *res;
