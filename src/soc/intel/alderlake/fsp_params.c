@@ -610,6 +610,8 @@ static void fill_fsps_cpu_params(FSP_S_CONFIG *s_cfg,
 	if (!s_cfg->SkipMpInit)
 		s_cfg->CpuFeaturesInitOnS3ResumeOverride = 1;
 #endif
+
+	s_cfg->TxtEnable = CONFIG(INTEL_TXT);
 }
 
 static void fill_fsps_igd_params(FSP_S_CONFIG *s_cfg,
