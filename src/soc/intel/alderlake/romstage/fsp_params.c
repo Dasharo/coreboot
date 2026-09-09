@@ -594,6 +594,24 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 	soc_memory_init_params(m_cfg, config);
 	mainboard_memory_init_params(mupd);
 
+	/*
+	 * A previous measured launch may have left secrets in DRAM and gone
+	 * away without tearing the environment down, in which case
+	 * TXT.E2STS.SECRET_STS is still set. Have MRC scrub DRAM so that
+	 * romstage can invoke the Clear Secrets BIOS ACM function afterwards,
+	 * see intel_txt_romstage_clear_secrets(). MRC is the right place for
+	 * it: it clears all of memory, including what is above 4 GiB and what
+	 * later becomes TSEG or DPR, before coreboot or FSP have put anything
+	 * in DRAM to preserve.
+	 *
+	 * Never on S3 resume: memory holds the suspended OS, and the secrets
+	 * in it belong to the environment that is about to be resumed.
+	 */
+	if (CONFIG(INTEL_TXT_CLEAR_SECRETS_IN_ROMSTAGE) &&
+	    arch_upd->BootMode != FSP_BOOT_ON_S3_RESUME &&
+	    intel_txt_memory_has_secrets())
+		m_cfg->CleanMemory = 1;
+
 	/* Override the memory init params through runtime debug capability */
 	if (CONFIG(SOC_INTEL_COMMON_BASECODE_DEBUG_FEATURE))
 		debug_override_memory_init_params(m_cfg);
