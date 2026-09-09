@@ -589,4 +589,17 @@ config SOC_INTEL_SPI_PSF_DESTINATION_ID
 	default 0x23b8 if SOC_INTEL_ALDERLAKE_PCH_S
 	default 0x23a8
 
+if INTEL_TXT
+
+config INTEL_TXT_DPR_SIZE
+	default 4
+
+config INTEL_TXT_SINIT_SIZE
+	default 0x50000
+
+config INTEL_TXT_HEAP_SIZE
+	default 0xf0000
+
+endif
+
 endif
