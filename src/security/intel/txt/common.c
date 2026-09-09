@@ -346,7 +346,7 @@ void intel_txt_run_sclean(void)
 	/*
 	 * Invoke the BIOS ACM. If successful, the system will reset with memory unlocked.
 	 */
-	getsec_sclean((uintptr_t)acm_data, acm_len);
+	getsec_enteraccs_car_teardown(ACMINPUT_SCLEAN, (uintptr_t)acm_data, acm_len);
 
 	/*
 	 * However, if this function returns, the BIOS ACM could not be invoked. This is bad.
