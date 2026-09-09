@@ -102,6 +102,22 @@ static void check_secrets_txt(void *unused)
 	 * TXT will issue a platform reset to come up sober.
 	 */
 	if (intel_txt_memory_has_secrets()) {
+		if (CONFIG(INTEL_TXT_CLEAR_SECRETS_IN_ROMSTAGE)) {
+			/*
+			 * romstage runs CLEAR_SECRETS on these platforms and
+			 * the ACM resets the platform on success, so reaching
+			 * this point means it did not run. It cannot be
+			 * retried here: GETSEC[ENTERACCS] requires INVD for
+			 * that function, and FSP-S has since set
+			 * MSR_BIOS_DONE.ENABLE_IA_UNTRUSTED, after which INVD
+			 * raises #GP(0). DRAM is cleared either way, by
+			 * memory init or by the ramstage memory clearing code.
+			 */
+			printk(BIOS_ERR, "TEE-TXT: Secrets still in memory after romstage "
+			       "teardown, cannot clear the flag from ramstage\n");
+			return;
+		}
+
 		if (intel_txt_prepare_txt_env()) {
 			printk(BIOS_ERR, "TEE-TXT: Failed to prepare TXT environment\n");
 			return;
