@@ -201,6 +201,8 @@ void mainboard_romstage_entry(void)
 	 */
 	if (!CONFIG(INTEL_TXT))
 		disable_intel_txt();
+	else
+		intel_txt_romstage_init();
 
 	if (CONFIG(VBOOT_EARLY_EC_SYNC) && CONFIG(VBOOT_EC_SYNC_ESOL))
 		vboot_sync_ec();
