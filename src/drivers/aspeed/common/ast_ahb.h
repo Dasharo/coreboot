@@ -22,7 +22,8 @@
  * cooperation from the BMC beyond having the P2A bridge enabled, which is
  * the default on AST2500/AST2600 unless locked down by BMC firmware.
  *
- * `bmc_addr` must be 4-byte aligned; `len` may be arbitrary.
+ * `bmc_addr` and `len` may be arbitrary; unaligned leading/trailing bytes
+ * are handled with a read-modify-write of the containing dword.
  *
  * Returns:
  * - CB_SUCCESS on success.
