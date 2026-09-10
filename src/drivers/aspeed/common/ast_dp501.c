@@ -8,6 +8,7 @@
 
 #include <delay.h>
 
+#include "ast_ahb.h"
 #include "ast_drv.h"
 
 static void send_ack(struct ast_private *ast)
@@ -210,7 +211,7 @@ u8 ast_get_dp501_max_clk(struct drm_device *dev)
 	boot_address = get_fw_base(ast);
 
 	/* validate FW version */
-	offset = 0xf000;
+	offset = AST_P2A_BRIDGE_CTRL;
 	data = ast_mindwm(ast, boot_address + offset);
 	if ((data & 0xf0) != 0x10) /* version: 1x */
 		return maxclk;
@@ -237,7 +238,7 @@ bool ast_dp501_read_edid(struct drm_device *dev, u8 *ediddata)
 	boot_address = get_fw_base(ast);
 
 	/* validate FW version */
-	offset = 0xf000;
+	offset = AST_P2A_BRIDGE_CTRL;
 	data = ast_mindwm(ast, boot_address + offset);
 	if ((data & 0xf0) != 0x10)
 		return false;
@@ -263,8 +264,8 @@ static bool ast_init_dvo(struct drm_device *dev)
 	struct ast_private *ast = dev->dev_private;
 	u8 jreg;
 	u32 data;
-	ast_write32(ast, 0xf004, 0x1e6e0000);
-	ast_write32(ast, 0xf000, 0x1);
+	ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+	ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 	ast_write32(ast, 0x12000, 0x1688a8a8);
 
 	jreg = ast_get_index_reg_mask(ast, AST_IO_CRTC_PORT, 0xd0, 0xff);
@@ -340,8 +341,8 @@ static void ast_init_analog(struct drm_device *dev)
 	 * bridge. First configure the P2U to target the SCU
 	 * in case it isn't at this stage.
 	 */
-	ast_write32(ast, 0xf004, 0x1e6e0000);
-	ast_write32(ast, 0xf000, 0x1);
+	ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+	ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 
 	/* Then unlock the SCU with the magic password */
 	ast_write32(ast, 0x12000, 0x1688a8a8);
