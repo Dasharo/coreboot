@@ -30,12 +30,18 @@ static u8 smbios_checksum(u8 *p, u32 length)
 
 static void *smbios_table_data;
 static size_t smbios_table_data_length;
+static void *smbios_entry_point_data;
 
 void *smbios_get_table(size_t *table_length)
 {
 	if (table_length)
 		*table_length = smbios_table_data_length;
 	return smbios_table_data;
+}
+
+void *smbios_get_entry_point(void)
+{
+	return smbios_entry_point_data;
 }
 
 int smbios_add_string(u8 *start, const char *str)
@@ -1450,6 +1456,7 @@ unsigned long smbios_write_tables(unsigned long current)
 
 	smbios_table_data = (void *)tables;
 	smbios_table_data_length = len;
+	smbios_entry_point_data = (void *)se3;
 
 	return current;
 }
