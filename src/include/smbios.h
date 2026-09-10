@@ -18,6 +18,15 @@ unsigned long smbios_write_tables(unsigned long start);
 int smbios_add_string(u8 *start, const char *str);
 int smbios_string_table_len(u8 *start);
 
+/*
+ * Returns a pointer to the raw SMBIOS structure table (i.e. the structures
+ * themselves, not the 32-/64-bit entry points) most recently built by
+ * smbios_write_tables(), and its length in bytes in *table_length.
+ * Returns NULL (and *table_length unset) if smbios_write_tables() has not
+ * run yet.
+ */
+void *smbios_get_table(size_t *table_length);
+
 struct smbios_header;
 int smbios_full_table_len(struct smbios_header *header, u8 *str_table_start);
 void *smbios_carve_table(unsigned long start, u8 type, u8 length, u16 handle);
