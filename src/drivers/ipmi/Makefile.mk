@@ -21,3 +21,5 @@ romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_if.c
 romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_ops_premem.c
 romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_bt.c
 romstage-$(CONFIG_IPMI_BT_ROMSTAGE) += ipmi_ops.c
+
+ramstage-$(CONFIG_IPMI_ASPEED_SMBIOS_MDRV2) += smbios_mdrv2.c
