@@ -68,8 +68,17 @@ static enum cb_err ast_ahb_set_window(void *regs, uint32_t addr)
 	unsigned int timeout;
 	uint32_t base = addr & ~AST_P2A_WINDOW_MASK;
 
-	write32(regs + AST_P2A_BRIDGE_ADDR, base);
+	/*
+	 * Gigabyte's SendIpmiSystemInfo.efi (see ast_ahb.h) writes the "go"
+	 * trigger before the window base on every window switch, the
+	 * opposite order from ast_mindwm()/ast_moutdwm() in ast_post.c.
+	 * Both are used on real hardware, which suggests the bridge doesn't
+	 * care about the relative order of these two writes; this mirrors
+	 * the vendor driver's order since that's the one directly confirmed
+	 * against this board.
+	 */
 	write32(regs + AST_P2A_BRIDGE_CTRL, 0x1);
+	write32(regs + AST_P2A_BRIDGE_ADDR, base);
 
 	for (timeout = 0; timeout < AST_P2A_TIMEOUT_LOOPS; timeout++) {
 		if (read32(regs + AST_P2A_BRIDGE_ADDR) == base)
@@ -88,11 +97,6 @@ enum cb_err ast_ahb_write_buffer(uint32_t bmc_addr, const void *buf, size_t len)
 	if (!regs)
 		return CB_ERR;
 
-	if (bmc_addr % sizeof(uint32_t)) {
-		printk(BIOS_ERR, "AST AHB: unaligned address 0x%08x\n", bmc_addr);
-		return CB_ERR;
-	}
-
 	while (len) {
 		uint32_t window_off = bmc_addr & AST_P2A_WINDOW_MASK;
 		size_t window_remaining = AST_P2A_WINDOW_SIZE - window_off;
@@ -101,23 +105,27 @@ enum cb_err ast_ahb_write_buffer(uint32_t bmc_addr, const void *buf, size_t len)
 			return CB_ERR;
 
 		while (len && window_remaining) {
+			/* byte_in_dword is nonzero only for the very first dword,
+			   if bmc_addr/window_off isn't itself dword-aligned. */
+			uint32_t byte_in_dword = window_off & (sizeof(uint32_t) - 1);
+			uint32_t dword_off = window_off - byte_in_dword;
+			size_t n = MIN(len, sizeof(uint32_t) - byte_in_dword);
 			uint32_t val;
-			size_t n = MIN(len, sizeof(val));
 
-			if (n == sizeof(val)) {
+			if (byte_in_dword == 0 && n == sizeof(uint32_t)) {
 				memcpy(&val, src, sizeof(val));
 			} else {
-				/* Trailing partial dword: read-modify-write so we
-				   only touch the bytes actually requested. */
-				val = read32(regs + AST_P2A_WINDOW_BASE + window_off);
-				memcpy(&val, src, n);
+				/* Leading/trailing partial dword: read-modify-write
+				   so we only touch the bytes actually requested. */
+				val = read32(regs + AST_P2A_WINDOW_BASE + dword_off);
+				memcpy((uint8_t *)&val + byte_in_dword, src, n);
 			}
-			write32(regs + AST_P2A_WINDOW_BASE + window_off, val);
+			write32(regs + AST_P2A_WINDOW_BASE + dword_off, val);
 
 			src += n;
-			window_off += sizeof(val);
-			window_remaining -= sizeof(val);
-			bmc_addr += sizeof(val);
+			window_off += n;
+			window_remaining -= n;
+			bmc_addr += n;
 			len -= n;
 		}
 	}
