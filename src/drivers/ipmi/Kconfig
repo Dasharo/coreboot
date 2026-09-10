@@ -56,22 +56,26 @@ config DRIVERS_IPMI_SUPERMICRO_OEM
 	  * Communicates the BIOS version to the BMC
 	  * Communicates the BIOS date to the BMC
 
-config IPMI_ASPEED_SMBIOS_MDRV2
-	bool "Forward the SMBIOS table to the BMC via ASPEED shared memory (MDR2)"
+config IPMI_GIGABYTE_SMBIOS_OEM
+	bool "Forward the SMBIOS table to the BMC via Gigabyte's OEM IPMI command"
 	depends on IPMI_KCS || IPMI_BT
 	depends on GENERATE_SMBIOS_TABLES
 	depends on DRIVERS_ASPEED_AST_COMMON
+	depends on ARCH_X86
 	default n
 	help
-	  Sends the platform's SMBIOS table to the BMC using the IPMI "MDR2"
-	  push-agent commands, as implemented by OpenBMC's intel-ipmi-oem and
-	  consumed by its smbios-mdr daemon (which exposes the resulting
-	  table over D-Bus/Redfish/the web UI).
+	  Sends the SMBIOS 3.0 entry point + structure table to the BMC using
+	  Gigabyte-specific OEM IPMI commands (NetFn 0x2e / Cmd 0x20 and 0x21),
+	  reverse engineered from the vendor's SendIpmiSystemInfo.efi DXE
+	  driver. This is not a standardized protocol: it was found not to
+	  interoperate with OpenBMC's intel-ipmi-oem MDR2 commands on the
+	  Gigabyte MZ33-AR1's stock BMC firmware, which only implements this
+	  OEM command instead.
 
-	  The bulk table data is written directly into BMC memory through
-	  the ASPEED BMC's PCI-to-AHB (P2A) bridge instead of being shipped
-	  over the IPMI KCS/BT transport; only small IPMI commands carrying
-	  offsets/lengths/checksums are exchanged. This requires an ASPEED
+	  The data is written directly into BMC memory through the ASPEED
+	  BMC's PCI-to-AHB (P2A) bridge instead of being shipped over the
+	  IPMI KCS/BT transport; only small IPMI commands carrying the
+	  transfer address and sizes are exchanged. This requires an ASPEED
 	  AST2500/AST2600-class BMC with a functional P2A bridge.
 
 config IPMI_BT
