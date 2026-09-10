@@ -27,6 +27,13 @@ int smbios_string_table_len(u8 *start);
  */
 void *smbios_get_table(size_t *table_length);
 
+/*
+ * Returns a pointer to the SMBIOS 3.0 (64-bit) entry point (struct
+ * smbios_entry30) most recently built by smbios_write_tables(), or NULL if
+ * it has not run yet.
+ */
+void *smbios_get_entry_point(void);
+
 struct smbios_header;
 int smbios_full_table_len(struct smbios_header *header, u8 *str_table_start);
 void *smbios_carve_table(unsigned long start, u8 type, u8 length, u16 handle);
