@@ -5,6 +5,7 @@
 #include <console/console.h>
 #include <delay.h>
 
+#include "ast_ahb.h"
 #include "ast_drv.h"
 #include "ast_dram_tables.h"
 
@@ -95,12 +96,12 @@ u32 ast_mindwm(struct ast_private *ast, u32 r)
 	uint32_t timeout;
 	uint32_t data;
 
-	ast_write32(ast, 0xf004, r & 0xffff0000);
-	ast_write32(ast, 0xf000, 0x1);
+	ast_write32(ast, AST_P2A_BRIDGE_ADDR, r & 0xffff0000);
+	ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 
 	timeout = 0;
 	do {
-		data = ast_read32(ast, 0xf004) & 0xffff0000;
+		data = ast_read32(ast, AST_P2A_BRIDGE_ADDR) & 0xffff0000;
 		timeout++;
 	} while ((data != (r & 0xffff0000)) && (timeout < COREBOOT_AST_FAILOVER_TIMEOUT));
 	if (timeout >= COREBOOT_AST_FAILOVER_TIMEOUT)
@@ -113,11 +114,11 @@ void ast_moutdwm(struct ast_private *ast, u32 r, u32 v)
 	uint32_t timeout;
 	uint32_t data;
 
-	ast_write32(ast, 0xf004, r & 0xffff0000);
-	ast_write32(ast, 0xf000, 0x1);
+	ast_write32(ast, AST_P2A_BRIDGE_ADDR, r & 0xffff0000);
+	ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 	timeout = 0;
 	do {
-		data = ast_read32(ast, 0xf004) & 0xffff0000;
+		data = ast_read32(ast, AST_P2A_BRIDGE_ADDR) & 0xffff0000;
 		timeout++;
 	} while ((data != (r & 0xffff0000)) && (timeout < COREBOOT_AST_FAILOVER_TIMEOUT));
 	if (timeout >= COREBOOT_AST_FAILOVER_TIMEOUT)
@@ -251,8 +252,8 @@ static void ast_init_dram_reg(struct drm_device *dev)
 	if ((j & 0x80) == 0) { /* VGA only */
 		if (ast->chip == AST2000) {
 			dram_reg_info = ast2000_dram_table_data;
-			ast_write32(ast, 0xf004, 0x1e6e0000);
-			ast_write32(ast, 0xf000, 0x1);
+			ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+			ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 			ast_write32(ast, 0x10100, 0xa8);
 
 			timeout = 0;
@@ -267,8 +268,8 @@ static void ast_init_dram_reg(struct drm_device *dev)
 			else
 				dram_reg_info = ast1100_dram_table_data;
 
-			ast_write32(ast, 0xf004, 0x1e6e0000);
-			ast_write32(ast, 0xf000, 0x1);
+			ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+			ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 			ast_write32(ast, 0x12000, 0x1688A8A8);
 
 			/* Wait up to 2.5 seconds for device initialization / register unlock */
@@ -1629,8 +1630,8 @@ static void ast_post_chip_2300(struct drm_device *dev)
 
 	reg = ast_get_index_reg_mask(ast, AST_IO_CRTC_PORT, 0xd0, 0xff);
 	if ((reg & 0x80) == 0) {/* vga only */
-		ast_write32(ast, 0xf004, 0x1e6e0000);
-		ast_write32(ast, 0xf000, 0x1);
+		ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+		ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 		ast_write32(ast, 0x12000, 0x1688a8a8);
 		timeout = 0;
 		do {
@@ -2074,8 +2075,8 @@ void ast_post_chip_2500(struct drm_device *dev)
 		ast_moutdwm(ast, 0x1e600084, 0x00010000);
 		ast_moutdwm(ast, 0x1e600088, 0x00000000);
 		ast_moutdwm(ast, 0x1e6e2000, 0x1688A8A8);
-		ast_write32(ast, 0xf004, 0x1e6e0000);
-		ast_write32(ast, 0xf000, 0x1);
+		ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+		ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 		ast_write32(ast, 0x12000, 0x1688a8a8);
 		while (ast_read32(ast, 0x12000) != 0x1)
 			;
