@@ -5,6 +5,7 @@
 
 #include <device/pci_def.h>
 
+#include "ast_ahb.h"
 #include "ast_drv.h"
 #include "ast_dram_tables.h"
 
@@ -58,7 +59,7 @@ static void ast_detect_config_mode(struct drm_device *dev, u32 *scu_rev)
 	jregd1 = ast_get_index_reg_mask(ast, AST_IO_CRTC_PORT, 0xd1, 0xff);
 	if (!(jregd0 & 0x80) || !(jregd1 & 0x10)) {
 		/* Double check it's actually working */
-		data = ast_read32(ast, 0xf004);
+		data = ast_read32(ast, AST_P2A_BRIDGE_ADDR);
 		if (data != 0xFFFFFFFF) {
 			/* P2A works, grab silicon revision */
 			ast->config_mode = ast_use_p2a;
@@ -66,8 +67,8 @@ static void ast_detect_config_mode(struct drm_device *dev, u32 *scu_rev)
 			DRM_INFO("Using P2A bridge for configuration\n");
 
 			/* Read SCU7c (silicon revision register) */
-			ast_write32(ast, 0xf004, 0x1e6e0000);
-			ast_write32(ast, 0xf000, 0x1);
+			ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+			ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 			*scu_rev = ast_read32(ast, 0x1207c);
 			return;
 		}
@@ -254,8 +255,8 @@ static int ast_get_dram_info(struct drm_device *dev)
 		mcr_scu_strap = 0;
 		break;
 	case ast_use_p2a:
-		ast_write32(ast, 0xf004, 0x1e6e0000);
-		ast_write32(ast, 0xf000, 0x1);
+		ast_write32(ast, AST_P2A_BRIDGE_ADDR, 0x1e6e0000);
+		ast_write32(ast, AST_P2A_BRIDGE_CTRL, 0x1);
 		mcr_cfg = ast_read32(ast, 0x10004);
 		mcr_scu_mpll = ast_read32(ast, 0x10120);
 		mcr_scu_strap = ast_read32(ast, 0x10170);
