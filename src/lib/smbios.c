@@ -28,6 +28,16 @@ static u8 smbios_checksum(u8 *p, u32 length)
 	return -ret;
 }
 
+static void *smbios_table_data;
+static size_t smbios_table_data_length;
+
+void *smbios_get_table(size_t *table_length)
+{
+	if (table_length)
+		*table_length = smbios_table_data_length;
+	return smbios_table_data;
+}
+
 int smbios_add_string(u8 *start, const char *str)
 {
 	int i = 1;
@@ -1432,6 +1442,9 @@ unsigned long smbios_write_tables(unsigned long current)
 	se3->struct_table_length = len;
 
 	se3->checksum = smbios_checksum((u8 *)se3, sizeof(*se3));
+
+	smbios_table_data = (void *)tables;
+	smbios_table_data_length = len;
 
 	return current;
 }
