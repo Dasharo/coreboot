@@ -235,7 +235,9 @@ static int add_smm_debug_resource(void)
 	}
 
 	if (CONFIG(CONSOLE_SERIAL) && CONFIG(DRIVERS_UART_8250IO)) {
-		Status |= add_pi_resource((void *)&rsc_uart_io, 1);
+		rsc_uart_io.base = CONFIG_TTYS0_BASE;
+		if (rsc_uart_io.base != 0)
+			Status |= add_pi_resource((void *)&rsc_uart_io, 1);
 	} else if (CONFIG(CONSOLE_SERIAL) && CONFIG(DRIVERS_UART_8250MEM)) {
 		rsc_uart_mmio.base = uart_platform_base(CONFIG_UART_FOR_CONSOLE);
 		if (rsc_uart_mmio.base != 0)
