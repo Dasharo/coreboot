@@ -111,17 +111,21 @@ config SBOM_EDK2_PLATFORMS_PATH
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
 config SBOM_ME
-	bool "Include ME metadata in SBOM"
+	bool "Include ME/SPS metadata in SBOM"
 	depends on HAVE_ME_BIN
 	default n
 	help
 	  Select this option if you want to include a
 	  coswid (Concise Software Identification Tag) of the
 	  ME firmware into the SBOM (Software Bill of Materials)
-	  File in your build
+	  File in your build.
+
+	  Both client CSME/TXE and server SPS (Server Platform Services)
+	  images are supported; which one ME_BIN_PATH holds is detected
+	  from the binary itself, and the tag is named accordingly.
 
 config SBOM_ME_GENERATE
-	bool "Auto-generate generic SBOM info for ME firmware"
+	bool "Auto-generate generic SBOM info for ME/SPS firmware"
 	depends on SBOM_ME
 	default y
 	help
@@ -133,7 +137,7 @@ config SBOM_ME_GENERATE
 	  incomplete or straight up wrong.
 
 config SBOM_ME_PATH
-	string "Path to sbom.json for the ME firmware"
+	string "Path to sbom.json for the ME/SPS firmware"
 	depends on SBOM_ME && !SBOM_ME_GENERATE
 	help
 	  The path of the SBOM file describing the Software included in the build
