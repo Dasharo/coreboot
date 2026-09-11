@@ -104,7 +104,7 @@ static STM_RSC_IO_DESC rsc_pci_io = {{IO_RANGE, sizeof(STM_RSC_IO_DESC)},
 
 // UART
 static STM_RSC_IO_DESC rsc_uart_io = {{IO_RANGE, sizeof(STM_RSC_IO_DESC)}, 0, 8};
-static STM_RSC_IO_DESC rsc_uart_mmio = {{MMIO_RANGE, sizeof(STM_RSC_IO_DESC)}, 0, 8, RDWR_ACCS};
+static STM_RSC_MMIO_DESC rsc_uart_mmio = {{MMIO_RANGE, sizeof(STM_RSC_MMIO_DESC)}, 0, 8, RDWR_ACCS};
 
 // PCIE MMIO
 static STM_RSC_MMIO_DESC rsc_pcie_mmio = {{MMIO_RANGE, sizeof(STM_RSC_MMIO_DESC)},
