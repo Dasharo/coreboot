@@ -60,6 +60,7 @@ function sdk_run {
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -e GOCACHE=/tmp/go-build \
+    -v "$SSH_AUTH_SOCK:/ssh-agent" -e SSH_AUTH_SOCK=/ssh-agent \
     -w /build/coreboot ${DASHARO_SDK} \
     "$@"
 }
