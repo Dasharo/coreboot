@@ -485,7 +485,7 @@ static void lockdown_intel_txt(void *unused)
 
 		/* The server ACM locks these registers in LockConfig */
 		if (!txt_setup_device_memory(tseg_base))
-			printk(BIOS_INFO, "TEE-TXT: Retrying TXT device memory "
+			printk(BIOS_INFO, "TEE-TXT: Will retry TXT device memory "
 			       "after LockConfig\n");
 
 		printk(BIOS_INFO, "TEE-TXT: Locking TEE...\n");
