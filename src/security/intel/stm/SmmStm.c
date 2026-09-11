@@ -607,9 +607,23 @@ void stm_gen_4g_pagetable_x64(uintptr_t pagetable_base)
 	if (addr_bits > 48)
 		addr_bits = 48;
 
-	num_pml4 = 1 << (addr_bits - 39);
-	addr_bits = 39;
-	num_pdp = 1 << (addr_bits - 30);
+	/*
+	 * The STM reserves 6 pages at Cr3Offset for this page table, and
+	 * stm_check_stm_image() sizes MSEG on the same assumption. Anything
+	 * written past that lands in the STM heap, so build the largest
+	 * identity map that fits: a PML4 plus up to five page directory
+	 * pointer tables of 1GiB pages, or a PML4, one page directory pointer
+	 * table and four page directories of 2MiB pages.
+	 */
+	if (page1G) {
+		num_pml4 = (addr_bits > 39) ? 1 << (addr_bits - 39) : 1;
+		if (num_pml4 > 5)
+			num_pml4 = 5;
+		num_pdp = SIZE_4KB / sizeof(uint64_t);
+	} else {
+		num_pml4 = 1;
+		num_pdp = 4;
+	}
 
 	page_addr = 0;
 
