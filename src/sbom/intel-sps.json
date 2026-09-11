@@ -1,0 +1,30 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "e51a1e53-b635-5702-8a53-34e516775f3e",
+  "tag-version": 0,
+  "software-name": "Intel Server Platform Services",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "persistent-id": "com.intel.sps",
+      "summary": "Intel Server Platform Services firmware"
+    }
+  ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://github.com/Dasharo/dasharo-blobs/blob/main/LICENSE"
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
