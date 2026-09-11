@@ -266,8 +266,20 @@ $(build-dir)/coreboot.json: $(src-dir)/coreboot.json $(coreboot-gitdir)/HEAD | $
 	# CRA sidecar instead, so the CoSWID stays LVFS-ingestable. Re-enable only
 	# once uswid tolerates unknown rels (or a standard rel exists).
 
-# Extract ME/TXE version from the firmware binary. Some versions
-# store it as an ASCII string like: "ME16.1.40.2765".
+# Extract ME/TXE/SPS version from the firmware binary.
+#
+# Intel SPS (Server Platform Services) images are handled first, because none
+# of the client paths below work on them: they carry no ASCII version string,
+# they have no NFTP partition, and their $FPT does not sit at one of the two
+# offsets cse_fpt probes, so cse_fpt bails out on the whole image. What they do
+# have - and what client CSME/TXE images never have - is an OPR (Operational)
+# code partition. Its $CPD header is directly followed by the partition
+# manifest, and the version sits 8 bytes after the manifest's $MN2 magic, same
+# as for NFTP below. Presence of OPR therefore serves both to detect SPS and to
+# pick the SPS CoSWID template, so the tag is not mislabelled as client ME.
+#
+# Client CSME/TXE: some versions store the version as an ASCII string like:
+# "ME16.1.40.2765".
 # When the string is missing, try to extract it from the CSE Main program
 # (NFTP) partition manifest: the version is 4x2 byte LE fields, 8 bytes after
 # the $MN2 magic string.
@@ -289,12 +301,28 @@ else
     sbom-me-bin := $(CONFIG_ME_BIN_PATH)
 endif
 
-$(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(sbom-me-bin) | $(build-dir) $(build-dir)/goswid $(IFWITOOL) $(CSE_SERGER) $(CSE_FPT)
-	cp $< $@
+$(build-dir)/intel-me.json: $(src-dir)/intel-me.json $(src-dir)/intel-sps.json $(sbom-me-bin) | $(build-dir) $(build-dir)/goswid $(IFWITOOL) $(CSE_SERGER) $(CSE_FPT)
 	me='$(sbom-me-bin)'; \
-	me_ver=$$(strings -a "$$me" \
-		| grep -m1 -Eo 'ME[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
-		| sed 's/^ME//'); \
+	me_ver=""; \
+	for cpd in $$(grep -aboF '$$CPD' "$$me" | cut -d: -f1); do \
+		name=$$(dd if="$$me" bs=1 skip=$$((cpd + 12)) count=4 2>/dev/null \
+			| tr -dc 'A-Za-z0-9'); \
+		case "$$name" in OPR*) ;; *) continue ;; esac; \
+		man=$$(grep -aboF '$$MN2' "$$me" | cut -d: -f1 \
+			| awk -v c="$$cpd" '$$1 >= c { print; exit }'); \
+		[ -n "$$man" ] || continue; \
+		me_ver=$$(dd if="$$me" skip=$$((man + 8)) bs=1 count=8 2>/dev/null \
+			| od -A n -t u2 | xargs | tr ' ' .); \
+		break; \
+	done; \
+	if [ -n "$$me_ver" ]; then \
+		cp $(src-dir)/intel-sps.json $@; \
+	else \
+		cp $(src-dir)/intel-me.json $@; \
+		me_ver=$$(strings -a "$$me" \
+			| grep -m1 -Eo 'ME[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' \
+			| sed 's/^ME//'); \
+	fi; \
 	if [ -z "$$me_ver" ]; then \
 		tmp=$$(mktemp -d); \
 		if [ "$(CONFIG_NEED_IFWI)" = "y" ]; then \
