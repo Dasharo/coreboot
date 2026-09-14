@@ -130,11 +130,11 @@ static STM_RSC_MMIO_DESC rsc_spi_mmio = {{MMIO_RANGE, sizeof(STM_RSC_MMIO_DESC)}
 				0x1000, // Length
 				RDWR_ACCS};
 
-// TXT MMIO
+// InSMM.STS
 static STM_RSC_MMIO_DESC rsc_txt_mmio = {{MMIO_RANGE, sizeof(STM_RSC_MMIO_DESC)},
-				TXT_PRIVATE_SPACE,
-				0x20000, // Length
-				RDWR_ACCS};
+				TXT_PUBLIC_SPACE + 0x880,
+				0x4, // Length
+				2};
 
 // End of list
 static STM_RSC_END rsc_list_end __attribute__((used)) = {
