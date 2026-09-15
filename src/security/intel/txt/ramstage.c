@@ -10,6 +10,7 @@
 #include <cpu/x86/msr.h>
 #include <cpu/x86/smm.h>
 #include <cpu/intel/msr.h>
+#include <dasharo/options.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
 #include <security/intel/cbnt/cbnt.h>
@@ -446,6 +447,60 @@ static bool txt_setup_device_memory(uintptr_t tseg_base)
 	       read64p(TXT_HEAP_SIZE) == heap_size;
 }
 
+/*
+ * Document Number: 558294
+ * Chapter 5.10.1 SMM in the Intel TXT for Servers Environment
+ *
+ * Point the chipset MSEG registers at the STM, or disable MSEG when no STM is
+ * present. Just like the TXT device memory registers, the server BIOS ACM locks
+ * these in LockConfig, so they have to be programmed before it runs.
+ * Returns true if the registers hold the requested values.
+ */
+static bool txt_setup_mseg(void)
+{
+	uint64_t mseg_base = 0;
+	uint64_t mseg_size = 0;
+
+	if (CONFIG(STM) && get_stm_option()) {
+		uintptr_t handler_base;
+		size_t handler_size;
+
+		/*
+		 * The MSEG sits at the top of the SMM handler subregion, which is where
+		 * smm_load_module() reserves it and what stm_setup() programs into
+		 * IA32_SMM_MONITOR_CTL. SINIT resets the platform if the chipset MSEG
+		 * registers and the MSR disagree.
+		 */
+		if (smm_subregion(SMM_SUBREGION_HANDLER, &handler_base, &handler_size)) {
+			printk(BIOS_ERR, "TEE-TXT: No SMM handler subregion for MSEG.\n");
+		} else if (handler_size < CONFIG_MSEG_SIZE) {
+			printk(BIOS_ERR, "TEE-TXT: MSEG does not fit SMRAM.\n");
+		} else {
+			mseg_base = handler_base + handler_size - CONFIG_MSEG_SIZE;
+			mseg_size = CONFIG_MSEG_SIZE;
+		}
+
+		if (!IS_ALIGNED(mseg_base, 4 * KiB)) {
+			printk(BIOS_ERR, "TEE-TXT: MSEG base is not 4 KiB aligned.\n");
+			mseg_base = 0;
+			mseg_size = 0;
+		}
+
+		if (!mseg_size)
+			printk(BIOS_ERR, "TEE-TXT: Disabling MSEG, no STM support.\n");
+	}
+
+	write64p(TXT_MSEG_SIZE, mseg_size);
+	write64p(TXT_MSEG_BASE, mseg_base);
+
+	const uint64_t base = read64p(TXT_MSEG_BASE);
+	const uint64_t size = read64p(TXT_MSEG_SIZE);
+
+	printk(BIOS_INFO, "TEE-TXT: TXT.MSEG.BASE 0x%llx SIZE 0x%llx\n", base, size);
+
+	return base == mseg_base && size == mseg_size;
+}
+
 /**
  * Finalize the TXT device.
  *
@@ -503,6 +558,10 @@ static void lockdown_intel_txt(void *unused)
 		if (!txt_setup_device_memory(tseg_base))
 			printk(BIOS_INFO, "TEE-TXT: Will retry TXT device memory "
 			       "after LockConfig\n");
+
+		/* Ditto for the MSEG registers */
+		if (!txt_setup_mseg())
+			printk(BIOS_INFO, "TEE-TXT: Will retry MSEG after LockConfig\n");
 
 		printk(BIOS_INFO, "TEE-TXT: Locking TEE...\n");
 
@@ -577,16 +636,8 @@ static void lockdown_intel_txt(void *unused)
 		return;
 	}
 
-	/*
-	 * FIXME: Server-TXT capable platforms need to install an STM in SMM and set up MSEG.
-	 */
-
-	/**
-	 * Chapter 5.10.1 SMM in the Intel TXT for Servers Environment
-	 * Disable MSEG.
-	 */
-	write64p(TXT_MSEG_SIZE, 0);
-	write64p(TXT_MSEG_BASE, 0);
+	if (!txt_setup_mseg())
+		printk(BIOS_ERR, "TEE-TXT: TXT.MSEG.BASE/SIZE not writable.\n");
 
 	/* Only initialize the heap on regular boots */
 	if (!acpi_is_wakeup_s3())
