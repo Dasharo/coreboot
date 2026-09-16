@@ -44,6 +44,7 @@ usage() {
   echo -e "\tqemu_full                  - build Dasharo for QEMU Q35 with all menus available"
   echo -e "\todroid_h4                  - build Dasharo compatible with Hardkernel ODROID H4"
   echo -e "\todroid_h4_netcard          - build Dasharo compatible with Hardkernel ODROID H4 for netcard support"
+  echo -e "\todroid_h5                  - build Dasharo compatible with Hardkernel ODROID H5"
   echo -e "\tasrock_spc741d8            - build Dasharo compatible with ASRock Rack SPC741D8-2L2T/BCM"
   echo -e "\tasrock_turind8ud_uefi      - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (UEFI)"
   echo -e "\tasrock_turind8ud_linuxboot - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (LinuxBoot)"
@@ -311,7 +312,7 @@ function build_qemu {
   fi
 }
 
-function build_odroid_h4 {
+function build_odroid_adln {
   VARIANT=$1
   DEFCONFIG="configs/config.hardkernel_${VARIANT}"
   FW_VERSION=$(cat ${DEFCONFIG} | grep CONFIG_LOCALVERSION | cut -d '=' -f 2 | tr -d '"')
@@ -320,7 +321,7 @@ function build_odroid_h4 {
   # out by coreboot's Makefile)
   build_prep 3rdparty/dasharo-blobs
 
-  echo "Building Dasharo compatbile with Hardkernel ODROID H4 (version $FW_VERSION)"
+  echo "Building Dasharo compatbile with Hardkernel ODROID (version $FW_VERSION)"
 
   build_start
 
@@ -538,10 +539,13 @@ case "$CMD" in
         build_qemu "_all_menus"
         ;;
     "odroid_h4" | "odroid_H4" | "ODROID_H4" )
-        build_odroid_h4 "odroid_h4"
+        build_odroid_adln "odroid_h4"
         ;;
     "odroid_h4_netcard" | "odroid_H4_netcard" | "ODROID_H4_NETCARD" )
-        build_odroid_h4 "odroid_h4_netcard"
+        build_odroid_adln "odroid_h4_netcard"
+        ;;
+    "odroid_h5" | "odroid_H5" | "ODROID_H5" )
+        build_odroid_adln "odroid_h5"
         ;;
     "asrock_spc741d8")
         build_asrock_rack "spc741d8"
