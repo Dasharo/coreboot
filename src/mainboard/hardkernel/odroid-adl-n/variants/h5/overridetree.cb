@@ -1,0 +1,55 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/intel/alderlake
+	device domain 0 on
+		device ref pcie_rp7 on	# M.2 M NVMe (x1)
+			register "pch_pcie_rp[PCH_RP(7)]" = "{
+				.clk_src = 3,
+				.clk_req = 3,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2/M 2280 (M2_SSD4)" "SlotDataBusWidth1X"
+		end
+
+		device ref pcie_rp9 on	# M.2 M NVMe (x2)
+			register "pch_pcie_rp[PCH_RP(9)]" = "{
+				.clk_src = 1,
+				.clk_req = 1,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2/M 2280 (M2_SSD3)" "SlotDataBusWidth2X"
+		end
+
+		device ref pcie_rp1 on	# M.2 M NVMe (x2)
+			register "pch_pcie_rp[PCH_RP(1)]" = "{
+				.clk_src = 2,
+				.clk_req = 2,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2/M 2280 (M2_SSD2)" "SlotDataBusWidth2X"
+		end
+
+		device ref pcie_rp11 on	# M.2 M NVMe (x2)
+			register "pch_pcie_rp[PCH_RP(11)]" = "{
+				.clk_src = 0,
+				.clk_req = 0,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2/M 2280 (M2_SSD1)" "SlotDataBusWidth2X"
+		end
+
+		device ref pcie_rp3 on	# Realtek RTL8127
+			register "pch_pcie_rp[PCH_RP(3)]" = "{
+				.clk_src = 4,
+				.clk_req = 4,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_DETECT,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+		end
+	end
+end

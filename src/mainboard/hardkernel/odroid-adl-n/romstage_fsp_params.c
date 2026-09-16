@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <gpio.h>
+#include <mainboard/gpio.h>
 #include <fsp/api.h>
 #include <soc/romstage.h>
 #include <soc/meminit.h>
 #include <soc/gpio.h>
-
-#include "gpio.h"
 
 static const struct mb_cfg ddr5_mem_config = {
 	.type = MEM_TYPE_DDR5,

@@ -2,3 +2,6 @@
 
 config BOARD_HARDKERNEL_ODROID_H4
 	bool "ODROID-H4 / H4+ / H4 Ultra"
+
+config BOARD_HARDKERNEL_ODROID_H5
+	bool "ODROID-H5"

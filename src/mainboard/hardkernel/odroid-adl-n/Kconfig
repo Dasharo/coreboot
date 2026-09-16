@@ -1,8 +1,6 @@
 ## SPDX-License-Identifier: GPL-2.0-only
 
-if BOARD_HARDKERNEL_ODROID_H4
-
-config BOARD_SPECIFIC_OPTIONS
+config BOARD_HARDKERNEL_ODROID_ADL_N_COMMON
 	def_bool y
 	select AZALIA_USE_LEGACY_VERB_TABLE
 	select BOARD_ROMSIZE_KB_16384
@@ -15,19 +13,35 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_GMA_HAVE_VBT
 	select SUPERIO_ITE_IT8613E
 	select SOC_INTEL_ALDERLAKE_PCH_N
+
+config BOARD_HARDKERNEL_ODROID_H4
+	bool
+	select BOARD_HARDKERNEL_ODROID_ADL_N_COMMON
 	select SOC_INTEL_COMMON_BLOCK_HDA_VERB
 
+config BOARD_HARDKERNEL_ODROID_H5
+	bool
+	select BOARD_HARDKERNEL_ODROID_ADL_N_COMMON
+
+if BOARD_HARDKERNEL_ODROID_ADL_N_COMMON
+
 config MAINBOARD_DIR
-	default "hardkernel/odroid-h4"
+	default "hardkernel/odroid-adl-n"
+
+config VARIANT_DIR
+	default "h4" if BOARD_HARDKERNEL_ODROID_H4
+	default "h5" if BOARD_HARDKERNEL_ODROID_H5
 
 config MAINBOARD_PART_NUMBER
-	default "ODROID-H4"
+	default "ODROID-H4" if BOARD_HARDKERNEL_ODROID_H4
+	default "ODROID-H5" if BOARD_HARDKERNEL_ODROID_H5
 
 config MAINBOARD_VENDOR
 	default "HARDKERNEL"
 
 config MAINBOARD_FAMILY
-	default "H4"
+	default "H4" if BOARD_HARDKERNEL_ODROID_H4
+	default "H5" if BOARD_HARDKERNEL_ODROID_H5
 
 config DIMM_SPD_SIZE
 	default 1024
@@ -80,6 +94,8 @@ config ODROID_H4_ENABLE_SAGV
 	  If unsure, keep enabled. If reflashing often, disabling this
 	  option can be useful to reduce memory training time.
 
+if BOARD_HARDKERNEL_ODROID_H4
+
 config ODROID_H4_NETCARD_SUPPORT
 	bool "Enable 4x1 PCIe for Net Card 2 support in M.2 NVME slot"
 	default n
@@ -92,9 +108,10 @@ config ODROID_H4_NETCARD_SUPPORT
 
 	  By default the slot is bifurcated as 1x4 for NVMe.
 
-config OVERRIDE_DEVICETREE
-	string
-	default "overridetree_netcard.cb" if ODROID_H4_NETCARD_SUPPORT
-	default "overridetree_nvme.cb"
+endif # BOARD_HARDKERNEL_ODROID_H4
 
-endif #BOARD_HARDKERNEL_ODROID_H4
+config OVERRIDE_DEVICETREE
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree_netcard.cb" if ODROID_H4_NETCARD_SUPPORT
+	default "variants/\$(CONFIG_VARIANT_DIR)/overridetree.cb"
+
+endif # BOARD_HARDKERNEL_ODROID_ADL_N_COMMON
