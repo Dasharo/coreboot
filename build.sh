@@ -459,8 +459,8 @@ case "$CMD" in
         BOARD="vp2440"
         build_protectli_vault _no_emmc
         ;;
-    "ap2110" | "AP2110")
-        BOARD="ap2110"
+    "v2210" | "V2210")
+        BOARD="v2210"
         build_protectli_vault
         ;;
     "v1210" | "V1210" )
