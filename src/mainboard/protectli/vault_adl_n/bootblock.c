@@ -30,9 +30,9 @@ void bootblock_mainboard_early_init(void)
 	/* Internal VCC_OK */
 	ite_reg_write(GPIO_DEV, 0x23, 0x00);
 
-	/* Set pin native functions. AP2110 uses pin 10 as GP12. */
+	/* Set pin native functions. V2210 uses pin 10 as GP12. */
 	ite_reg_write(GPIO_DEV, 0x26,
-		      CONFIG(BOARD_PROTECTLI_AP2110) ? 0xc4 : 0xc0);
+		      CONFIG(BOARD_PROTECTLI_V2210) ? 0xc4 : 0xc0);
 
 	/* Pin28 as GP41 - PC speaker */
 	ite_reg_write(GPIO_DEV, 0x28, 0x02);
@@ -50,8 +50,8 @@ void bootblock_mainboard_early_init(void)
 		       ITE_GPIO_OUTPUT, ITE_GPIO_SIMPLE_IO_MODE,
 		       ITE_GPIO_CONTROL_DEFAULT);
 
-	if (CONFIG(BOARD_PROTECTLI_AP2110)) {
-		/* Configure GP12 direction/mode as required by AP2110. */
+	if (CONFIG(BOARD_PROTECTLI_V2210)) {
+		/* Configure GP12 direction/mode as required by V2210. */
 		ite_gpio_setup(GPIO_DEV, 12,
 			       ITE_GPIO_INPUT, ITE_GPIO_SIMPLE_IO_MODE,
 			       ITE_GPIO_CONTROL_DEFAULT);
