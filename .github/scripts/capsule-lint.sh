@@ -32,6 +32,8 @@ if [ ! -d configs ]; then
     exit 1
 fi
 
+# one array for both main and EC capsule GUIDs, because the same value can't be
+# reused regardless of what's being updated
 declare -A guids
 fail=0
 
@@ -43,8 +45,15 @@ for c in "${configs[@]}"; do
     ver=$(get_hex "$c" 'CONFIG_DRIVERS_EFI_MAIN_FW_VERSION')
     lsv=$(get_hex "$c" 'CONFIG_DRIVERS_EFI_MAIN_FW_LSV')
 
+    # for EC capsules:
+    #  - the version is not known at build time
+    #  - LSV defaults to zero and there is no version to check it against
+    ec_guid=$(get_str "$c" 'CONFIG_DRIVERS_EFI_EC_FW_GUID')
+    ec_size=$(get_hex "$c" 'CONFIG_DRIVERS_EFI_EC_FW_SIZE')
+
     # convert to lower case as normalization
     guid=${guid,,*}
+    ec_guid=${ec_guid,,*}
     # remove common prefix to shorten error messages
     c=${c##*/}
 
@@ -57,6 +66,22 @@ for c in "${configs[@]}"; do
         fail=1
     else
         guids["$guid"]=$c
+    fi
+
+    # EC capsules are optional
+    if [ -n "$ec_guid" ]; then
+        if [ -n "${guids["$ec_guid"]}" ]; then
+            echo "$c: duplicated CONFIG_DRIVERS_EFI_EC_FW_GUID value ($ec_guid)"
+            echo "${c//?/ }  also appears in ${guids["$ec_guid"]}"
+            fail=1
+        else
+            guids["$ec_guid"]=$c
+        fi
+
+        if [ -z "$ec_size" ] || [ $(( $ec_size )) -le 0 ]; then
+            echo "$c: invalid CONFIG_DRIVERS_EFI_EC_FW_SIZE value ($ec_size)"
+            fail=1
+        fi
     fi
 
     if [ -z "$ver" ]; then
