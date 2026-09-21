@@ -77,7 +77,7 @@ function source_coreboot_config() {
     local config_file=${1-.config}
 
     if [ ! -f "$config_file" ]; then
-            die "config file '$config_file' doesn't exist"
+        die "config file '$config_file' doesn't exist"
     fi
 
     local line
@@ -671,7 +671,6 @@ function create_cabinet_subcommand() {
     </release>
   </releases>
 </component>
-
 EOF
 
     cp "$capsule" "${archive_dir}/firmware.bin"
