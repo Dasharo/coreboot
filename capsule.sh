@@ -46,17 +46,17 @@ function print_usage() {
     echo '  keygen         use OpenSSL to auto-generate test keys suitable for signing'
     echo '                 positional argument: directory-path'
     echo '  make           build a capsule, options:'
-    echo '                 -t root-certificate-file'
-    echo '                 -o subroot-certificate-file'
-    echo '                 -s signing-certificate-file'
+    echo '                 -k certs-dir (root.pub.pem, sub.pub.pem and sign.p12) AND/OR'
+    echo '                 -t/-o/-s root/subroot/signing-certificate-file'
     echo '                 [-b] (include battery check DXE in the capsule)'
     echo '                 [-y] (overwrite destination without prompting)'
     echo '                 [-e ec-rom-file] (make an EC firmware capsule)'
     echo '                 [-c cap-file] (destination file name, generated if omitted)'
+    echo '                 (later options override earlier ones)'
     echo '  resign         resign an existing capsule with a different key'
-    echo '                 -t root-certificate-file'
-    echo '                 -o subroot-certificate-file'
-    echo '                 -s signing-certificate-file'
+    echo '                 -k certs-dir (root.pub.pem, sub.pub.pem and sign.p12) AND/OR'
+    echo '                 -t/-o/-s root/subroot/signing-certificate-file'
+    echo '                 (later options override earlier ones)'
     echo '                 positional arguments: input-capsule output-capsule'
     echo '  create_cabinet create a fwupd cabinet (.cab) from a capsule'
     echo '                 positional argument: capsule-file'
@@ -205,7 +205,7 @@ EOF
     echo "  cp $dir/CapsuleRootKey.inc ${edk_workspace}/Dasharo/DasharoPayloadPkg/"
     echo
     echo "Signing a capsule (after build):"
-    echo "  $0 make -t $dir/root.pub.pem -o $dir/sub.pub.pem -s $dir/sign.p12"
+    echo "  $0 make -k $dir"
 }
 
 function check_cert() {
@@ -373,14 +373,19 @@ function make_subcommand() {
     #  * t - trusted
     #  * o - other
     #  * s - signer
+    #
+    # -k can be combined with -t/-o/-s to override files, but order matters
 
     local -A cap_certs
     local include_battery_check overwrite_output ec_rom_file cap_file
-    while getopts "t:o:s:be:yc:" OPTION; do
+    while getopts "t:o:s:k:be:yc:" OPTION; do
         case $OPTION in
             t) cap_certs[root]="$OPTARG" ;;
             o) cap_certs[sub]="$OPTARG" ;;
             s) cap_certs[sign]="$OPTARG" ;;
+            k) cap_certs[root]="$OPTARG/root.pub.pem"
+               cap_certs[sub]="$OPTARG/sub.pub.pem"
+               cap_certs[sign]="$OPTARG/sign.p12" ;;
             b) include_battery_check=1 ;;
             y) overwrite_output=1 ;;
             e) ec_rom_file="$OPTARG" ;;
@@ -558,11 +563,14 @@ function resign_subcommand() {
 
     local root_cert sub_cert sign_cert
     OPTIND=1
-    while getopts "t:o:s:" OPTION; do
+    while getopts "t:o:s:k:" OPTION; do
         case $OPTION in
             t) root_cert="$OPTARG" ;;
             o) sub_cert="$OPTARG" ;;
             s) sign_cert="$OPTARG" ;;
+            k) root_cert="$OPTARG/root.pub.pem"
+               sub_cert="$OPTARG/sub.pub.pem"
+               sign_cert="$OPTARG/sign.p12" ;;
             *) exit 1 ;;
         esac
     done
