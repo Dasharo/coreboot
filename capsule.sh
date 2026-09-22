@@ -59,6 +59,7 @@ function print_usage() {
     echo '                 (later options override earlier ones)'
     echo '                 positional arguments: input-capsule output-capsule'
     echo '  create_cabinet create a fwupd cabinet (.cab) from a capsule'
+    echo '                 -e (make a cabinet for EC firmware)'
     echo '                 positional argument: capsule-file'
     echo '  upload_lvfs    upload a cabinet (.cab) to LVFS, options'
     echo '                 [-c credentials-file] (defaults to ~/.config/dasharo-credentials/lvfs)'
@@ -330,6 +331,19 @@ EOF
     fi
 }
 
+# Prints version of an EC ROM as it appears in the file or dies.
+function extract_raw_ec_version() {
+    local ec_rom_file=$1
+
+    local ver
+    ver=$(strings "$ec_rom_file" | sed -n '/^76EC_VERSION=./s/.*=//p' | head -1)
+    if [ -z "$ver" ]; then
+        die "Failed to extract raw 76EC_VERSION from '$ec_rom_file'"
+    fi
+
+    echo "$ver"
+}
+
 # Prints version of an EC ROM derived from the file or dies.
 # The implementation of version conversion must be kept in sync with
 # parse_ec_version() in src/drivers/efi/info.c
@@ -338,7 +352,7 @@ function extract_ec_version() {
 
     local ver
     ver=$(strings "$ec_rom_file" | \
-          sed -n '/^76EC_VERSION/s/.*=\([0-9]\{4\}\(-[0-9][0-9]\)\{2\}\).*/\1/p' | \
+          sed -n '/^76EC_VERSION=./s/.*=\([0-9]\{4\}\(-[0-9][0-9]\)\{2\}\).*/\1/p' | \
           head -1)
 
     if [ -z "$ver" ]; then
@@ -608,8 +622,18 @@ function resign_subcommand() {
 }
 
 function create_cabinet_subcommand() {
+    local ec_fw
+    OPTIND=1
+    while getopts "e" OPTION; do
+        case $OPTION in
+            e) ec_fw="yes" ;;
+            *) exit 1 ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
     if [ $# -ne 1 ]; then
-        die "Incorrect number of input parameters specified: $# (expected: 1)"
+        die "Incorrect number of positional parameters: $# (expected: 1)"
     fi
 
     local capsule=$1
@@ -639,7 +663,32 @@ function create_cabinet_subcommand() {
     archive_dir=$(mktemp --tmpdir -d XXXXXXXX)
     trap 'rm -rf -- "$archive_dir"' EXIT
 
-    local id=com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.system.firmware
+    local fw_guid=$CONFIG_DRIVERS_EFI_MAIN_FW_GUID
+    local fw_kind=system
+    local name_suffix=
+    local category=X-System
+    local version_formats=( quad dell-bios-msb )
+    local tag=$CONFIG_LOCALVERSION
+    if [ "$ec_fw" = yes ]; then
+        if [ -z "$CONFIG_DRIVERS_EFI_EC_FW_GUID" ]; then
+            die '-e is passed but CONFIG_DRIVERS_EFI_EC_FW_GUID is empty'
+        fi
+
+        fw_guid=$CONFIG_DRIVERS_EFI_EC_FW_GUID
+        fw_kind=EC
+        name_suffix=' EC'
+        category=X-EmbeddedController
+        version_formats=( hex )
+
+        # extract[_raw]_ec_version() work on capsules too.
+        tag=$(extract_raw_ec_version "$capsule")
+        version=$(extract_ec_version "$capsule")
+    fi
+
+    local version_formats_str
+    version_formats_str=$(printf '    <value key="LVFS::VersionFormat">%s</value>\n' "${version_formats[@]}")
+
+    local id=com.${vendor}.${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}.${CONFIG_MAINBOARD_VERSION}.${fw_kind,,*}.firmware
     id=${id// /_}
     id=${id////_}
 
@@ -647,27 +696,26 @@ function create_cabinet_subcommand() {
 <?xml version='1.0' encoding='utf-8'?>
 <component type="firmware">
   <id>${id}</id>
-  <name>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}</name>
-  <summary>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</summary>
+  <name>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME}${name_suffix}</name>
+  <summary>${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} ${fw_kind} firmware</summary>
   <description>
-    <p>Dasharo ${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} system firmware</p>
+    <p>Dasharo ${CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME} ${CONFIG_MAINBOARD_VERSION} ${fw_kind} firmware</p>
   </description>
   <provides>
-    <firmware type="flashed">${CONFIG_DRIVERS_EFI_MAIN_FW_GUID}</firmware>
+    <firmware type="flashed">${fw_guid}</firmware>
   </provides>
   <url type="homepage">https://docs.dasharo.com/</url>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>LicenseRef-proprietary</project_license>
   <categories>
-    <category>X-System</category>
+    <category>${category}</category>
   </categories>
   <custom>
-    <value key="LVFS::VersionFormat">quad</value>
-    <value key="LVFS::VersionFormat">dell-bios-msb</value>
+${version_formats_str}
     <value key="LVFS::UpdateProtocol">org.uefi.capsule</value>
   </custom>
   <releases>
-    <release version="${version}" date="${date}" tag="${CONFIG_LOCALVERSION}" urgency="high">
+    <release version="${version}" date="${date}" tag="${tag}" urgency="high">
       <checksum filename="firmware.bin" target="content"/>
     </release>
   </releases>
