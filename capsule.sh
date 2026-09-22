@@ -725,10 +725,10 @@ EOF
     cp "$capsule" "${archive_dir}/firmware.bin"
 
     pushd "$archive_dir" >/dev/null
-    fwupdtool build-cabinet "${cabinet}" firmware.bin firmware.metainfo.xml
+    fwupdtool build-cabinet update.cab firmware.bin firmware.metainfo.xml
     popd >/dev/null
 
-    cp "${archive_dir}/${cabinet}" ./
+    mv "${archive_dir}/update.cab" "${cabinet}"
 
     echo "File ${cabinet} created"
 }
