@@ -145,7 +145,7 @@ config SBOM_ME_PATH
 
 config SBOM_EC
 	bool "Include EC metadata in SBOM"
-	depends on HAVE_EC_BIN || EC_DASHARO_EC || EC_SYSTEM76_EC
+	depends on HAVE_EC_BIN || (EC_DASHARO_EC && EC_DASHARO_EC_UPDATE) || EC_SYSTEM76_EC
 	default n
 	help
 	  Select this option if you want to include a
