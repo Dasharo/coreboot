@@ -520,6 +520,9 @@ function decode_capsule() {
         printf '    { "Driver": "%s" },\n' "$f"
     done | sed '$s/,$//')
     result["drivers"]="$drivers"
+
+    result["flags"]=$("$generate_capsule" --dump-info "$capsule" |
+                      sed -nE '/CAPSULE_FLAGS_/{s/.*CAPSULE_FLAGS_//; s/_?([A-Z])([A-Z]*)/\1\L\2/g; p}')
 }
 
 function encode_capsule() {
@@ -546,11 +549,8 @@ ${json_data["drivers"]}
 }
 EOF
 
-    local cap_flags=( --capflag PersistAcrossReset )
-    # Capsules on AMD boards do not survive resets
-    if [ "$CONFIG_EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET" = y ]; then
-        cap_flags=()
-    fi
+    local cap_flags
+    mapfile -t cap_flags < <(echo "${json_data["flags"]}" | xargs -r printf '--capflag\n%s\n')
 
     "$generate_capsule" --encode \
                         "${cap_flags[@]}" \
@@ -589,7 +589,6 @@ function resign_subcommand() {
         confirm "Overwrite already existing '$out_capsule'?"
     fi
     assert_command_exists jq
-    assert_command_exists cbfstool
 
     local tmp_dir
     tmp_dir=$(mktemp --tmpdir --directory --suffix -cap XXXXXXXX)
@@ -604,12 +603,6 @@ function resign_subcommand() {
     metadata[sign_cert]=$sign_cert
     metadata[sub_cert]=$sub_cert
     metadata[root_cert]=$root_cert
-
-    local -A metadata_inner
-    mkdir "$tmp_dir/inner"
-    decode_capsule "$tmp_dir/inner" "${metadata[payload]}" metadata_inner
-    cbfstool "${metadata_inner[payload]}" extract -f "$tmp_dir/inner/.config" -n config 2>/dev/null
-    source_coreboot_config "$tmp_dir/inner/.config"
 
     encode_capsule "$tmp_dir" "$out_capsule" metadata
 }
