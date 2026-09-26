@@ -1750,15 +1750,74 @@ static acpi_rsdp_t *valid_rsdp(acpi_rsdp_t *rsdp)
 	return rsdp;
 }
 
+static acpi_fadt_t *acpi_facp_from_table(void *table)
+{
+	acpi_header_t *header = table;
+
+	if (header && strncmp(header->signature, "FACP", 4) == 0)
+		return table;
+	return NULL;
+}
+
+/*
+ * QEMU (and ACPI 1.0) publishes an RSDP with XSDT=0 and only RSDT.
+ * QEMU's FADT also leaves x_firmware_ctl at 0 and uses firmware_ctrl.
+ * Walking only XSDT / x_firmware_ctl then reports "No FADT" on S3 and
+ * never jumps to the OS waking vector.
+ */
+static acpi_fadt_t *acpi_find_fadt(acpi_rsdp_t *rsdp)
+{
+	int i;
+	char *end;
+
+	if (rsdp->xsdt_address) {
+		acpi_xsdt_t *xsdt = (acpi_xsdt_t *)(uintptr_t)rsdp->xsdt_address;
+		end = (char *)xsdt + xsdt->header.length;
+		printk(BIOS_DEBUG, "XSDT found at %p ends at %p\n", xsdt, end);
+		for (i = 0; (char *)&xsdt->entry[i] < end; i++) {
+			acpi_fadt_t *fadt = acpi_facp_from_table(
+				(void *)(uintptr_t)xsdt->entry[i]);
+			if (fadt)
+				return fadt;
+		}
+	}
+
+	if (rsdp->rsdt_address) {
+		acpi_rsdt_t *rsdt = (acpi_rsdt_t *)(uintptr_t)rsdp->rsdt_address;
+		end = (char *)rsdt + rsdt->header.length;
+		printk(BIOS_DEBUG, "RSDT found at %p ends at %p\n", rsdt, end);
+		for (i = 0; (char *)&rsdt->entry[i] < end; i++) {
+			acpi_fadt_t *fadt = acpi_facp_from_table(
+				(void *)(uintptr_t)rsdt->entry[i]);
+			if (fadt)
+				return fadt;
+		}
+	}
+
+	return NULL;
+}
+
+static acpi_facs_t *acpi_facs_from_fadt(acpi_fadt_t *fadt)
+{
+	uint64_t facs_addr;
+
+	facs_addr = ((uint64_t)fadt->x_firmware_ctl_h << 32) |
+		    fadt->x_firmware_ctl_l;
+	if (!facs_addr)
+		facs_addr = fadt->firmware_ctrl;
+
+	if (!facs_addr)
+		return NULL;
+	return (acpi_facs_t *)(uintptr_t)facs_addr;
+}
+
 void *acpi_find_wakeup_vector(void)
 {
-	char *p, *end;
-	acpi_xsdt_t *xsdt;
+	char *p;
 	acpi_facs_t *facs;
-	acpi_fadt_t *fadt = NULL;
+	acpi_fadt_t *fadt;
 	acpi_rsdp_t *rsdp = NULL;
 	void *wake_vec;
-	int i;
 
 	if (!acpi_is_wakeup_s3())
 		return NULL;
@@ -1779,17 +1838,7 @@ void *acpi_find_wakeup_vector(void)
 	}
 
 	printk(BIOS_DEBUG, "RSDP found at %p\n", rsdp);
-	xsdt = (acpi_xsdt_t *)(uintptr_t)rsdp->xsdt_address;
-
-	end = (char *)xsdt + xsdt->header.length;
-	printk(BIOS_DEBUG, "XSDT found at %p ends at %p\n", xsdt, end);
-
-	for (i = 0; ((char *)&xsdt->entry[i]) < end; i++) {
-		fadt = (acpi_fadt_t *)(uintptr_t)xsdt->entry[i];
-		if (strncmp((char *)fadt, "FACP", 4) == 0)
-			break;
-		fadt = NULL;
-	}
+	fadt = acpi_find_fadt(rsdp);
 
 	if (fadt == NULL) {
 		printk(BIOS_ALERT,
@@ -1798,8 +1847,7 @@ void *acpi_find_wakeup_vector(void)
 	}
 
 	printk(BIOS_DEBUG, "FADT found at %p\n", fadt);
-	facs = (acpi_facs_t *)(uintptr_t)((uint64_t)fadt->x_firmware_ctl_l
-			       | (uint64_t)fadt->x_firmware_ctl_h << 32);
+	facs = acpi_facs_from_fadt(fadt);
 
 	if (facs == NULL) {
 		printk(BIOS_ALERT,

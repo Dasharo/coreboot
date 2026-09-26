@@ -1,0 +1,62 @@
+qemu-q35 ACPI S3 smoke (Dasharo/dasharo-issues#902)
+==============================================
+
+Host: QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
+ROM:  configs/config.emulation_qemu_x86_q35_s3_smoke
+      coreboot 64d6c7396a (x86_32, loglevel 8, PAYLOAD_NONE + injected stub)
+Command:
+  make olddefconfig && make -j$(nproc)
+  src/mainboard/emulation/qemu-q35/s3-verify.sh build/coreboot.rom
+
+s3-verify.sh result
+-------------------
+PAYLOAD: S3-PAYLOAD: programmed
+COLD:  Q35 S3: PM1_STS=0x0001 PM1_CNT=0x00000000 s3resume=0
+STATUS before S3: running
+HMP o 0x605 0x24 -> event SUSPEND
+STATUS after S3 write: suspended
+WAKE:  Q35 S3: PM1_STS=0x8101 PM1_CNT=0x00000000 s3resume=1
+PASS: QEMU q35 S3 detect, TSEG cache resume, and FACS waking-vector jump
+
+Serial excerpts (ANSI stripped)
+------------------------------
+Cold:
+  Q35 S3: PM1_STS=0x0001 PM1_CNT=0x00000000 s3resume=0
+  SMM_SIZE: 8 MiB
+  Subregion 1: 0x3fe00000 0x200000
+  S3-PAYLOAD: looking for FACS
+  S3-PAYLOAD: programmed
+
+Wake:
+  Q35 S3: PM1_STS=0x8101 PM1_CNT=0x00000000 s3resume=1
+  S3 Resume
+  Jumping to image.
+  Trying to find the wakeup vector...
+  RSDP found at 0x000f0000
+  RSDT found at 0x3f64234e ends at 0x3f64238a
+  FADT found at 0x3f642146
+  FACS found at 0x3f640040
+  OS waking vector is 0x00001000
+  Wake vector 0x00001000 bytes fa ba f8 03
+  Q35VEC
+
+Test matrix
+-----------
+ 1 Cold boot s3resume=0                         PASS (this run)
+ 2 Firmware HMP S3 + system_wakeup               PASS (this run)
+ 3 Guest Linux systemctl suspend              NOT RUN (no guest disk in this environment)
+ 4 Guest S5 / QEMU typ=0 poweroff             NOT RUN (no guest OS)
+ 5 ICH9-LPC.disable_s3=on                     NOT RUN (PM path is independent of fw_cfg)
+ 6 CBMEM lost                                 NOT RUN (destructive)
+ 7 TSEG cache too small                       covered by prior commit 45fee7c607
+ 8 TSEG 8MiB + SMM_RESERVED_SIZE=0x200000      PASS (Jumping to image, no postcar cache invalid)
+ 9 ACPI 1.0 RSDT + firmware_ctrl              PASS (FADT/FACS found; not "No FADT found")
+10 FACS waking vector 0x1000 + Q35VEC         PASS (this run)
+
+Notes
+-----
+QEMU ACPI PM SLP_TYP is 1 for S3 and 0 for S5 (not ICH9 5/7).
+Wake is RESET_TYPE_WAKEUP; WAK_STS|PWRBTN_STS|TMROF_STS = 0x8101.
+qemu-q35 CAR is DRAM at 0x10000-0xa0000; bootblock zeros only allocated
+CAR through _car_unallocated_start so a waking vector in unused
+conventional memory (here 0x1000) survives the S3 reset.

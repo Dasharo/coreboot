@@ -34,7 +34,22 @@ endchoice
 config SMM_TSEG_SIZE
 	hex
 	depends on SMM_TSEG
+	default 0x800000 if BOARD_EMULATION_QEMU_X86_Q35
 	default 0x100000
+	help
+	  qemu-q35 S3 resume stashes postcar and ramstage in TSEG
+	  (TSEG_STAGE_CACHE). This must be larger than SMM_RESERVED_SIZE.
+	  Romstage programs ICH9 ESMRAMC for 1, 2, or 8 MiB.
+
+config SMM_RESERVED_SIZE
+	hex
+	depends on SMM_TSEG
+	default 0x200000 if BOARD_EMULATION_QEMU_X86_Q35
+	help
+	  External stage-cache subregion at the top of TSEG. qemu-q35 did
+	  not set this (0), so HAVE_ACPI_RESUME detected S3 and then
+	  postcar_cache_invalid() reset. Size for postcar plus ramstage
+	  minus HEAP_SIZE.
 
 config MAX_CPUS
 	int
