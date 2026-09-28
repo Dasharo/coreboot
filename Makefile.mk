@@ -1558,6 +1558,8 @@ else
     edk2_repo_dirname := $(word 3,$(subst /, ,$(edk2_repo)))
     edk2_inc_rel := BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
     root_key_inc := payloads/external/edk2/workspace/$(edk2_repo_dirname)/$(edk2_inc_rel)
+
+    $(root_key_inc): $(call strip_quotes,$(CONFIG_PAYLOAD_FILE))
 endif
 
 cbfs-files-$(CONFIG_EDK2_CAPSULES_V2) += root_key
