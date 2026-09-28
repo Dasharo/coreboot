@@ -60,3 +60,4 @@ jobs:
         branch: update_ucode_${{ env.RELEASE_DATE }}
         title: Update µcode ${{ env.RELEASE_DATE }}
         commit-message: "[automated change] Update µcode ${{ env.RELEASE_DATE }}\n\nUpstream-Status: Inappropriate (Dasharo automation)"
+        reviewers: mkopec, miczyg1
