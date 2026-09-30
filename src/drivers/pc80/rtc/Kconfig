@@ -38,3 +38,17 @@ config RESET_OPTIONS_ON_CMOS_CLEAR
 
 	  Say n if the platform has no reliable indication that the RTC well
 	  lost power, as the settings would then be discarded on every boot.
+
+config RESET_OPTIONS_IN_PAYLOAD
+	bool
+	default y if PAYLOAD_EDK2
+	depends on RESET_OPTIONS_ON_CMOS_CLEAR
+	help
+	  The payload performs the settings reset itself, which lets it keep
+	  the setup password and the Secure Boot configuration. coreboot only
+	  reports that the CMOS contents were lost, through the coreboot table.
+	  Without this, coreboot erases the whole option store and every stored
+	  setting is lost.
+
+	  The payload must understand the cmos_was_cleared field of
+	  lb_boot_info, otherwise the settings are not reset at all.
