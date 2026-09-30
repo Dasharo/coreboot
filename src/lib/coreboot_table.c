@@ -26,6 +26,7 @@
 #include <types.h>
 #include <version.h>
 #include <dasharo/options.h>
+#include <pc80/mc146818rtc.h>
 
 #if CONFIG(USE_OPTION_TABLE)
 #include <option_table.h>
@@ -539,10 +540,13 @@ static void lb_add_boot_info(struct lb_header *header)
 	struct lb_boot_info *boot_info;
 
 	boot_info = (struct lb_boot_info *)lb_new_record(header);
+	memset(boot_info, 0, sizeof(*boot_info));
 	boot_info->tag = LB_TAG_BOOT_INFO;
 	boot_info->size = sizeof(*boot_info);
 
 	boot_info->is_disk_capsules_boot = dasharo_is_disk_capsules_boot();
+	/* Lets the payload reset its own settings after a CMOS clear. */
+	boot_info->cmos_was_cleared = option_defaults_forced();
 }
 
 static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
