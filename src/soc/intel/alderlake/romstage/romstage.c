@@ -251,6 +251,9 @@ void mainboard_romstage_entry(void)
 	fsp_memory_init(s3wake);
 	pmc_set_disb();
 
+	/* Re-initialize OC WDT, because FSP-M could have used it too during OC. */
+	setup_oc_wdt();
+
 	/*
 	 * Clear the TXT secrets flag if a previous measured launch left it
 	 * set. FSP-M has just scrubbed DRAM for us (CleanMemory), and this is
