@@ -662,6 +662,12 @@ struct lb_boot_info {
 	uint32_t size;
 	uint8_t is_disk_capsules_boot; /* Boolean. */
 	uint8_t pad[3];
+	/*
+	 * Appended rather than taken from pad[], which older versions leave
+	 * uninitialised: payloads must check that size covers a field.
+	 */
+	uint8_t cmos_was_cleared;      /* Boolean. */
+	uint8_t pad2[3];
 } __packed;
 
 #endif
