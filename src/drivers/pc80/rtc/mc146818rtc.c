@@ -191,9 +191,13 @@ void cmos_init(bool invalid)
 	 * GEN_PMCON_B, because the live bit does not survive into ramstage.
 	 */
 	if (invalid && !(ENV_RAMSTAGE && acpi_is_wakeup_s3())) {
-		printk(BIOS_INFO, "RTC: CMOS was cleared, resetting firmware settings\n");
+		printk(BIOS_INFO, "RTC: CMOS was cleared, %s firmware settings\n",
+		       CONFIG(RESET_OPTIONS_IN_PAYLOAD) ? "payload will reset" : "resetting");
 		/* Only acknowledge once the options really are gone, so that a
-		   failed erase is retried on the next boot. */
+		   failed erase is retried on the next boot. With the reset done
+		   by the payload this cannot be known yet, so acknowledge now; a
+		   reset interrupted halfway leaves an invalid store, which the
+		   payload resets again on its own. */
 		if (dasharo_reset_options() == CB_SUCCESS)
 			cmos_invalid_ack();
 		else
