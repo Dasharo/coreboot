@@ -128,6 +128,12 @@ enum cb_err dasharo_reset_options(void)
 	struct region_device rdev;
 	ssize_t res;
 
+	/* The payload resets the options itself, so that it can preserve the
+	   setup password and the Secure Boot configuration. It learns about
+	   the CMOS clear through the coreboot table. */
+	if (CONFIG(RESET_OPTIONS_IN_PAYLOAD))
+		return CB_SUCCESS;
+
 	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
 		return CB_ERR;
 
