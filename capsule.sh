@@ -476,18 +476,26 @@ function make_subcommand() {
 
     local build_dir=${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_${toolchain}/X64
 
-    # Ensure the charger check driver module is first
     local embedded_drivers=()
+    # Ensure the charger check driver module comes first.
     if [ "$include_battery_check" = 1 ]; then
         embedded_drivers+=( "${build_dir}/CapsuleChargerCheckDxe.efi" )
     fi
-    embedded_drivers+=(
+    # EDK2's build system drops GUIDs when there is only one module of the same
+    # name, hence the checks.
+    if [ -f "${build_dir}/CapsuleSplashDxe.efi" ]; then
+        embedded_drivers+=( "${build_dir}/CapsuleSplashDxe.efi" )
+    else
         # Can't use the same GUID more than once and can't easily derive it
         # either, so CapsuleSplashDxe has hard-coded GUIDs for main/EC firmware
         # and one of them is selected above.
-        "${build_dir}/DasharoPayloadPkg/CapsuleSplashDxe/${splash_guid}/OUTPUT/CapsuleSplashDxe.efi"
-        "${build_dir}/FmpDevicePkg/FmpDxe/${guid}/OUTPUT/FmpDxe.efi"
-    )
+        embedded_drivers+=( "${build_dir}/CapsuleSplashDxe_${splash_guid}.efi" )
+    fi
+    if [ -f "${build_dir}/FmpDxe.efi" ]; then
+        embedded_drivers+=( "${build_dir}/FmpDxe.efi" )
+    else
+        embedded_drivers+=( "${build_dir}/FmpDxe_${guid}.efi" )
+    fi
 
     build_capsule "$rom_file" "$guid" "$version" "$lsv" \
                   embedded_drivers cap_certs \
