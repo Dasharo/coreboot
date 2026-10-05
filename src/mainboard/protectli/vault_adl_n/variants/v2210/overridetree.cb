@@ -76,6 +76,7 @@ chip soc/intel/alderlake
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.clk_src = 2,
 				.clk_req = 2,
+				.pcie_rp_aspm = ASPM_L1,
 			}"
 		end
 
@@ -85,6 +86,7 @@ chip soc/intel/alderlake
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.clk_src = 1,
 				.clk_req = 1,
+				.pcie_rp_aspm = ASPM_L1,
 			}"
 		end
 
@@ -94,17 +96,19 @@ chip soc/intel/alderlake
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
 				.clk_src = 0,
 				.clk_req = 0,
+				.pcie_rp_aspm = ASPM_L1,
 			}"
 			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
 						"M.2 NVMe" "SlotDataBusWidth4X"
 		end
 
 		# M.2 WiFi x2 (uses CLKREQ3#, but some cards do not get detected)
+		# No L1 substates: they need CLKREQ#, which this port does not use
 		device ref pcie_rp1 on
 			register "pch_pcie_rp[PCH_RP(1)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
 				.clk_src = 3,
-				.pcie_rp_aspm = ASPM_DISABLE,
+				.pcie_rp_aspm = ASPM_L0S_L1,
 				.PcieRpL1Substates = L1_SS_DISABLED,
 			}"
 			smbios_slot_desc	"SlotTypeM2Socket1_SD" "SlotLengthOther"
