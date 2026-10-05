@@ -4,7 +4,7 @@ config EDK2_REPOSITORY
 	default "https://github.com/Dasharo/edk2"
 
 config EDK2_TAG_OR_REV
-	default "df70843402b8eb4be3a29364f52d043c5a2a8708"
+	default "efb5f9a8b48436a2a5e27caee488a076fbe68608"
 
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
@@ -124,6 +124,15 @@ config EDK2_DASHARO_USB_CONFIG
 	default n
 	help
 	  Enables the EDK2 USB stack configuration submenu in Dasharo System Features.
+
+config EDK2_DASHARO_USB_STACK_OPTION
+	bool "Show USB stack option in Dasharo USB Configuration Menu"
+	default y
+	depends on EDK2_DASHARO_USB_CONFIG
+	help
+	  Shows the option to disable the whole USB stack. When hidden, the USB
+	  stack is always enabled, regardless of a previously saved setting,
+	  while the USB mass storage option remains available.
 
 config EDK2_DASHARO_NETWORK_CONFIG
 	bool "Enable EDK2 Dasharo Network Stack Configuration Menu"

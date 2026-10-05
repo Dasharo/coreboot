@@ -275,6 +275,10 @@ endif
 # DASHARO_USB_CONFIG            = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_USB_CONFIG),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowUsbMenu=TRUE
+# USB_MENU_SHOW_USB_STACK_OPTION = TRUE
+ifneq ($(CONFIG_EDK2_DASHARO_USB_STACK_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdUsbMenuShowUsbStackOption=FALSE
+endif
 endif
 # DASHARO_CHIPSET_CONFIG        = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_CHIPSET_CONFIG),y)
