@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/cpu.h>
+#include <assert.h>
 #include <console/console.h>
 #include <dasharo/options.h>
 #include <device/device.h>
@@ -20,6 +21,13 @@ const char *smbios_mainboard_product_name(void)
 
 	if (CONFIG(BOARD_PROTECTLI_VP2440))
 		return CONFIG(ENABLE_EMMC) ? "VP2440" : "VP2440e";
+
+	if (CONFIG(BOARD_PROTECTLI_V2210))
+		return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
+
+	/* The implementation below is for VP32XX boards only, handle the rest above. */
+	if (!CONFIG(BOARD_PROTECTLI_VP32XX))
+		dead_code();
 
 	u32 tmp[13];
 	const char *str = "Unknown Processor Name";
