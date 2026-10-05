@@ -468,7 +468,13 @@ function make_subcommand() {
         build_type=DEBUG
     fi
 
-    local build_dir=${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_GCC/X64
+    local toolchain=GCC
+    if [ -f "${edk_workspace}/../tools_def.txt" ]; then
+        # Must be older coreboot that defined its own toolchain.
+        toolchain=COREBOOT
+    fi
+
+    local build_dir=${edk_workspace}/Build/DasharoPayloadPkgX64/${build_type}_${toolchain}/X64
 
     # Ensure the charger check driver module is first
     local embedded_drivers=()
