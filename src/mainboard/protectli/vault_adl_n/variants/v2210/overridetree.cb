@@ -99,12 +99,11 @@ chip soc/intel/alderlake
 						"M.2 NVMe" "SlotDataBusWidth4X"
 		end
 
-		# M.2 WiFi x2
+		# M.2 WiFi x2 (uses CLKREQ3#, but some cards do not get detected)
 		device ref pcie_rp1 on
 			register "pch_pcie_rp[PCH_RP(1)]" = "{
-				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_REQ_UNUSED,
 				.clk_src = 3,
-				.clk_req = 3,
 				.pcie_rp_aspm = ASPM_DISABLE,
 				.PcieRpL1Substates = L1_SS_DISABLED,
 			}"
