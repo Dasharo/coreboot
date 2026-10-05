@@ -1,6 +1,8 @@
 chip soc/intel/alderlake
 	# FSP configuration
 
+	register "s0ix_enable" = "true"
+
 	device domain 0 on
 		device ref igpu on
 			register "ddi_ports_config" = "{
