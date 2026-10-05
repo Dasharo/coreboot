@@ -21,6 +21,9 @@ const char *smbios_mainboard_product_name(void)
 	if (CONFIG(BOARD_PROTECTLI_VP2440))
 		return CONFIG(ENABLE_EMMC) ? "VP2440" : "VP2440e";
 
+	if (CONFIG(BOARD_PROTECTLI_V2210))
+		return CONFIG_MAINBOARD_SMBIOS_PRODUCT_NAME;
+
 	u32 tmp[13];
 	const char *str = "Unknown Processor Name";
 
