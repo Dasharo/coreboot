@@ -85,6 +85,9 @@ chip soc/intel/alderlake
 			register "usb3_ports[7]" = "USB3_PORT_DEFAULT(OC3)" # JUSB4
 			register "usb3_ports[8]" = "USB3_PORT_DEFAULT(OC4)" # JUSB3
 			register "usb3_ports[9]" = "USB3_PORT_DEFAULT(OC4)" # JUSB3
+
+			register "usb2_wake_enable_bitmap" = "0x1fdd"
+			register "usb3_wake_enable_bitmap" = "0x3ff"
 		end
 		device ref cnvi_wifi on
 			# Enable CNVi BT
