@@ -6,6 +6,8 @@
 /* Include UWES method for enabling USB wake */
 #include <soc/intel/common/acpi/xhci_wake.asl>
 
+#define ADL_PCHS_PORTSCXUSB3_OFFSET	0x580
+
 /* XHCI Controller 0:14.0 */
 
 Device (XHCI)
@@ -25,7 +27,11 @@ Device (XHCI)
 	Method (_DSW, 3)
 	{
 		UWES ((\U2WE & 0xFFF), PORTSCN_OFFSET, XMEM)
+#if CONFIG(SOC_INTEL_ALDERLAKE_PCH_S)
+		UWES ((\U3WE & 0x3F ), ADL_PCHS_PORTSCXUSB3_OFFSET, XMEM)
+#else
 		UWES ((\U3WE & 0x3F ), PORTSCXUSB3_OFFSET, XMEM)
+#endif
 	}
 
 	Name (_S3D, 3)	/* D3 supported in S3 */
