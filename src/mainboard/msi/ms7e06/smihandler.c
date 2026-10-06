@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <cpu/x86/smm.h>
+#include <dasharo/options.h>
 #include <device/pnp_ops.h>
+#include <intelblocks/smihandler.h>
+#include <soc/pm.h>
 #include <superio/nuvoton/nct6687d/nct6687d.h>
 #include <superio/nuvoton/nct6687d/nct6687d_ec.h>
 
@@ -41,6 +44,7 @@ void mainboard_smi_sleep(u8 slp_typ)
 {
 	nuvoton_pnp_enter_conf_state(POWER_DEV);
 	pnp_set_logical_device(POWER_DEV);
+	uint8_t usb_power = dasharo_get_usb_port_power();
 
 	switch (slp_typ) {
 	case 3:
@@ -56,9 +60,31 @@ void mainboard_smi_sleep(u8 slp_typ)
 		pnp_write_config(POWER_DEV, 0xe8, 0x07); /* LED to low */
 		disable_ps2_wake();
 		/* Disable USB port power */
-		nct6687d_ec_and_or_page(EC_IO_BASE, 0, 0x3d, 0xbf, 0x00);
+		if (usb_power != USB_PORT_ALWAYS_ON)
+			nct6687d_ec_and_or_page(EC_IO_BASE, 0, 0x3d, 0xbf, 0x00);
 		break;
 	}
 
 	nuvoton_pnp_exit_conf_state(POWER_DEV);
+}
+
+void mainboard_smi_pm1_handler(uint16_t pm1_sts, uint16_t pm1_en)
+{
+	uint8_t usb_power = dasharo_get_usb_port_power();
+
+	if ((pm1_sts & PWRBTN_STS) && (pm1_en & PWRBTN_EN)) {
+
+		nuvoton_pnp_enter_conf_state(POWER_DEV);
+		pnp_set_logical_device(POWER_DEV);
+
+		pnp_write_config(POWER_DEV, 0xe7, 0x88); /* Set AUTO_EN */
+		pnp_write_config(POWER_DEV, 0xe8, 0x07); /* LED to low */
+		disable_ps2_wake();
+
+		nuvoton_pnp_exit_conf_state(POWER_DEV);
+
+		/* Disable USB port power */
+		if (usb_power != USB_PORT_ALWAYS_ON)
+			nct6687d_ec_and_or_page(EC_IO_BASE, 0, 0x3d, 0xbf, 0x00);
+	}
 }
