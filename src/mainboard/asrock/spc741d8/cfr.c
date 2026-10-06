@@ -16,10 +16,13 @@
  *   0x02 xxx8x4x4    0xFF AUTO (FSP default)
  *
  * Each name is eight characters, four two-character fields describing root
- * ports A, B, C and D of the IOU in order. A link wider than x4 is written in
- * the last field it spans and the fields it also covers are filled with 'xx',
- * so xxx8x4x4 is an x8 on ports A+B followed by an x4 on C and an x4 on D, and
- * xxxxxx16 is a single x16 spanning all four ports.
+ * ports D, C, B and A of the IOU in that order, i.e. port A is the rightmost
+ * field. A link wider than x4 is written in the field of its lowest port and
+ * the fields it also covers are filled with 'xx', so x4x4xxx8 is an x8 on
+ * ports A+B followed by an x4 on C and an x4 on D, and xxxxxx16 is a single
+ * x16 spanning all four ports.
+ *
+ * The option labels below list the widths from port A to port D instead.
  *
  * defs_iio.h also defines the x2-capable encodings (0x05 ~ 0x19), but the UPD
  * documentation does not list them as accepted values, so they are not offered
@@ -28,8 +31,8 @@
 static const struct sm_enum_value iio_bifurcation_values[] = {
 	{ "x16",	IIO_BIFURCATE_xxxxxx16	},
 	{ "x8x8",	IIO_BIFURCATE_xxx8xxx8	},
-	{ "x8x4x4",	IIO_BIFURCATE_xxx8x4x4	},
-	{ "x4x4x8",	IIO_BIFURCATE_x4x4xxx8	},
+	{ "x8x4x4",	IIO_BIFURCATE_x4x4xxx8	},
+	{ "x4x4x8",	IIO_BIFURCATE_xxx8x4x4	},
 	{ "x4x4x4x4",	IIO_BIFURCATE_x4x4x4x4	},
 	SM_ENUM_VALUE_END
 };
