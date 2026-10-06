@@ -406,8 +406,12 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_D7 - SRCCLKREQ2# */
 	PAD_CFG_NF(GPP_D7, NONE, DEEP, NF1),
 
-	/* GPP_D8 - SRCCLKREQ3# */
-	PAD_CFG_NF(GPP_D8, NONE, DEEP, NF1),
+	/*
+	 * GPP_D8 - SRCCLKREQ3# (M.2 Wi-Fi). Not used: the slot runs a free-running
+	 * clock. Some cards (AW7916-AED) drive CLKREQ# high, so in native mode the
+	 * clock stops before FSP-M configures it and the link never recovers.
+	 */
+	PAD_NC(GPP_D8, NONE),
 
 	/* GPP_D9 - BSSB_LS2_RX */
 	PAD_CFG_NF(GPP_D9, NATIVE, DEEP, NF5),
