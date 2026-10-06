@@ -34,6 +34,10 @@ static bool iio_bifurcation_valid(unsigned int bifurcation)
 	}
 }
 
+/*
+ * The IIO_BIFURCATE_* names list the root ports from D to A, while the comments
+ * below list them from A to D. Bit 2n of the mask is root port n of the IOU.
+ */
 static uint8_t iio_bifurcation_port_mask(unsigned int bifurcation)
 {
 	switch (bifurcation) {
@@ -41,10 +45,10 @@ static uint8_t iio_bifurcation_port_mask(unsigned int bifurcation)
 		return BIT(0);
 	case IIO_BIFURCATE_xxx8xxx8:	/* x8NAx8NA */
 		return BIT(0) | BIT(4);
-	case IIO_BIFURCATE_xxx8x4x4:	/* x8NAx4x4 */
-		return BIT(0) | BIT(4) | BIT(6);
-	case IIO_BIFURCATE_x4x4xxx8:	/* x4x4x8NA */
+	case IIO_BIFURCATE_xxx8x4x4:	/* x4x4x8NA */
 		return BIT(0) | BIT(2) | BIT(4);
+	case IIO_BIFURCATE_x4x4xxx8:	/* x8NAx4x4 */
+		return BIT(0) | BIT(4) | BIT(6);
 	case IIO_BIFURCATE_x4x4x4x4:	/* x4x4x4x4 */
 	default:
 		return BIT(0) | BIT(2) | BIT(4) | BIT(6);
