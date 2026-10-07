@@ -38,12 +38,20 @@ bool variant_pcie_is_2x2(void)
 	uint32_t flmap1;
 	uint8_t strap;
 
-	if (fmap_locate_area_as_rdev("SI_DESC", &rdev) < 0)
+	/*
+	 * The descriptor is outside the BIOS region, which is all the read-only
+	 * boot device maps here (no FAST_SPI_FULL_RO_BOOTMEDIA), so read it
+	 * through the SPI controller.
+	 */
+	if (fmap_locate_area_as_rdev_rw("SI_DESC", &rdev) < 0 ||
+	    rdev_readat(&rdev, &flmap1, FLMAP1_OFFSET, sizeof(flmap1)) != sizeof(flmap1) ||
+	    rdev_readat(&rdev, &strap, pcie_ctrl3_offset(flmap1), sizeof(strap)) != sizeof(strap)) {
+		printk(BIOS_ERR, "PCIe bifurcation: failed to read the descriptor\n");
 		return false;
-	if (rdev_readat(&rdev, &flmap1, FLMAP1_OFFSET, sizeof(flmap1)) != sizeof(flmap1))
-		return false;
-	if (rdev_readat(&rdev, &strap, pcie_ctrl3_offset(flmap1), sizeof(strap)) != sizeof(strap))
-		return false;
+	}
+
+	printk(BIOS_DEBUG, "PCIe bifurcation: controller 3 strap 0x%02x (%s)\n", strap,
+	       (strap & PCIE_CTRL3_MASK) == PCIE_CTRL3_2X2 ? "2x2" : "not 2x2");
 
 	return (strap & PCIE_CTRL3_MASK) == PCIE_CTRL3_2X2;
 }
