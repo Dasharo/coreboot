@@ -178,6 +178,16 @@ bool dasharo_resizeable_bars_enabled(void)
 	return enabled;
 }
 
+uint8_t dasharo_get_pcie_bifurcation(void)
+{
+	uint8_t bifurcation = PCIE_BIFURCATION_OPTION_1X4;
+
+	if (CONFIG(EDK2_PCIE_BIFURCATION_OPTION))
+		read_u8_var("PcieBifurcation", &bifurcation);
+
+	return bifurcation;
+}
+
 static bool fum_is_active(void)
 {
 	bool fum = false;

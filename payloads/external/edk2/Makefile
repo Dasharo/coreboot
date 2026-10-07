@@ -347,6 +347,10 @@ endif
 ifeq ($(CONFIG_PCIEXP_SUPPORT_RESIZABLE_BARS),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowResizeableBars=TRUE
 endif
+# PcdPciMenuShowBifurcation     = FALSE
+ifeq ($(CONFIG_EDK2_PCIE_BIFURCATION_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPciMenuShowBifurcation=TRUE
+endif
 # BATTERY_CHECK                 = FALSE
 ifeq ($(CONFIG_EDK2_ENABLE_BATTERY_CHECK),y)
 BUILD_STR += -D BATTERY_CHECK=TRUE

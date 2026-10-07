@@ -231,6 +231,19 @@ config EDK2_DASHARO_PCI_CONFIG
 	help
 	  Enables the EDK2 PCI/PCIe configuration submenu in Dasharo System Features menu.
 
+config EDK2_PCIE_BIFURCATION_OPTION
+	bool "Show PCIe bifurcation in Dasharo PCI/PCIe Configuration Menu"
+	depends on EDK2_DASHARO_SYSTEM_FEATURES
+	depends on SOC_INTEL_CSE_MAINBOARD_DESCRIPTOR_UPDATE
+	default n
+	help
+	  Shows the PCIe bifurcation option (1x4 / 2x2) in EDK2 PCI/PCIe
+	  configuration submenu in Dasharo System Features menu. It does not
+	  need EDK2_DASHARO_PCI_CONFIG, which adds the other PCI options.
+	  The mainboard applies it by patching the flash descriptor soft
+	  straps, so the option is hidden when the descriptor is not
+	  writeable.
+
 config EDK2_DASHARO_MEMORY_CONFIG
 	bool "Enable EDK2 Dasharo Memory Configuration Menu"
 	default n
