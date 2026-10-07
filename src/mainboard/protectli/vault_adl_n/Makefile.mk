@@ -6,6 +6,8 @@ bootblock-y += bootblock.c
 
 romstage-y += variants/$(VARIANT_DIR)/gpio.c
 romstage-y += romstage_fsp_params.c
+romstage-$(CONFIG_BOARD_PROTECTLI_V2210) += variants/v2210/bifurcation.c
+ramstage-$(CONFIG_BOARD_PROTECTLI_V2210) += variants/v2210/bifurcation.c
 
 ramstage-y += mainboard.c
 ramstage-y += hda_verb.c
