@@ -18,6 +18,9 @@
 #define SLEEP_TYPE_OPTION_S0IX	0
 #define SLEEP_TYPE_OPTION_S3	1
 
+#define PCIE_BIFURCATION_OPTION_1X4 0
+#define PCIE_BIFURCATION_OPTION_2X2 1
+
 #define CAMERA_ENABLED_OPTION 1
 #define CAMERA_DISABLED_OPTION 0
 
@@ -104,6 +107,15 @@ uint8_t dasharo_get_usb_port_power(void);
  *  - false - resizeable PCIe BARs are disabled or not supported
  */
 bool dasharo_resizeable_bars_enabled(void);
+
+/* Looks up Dasharo/"PcieBifurcation" variable if the bifurcation option was
+ * enabled at compile time.
+ *
+ * Result:
+ *  - 0 - 1x4 (default, also when the option is not supported)
+ *  - 1 - 2x2
+ */
+uint8_t dasharo_get_pcie_bifurcation(void);
 
 /* Looks Dasharo/"LockBios" variable if bootmedia lock was enabled at compile
  * time.
