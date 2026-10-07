@@ -10,6 +10,7 @@
 #include <soc/ramstage.h>
 #include <superio/ite/it8659e/chip.h>
 #include <superio/ite/it8659e/it8659e.h>
+#include <variant/pcie.h>
 
 #include <string.h>
 
@@ -150,6 +151,22 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	if (!CONFIG(ENABLE_EMMC)) {
 		params->ScsEmmcEnabled = 0;
 		pcidev_path_on_root(PCH_DEVFN_EMMC)->enabled = 0;
+	}
+
+	if (CONFIG(BOARD_PROTECTLI_V2210) && variant_pcie_is_2x2()) {
+		struct device *rp9 = pcidev_path_on_root(PCH_DEVFN_PCIE9);
+
+		/*
+		 * In 2x2, RP9 has the M.2 slot's lanes 2-3, which have no CLKREQ#
+		 * (the slot's only one goes with lanes 0-1, i.e. RP11). L1
+		 * substates need CLKREQ#, so turn them off. 0 = disabled.
+		 */
+		params->PcieRpL1Substates[8] = 0;
+
+		if (rp9) {
+			rp9->smbios_slot_designation = "M.2 NVMe lanes 2-3";
+			rp9->smbios_slot_data_width = SlotDataBusWidth2X;
+		}
 	}
 }
 
