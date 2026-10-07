@@ -1268,17 +1268,27 @@ static bool is_descriptor_writeable(uint8_t *desc)
 	return 1;
 }
 
-static void cse_set_hap_bit(bool state)
+/*
+ * Sets the HAP bit according to the ME mode and lets the mainboard change its
+ * soft straps. All changes go into a single erase and write of the descriptor,
+ * followed by one global reset, so that soft straps are reloaded.
+ */
+static void cse_update_descriptor(void *unused)
 {
-	uint8_t *si_desc_buf;
+	uint8_t *si_desc_buf, *orig_buf;
 	struct region_device desc_rdev;
+	bool hap_state = false;
 
-	si_desc_buf = (uint8_t *)malloc(SI_DESC_SIZE);
+	if (HAP_OFFSET == 0 && !CONFIG(SOC_INTEL_CSE_MAINBOARD_DESCRIPTOR_UPDATE))
+		return;
+
+	si_desc_buf = (uint8_t *)malloc(2 * SI_DESC_SIZE);
 
 	if (!si_desc_buf) {
 		printk(BIOS_ERR, "Failed to allocate buffer for %s\n", SI_DESC_REGION);
 		return;
 	}
+	orig_buf = si_desc_buf + SI_DESC_SIZE;
 
 	if (fmap_locate_area_as_rdev_rw("SI_DESC", &desc_rdev) < 0) {
 		printk(BIOS_ERR, "Failed to locate %s in the FMAP\n", SI_DESC_REGION);
@@ -1295,15 +1305,27 @@ static void cse_set_hap_bit(bool state)
 		return;
 	}
 
-	if (!!(si_desc_buf[HAP_OFFSET] & 1) == state) {
+	memcpy(orig_buf, si_desc_buf, SI_DESC_SIZE);
+
+	if (HAP_OFFSET != 0) {
+		hap_state = cse_get_me_disable_mode() == ME_MODE_DISABLE_HAP;
+		if (hap_state)
+			si_desc_buf[HAP_OFFSET] |= 1;
+		else
+			si_desc_buf[HAP_OFFSET] &= ~1;
+	}
+
+	if (CONFIG(SOC_INTEL_CSE_MAINBOARD_DESCRIPTOR_UPDATE))
+		mainboard_update_descriptor(si_desc_buf);
+
+	if (!memcmp(si_desc_buf, orig_buf, SI_DESC_SIZE)) {
 		printk(BIOS_DEBUG, "Update of Descriptor is not required!\n");
-		if (state)
+		if (hap_state)
 			printk(BIOS_INFO, "ME is HAP disabled\n");
 		free(si_desc_buf);
 		return;
 	}
 
-	si_desc_buf[HAP_OFFSET] ^= 1;
 	if (rdev_eraseat(&desc_rdev, 0, SI_DESC_SIZE) != SI_DESC_SIZE) {
 		printk(BIOS_ERR, "Failed to erase Descriptor Region area\n");
 		free(si_desc_buf);
@@ -1321,14 +1343,7 @@ static void cse_set_hap_bit(bool state)
 	do_global_reset();
 }
 
-static void set_hap_bit(void *unused)
-{
-	bool state = cse_get_me_disable_mode() == ME_MODE_DISABLE_HAP;
-	if (HAP_OFFSET != 0)
-		cse_set_hap_bit(state);
-}
-
-BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, set_hap_bit, NULL);
+BOOT_STATE_INIT_ENTRY(BS_PRE_DEVICE, BS_ON_ENTRY, cse_update_descriptor, NULL);
 
 /*
  * Disable the Intel (CS)Management Engine via HECI based on a cmos value

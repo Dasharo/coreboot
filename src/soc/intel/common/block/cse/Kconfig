@@ -24,6 +24,16 @@ config SOC_INTEL_COMMON_BLOCK_CSE
 	  Driver for communication with Converged Security Engine (CSE)
 	  over Host Embedded Controller Interface (HECI)
 
+config SOC_INTEL_CSE_MAINBOARD_DESCRIPTOR_UPDATE
+	bool
+	depends on SOC_INTEL_COMMON_BLOCK_CSE
+	help
+	  Select if the mainboard implements mainboard_update_descriptor() to
+	  change flash descriptor soft straps at runtime, e.g. from a setup
+	  option. The changes are written together with the HAP bit, in one
+	  descriptor erase and one global reset. The descriptor must be
+	  writeable by the host.
+
 config SOC_INTEL_COMMON_BLOCK_HECI1_DISABLE_USING_SBI
 	bool
 	default y if HECI_DISABLE_USING_SMM

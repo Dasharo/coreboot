@@ -629,4 +629,12 @@ unsigned int soc_get_heci_dev(unsigned int heci_idx);
 
 int cse_write_smbios_type14(int *handle, unsigned long *current);
 
+/*
+ * Implemented by the mainboard if SOC_INTEL_CSE_MAINBOARD_DESCRIPTOR_UPDATE is
+ * selected. Changes soft straps in the first 4K of the flash descriptor, in
+ * place. If anything changed, the descriptor is rewritten and a global reset
+ * follows.
+ */
+void mainboard_update_descriptor(uint8_t *si_desc);
+
 #endif // SOC_INTEL_COMMON_CSE_H
