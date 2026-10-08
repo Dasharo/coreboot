@@ -81,7 +81,8 @@ chip soc/intel/alderlake
 		end
 
 		# M.2 NVMe x4, uses RP9-RP12 bundle (1x4). The slot's lanes are
-		# reversed, so in 2x2 this port gets the slot's lanes 2-3.
+		# reversed, so in 2x2 this port gets the slot's lanes 2-3 and in
+		# 4x1 lane 3.
 		device ref pcie_rp9 on
 			register "pch_pcie_rp[PCH_RP(9)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
@@ -93,10 +94,10 @@ chip soc/intel/alderlake
 						"M.2 NVMe" "SlotDataBusWidth4X"
 		end
 
-		# M.2 slot lanes 0-1, only in 2x2 (PCIe bifurcation option), so a
-		# single NVMe drive ends up here. FSP disables the port in 1x4.
-		# SRCCLK0 is made free-running in 2x2 (romstage_fsp_params.c), so
-		# no clock source or CLKREQ# of its own.
+		# M.2 slot lanes 0-1 in 2x2, lane 1 in 4x1 (PCIe bifurcation option).
+		# FSP disables the port in 1x4. SRCCLK0 is made free-running when
+		# the slot is split (romstage_fsp_params.c), so no clock source or
+		# CLKREQ# of its own. The same goes for RP10 and RP12.
 		device ref pcie_rp11 on
 			register "pch_pcie_rp[PCH_RP(11)]" = "{
 				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_SRC_UNUSED | PCIE_RP_CLK_REQ_UNUSED,
@@ -105,6 +106,28 @@ chip soc/intel/alderlake
 			}"
 			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
 						"M.2 NVMe lanes 0-1" "SlotDataBusWidth2X"
+		end
+
+		# M.2 slot lane 2, only in 4x1
+		device ref pcie_rp10 on
+			register "pch_pcie_rp[PCH_RP(10)]" = "{
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_SRC_UNUSED | PCIE_RP_CLK_REQ_UNUSED,
+				.pcie_rp_aspm = ASPM_L1,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2 NVMe lane 2" "SlotDataBusWidth1X"
+		end
+
+		# M.2 slot lane 0, only in 4x1
+		device ref pcie_rp12 on
+			register "pch_pcie_rp[PCH_RP(12)]" = "{
+				.flags = PCIE_RP_LTR | PCIE_RP_AER | PCIE_RP_CLK_SRC_UNUSED | PCIE_RP_CLK_REQ_UNUSED,
+				.pcie_rp_aspm = ASPM_L1,
+				.PcieRpL1Substates = L1_SS_DISABLED,
+			}"
+			smbios_slot_desc	"SlotTypeM2Socket3" "SlotLengthOther"
+						"M.2 NVMe lane 0" "SlotDataBusWidth1X"
 		end
 
 		# M.2 WiFi x2 (uses CLKREQ3#, but some cards do not get detected)

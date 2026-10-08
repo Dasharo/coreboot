@@ -5,6 +5,7 @@
 #include <soc/meminit.h>
 #include <soc/gpio.h>
 #include <variant/gpio.h>
+#include <dasharo/options.h>
 #include <variant/pcie.h>
 
 /* As in soc/intel/alderlake/romstage/fsp_params.c */
@@ -45,12 +46,12 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	memupd->FspmConfig.CpuPcieRpClockReqMsgEnable[2] = 0;
 
 	/*
-	 * The M.2 slot has one REFCLK (SRCCLK0) and one CLKREQ#. In 2x2 the
-	 * slot's lanes 0-1 are on RP11 (lanes are reversed) and lanes 2-3 on
-	 * RP9, so neither port owns the clock. Keep it running regardless of
-	 * CLKREQ0#. A carrier with two devices has to buffer it.
+	 * The M.2 slot has one REFCLK (SRCCLK0) and one CLKREQ#. Once it is
+	 * split, no single port owns the clock. Keep it running regardless of
+	 * CLKREQ0#. A carrier with several devices has to buffer it.
 	 */
-	if (CONFIG(BOARD_PROTECTLI_V2210) && variant_pcie_is_2x2()) {
+	if (CONFIG(BOARD_PROTECTLI_V2210) &&
+	    variant_pcie_bifurcation() != PCIE_BIFURCATION_OPTION_1X4) {
 		memupd->FspmConfig.PcieClkSrcUsage[0] = FSP_CLK_FREE_RUNNING;
 		memupd->FspmConfig.PcieClkSrcClkReq[0] = FSP_CLK_NOTUSED;
 	}
