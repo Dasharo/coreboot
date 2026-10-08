@@ -153,19 +153,33 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		pcidev_path_on_root(PCH_DEVFN_EMMC)->enabled = 0;
 	}
 
-	if (CONFIG(BOARD_PROTECTLI_V2210) && variant_pcie_is_2x2()) {
+	if (CONFIG(BOARD_PROTECTLI_V2210)) {
+		const uint8_t bifurcation = variant_pcie_bifurcation();
 		struct device *rp9 = pcidev_path_on_root(PCH_DEVFN_PCIE9);
+		struct device *rp11 = pcidev_path_on_root(PCH_DEVFN_PCIE11);
 
 		/*
-		 * In 2x2, RP9 has the M.2 slot's lanes 2-3, which have no CLKREQ#
-		 * (the slot's only one goes with lanes 0-1, i.e. RP11). L1
-		 * substates need CLKREQ#, so turn them off. 0 = disabled.
+		 * When split, RP9 has the M.2 slot's last lanes (2-3 in 2x2, 3 in 4x1),
+		 * which have no CLKREQ# (the slot's only one goes with lane 0).
+		 * L1 substates need CLKREQ#, so turn them off. 0 = disabled.
 		 */
-		params->PcieRpL1Substates[8] = 0;
+		if (bifurcation != PCIE_BIFURCATION_OPTION_1X4)
+			params->PcieRpL1Substates[8] = 0;
 
-		if (rp9) {
+		if (bifurcation == PCIE_BIFURCATION_OPTION_2X2 && rp9) {
 			rp9->smbios_slot_designation = "M.2 NVMe lanes 2-3";
 			rp9->smbios_slot_data_width = SlotDataBusWidth2X;
+		}
+
+		if (bifurcation == PCIE_BIFURCATION_OPTION_4X1) {
+			if (rp9) {
+				rp9->smbios_slot_designation = "M.2 NVMe lane 3";
+				rp9->smbios_slot_data_width = SlotDataBusWidth1X;
+			}
+			if (rp11) {
+				rp11->smbios_slot_designation = "M.2 NVMe lane 1";
+				rp11->smbios_slot_data_width = SlotDataBusWidth1X;
+			}
 		}
 	}
 }
