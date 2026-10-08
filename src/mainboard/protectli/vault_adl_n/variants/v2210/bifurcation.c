@@ -32,7 +32,7 @@ static size_t pcie_ctrl3_offset(uint32_t flmap1)
 	       PCIE_CTRL3_BYTE;
 }
 
-bool variant_pcie_is_2x2(void)
+uint8_t variant_pcie_bifurcation(void)
 {
 	struct region_device rdev;
 	uint32_t flmap1;
@@ -47,13 +47,19 @@ bool variant_pcie_is_2x2(void)
 	    rdev_readat(&rdev, &flmap1, FLMAP1_OFFSET, sizeof(flmap1)) != sizeof(flmap1) ||
 	    rdev_readat(&rdev, &strap, pcie_ctrl3_offset(flmap1), sizeof(strap)) != sizeof(strap)) {
 		printk(BIOS_ERR, "PCIe bifurcation: failed to read the descriptor\n");
-		return false;
+		return PCIE_BIFURCATION_OPTION_1X4;
 	}
 
-	printk(BIOS_DEBUG, "PCIe bifurcation: controller 3 strap 0x%02x (%s)\n", strap,
-	       (strap & PCIE_CTRL3_MASK) == PCIE_CTRL3_2X2 ? "2x2" : "not 2x2");
+	printk(BIOS_DEBUG, "PCIe bifurcation: controller 3 strap 0x%02x\n", strap);
 
-	return (strap & PCIE_CTRL3_MASK) == PCIE_CTRL3_2X2;
+	switch (strap & PCIE_CTRL3_MASK) {
+	case PCIE_CTRL3_2X2:
+		return PCIE_BIFURCATION_OPTION_2X2;
+	case PCIE_CTRL3_4X1:
+		return PCIE_BIFURCATION_OPTION_4X1;
+	default:
+		return PCIE_BIFURCATION_OPTION_1X4;
+	}
 }
 
 void mainboard_update_descriptor(uint8_t *si_desc)
@@ -73,6 +79,9 @@ void mainboard_update_descriptor(uint8_t *si_desc)
 		break;
 	case PCIE_BIFURCATION_OPTION_2X2:
 		value = PCIE_CTRL3_2X2;
+		break;
+	case PCIE_BIFURCATION_OPTION_4X1:
+		value = PCIE_CTRL3_4X1;
 		break;
 	default:
 		printk(BIOS_WARNING, "PCIe bifurcation option %u is not supported, using 1x4\n",
