@@ -5,7 +5,10 @@
 
 #include <types.h>
 
-/* True if the descriptor in flash splits the M.2 M-key slot as 2x2 */
-bool variant_pcie_is_2x2(void);
+/*
+ * Split of the M.2 M-key slot set by the descriptor in flash, as one of
+ * PCIE_BIFURCATION_OPTION_*. 1x4 if it can't be read.
+ */
+uint8_t variant_pcie_bifurcation(void);
 
 #endif /* VARIANT_PCIE_H */
