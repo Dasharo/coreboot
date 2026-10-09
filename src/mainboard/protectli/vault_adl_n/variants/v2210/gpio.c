@@ -181,7 +181,7 @@ static const struct pad_config gpio_table[] = {
 	/* GPP_A11 - GPIO */
 	PAD_NC(GPP_A11, NONE),
 
-	/* GPP_A12 - SATAXPCIE1 */
+	/* GPP_A12 - SATAXPCIE1 (M.2 PEDET: 1 = PCIe, 0 = SATA) */
 	PAD_CFG_NF(GPP_A12, UP_20K, DEEP, NF1),
 
 	/* GPP_A13 - GPIO */
