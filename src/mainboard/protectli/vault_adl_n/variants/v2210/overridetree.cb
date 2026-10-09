@@ -60,6 +60,14 @@ chip soc/intel/alderlake
 			end
 		end
 
+		# SATA/PCIe combo port 1 is lane 0 of the M.2 M-key slot (PCIE12/SATA1).
+		# The descriptor lets SATAXPCIE1 (M.2 PEDET) pick SATA or PCIe. The
+		# controller is turned off in mainboard.c unless the slot is 1x4 and
+		# PEDET reports a SATA drive.
+		device ref sata on
+			register "sata_ports_enable[1]" = "1"
+		end
+
 		# LAN1
 		device ref pcie_rp4 on
 			register "pch_pcie_rp[PCH_RP(4)]" = "{
