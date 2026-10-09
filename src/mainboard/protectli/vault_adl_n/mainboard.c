@@ -4,8 +4,10 @@
 #include <console/console.h>
 #include <dasharo/options.h>
 #include <device/device.h>
+#include <gpio.h>
 #include <pc80/i8254.h>
 #include <smbios.h>
+#include <soc/gpio.h>
 #include <soc/pci_devs.h>
 #include <soc/ramstage.h>
 #include <superio/ite/it8659e/chip.h>
@@ -157,6 +159,22 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		const uint8_t bifurcation = variant_pcie_bifurcation();
 		struct device *rp9 = pcidev_path_on_root(PCH_DEVFN_PCIE9);
 		struct device *rp11 = pcidev_path_on_root(PCH_DEVFN_PCIE11);
+		struct device *sata = pcidev_path_on_root(PCH_DEVFN_SATA);
+
+		/*
+		 * SATA port 1 can only use lane 0 of the M.2 slot. Keep the
+		 * controller off when that lane belongs to a PCIe root port (slot
+		 * split) or when PEDET (GPP_A12, SATAXPCIE1, pulled up by R74)
+		 * reports a PCIe device: 1 = PCIe, 0 = SATA. The pad stays in
+		 * native mode; its RX state is valid regardless of the pad mode.
+		 */
+		if (sata && sata->enabled &&
+		    (bifurcation != PCIE_BIFURCATION_OPTION_1X4 || gpio_get(GPP_A12))) {
+			printk(BIOS_INFO, "M.2 slot: %s, SATA disabled\n",
+			       bifurcation != PCIE_BIFURCATION_OPTION_1X4 ? "split" : "PCIe device");
+			params->SataEnable = 0;
+			sata->enabled = 0;
+		}
 
 		/*
 		 * When split, RP9 has the M.2 slot's last lanes (2-3 in 2x2, 3 in 4x1),
