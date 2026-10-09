@@ -49,9 +49,18 @@ void mainboard_memory_init_params(FSPM_UPD *memupd)
 	 * The M.2 slot has one REFCLK (SRCCLK0) and one CLKREQ#. Once it is
 	 * split, no single port owns the clock. Keep it running regardless of
 	 * CLKREQ0#. A carrier with several devices has to buffer it.
+	 *
+	 * A carrier leaves CLKREQ0# undriven, so the pull-up holds it
+	 * deasserted. Take GPP_D5 off the native SRCCLKREQ0# function, as the
+	 * vendor firmware does in 2x2, or the clock stays gated.
 	 */
 	if (CONFIG(BOARD_PROTECTLI_V2210) &&
 	    variant_pcie_bifurcation() != PCIE_BIFURCATION_OPTION_1X4) {
+		const struct pad_config clkreq0_gpi[] = {
+			PAD_CFG_GPI(GPP_D5, NONE, DEEP),
+		};
+
+		gpio_configure_pads(clkreq0_gpi, ARRAY_SIZE(clkreq0_gpi));
 		memupd->FspmConfig.PcieClkSrcUsage[0] = FSP_CLK_FREE_RUNNING;
 		memupd->FspmConfig.PcieClkSrcClkReq[0] = FSP_CLK_NOTUSED;
 	}
