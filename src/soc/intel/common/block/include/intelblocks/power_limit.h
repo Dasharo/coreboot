@@ -21,6 +21,8 @@
 struct soc_power_limits_config {
 	/* PL1 Override value in Watts */
 	uint16_t tdp_pl1_override;
+	/* PL1 time window (tau) in seconds, 0 = SoC default */
+	uint8_t tdp_pl1_time;
 	/* PL2 Override value in Watts */
 	uint16_t tdp_pl2_override;
 	/* SysPL2 Value in Watts */
