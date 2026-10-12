@@ -128,7 +128,8 @@ void set_power_limits(u8 power_limit_1_time,
 
 	printk(BIOS_INFO, "CPU TDP = %u Watts\n", tdp / power_unit);
 
-	if (power_limit_time_msr_to_sec[max_time] > power_limit_1_time)
+	if (max_time < ARRAY_SIZE(power_limit_time_msr_to_sec) &&
+	    power_limit_time_msr_to_sec[max_time] > power_limit_1_time)
 		power_limit_1_time = power_limit_time_msr_to_sec[max_time];
 
 	if (min_power > 0 && tdp < min_power)
