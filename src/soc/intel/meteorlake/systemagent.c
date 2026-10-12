@@ -175,7 +175,8 @@ static void configure_tdp(struct device *dev)
 		if (sa_pci_id == cpuid_to_mtl[i].cpu_id &&
 				tdp == cpuid_to_mtl[i].cpu_tdp) {
 			soc_config = &config->power_limits_config[cpuid_to_mtl[i].limits];
-			set_power_limits(MOBILE_SKU_PL1_TIME_SEC, soc_config);
+			set_power_limits(soc_config->tdp_pl1_time ?: MOBILE_SKU_PL1_TIME_SEC,
+					 soc_config);
 			config_tdp = true;
 			printk(BIOS_DEBUG, "Configured power limits for SA PCI ID: 0x%4x\n",
 				sa_pci_id);
