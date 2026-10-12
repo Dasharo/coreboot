@@ -3,6 +3,7 @@ chip soc/intel/alderlake
     # to available wall brick capabilities.
 	register "power_limits_config[ADL_P_282_442_482_28W_CORE]" = "{
 		.tdp_pl1_override = 20,
+		.tdp_pl1_time = 8,
 		.tdp_pl2_override = 56,
 		.tdp_psyspl2 = 90,
 		.tdp_psyspl3 = 92,
