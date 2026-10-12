@@ -123,7 +123,8 @@ static uint32_t sm_write_enum_value(char *current, const struct sm_enum_value *e
 	return enum_val->size;
 }
 
-static uint32_t write_numeric_option(char *current, uint32_t tag, const uint64_t object_id,
+static uint32_t write_numeric_option(char *current, const enum sm_object_kind kind,
+		uint32_t tag, const uint64_t object_id,
 		const char *opt_name, const char *ui_name, const char *ui_helptext,
 		uint32_t flags, uint32_t default_value, uint32_t min, uint32_t max, uint32_t step,
 		uint32_t display_flags, const struct sm_enum_value *values, const uint64_t dep_id,
@@ -135,9 +136,9 @@ static uint32_t write_numeric_option(char *current, uint32_t tag, const uint64_t
 	/* Check for mainboard override of default value */
 	const struct cfr_default_override *ovr = find_override(opt_name);
 	if (ovr) {
-		if (ovr->kind != tag)
+		if (ovr->kind != kind)
 			printk(BIOS_WARNING, "CFR: override for option '%s' has mismatched type; skipping.\n", opt_name);
-		else if (tag == CFR_TAG_OPTION_BOOL)
+		else if (kind == SM_OBJ_BOOL)
 			default_value = ovr->bool_value;
 		else
 			default_value = ovr->uint_value;
@@ -178,41 +179,45 @@ static uint32_t write_numeric_option(char *current, uint32_t tag, const uint64_t
 	return option->size;
 }
 
-static uint32_t sm_write_opt_enum(char *current, const struct sm_obj_enum *sm_enum,
+static uint32_t sm_write_opt_enum(char *current, const enum sm_object_kind kind,
+				  const struct sm_obj_enum *sm_enum,
 				  const uint64_t object_id, const uint64_t dep_id,
 				  const uint32_t *dep_values, const uint32_t num_dep_values)
 
 {
-	return write_numeric_option(current, CFR_TAG_OPTION_ENUM, object_id,
+	return write_numeric_option(current, kind, CFR_TAG_OPTION_ENUM, object_id,
 			sm_enum->opt_name, sm_enum->ui_name, sm_enum->ui_helptext,
 			sm_enum->flags, sm_enum->default_value, 0, 0, 0, 0, sm_enum->values,
 			dep_id, dep_values, num_dep_values);
 }
 
-static uint32_t sm_write_opt_number(char *current, const struct sm_obj_number *sm_number,
+static uint32_t sm_write_opt_number(char *current, const enum sm_object_kind kind,
+				    const struct sm_obj_number *sm_number,
 				    const uint64_t object_id, const uint64_t dep_id,
 				    const uint32_t *dep_values, const uint32_t num_dep_values)
 
 {
-	return write_numeric_option(current, CFR_TAG_OPTION_NUMBER, object_id,
+	return write_numeric_option(current, kind, CFR_TAG_OPTION_NUMBER, object_id,
 			sm_number->opt_name, sm_number->ui_name, sm_number->ui_helptext,
 			sm_number->flags, sm_number->default_value, sm_number->min, sm_number->max,
 			sm_number->step, sm_number->display_flags, NULL, dep_id, dep_values,
 			num_dep_values);
 }
 
-static uint32_t sm_write_opt_bool(char *current, const struct sm_obj_bool *sm_bool,
+static uint32_t sm_write_opt_bool(char *current, const enum sm_object_kind kind,
+				  const struct sm_obj_bool *sm_bool,
 				  const uint64_t object_id, const uint64_t dep_id,
 				  const uint32_t *dep_values, const uint32_t num_dep_values)
 
 {
-	return write_numeric_option(current, CFR_TAG_OPTION_BOOL, object_id,
+	return write_numeric_option(current, kind, CFR_TAG_OPTION_BOOL, object_id,
 			sm_bool->opt_name, sm_bool->ui_name, sm_bool->ui_helptext,
 			sm_bool->flags, sm_bool->default_value, 0, 0, 0, 0, NULL, dep_id,
 			dep_values, num_dep_values);
 }
 
-static uint32_t sm_write_opt_varchar(char *current, const struct sm_obj_varchar *sm_varchar,
+static uint32_t sm_write_opt_varchar(char *current, const enum sm_object_kind kind,
+				     const struct sm_obj_varchar *sm_varchar,
 				     const uint64_t object_id, const uint64_t dep_id,
 				     const uint32_t *dep_values, const uint32_t num_dep_values)
 
@@ -224,7 +229,7 @@ static uint32_t sm_write_opt_varchar(char *current, const struct sm_obj_varchar 
 	/* Check for mainboard override of default value */
 	const struct cfr_default_override *ovr = find_override(sm_varchar->opt_name);
 	if (ovr) {
-		if (ovr->kind == SM_OBJ_VARCHAR)
+		if (ovr->kind == kind)
 			default_value = ovr->str_value;
 		else
 			printk(BIOS_WARNING, "CFR: override for option '%s' has mismatched type (not varchar); skipping.\n", sm_varchar->opt_name);
@@ -354,20 +359,20 @@ static uint32_t sm_write_object(char *current, const struct sm_object *sm_obj)
 	case SM_OBJ_NONE:
 		return 0;
 	case SM_OBJ_ENUM:
-		return sm_write_opt_enum(current, &sm_obj_copy.sm_enum, obj_id,
-					 dep_id, dep_values, num_dep_values);
+		return sm_write_opt_enum(current, sm_obj_copy.kind, &sm_obj_copy.sm_enum,
+					 obj_id, dep_id, dep_values, num_dep_values);
 	case SM_OBJ_NUMBER:
-		return sm_write_opt_number(current, &sm_obj_copy.sm_number, obj_id,
-					   dep_id, dep_values, num_dep_values);
+		return sm_write_opt_number(current, sm_obj_copy.kind, &sm_obj_copy.sm_number,
+					   obj_id, dep_id, dep_values, num_dep_values);
 	case SM_OBJ_BOOL:
-		return sm_write_opt_bool(current, &sm_obj_copy.sm_bool, obj_id,
-					 dep_id, dep_values, num_dep_values);
+		return sm_write_opt_bool(current, sm_obj_copy.kind, &sm_obj_copy.sm_bool,
+					 obj_id, dep_id, dep_values, num_dep_values);
 	case SM_OBJ_VARCHAR:
-		return sm_write_opt_varchar(current, &sm_obj_copy.sm_varchar, obj_id,
-					    dep_id, dep_values, num_dep_values);
+		return sm_write_opt_varchar(current, sm_obj_copy.kind, &sm_obj_copy.sm_varchar,
+					    obj_id, dep_id, dep_values, num_dep_values);
 	case SM_OBJ_COMMENT:
-		return sm_write_opt_comment(current, &sm_obj_copy.sm_comment, obj_id,
-					    dep_id, dep_values, num_dep_values);
+		return sm_write_opt_comment(current, &sm_obj_copy.sm_comment,
+					    obj_id, dep_id, dep_values, num_dep_values);
 	case SM_OBJ_FORM:
 		return sm_write_form(current, (struct sm_obj_form *)&sm_obj_copy.sm_form, obj_id,
 				     dep_id, dep_values, num_dep_values);
