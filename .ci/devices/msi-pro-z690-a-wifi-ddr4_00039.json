@@ -1,0 +1,9 @@
+{
+    "env_vars": {
+        "ASSET_ID": "00039",
+        "CONFIG": "msi-pro-z690-a-wifi-ddr4"
+    },
+    "fw_files": {
+        "FW_FILE": "coreboot.rom"
+    }
+}
