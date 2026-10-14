@@ -3,12 +3,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: '3'
+
+vars:
+  REPO_ROOT:
+    sh: git rev-parse --show-toplevel
+
 tasks:
   ec:
     desc: Build EC
     cmds:
       - echo "TODO Would build EC"
   main:
-    desc: Build coreboot
+    desc: Build coreboot with build.sh for BOARD
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [BOARD]
     cmds:
-      - echo "TODO Would build"
+      - rm -f build/coreboot.rom
+      - ./build.sh {{.BOARD}}
+      - test -f build/coreboot.rom
