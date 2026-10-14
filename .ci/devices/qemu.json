@@ -1,0 +1,7 @@
+{
+    "env_vars": {
+        "RTE_IP": "127.0.0.1",
+        "SNIPEIT_NO": "true",
+        "CONFIG": "qemu"
+    }
+}
