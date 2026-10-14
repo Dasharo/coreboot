@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+when:
+  - branch: dasharo
+    event: [pull_request, manual]
+    path:
+      include:
+        - 'src/**'
+        - 'configs/**'
+
+labels:
+  network: office
+
+matrix:
+  include:
+      # Novacustom
+    - DEVICE: v540tnx
+      TEST_CONFIG: "novacustom-v540tnd_00266"
+      COREBOOT_CONFIG: "config.novacustom_v540tnx"
+      EC_BOARD_VENDOR: "novacustom"
+      EC_BOARD_MODEL: "v540tu"
+      BLOBS: "novacustom"
+
+      # MSI
+    - DEVICE: ms7d25_ddr4
+      TEST_CONFIG: "msi-pro-z690-a-wifi-ddr4_00039"
+      COREBOOT_CONFIG: "config.msi_ms7d25_ddr4"
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: false
+      depth: 0
+
+steps:
+  - name: ec
+    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    when:
+      - matrix:
+          EC_BOARD_VENDOR: "?*"
+          EC_BOARD_MODEL: "?*"
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:build-ec EC_BOARD=${EC_BOARD}
+
+
+  - name: blobs
+    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    when:
+      - matrix:
+          BLOBS: "?*"
+    # environment:
+    #   BLOBS_TOKEN:
+    #     from_secret: NCM_BLOBS_TOKEN
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:blobs BLOBS=${BLOBS}
+
+
+  - name: build
+    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    when:
+      - matrix:
+          COREBOOT_CONFIG: "?*"
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:build-coreboot COREBOOT_CONFIG=${COREBOOT_CONFIG}
+
+
+  - name: test
+    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    when:
+      - matrix:
+          TEST_CONFIG: "?*"
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:test TEST_CONFIG=${TEST_CONFIG}
