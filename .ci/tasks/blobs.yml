@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+tasks:
+  main:
+    desc: Download blobs
+    cmds:
+      - echo "TODO download {{.BLOBS}}"
