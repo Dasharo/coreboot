@@ -208,6 +208,14 @@ config EDK2_DGPU_POWER_OPTION
 	  Shows the DGPU power option in EDK2 power configuration submenu in
 	  Dasharo System Features menu.
 
+config EDK2_RENDER_STANDBY_OPTION
+	bool "Show Render Standby option in Dasharo Power Configuration Menu"
+	default n
+	depends on EDK2_DASHARO_POWER_CONFIG
+	depends on SOC_INTEL_METEORLAKE
+	help
+	  Shows the Render Standby option in EDK2 power configuration submenu in Dasharo System Features menu.
+
 config EDK2_DASHARO_PCI_CONFIG
 	bool "Enable EDK2 Dasharo PCI/PCIe Configuration Menu"
 	default n
