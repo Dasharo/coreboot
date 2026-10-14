@@ -19,14 +19,11 @@
 
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
-	memset(params->PcieRpEnableCpm, 0, sizeof(params->PcieRpEnableCpm));
 	memset(params->PcieRpPmSci, 0, sizeof(params->PcieRpPmSci));
 
-	params->PcieRpEnableCpm[2] = 1; // LAN1
-	params->PcieRpEnableCpm[3] = 1; // LAN2
-	params->PcieRpEnableCpm[6] = 1; // ASMedia PCIe to SATA
-	if (!CONFIG(ODROID_H4_NETCARD_SUPPORT))
-		params->PcieRpEnableCpm[8] = 1; // NVMe
+	/* Never enable CLK_PM on the bifurcated M.2 slot */
+	if (CONFIG(ODROID_H4_NETCARD_SUPPORT))
+		params->PcieRpEnableCpm[8] = 0;
 
 	// Max payload 256B
 	memset(params->PcieRpMaxPayload, 1, sizeof(params->PcieRpMaxPayload));
