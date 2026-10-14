@@ -383,6 +383,12 @@ static void fill_fsps_igd_params(FSP_S_CONFIG *s_cfg,
 	s_cfg->PeiGraphicsPeimInit = CONFIG(RUN_FSP_GOP) && is_devfn_enabled(PCI_DEVFN_IGD);
 	s_cfg->LidStatus = CONFIG(VBOOT_LID_SWITCH) ? get_lid_switch() : CONFIG(RUN_FSP_GOP);
 	s_cfg->PavpEnable = CONFIG(PAVP);
+
+	if (CONFIG(EDK2_RENDER_STANDBY_OPTION)) {
+		s_cfg->RenderStandby = dasharo_render_standby_enabled();
+		printk(BIOS_DEBUG, "IGD Render Standby: %s\n",
+		       s_cfg->RenderStandby ? "enabled" : "disabled");
+	}
 }
 
 static void fill_fsps_tcss_params(FSP_S_CONFIG *s_cfg,
