@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+tasks:
+  ec:
+    desc: Build EC
+    cmds:
+      - echo "TODO Would build EC"
+  main:
+    desc: Build coreboot
+    cmds:
+      - echo "TODO Would build"
