@@ -18,12 +18,12 @@ matrix:
       # Emulation
     - DEVICE: qemu
       TEST_CONFIG: "qemu"
-      COREBOOT_CONFIG: "config.emulation_qemu_x86_q35_uefi_all_menus"
+      BOARD: "x86_q35_uefi_all_menus"
 
       # Novacustom
     - DEVICE: v540tnx
       TEST_CONFIG: "novacustom-v540tnd_00266"
-      COREBOOT_CONFIG: "config.novacustom_v540tnx"
+      BOARD: "v540tnx"
       EC_BOARD_VENDOR: "novacustom"
       EC_BOARD_MODEL: "v540tu"
       BLOBS: "novacustom"
@@ -31,7 +31,7 @@ matrix:
       # MSI
     - DEVICE: ms7d25_ddr4
       TEST_CONFIG: "msi-pro-z690-a-wifi-ddr4_00039"
-      COREBOOT_CONFIG: "config.msi_ms7d25_ddr4"
+      BOARD: "ms7d25_ddr4"
 
 clone:
   git:
@@ -67,9 +67,9 @@ steps:
     image: ghcr.io/dasharo/osfv-qemu-ci:latest
     when:
       - matrix:
-          COREBOOT_CONFIG: "?*"
+          BOARD: "?*"
     commands:
-      - task --taskfile .ci/Taskfile.yml ci:build-coreboot COREBOOT_CONFIG=${COREBOOT_CONFIG}
+      - task --taskfile .ci/Taskfile.yml ci:build-coreboot BOARD=${BOARD}
 
 
   - name: test
