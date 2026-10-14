@@ -206,6 +206,16 @@ uint8_t dasharo_get_pcie_bifurcation(void)
 	return bifurcation;
 }
 
+bool dasharo_render_standby_enabled(void)
+{
+	bool enabled = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("RenderStandby", &enabled);
+
+	return enabled;
+}
+
 static bool fum_is_active(void)
 {
 	bool fum = false;
