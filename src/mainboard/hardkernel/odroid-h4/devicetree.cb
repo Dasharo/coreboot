@@ -163,6 +163,8 @@ chip soc/intel/alderlake
 				.clk_src = 1,
 				.clk_req = 1,
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
 			}"
 		end
 		device ref pcie_rp4 on	# LAN2 Intel i226
@@ -170,6 +172,8 @@ chip soc/intel/alderlake
 				.clk_src = 2,
 				.clk_req = 2,
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
 			}"
 		end
 		device ref pcie_rp7 on	# ASM1064B SATA (ASMedia PCie to 4xSATA)
@@ -177,6 +181,8 @@ chip soc/intel/alderlake
 				.clk_src = 3,
 				.clk_req = 3,	// Use hardwired CLKREQ# to allow clock gating
 				.flags = PCIE_RP_LTR | PCIE_RP_AER,
+				.pcie_rp_aspm = ASPM_DISABLE,
+				.PcieRpL1Substates = L1_SS_DISABLED,
 			}"
 		end
 
