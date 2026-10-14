@@ -1,0 +1,9 @@
+{
+    "env_vars": {
+        "ASSET_ID": "00226",
+        "CONFIG": "novacustom-v540tnd"
+    },
+    "fw_files": {
+        "FW_FILE": "coreboot.rom"
+    }
+}
