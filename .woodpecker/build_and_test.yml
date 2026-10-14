@@ -15,6 +15,11 @@ labels:
 
 matrix:
   include:
+      # Emulation
+    - DEVICE: qemu
+      TEST_CONFIG: "qemu"
+      COREBOOT_CONFIG: "config.emulation_qemu_x86_q35_uefi_all_menus"
+
       # Novacustom
     - DEVICE: v540tnx
       TEST_CONFIG: "novacustom-v540tnd_00266"
