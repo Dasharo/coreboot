@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+includes:
+  build: tasks/build.yml
+  blobs: tasks/blobs.yml
+  test: tasks/test.yml
+
+tasks:
+  ci:blobs:
+    desc: Download blobs
+    cmds:
+      - task: blobs:main
+
+  ci:build-ec:
+    desc: Build EC
+    cmds:
+      - task: build:ec
+
+  ci:build-coreboot:
+    desc: Build coreboot
+    cmds:
+      - task: build:main
+
+  ci:test:
+    desc: Run tests on build firmware
+    cmds:
+      - task: test:main
