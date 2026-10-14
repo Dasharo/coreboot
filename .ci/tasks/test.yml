@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+tasks:
+  main:
+    desc: Test build firmware
+    cmds:
+      - echo "TODO Would test"
+      - echo "TODO Clone OSFV, run task stability:device"
+      - echo "TODO use config from .ci/devices/ and the build binary"
