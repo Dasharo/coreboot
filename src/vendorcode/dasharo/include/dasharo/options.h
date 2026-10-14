@@ -118,6 +118,15 @@ bool dasharo_resizeable_bars_enabled(void);
  */
 uint8_t dasharo_get_pcie_bifurcation(void);
 
+/* Looks up Dasharo/"RenderStandby" variable to check whether the Render
+ * Standby (RC6) state should be enabled.
+ *
+ * Result:
+ *  - true  - Render Standby is enabled and supported
+ *  - false - Render Standby is disabled or not supported
+ */
+bool dasharo_render_standby_enabled(void);
+
 /* Looks Dasharo/"LockBios" variable if bootmedia lock was enabled at compile
  * time.
  *
