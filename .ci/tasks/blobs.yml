@@ -3,8 +3,31 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: '3'
+
+vars:
+  BLOBS_LIST:
+    map:
+      novacustom_blobs:
+        method: clone
+        url: https://git.3mdeb.com/Dasharo/novacustom-blobs.git
+        ref: 33612cfaa9d21f8048a5f1e7716da3129df0d225
+        path: 3rdparty/blobs/mainboard
+        token: NCM_BLOBS_TOKEN
+
+
 tasks:
   main:
     desc: Download blobs
+    requires:
+      vars: [BLOBS]
+    vars:
+      BLOB:
+        ref: index .BLOBS_LIST .BLOBS
+    env:
+      BLOB_METHOD: '{{.BLOB.method}}'
+      BLOB_URL: '{{.BLOB.url}}'
+      BLOB_REF: '{{.BLOB.ref}}'
+      BLOB_PATH: '{{.BLOB.path}}'
+      BLOB_TOKEN: '{{.BLOB.token | default ""}}'
     cmds:
-      - echo "TODO download {{.BLOBS}}"
+      - bash blobs.sh
