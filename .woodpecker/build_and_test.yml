@@ -42,38 +42,55 @@ clone:
 
 steps:
   - name: ec
-    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    image: git.3mdeb.com/dasharo/coreboot-build-ci
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/coreboot-builds:/tmp/coreboot-builds
     when:
       - matrix:
           EC_BOARD_VENDOR: "?*"
           EC_BOARD_MODEL: "?*"
+    environment:
+      GITEA_TOKEN:
+        from_secret: NCM_BLOBS_TOKEN # TODO own token
+      HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
-      - task --taskfile .ci/Taskfile.yml ci:build-ec EC_BOARD=${EC_BOARD}
+      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - task --taskfile .ci/Taskfile.yml ci:build-ec EC_BOARD_VENDOR=${EC_BOARD_VENDOR} EC_BOARD_MODEL=${EC_BOARD_MODEL} HOSTPATH="$${HOSTPATH}"
+      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
   - name: blobs
-    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    image: git.3mdeb.com/dasharo/coreboot-build-ci
     when:
       - matrix:
           BLOBS: "?*"
-    # environment:
-    #   BLOBS_TOKEN:
-    #     from_secret: NCM_BLOBS_TOKEN
+    environment:
+      BLOBS_TOKEN:
+        from_secret: NCM_BLOBS_TOKEN
     commands:
       - task --taskfile .ci/Taskfile.yml ci:blobs BLOBS=${BLOBS}
 
 
   - name: build
-    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    image: git.3mdeb.com/dasharo/coreboot-build-ci
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/coreboot-builds:/tmp/coreboot-builds
+    environment:
+      SSH_AUTH_SOCK: /tmp/no-ssh-agent
+      HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     when:
       - matrix:
           BOARD: "?*"
     commands:
-      - task --taskfile .ci/Taskfile.yml ci:build-coreboot BOARD=${BOARD}
+      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - task --taskfile .ci/Taskfile.yml ci:build-coreboot BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}"
+      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
   - name: test
-    image: ghcr.io/dasharo/osfv-qemu-ci:latest
+    image: git.3mdeb.com/dasharo/coreboot-build-ci
     when:
       - matrix:
           TEST_CONFIG: "?*"
