@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+includes:
+  image:
+    taskfile: common/docker-image.yml
+    dir: ../..
+    vars:
+      IMAGE_NAME: git.3mdeb.com/dasharo/coreboot-build-ci
+      DOCKERFILE: .ci/Dockerfile
+vars:
+  BUILD_TAG:
+    sh: date -u +%Y%m%d-%H%M%S
+  RELEASE_TAG:
+    sh: echo "$(date -u +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
+
+tasks:
+  build:
+    desc: Build the CI image, tagged with a UTC timestamp and latest
+    cmds:
+      - task: image:build
+        vars: {TAGS: 'latest,{{.BUILD_TAG}}'}
+
+  release:
+    desc: Build and push the CI image
+    cmds:
+      - task: image:build-push
+        vars: {TAGS: 'latest,{{.RELEASE_TAG}}'}
+
+  push:
+    desc: Push both tags of the CI image
+    cmds:
+      - task: image:push
+        vars: {TAGS: 'latest,{{.BUILD_TAG}}'}
