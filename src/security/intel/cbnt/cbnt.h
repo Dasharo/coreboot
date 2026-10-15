@@ -30,6 +30,11 @@
 #define CBNT_BP_RSTR_PBE   (1 << 6)
 #define CBNT_BP_RESERVED2  (1 << 8)
 
+/* Values of `cbnt_biosacm_policy::status::scrtm_status`. */
+#define CBNT_SCRTM_STATUS_BTG  1
+#define CBNT_SCRTM_STATUS_TXT  2
+#define CBNT_SCRTM_STATUS_PFR  4
+
 #define CBNT_EVENT_LOG_MESSAGE  "Boot Guard Measured S-CRTM"
 
 union cbnt_biosacm_policy {
