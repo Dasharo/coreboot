@@ -4,11 +4,7 @@
 
 when:
   - branch: dasharo
-    event: [pull_request, manual]
-    path:
-      include:
-        - 'src/**'
-        - 'configs/**'
+    event: [pull_request, push, manual]
 
 labels:
   network: office
@@ -90,6 +86,7 @@ steps:
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - task --taskfile .ci/Taskfile.yml ci:build-coreboot BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}"
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+
 
   - name: build-capsule
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
