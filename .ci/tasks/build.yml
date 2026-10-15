@@ -57,6 +57,9 @@ tasks:
     dir: '{{.REPO_ROOT}}'
     requires:
       vars: [BOARD, HOSTPATH]
+    vars:
+      BATTERY_FLAG:
+        sh: grep -q 'CONFIG_EDK2_ENABLE_BATTERY_CHECK 1' build/config.h && echo " -b" || true
     env:
       SSH_AUTH_SOCK: ""
     cmds:
@@ -71,7 +74,8 @@ tasks:
         ./capsule.sh make \
           -t keys/TestRoot.pub.pem \
           -o keys/TestSub.pub.pem \
-          -s keys/TestCert.pem;
+          -s keys/TestCert.pem \
+          {{.BATTERY_FLAG}}
       - cp {{.HOSTPATH}}/*.cap ./
       - rm -rf {{.HOSTPATH}}
       - chown -R "$(stat -c %u:%g .)" *.cap
