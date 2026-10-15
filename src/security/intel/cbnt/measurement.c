@@ -894,8 +894,12 @@ void intel_cbnt_inject_ibg_measurements(void)
 	if (biosacm_sts.status.scrtm_status == 0)
 		return;
 
-	/* Do nothing if BootGuard doesn't measure anything. */
-	if (!(biosacm_sts.status.bp & CBNT_BP_TYPE_M))
+	/*
+	 * Do nothing if BootGuard doesn't measure anything. When TXT is the S-CRTM (server
+	 * platforms), the ACM extends PCR-0 regardless of the Measured Boot policy bit.
+	 */
+	if (!(biosacm_sts.status.bp & CBNT_BP_TYPE_M) &&
+	    biosacm_sts.status.scrtm_status != CBNT_SCRTM_STATUS_TXT)
 		return;
 
 	if (cap_pcrs(biosacm_sts) != CB_SUCCESS) {
