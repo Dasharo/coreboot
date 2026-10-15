@@ -1,0 +1,64 @@
+version: '3'
+
+# Internal helper: run a command inside a Docker container.
+# Handles two environments:
+#
+#   CI/DinD (/.dockerenv present + /var/run/docker.sock is a socket):
+#     Woodpecker mounts the workspace as a volume into the step container.
+#     The workspace path inside the step does NOT exist on the Docker daemon
+#     host, so explicit -v bind-mounts fail. Instead, --volumes-from is used
+#     so the spawned container inherits the step container's volume mounts.
+#     The real container ID is extracted from /proc/self/cgroup (reliable even
+#     when the CI agent sets a custom /etc/hostname on the step container).
+#
+#   Local (no /.dockerenv or no docker.sock):
+#     Explicit -v bind-mounts are used with the VOLUMES parameter, and WORKDIR
+#     sets the working directory inside the spawned container.
+#
+# Parameters (all passed via vars):
+#   IMAGE    - Docker image to run (required)
+#   COMMAND  - Shell command to execute inside the container (required)
+#   VOLUMES  - Comma-separated list of -v bind-mounts, e.g. "$PWD:/src" (local only)
+#   WORKDIR  - Working directory inside the container (local only; CI uses $PWD)
+#   ENV      - Comma-separated list of env var names to forward, e.g. "FOO,BAR"
+
+tasks:
+  run:
+    internal: true
+    cmds:
+      - |
+        set -eu
+
+        if [ -f /.dockerenv ] && [ -S /var/run/docker.sock ]; then
+          # Extract the real Docker container ID from cgroups. CI agents often
+          # set a custom hostname on step containers, making /etc/hostname
+          # unusable for --volumes-from. /proc/self/cgroup always contains the
+          # 64-char hex container ID in both cgroupv1 and cgroupv2 Docker setups.
+          _cid=$(grep -oE '[0-9a-f]{64}' /proc/self/cgroup 2>/dev/null | head -1)
+          if [ -z "$_cid" ]; then
+            _cid=$(grep -oE '[0-9a-f]{64}' /proc/self/mountinfo 2>/dev/null | head -1)
+          fi
+          VOL_FLAGS="--volumes-from ${_cid:-$(cat /etc/hostname)}"
+          EFFECTIVE_WORKDIR="$PWD"
+        else
+          VOL_FLAGS=""
+          for vol in $(echo "{{.VOLUMES}}" | tr ',' '\n'); do
+            [ -n "$vol" ] && VOL_FLAGS="$VOL_FLAGS -v $vol"
+          done
+          EFFECTIVE_WORKDIR='{{.WORKDIR}}'
+        fi
+
+        ENV_ARGS=""
+        if [ -n "{{.ENV}}" ]; then
+          for env in $(echo "{{.ENV}}" | tr ',' '\n'); do
+            [ -n "$env" ] && ENV_ARGS="$ENV_ARGS -e $env"
+          done
+        fi
+
+        docker run --rm \
+          ${EFFECTIVE_WORKDIR:+-w "$EFFECTIVE_WORKDIR"} \
+          $VOL_FLAGS \
+          $ENV_ARGS \
+          --entrypoint sh \
+          {{.IMAGE}} \
+          -c '{{.COMMAND}}'
