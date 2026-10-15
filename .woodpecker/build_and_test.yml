@@ -27,11 +27,13 @@ matrix:
       EC_BOARD_VENDOR: "novacustom"
       EC_BOARD_MODEL: "v540tu"
       BLOBS: "novacustom"
+      CAPSULE: "yes"
 
       # MSI
     - DEVICE: ms7d25_ddr4
       TEST_CONFIG: "msi-pro-z690-a-wifi-ddr4_00039"
       BOARD: "ms7d25_ddr4"
+      CAPSULE: "yes"
 
 clone:
   git:
@@ -42,7 +44,7 @@ clone:
 
 steps:
   - name: ec
-    image: git.3mdeb.com/dasharo/coreboot-build-ci
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/coreboot-builds:/tmp/coreboot-builds
@@ -61,7 +63,7 @@ steps:
 
 
   - name: blobs
-    image: git.3mdeb.com/dasharo/coreboot-build-ci
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     when:
       - matrix:
           BLOBS: "?*"
@@ -73,7 +75,7 @@ steps:
 
 
   - name: build
-    image: git.3mdeb.com/dasharo/coreboot-build-ci
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/coreboot-builds:/tmp/coreboot-builds
@@ -88,9 +90,26 @@ steps:
       - task --taskfile .ci/Taskfile.yml ci:build-coreboot BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}"
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
+  - name: build-capsule
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/coreboot-builds:/tmp/coreboot-builds
+    environment:
+      SSH_AUTH_SOCK: /tmp/no-ssh-agent
+      HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+    when:
+      - matrix:
+          BOARD: "?*"
+          CAPSULE: "yes"
+    commands:
+      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - task --taskfile .ci/Taskfile.yml ci:build-capsule BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}"
+      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+
 
   - name: test
-    image: git.3mdeb.com/dasharo/coreboot-build-ci
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     when:
       - matrix:
           TEST_CONFIG: "?*"
