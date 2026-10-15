@@ -39,7 +39,8 @@ clone:
   git:
     image: woodpeckerci/plugin-git
     settings:
-      recursive: false
+      recursive: true
+      submodule_partial: false
       depth: 0
 
 steps:
