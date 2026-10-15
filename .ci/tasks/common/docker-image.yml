@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+# Category: build
+# Build and optionally push a Docker image.
+# Requires: Docker
+#
+# Variables (override in your Taskfile or via CLI):
+#   IMAGE_NAME   - image name without tag (required, e.g. myorg/myapp)
+#   TAGS         - comma-separated list of one or more tags to build and push
+#                  (default: latest), e.g. "latest,20260826-101500,v1.2.3"
+#   DOCKERFILE   - path to Dockerfile (default: Dockerfile)
+#   CONTEXT      - Docker build context (default: .)
+#   REGISTRY     - registry prefix, e.g. registry.example.com (default: empty)
+#
+# Usage in your Taskfile:
+#   includes:
+#     image:
+#       taskfile: .taskfile-templates/templates/build/docker-image.yml
+#       vars:
+#         IMAGE_NAME: myorg/myapp
+#         DOCKERFILE: .ci/Dockerfile
+
+tasks:
+  build:
+    desc: Build the image, tagged with every entry in TAGS
+    cmds:
+      - |
+        _prefix=""
+        if [ -n "{{.REGISTRY}}" ]; then
+          _prefix="{{.REGISTRY}}/"
+        fi
+        _args=""
+        for _tag in $(echo "{{.TAGS | default "latest"}}" | tr ',' '\n'); do
+          _args="$_args -t ${_prefix}{{.IMAGE_NAME}}:$_tag"
+        done
+        docker build -f {{.DOCKERFILE | default "Dockerfile"}} $_args {{.CONTEXT | default "."}}
+
+  push:
+    desc: Push every entry in TAGS to the registry
+    cmds:
+      - |
+        _prefix=""
+        if [ -n "{{.REGISTRY}}" ]; then _prefix="{{.REGISTRY}}/"; fi
+        for _tag in $(echo "{{.TAGS | default "latest"}}" | tr ',' '\n'); do
+          docker push "${_prefix}{{.IMAGE_NAME}}:$_tag"
+        done
+
+  build-push:
+    desc: Build and push the Docker image in one step
+    cmds:
+      - task: build
+      - task: push
