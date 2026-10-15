@@ -8,6 +8,7 @@ includes:
   build: tasks/build.yml
   blobs: tasks/blobs.yml
   test: tasks/test.yml
+  image: tasks/image.yml
 
 tasks:
   ci:blobs:
@@ -29,3 +30,13 @@ tasks:
     desc: Run tests on build firmware
     cmds:
       - task: test:main
+
+  ci:image:build:
+    desc: Build the CI image, tagged with a UTC timestamp and latest
+    cmds:
+      - task: image:build
+
+  ci:image:release:
+    desc: Build and push the CI image
+    cmds:
+      - task: image:release
