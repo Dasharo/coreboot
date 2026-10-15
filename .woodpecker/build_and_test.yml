@@ -5,6 +5,8 @@
 when:
   - branch: dasharo
     event: [pull_request, push, manual]
+  - branch:  woodpecker-build-test-ci
+    event: [manual]
 
 labels:
   network: office
