@@ -50,3 +50,29 @@ tasks:
       - rm -rf {{.HOSTPATH}}
       - chown -R "$(stat -c %u:%g .)" build
       - test -f build/coreboot.rom
+
+
+  capsule:
+    desc: Build UEFI capsule with build.sh for BOARD
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [BOARD, HOSTPATH]
+    env:
+      SSH_AUTH_SOCK: ""
+    cmds:
+      - rm -rf {{.HOSTPATH}} *.cap
+      - cp -a . {{.HOSTPATH}}
+      - chown -R 0:0 {{.HOSTPATH}}
+      - mkdir -p {{.HOSTPATH}}/keys
+      - cp payloads/external/edk2/workspace/Dasharo/BaseTools/Source/Python/Pkcs7Sign/Test* {{.HOSTPATH}}/keys/
+      - chown -R 0:0 {{.HOSTPATH}}/keys
+      - |
+        cd {{.HOSTPATH}} && \
+        ./capsule.sh make \
+          -t keys/TestRoot.pub.pem \
+          -o keys/TestSub.pub.pem \
+          -s keys/TestCert.pem;
+      - cp {{.HOSTPATH}}/*.cap ./
+      - rm -rf {{.HOSTPATH}}
+      - chown -R "$(stat -c %u:%g .)" *.cap
+      - ls *.cap
