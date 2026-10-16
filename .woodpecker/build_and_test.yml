@@ -10,6 +10,7 @@ when:
 
 labels:
   network: office
+  kvm: true
 
 matrix:
   include:
@@ -115,14 +116,12 @@ steps:
 
   - name: test
     image: git.3mdeb.com/dasharo/osfv-qemu-ci
-    privileged: true
-    kvm: true
+    privileged: true # needs kvm
     environment:
       GITEA_TOKEN:
         from_secret: NCM_BLOBS_TOKEN # TODO own tokenN
       SNIPEIT_CONFIG:
         from_secret: SNIPEIT_YAML_CONFIG_FILE
-
     when:
       - matrix:
           TEST_CONFIG: "**/?*"
