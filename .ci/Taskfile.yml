@@ -26,11 +26,6 @@ tasks:
     cmds:
       - task: build:main
 
-  ci:build-capsule:
-    desc: Build UEFI capsules
-    cmds:
-      - task: build:capsule
-
   ci:test:
     desc: Run tests on build firmware
     cmds:
