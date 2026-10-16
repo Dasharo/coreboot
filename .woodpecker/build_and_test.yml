@@ -24,7 +24,7 @@ matrix:
       EC_BOARD_MODEL: "v540tu"
       EC_REV: "f0439d8d95"
       BLOBS: "novacustom"
-      BLOB_REF: "33612cfaa9"
+      # BLOB_REF_novacustom: "33612cfaa9"
       CAPSULE: "yes"
 
       # MSI
