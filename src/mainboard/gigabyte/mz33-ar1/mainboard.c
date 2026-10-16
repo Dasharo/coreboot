@@ -4,6 +4,7 @@
 #include <amdblocks/amd_pci_util.h>
 #include <cbmem.h>
 #include <drivers/amd/opensil/opensil.h>
+#include <drivers/ipmi/ipmi_ops.h>
 #include <smbios.h>
 #include <soc/amd_pci_int_defs.h>
 #include <stdio.h>
@@ -11,9 +12,49 @@
 
 #include "smbios_oem.h"
 
+/*
+ * The BMC holds the board FRU as FRU device 0. Its board area has the
+ * unique board serial number and the board part number, its product area
+ * the system serial number. The stock BIOS fills SMBIOS type 2 (serial
+ * number, and version from the part number) and type 1 from these. FRU
+ * device 1 only has default values. Read it once, when the SMBIOS tables
+ * are written.
+ */
+#define MZ33_FRU_DEVICE_ID	0
+
+static const struct fru_info_str *board_fru(void)
+{
+	static struct fru_info_str fru;
+	static bool done;
+
+	if (!done) {
+		done = true;
+		read_fru_areas(CONFIG_BMC_KCS_BASE, MZ33_FRU_DEVICE_ID, 0, &fru);
+	}
+
+	return &fru;
+}
+
+static const char *fru_string_or_default(const char *str, const char *fallback)
+{
+	return (str && *str) ? str : fallback;
+}
+
+const char *smbios_mainboard_serial_number(void)
+{
+	return fru_string_or_default(board_fru()->board_info.serial_number,
+				     CONFIG_MAINBOARD_SERIAL_NUMBER);
+}
+
 const char *smbios_system_version(void)
 {
-	return "0100";
+	return fru_string_or_default(board_fru()->prod_info.product_version, "0100");
+}
+
+const char *smbios_system_serial_number(void)
+{
+	return fru_string_or_default(board_fru()->prod_info.serial_number,
+				     CONFIG_MAINBOARD_SERIAL_NUMBER);
 }
 
 /* The IRQ mapping in fch_irq_map ends up getting written to the indirect

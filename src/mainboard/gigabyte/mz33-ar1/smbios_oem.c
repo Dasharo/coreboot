@@ -20,6 +20,7 @@
  */
 
 #include <arch/cpuid.h>
+#include <commonlib/endian.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <device/pci.h>
@@ -27,6 +28,8 @@
 #include <device/pci_ids.h>
 #include <device/pci_ops.h>
 #include <device/pciexp.h>
+#include <drivers/ipmi/ipmi_ops.h>
+#include <rtc.h>
 #include <smbios.h>
 #include <static.h>
 #include <stddef.h>
@@ -237,7 +240,7 @@ static bool is_skipped_function(const struct device *dev)
  * below it is onboard and gets the instance of the "Onboard LAN" SMBIOS
  * type 41 record from the devicetree; anything else is an add-in card.
  */
-static u16 onboard_index(const struct device *dev)
+static u16 dev_onboard_index(const struct device *dev)
 {
 	const struct device *bridge = DEV_PTR(gpp_bridge_5_0_b);
 	const struct device *br;
@@ -292,7 +295,7 @@ static int write_type83(unsigned long *current, int *handle)
 		t->devfn = dev->path.pci.devfn;
 		t->subsystem_vendor_id = pci_read_config16(dev, PCI_SUBSYSTEM_VENDOR_ID);
 		t->subsystem_id = pci_read_config16(dev, PCI_SUBSYSTEM_ID);
-		t->onboard_index = onboard_index(dev);
+		t->onboard_index = dev_onboard_index(dev);
 
 		printk(BIOS_INFO, "%s: MAC %02x:%02x:%02x:%02x:%02x:%02x, %s\n", dev_path(dev),
 		       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
@@ -302,6 +305,108 @@ static int write_type83(unsigned long *current, int *handle)
 	}
 
 	return len;
+}
+
+/*
+ * SMBIOS type 1 UUID. The vendor BIOS (DxeIpmiInitialize.efi) takes it from
+ * the BMC with IPMI Get System GUID. The BMC answers with the UUID of the
+ * SMBIOS tables sent to it on the previous boot, or with its own GUID
+ * (/conf/Sys_GUID.dat) if it has none, so the UUID stays the same across
+ * boots. IPMI sends every GUID field least significant byte first, SMBIOS
+ * only the time fields.
+ *
+ * Firmware that reported no UUID leaves an all-zero one in the BMC. Generate
+ * a new UUID then, in the same form as the one the vendor set on the board:
+ * RFC 4122 version 1 with the midnight of the current day as timestamp, clock
+ * sequence 0 and the MAC address of the onboard NIC port 0 (the device behind
+ * gpp_bridge_5_0_b, function 0) as node, e.g.
+ * f69d0000-f592-11f0-8000-10ffe0abc8b1 for 2026-01-20 and 10:ff:e0:ab:c8:b1.
+ * The BMC returns it from the next boot on. Without an answer from the BMC
+ * the UUID is left unset, a new one on every boot would be worse.
+ */
+
+/* 100 ns intervals from 1582-10-15, the UUID epoch, to 1970-01-01 */
+#define UUID_TIME_OFFSET	0x01b21dd213814000ULL
+#define UUID_VERSION_1		0x1000
+#define UUID_VARIANT_RFC4122	0x80
+
+static bool uuid_is_valid(const u8 uuid[16])
+{
+	bool zeros = true, ones = true;
+
+	for (size_t i = 0; i < 16; i++) {
+		zeros &= uuid[i] == 0x00;
+		ones &= uuid[i] == 0xff;
+	}
+
+	return !zeros && !ones;
+}
+
+static void ipmi_guid_to_smbios_uuid(const u8 guid[16], u8 uuid[16])
+{
+	memcpy(&uuid[0], &guid[12], 4);	/* time_low */
+	memcpy(&uuid[4], &guid[10], 2);	/* time_mid */
+	memcpy(&uuid[6], &guid[8], 2);	/* time_hi_and_version */
+	for (size_t i = 0; i < 8; i++)	/* clock_seq and node */
+		uuid[8 + i] = guid[7 - i];
+}
+
+/* MAC of port 0 of the onboard BCM57416, the device behind gpp_bridge_5_0_b */
+static bool onboard_nic_mac(u8 mac[6])
+{
+	const struct device *bridge = DEV_PTR(gpp_bridge_5_0_b);
+
+	if (!bridge->enabled || !bridge->downstream)
+		return false;
+
+	for (struct device *dev = bridge->downstream->children; dev; dev = dev->sibling) {
+		if (!is_enabled_pci(dev) || (dev->class >> 8) != PCI_CLASS_NETWORK_ETHERNET ||
+		    dev->path.pci.devfn != PCI_DEVFN(0, 0))
+			continue;
+
+		return nic_mac_from_dsn(dev, mac);
+	}
+
+	return false;
+}
+
+static bool generate_uuid(u8 uuid[16])
+{
+	struct rtc_time today;
+	u8 mac[6];
+	u64 time;
+
+	if (!onboard_nic_mac(mac) || rtc_get(&today) || rtc_invalid(&today))
+		return false;
+
+	today.hour = 0;
+	today.min = 0;
+	today.sec = 0;
+	time = (u64)rtc_mktime(&today) * 10000000 + UUID_TIME_OFFSET;
+
+	write_le32(&uuid[0], time);
+	write_le16(&uuid[4], time >> 32);
+	write_le16(&uuid[6], ((time >> 48) & 0x0fff) | UUID_VERSION_1);
+	uuid[8] = UUID_VARIANT_RFC4122;
+	uuid[9] = 0;
+	memcpy(&uuid[10], mac, sizeof(mac));
+
+	return true;
+}
+
+void smbios_system_set_uuid(u8 *uuid)
+{
+	u8 guid[16];
+
+	if (ipmi_get_system_guid(CONFIG_BMC_KCS_BASE, guid) != CB_SUCCESS)
+		return;
+
+	if (uuid_is_valid(guid))
+		ipmi_guid_to_smbios_uuid(guid, uuid);
+	else if (generate_uuid(uuid))
+		printk(BIOS_INFO, "BMC has no system GUID, generated a new UUID\n");
+	else
+		printk(BIOS_ERR, "BMC has no system GUID, could not generate a UUID\n");
 }
 
 int mainboard_smbios_oem_data(struct device *dev, int *handle, unsigned long *current)
