@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+util/prepare-platform.robot
+util/basic-platform-setup.robot
+
+dasharo-compatibility/dmidecode.robot
+dasharo-compatibility/cpu-status.robot
+
+dasharo-security/tpm-support.robot
+dasharo-security/verified-boot.robot
+dasharo-security/secure-boot.robot
+
+dasharo-stability/capsule-update.robot
