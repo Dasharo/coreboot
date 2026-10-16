@@ -76,7 +76,7 @@ steps:
       - matrix:
           BLOBS: "?*"
     environment:
-      BLOBS_TOKEN:
+      NCM_BLOBS_TOKEN:
         from_secret: NCM_BLOBS_TOKEN
     commands:
       - task --taskfile .ci/Taskfile.yml ci:blobs BLOBS=${BLOBS}
