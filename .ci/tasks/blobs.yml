@@ -21,6 +21,7 @@ tasks:
     requires:
       vars: [BLOBS]
     cmds:
+      - git -C "$(git rev-parse --show-toplevel)" submodule update --init --checkout 3rdparty/blobs
       - for: {var: BLOBS, split: ','}
         task: fetch
         vars:
