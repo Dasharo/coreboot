@@ -2,7 +2,8 @@
     "env_vars": {
         "RTE_IP": "127.0.0.1",
         "SNIPEIT_NO": "true",
-        "CONFIG": "qemu"
+        "CONFIG": "qemu",
+        "DEVICE_IP": "127.0.0.1"
     },
     "fw_files": {
         "FW_FILE": "coreboot.rom"
