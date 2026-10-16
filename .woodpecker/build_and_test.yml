@@ -9,29 +9,35 @@ when:
     event: [manual]
 
 labels:
-  network: office
-  kvm: true
+  network: ${NETWORK}
+  kvm: ${QEMU} # set in matrix
 
 matrix:
   include:
       # Emulation
     - BOARD: "x86_q35_uefi_all_menus"
       TEST_CONFIG: ".ci/devices/qemu.json"
+      MANUAL_TESTS_LIST: ".ci/test_lists/basic.txt"
+      QEMU: "true"
 
       # Novacustom
     - BOARD: "v540tnx"
       # TEST_CONFIG: ".ci/devices/novacustom-v540tnd_00266.json"
+      # MANUAL_TESTS_LIST: ".ci/test_lists/basic.txt"
       EC_BOARD_VENDOR: "novacustom"
       EC_BOARD_MODEL: "v540tu"
       EC_REV: "f0439d8d95"
       BLOBS: "novacustom"
       # BLOB_REF_novacustom: "33612cfaa9"
       CAPSULE: "yes"
+      NETWORK: "office"
 
       # MSI
     - BOARD: "ms7d25_ddr4"
       TEST_CONFIG: ".ci/devices/msi-pro-z690-a-wifi-ddr4_00039.json"
+      MANUAL_TESTS_LIST: ".ci/test_lists/basic.txt"
       CAPSULE: "yes"
+      NETWORK: "office"
 
 clone:
   git:
@@ -114,19 +120,33 @@ steps:
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
+  - name: test-qemu
+    image: git.3mdeb.com/dasharo/osfv-qemu-ci
+    privileged: false
+    when:
+      - matrix:
+          QEMU: "true"
+    commands:
+      - |
+        task --taskfile .ci/Taskfile.yml ci:test \
+        TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}"
+
+
   - name: test
     image: git.3mdeb.com/dasharo/osfv-qemu-ci
-    privileged: true # needs kvm
     environment:
       GITEA_TOKEN:
-        from_secret: NCM_BLOBS_TOKEN # TODO own tokenN
+        from_secret: NCM_BLOBS_TOKEN # TODO own token
       SNIPEIT_CONFIG:
         from_secret: SNIPEIT_YAML_CONFIG_FILE
     when:
       - matrix:
           TEST_CONFIG: "**/?*"
+        evaluate: 'QEMU != "true"'
     commands:
       - mkdir -p /root/.osfv
       - printf '%s\n' "$${SNIPEIT_CONFIG}" > /root/.osfv/snipeit.yml
       - chmod 600 /root/.osfv/snipeit.yml
-      - task --taskfile .ci/Taskfile.yml ci:test TEST_CONFIG=${TEST_CONFIG}
+      - |
+        task --taskfile .ci/Taskfile.yml ci:test \
+        TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}"
