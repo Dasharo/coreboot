@@ -28,6 +28,10 @@
  *    web interface and Redfish use for the host BIOS/system information.
  *    Sending it as a "get" (0x21) is answered with 0xc5, as that table
  *    entry has no get handler.
+ *  - 0x57, set only: POST is complete ("BIOS ready"), followed by one data
+ *    byte 0. The BMC then starts its MCTP PCIe/I2C endpoint discovery and
+ *    I3C device init. The vendor BIOS sends it at ReadyToBoot
+ *    (GbtBiosReady.efi), right after driving its BIOS ready GPIO.
  *
  * Payload layout, all blocks back to back:
  *
@@ -57,10 +61,16 @@
 
 #define GIGABYTE_SUBCMD_GET_SHM_ADDR		0x0a
 #define GIGABYTE_SUBCMD_SET_SMBIOS_READY	0x0b
+#define GIGABYTE_SUBCMD_SET_BIOS_READY		0x57
 
 struct gigabyte_oem_req {
 	uint8_t iana[3];
 	uint8_t subcmd;
+} __packed;
+
+struct gigabyte_set_bios_ready_req {
+	struct gigabyte_oem_req hdr;
+	uint8_t data;		/* 0: start the BMC's device discovery */
 } __packed;
 
 struct gigabyte_get_shm_addr_rsp {
