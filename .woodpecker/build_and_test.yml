@@ -14,23 +14,20 @@ labels:
 matrix:
   include:
       # Emulation
-    - DEVICE: qemu
-      TEST_CONFIG: "qemu"
-      BOARD: "x86_q35_uefi_all_menus"
+    - BOARD: "x86_q35_uefi_all_menus"
+      TEST_CONFIG: ".ci/devices/qemu.json"
 
       # Novacustom
-    - DEVICE: v540tnx
-      TEST_CONFIG: "novacustom-v540tnd_00266"
-      BOARD: "v540tnx"
+    - BOARD: "v540tnx"
+      TEST_CONFIG: ".ci/devices/novacustom-v540tnd_00266.json"
       EC_BOARD_VENDOR: "novacustom"
       EC_BOARD_MODEL: "v540tu"
       BLOBS: "novacustom"
       CAPSULE: "yes"
 
       # MSI
-    - DEVICE: ms7d25_ddr4
-      TEST_CONFIG: "msi-pro-z690-a-wifi-ddr4_00039"
-      BOARD: "ms7d25_ddr4"
+    - BOARD: "ms7d25_ddr4"
+      TEST_CONFIG: ".ci/devices/msi-pro-z690-a-wifi-ddr4_00039.json"
       CAPSULE: "yes"
 
 clone:
@@ -109,9 +106,12 @@ steps:
 
 
   - name: test
-    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    image: git.3mdeb.com/dasharo/osfv-qemu-ci
+    environment:
+      GITEA_TOKEN:
+        from_secret: NCM_BLOBS_TOKEN # TODO own token
     when:
       - matrix:
-          TEST_CONFIG: "?*"
+          TEST_CONFIG: "**/?*"
     commands:
       - task --taskfile .ci/Taskfile.yml ci:test TEST_CONFIG=${TEST_CONFIG}
