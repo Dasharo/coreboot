@@ -4,7 +4,7 @@ config EDK2_REPOSITORY
 	default "https://github.com/Dasharo/edk2"
 
 config EDK2_TAG_OR_REV
-	default "be9b37bf5da2fcae560e858fa2fd6db3a5dfa92b"
+	default "4fa9693f83ebd4a8b6677533f78f48e6fe89dc47"
 
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
@@ -507,5 +507,27 @@ config EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET
 	  method. Note that the Capsule Updates produced for platforms that
 	  select this option, must not set CAPSULE_FLAGS_PERSIST_ACROSS_RESET
 	  in the Capsule flags field.
+
+config EDK2_IPMI
+	bool "Enable IPMI KCS transport in edk2"
+	select EDK2_USE_EDK2_PLATFORMS
+	default n
+	help
+	  Adds the GenericIpmi DXE driver from the edk2-platforms
+	  IpmiFeaturePkg, which produces the IPMI transport protocol on the
+	  KCS interface at BMC_KCS_BASE.
+
+config EDK2_GIGABYTE_BMC_SYSINFO
+	bool
+	depends on IPMI_GIGABYTE_SMBIOS_OEM
+	select EDK2_IPMI
+	default y
+	help
+	  At ReadyToBoot, adds SMBIOS OEM records describing SATA/NVMe disks
+	  and NICs and sends the SMBIOS tables plus disk/NIC/CPU data to the
+	  BMC using Gigabyte's OEM IPMI commands and the ASPEED P2A bridge, as
+	  the vendor BIOS does. This fills in the host BIOS, disk and NIC
+	  information in the BMC web interface and Redfish on boards like
+	  the Gigabyte MZ33-AR1.
 
 endif
