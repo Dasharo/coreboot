@@ -59,7 +59,7 @@ steps:
           EC_BOARD_MODEL: "?*"
     environment:
       GITEA_TOKEN:
-        from_secret: NCM_BLOBS_TOKEN # TODO own token
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
       HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
       - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
@@ -124,7 +124,7 @@ steps:
     image: git.3mdeb.com/dasharo/osfv-qemu-ci
     environment:
       GITEA_TOKEN:
-        from_secret: NCM_BLOBS_TOKEN # TODO own token
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
       NFS_IP: 192.168.10.217
       QEMU_HDD_BASE: /srv/nfs/disk-images/qemu/ubuntu_windows_compacted.qcow2
     privileged: true # for /dev/kvm
@@ -144,7 +144,7 @@ steps:
     image: git.3mdeb.com/dasharo/osfv-qemu-ci
     environment:
       GITEA_TOKEN:
-        from_secret: NCM_BLOBS_TOKEN # TODO own token
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
       SNIPEIT_CONFIG:
         from_secret: SNIPEIT_YAML_CONFIG_FILE
     when:
