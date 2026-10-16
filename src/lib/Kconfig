@@ -7,6 +7,14 @@ config MISSING_BOARD_RESET
 	  implementation. This activates a stub that logs the missing
 	  board reset and halts execution.
 
+config COREBOOT_TABLE_GPIOS
+	bool
+	default y if CHROMEOS
+	help
+	  Pass the GPIOs from the mainboard's fill_lb_gpios() to the payload
+	  in the coreboot table (LB_TAG_GPIO). Always enabled with ChromeOS;
+	  other boards select it when their payload needs to find a GPIO.
+
 config ROMSTAGE_ADA
 	bool
 	help
