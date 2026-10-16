@@ -122,11 +122,19 @@ steps:
 
   - name: test-qemu
     image: git.3mdeb.com/dasharo/osfv-qemu-ci
-    privileged: false
+    environment:
+      GITEA_TOKEN:
+        from_secret: NCM_BLOBS_TOKEN # TODO own token
+      NFS_IP: 192.168.10.217
+      QEMU_HDD_BASE: /srv/nfs/disk-images/qemu/ubuntu_windows_compacted.qcow2
+    privileged: true # for /dev/kvm
     when:
       - matrix:
           QEMU: "true"
     commands:
+      - mkdir -p /srv/nfs/disk-images
+      - mount -t nfs -o nolock,ro "$${NFS_IP}":/srv/nfs/disk-images /srv/nfs/disk-images
+      - mountpoint -q /srv/nfs/disk-images
       - |
         task --taskfile .ci/Taskfile.yml ci:test \
         TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}"
@@ -149,4 +157,5 @@ steps:
       - chmod 600 /root/.osfv/snipeit.yml
       - |
         task --taskfile .ci/Taskfile.yml ci:test \
-        TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}"
+        TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}" \
+        QEMU="${QEMU}"
