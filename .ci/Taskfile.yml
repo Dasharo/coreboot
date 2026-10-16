@@ -34,6 +34,7 @@ tasks:
   ci:test:
     desc: Run tests on build firmware
     cmds:
+      - task: test:clone
       - task: test:main
 
   ci:image:build:
