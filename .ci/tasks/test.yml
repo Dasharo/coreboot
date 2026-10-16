@@ -15,7 +15,7 @@ tasks:
     cmds:
       - rm -rf osfv
       - |
-        git clone --depth 1 --recurse-submodules --branch ci-stability-device-configurable \
+        git clone --depth 1 --recurse-submodules --branch using-stability-ci-outside \
         https://ci:$GITEA_TOKEN@git.3mdeb.com/Dasharo/open-source-firmware-validation.git \
         osfv
 
@@ -27,6 +27,6 @@ tasks:
     cmds:
       - |
         DEVICE={{.REPO_ROOT}}/{{.TEST_CONFIG}} REPEATS=1 LOGS_DIR={{.REPO_ROOT}}/test-logs \
-        OSFV_ROMS_DIR={{.REPO_ROOT}}/build \
+        OSFV_ROMS_DIR={{.REPO_ROOT}}/build QEMU="${QEMU}" \
         {{if .MANUAL_TESTS_LIST}}MANUAL_TESTS_LIST={{.REPO_ROOT}}/{{.MANUAL_TESTS_LIST}}{{end}} \
         task -t osfv/.ci/Taskfile.yml -d osfv ci:stability-device;
