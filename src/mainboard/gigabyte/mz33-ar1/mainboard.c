@@ -74,15 +74,18 @@ void smbios_fill_dimm_locator(const struct dimm_info *dimm, struct smbios_type17
 	char locator[40];
 
 	/*
-	 * DIMM slots are anemd by channel number and dimm number:
-	 * Channels: A, B, C, D, etc.
-	 * DIMMs: A0, A1, B0, B1, etc.
+	 * Same names as the vendor BIOS, DIMM_P<socket>_<channel><dimm>:
+	 * DIMM_P0_A0, DIMM_P0_A1, DIMM_P0_B0, ... on this single socket board.
+	 * The BMC parses the locator to map each DIMM to its status sensor and
+	 * only accepts "DIMM_P%d_%c%d", "DIMM %c%d" with a digit as channel,
+	 * or "CPU%d_HBMIO%d". Anything else fails the whole DIMM inventory
+	 * ("Error in Parse Dimm Status: Out Of Spec Define").
 	 */
-	snprintf(locator, sizeof(locator), "DIMM %c%u",
+	snprintf(locator, sizeof(locator), "DIMM_P0_%c%u",
 		'A' + dimm->channel_num, dimm->dimm_num);
 	t->device_locator = smbios_add_string(t->eos, locator);
 
-	snprintf(locator, sizeof(locator), "BANK %d", dimm->bank_locator);
+	snprintf(locator, sizeof(locator), "BANK %u", dimm->dimm_num);
 	t->bank_locator = smbios_add_string(t->eos, locator);
 }
 
