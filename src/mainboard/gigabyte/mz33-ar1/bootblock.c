@@ -50,7 +50,8 @@ static const struct soc_amd_gpio gpio_table[] = {
 	PAD_NF(GPIO_76, SPI_TPM_CS_L, PULL_UP),
 	PAD_GPI(GPIO_89, PULL_UP),
 	PAD_NF(GPIO_89, PM_INTR_L, PULL_NONE),
-	PAD_GPO(GPIO_115, LOW),
+	/* POST complete to the BMC, active low, see post_complete.c */
+	PAD_GPO(GPIO_115, HIGH),
 	PAD_GPO(GPIO_116, LOW),
 	PAD_NF(GPIO_129, KBRST_L, PULL_UP),
 	PAD_NF(GPIO_135, UART0_CTS_L, PULL_NONE),
