@@ -26,9 +26,9 @@ tasks:
       vars: [TEST_CONFIG]
     cmds:
       - |
-        task -t osfv/.ci/Taskfile.yml -d osfv ci:stability-device \
         DEVICE={{.REPO_ROOT}}/{{.TEST_CONFIG}} REPEATS=1 LOGS_DIR={{.REPO_ROOT}}/test-logs \
-        OSFV_ROMS_DIR={{.REPO_ROOT}}/build
+        OSFV_ROMS_DIR={{.REPO_ROOT}}/build \
+        task -t osfv/.ci/Taskfile.yml -d osfv ci:stability-device;
       - echo "TODO Would test"
       - echo "TODO Clone OSFV, run task stability:device"
       - echo "TODO use config from .ci/devices/ and the build binary"
