@@ -5,11 +5,16 @@
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
+
+BLOB_NAME="${BLOB_NAME:?}"
 BLOB_METHOD="${BLOB_METHOD:?}"
 BLOB_URL="${BLOB_URL:?}"
-BLOB_REF="${BLOB_REF:-}"
+
 BLOB_PATH="${BLOB_PATH:-}"
 BLOB_PATH="${REPO_ROOT}/${BLOB_PATH}"
+
+ref_override="BLOB_REF_${BLOB_NAME}"
+BLOB_REF="${!ref_override:-${BLOB_REF:-}}"
 
 function die { # $1: msg
     printf "$1\n" >&2
