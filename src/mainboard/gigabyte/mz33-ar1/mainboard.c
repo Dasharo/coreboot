@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <types.h>
 
+#include "smbios_oem.h"
+
 const char *smbios_system_version(void)
 {
 	return "0100";
@@ -89,16 +91,27 @@ static void mainboard_init(void *chip_info)
 	struct memory_info *mem_info;
 
 	/*
-	 * Update maximum memory capacity for SMBIOS type 16 for this board.
-	 * Turin can support up to 6TB of memory on 24 DIMMS per socket. This
-	 * board populates all 12 channels with 2 DIMMs per channel on one
-	 * socket.
+	 * Update maximum memory capacity and number of DIMM slots for SMBIOS
+	 * type 16 for this board. Turin can support up to 6TB of memory on 24
+	 * DIMMS per socket. This board populates all 12 channels with 2 DIMMs
+	 * per channel on one socket. Both values must be set, otherwise
+	 * smbios_write_type16() replaces them with the populated DIMMs. The
+	 * edk2 payload derives the Gigabyte DIMM record (type 0x85) from them.
 	 */
 	mem_info = cbmem_find(CBMEM_ID_MEMINFO);
-	if (mem_info)
-		mem_info->max_capacity_mib = 6 * 1024 * (GiB / MiB);
+	if (mem_info) {
+		mem_info->max_capacity_mib = MZ33_MAX_MEMORY_GIB * (GiB / MiB);
+		mem_info->number_of_devices = CONFIG_DIMM_MAX;
+	}
+}
+
+static void mainboard_enable(struct device *dev)
+{
+	if (CONFIG(GENERATE_SMBIOS_TABLES))
+		dev->ops->get_smbios_data = mainboard_smbios_oem_data;
 }
 
 struct chip_operations mainboard_ops = {
 	.init = mainboard_init,
+	.enable_dev = mainboard_enable,
 };
