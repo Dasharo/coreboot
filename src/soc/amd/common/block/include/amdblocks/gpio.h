@@ -84,6 +84,9 @@ void gpio_configure_pads_with_override(const struct soc_amd_gpio *base_cfg,
  * @return none
  */
 void gpio_configure_pads(const struct soc_amd_gpio *gpio_list_ptr, size_t size);
+
+/* MMIO address of the GPIO's control register (GPIO_OUTPUT_VALUE etc.) */
+uintptr_t gpio_control_address(gpio_t gpio_num);
 /* Return the interrupt status and clear if set. */
 int gpio_interrupt_status(gpio_t gpio);
 /* Implemented by soc, provides table of available GPIO mapping to Gevents */
