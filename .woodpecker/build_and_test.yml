@@ -52,7 +52,7 @@ steps:
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/coreboot-builds:/tmp/coreboot-builds
+      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
     when:
       - matrix:
           EC_BOARD_VENDOR: "?*"
@@ -60,14 +60,14 @@ steps:
     environment:
       GITEA_TOKEN:
         from_secret: NCM_BLOBS_TOKEN # TODO own token
-      HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+      HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
-      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - |
         task --taskfile .ci/Taskfile.yml ci:build-ec \
         EC_BOARD_VENDOR=${EC_BOARD_VENDOR} EC_BOARD_MODEL=${EC_BOARD_MODEL} \
         HOSTPATH="$${HOSTPATH}" EC_REV="${EC_REV}"
-      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
   - name: blobs
@@ -86,38 +86,38 @@ steps:
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/coreboot-builds:/tmp/coreboot-builds
+      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
-      HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+      HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     when:
       - matrix:
           BOARD: "?*"
     commands:
-      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - |
         task --taskfile .ci/Taskfile.yml ci:build-coreboot \
         BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}" \
         EDK2_REPO="${EDK2_REPO}" EDK2_REV="${EDK2_REV}"
-      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
   - name: build-capsule
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/coreboot-builds:/tmp/coreboot-builds
+      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
-      HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+      HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     when:
       - matrix:
           BOARD: "?*"
           CAPSULE: "yes"
     commands:
-      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - task --taskfile .ci/Taskfile.yml ci:build-capsule BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}"
-      - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
   - name: test-qemu
