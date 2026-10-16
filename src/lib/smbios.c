@@ -203,17 +203,18 @@ static void smbios_fill_dimm_fw_version(const char *fw_version, struct smbios_ty
 		}
 	}
 
-	if (len == 0) {
-		/* Null String in Part Number will have "None" instead. */
-		t->part_number = smbios_add_string(t->eos, "None");
-	} else if (invalid) {
+	/* No firmware version: leave the string number 0 (not specified) */
+	if (len == 0)
+		return;
+
+	if (invalid) {
 		char string_buffer[sizeof(trimmed_fw_version) + 10];
 
 		snprintf(string_buffer, sizeof(string_buffer), "Invalid (%s)",
 			 trimmed_fw_version);
-		t->part_number = smbios_add_string(t->eos, string_buffer);
+		t->firmware_version = smbios_add_string(t->eos, string_buffer);
 	} else {
-		t->part_number = smbios_add_string(t->eos, trimmed_fw_version);
+		t->firmware_version = smbios_add_string(t->eos, trimmed_fw_version);
 	}
 }
 
