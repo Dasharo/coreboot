@@ -162,6 +162,11 @@ static void master_switch_set(uint32_t or)
 	gpio_or32(master_reg, or);
 }
 
+uintptr_t gpio_control_address(gpio_t gpio_num)
+{
+	return (uintptr_t)gpio_ctrl_ptr(gpio_num);
+}
+
 int gpio_get(gpio_t gpio_num)
 {
 	uint32_t reg;
