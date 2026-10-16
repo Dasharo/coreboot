@@ -3,10 +3,32 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: '3'
+
+vars:
+  REPO_ROOT:
+    sh: git rev-parse --show-toplevel
+
 tasks:
+  clone:
+    desc: Clone OSFV
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - rm -rf osfv
+      - |
+        git clone --depth 1 --recurse-submodules --branch ci-stability-device-configurable \
+        https://ci:$GITEA_TOKEN@git.3mdeb.com/Dasharo/open-source-firmware-validation.git \
+        osfv
+
   main:
     desc: Test build firmware
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [TEST_CONFIG]
     cmds:
+      - |
+        task -t osfv/.ci/Taskfile.yml -d osfv ci:stability-device \
+        DEVICE={{.REPO_ROOT}}/{{.TEST_CONFIG}} REPEATS=1 LOGS_DIR={{.REPO_ROOT}}/test-logs \
+        OSFV_ROMS_DIR={{.REPO_ROOT}}/build
       - echo "TODO Would test"
       - echo "TODO Clone OSFV, run task stability:device"
       - echo "TODO use config from .ci/devices/ and the build binary"
