@@ -376,6 +376,10 @@ ifeq ($(CONFIG_EDK2_USB_PORT_POWER_OPTION),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowUsbPowerOption=TRUE
 endif
 
+ifeq ($(CONFIG_EDK2_BATTERY_BOOST_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowBatteryBoostOption=TRUE
+endif
+
 ifeq ($(CONFIG_EDK2_DGPU_POWER_OPTION),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowDGPUPowerOption=TRUE
 endif

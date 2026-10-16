@@ -183,6 +183,16 @@ uint8_t dasharo_get_usb_port_power(void)
 	return usb_port_power;
 }
 
+bool dasharo_get_battery_boost(void)
+{
+	bool battery_boost = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("BatteryBoost", &battery_boost);
+
+	return battery_boost;
+}
+
 bool dasharo_resizeable_bars_enabled(void)
 {
 	static bool enabled = false;

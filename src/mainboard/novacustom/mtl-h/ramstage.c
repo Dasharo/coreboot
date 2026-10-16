@@ -76,6 +76,25 @@ static void set_usb_charge_port(void)
 	dasharo_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
 }
 
+static void set_battery_boost(void)
+{
+	struct smfi_option_get_cmd {
+		uint8_t index;
+		uint8_t value;
+	} __packed cmd = {
+		OPT_ALLOW_BAT_BOOST,
+		0
+	};
+
+	/* Without the menu option, leave the value stored in the EC untouched */
+	if (!CONFIG(EDK2_BATTERY_BOOST_OPTION))
+		return;
+
+	cmd.value = dasharo_get_battery_boost();
+
+	dasharo_ec_smfi_cmd(CMD_OPTION_SET, sizeof(cmd), (uint8_t *)&cmd);
+}
+
 void __weak variant_devtree_update(void)
 {
 	/* Override dev tree settings per board */
@@ -105,6 +124,7 @@ static void mainboard_init(void *chip_info)
 	set_battery_thresholds();
 	set_power_on_ac();
 	set_usb_charge_port();
+	set_battery_boost();
 
 	variant_devtree_update();
 }

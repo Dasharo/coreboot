@@ -108,6 +108,14 @@ uint8_t dasharo_get_power_on_after_fail(void);
  */
 uint8_t dasharo_get_usb_port_power(void);
 
+/* Looks up Dasharo/"BatteryBoost" variable.
+ *
+ * Result:
+ *  - false - Battery does not supplement the AC adapter (default)
+ *  - true  - Battery may supplement the AC adapter under load
+ */
+bool dasharo_get_battery_boost(void);
+
 /* Looks up Dasharo/"PCIeResizeableBarsEnabled" variable if resizable PCIe BARs
  * support was enabled at compile-time.
  *

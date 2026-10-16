@@ -237,6 +237,16 @@ config EDK2_USB_PORT_POWER_OPTION
 	  Shows the USB Port Power option in EDK2 power configuration submenu in
 	  Dasharo System Features menu.
 
+config EDK2_BATTERY_BOOST_OPTION
+	bool "Show Battery Boost option in Dasharo Power Configuration Menu"
+	default n
+	depends on EDK2_DASHARO_POWER_CONFIG
+	help
+	  Shows the Battery Boost option in EDK2 power configuration submenu in
+	  Dasharo System Features menu. When enabled by the user, the EC lets the
+	  battery supplement the AC adapter under load, unless the battery charge
+	  is low.
+
 config EDK2_DGPU_POWER_OPTION
 	bool "Show DGPU power option in Dasharo Power Configuration Menu"
 	default n
