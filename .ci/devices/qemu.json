@@ -3,5 +3,8 @@
         "RTE_IP": "127.0.0.1",
         "SNIPEIT_NO": "true",
         "CONFIG": "qemu"
+    },
+    "fw_files": {
+        "FW_FILE": "coreboot.rom"
     }
 }
