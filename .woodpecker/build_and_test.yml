@@ -19,10 +19,12 @@ matrix:
 
       # Novacustom
     - BOARD: "v540tnx"
-      TEST_CONFIG: ".ci/devices/novacustom-v540tnd_00266.json"
+      # TEST_CONFIG: ".ci/devices/novacustom-v540tnd_00266.json"
       EC_BOARD_VENDOR: "novacustom"
       EC_BOARD_MODEL: "v540tu"
+      EC_REV: "f0439d8d95"
       BLOBS: "novacustom"
+      BLOB_REF: "33612cfaa9"
       CAPSULE: "yes"
 
       # MSI
@@ -54,7 +56,10 @@ steps:
       HOSTPATH: /tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
-      - task --taskfile .ci/Taskfile.yml ci:build-ec EC_BOARD_VENDOR=${EC_BOARD_VENDOR} EC_BOARD_MODEL=${EC_BOARD_MODEL} HOSTPATH="$${HOSTPATH}"
+      - |
+        task --taskfile .ci/Taskfile.yml ci:build-ec \
+        EC_BOARD_VENDOR=${EC_BOARD_VENDOR} EC_BOARD_MODEL=${EC_BOARD_MODEL} \
+        HOSTPATH="$${HOSTPATH}" EC_REV="${EC_REV}"
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
@@ -83,7 +88,10 @@ steps:
           BOARD: "?*"
     commands:
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
-      - task --taskfile .ci/Taskfile.yml ci:build-coreboot BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}"
+      - |
+        task --taskfile .ci/Taskfile.yml ci:build-coreboot \
+        BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}" \
+        EDK2_REPO="${EDK2_REPO}" EDK2_REV="${EDK2_REV}"
       - docker run --rm -v /tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
@@ -107,11 +115,19 @@ steps:
 
   - name: test
     image: git.3mdeb.com/dasharo/osfv-qemu-ci
+    privileged: true
+    kvm: true
     environment:
       GITEA_TOKEN:
-        from_secret: NCM_BLOBS_TOKEN # TODO own token
+        from_secret: NCM_BLOBS_TOKEN # TODO own tokenN
+      SNIPEIT_CONFIG:
+        from_secret: SNIPEIT_YAML_CONFIG_FILE
+
     when:
       - matrix:
           TEST_CONFIG: "**/?*"
     commands:
+      - mkdir -p /root/.osfv
+      - printf '%s\n' "$${SNIPEIT_CONFIG}" > /root/.osfv/snipeit.yml
+      - chmod 600 /root/.osfv/snipeit.yml
       - task --taskfile .ci/Taskfile.yml ci:test TEST_CONFIG=${TEST_CONFIG}
