@@ -5,6 +5,7 @@ bootblock-y += bootblock.c
 all-y += die.c
 smm-y += die.c
 
+ramstage-y += post_complete.c
 ramstage-$(CONFIG_GENERATE_SMBIOS_TABLES) += smbios_oem.c
 
 ifneq ($(wildcard $(src)/mainboard/$(MAINBOARDDIR)/data.apcb),)
