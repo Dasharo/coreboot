@@ -28,6 +28,7 @@ tasks:
       - |
         DEVICE={{.REPO_ROOT}}/{{.TEST_CONFIG}} REPEATS=1 LOGS_DIR={{.REPO_ROOT}}/test-logs \
         OSFV_ROMS_DIR={{.REPO_ROOT}}/build \
+        {{if .MANUAL_TESTS_LIST}}MANUAL_TESTS_LIST={{.REPO_ROOT}}/{{.MANUAL_TESTS_LIST}}{{end}} \
         task -t osfv/.ci/Taskfile.yml -d osfv ci:stability-device;
       - echo "TODO Would test"
       - echo "TODO Clone OSFV, run task stability:device"
