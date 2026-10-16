@@ -77,7 +77,7 @@ steps:
           BLOBS: "?*"
     environment:
       NCM_BLOBS_TOKEN:
-        from_secret: NCM_BLOBS_TOKEN
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
     commands:
       - task --taskfile .ci/Taskfile.yml ci:blobs BLOBS=${BLOBS}
 
