@@ -605,8 +605,8 @@ static uintptr_t write_coreboot_table(uintptr_t rom_table_end)
 	/* Record our framebuffer */
 	lb_framebuffer(head);
 
-	/* Record our GPIO settings (ChromeOS specific) */
-	if (CONFIG(CHROMEOS))
+	/* Record our GPIO settings */
+	if (CONFIG(COREBOOT_TABLE_GPIOS))
 		lb_gpios(head);
 
 	/* pass along VBNV offsets in CMOS */
