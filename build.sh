@@ -49,6 +49,10 @@ usage() {
   echo -e "\tasrock_turind8ud_uefi      - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (UEFI)"
   echo -e "\tasrock_turind8ud_linuxboot - build Dasharo compatible with ASRock Rack TURIND8UD-2T/X550 (LinuxBoot)"
   echo -e "\tmz33_ar1                   - build Dasharo compatible with Gigabyte MZ33-AR1"
+  echo
+  echo "Environment variables:"
+  echo -e "\tCONFIG_OVERRIDES:          - newline separated overrides of .config settings."
+  echo -e "\t\te.g. CONFIG_OVERRIDES='CONFIG_EDK2_TAG_OR_REV="origin/my-branch"'"
 }
 
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.6"}
@@ -74,6 +78,7 @@ function build_prep {
   fi
 
   cp "${DEFCONFIG}" .config
+  echo "${CONFIG_OVERRIDES:-}" >> .config
 
   git submodule update --init --checkout $@
 }
