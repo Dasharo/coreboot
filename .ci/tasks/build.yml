@@ -20,12 +20,13 @@ tasks:
     env:
       EC_BOARD_VENDOR: '{{.EC_BOARD_VENDOR}}'
       EC_BOARD_MODEL: '{{.EC_BOARD_MODEL}}'
+      EC_REV: '{{.EC_REV | default "master"}}'
     cmds:
-      - echo "Would build EC {{.EC_BOARD_VENDOR}} - {{.EC_BOARD_MODEL}}"
       - rm -rf ec.rom
       - rm -rf {{.HOSTPATH}}
       - mkdir -p {{.HOSTPATH}}
-      - git clone --depth 1 --recurse-submodules https://ci:$GITEA_TOKEN@git.3mdeb.com/Dasharo/ec.git {{.HOSTPATH}}/ec
+      - git clone --recurse-submodules https://ci:$GITEA_TOKEN@git.3mdeb.com/Dasharo/ec.git {{.HOSTPATH}}/ec
+      - cd {{.HOSTPATH}}/ec && git checkout --recurse-submodules "${EC_REV}"
       - cd {{.HOSTPATH}}/ec && ./build.sh;
       - test -f {{.HOSTPATH}}/ec/{{.EC_BOARD_VENDOR}}_{{.EC_BOARD_MODEL}}_ec.rom
       - cp {{.HOSTPATH}}/ec/{{.EC_BOARD_VENDOR}}_{{.EC_BOARD_MODEL}}_ec.rom ec.rom
@@ -40,11 +41,22 @@ tasks:
       vars: [BOARD, HOSTPATH]
     env:
       SSH_AUTH_SOCK: ""
+      # Chainging the repo and Rev for other modules
+      # possible once it's supported by the Kconfigs
+      # E.g. iPXE is not today when this comment is written
+      EDK2_REPO: '{{.EDK2_REPO}}'
+      EDK2_REV: '{{.EDK2_REV}}'
+      CONFIG_OVERRIDES: |
+        {{if .EDK2_REPO}}CONFIG_EDK2_REPOSITORY="{{.EDK2_REPO}}"{{end}}
+        {{if .EDK2_REV}}CONFIG_EDK2_TAG_OR_REV="{{.EDK2_REV}}"{{end}}
+
     cmds:
       - rm -rf {{.HOSTPATH}} build
       - mkdir -p {{.HOSTPATH}}
       - cp -a . {{.HOSTPATH}}
       - chown -R 0:0 {{.HOSTPATH}}
+      # Configuring submodule revisions example
+      # - cd {{.HOSTPATH}} && git update-index --cacheinfo 160000,<rev>,3rdparty/dasharo-blobs
       - cd {{.HOSTPATH}} && ./build.sh {{.BOARD}}
       - rm -rf build && cp -a {{.HOSTPATH}}/build build
       - rm -rf {{.HOSTPATH}}
