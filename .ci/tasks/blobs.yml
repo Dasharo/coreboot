@@ -26,7 +26,7 @@ tasks:
     env:
       BLOB_METHOD: '{{.BLOB.method}}'
       BLOB_URL: '{{.BLOB.url}}'
-      BLOB_REF: '{{.BLOB.ref}}'
+      BLOB_REF: '{{.BLOBS_REF | default .BLOB.ref}}'
       BLOB_PATH: '{{.BLOB.path}}'
       BLOB_TOKEN: '{{.BLOB.token | default ""}}'
     cmds:
