@@ -60,7 +60,7 @@ steps:
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
-      HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+      HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
       - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - |
@@ -89,7 +89,7 @@ steps:
       - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
-      HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+      HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
     when:
       - matrix:
           BOARD: "?*"
@@ -151,6 +151,6 @@ steps:
     volumes:
       - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
     environment:
-        HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+        HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
       - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="$${HOSTPATH}"
