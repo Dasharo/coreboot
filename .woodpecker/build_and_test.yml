@@ -142,3 +142,15 @@ steps:
         task --taskfile .ci/Taskfile.yml ci:test \
         TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}" \
         QEMU="${QEMU}"
+
+
+  - name: cleanup
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    when:
+      - status: [success, failure]
+    volumes:
+      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
+    environment:
+        HOSTPATH: /var/tmp/coreboot-builds/${CI_PIPELINE_NUMBER}-${BOARD}
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="$${HOSTPATH}"
