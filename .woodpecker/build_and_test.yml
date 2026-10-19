@@ -48,6 +48,16 @@ clone:
       depth: 0
 
 steps:
+  - name: report-init
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    environment:
+      GITHUB_REPO: Dasharo/coreboot
+      GITHUB_TOKEN:
+        from_secret: GITHUB_STATUS_TOKEN
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:report:init BOARD="${BOARD}"
+
+
   - name: ec
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     volumes:
@@ -142,6 +152,20 @@ steps:
         task --taskfile .ci/Taskfile.yml ci:test \
         TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}" \
         QEMU="${QEMU}"
+
+
+  - name: report
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    when:
+      - status: [success, failure]
+    environment:
+      GITHUB_REPO: Dasharo/coreboot
+      GITHUB_TOKEN:
+        from_secret: GITHUB_STATUS_TOKEN
+      WOODPECKER_TOKEN:
+        from_secret: WOODPECKER_API_TOKEN
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:report:publish BOARD="${BOARD}"
 
 
   - name: cleanup
