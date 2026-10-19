@@ -9,6 +9,7 @@ vars:
     sh: git rev-parse --show-toplevel
 
 tasks:
+# TODO change OSFV branch to develop or a constant revision once required changes are merged
   clone:
     desc: Clone OSFV
     dir: '{{.REPO_ROOT}}'
