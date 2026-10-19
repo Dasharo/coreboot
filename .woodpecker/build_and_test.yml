@@ -54,6 +54,7 @@ steps:
       GITHUB_REPO: Dasharo/coreboot
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
+    failure: ignore
     commands:
       - task --taskfile .ci/Taskfile.yml ci:report:init BOARD="${BOARD}"
 
@@ -168,6 +169,7 @@ steps:
         from_secret: CONTENT_STATUSES_CI_TOKEN
       WOODPECKER_TOKEN:
         from_secret: WOODPECKER_BUILDER_API_TOKEN
+    failure: ignore
     commands:
       - task --taskfile .ci/Taskfile.yml ci:report:publish BOARD="${BOARD}"
 
