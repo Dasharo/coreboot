@@ -19,7 +19,7 @@ CONTEXT="woodpecker/${BOARD}"
 # https://docs.github.com/en/rest/commits/statuses#create-a-commit-status
 publish_ci_status() { # $1=state, $2=context, $3=link_url, $4=description
     echo "Publishing status "$1" of "$2" to "$3""
-    curl -fsS -o /dev/null -X POST -H "$GH_AUTH" "${GH_API}/statuses/${CI_COMMIT_SHA}" \
+    curl -sS --fail-with-body -X POST -H "$GH_AUTH" "${GH_API}/statuses/${CI_COMMIT_SHA}" \
         -d "$(jq -cn --arg state "$1" --arg context "$2" --arg target_url "$3" --arg description "$4" \
         '{state: $state, context: $context, target_url: $target_url, description: $description}')"
 }
@@ -28,7 +28,7 @@ publish_ci_status() { # $1=state, $2=context, $3=link_url, $4=description
 # Once the GH mirror is updated, the result will automatically attach to the
 # commit
 ensure_commit_on_github() {
-    curl -fsS -o /dev/null -H "$GH_AUTH" "${GH_API}/commits/${CI_COMMIT_SHA}" && return
+    curl -sS --fail-with-body -H "$GH_AUTH" "${GH_API}/commits/${CI_COMMIT_SHA}" && return
     echo "Commit does not exist on GH yet, creating a pending status object"
     git push -q "https://x-access-token:${GITHUB_COMMIT_TOKEN}@github.com/${GITHUB_REPO}.git" \
         "${CI_COMMIT_SHA}:refs/ci-pending/${CI_COMMIT_SHA}"
