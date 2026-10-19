@@ -6,13 +6,14 @@
 set -euo pipefail
 
 GITHUB_REPO="${GITHUB_REPO:?}"
-GITHUB_TOKEN="${GITHUB_TOKEN:?}"
+GITHUB_COMMIT_TOKEN="${GITHUB_COMMIT_TOKEN:?}"
+GITHUB_COMMIT_STATUS_TOKEN=${GITHUB_COMMIT_STATUS_TOKEN:?}
 BOARD="${BOARD:?}"
 CI_COMMIT_SHA="${CI_COMMIT_SHA:?}"
 CI_PIPELINE_URL="${CI_PIPELINE_URL:?}"
 
 GH_API="https://api.github.com/repos/${GITHUB_REPO}"
-GH_AUTH="Authorization: Bearer ${GITHUB_TOKEN}"
+GH_AUTH="Authorization: Bearer ${GITHUB_COMMIT_STATUS_TOKEN}"
 CONTEXT="woodpecker/${BOARD}"
 
 # https://docs.github.com/en/rest/commits/statuses#create-a-commit-status
@@ -29,7 +30,7 @@ publish_ci_status() { # $1=state, $2=context, $3=link_url, $4=description
 ensure_commit_on_github() {
     curl -fsS -o /dev/null -H "$GH_AUTH" "${GH_API}/commits/${CI_COMMIT_SHA}" && return
     echo "Commit does not exist on GH yet, creating a pending status object"
-    git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git" \
+    git push -q "https://x-access-token:${GITHUB_COMMIT_TOKEN}@github.com/${GITHUB_REPO}.git" \
         "${CI_COMMIT_SHA}:refs/ci-pending/${CI_COMMIT_SHA}"
 }
 
