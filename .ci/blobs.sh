@@ -27,8 +27,7 @@ function cmd_clone {
     if [ -n "$BLOB_TOKEN" ]; then
         token="${!BLOB_TOKEN}"
         [[ -n "$token" ]] || die "variable BLOB_TOKEN is empty or unset"
-        user="x-access-token"
-        url="${url/#https:\/\//https://${user}:${token}@}"
+        url="${url/#https:\/\//https://ci:${token}@}"
     fi
 
     mkdir -p "$BLOB_PATH"
