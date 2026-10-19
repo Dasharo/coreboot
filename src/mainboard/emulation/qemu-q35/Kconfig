@@ -11,6 +11,9 @@ config BOARD_SPECIFIC_OPTIONS
 	select HAVE_OPTION_TABLE
 #	select HAVE_PIRQ_TABLE
 	select HAVE_ACPI_TABLES
+	select HAVE_ACPI_RESUME
+	# EDK2 defaults DASHARO_PREFER_S3_SLEEP off (S0ix). Force S3.
+	select DASHARO_PREFER_S3_SLEEP
 	select BOARD_ROMSIZE_KB_8192
 	select MAINBOARD_HAS_NATIVE_VGA_INIT
 	select MAINBOARD_FORCE_NATIVE_VGA_INIT if !CHROMEOS
@@ -79,7 +82,9 @@ config MAX_ACPI_TABLE_SIZE_KB
 	default 224
 
 # Skip the first 64KiB as coreboot table pointer is installed
-# at address 0
+# at address 0. Bootblock only zeros allocated CAR (through
+# _car_unallocated_start) so an OS waking vector in unused
+# conventional memory survives S3.
 config DCACHE_RAM_BASE
 	hex
 	default 0x10000

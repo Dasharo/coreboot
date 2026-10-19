@@ -28,6 +28,10 @@ void __noreturn acpi_resume(void *wake_vec)
 	timestamp_add_now(TS_ACPI_WAKE_JUMP);
 
 	post_code(POSTCODE_OS_RESUME);
+	printk(BIOS_DEBUG, "Wake vector %p bytes %02x %02x %02x %02x\n",
+	       wake_vec,
+	       ((unsigned char *)wake_vec)[0], ((unsigned char *)wake_vec)[1],
+	       ((unsigned char *)wake_vec)[2], ((unsigned char *)wake_vec)[3]);
 	acpi_do_wakeup((uintptr_t)wake_vec);
 
 	die("Failed the jump to wakeup vector\n");
