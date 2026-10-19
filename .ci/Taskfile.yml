@@ -9,6 +9,7 @@ includes:
   blobs: tasks/blobs.yml
   test: tasks/test.yml
   image: tasks/image.yml
+  report: tasks/report.yml
 
 tasks:
   ci:blobs:
@@ -41,6 +42,16 @@ tasks:
     desc: Build and push the CI image
     cmds:
       - task: image:release
+
+  ci:report:init:
+    desc: Create CI result object on GH
+    cmds:
+      - task: report:init
+
+  ci:report:publish:
+    desc: Publish CI results of this workflow to GH
+    cmds:
+      - task: report:publish
 
   ci:cleanup:
     desc: Clean up all build artifacts that were created for other tasks to use

@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+tasks:
+  init:
+    desc: Create CI result object on GH
+    requires:
+      vars: [BOARD]
+    env:
+      BOARD: '{{.BOARD}}'
+    cmds:
+      - bash github-status.sh init
+
+  publish:
+    desc: Publish CI results of this workflow to GH
+    requires:
+      vars: [BOARD]
+    env:
+      BOARD: '{{.BOARD}}'
+    cmds:
+      - bash github-status.sh publish
