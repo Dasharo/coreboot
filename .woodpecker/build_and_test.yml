@@ -53,7 +53,7 @@ steps:
     environment:
       GITHUB_REPO: Dasharo/coreboot
       GITHUB_TOKEN:
-        from_secret: GITHUB_STATUS_TOKEN
+        from_secret: CONTENT_STATUSES_CI_TOKEN
     commands:
       - task --taskfile .ci/Taskfile.yml ci:report:init BOARD="${BOARD}"
 
@@ -71,6 +71,8 @@ steps:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
       HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+      GITHUB_TOKEN:
+        from_secret: CONTENT_STATUSES_CI_TOKEN
     commands:
       - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - |
@@ -100,6 +102,8 @@ steps:
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
       HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+      GITHUB_TOKEN:
+        from_secret: CONTENT_STATUSES_CI_TOKEN
     when:
       - matrix:
           BOARD: "?*"
@@ -161,9 +165,9 @@ steps:
     environment:
       GITHUB_REPO: Dasharo/coreboot
       GITHUB_TOKEN:
-        from_secret: GITHUB_STATUS_TOKEN
+        from_secret: CONTENT_STATUSES_CI_TOKEN
       WOODPECKER_TOKEN:
-        from_secret: WOODPECKER_API_TOKEN
+        from_secret: WOODPECKER_BUILDER_API_TOKEN
     commands:
       - task --taskfile .ci/Taskfile.yml ci:report:publish BOARD="${BOARD}"
 
