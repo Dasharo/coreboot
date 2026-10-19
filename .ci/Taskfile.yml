@@ -41,3 +41,10 @@ tasks:
     desc: Build and push the CI image
     cmds:
       - task: image:release
+
+  ci:cleanup:
+    desc: Clean up all build artifacts that were created for other tasks to use
+    dir:  '{{.REPO_ROOT}}'
+    cmds:
+      - rm -rf build *.cap ec.rom osfv test-logs
+      - '{{if .HOSTPATH}}rm -rf {{.HOSTPATH}}{{end}}'
