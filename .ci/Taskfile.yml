@@ -4,6 +4,10 @@
 
 version: '3'
 
+vars:
+  REPO_ROOT:
+    sh: git rev-parse --show-toplevel
+
 includes:
   build: tasks/build.yml
   blobs: tasks/blobs.yml
