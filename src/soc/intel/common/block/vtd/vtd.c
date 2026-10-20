@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
+#include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
+#include <cpu/x86/smm.h>
 #include <dasharo/options.h>
 #include <device/mmio.h>
 #include <device/pci_ops.h>
@@ -66,7 +68,27 @@ static uint64_t vtd_get_pmr_alignment_hi(uintptr_t vtd_base)
 	/* The host address width can be different than the sizing of the register.
 	 * Simply find the least significant bit set and use it as alignment;
 	 */
-	return __ffs64(value);
+	if (!value)
+		return 1;
+
+	return 1ULL << __ffs64(value);
+}
+
+/*
+ * Used when FSP does not provide the PMR info HOB. Protect everything up to
+ * cbmem_top, or up to the end of TSEG if TSEG is located above cbmem_top.
+ */
+static uint32_t vtd_get_fallback_pmr_low_limit(void)
+{
+	uintptr_t tseg_base;
+	size_t tseg_size;
+	uintptr_t limit = (uintptr_t)cbmem_top();
+
+	smm_region(&tseg_base, &tseg_size);
+	if (tseg_size && tseg_base + tseg_size > limit)
+		limit = tseg_base + tseg_size;
+
+	return limit;
 }
 
 static void vtd_set_pmr_low(uintptr_t vtd_base)
@@ -78,17 +100,49 @@ static void vtd_set_pmr_low(uintptr_t vtd_base)
 	 * case.
 	 */
 	pmr_lo_align = vtd_get_pmr_alignment_lo(vtd_base);
-	pmr_lo_limit = pmr_hob->protected_low_limit;
 
-	if (!IS_ALIGNED(pmr_lo_limit, pmr_lo_align)) {
-		pmr_lo_limit = ALIGN_DOWN(pmr_lo_limit, pmr_lo_align);
-		printk(BIOS_WARNING, "PMR limit low not properly aligned, aligning down to %08x\n",
-		       pmr_lo_limit);
+	if (pmr_hob) {
+		pmr_lo_limit = pmr_hob->protected_low_limit;
+
+		if (!IS_ALIGNED(pmr_lo_limit, pmr_lo_align)) {
+			pmr_lo_limit = ALIGN_DOWN(pmr_lo_limit, pmr_lo_align);
+			printk(BIOS_WARNING,
+			       "PMR limit low not properly aligned, aligning down to %08x\n",
+			       pmr_lo_limit);
+		}
+	} else {
+		/* Align up, so that cbmem and TSEG are fully covered */
+		pmr_lo_limit = ALIGN_UP(vtd_get_fallback_pmr_low_limit(), pmr_lo_align);
 	}
 
 	printk(BIOS_INFO, "Setting DMA protection [0x0 - 0x%08x]\n", pmr_lo_limit);
 	vtd_write32(vtd_base, PLMBASE_REG, 0);
 	vtd_write32(vtd_base, PLMLIMIT_REG, pmr_lo_limit - 1);
+}
+
+/*
+ * Used when FSP does not provide the PMR info HOB. Protect everything up to
+ * the end of the highest memory range reported by FSP resource HOBs.
+ */
+static uint64_t vtd_get_fallback_pmr_high_limit(void)
+{
+	const struct hob_header *hob_iterator;
+	const struct hob_resource *res;
+	uint64_t limit = 0;
+
+	if (fsp_hob_iterator_init(&hob_iterator) != CB_SUCCESS)
+		return 0;
+
+	while (fsp_hob_iterator_get_next_resource(&hob_iterator, &res) == CB_SUCCESS) {
+		if (res->type != EFI_RESOURCE_SYSTEM_MEMORY &&
+		    res->type != EFI_RESOURCE_MEMORY_RESERVED)
+			continue;
+
+		if (res->addr + res->length > limit)
+			limit = res->addr + res->length;
+	}
+
+	return limit;
 }
 
 static void vtd_set_pmr_high(uintptr_t vtd_base)
@@ -100,17 +154,26 @@ static void vtd_set_pmr_high(uintptr_t vtd_base)
 	 * memory but check just in case.
 	 */
 	pmr_hi_align = vtd_get_pmr_alignment_hi(vtd_base);
-	pmr_hi_limit = pmr_hob->protected_high_limit;
+
+	if (pmr_hob)
+		pmr_hi_limit = pmr_hob->protected_high_limit;
+	else
+		pmr_hi_limit = vtd_get_fallback_pmr_high_limit();
 
 	/* No memory above 4G? Skip PMR high programming */
-	if (pmr_hi_limit == 0 || pmr_hi_limit < 4ULL * GiB)
+	if (pmr_hi_limit == 0 || pmr_hi_limit <= 4ULL * GiB)
 		return;
 
 	if (!IS_ALIGNED(pmr_hi_limit, pmr_hi_align)) {
-		pmr_hi_limit = ALIGN_DOWN(pmr_hi_limit, pmr_hi_align);
-		printk(BIOS_WARNING, "PMR High limit not properly aligned, "
-				     "aligning down to %016llx\n",
-				     pmr_hi_limit);
+		if (pmr_hob) {
+			pmr_hi_limit = ALIGN_DOWN(pmr_hi_limit, pmr_hi_align);
+			printk(BIOS_WARNING, "PMR High limit not properly aligned, "
+					     "aligning down to %016llx\n",
+					     pmr_hi_limit);
+		} else {
+			/* Align up, so that the whole memory is covered */
+			pmr_hi_limit = ALIGN_UP(pmr_hi_limit, pmr_hi_align);
+		}
 	}
 
 	printk(BIOS_INFO, "Setting DMA protection [0x100000000 - 0x%016llx]\n", pmr_hi_limit);
@@ -177,10 +240,8 @@ static void vtd_engine_enable_dma_protection(uintptr_t vtd_base)
 		return;
 	}
 
-	if (!locate_pmr_info_hob()) {
-		printk(BIOS_ERR, "VT-d PMR HOB not found, not enabling DMA protection\n");
-		return;
-	}
+	if (!locate_pmr_info_hob())
+		printk(BIOS_WARNING, "VT-d PMR HOB not found, using fallback PMR limits\n");
 
 	/* If protection is enabled, disable it first */
 	if (!disable_pmr_protection(vtd_base)) {
