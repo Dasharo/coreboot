@@ -37,6 +37,7 @@ config MAINBOARD_VENDOR
 	default "Protectli"
 
 config MAINBOARD_FAMILY
+	default "Vault" if BOARD_PROTECTLI_V2210
 	default "Vault Pro"
 
 config DIMM_SPD_SIZE
