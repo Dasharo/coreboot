@@ -99,6 +99,7 @@ config BEEP_ON_BOOT
 
 config ENABLE_EMMC
 	bool "Enable eMMC support"
+	default n if BOARD_PROTECTLI_V2210
 	default y
 	help
 	  Enable the eMMC storage controller
