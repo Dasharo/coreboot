@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <console/console.h>
+#include <cpu/intel/common/common.h>
 #include <soc/config.h>
 #include <smbios.h>
 #include <spd.h>
@@ -70,6 +71,8 @@ void platform_fsp_memory_init_params_cb(FSPM_UPD *mupd, uint32_t version)
 		m_cfg->VmxEnable = 1;
 	else
 		m_cfg->VmxEnable = 0;
+
+	m_cfg->SecurityCctEnableTme = CONFIG(INTEL_TME) && is_tme_supported();
 
 	/* Board level settings */
 	mainboard_memory_init_params(mupd);
