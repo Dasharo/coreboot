@@ -3,6 +3,7 @@
 #include <arch/ioapic.h>
 #include <console/console.h>
 #include <console/debug.h>
+#include <cpu/intel/common/common.h>
 #include <cpu/x86/lapic.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
@@ -33,6 +34,10 @@ __weak void mainboard_silicon_init_params(FSPS_UPD *params)
 /* UPD parameters to be initialized before SiliconInit */
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 {
+	FSPS_CONFIG *s_cfg = &silupd->FspsConfig;
+
+	s_cfg->EnableTme = CONFIG(INTEL_TME) && is_tme_supported();
+
 	mainboard_silicon_init_params(silupd);
 }
 
