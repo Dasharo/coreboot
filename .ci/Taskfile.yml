@@ -14,8 +14,37 @@ includes:
   test: tasks/test.yml
   image: tasks/image.yml
   report: tasks/report.yml
+  checks: tasks/checks.yml
 
 tasks:
+  ci:check:
+    desc: Run one source check (CHECK=upstream-status|lint-stable|lint-extended|defconfigs|capsule-lint)
+    requires:
+      vars: [CHECK]
+    cmds:
+      - task: 'checks:{{.CHECK}}'
+
+  ci:tag-check:
+    desc: Verify the pushed tag is annotated and signed
+    cmds:
+      - task: checks:tag-annotated
+      - task: checks:tag-signed
+
+  ci:tag-capsule-versioning:
+    desc: Verify capsule version transitions for the pushed tag
+    cmds:
+      - task: checks:tag-capsule-versioning
+
+  ci:ucode:check:
+    desc: Fail if the Intel µcode submodule is out of date
+    cmds:
+      - task: checks:ucode-up-to-date
+
+  ci:ucode:update:
+    desc: Update the Intel µcode submodule and open a pull request
+    cmds:
+      - task: checks:ucode-update
+
   ci:blobs:
     desc: Download blobs
     cmds:
