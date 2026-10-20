@@ -7,6 +7,7 @@ when:
     event: [pull_request, push, manual]
   - branch:  woodpecker-build-test-ci
     event: [manual]
+  - event: tag
 
 labels:
   network: ${NETWORK}
