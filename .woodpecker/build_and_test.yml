@@ -258,7 +258,7 @@ steps:
     environment:
       GITHUB_REPO: Dasharo/coreboot
       GITHUB_TOKEN:
-        from_secret: CONTENT_STATUSES_CI_TOKEN
+        from_secret: GITHUB_SYNC_TOKEN
       WOODPECKER_TOKEN:
         from_secret: WOODPECKER_BUILDER_API_TOKEN
     failure: ignore
