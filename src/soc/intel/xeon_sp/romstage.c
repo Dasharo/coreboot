@@ -2,6 +2,7 @@
 
 #include <arch/romstage.h>
 #include <intelblocks/rtc.h>
+#include <intelblocks/vtd.h>
 #include <console/console.h>
 #include <fsp/util.h>
 #include <smbios.h>
@@ -30,6 +31,9 @@ void mainboard_romstage_entry(void)
 			die("ERROR: FSP reported an error(s) after running!");
 		}
 	}
+
+	if (CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+		vtd_enable_dma_protection();
 
 	save_dimm_info();
 }
