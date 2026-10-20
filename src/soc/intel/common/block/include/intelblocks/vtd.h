@@ -44,6 +44,12 @@ static __always_inline void vtd_write64(uintptr_t vtd_base, uint32_t reg, uint64
  */
 void vtd_enable_dma_protection(void);
 /*
+ * Call the function for every VT-d engine whose PMRs should be programmed.
+ * The default implementation uses the VTVC0 engine. SoCs with more VT-d
+ * engines, e.g. one per IIO stack, should override it.
+ */
+void soc_vtd_for_each_pmr_engine(void (*func)(uintptr_t vtd_base));
+/*
  * Get DMA buffer base and size.
  */
 void *vtd_get_dma_buffer(size_t *size);
