@@ -30,7 +30,7 @@ publish_ci_status() { # $1=state, $2=context, $3=link_url, $4=description
 ensure_commit_on_github() {
     curl -sS --fail-with-body -H "$GH_AUTH" "${GH_API}/commits/${CI_COMMIT_SHA}" && return
     echo "Commit does not exist on GH yet, creating a pending status object"
-    git push -q "https://x-access-token:${GITHUB_COMMIT_TOKEN}@github.com/${GITHUB_REPO}.git" \
+    git push -q "https://x-access-token:${GITHUB_COMMIT_STATUS_TOKEN}@github.com/${GITHUB_REPO}.git" \
         "${CI_COMMIT_SHA}:refs/ci-pending/${CI_COMMIT_SHA}"
 }
 
