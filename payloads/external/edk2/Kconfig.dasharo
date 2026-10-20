@@ -4,7 +4,7 @@ config EDK2_REPOSITORY
 	default "https://github.com/Dasharo/edk2"
 
 config EDK2_TAG_OR_REV
-	default "a0ea0f5d73e131d060c73bdf6d19d19f4a899ae6"
+	default "24d8338a290934b03e424966937146018e11ad86"
 
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
@@ -87,6 +87,15 @@ config EDK2_SHOW_WIFI_BT_OPTION
 	help
 	  Shows the WiFi/BT option in Dasharo Security Options submenu in
 	  Dasharo System Features menu.
+
+config EDK2_DASHARO_SMM_BWP_DEFAULT_ENABLE
+	bool "Enable SMM BIOS write protection by default"
+	depends on EDK2_DASHARO_SECURITY_OPTIONS && BOOTMEDIA_SMM_BWP
+	default n
+	help
+	  Makes the boot media only writable in SMM by default in coreboot and
+	  EDK2 UEFI Payload. The setting can still be changed in the Dasharo
+	  Security Options menu.
 
 config EDK2_DASHARO_INTEL_ME_OPTIONS
 	bool "Enable EDK2 Dasharo ME Configuration Menu"

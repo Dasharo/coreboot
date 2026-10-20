@@ -465,6 +465,10 @@ endif
 # PcdShowSmmBwp                 = FALSE
 ifeq ($(CONFIG_EDK2_ENABLE_SMM_BWP),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdShowSmmBwp=TRUE
+# PcdSmmBwpDefaultState         = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_SMM_BWP_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdSmmBwpDefaultState=TRUE
+endif
 endif
 # PcdSleepTypeDefaultS3         = FALSE
 ifeq ($(CONFIG_EDK2_S3_SLEEP_DEFAULT),y)

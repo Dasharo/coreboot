@@ -359,7 +359,7 @@ uint8_t cse_get_me_disable_mode(void)
 
 bool is_smm_bwp_permitted(void)
 {
-	bool smm_bwp = false;
+	bool smm_bwp = CONFIG(EDK2_DASHARO_SMM_BWP_DEFAULT_ENABLE);
 
 	/* Disable SMM BWP if in Firmware Update Mode */
 	if (fum_is_active())
