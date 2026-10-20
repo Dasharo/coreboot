@@ -18,6 +18,7 @@
 #include <soc/pci_devs.h>
 #include <soc/soc_util.h>
 #include <soc/util.h>
+#include <string.h>
 #include "chip.h"
 
 /* NUMA related ACPI table generation. SRAT, SLIT, etc */
@@ -362,6 +363,35 @@ static unsigned long acpi_create_drhd(unsigned long current, struct device *iomm
 	return current;
 }
 
+/*
+ * The VT-d device is located on the first bus of an IIO stack. Domains that do
+ * not start at the first bus of a stack (e.g. the CPM/HQM accelerator domains
+ * of an IOAT stack) and UBOX domains have no VT-d device behind them.
+ */
+static bool domain_has_vtd(const struct device *domain)
+{
+	if (is_ubox_domain(domain))
+		return false;
+
+	if (is_ioat_domain(domain) && !strstr(domain->name, DOMAIN_TYPE_DINO))
+		return false;
+
+	return true;
+}
+
+static struct device *vtd_dev_behind_domain(struct device *domain)
+{
+	struct device *dev;
+
+	if (!domain_has_vtd(domain))
+		return NULL;
+
+	dev = pcidev_path_behind(domain->downstream, PCI_DEVFN(VTD_DEV_NUM, VTD_FUNC_NUM));
+	assert(dev);
+
+	return dev;
+}
+
 static unsigned long acpi_create_atsr(unsigned long current)
 {
 	struct device *domain = NULL;
@@ -384,9 +414,7 @@ static unsigned long acpi_create_atsr(unsigned long current)
 		/* Early Xeon-SP have different PCI IDs for the VTD device on CSTACK vs PSTACK.
 		 * Iterate over PCI domains and then look for the VTD PCI device. */
 		while ((domain = dev_find_path(domain, DEVICE_PATH_DOMAIN))) {
-			dev = pcidev_path_behind(domain->downstream,
-						 PCI_DEVFN(VTD_DEV_NUM, VTD_FUNC_NUM));
-			assert(dev);
+			dev = vtd_dev_behind_domain(domain);
 			if (!dev)
 				continue;
 			/* Only add devices for the current socket */
@@ -442,9 +470,7 @@ static unsigned long acpi_create_rhsa(unsigned long current)
 	/* Early Xeon-SP have different PCI IDs for the VTD device on CSTACK vs PSTACK.
 	 * Iterate over PCI domains and then look for the VTD PCI device. */
 	while ((domain = dev_find_path(domain, DEVICE_PATH_DOMAIN))) {
-		dev = pcidev_path_behind(domain->downstream,
-					 PCI_DEVFN(VTD_DEV_NUM, VTD_FUNC_NUM));
-		assert(dev);
+		dev = vtd_dev_behind_domain(domain);
 		if (!dev)
 			continue;
 		/* See if there is a resource with the appropriate index. */
@@ -536,9 +562,7 @@ static unsigned long acpi_fill_dmar(unsigned long current)
 	/* Early Xeon-SP have different PCI IDs for the VTD device on CSTACK vs PSTACK.
 	 * Iterate over PCI domains and then look for the VTD PCI device. */
 	while ((domain = dev_find_path(domain, DEVICE_PATH_DOMAIN))) {
-		dev = pcidev_path_behind(domain->downstream,
-					 PCI_DEVFN(VTD_DEV_NUM, VTD_FUNC_NUM));
-		assert(dev);
+		dev = vtd_dev_behind_domain(domain);
 		if (!dev)
 			continue;
 		if (is_dev_on_domain0(dev)) {
