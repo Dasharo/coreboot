@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+when:
+  - event: cron
+    cron: ucode
+  - branch: [dasharo, woodpecker-build-test-ci]
+    event: manual
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: false
+
+steps:
+  - name: ucode-up-to-date
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:ucode:check
+
+  - name: ucode-update
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    when:
+      - status: failure
+    environment:
+      GITEA_TOKEN:
+        from_secret: GITEA_BUILDER_TOKEN_REBASE_CI
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:ucode:update
