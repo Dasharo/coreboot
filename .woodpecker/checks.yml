@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+when:
+  - event: [push, manual]
+
+matrix:
+  CHECK:
+    - upstream-status
+    - lint-stable
+    - lint-extended
+    - defconfigs
+    - capsule-lint
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: false
+      partial: false
+      tags: true
+
+steps:
+  - name: ${CHECK}
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    environment:
+      GITEA_TOKEN:
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:check CHECK="${CHECK}"
