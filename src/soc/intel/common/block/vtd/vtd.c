@@ -308,6 +308,19 @@ no_dma_buffer:
 	return NULL;
 }
 
+#ifdef VTVC0_BASE_ADDRESS
+__weak void soc_vtd_for_each_pmr_engine(void (*func)(uintptr_t vtd_base))
+{
+	func(VTVC0_BASE_ADDRESS);
+	/*
+	 * FIXME: GFX VT-d will fail to set PMR (tested on ADL-S).
+	 * Should we program PMRs on all VT-d engines?
+	 * func(GFXVT_BASE_ADDRESS);
+	 * func(IPUVT_BASE_ADDRESS);
+	 */
+}
+#endif
+
 void vtd_enable_dma_protection(void)
 {
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
@@ -318,29 +331,28 @@ void vtd_enable_dma_protection(void)
 		return;
 	}
 
-	vtd_engine_enable_dma_protection(VTVC0_BASE_ADDRESS);
-	/*
-	 * FIXME: GFX VT-d will fail to set PMR (tested on ADL-S).
-	 * Should we program PMRs on all VT-d engines?
-	 * vtd_engine_enable_dma_protection(GFXVT_BASE_ADDRESS);
-	 * vtd_engine_enable_dma_protection(IPUVT_BASE_ADDRESS);
-	 */
+	soc_vtd_for_each_pmr_engine(vtd_engine_enable_dma_protection);
+}
+
+static void vtd_engine_disable_pmr(uintptr_t vtd_base)
+{
+	/* At minimum PMR Low must be supported */
+	if (!(vtd_read32(vtd_base, CAP_REG) & CAP_PMR_LO))
+		return;
+
+	if (disable_pmr_protection(vtd_base)) {
+		vtd_write32(vtd_base, PLMBASE_REG, 0);
+		vtd_write32(vtd_base, PLMLIMIT_REG, 0);
+		if (vtd_read32(vtd_base, CAP_REG) & CAP_PMR_HI) {
+			vtd_write64(vtd_base, PHMBASE_REG, 0);
+			vtd_write64(vtd_base, PHMLIMIT_REG, 0);
+		}
+	}
 }
 
 static void vtd_disable_pmr_on_resume(void *unused)
 {
-	/* At minimum PMR Low must be supported */
-	if (!(vtd_read32(VTVC0_BASE_ADDRESS, CAP_REG) & CAP_PMR_LO))
-		return;
-
-	if (disable_pmr_protection(VTVC0_BASE_ADDRESS)) {
-		vtd_write32(VTVC0_BASE_ADDRESS, PLMBASE_REG, 0);
-		vtd_write32(VTVC0_BASE_ADDRESS, PLMLIMIT_REG, 0);
-		if (vtd_read32(VTVC0_BASE_ADDRESS, CAP_REG) & CAP_PMR_HI) {
-			vtd_write64(VTVC0_BASE_ADDRESS, PHMBASE_REG, 0);
-			vtd_write64(VTVC0_BASE_ADDRESS, PHMLIMIT_REG, 0);
-		}
-	}
+	soc_vtd_for_each_pmr_engine(vtd_engine_disable_pmr);
 }
 
 BOOT_STATE_INIT_ENTRY(BS_OS_RESUME, BS_ON_ENTRY, vtd_disable_pmr_on_resume, NULL);
