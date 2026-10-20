@@ -5,14 +5,6 @@
 when:
   - event: [push, manual]
 
-matrix:
-  CHECK:
-    - upstream-status
-    - lint-stable
-    - lint-extended
-    - defconfigs
-    - capsule-lint
-
 clone:
   git:
     image: woodpeckerci/plugin-git
@@ -22,10 +14,37 @@ clone:
       tags: true
 
 steps:
-  - name: ${CHECK}
+  - name: upstream-status
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    depends_on: []
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
     commands:
-      - task --taskfile .ci/Taskfile.yml ci:check CHECK="${CHECK}"
+      - task --taskfile .ci/Taskfile.yml ci:check CHECK=upstream-status
+
+  - name: lint-stable
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    depends_on: []
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:check CHECK=lint-stable
+
+  - name: lint-extended
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    depends_on: []
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:check CHECK=lint-extended
+
+  - name: capsule-lint
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    depends_on: []
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:check CHECK=capsule-lint
+
+  - name: defconfigs
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    depends_on: [upstream-status, lint-stable, lint-extended, capsule-lint]
+    when:
+      - status: [success, failure]
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:check CHECK=defconfigs
