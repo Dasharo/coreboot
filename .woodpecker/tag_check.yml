@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+when:
+  - event: tag
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: false
+      partial: false
+      tags: true
+      depth: 0
+
+steps:
+  - name: tag-annotated-and-signed
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    environment:
+      GITEA_TOKEN:
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:tag-check
+
+  - name: capsule-versioning
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    environment:
+      GITEA_TOKEN:
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:tag-capsule-versioning
