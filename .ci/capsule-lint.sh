@@ -37,7 +37,7 @@ fi
 declare -A guids
 fail=0
 
-mapfile -t configs < <(grep -l 'EFI_UPDATE_CAPSULE' configs/config.*)
+mapfile -t configs < <(grep -l 'EFI_UPDATE_CAPSULE' $(grep -l 'CONFIG_DASHARO=y' configs/config.*))
 for c in "${configs[@]}"; do
     local_ver=$(get_str "$c" 'CONFIG_LOCALVERSION')
 
