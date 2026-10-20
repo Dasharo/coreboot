@@ -9,6 +9,7 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         jq \
+        pre-commit \
     && rm -rf /var/lib/apt/lists/*
 
 ARG DOCKER_VERSION=28.3.3
