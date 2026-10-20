@@ -14,6 +14,8 @@ vars:
         path: 3rdparty/blobs/mainboard
         token: NCM_BLOBS_TOKEN
 
+# Blob ref can be overriden per-platform in the woodpecker config
+# with an environment variable called "BLOB_REF_<name>", e.g. BLOB_REF_novacustom=<sha>
 
 tasks:
   main:
