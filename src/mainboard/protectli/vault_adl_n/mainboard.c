@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/cpu.h>
+#include <bootstate.h>
 #include <console/console.h>
 #include <dasharo/options.h>
+#include <delay.h>
 #include <device/device.h>
+#include <device/pci_ops.h>
 #include <gpio.h>
 #include <pc80/i8254.h>
 #include <smbios.h>
@@ -12,6 +15,7 @@
 #include <soc/ramstage.h>
 #include <superio/ite/it8659e/chip.h>
 #include <superio/ite/it8659e/it8659e.h>
+#include <timer.h>
 #include <variant/pcie.h>
 
 #include <string.h>
@@ -201,6 +205,115 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 		}
 	}
 }
+
+#define PCIE_LNKCAP_DLLLARC	(1 << 20)	/* Data Link Layer Link Active Reporting */
+#define PCIE_LNKSTA_DLLLA	(1 << 13)	/* Data Link Layer Link Active */
+#define M2_RP_COUNT		4
+#define M2_LINK_UP_TIMEOUT_MS	200
+#define M2_LINK_READY_DELAY_MS	100
+#define M2_LINK_DISABLE_MS	10
+#define M2_RETRAIN_ATTEMPTS	3
+
+static pci_devfn_t m2_rp(unsigned int fn)
+{
+	return PCI_DEV(0, PCH_DEV_SLOT_PCIE_1, fn);
+}
+
+static void m2_set_link_disable(const u16 *cap, unsigned int fn, bool disable)
+{
+	const u16 reg = cap[fn] + PCI_EXP_LNKCTL;
+	u16 lnkctl = pci_s_read_config16(m2_rp(fn), reg);
+
+	if (disable)
+		lnkctl |= PCI_EXP_LNKCTL_LD;
+	else
+		lnkctl &= ~PCI_EXP_LNKCTL_LD;
+
+	pci_s_write_config16(m2_rp(fn), reg, lnkctl);
+}
+
+/* Wait for the links in the mask to come up. Returns the ones still down. */
+static unsigned int m2_wait_links(const u16 *cap, unsigned int pending)
+{
+	struct stopwatch sw;
+	unsigned int fn;
+
+	stopwatch_init_msecs_expire(&sw, M2_LINK_UP_TIMEOUT_MS);
+	do {
+		for (fn = 0; fn < M2_RP_COUNT; fn++) {
+			if ((pending & (1 << fn)) &&
+			    (pci_s_read_config16(m2_rp(fn), cap[fn] + PCI_EXP_LNKSTA) &
+			     PCIE_LNKSTA_DLLLA))
+				pending &= ~(1 << fn);
+		}
+	} while (pending && !stopwatch_expired(&sw));
+
+	return pending;
+}
+
+/*
+ * The M.2 slot's PERST# is PLTRST#, released long before SRCCLK0 runs in a
+ * split mode: the carrier leaves CLKREQ0# undriven, so the clock only starts
+ * once FSP-M makes it free running. Some drives come out of reset without a
+ * reference clock and then fail to train, so on some boots nothing is found
+ * behind the root port. Wait for the links of the slot's root ports
+ * (RP9-RP12) to come up. Restart training on the ones that do not, now
+ * that the clock is stable, by disabling and re-enabling the link: a hot
+ * reset is sent in-band and cannot reach a device over a link that is
+ * down. Then wait the 100 ms the PCIe spec requires between link up (above
+ * 5 GT/s) and the first configuration request, as nothing else does before
+ * the root ports are probed.
+ */
+static void wait_for_m2_links(void *unused)
+{
+	u16 cap[M2_RP_COUNT] = { 0 };
+	unsigned int present = 0, down;
+	unsigned int fn, attempt;
+
+	if (!CONFIG(BOARD_PROTECTLI_V2210))
+		return;
+
+	for (fn = 0; fn < M2_RP_COUNT; fn++) {
+		if (pci_s_read_config16(m2_rp(fn), PCI_VENDOR_ID) == 0xffff)
+			continue;
+
+		cap[fn] = pci_s_find_capability(m2_rp(fn), PCI_CAP_ID_PCIE);
+		if (cap[fn] &&
+		    (pci_s_read_config32(m2_rp(fn), cap[fn] + PCI_EXP_LNKCAP) &
+		     PCIE_LNKCAP_DLLLARC))
+			present |= 1 << fn;
+	}
+
+	if (!present)
+		return;
+
+	down = m2_wait_links(cap, present);
+
+	for (attempt = 1; down && attempt <= M2_RETRAIN_ATTEMPTS; attempt++) {
+		printk(BIOS_INFO, "M.2 slot: links down (fn mask) 0x%x, retrain %u\n",
+		       down, attempt);
+
+		for (fn = 0; fn < M2_RP_COUNT; fn++) {
+			if (down & (1 << fn))
+				m2_set_link_disable(cap, fn, true);
+		}
+		mdelay(M2_LINK_DISABLE_MS);
+		for (fn = 0; fn < M2_RP_COUNT; fn++) {
+			if (down & (1 << fn))
+				m2_set_link_disable(cap, fn, false);
+		}
+
+		down = m2_wait_links(cap, down);
+	}
+
+	printk(BIOS_INFO, "M.2 slot: links up (fn mask) 0x%x, down 0x%x\n",
+	       present & ~down, down);
+
+	if (present & ~down)
+		mdelay(M2_LINK_READY_DELAY_MS);
+}
+
+BOOT_STATE_INIT_ENTRY(BS_DEV_ENUMERATE, BS_ON_ENTRY, wait_for_m2_links, NULL);
 
 static void mainboard_final(void *chip_info)
 {
