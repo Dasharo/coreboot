@@ -1,0 +1,166 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+vars:
+  REPO_ROOT:
+    sh: git rev-parse --show-toplevel
+
+tasks:
+  auth-origin:
+    desc: Point the origin remote at an authenticated clone URL
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [CI_REPO_CLONE_URL, GITEA_TOKEN]
+    cmds:
+      - git remote set-url origin "$(printf '%s' "$CI_REPO_CLONE_URL" | sed "s#^https://#https://ci:$GITEA_TOKEN@#")"
+
+  upstream-status:
+    desc: Check Upstream-Status tags of commits since the base release
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - task: auth-origin
+      - pre-commit run --hook-stage pre-push check-upstream-status
+
+  lint-stable:
+    desc: Standard coreboot lint tests
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - util/lint/lint lint-stable
+
+  lint-extended:
+    desc: Extended coreboot lint tests
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - util/lint/lint lint-extended
+
+  defconfigs:
+    desc: Verify Dasharo defconfigs are up-to-date
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - |
+        set -e
+        for c in $(grep -l 'CONFIG_DASHARO=y' configs/config.* | sort); do
+          make savedefconfig DOTCONFIG="$c"
+          mv defconfig "$c"
+        done
+        git diff --exit-code
+
+  capsule-lint:
+    desc: Verify update capsule settings in defconfigs
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - .github/scripts/capsule-lint.sh
+
+  tag-annotated:
+    desc: Verify the pushed tag is annotated
+    cmds:
+      - task: fetch-tags
+      - |
+        set -euo pipefail
+        tag="${CI_COMMIT_TAG}"
+        ref="refs/tags/${tag}"
+
+        if ! git show-ref --verify --quiet "$ref"; then
+          echo "::error::Tag '${tag}' not found after checkout"
+          exit 1
+        fi
+
+        type="$(git cat-file -t "$ref")"   # 'tag' for annotated, 'commit' for lightweight
+        if [[ "$type" != "tag" ]]; then
+          echo "::error::Tag '${tag}' is not annotated: type '$type'. Use: git tag -s"
+          exit 1
+        fi
+
+  tag-signed:
+    desc: Verify the pushed tag is signed
+    cmds:
+      - |
+        set -euo pipefail
+        tag="${CI_COMMIT_TAG}"
+        ref="refs/tags/${tag}"
+
+        if git cat-file -p "$ref" | grep -q '^-----BEGIN PGP SIGNATURE-----$'; then
+          echo "Tag '${tag}' contains a signature block"
+        else
+          echo "::error::Tag '${tag}' is NOT signed. Create it with: git tag -s"
+          exit 1
+        fi
+
+  tag-capsule-versioning:
+    desc: Verify capsule version transitions between the tag and its predecessor
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [CI_COMMIT_TAG]
+    cmds:
+      - .github/scripts/capsule-versioning-check.sh "$CI_COMMIT_TAG"
+
+  ucode-checkout:
+    desc: Check out the latest ucode submodule
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - |
+        set -euo pipefail
+        git submodule update --init --checkout 3rdparty/intel-microcode
+
+  ucode-up-to-date:
+    desc: Check whether the Intel µcode submodule is up to date
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - task: ucode-checkout
+      - |
+        set -euo pipefail
+        current=$(git -C 3rdparty/intel-microcode log -1 --pretty=format:"%H")
+        git -C 3rdparty/intel-microcode checkout main
+        new=$(git -C 3rdparty/intel-microcode log -1 --pretty=format:"%H")
+
+        if [[ "$current" == "$new" ]]; then
+          echo "Intel µcode submodule is up-to-date."
+        else
+          echo "::error::Intel µcode submodule is out of date! ${current} -> ${new}"
+          exit 1
+        fi
+
+  ucode-update:
+    desc: Update the Intel µcode submodule on a new branch and open a pull request
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [GITEA_TOKEN, CI_FORGE_URL, CI_REPO, CI_REPO_CLONE_URL, CI_COMMIT_BRANCH]
+    cmds:
+      - task: ucode-checkout
+      - |
+        set -euo pipefail
+        git -C 3rdparty/intel-microcode checkout main
+
+        RELEASE_DATE=$(git -C 3rdparty/intel-microcode log -1 --pretty=format:%cs)
+        branch="update_ucode_${RELEASE_DATE}"
+        title="Update µcode ${RELEASE_DATE}"
+        git checkout -B "$BRANCH"
+
+        git add 3rdparty/intel-microcode
+        git -c user.name="Dasharo CI" -c user.email="robot@3mdeb.com" \
+          commit -m "[automated change] ${title}" \
+          -m "Upstream-Status: Inappropriate (Dasharo automation)"
+        push_url=$(printf '%s' "$CI_REPO_CLONE_URL" | sed "s#^https://#https://ci:${GITEA_TOKEN}@#")
+        git push -f "$push_url" "HEAD:refs/heads/${branch}"
+
+        response=$(mktemp)
+        status=$(curl -sS -o "$response" -w '%{http_code}' -X POST \
+          -H "Authorization: token ${GITEA_TOKEN}" \
+          -H 'Content-Type: application/json' \
+          "${CI_FORGE_URL}/api/v1/repos/${CI_REPO}/pulls" \
+          -d "$(jq -cn --arg head "$branch" --arg base "${PR_BASE:-$CI_COMMIT_BRANCH}" \
+          --arg title "$title" \
+          '{head: $head, base: $base, title: $title}')")
+
+        case "$status" in
+          201) echo "Opened pull request: $(jq -r .html_url "$response")" ;;
+          409) echo "Pull request already exists: $(jq -r .html_url "$response")" ;;
+          *)
+            echo "::error::Creating pull request failed with HTTP ${status}"
+            cat "$response"
+            exit 1
+            ;;
+        esac
