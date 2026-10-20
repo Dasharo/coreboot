@@ -142,9 +142,7 @@ steps:
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     environment:
       GITHUB_REPO: Dasharo/coreboot
-      GITHUB_COMMIT_TOKEN:
-        from_secret: GITHUB_SYNC_TOKEN
-      GITHUB_COMMIT_STATUS_TOKEN:
+      GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     failure: ignore
     commands:
@@ -258,7 +256,7 @@ steps:
     environment:
       GITHUB_REPO: Dasharo/coreboot
       GITHUB_TOKEN:
-        from_secret: GITHUB_SYNC_TOKEN
+        from_secret: CONTENT_STATUSES_CI_TOKEN
       WOODPECKER_TOKEN:
         from_secret: WOODPECKER_BUILDER_API_TOKEN
     failure: ignore
