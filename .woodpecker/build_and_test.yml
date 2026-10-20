@@ -10,7 +10,7 @@ when:
   - event: tag
 
 labels:
-  network: ${NETWORK}
+  network: ${NETWORK} # must be set to "office" to run tests on hardware
   kvm: ${QEMU} # set in matrix
 
 matrix:
