@@ -612,6 +612,8 @@ unsigned long northbridge_write_acpi_tables(const struct device *device, unsigne
 		current = ALIGN_UP(current, 8);
 		dmar = (acpi_dmar_t *)current;
 		enum dmar_flags flags = DMAR_INTR_REMAP;
+		if (CONFIG(ENABLE_EARLY_DMA_PROTECTION))
+			flags |= DMA_CTRL_PLATFORM_OPT_IN_FLAG;
 		printk(BIOS_DEBUG, "ACPI:    * DMAR at %lx\n", current);
 		printk(BIOS_DEBUG, "[DMA Remapping table] Flags: 0x%x\n", flags);
 		acpi_create_dmar(dmar, flags, acpi_fill_dmar);
