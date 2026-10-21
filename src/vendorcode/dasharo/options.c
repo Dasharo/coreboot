@@ -250,21 +250,22 @@ bool dma_protection_enabled(void)
 		bool iommu_handoff;
 	} __packed iommu_var;
 	uint32_t size;
+	const bool default_state = CONFIG(EDK2_DASHARO_IOMMU_DEFAULT_ENABLE);
 
 	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
-		return false;
+		return default_state;
 
 	size = sizeof(iommu_var);
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE)) {
 		if (option_defaults_forced())
-			return false;
+			return default_state;
 
 		ret = efi_fv_get_option(&rdev, &dasharo_system_features_guid, "IommuConfig",
 				&iommu_var, &size);
 	}
 
 	if (ret != CB_SUCCESS)
-		return false;
+		return default_state;
 
 	return iommu_var.iommu_enable;
 }
