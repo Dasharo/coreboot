@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+when:
+  - event: cron
+    cron: upstream
+  - event: manual
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: false
+
+steps:
+  - name: upstream-pull
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    environment:
+      GITEA_TOKEN:
+        from_secret: GITEA_BUILDER_TOKEN_REBASE_CI
+    commands:
+      - task --taskfile .ci/Taskfile.yml ci:upstream:pull
