@@ -15,6 +15,7 @@ includes:
   image: tasks/image.yml
   report: tasks/report.yml
   checks: tasks/checks.yml
+  upstream: tasks/upstream.yml
 
 tasks:
   ci:check:
@@ -92,3 +93,9 @@ tasks:
     cmds:
       - rm -rf build *.cap ec.rom osfv test-logs
       - '{{if .HOSTPATH}}rm -rf {{.HOSTPATH}}{{end}}'
+
+  ci:upstream:pull:
+    desc: Update the main branch containing upstream state
+    dir:  '{{.REPO_ROOT}}'
+    cmds:
+      - task: upstream:pull
