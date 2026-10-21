@@ -311,6 +311,10 @@ endif
 # IOMMU_ENABLE                  = FALSE
 ifeq ($(CONFIG_IOMMU_ENABLE),y)
 BUILD_STR += -D IOMMU_ENABLE=TRUE
+# PcdIommuDefaultState          = FALSE
+ifeq ($(CONFIG_EDK2_DASHARO_IOMMU_DEFAULT_ENABLE),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdIommuDefaultState=TRUE
+endif
 endif
 # DASHARO_SYSTEM_FEATURES       = FALSE
 ifeq ($(CONFIG_EDK2_DASHARO_SYSTEM_FEATURES),y)
