@@ -109,8 +109,12 @@ static void mainboard_config_iio(FSPM_UPD *mupd)
 
 void mainboard_memory_init_params(FSPM_UPD *mupd)
 {
-	/* Send FSP log message to main serial port */
-	mupd->FspmConfig.SerialIoUartDebugEnable = 1;
+	/*
+	 * Send FSP log messages to the main serial port only with a debug FSP.
+	 * The release FSP prints just a few UPI messages (IpUpiIpInit), which
+	 * only clutter the console.
+	 */
+	mupd->FspmConfig.SerialIoUartDebugEnable = CONFIG(BUILDING_WITH_DEBUG_FSP);
 	mupd->FspmConfig.SerialIoUartDebugIoBase = CONFIG_TTYS0_BASE;
 
 	/* Set Rank Margin Tool to disable. */
