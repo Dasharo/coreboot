@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2026 3mdeb <contact@3mdeb.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+vars:
+  REPO_ROOT:
+    sh: git rev-parse --show-toplevel
+
+tasks:
+  pull:
+    desc: Pull&Push upstream main to the mirror
+    dir: '{{.REPO_ROOT}}'
+    requires:
+      vars: [GITEA_TOKEN, CI_REPO]
+    cmds:
+      - |
+        set -euo pipefail
+        git fetch --no-tags https://review.coreboot.org/coreboot.git \
+          +main:refs/upstream/main\
+          '+refs/tags/*:refs/upstream-tags/*'
+        push_url="https://ci:${GITEA_TOKEN}@git.3mdeb.com/${CI_REPO}.git"
+        git push --atomic "$push_url" \
+          refs/upstream/main:refs/heads/main \
+          'refs/upstream-tags/*:refs/tags/*'
