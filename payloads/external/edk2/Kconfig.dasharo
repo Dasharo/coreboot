@@ -4,7 +4,7 @@ config EDK2_REPOSITORY
 	default "https://github.com/Dasharo/edk2"
 
 config EDK2_TAG_OR_REV
-	default "24d8338a290934b03e424966937146018e11ad86"
+	default "bfeaf7b25df5451691c5d686a7ec0fe0f4a85687"
 
 config EDK2_SYSTEM76_EC_LOGGING
 	bool "Enable edk2 logging to System76 EC"
@@ -95,6 +95,16 @@ config EDK2_DASHARO_SMM_BWP_DEFAULT_ENABLE
 	help
 	  Makes the boot media only writable in SMM by default in coreboot and
 	  EDK2 UEFI Payload. The setting can still be changed in the Dasharo
+	  Security Options menu.
+
+config EDK2_DASHARO_IOMMU_DEFAULT_ENABLE
+	bool "Enable IOMMU DMA protection and IOMMU handoff by default"
+	depends on EDK2_DASHARO_SECURITY_OPTIONS && ENABLE_EARLY_DMA_PROTECTION
+	default n
+	help
+	  Enables the IOMMU DMA protection option and keeps the IOMMU enabled
+	  when handing off control to the OS by default in coreboot and EDK2
+	  UEFI Payload. The settings can still be changed in the Dasharo
 	  Security Options menu.
 
 config EDK2_DASHARO_INTEL_ME_OPTIONS
