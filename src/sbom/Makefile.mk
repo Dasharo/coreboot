@@ -209,7 +209,7 @@ endif
 
 ## Build final SBOM (Software Bill of Materials) file in uswid format
 
-$(build-dir)/sbom.uswid: $(build-dir)/coreboot.json $$(swid-files-y) $(swid-files-compiler) | $(build-dir)/goswid $(build-dir) sbom-acm-clean $(amdfw-sbom-dep)
+$(build-dir)/sbom.uswid: $(build-dir)/coreboot.json $$(swid-files-y) $(swid-files-compiler) | $(build-dir)/goswid $(build-dir) $(amdfw-sbom-dep)
 	echo "    SBOM      " $^
 	$(eval $(call amdfw_swid_get_files))
 	$(build-dir)/goswid convert -o $@ \
@@ -410,10 +410,12 @@ $(build-dir)/generic-ec.json: $(src-dir)/generic-ec.json $(CONFIG_SBOM_EC_BIN_PA
 # are identical for both ACM types.
 # NOTE: $(obj)/coreboot.rom is intentionally NOT listed as a make prerequisite.
 # Adding it as a prereq would cause 'make sbom' (and especially 'make -B sbom')
-# to rebuild the entire ROM.  Instead, the 'sbom' target depends on the phony
-# 'sbom-acm-clean' target which deletes these JSON files unconditionally, so
-# they are always regenerated fresh from whatever ROM is already on disk.
-$(build-dir)/intel-bios-acm.json: $(src-dir)/intel-bios-acm.json | $(build-dir)
+# to rebuild the entire ROM.  Instead, these JSON files depend on the phony
+# 'sbom-acm-force' target, so they are always regenerated fresh from whatever
+# ROM is already on disk.  Do not delete them from an order-only prerequisite
+# of sbom.uswid: make runs order-only prerequisites after the normal ones, so
+# the files would be removed after being generated and before goswid uses them.
+$(build-dir)/intel-bios-acm.json: $(src-dir)/intel-bios-acm.json sbom-acm-force | $(build-dir)
 	cp $< $@
 	acm_tmp=$$(mktemp); \
 	if $(CBFSTOOL) $(obj)/coreboot.rom extract -r COREBOOT \
@@ -427,7 +429,7 @@ $(build-dir)/intel-bios-acm.json: $(src-dir)/intel-bios-acm.json | $(build-dir)
 	fi; \
 	rm -f $$acm_tmp
 
-$(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json | $(build-dir)
+$(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json sbom-acm-force | $(build-dir)
 	cp $< $@
 	acm_tmp=$$(mktemp); \
 	if $(CBFSTOOL) $(obj)/coreboot.rom extract -r COREBOOT \
@@ -807,13 +809,11 @@ endif
 ## To re-inject into the ROM after regenerating: use cbfstool manually or
 ## via build.sh once that integration is added.
 ##
-## ACM JSON files are deleted before rebuilding so they are always freshly
-## extracted from the current ROM, reflecting any post-build ACM swap.
-.PHONY: sbom sbom-acm-clean
+## ACM JSON files are always regenerated so they are freshly extracted from
+## the current ROM, reflecting any post-build ACM swap.
+.PHONY: sbom sbom-acm-force
 
-sbom-acm-clean:
-	$(if $(CONFIG_SBOM_BIOS_ACM_GENERATE),rm -f $(build-dir)/intel-bios-acm.json,)
-	$(if $(CONFIG_SBOM_SINIT_ACM_GENERATE),rm -f $(build-dir)/intel-sinit-acm.json,)
+sbom-acm-force:
 
 ## FIXME: this target doesn't reliably trigger regeneration of sbom.uswid, which
 ##        is easy to see by running `make --debug=b sbom` once or twice
