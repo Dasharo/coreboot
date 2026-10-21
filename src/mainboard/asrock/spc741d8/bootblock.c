@@ -15,6 +15,12 @@
 
 #define PCR_DMI_LPCIOD	0x2770
 #define PCR_DMI_LPCIOE	0x2774
+#define PCR_DMI_SEGIR	0x27bc	/* DMI mirror of eSPI CS1# Generic I/O Range */
+
+#define ESPI_CS1GIR1	0xa4	/* eSPI CS1# Generic I/O Range 1 */
+
+/* BMC KCS interface at 0xca2/0xca3, decode the 0xca0-0xca3 range */
+#define BMC_KCS_IO_RANGE	(0xca0 | LPC_LGIR_EN)
 
 void bootblock_mainboard_early_init(void)
 {
@@ -35,6 +41,14 @@ void bootblock_mainboard_early_init(void)
 	pci_write_config16(PCH_DEV_LPC, LPC_IO_ENABLES, lpcioe);
 	/* AST2600 is on eSPI CS1# */
 	pci_write_config16(PCH_DEV_LPC, ESPI_CS1_ENABLE, lpcioe);
+
+	/*
+	 * Forward the BMC KCS interface to eSPI CS1#. The generic I/O ranges
+	 * from the devicetree (gen*_dec) are decoded to CS0# only, CS1# has its
+	 * own generic I/O range, which also needs to be mirrored in DMI.
+	 */
+	pcr_write32(PID_DMI, PCR_DMI_SEGIR, BMC_KCS_IO_RANGE);
+	pci_write_config32(PCH_DEV_LPC, ESPI_CS1GIR1, BMC_KCS_IO_RANGE);
 
 	/*
 	 * Disable the Nuvoton NCT6791D SuperIO UART1.  It is enabled by
