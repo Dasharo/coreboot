@@ -4,6 +4,7 @@
 #include <soc/ramstage.h>
 #include <soc/smmrelocate.h>
 #include <device/i2c_simple.h>
+#include <intelblocks/cse.h>
 #include "gpio.h"
 
 void mainboard_silicon_init_params(FSPS_UPD *params)
@@ -42,3 +43,23 @@ int platform_i2c_transfer(unsigned int bus, struct i2c_msg *segments, int count)
 	// This is not supported (or needed) on the SPC741D8, so stub the function.
 	return -1;
 }
+
+
+static int mainboard_smbios_data(struct device *dev, int *handle, unsigned long *current)
+{
+	int len = 0;
+
+	len += cse_write_smbios_type14(handle, current);
+
+	return len;
+}
+
+static void mainboard_enable(struct device *dev)
+{
+	if (CONFIG(GENERATE_SMBIOS_TABLES))
+		dev->ops->get_smbios_data = mainboard_smbios_data;
+}
+
+struct chip_operations mainboard_ops = {
+	.enable_dev = mainboard_enable,
+};
