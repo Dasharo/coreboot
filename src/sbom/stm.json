@@ -1,0 +1,31 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+{
+  "lang": "en-US",
+  "tag-id": "12c9bfdc-e807-57cf-a7f6-55b98fe090a2",
+  "tag-version": 0,
+  "software-name": "SMI Transfer Monitor",
+  "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "colloquial-version": "<colloquial_version>",
+      "persistent-id": "org.coreboot.stm",
+      "summary": "SMI Transfer Monitor (STM), a hypervisor loaded into SMM that restricts what the SMI handler can access"
+    }
+  ],
+  "link": [
+    {
+      "rel": "license",
+      "href": "https://spdx.org/licenses/BSD-2-Clause.html"
+    }
+  ],
+  "entity": [
+    {
+      "entity-name": "coreboot",
+      "reg-id": "coreboot.org",
+      "role": [
+        "tagCreator"
+      ]
+    }
+  ]
+}
