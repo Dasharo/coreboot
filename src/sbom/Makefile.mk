@@ -414,11 +414,28 @@ $(build-dir)/generic-ec.json: $(src-dir)/generic-ec.json $(CONFIG_SBOM_EC_BIN_PA
 		sed -i "/software-version/d" $@; \
 	fi
 
-# Extract the ACM version and hash.  The ACM header has a BCD date field
-# at offset 0x14: byte[20]=day, byte[21]=month, bytes[22-23 LE 16-bit]=year.
-# This mirrors the Intel microcode date layout (same BCD encoding, different
-# offsets).  The SHA-256 of the ACM, as Intel ships it (uncompressed), is
-# added to the entry so the component carries integrity info.
+# Extract the ACM revision, date and hash.  The ACM header has a BCD date
+# field at offset 0x14: byte[20]=day, byte[21]=month, bytes[22-23 LE
+# 16-bit]=year.  This mirrors the Intel microcode date layout (same BCD
+# encoding, different offsets).  The ACM revision is the software version and
+# the date the colloquial version, as for FSP; when the ACM carries no revision,
+# the date is the software version too.  The SHA-256 of the ACM, as Intel
+# ships it (uncompressed), is added to the entry so the component carries
+# integrity info.
+#
+# The ACM revision is the AcmRevision field (offset 37, 3 bytes:
+# major.minor.build, shown as hexadecimal XX.YY.ZZ) of the Chipset AC Module
+# Information Table, present from table version 6.  The table starts the User
+# Area, which follows the header and the scratch area.  Per the Intel TXT MLE
+# Developer's Guide (315168), "Authenticated Code Module Format":
+#   header version 0.0: 128 + KeySize*4 (RSAPubKey) + 4 (RSAPubExp)
+#                           + KeySize*4 (RSASig) + ScratchSize*4
+#   header version 3.0: 128 + KeySize*4 (RSAPubKey) + KeySize*4 (RSASig)
+#                           + ScratchSize*4 (no exponent, fixed to 0x10001)
+# with HeaderVersion at offset 8, KeySize at 120 and ScratchSize at 124, both
+# in dwords.  The table is accepted only if it carries the information table
+# UUID; otherwise, for other header versions, or for table versions below 6,
+# there is no revision.
 #
 # The ACM is read from the ROM image when running 'make sbom', so the SBOM
 # reflects any post-build ACM swap, or when the build does not provide the ACM
@@ -453,12 +470,32 @@ intel-acm-sbom = \
 		year=$$(hexdump --skip 22 --length 2 --format '"%04x"' "$$acm_src"); \
 		month=$$(hexdump --skip 21 --length 1 --format '"%02x"' "$$acm_src"); \
 		day=$$(hexdump   --skip 20 --length 1 --format '"%02x"' "$$acm_src"); \
-		sed -i "s/<software_version>/$$year-$$month-$$day/" $@; \
+		hdr_ver=$$(od -An -tx4 -j8 -N4 "$$acm_src" | tr -d ' '); \
+		key_size=$$(od -An -tu4 -j120 -N4 "$$acm_src" | tr -d ' '); \
+		scratch_size=$$(od -An -tu4 -j124 -N4 "$$acm_src" | tr -d ' '); \
+		case "$$hdr_ver" in \
+		00000000) exp_size=4 ;; \
+		00030000) exp_size=0 ;; \
+		*) exp_size= ;; \
+		esac; \
+		acm_rev=; \
+		if [ -n "$$exp_size" ]; then \
+			info=$$((128 + key_size * 4 + exp_size + key_size * 4 + scratch_size * 4)); \
+			uuid=$$(od -An -tx4 -j$$info -N16 "$$acm_src" | tr -d ' \n'); \
+			info_ver=$$(od -An -tu1 -j$$((info + 17)) -N1 "$$acm_src" | tr -d ' '); \
+			if [ "$$uuid" = "7fc03aaa18db46a78f69ac2e5a7f418d" ] && \
+			   [ "$${info_ver:-0}" -ge 6 ]; then \
+				acm_rev=$$(od -An -tx1 -j$$((info + 37)) -N3 "$$acm_src" | \
+					tr 'a-f' 'A-F' | awk '{ print $$1 "." $$2 "." $$3 }'); \
+			fi; \
+		fi; \
+		sed -i -e "s/<software_version>/$${acm_rev:-$$year-$$month-$$day}/" \
+			-e "s/<colloquial_version>/$$year-$$month-$$day/" $@; \
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
 			--name "$(1)" \
 			--hash "$$(sha256sum "$$acm_src" | cut -d' ' -f1)"; \
 	else \
-		sed -i "/software-version/d" $@; \
+		sed -i -e "/software-version/d" -e "/<colloquial_version>/d" $@; \
 	fi; \
 	rm -f $$acm_tmp
 
