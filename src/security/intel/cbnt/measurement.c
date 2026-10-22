@@ -632,7 +632,12 @@ static enum cb_err cap_pcrs_for_alg(enum vb2_hash_algorithm alg)
 	};
 
 	for (int pcr = 0; pcr < 8; pcr++) {
-		tpm_log_add_table_entry("CBnT hit TPM failure during boot", pcr, cap_digests);
+		/*
+		 * Per BWG and TCG PC Client Platform Firmware Profile Specification
+		 * the PCR capping should be logged with EV_SEPARATOR type.
+		 */
+		tpm_log_add_typed_table_entry("CBnT hit TPM failure during boot",
+					      pcr, EV_SEPARATOR, cap_digests);
 		printk(BIOS_INFO, "CBnT: capped PCR-%d\n", pcr);
 	}
 	return CB_SUCCESS;
@@ -743,8 +748,9 @@ static void measure_intel_tgl_style(uint64_t biosacm_policy, bool auth_measure)
 
 	pcr0_digests.values[j].hash_type = VB2_HASH_INVALID;
 
-	/* Per BWG this should be logged with EV_S_CRTM_CONTENTS type. */
-	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, pcr0_digests.values);
+	/* Per BWG the S-CRTM measurement is logged with EV_S_CRTM_CONTENTS type. */
+	tpm_log_add_typed_table_entry(CBNT_EVENT_LOG_MESSAGE, 0, EV_S_CRTM_CONTENTS,
+				      pcr0_digests.values);
 
 	/* Optionally making and hashing PCR-7 data (not supported since MTL). */
 	if (!auth_measure)
@@ -768,7 +774,8 @@ static void measure_intel_tgl_style(uint64_t biosacm_policy, bool auth_measure)
 
 	/* Per BWG this should be logged with EV_EFI_VARIABLE_DRIVER_CONFIG type
 	   and event name should be a Unicode string. */
-	tpm_log_add_table_entry(CBNT_EVENT_LOG_MESSAGE, 7, pcr7_digests.values);
+	tpm_log_add_typed_table_entry(CBNT_EVENT_LOG_MESSAGE, 7,
+				      EV_EFI_VARIABLE_DRIVER_CONFIG, pcr7_digests.values);
 	printk(BIOS_INFO, "CBnT: reconstructed PCR-7 measurement\n");
 }
 
@@ -802,7 +809,8 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 		return;
 	}
 	/* Per BWG this should be logged with EV_S_CRTM_VERSION type. */
-	tpm_log_add_table_entry(crtm_version_str, 0, crtm_digests.values);
+	tpm_log_add_typed_table_entry(crtm_version_str, 0, EV_S_CRTM_VERSION,
+				      crtm_digests.values);
 
 	int i, j;
 
@@ -827,7 +835,8 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 	post_code_digests.values[j].hash_type = VB2_HASH_INVALID;
 
 	/* Per BWG this should be logged with EV_POST_CODE type. */
-	tpm_log_add_table_entry("Boot Guard Measured IBB", 0, post_code_digests.values);
+	tpm_log_add_typed_table_entry("Boot Guard Measured IBB", 0, EV_POST_CODE,
+				      post_code_digests.values);
 
 	/*
 	 * struct {
@@ -879,8 +888,8 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 	policy_digests.values[j].hash_type = VB2_HASH_INVALID;
 
 	/* Per BWG this should be logged with EV_POST_CODE type. */
-	if (tpm_extend_pcr(0, policy_digests.values,
-			   "BIOS Measured Boot Guard Policy") != TPM_SUCCESS)
+	if (tpm_extend_pcr_typed(0, EV_POST_CODE, policy_digests.values,
+				 "BIOS Measured Boot Guard Policy") != TPM_SUCCESS)
 		printk(BIOS_ERR, "CBnT: failed to extend POLICY_DATA\n");
 }
 
