@@ -34,6 +34,10 @@ CONFIG_SBOM_BIOS_ACM_PATH        := $(call strip_quotes, $(CONFIG_SBOM_BIOS_ACM_
 CONFIG_SBOM_SINIT_ACM_PATH       := $(call strip_quotes, $(CONFIG_SBOM_SINIT_ACM_PATH))
 CONFIG_INTEL_TXT_CBFS_BIOS_ACM   := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM))
 CONFIG_INTEL_TXT_CBFS_SINIT_ACM  := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS_SINIT_ACM))
+# Other subsystems test these options against "" (e.g. src/security/intel/acm),
+# so keep them intact and use local copies without quotes.
+sbom-bios-acm-file               := $(call strip_quotes, $(CONFIG_INTEL_TXT_BIOSACM_FILE))
+sbom-sinit-acm-file              := $(call strip_quotes, $(CONFIG_INTEL_TXT_SINITACM_FILE))
 CONFIG_SBOM_COMPILER_PATH  := $(call strip_quotes, $(CONFIG_SBOM_COMPILER_PATH))
 CONFIG_EDK2_REPOSITORY     := $(call strip_quotes, $(CONFIG_EDK2_REPOSITORY))
 CONFIG_SBOM_EDK2_PLATFORMS_PATH := $(call strip_quotes, $(CONFIG_SBOM_EDK2_PLATFORMS_PATH))
@@ -135,19 +139,21 @@ swid-files-$(CONFIG_SBOM_AGESA) += $(if $(CONFIG_SBOM_AGESA_GENERATE), $(build-d
 swid-files-$(CONFIG_SBOM_OPENSIL) += $(if $(CONFIG_SBOM_OPENSIL_GENERATE), $(build-dir)/amd-opensil.json, $(CONFIG_SBOM_OPENSIL_PATH))
 swid-files-$(CONFIG_SBOM_IFD) += $(if $(CONFIG_SBOM_IFD_GENERATE),$(build-dir)/intel-ifd.json,$(CONFIG_SBOM_IFD_PATH))
 swid-files-$(CONFIG_SBOM_EC) += $(if $(CONFIG_SBOM_EC_GENERATE),$(build-dir)/generic-ec.json,$(CONFIG_SBOM_EC_PATH))
-# For ACM entries: extract version from the ROM after provisioning (make sbom).
+# For ACM entries: when the build provides the ACM (INTEL_TXT_BIOSACM_FILE,
+# INTEL_TXT_SINITACM_FILE), take its version and hash from that file.
+# Otherwise extract them from the ROM after provisioning (make sbom).
 # The wildcard guard avoids a circular dependency during the initial 'make all'
-# (coreboot.rom → sbom.uswid → acm.json → coreboot.rom): when the ROM does not
-# yet exist, swid-files is left empty for ACMs so the initial SBOM builds
-# without ACM version info.  After post-build ACM provisioning, run 'make sbom'
-# to regenerate sbom.uswid with the real ACM versions extracted from the ROM.
+# (coreboot.rom → sbom.uswid → acm.json → coreboot.rom): when neither the ACM
+# file nor the ROM exists, swid-files is left empty for that ACM so the initial
+# SBOM builds without its entry.  After post-build ACM provisioning, run
+# 'make sbom' to regenerate sbom.uswid with the ACMs extracted from the ROM.
 swid-files-$(CONFIG_SBOM_BIOS_ACM) += \
 	$(if $(CONFIG_SBOM_BIOS_ACM_GENERATE), \
-		$(if $(wildcard $(obj)/coreboot.rom),$(build-dir)/intel-bios-acm.json,), \
+		$(if $(sbom-bios-acm-file)$(wildcard $(obj)/coreboot.rom),$(build-dir)/intel-bios-acm.json,), \
 		$(CONFIG_SBOM_BIOS_ACM_PATH))
 swid-files-$(CONFIG_SBOM_SINIT_ACM) += \
 	$(if $(CONFIG_SBOM_SINIT_ACM_GENERATE), \
-		$(if $(wildcard $(obj)/coreboot.rom),$(build-dir)/intel-sinit-acm.json,), \
+		$(if $(sbom-sinit-acm-file)$(wildcard $(obj)/coreboot.rom),$(build-dir)/intel-sinit-acm.json,), \
 		$(CONFIG_SBOM_SINIT_ACM_PATH))
 
 swid-files-$(CONFIG_SBOM_IPXE) += $(if $(CONFIG_SBOM_IPXE_GENERATE),$(build-dir)/payload-iPXE.json,$(CONFIG_SBOM_IPXE_PATH))
@@ -408,11 +414,20 @@ $(build-dir)/generic-ec.json: $(src-dir)/generic-ec.json $(CONFIG_SBOM_EC_BIN_PA
 		sed -i "/software-version/d" $@; \
 	fi
 
-# Extract ACM version from the ROM image.  The ACM header has a BCD date field
+# Extract the ACM version and hash.  The ACM header has a BCD date field
 # at offset 0x14: byte[20]=day, byte[21]=month, bytes[22-23 LE 16-bit]=year.
 # This mirrors the Intel microcode date layout (same BCD encoding, different
-# offsets).  cbfstool decompresses the SINIT ACM on extraction so the offsets
-# are identical for both ACM types.
+# offsets).  The SHA-256 of the ACM, as Intel ships it (uncompressed), is
+# added to the entry so the component carries integrity info.
+#
+# The ACM is read from the ROM image when running 'make sbom', so the SBOM
+# reflects any post-build ACM swap, or when the build does not provide the ACM
+# file.  Otherwise, and when extraction fails, the ACM file given in the build
+# (INTEL_TXT_BIOSACM_FILE, INTEL_TXT_SINITACM_FILE) is used, which lets the
+# initial build describe it without reading a ROM that does not exist yet.
+# cbfstool decompresses the SINIT ACM on extraction so the offsets and the hash
+# are identical for both sources and both ACM types.
+#
 # NOTE: $(obj)/coreboot.rom is intentionally NOT listed as a make prerequisite.
 # Adding it as a prereq would cause 'make sbom' (and especially 'make -B sbom')
 # to rebuild the entire ROM.  Instead, these JSON files depend on the phony
@@ -420,33 +435,40 @@ $(build-dir)/generic-ec.json: $(src-dir)/generic-ec.json $(CONFIG_SBOM_EC_BIN_PA
 # ROM is already on disk.  Do not delete them from an order-only prerequisite
 # of sbom.uswid: make runs order-only prerequisites after the normal ones, so
 # the files would be removed after being generated and before goswid uses them.
-$(build-dir)/intel-bios-acm.json: $(src-dir)/intel-bios-acm.json sbom-acm-force | $(build-dir)
-	cp $< $@
+#
+# $(1): CBFS name of the ACM, $(2): ACM file given in the build (may be empty)
+intel-acm-sbom = \
 	acm_tmp=$$(mktemp); \
-	if $(CBFSTOOL) $(obj)/coreboot.rom extract -r COREBOOT \
-	    -n $(CONFIG_INTEL_TXT_CBFS_BIOS_ACM) -f $$acm_tmp 2>/dev/null; then \
-		year=$$(hexdump --skip 22 --length 2 --format '"%04x"' $$acm_tmp); \
-		month=$$(hexdump --skip 21 --length 1 --format '"%02x"' $$acm_tmp); \
-		day=$$(hexdump   --skip 20 --length 1 --format '"%02x"' $$acm_tmp); \
+	acm_src=; \
+	if [ "$(filter sbom,$(MAKECMDGOALS))" = "sbom" ] || [ -z "$(2)" ]; then \
+		if $(CBFSTOOL) $(obj)/coreboot.rom extract -r COREBOOT \
+		    -n $(1) -f $$acm_tmp 2>/dev/null; then \
+			acm_src=$$acm_tmp; \
+		fi; \
+	fi; \
+	if [ -z "$$acm_src" ] && [ -s "$(2)" ]; then \
+		acm_src="$(2)"; \
+	fi; \
+	if [ -n "$$acm_src" ]; then \
+		year=$$(hexdump --skip 22 --length 2 --format '"%04x"' "$$acm_src"); \
+		month=$$(hexdump --skip 21 --length 1 --format '"%02x"' "$$acm_src"); \
+		day=$$(hexdump   --skip 20 --length 1 --format '"%02x"' "$$acm_src"); \
 		sed -i "s/<software_version>/$$year-$$month-$$day/" $@; \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "$(1)" \
+			--hash "$$(sha256sum "$$acm_src" | cut -d' ' -f1)"; \
 	else \
 		sed -i "/software-version/d" $@; \
 	fi; \
 	rm -f $$acm_tmp
 
-$(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json sbom-acm-force | $(build-dir)
+$(build-dir)/intel-bios-acm.json: $(src-dir)/intel-bios-acm.json sbom-acm-force | $(build-dir) $(build-dir)/goswid
 	cp $< $@
-	acm_tmp=$$(mktemp); \
-	if $(CBFSTOOL) $(obj)/coreboot.rom extract -r COREBOOT \
-	    -n $(CONFIG_INTEL_TXT_CBFS_SINIT_ACM) -f $$acm_tmp 2>/dev/null; then \
-		year=$$(hexdump --skip 22 --length 2 --format '"%04x"' $$acm_tmp); \
-		month=$$(hexdump --skip 21 --length 1 --format '"%02x"' $$acm_tmp); \
-		day=$$(hexdump   --skip 20 --length 1 --format '"%02x"' $$acm_tmp); \
-		sed -i "s/<software_version>/$$year-$$month-$$day/" $@; \
-	else \
-		sed -i "/software-version/d" $@; \
-	fi; \
-	rm -f $$acm_tmp
+	$(call intel-acm-sbom,$(CONFIG_INTEL_TXT_CBFS_BIOS_ACM),$(sbom-bios-acm-file))
+
+$(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json sbom-acm-force | $(build-dir) $(build-dir)/goswid
+	cp $< $@
+	$(call intel-acm-sbom,$(CONFIG_INTEL_TXT_CBFS_SINIT_ACM),$(sbom-sinit-acm-file))
 
 # The FSP version is embedded in the binary, FSP spec 5.1,
 # FSP_INFO_HEADER, it lives in the firmware file with
