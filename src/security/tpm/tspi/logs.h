@@ -31,7 +31,7 @@ uint16_t tpm1_log_get_size(const void *log_table);
 void tpm1_log_copy_entries(const void *from, void *to);
 int tpm1_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
 		 uint32_t *event_type);
-void tpm1_log_add_table_entry(const char *name, const uint32_t pcr,
+void tpm1_log_add_table_entry(const char *name, const uint32_t pcr, uint32_t event_type,
 			      const struct tpm_digest *digests);
 void tpm1_log_dump(void);
 
@@ -44,7 +44,7 @@ uint16_t tpm2_log_get_size(const void *log_table);
 void tpm2_log_copy_entries(const void *from, void *to);
 int tpm2_log_get(int entry_idx, int *pcr, struct tpm_digest *digests, const char **event_name,
 		 uint32_t *event_type);
-void tpm2_log_add_table_entry(const char *name, const uint32_t pcr,
+void tpm2_log_add_table_entry(const char *name, const uint32_t pcr, uint32_t event_type,
 			      const struct tpm_digest *digests);
 void tpm2_log_startup_locality(int locality);
 void tpm2_log_align_with_tpm(void);

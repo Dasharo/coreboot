@@ -406,7 +406,8 @@ static void add_log_table_entry(struct tpm_2_log_table *tclt,
 	bottom->num_entries = htole16(le16toh(bottom->num_entries) + 1);
 }
 
-void tpm2_log_add_table_entry(const char *name, uint32_t pcr, const struct tpm_digest *digests)
+void tpm2_log_add_table_entry(const char *name, uint32_t pcr, uint32_t event_type,
+			      const struct tpm_digest *digests)
 {
 	struct tpm_2_log_table *tclt = tpm_log_init();
 	if (!tclt) {
@@ -419,7 +420,7 @@ void tpm2_log_add_table_entry(const char *name, uint32_t pcr, const struct tpm_d
 		return;
 	}
 
-	add_log_table_entry(tclt, name, strlen(name) + 1, pcr, EV_ACTION, digests);
+	add_log_table_entry(tclt, name, strlen(name) + 1, pcr, event_type, digests);
 }
 
 void tpm2_log_startup_locality(int locality)
