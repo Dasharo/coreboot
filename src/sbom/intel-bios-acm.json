@@ -5,6 +5,13 @@
   "tag-version": 0,
   "software-name": "Intel BIOS ACM",
   "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "colloquial-version": "<colloquial_version>",
+      "summary": "Intel BIOS Authenticated Code Module (Boot Guard / TXT startup ACM)"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
