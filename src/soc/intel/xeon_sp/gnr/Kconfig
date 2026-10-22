@@ -136,4 +136,11 @@ config INTEL_SPI_BASE_ADDRESS
 	help
 	  SPI BAR0 Base address.
 
+if SBOM_BIOS_ACM_GENERATE || SBOM_SINIT_ACM_GENERATE
+
+config SBOM_ACM_PRODUCT_FAMILY
+	default "BirchStream"
+
+endif
+
 endif
