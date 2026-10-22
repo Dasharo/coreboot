@@ -123,4 +123,8 @@ config SUPPORT_SIMICS_SIMULATION
 	default y
 	select SHADOW_ROM_TABLE_TO_EBDA
 
+config PRERAM_CBMEM_CONSOLE_SIZE
+	hex
+	default 0x2000
+
 endif ## SOC_INTEL_XEON_SP
