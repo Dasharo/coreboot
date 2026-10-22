@@ -137,7 +137,26 @@ static inline int tpm_log_get(int entry_idx, int *pcr, struct tpm_digest *digest
 }
 
 /**
- * Add table entry for cbmem TPM log.
+ * Add table entry of a specific event type for cbmem TPM log.
+ * @param name Name of the hashed data, used as the event data
+ * @param pcr PCR used to extend hashed data
+ * @param event_type TCG event type (EV_*), ignored by coreboot's custom log format
+ * @param digests An array of digests terminated by an entry with VB2_HASH_NONE
+ */
+static inline void tpm_log_add_typed_table_entry(const char *name, const uint32_t pcr,
+						 uint32_t event_type,
+						 const struct tpm_digest *digests)
+{
+	if (CONFIG(TPM_LOG_CB))
+		tpm_cb_log_add_table_entry(name, pcr, digests);
+	else if (tpm_log_use_tpm1_format())
+		tpm1_log_add_table_entry(name, pcr, event_type, digests);
+	else if (tpm_log_use_tpm2_format())
+		tpm2_log_add_table_entry(name, pcr, event_type, digests);
+}
+
+/**
+ * Add table entry for cbmem TPM log, logged as EV_ACTION.
  * @param name Name of the hashed data
  * @param pcr PCR used to extend hashed data
  * @param digests An array of digests terminated by an entry with VB2_HASH_NONE
@@ -145,12 +164,7 @@ static inline int tpm_log_get(int entry_idx, int *pcr, struct tpm_digest *digest
 static inline void tpm_log_add_table_entry(const char *name, const uint32_t pcr,
 					   const struct tpm_digest *digests)
 {
-	if (CONFIG(TPM_LOG_CB))
-		tpm_cb_log_add_table_entry(name, pcr, digests);
-	else if (tpm_log_use_tpm1_format())
-		tpm1_log_add_table_entry(name, pcr, digests);
-	else if (tpm_log_use_tpm2_format())
-		tpm2_log_add_table_entry(name, pcr, digests);
+	tpm_log_add_typed_table_entry(name, pcr, EV_ACTION, digests);
 }
 
 /**
@@ -193,6 +207,18 @@ static inline void tpm_log_dump(void *unused)
  * @return TPM_SUCCESS on success. If not a tpm error is returned
  */
 tpm_result_t tpm_extend_pcr(int pcr, const struct tpm_digest *digests, const char *name);
+
+/**
+ * Ask vboot for a digest and extend a TPM PCR with it. Log the digest with specified
+ * event type
+ * @param pcr sets the pcr index
+ * @param event_type defines the event type of the measurement in the log
+ * @param digests An array of digests terminated by an entry with VB2_HASH_NONE
+ * @param name sets additional info where the digest comes from
+ * @return TPM_SUCCESS on success. If not a tpm error is returned
+ */
+tpm_result_t tpm_extend_pcr_typed(int pcr, uint32_t event_type,
+				  const struct tpm_digest *digests, const char *name);
 
 /**
  * Issue a TPM_Clear and re-enable/reactivate the TPM.
