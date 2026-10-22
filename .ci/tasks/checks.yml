@@ -52,7 +52,7 @@ tasks:
     desc: Verify update capsule settings in defconfigs
     dir: '{{.REPO_ROOT}}'
     cmds:
-      - .ci/scripts/capsule-lint.sh
+      - .ci/capsule-lint.sh
 
   tag-annotated:
     desc: Verify the pushed tag is annotated
@@ -95,7 +95,7 @@ tasks:
     requires:
       vars: [CI_COMMIT_TAG]
     cmds:
-      - .ci/scripts/capsule-versioning-check.sh "$CI_COMMIT_TAG"
+      - .ci/capsule-versioning-check.sh "$CI_COMMIT_TAG"
 
   ucode-checkout:
     desc: Check out the latest ucode submodule
