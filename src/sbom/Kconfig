@@ -198,13 +198,15 @@ config SBOM_SINIT_ACM_GENERATE
 	depends on SBOM_SINIT_ACM
 	default y
 	help
-	  When enabled, coreboot extracts the SINIT ACM version from the built
-	  ROM image (build/coreboot.rom) via cbfstool and includes it in the
-	  SBOM.  The version is the BCD date field at offset 0x14 in the ACM
-	  header, formatted as YYYY-MM-DD.
+	  When enabled, coreboot includes the SINIT ACM version and the SHA-256
+	  of the ACM in the SBOM.  The version is the BCD date field at offset
+	  0x14 in the ACM header, formatted as YYYY-MM-DD.
+	  If INTEL_TXT_SINITACM_FILE is set, the build reads that file.  Otherwise
+	  the ACM is extracted from the built ROM image (build/coreboot.rom)
+	  via cbfstool.
 	  Run 'make sbom' after post-build ACM provisioning to ensure the SBOM
 	  reflects the actual ACM present in the ROM rather than a build-time
-	  placeholder.
+	  placeholder; 'make sbom' always prefers the ACM found in the ROM.
 	  If disabled, set SBOM_SINIT_ACM_PATH to a custom file.
 
 config SBOM_SINIT_ACM_PATH
@@ -230,13 +232,15 @@ config SBOM_BIOS_ACM_GENERATE
 	depends on SBOM_BIOS_ACM
 	default y
 	help
-	  When enabled, coreboot extracts the BIOS ACM version from the built
-	  ROM image (build/coreboot.rom) via cbfstool and includes it in the
-	  SBOM.  The version is the BCD date field at offset 0x14 in the ACM
-	  header, formatted as YYYY-MM-DD.
+	  When enabled, coreboot includes the BIOS ACM version and the SHA-256
+	  of the ACM in the SBOM.  The version is the BCD date field at offset
+	  0x14 in the ACM header, formatted as YYYY-MM-DD.
+	  If INTEL_TXT_BIOSACM_FILE is set, the build reads that file.  Otherwise
+	  the ACM is extracted from the built ROM image (build/coreboot.rom)
+	  via cbfstool.
 	  Run 'make sbom' after post-build ACM provisioning to ensure the SBOM
 	  reflects the actual ACM present in the ROM rather than a build-time
-	  placeholder.
+	  placeholder; 'make sbom' always prefers the ACM found in the ROM.
 	  If disabled, set SBOM_BIOS_ACM_PATH to a custom file.
 
 config SBOM_BIOS_ACM_PATH
