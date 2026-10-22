@@ -183,4 +183,12 @@ config MEM_POR_FREQ
 	help
 	  When RMT is enabled. Select this option to enforce Intel Plan Of Record(POR)
 	  restriction on DDR5 frequency & voltage settings.
+
+if SBOM_BIOS_ACM_GENERATE || SBOM_SINIT_ACM_GENERATE
+
+config SBOM_ACM_PRODUCT_FAMILY
+	default "EagleStream"
+
+endif
+
 endif
