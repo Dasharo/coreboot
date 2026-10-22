@@ -5,6 +5,13 @@
   "tag-version": 0,
   "software-name": "Intel SINIT ACM",
   "software-version": "<software_version>",
+  "version-scheme": "alphanumeric",
+  "software-meta": [
+    {
+      "colloquial-version": "<colloquial_version>",
+      "summary": "Intel TXT SINIT Authenticated Code Module"
+    }
+  ],
   "entity": [
     {
       "entity-name": "coreboot",
