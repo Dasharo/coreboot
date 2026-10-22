@@ -38,6 +38,7 @@ CONFIG_INTEL_TXT_CBFS_SINIT_ACM  := $(call strip_quotes, $(CONFIG_INTEL_TXT_CBFS
 # so keep them intact and use local copies without quotes.
 sbom-bios-acm-file               := $(call strip_quotes, $(CONFIG_INTEL_TXT_BIOSACM_FILE))
 sbom-sinit-acm-file              := $(call strip_quotes, $(CONFIG_INTEL_TXT_SINITACM_FILE))
+CONFIG_SBOM_ACM_PRODUCT_FAMILY   := $(call strip_quotes, $(CONFIG_SBOM_ACM_PRODUCT_FAMILY))
 CONFIG_SBOM_COMPILER_PATH  := $(call strip_quotes, $(CONFIG_SBOM_COMPILER_PATH))
 CONFIG_EDK2_REPOSITORY     := $(call strip_quotes, $(CONFIG_EDK2_REPOSITORY))
 CONFIG_SBOM_EDK2_PLATFORMS_PATH := $(call strip_quotes, $(CONFIG_SBOM_EDK2_PLATFORMS_PATH))
@@ -419,7 +420,10 @@ $(build-dir)/generic-ec.json: $(src-dir)/generic-ec.json $(CONFIG_SBOM_EC_BIN_PA
 # 16-bit]=year.  This mirrors the Intel microcode date layout (same BCD
 # encoding, different offsets).  The ACM revision is the software version and
 # the date the colloquial version, as for FSP; when the ACM carries no revision,
-# the date is the software version too.  The SHA-256 of the ACM, as Intel
+# the date is the software version too.  The product family is the platform the
+# ACM is released for (SBOM_ACM_PRODUCT_FAMILY, set by the SoC).  All template
+# placeholders are replaced before goswid rewrites the file, because goswid
+# escapes '<' and '>' in its JSON output.  The SHA-256 of the ACM, as Intel
 # ships it (uncompressed), is added to the entry so the component carries
 # integrity info.
 #
@@ -455,6 +459,11 @@ $(build-dir)/generic-ec.json: $(src-dir)/generic-ec.json $(CONFIG_SBOM_EC_BIN_PA
 #
 # $(1): CBFS name of the ACM, $(2): ACM file given in the build (may be empty)
 intel-acm-sbom = \
+	if [ -n "$(CONFIG_SBOM_ACM_PRODUCT_FAMILY)" ]; then \
+		sed -i "s|<acm_product_family>|$(CONFIG_SBOM_ACM_PRODUCT_FAMILY)|" $@; \
+	else \
+		sed -i "/<acm_product_family>/d" $@; \
+	fi; \
 	acm_tmp=$$(mktemp); \
 	acm_src=; \
 	if [ "$(filter sbom,$(MAKECMDGOALS))" = "sbom" ] || [ -z "$(2)" ]; then \
