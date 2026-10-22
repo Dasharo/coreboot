@@ -320,4 +320,11 @@ config SOC_INTEL_SPI_PSF_DESTINATION_ID
 	default 0x23b0 if SOC_INTEL_TIGERLAKE_PCH_H
 	default 0x23a8
 
+if SBOM_BIOS_ACM_GENERATE || SBOM_SINIT_ACM_GENERATE
+
+config SBOM_ACM_PRODUCT_FAMILY
+	default "TigerLake"
+
+endif
+
 endif
