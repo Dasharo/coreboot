@@ -8,6 +8,7 @@
   "version-scheme": "alphanumeric",
   "software-meta": [
     {
+      "product-family": "<acm_product_family>",
       "colloquial-version": "<colloquial_version>",
       "summary": "Intel TXT SINIT Authenticated Code Module"
     }
