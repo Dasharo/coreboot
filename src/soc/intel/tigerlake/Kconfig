@@ -301,4 +301,11 @@ config INTEL_GMA_BCLM_OFFSET
 config INTEL_GMA_BCLM_WIDTH
 	default 32
 
+if SBOM_BIOS_ACM_GENERATE || SBOM_SINIT_ACM_GENERATE
+
+config SBOM_ACM_PRODUCT_FAMILY
+	default "TigerLake"
+
+endif
+
 endif
