@@ -83,7 +83,8 @@ void tpm1_log_dump(void)
 	printk(BIOS_INFO, "\n");
 }
 
-void tpm1_log_add_table_entry(const char *name, uint32_t pcr, const struct tpm_digest *digests)
+void tpm1_log_add_table_entry(const char *name, uint32_t pcr, uint32_t event_type,
+			      const struct tpm_digest *digests)
 {
 	struct tpm_1_log_table *tclt;
 	struct tpm_1_log_entry *tce;
@@ -119,7 +120,7 @@ void tpm1_log_add_table_entry(const char *name, uint32_t pcr, const struct tpm_d
 	tclt->vendor.num_entries = htole16(le16toh(tclt->vendor.num_entries) + 1);
 
 	tce->pcr = htole32(pcr);
-	tce->event_type = htole32(EV_ACTION);
+	tce->event_type = htole32(event_type);
 
 	memcpy(tce->digest, digests[0].hash, TPM_1_LOG_DIGEST_MAX_LENGTH);
 
