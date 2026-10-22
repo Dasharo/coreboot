@@ -51,6 +51,8 @@ CONFIG_SBOM_VGA_BIOS_DGPU_PATH   := $(call strip_quotes, $(CONFIG_SBOM_VGA_BIOS_
 CONFIG_SBOM_EDK2_GOP_PATH        := $(call strip_quotes, $(CONFIG_SBOM_EDK2_GOP_PATH))
 CONFIG_SBOM_EDK2_LAN_ROM_PATH    := $(call strip_quotes, $(CONFIG_SBOM_EDK2_LAN_ROM_PATH))
 CONFIG_SBOM_IPXE_PATH      := $(call strip_quotes, $(CONFIG_SBOM_IPXE_PATH))
+CONFIG_SBOM_STM_PATH       := $(call strip_quotes, $(CONFIG_SBOM_STM_PATH))
+sbom-stm-file              := $(call strip_quotes, $(CONFIG_STM_BINARY_FILE))
 CONFIG_SBOM_AMD_BLOB_LICENSE    := $(call strip_quotes, $(CONFIG_SBOM_AMD_BLOB_LICENSE))
 CONFIG_LINUXBOOT_KERNEL_VERSION := $(call strip_quotes, $(CONFIG_LINUXBOOT_KERNEL_VERSION))
 CONFIG_LINUXBOOT_UROOT_VERSION  := $(call strip_quotes, $(CONFIG_LINUXBOOT_UROOT_VERSION))
@@ -98,12 +100,14 @@ ifeq ($(filter sbom,$(MAKECMDGOALS)),sbom)
 payload-swid-ready-dep := $(wildcard $(payload-git-dir-y)/.git)
 ipxe-swid-ready-dep := $(wildcard payloads/external/iPXE/ipxe/.git)
 edk2-platforms-swid-ready-dep := $(wildcard payloads/external/edk2/workspace/edk2-platforms/.git)
+stm-swid-ready-dep := $(wildcard $(sbom-stm-file))
 else
 payload-swid-ready-dep := $(CONFIG_PAYLOAD_FILE)
 ipxe-swid-ready-dep := payloads/external/iPXE/ipxe/ipxe.rom
 # edk2-platforms is checked out as part of the edk2 payload build, so gate its
 # SBOM extraction on the built payload file being ready.
 edk2-platforms-swid-ready-dep := $(CONFIG_PAYLOAD_FILE)
+stm-swid-ready-dep := $(sbom-stm-file)
 endif
 
 # Add all SBOM files into the swid-files-y target. This target contains all
@@ -147,6 +151,7 @@ swid-files-$(CONFIG_SBOM_SINIT_ACM) += \
 		$(CONFIG_SBOM_SINIT_ACM_PATH))
 
 swid-files-$(CONFIG_SBOM_IPXE) += $(if $(CONFIG_SBOM_IPXE_GENERATE),$(build-dir)/payload-iPXE.json,$(CONFIG_SBOM_IPXE_PATH))
+swid-files-$(CONFIG_SBOM_STM) += $(if $(CONFIG_SBOM_STM_GENERATE),$(build-dir)/stm.json,$(CONFIG_SBOM_STM_PATH))
 # Proprietary graphics/network binary blobs (VGA BIOS OptionROMs, edk2 GOP and
 # LAN drivers).  In GENERATE mode a minimal template + blob hash is emitted;
 # vendors should prefer supplying a full SBOM via the matching _PATH option.
@@ -644,6 +649,29 @@ $(build-dir)/payload-iPXE.json: $(src-dir)/payload-iPXE.json $(ipxe-gitdir) | $(
 		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
 			--name "ipxe.rom" \
 			--hash "$$(sha256sum "payloads/external/iPXE/ipxe/ipxe.rom" | cut -d' ' -f1)"; \
+	fi
+
+# STM: built from the 3rdparty/stm submodule unless STM_BINARY_FILE points
+# to a prebuilt binary. Record the submodule revision only when the binary is
+# the one built from it, and hash the uncompressed binary (CBFS stores it
+# LZMA-compressed) so the component carries integrity info.
+stm-src-bin := 3rdparty/stm/Stm/build/StmPkg/Core/stm.bin
+
+$(build-dir)/stm.json: $(src-dir)/stm.json | $(build-dir) $(build-dir)/goswid $(stm-swid-ready-dep)
+	cp $< $@
+	set -e; \
+	if [ "$(sbom-stm-file)" = "$(stm-src-bin)" ] && \
+	   git -C 3rdparty/stm rev-parse --git-dir >/dev/null 2>&1; then \
+		git_comm_hash=$$(git -C 3rdparty/stm log -n 1 --format="%cs_%H"); \
+		git_latest_rel=$$(git -C 3rdparty/stm tag --merged HEAD --sort=-creatordate | head -n1); \
+		sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@; \
+	else \
+		sed -i -e "/<colloquial_version>/d" -e "/<software_version>/d" $@; \
+	fi; \
+	if [ -s "$(sbom-stm-file)" ]; then \
+		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+			--name "stm.bin" \
+			--hash "$$(sha256sum "$(sbom-stm-file)" | cut -d' ' -f1)"; \
 	fi
 
 # edk2-platforms is a separate git repository compiled into the edk2 payload.
