@@ -436,6 +436,35 @@ config SBOM_IPXE_PATH
 	  The path of the SBOM file describing the Software included in the build
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
+config SBOM_STM
+	bool "Include STM metadata in SBOM"
+	default n
+	depends on STM
+	help
+	  Select this option if you want to include a
+	  coswid (Concise Software Identification Tag) of the
+	  SMI Transfer Monitor (STM) into the SBOM
+	  (Software Bill of Materials) File in your build.
+
+config SBOM_STM_GENERATE
+	bool "Auto-generate STM revision in SBOM"
+	depends on SBOM_STM
+	default y
+	help
+	  When enabled, coreboot reads the git commit hash of the STM
+	  submodule (3rdparty/stm) and records it as the SBOM version,
+	  with the latest tag stored as colloquial-version. The SHA-256
+	  of the STM binary (STM_BINARY_FILE) is added to the entry.
+	  If disabled, set SBOM_STM_PATH to a custom file.
+
+config SBOM_STM_PATH
+	string "Path to SBOM file for the STM"
+	depends on SBOM_STM && !SBOM_STM_GENERATE
+	default "src/sbom/stm.json"
+	help
+	  The path of the SBOM file describing the Software included in the build
+	  File can be a .json, .xml, .cbor, .uswid, or .pc
+
 config SBOM_AMD_PSP_FW
 	bool "Include AMD PSP firmware metadata in SBOM"
 	default n
