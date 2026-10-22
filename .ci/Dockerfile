@@ -10,6 +10,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         jq \
         pre-commit \
+        pre-commit \
+        python3-requests \
     && rm -rf /var/lib/apt/lists/*
 
 ARG DOCKER_VERSION=28.3.3
@@ -20,6 +22,7 @@ ARG TASK_VERSION=3.54.0
 RUN curl -fsSL "https://github.com/go-task/task/releases/download/v${TASK_VERSION}/task_linux_amd64.tar.gz" \
       | tar -xz -C /usr/local/bin task
 
+ENV PRE_COMMIT_HOME=/opt/pre-commit-cache
 
 RUN git config --system --add safe.directory '*'
 
