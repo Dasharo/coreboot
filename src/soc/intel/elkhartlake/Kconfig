@@ -263,4 +263,11 @@ config DIMM_SPD_SIZE
 config SOC_INTEL_COMMON_OC_WDT_TIMEOUT_SECONDS
 	default 300
 
+if SBOM_BIOS_ACM_GENERATE || SBOM_SINIT_ACM_GENERATE
+
+config SBOM_ACM_PRODUCT_FAMILY
+	default "ElkhartLake"
+
+endif
+
 endif
