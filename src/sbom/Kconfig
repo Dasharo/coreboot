@@ -251,6 +251,15 @@ config SBOM_BIOS_ACM_PATH
 	  The path of the SBOM file describing the Software included in the build
 	  File can be a .json, .xml, .cbor, .uswid, or .pc
 
+config SBOM_ACM_PRODUCT_FAMILY
+	string "Product family of the ACMs in SBOM"
+	depends on SBOM_BIOS_ACM_GENERATE || SBOM_SINIT_ACM_GENERATE
+	help
+	  The platform the BIOS ACM and SINIT ACM are released for, recorded as
+	  the product-family of their SBOM entries, for example "EagleStream"
+	  for Sapphire Rapids. The SoC provides the default. Leave it empty to
+	  omit the product-family.
+
 config SBOM_INTEL_MICROCODE
 	bool "Include Intel microcode metadata in SBOM"
 	default n
