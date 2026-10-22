@@ -219,7 +219,7 @@ tpm_result_t tpm_clear_and_reenable(void)
 	return TPM_SUCCESS;
 }
 
-tpm_result_t tpm_extend_pcr(int pcr, const struct tpm_digest *digests, const char *name)
+static tpm_result_t extend_pcr(int pcr, const struct tpm_digest *digests, const char *name)
 {
 	tpm_result_t rc;
 
@@ -254,13 +254,31 @@ tpm_result_t tpm_extend_pcr(int pcr, const struct tpm_digest *digests, const cha
 		}
 	}
 
-	if (CONFIG(TPM_MEASURED_BOOT))
-		tpm_log_add_table_entry(name, pcr, digests);
-
 	printk(BIOS_DEBUG, "TPM: Digest of `%s` to PCR %d %s\n",
 	       name, pcr, tspi_tpm_is_setup() ? "measured" : "logged");
 
 	return TPM_SUCCESS;
+}
+
+tpm_result_t tpm_extend_pcr(int pcr, const struct tpm_digest *digests, const char *name)
+{
+	tpm_result_t rc = extend_pcr(pcr, digests, name);
+
+	if (CONFIG(TPM_MEASURED_BOOT))
+		tpm_log_add_table_entry(name, pcr, digests);
+
+	return rc;
+}
+
+tpm_result_t tpm_extend_pcr_typed(int pcr, uint32_t event_type,
+				  const struct tpm_digest *digests, const char *name)
+{
+	tpm_result_t rc = extend_pcr(pcr, digests, name);
+
+	if (CONFIG(TPM_MEASURED_BOOT))
+		tpm_log_add_typed_table_entry(name, pcr, event_type, digests);
+
+	return rc;
 }
 
 #if CONFIG(VBOOT_LIB)
