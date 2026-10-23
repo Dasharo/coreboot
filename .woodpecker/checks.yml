@@ -16,6 +16,7 @@ clone:
 steps:
   - name: upstream-status
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     depends_on: []
     environment:
       GITEA_TOKEN:
@@ -25,24 +26,28 @@ steps:
 
   - name: lint-stable
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     depends_on: []
     commands:
       - task --taskfile .ci/Taskfile.yml ci:check CHECK=lint-stable
 
   - name: lint-extended
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     depends_on: []
     commands:
       - task --taskfile .ci/Taskfile.yml ci:check CHECK=lint-extended
 
   - name: capsule-lint
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     depends_on: []
     commands:
       - task --taskfile .ci/Taskfile.yml ci:check CHECK=capsule-lint
 
   - name: defconfigs
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     depends_on: [upstream-status, lint-stable, lint-extended, capsule-lint]
     when:
       - status: [success, failure]
