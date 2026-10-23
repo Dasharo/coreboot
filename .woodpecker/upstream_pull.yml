@@ -16,6 +16,7 @@ clone:
 steps:
   - name: upstream-pull
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REBASE_CI
