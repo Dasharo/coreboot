@@ -216,6 +216,8 @@ steps:
   - name: test-qemu
     image: git.3mdeb.com/dasharo/osfv-qemu-ci:latest
     pull: true
+    volumes:
+      - /var/tmp/ci-locks:/var/tmp/ci-locks
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
@@ -226,10 +228,11 @@ steps:
       - matrix:
           QEMU: "true"
     commands:
-      - mkdir -p /srv/nfs/disk-images
+      - mkdir -p /srv/nfs/disk-images /var/tmp/ci-locks
       - mount -t nfs -o nolock,ro "$${NFS_IP}":/srv/nfs/disk-images /srv/nfs/disk-images
       - mountpoint -q /srv/nfs/disk-images
       - |
+        flock -w 60 /var/tmp/ci-locks/qemu.lock \
         task --taskfile .ci/Taskfile.yml ci:test \
         TEST_CONFIG=${TEST_CONFIG} MANUAL_TESTS_LIST="${MANUAL_TESTS_LIST}"
 
