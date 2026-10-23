@@ -17,6 +17,7 @@ clone:
 steps:
   - name: tag-annotated-and-signed
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
@@ -25,6 +26,7 @@ steps:
 
   - name: capsule-versioning
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
