@@ -17,11 +17,13 @@ clone:
 steps:
   - name: ucode-up-to-date
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     commands:
       - task --taskfile .ci/Taskfile.yml ci:ucode:check
 
   - name: ucode-update
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
     when:
       - status: failure
     environment:
