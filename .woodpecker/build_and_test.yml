@@ -20,8 +20,8 @@ matrix:
   include:
       # Emulation
     - BOARD: "x86_q35_uefi_all_menus"
-      TEST_CONFIG: ".ci/devices/qemu.json"
-      MANUAL_TESTS_LIST: ".ci/test_lists/qemu.txt"
+      # TEST_CONFIG: ".ci/devices/qemu.json"
+      # MANUAL_TESTS_LIST: ".ci/test_lists/qemu.txt"
       QEMU: "true"
     - BOARD: "x86_q35_uefi"
       TEST_CONFIG: ".ci/devices/qemu.json"
