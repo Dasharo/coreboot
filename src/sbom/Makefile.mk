@@ -516,6 +516,45 @@ $(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json sbom-acm-forc
 	cp $< $@
 	$(call intel-acm-sbom,$(CONFIG_INTEL_TXT_CBFS_SINIT_ACM),$(sbom-sinit-acm-file))
 
+# coreboot stores the FSP components as cbfstool adds them: FSP-T and FSP-M
+# placed execute-in-place are rebased to their flash address, so their bytes,
+# which coreboot measures, differ from the split Fsp_T.fd/Fsp_M.fd. Each
+# component is extracted from the image (cbfstool decompresses FSP-S); when it
+# differs from the split file, its hash is the extracted one.
+#
+# In a build the image is coreboot.pre, which holds every CBFS file before the
+# SBOM is added to it (add_sbom_cbfs), so the FSP tag depends on it. A
+# standalone 'make sbom' must not rebuild the image: it reads the existing
+# coreboot.rom (e.g. after post-build provisioning), else coreboot.pre. Only
+# the COREBOOT region is read; RW copies of a vboot image are rebased to their
+# own addresses.
+ifeq ($(filter sbom,$(MAKECMDGOALS)),sbom)
+intel-fsp-image :=
+intel-fsp-image-files = $(obj)/coreboot.rom $(obj)/coreboot.pre
+else
+intel-fsp-image := $(obj)/coreboot.pre
+intel-fsp-image-files = $(obj)/coreboot.pre
+endif
+
+# $(1): payload file name, $(2): split FSP component, $(3): its CBFS name
+intel-fsp-swid-file = \
+	hash=; \
+	if [ -f "$(2)" ]; then hash=$$(sha256sum "$(2)" | cut -d' ' -f1); fi; \
+	for img in $(intel-fsp-image-files); do \
+		[ -f "$$img" ] || continue; \
+		if $(CBFSTOOL) "$$img" extract -r COREBOOT -n "$(3)" -f $@.fsp >/dev/null 2>&1; then \
+			ext=$$(sha256sum $@.fsp | cut -d' ' -f1); \
+			if [ "$$ext" != "$$hash" ]; then \
+				echo "    SBOM      $(1): $(3) in $$(basename $$img) differs from $(notdir $(2)) (rebased), using its hash"; \
+				hash=$$ext; \
+			fi; \
+			break; \
+		fi; \
+	done; \
+	rm -f $@.fsp; \
+	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "$(1)" \
+		$$([ -z "$$hash" ] || echo --hash "$$hash")
+
 # The FSP version is embedded in the binary, FSP spec 5.1,
 # FSP_INFO_HEADER, it lives in the firmware file with
 # guid 912740be-2284-4734-b971-84b027353f0c
@@ -524,7 +563,7 @@ $(build-dir)/intel-sinit-acm.json: $(src-dir)/intel-sinit-acm.json sbom-acm-forc
 # ExtendedImageRevision (2 bytes LE at +76) holds additional bytes:
 #	Revision = ExtendedImageRevision[15:8] << 8 | ImageRevision[15:8]
 #	Build = ExtendedImageRevision[7:0] << 8 | ImageRevision[7:0]
-$(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_FD_PATH) $(CONFIG_FSP_S_FILE) $(CONFIG_FSP_T_FILE) $(CONFIG_FSP_M_FILE) | $(build-dir)/goswid
+$(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_FD_PATH) $(CONFIG_FSP_S_FILE) $(CONFIG_FSP_T_FILE) $(CONFIG_FSP_M_FILE) $(intel-fsp-image) | $(build-dir)/goswid
 	cp $< $@
 	set -e; \
 	fsp_bin="$(CONFIG_FSP_FD_PATH)"; \
@@ -568,18 +607,15 @@ $(build-dir)/intel-fsp.json: $(src-dir)/intel-fsp.json $(CONFIG_FSP_FD_PATH) $(C
 
 ifneq ($(CONFIG_FSP_S_FILE),)
 	echo "    SBOM      Adding FSP-S"
-	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-S" \
-		$(if $(wildcard $(CONFIG_FSP_S_FILE)),--hash "$$(sha256sum "$(CONFIG_FSP_S_FILE)" | cut -d' ' -f1)")
+	$(call intel-fsp-swid-file,FSP-S,$(CONFIG_FSP_S_FILE),$(FSP_S_CBFS))
 endif
 ifneq ($(CONFIG_FSP_T_FILE),)
 	echo "    SBOM      Adding FSP-T"
-	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-T" \
-		$(if $(wildcard $(CONFIG_FSP_T_FILE)),--hash "$$(sha256sum "$(CONFIG_FSP_T_FILE)" | cut -d' ' -f1)")
+	$(call intel-fsp-swid-file,FSP-T,$(CONFIG_FSP_T_FILE),$(FSP_T_CBFS))
 endif
 ifneq ($(CONFIG_FSP_M_FILE),)
 	echo "    SBOM      Adding FSP-M"
-	$(build-dir)/goswid add-payload-file -o $@ -i $@ --name "FSP-M" \
-		$(if $(wildcard $(CONFIG_FSP_M_FILE)),--hash "$$(sha256sum "$(CONFIG_FSP_M_FILE)" | cut -d' ' -f1)")
+	$(call intel-fsp-swid-file,FSP-M,$(CONFIG_FSP_M_FILE),$(FSP_M_CBFS))
 endif
 
 # Extract AGESA version from the binary blob. AGESA binaries often embed a
