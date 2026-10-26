@@ -51,6 +51,7 @@ static void generic_ssdt(const struct device *dev)
 	printk(BIOS_DEBUG, "%s.%s: %s\n", scope, name, dev_path(dev));
 
 	acpigen_write_name_string("_HID", "PNP0C02");
+	acpigen_write_name_integer("_UID", dev->path.pnp.port);
 	acpigen_write_name_string("_DDN", dev_name(dev));
 
 	/* OperationRegion("IOID", SYSTEMIO, port, 2) */
