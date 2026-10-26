@@ -63,6 +63,7 @@ Scope(\_SB) {
 	Device (PERC)	// PCI ECAM Resource Consumption
 	{
 		Name (_HID, EisaId("PNP0C02"))
+		Name (_UID, 0)
 		Name (RBUF, ResourceTemplate ()
 		{
 			QWordMemory (ResourceConsumer, PosDecode, MinFixed, MaxFixed,
