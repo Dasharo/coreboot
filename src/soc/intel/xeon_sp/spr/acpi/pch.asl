@@ -220,6 +220,7 @@ Device (LPCB)
 	Device (XTRA)
 	{
 		Name (_HID, EisaId ("PNP0C02"))
+		Name (_UID, 1)
 		Name (_CRS, ResourceTemplate ()
 		{
 			IO (Decode16,
