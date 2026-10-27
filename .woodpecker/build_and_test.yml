@@ -131,16 +131,25 @@ matrix:
     # Asrock
     - BOARD: "asrock_spc741d8"
 
-clone:
-  git:
-    image: woodpeckerci/plugin-git
-    settings:
-      recursive: true
-      partial: false
-      submodule_partial: false
-      depth: 0
+skip_clone: true
 
 steps:
+  - name: clone
+    image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
+    pull: true
+    environment:
+      GITEA_TOKEN:
+        from_secret: GITEA_BUILDER_TOKEN_REPO_READ
+      GITHUB_TOKEN:
+        from_secret: GITHUB_SYNC_TOKEN
+    commands:
+      - git init -q .
+      - git remote add origin "$(printf '%s' "$${CI_REPO_CLONE_URL}" | sed "s#^https://#https://ci:$${GITEA_TOKEN}@#")"
+      - git fetch -q --no-tags origin "+$${CI_COMMIT_SHA}:"
+      - git checkout -q FETCH_HEAD
+      - git $${GITHUB_TOKEN:+-c url.https://x-access-token:$${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/} submodule update --init --recursive
+
+
   - name: report-init
     image: git.3mdeb.com/dasharo/coreboot-build-ci:latest
     pull: true
