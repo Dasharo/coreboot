@@ -5,6 +5,11 @@
 
 #set -x # uncomment for debug
 
+# Prevent linting submodules
+export GIT_CONFIG_COUNT=1
+export GIT_CONFIG_KEY_0=submodule.recurse
+export GIT_CONFIG_VALUE_0=false
+
 JUNIT=0
 INVERT=0
 
