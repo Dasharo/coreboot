@@ -167,7 +167,8 @@ steps:
     pull: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
+      - /project-data:/project-data
+      - /var/jenkins-home:/var/jenkins-home
     when:
       - matrix:
           EC_BOARD_VENDOR: "?*"
@@ -175,10 +176,11 @@ steps:
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
-      HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+      BUILDS_SUBPATH: coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     commands:
+      - export HOSTPATH="$$(for d in /project-data /var/jenkins-home; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
       - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - |
         task --taskfile .ci/Taskfile.yml ci:build-ec \
@@ -205,16 +207,18 @@ steps:
     pull: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
+      - /project-data:/project-data
+      - /var/jenkins-home:/var/jenkins-home
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
-      HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+      BUILDS_SUBPATH: coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     when:
       - matrix:
           BOARD: "?*"
     commands:
+      - export HOSTPATH="$$(for d in /project-data /var/jenkins-home; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
       - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
       - |
         task --taskfile .ci/Taskfile.yml ci:build-coreboot \
@@ -290,8 +294,10 @@ steps:
     when:
       - status: [success, failure]
     volumes:
-      - /var/tmp/coreboot-builds:/var/tmp/coreboot-builds
+      - /project-data:/project-data
+      - /var/jenkins-home:/var/jenkins-home
     environment:
-        HOSTPATH: /var/tmp/coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+        BUILDS_SUBPATH: coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
-      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="$${HOSTPATH}"
+      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="/project-data/$${BUILDS_SUBPATH}"
+      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="/var/jenkins-home/$${BUILDS_SUBPATH}"
