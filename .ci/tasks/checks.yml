@@ -46,7 +46,7 @@ tasks:
           make savedefconfig DOTCONFIG="$c"
           mv defconfig "$c"
         done
-        git diff --exit-code
+        git diff --exit-code -- configs/
 
   capsule-lint:
     desc: Verify update capsule settings in defconfigs
