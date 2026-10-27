@@ -3,4 +3,3 @@ config DRIVERS_NUVOTON_NCT3933
 	default n
 	help
 	  Driver for Nuvoton NCT3933 SMBus Sink/Source Current DAC
-
