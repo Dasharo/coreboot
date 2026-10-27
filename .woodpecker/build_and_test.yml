@@ -124,7 +124,7 @@ matrix:
 
     # Hardkernel
     - BOARD: "odroid_h4"
-      CAPSULE: "yes"
+      # CAPSULE: "yes" # It's not enabled for some reason here
     - BOARD: "odroid_h4_netcard"
       CAPSULE: "yes"
 
