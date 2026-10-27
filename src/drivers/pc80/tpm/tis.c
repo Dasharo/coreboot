@@ -878,7 +878,8 @@ static void lpc_tpm_fill_ssdt(const struct device *dev)
 		 */
 		struct acpi_irq tpm_irq_a = ACPI_IRQ_LEVEL_LOW(CONFIG_TPM_PIRQ);
 		acpi_device_write_interrupt(&tpm_irq_a);
-	} else if (tpm_read_int_vector(0) > 0) {
+	} else if (tpm_read_int_vector(0) > 0 && tpm_read_int_vector(0) < 16) {
+		/* SERIRQ vector is 4 bits; 0 means none, 0xff means no response */
 		u8 int_vec = tpm_read_int_vector(0);
 		u8 int_pol = tpm_read_int_polarity(0);
 		struct acpi_irq tpm_irq = ACPI_IRQ_LEVEL_LOW(int_vec);
