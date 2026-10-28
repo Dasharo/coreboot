@@ -167,8 +167,8 @@ steps:
     pull: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /project-data:/project-data
-      - /var/jenkins-home:/var/jenkins-home
+      - /project-data/coreboot-builds:/project-data/coreboot-builds
+      - /var/jenkins-home/coreboot-builds:/var/jenkins-home/coreboot-builds
     when:
       - matrix:
           EC_BOARD_VENDOR: "?*"
@@ -176,17 +176,15 @@ steps:
     environment:
       GITEA_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
-      BUILDS_SUBPATH: coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+      BUILDS_SUBPATH: ${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     commands:
-      - export HOSTPATH="$$(for d in /project-data /var/jenkins-home; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
-      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - export HOSTPATH="$$(for d in /project-data/coreboot-builds /var/jenkins-home/coreboot-builds; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
       - |
         task --taskfile .ci/Taskfile.yml ci:build-ec \
         EC_BOARD_VENDOR=${EC_BOARD_VENDOR} EC_BOARD_MODEL=${EC_BOARD_MODEL} \
         HOSTPATH="$${HOSTPATH}" EC_REV="${EC_REV}"
-      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
 
   - name: blobs
@@ -207,24 +205,22 @@ steps:
     pull: true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /project-data:/project-data
-      - /var/jenkins-home:/var/jenkins-home
+      - /project-data/coreboot-builds:/project-data/coreboot-builds
+      - /var/jenkins-home/coreboot-builds:/var/jenkins-home/coreboot-builds
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
-      BUILDS_SUBPATH: coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+      BUILDS_SUBPATH: ${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     when:
       - matrix:
           BOARD: "?*"
     commands:
-      - export HOSTPATH="$$(for d in /project-data /var/jenkins-home; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
-      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
+      - export HOSTPATH="$$(for d in /project-data/coreboot-builds /var/jenkins-home/coreboot-builds; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
       - |
         task --taskfile .ci/Taskfile.yml ci:build-coreboot \
         BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}" \
         EDK2_REPO="${EDK2_REPO}" EDK2_REV="${EDK2_REV}"
-      - docker run --rm -v /var/tmp/coreboot-builds:/w alpine rm -rf /w/{{base .HOSTPATH}}
 
   - name: test-qemu
     image: git.3mdeb.com/dasharo/osfv-qemu-ci:latest
@@ -294,10 +290,10 @@ steps:
     when:
       - status: [success, failure]
     volumes:
-      - /project-data:/project-data
-      - /var/jenkins-home:/var/jenkins-home
+      - /project-data/coreboot-builds:/project-data/coreboot-builds
+      - /var/jenkins-home/coreboot-builds:/var/jenkins-home/coreboot-builds
     environment:
-        BUILDS_SUBPATH: coreboot-builds/${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
+        BUILDS_SUBPATH: ${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
     commands:
-      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="/project-data/$${BUILDS_SUBPATH}"
-      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="/var/jenkins-home/$${BUILDS_SUBPATH}"
+      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="/project-data/coreboot-builds/$${BUILDS_SUBPATH}"
+      - task --taskfile .ci/Taskfile.yml ci:cleanup HOSTPATH="/var/jenkins-home/coreboot-builds/$${BUILDS_SUBPATH}"
