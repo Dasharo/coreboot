@@ -622,7 +622,7 @@ bool get_stm_option(void)
 
 bool dasharo_is_disk_capsules_boot(void)
 {
-	if (!CONFIG(EDK2_CAPSULES_V2))
+	if (!CONFIG(EDK2_CAPSULES_V2) && !CONFIG(EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET))
 		return false;
 
 	bool disk_capsules_boot = false;
