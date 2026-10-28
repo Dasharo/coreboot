@@ -236,6 +236,7 @@ steps:
     when:
       - matrix:
           QEMU: "true"
+          TEST_CONFIG: "**/?*"
     commands:
       - mkdir -p /srv/nfs/disk-images /var/tmp/ci-locks
       - mount -t nfs -o nolock,ro "$${NFS_IP}":/srv/nfs/disk-images /srv/nfs/disk-images
