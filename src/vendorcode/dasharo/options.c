@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <dasharo/options.h>
 #include <device/mmio.h>
@@ -337,6 +338,64 @@ hmrfpo_error:
 					 : ME_MODE_DISABLE_HECI;
 }
 
+static bool me_override_attempted(void)
+{
+	bool attempted = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("MeOverrideAttempted", &attempted);
+
+	return attempted;
+}
+
+static void set_me_override_attempted(bool attempted)
+{
+	struct region_device rdev;
+	uint8_t value = attempted;
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE))
+		return;
+
+	if (smmstore_lookup_region(&rdev))
+		return;
+
+	efi_fv_set_option(&rdev, &dasharo_system_features_guid, "MeOverrideAttempted",
+			  &value, sizeof(value));
+}
+
+__weak bool dasharo_fdopss_override_set(bool enable)
+{
+	(void)enable;
+	return false;
+}
+
+static bool fdopss_override_for_fum(void)
+{
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
+	if (fast_spi_flash_descriptor_override()) {
+		if (me_override_attempted())
+			set_me_override_attempted(false);
+		return true;
+	}
+#endif
+
+	if (me_override_attempted()) {
+		printk(BIOS_ERR, "FUM: ME override did not latch, using HMRFPO instead\n");
+		set_me_override_attempted(false);
+		return false;
+	}
+
+	if (!dasharo_fdopss_override_set(true))
+		return false;
+
+	set_me_override_attempted(true);
+	printk(BIOS_INFO, "FUM: ME override armed, performing full reset\n");
+#if CONFIG(HAVE_CF9_RESET)
+	do_full_reset();
+#endif
+	return false;
+}
+
 uint8_t cse_get_me_disable_mode(void)
 {
 	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
@@ -353,6 +412,9 @@ uint8_t cse_get_me_disable_mode(void)
 	 */
 	if (fum_is_active() &&
 	    (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot())) {
+		if (fdopss_override_for_fum())
+			return ME_MODE_DISABLE_FDOPSS;
+
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -684,6 +746,7 @@ static void set_descriptor_lockdown_option(void *unused)
 	uint8_t si_desc_buf[SI_DESC_SIZE];
 	struct region_device desc_rdev, smmstore_rdev;
 	uint8_t descriptor_writeable;
+	uint8_t descriptor_override;
 
 	if (!CONFIG(INTEL_DESCRIPTOR_MODE_CAPABLE) || !CONFIG(SMMSTORE))
 		return;
@@ -714,9 +777,9 @@ static void set_descriptor_lockdown_option(void *unused)
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
 	/*
 	 * With a locked descriptor, ME region is accessible only if ME opened it
-	 * (HMRFPO), this is checked after FSP-S which might have requested it.
+	 * (HMRFPO / FDOPSS), this is checked after FSP-S which might have requested it.
 	 */
-	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME);
+	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME) && fast_spi_flash_descriptor_override();
 
 	printk(BIOS_DEBUG, "ME region is %swriteable\n", me_region_writeable ? "" : "not ");
 

@@ -37,7 +37,8 @@ enum cse_disable_mode {
 	ME_MODE_DISABLE_HECI = 1,
 	ME_MODE_DISABLE_HAP = 2,
 	/* Not a variable value, but serves a purpose of disabling ME in boot flow */
-	ME_MODE_DISABLE_HMRFPO = 10
+	ME_MODE_DISABLE_HMRFPO = 10,
+	ME_MODE_DISABLE_FDOPSS = 11
 };
 
 enum usb_port_power_opt {
@@ -153,6 +154,8 @@ bool dma_protection_enabled(void);
  *  - 2 - ME HAP disabled
  */
 uint8_t cse_get_me_disable_mode(void);
+
+bool dasharo_fdopss_override_set(bool enable);
 
 /* Looks Dasharo/"SmmBwp" variable if SMM BIOS Write Protection was
  * enabled at compile time.
