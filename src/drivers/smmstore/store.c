@@ -49,6 +49,7 @@ _Static_assert(SMM_BLOCK_SIZE <= FMAP_SECTION_SMMSTORE_SIZE,
  */
 
 static int smmstore_use_full_flash = 0;
+static int smmstore_use_small_blocks = 0;
 static int has_capsules = -1;
 
 int smmstore_preprocess_cmd(uint8_t *cmd, void *param)
@@ -64,13 +65,32 @@ int smmstore_preprocess_cmd(uint8_t *cmd, void *param)
 			return has_capsules;
 		} else if (has_capsules == 1 && *cmd & SMMSTORE_CMD_USE_FULL_FLASH) {
 			smmstore_use_full_flash = 1;
+			/* Small blocks are supported only for the whole flash. */
+			smmstore_use_small_blocks = !!(*cmd & SMMSTORE_CMD_FULL_FLASH_SMALL_BLOCKS);
+			*cmd &= ~SMMSTORE_CMD_FULL_FLASH_SMALL_BLOCKS;
 		} else {
 			smmstore_use_full_flash = 0;
+			smmstore_use_small_blocks = 0;
 		}
 		*cmd &= ~SMMSTORE_CMD_USE_FULL_FLASH;
 	}
 
 	return 0;
+}
+
+/*
+ * Raw accesses to the whole flash (used by capsule updates) can operate on
+ * smaller blocks than the store, so that flash regions which aren't aligned to
+ * 64KiB (e.g. Intel ME region right after a read-only descriptor) can be
+ * updated without touching their neighbours.
+ */
+static uint32_t store_block_size(void)
+{
+	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) && smmstore_use_full_flash &&
+	    smmstore_use_small_blocks)
+		return SMM_FULL_FLASH_SMALL_BLOCK_SIZE;
+
+	return SMM_BLOCK_SIZE;
 }
 
 static enum cb_err lookup_store_region(struct region *region)
@@ -405,7 +425,7 @@ static int lookup_block_in_store(struct region_device *store, uint32_t block_id)
 		return -1;
 	}
 
-	if ((block_id * SMM_BLOCK_SIZE) >= region_device_sz(store)) {
+	if ((block_id * store_block_size()) >= region_device_sz(store)) {
 		printk(BIOS_ERR, "smm store: block ID out of range\n");
 		return -1;
 	}
@@ -459,7 +479,7 @@ int smmstore_rawread_region(uint32_t block_id, uint32_t offset, uint32_t bufsize
 	printk(BIOS_DEBUG, "smm store: reading %p block %d, offset=0x%x, size=%x\n",
 	       ptr, block_id, offset, bufsize);
 
-	ssize_t ret = rdev_readat(&store, ptr, block_id * SMM_BLOCK_SIZE + offset, bufsize);
+	ssize_t ret = rdev_readat(&store, ptr, block_id * store_block_size() + offset, bufsize);
 	rdev_munmap(&com_buf, ptr);
 	if (ret < 0)
 		return -1;
@@ -486,7 +506,7 @@ int smmstore_rawwrite_region(uint32_t block_id, uint32_t offset, uint32_t bufsiz
 	if (lookup_block_in_store(&store, block_id) < 0)
 		return -1;
 
-	if (rdev_chain(&store, &store, block_id * SMM_BLOCK_SIZE + offset, bufsize)) {
+	if (rdev_chain(&store, &store, block_id * store_block_size() + offset, bufsize)) {
 		printk(BIOS_ERR, "smm store: could not create subregion rdev\n");
 		return -1;
 	}
@@ -520,8 +540,9 @@ int smmstore_rawclear_region(uint32_t block_id)
 	if (lookup_block_in_store(&store, block_id) < 0)
 		return -1;
 
-	ssize_t ret = rdev_eraseat(&store, block_id * SMM_BLOCK_SIZE, SMM_BLOCK_SIZE);
-	if (ret != SMM_BLOCK_SIZE) {
+	const uint32_t block_size = store_block_size();
+	ssize_t ret = rdev_eraseat(&store, block_id * block_size, block_size);
+	if (ret != (ssize_t)block_size) {
 		printk(BIOS_ERR, "smm store: erasing block failed\n");
 		return -1;
 	}
