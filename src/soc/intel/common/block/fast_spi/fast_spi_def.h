@@ -36,6 +36,7 @@
 #define SPIBAR_FADDR			0x08
 #define SPIBAR_DLOCK			0x0c
 #define SPIBAR_FDATA(n)			(0x10 + ((n) & 0xf) * 4)
+#define SPIBAR_FRAP			0x50
 #define SPIBAR_FPR_BASE			0x84
 #define SPIBAR_FPR(n)			(0x84 + (4 * (n)))
 #define SPIBAR_PREOP			0xa4
@@ -94,6 +95,10 @@
 #define SPIBAR_DLOCK_PR2LOCKDN		(1 << 10)
 #define SPIBAR_DLOCK_PR3LOCKDN		(1 << 11)
 #define SPIBAR_DLOCK_PR4LOCKDN		(1 << 12)
+
+/* Bit definitions for FRAP (0x50) register */
+#define SPIBAR_FRAP_BRRA(region)	(1 << (region))
+#define SPIBAR_FRAP_BRWA(region)	(1 << (8 + (region)))
 
 /* Maximum bytes of data that can fit in FDATAn (0x10) registers */
 #define SPIBAR_FDATA_FIFO_SIZE		0x40
