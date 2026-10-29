@@ -24,6 +24,15 @@
  * them.
  */
 #define SMMSTORE_CMD_USE_FULL_FLASH 0x80
+/*
+ * Modifier of raw commands combined with SMMSTORE_CMD_USE_FULL_FLASH: blocks are
+ * SMM_FULL_FLASH_SMALL_BLOCK_SIZE instead of SMM_BLOCK_SIZE, which allows
+ * updating flash regions that aren't aligned to the latter. A separate flag
+ * keeps the meaning of SMMSTORE_CMD_USE_FULL_FLASH alone unchanged for existing
+ * payloads, while firmware without support for it rejects the command as
+ * unknown. Support is reported in the coreboot table.
+ */
+#define SMMSTORE_CMD_FULL_FLASH_SMALL_BLOCKS 0x40
 
 /*
  * The SMMSTORE protocol separates the store into blocks, each of which
@@ -32,6 +41,9 @@
  */
 
 #define SMM_BLOCK_SIZE CONFIG_SMMSTORE_BLOCK_SIZE
+
+/* Size of a block for raw commands with SMMSTORE_CMD_FULL_FLASH_SMALL_BLOCKS. */
+#define SMM_FULL_FLASH_SMALL_BLOCK_SIZE (4 * KiB)
 
 /*
  * Sets the communication buffer to use for read and write operations.
