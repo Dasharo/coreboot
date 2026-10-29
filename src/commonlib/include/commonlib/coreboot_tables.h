@@ -571,6 +571,11 @@ struct lb_smmstorev2 {
 					   Introduced after the initial implementation. Users of
 					   this table must check the 'size' field to detect if its
 					   written out by coreboot. */
+	uint32_t full_flash_small_block_size;
+					/* Size of a block of raw commands with
+					   SMMSTORE_CMD_FULL_FLASH_SMALL_BLOCKS in bytes, zero if
+					   unsupported. Users of this table must check the 'size'
+					   field to detect if its written out by coreboot. */
 };
 
 enum lb_tpm_ppi_tpm_version {
