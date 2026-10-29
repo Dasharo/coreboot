@@ -863,6 +863,19 @@ void efi_add_capsules_to_bootmem(void)
 	}
 }
 
+bool efi_ram_capsules_pending(void)
+{
+	struct region_device rdev;
+	uint64_t data;
+	uint32_t size = sizeof(data);
+
+	if (smmstore_lookup_region(&rdev))
+		return false;
+
+	return efi_fv_get_option(&rdev, &capsule_vendor_guid, "CapsuleUpdateData",
+		&data, &size) == CB_SUCCESS;
+}
+
 /*
  * The code from this unit is typically executed by clear_memory() which is run
  * after DEV_INIT.  However, clear_memory() might not be compiled in in which
