@@ -19,6 +19,7 @@
 #include <intelbasecode/ramtop.h>
 #include <intelblocks/cpulib.h>
 #include <intelblocks/cse.h>
+#include <intelblocks/fast_spi.h>
 #include <intelblocks/pcie_rp.h>
 #include <option.h>
 #include <security/intel/cbnt/cbnt.h>
@@ -292,6 +293,13 @@ static void fill_fspm_misc_params(FSP_M_CONFIG *m_cfg,
 
 	/* Skip MBP HOB */
 	m_cfg->SkipMbpHob = !CONFIG(FSP_PUBLISH_MBP_HOB);
+
+	/* Skip ME Handshake when in FDOPSS */
+	if (fast_spi_flash_descriptor_override()) {
+		m_cfg->SkipMbpHob = 1;
+		m_cfg->DidInitStat = 1;
+		m_cfg->DisableCpuReplacedPolling = 1;
+	}
 
 	m_cfg->SkipExtGfxScan = config->skip_ext_gfx_scan;
 
