@@ -445,6 +445,14 @@ bool fast_spi_wpd_status(void)
 		SPI_BIOS_CONTROL_WPD;
 }
 
+bool fast_spi_region_rw_accessible(unsigned int region)
+{
+	const uint32_t frap = read32(fast_spi_get_bar() + SPIBAR_FRAP);
+	const uint32_t mask = SPIBAR_FRAP_BRRA(region) | SPIBAR_FRAP_BRWA(region);
+
+	return (frap & mask) == mask;
+}
+
 /* Enable SPI Write Protect. */
 void fast_spi_enable_wp(void)
 {
