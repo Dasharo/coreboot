@@ -17,6 +17,14 @@
 #include <intelblocks/cse.h>
 #endif
 
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
+#include <intelblocks/fast_spi.h>
+#endif
+
+#if ENV_RAMSTAGE && CONFIG(XEON_SP_COMMON_BASE)
+#include <soc/ramstage.h>
+#endif
+
 _Static_assert(sizeof(bool) == 1, "Size of bool, must be 1");
 
 /* Keeping field names as in EDK to make things easier to follow, types are
@@ -233,6 +241,14 @@ static bool fum_is_active(void)
 
 	return fum;
 }
+
+#if ENV_RAMSTAGE && CONFIG(XEON_SP_COMMON_BASE)
+/* Open ME region for flashing in Firmware Update Mode, including capsule updates */
+bool sps_hmrfpo_enable_requested(void)
+{
+	return fum_is_active();
+}
+#endif
 
 bool is_vboot_locking_permitted(void)
 {
@@ -694,5 +710,21 @@ static void set_descriptor_lockdown_option(void *unused)
 			  "DescriptorWriteable",
 			  &descriptor_writeable,
 			  sizeof(descriptor_writeable));
+
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
+	/*
+	 * With a locked descriptor, ME region is accessible only if ME opened it
+	 * (HMRFPO), this is checked after FSP-S which might have requested it.
+	 */
+	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME);
+
+	printk(BIOS_DEBUG, "ME region is %swriteable\n", me_region_writeable ? "" : "not ");
+
+	efi_fv_set_option(&smmstore_rdev,
+			  &dasharo_system_features_guid,
+			  "MeRegionWriteable",
+			  &me_region_writeable,
+			  sizeof(me_region_writeable));
+#endif
 }
 BOOT_STATE_INIT_ENTRY(BS_POST_DEVICE, BS_ON_ENTRY, set_descriptor_lockdown_option, NULL);
