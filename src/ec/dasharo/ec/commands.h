@@ -58,6 +58,8 @@
 #define CMD_OPTION_GET 25
 // Set a persistent option by index
 #define CMD_OPTION_SET 26
+// Drive the flash descriptor override strap (ME_WE)
+#define CMD_ME_OVERRIDE_SET 27
 
 // Print command. Registers are unique for each command
 #define CMD_PRINT_REG_FLAGS 2
