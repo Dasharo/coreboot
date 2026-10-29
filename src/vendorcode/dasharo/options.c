@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <dasharo/options.h>
 #include <device/mmio.h>
+#include <drivers/efi/capsules.h>
 #include <drivers/efi/efivars.h>
 #include <fmap.h>
 #include <option.h>
@@ -337,12 +339,84 @@ hmrfpo_error:
 					 : ME_MODE_DISABLE_HECI;
 }
 
+static bool fdopss_me_override_attempted(void)
+{
+	bool attempted = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("MeOverrideAttempted", &attempted);
+
+	return attempted;
+}
+
+static void set_fdopss_me_override_attempted(bool attempted)
+{
+	struct region_device rdev;
+	uint8_t value = attempted;
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE_V2))
+		return;
+
+	if (smmstore_lookup_region(&rdev))
+		return;
+
+	efi_fv_set_option(&rdev, &dasharo_system_features_guid, "MeOverrideAttempted",
+			  &value, sizeof(value));
+}
+
+__weak bool dasharo_fdopss_me_override_set(bool enable)
+{
+	return false;
+}
+
+static bool fdopss_me_override_for_fum(void)
+{
+/* The required header is included conditionally */
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
+	if (fast_spi_flash_descriptor_override()) {
+		if (fdopss_me_override_attempted())
+			set_fdopss_me_override_attempted(false);
+		return true;
+	}
+#endif
+
+	if (fdopss_me_override_attempted()) {
+		printk(BIOS_ERR, "FUM: ME override did not latch, using HMRFPO instead\n");
+		set_fdopss_me_override_attempted(false);
+		return false;
+	}
+
+	if (!CONFIG(HAVE_CF9_RESET)) {
+		printk(BIOS_WARNING, "FUM: CF9 reset not supported, cannot toggle FDOPSS\n");
+		return false;
+	}
+
+	if (!dasharo_fdopss_me_override_set(true))
+		return false;
+
+	set_fdopss_me_override_attempted(true);
+	printk(BIOS_INFO, "FUM: ME override armed, performing full reset\n");
+	do_full_reset();
+	return false;
+}
+
 uint8_t cse_get_me_disable_mode(void)
 {
 	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("MeMode", &var);
+
+	if (!fum_is_active())
+		return var;
+
+	/*
+	 * Open the flash for the update by overriding the descriptor with the
+	 * FDOPSS strap, unless an in-RAM capsule is pending, as it would not
+	 * survive the full reset required to latch the strap.
+	 */
+	if (!efi_ram_capsules_pending() && fdopss_me_override_for_fum())
+		return ME_MODE_DISABLE_FDOPSS;
 
 	/*
 	 * Disable ME via HMRPFO if in Firmware Update Mode
@@ -351,8 +425,7 @@ uint8_t cse_get_me_disable_mode(void)
 	 * capsules, because in-RAM capsules do not survive a cold reset
 	 * required for HMRFPO.
 	 */
-	if (fum_is_active() &&
-	    (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot())) {
+	if (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot()) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -714,9 +787,11 @@ static void set_descriptor_lockdown_option(void *unused)
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
 	/*
 	 * With a locked descriptor, ME region is accessible only if ME opened it
-	 * (HMRFPO), this is checked after FSP-S which might have requested it.
+	 * (HMRFPO), this is checked after FSP-S which might have requested it, or
+	 * if the descriptor is overridden by the FDOPSS strap.
 	 */
-	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME);
+	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME) ||
+				      fast_spi_flash_descriptor_override();
 
 	printk(BIOS_DEBUG, "ME region is %swriteable\n", me_region_writeable ? "" : "not ");
 
