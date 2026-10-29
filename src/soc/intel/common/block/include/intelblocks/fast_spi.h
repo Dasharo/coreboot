@@ -111,5 +111,13 @@ void fast_spi_set_bde(void);
  * Check if flash descriptor override is asserted
  */
 bool fast_spi_flash_descriptor_override(void);
+/* Number of Intel ME region in the flash descriptor */
+#define FAST_SPI_REGION_ME	2
+/*
+ * Check if host can both read and write flash region with given number
+ * (as in the flash descriptor). This reflects the effective permissions, e.g.
+ * ME region becomes accessible while ME is in HMRFPO mode.
+ */
+bool fast_spi_region_rw_accessible(unsigned int region);
 
 #endif	/* SOC_INTEL_COMMON_BLOCK_FAST_SPI_H */
