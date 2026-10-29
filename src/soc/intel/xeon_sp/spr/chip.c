@@ -9,6 +9,8 @@
 #include <device/pci_ids.h>
 #include <device/pciexp.h>
 #include <intelblocks/acpi.h>
+#include <intelblocks/cse.h>
+#include <intelblocks/fast_spi.h>
 #include <intelblocks/gpio.h>
 #include <intelblocks/lpc_lib.h>
 #include <intelblocks/p2sb.h>
@@ -31,12 +33,27 @@ __weak void mainboard_silicon_init_params(FSPS_UPD *params)
 {
 }
 
+__weak bool sps_hmrfpo_enable_requested(void)
+{
+	return false;
+}
+
 /* UPD parameters to be initialized before SiliconInit */
 void platform_fsp_silicon_init_params_cb(FSPS_UPD *silupd)
 {
 	FSPS_CONFIG *s_cfg = &silupd->FspsConfig;
 
 	s_cfg->EnableTme = CONFIG(INTEL_TME) && is_tme_supported();
+
+	/*
+	 * FSP-S obtains a nonce with HMRFPO_LOCK (enabled by default) and uses
+	 * it for HMRFPO_ENABLE. SPS then switches to recovery firmware and
+	 * the host gets access to the ME region until the next platform reset.
+	 */
+	if (sps_hmrfpo_enable_requested()) {
+		printk(BIOS_INFO, "Requesting ME region access for ME firmware update\n");
+		s_cfg->MeHmrfpoEnableEnabled = 1;
+	}
 
 	mainboard_silicon_init_params(silupd);
 }
@@ -88,6 +105,14 @@ static void chip_init(void *data)
 {
 	printk(BIOS_DEBUG, "coreboot: calling fsp_silicon_init\n");
 	fsp_silicon_init();
+
+	if (sps_hmrfpo_enable_requested()) {
+		/* ME runs recovery firmware (current state 2) while ME region is open */
+		const uint32_t hfsts1 = me_read_config32(PCI_ME_HFSTS1);
+		printk(BIOS_INFO, "HMRFPO: ME HFSTS1 = 0x%08x (current state %u), "
+		       "ME region is %saccessible\n", hfsts1, hfsts1 & 0xf,
+		       fast_spi_region_rw_accessible(FAST_SPI_REGION_ME) ? "" : "not ");
+	}
 
 	setup_pds();
 	attach_iio_stacks();
