@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <cbfs.h>
 #include <console/system76_ec.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/pnp.h>
@@ -199,6 +200,12 @@ uint8_t dasharo_ec_read_board(uint8_t *data)
 	}
 
 	return result;
+}
+
+bool dasharo_fdopss_override_set(bool enable)
+{
+	uint8_t data = enable;
+	return dasharo_ec_smfi_cmd(CMD_ME_OVERRIDE_SET, sizeof(data), &data) == 0;
 }
 
 /* Ported from system76_ectool */

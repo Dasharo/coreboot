@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <bootstate.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <dasharo/options.h>
 #include <device/mmio.h>
@@ -337,12 +338,102 @@ hmrfpo_error:
 					 : ME_MODE_DISABLE_HECI;
 }
 
+static bool me_override_attempted(void)
+{
+	bool attempted = false;
+
+	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
+		read_bool_var("MeOverrideAttempted", &attempted);
+
+	return attempted;
+}
+
+static void set_me_override_attempted(bool attempted)
+{
+	struct region_device rdev;
+	uint8_t value = attempted;
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE))
+		return;
+
+	if (smmstore_lookup_region(&rdev))
+		return;
+
+	efi_fv_set_option(&rdev, &dasharo_system_features_guid, "MeOverrideAttempted",
+			  &value, sizeof(value));
+}
+
+__weak bool dasharo_fdopss_override_set(bool enable)
+{
+	(void)enable;
+	return false;
+}
+
+/* In-RAM capsules are passed via CapsuleUpdateData* variables and don't
+ * survive the full reset needed to latch the override. */
+static bool in_ram_capsule_pending(void)
+{
+	static const EFI_GUID capsule_vendor_guid = {
+		0x711C703F, 0xC285, 0x4B10, { 0xA3, 0xB0, 0x36, 0xEC, 0xBD, 0x3C, 0x8B, 0xE2 }
+	};
+	struct region_device rdev;
+	uint64_t data;
+	uint32_t size = sizeof(data);
+
+	if (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES))
+		return false;
+
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
+		return false;
+
+	return efi_fv_get_option(&rdev, &capsule_vendor_guid, "CapsuleUpdateData",
+				 &data, &size) == CB_SUCCESS;
+}
+
+static bool fdopss_override_for_fum(void)
+{
+#if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
+	if (fast_spi_flash_descriptor_override()) {
+		if (me_override_attempted())
+			set_me_override_attempted(false);
+		return true;
+	}
+#endif
+
+	if (me_override_attempted()) {
+		printk(BIOS_ERR, "FUM: ME override did not latch, using HMRFPO instead\n");
+		set_me_override_attempted(false);
+		return false;
+	}
+
+	if (!dasharo_fdopss_override_set(true))
+		return false;
+
+	set_me_override_attempted(true);
+	printk(BIOS_INFO, "FUM: ME override armed, performing full reset\n");
+#if CONFIG(HAVE_CF9_RESET)
+	do_full_reset();
+#endif
+	return false;
+}
+
 uint8_t cse_get_me_disable_mode(void)
 {
 	uint8_t var = CONFIG_INTEL_ME_DEFAULT_STATE;
 
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("MeMode", &var);
+
+	if (!fum_is_active())
+		return var;
+
+	/*
+	 * Open the flash for the update by overriding the descriptor with the
+	 * FDOPSS strap, unless an in-RAM capsule is pending, as it would not
+	 * survive the full reset required to latch the strap.
+	 */
+	if (!in_ram_capsule_pending() && fdopss_override_for_fum())
+		return ME_MODE_DISABLE_FDOPSS;
 
 	/*
 	 * Disable ME via HMRPFO if in Firmware Update Mode
@@ -351,8 +442,7 @@ uint8_t cse_get_me_disable_mode(void)
 	 * capsules, because in-RAM capsules do not survive a cold reset
 	 * required for HMRFPO.
 	 */
-	if (fum_is_active() &&
-	    (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot())) {
+	if (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot()) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -714,9 +804,9 @@ static void set_descriptor_lockdown_option(void *unused)
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
 	/*
 	 * With a locked descriptor, ME region is accessible only if ME opened it
-	 * (HMRFPO), this is checked after FSP-S which might have requested it.
+	 * (HMRFPO / FDOPSS), this is checked after FSP-S which might have requested it.
 	 */
-	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME);
+	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME) || fast_spi_flash_descriptor_override();
 
 	printk(BIOS_DEBUG, "ME region is %swriteable\n", me_region_writeable ? "" : "not ");
 

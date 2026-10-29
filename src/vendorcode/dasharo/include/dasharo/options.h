@@ -37,7 +37,8 @@ enum cse_disable_mode {
 	ME_MODE_DISABLE_HECI = 1,
 	ME_MODE_DISABLE_HAP = 2,
 	/* Not a variable value, but serves a purpose of disabling ME in boot flow */
-	ME_MODE_DISABLE_HMRFPO = 10
+	ME_MODE_DISABLE_HMRFPO = 10,
+	ME_MODE_DISABLE_FDOPSS = 11
 };
 
 enum usb_port_power_opt {
@@ -153,6 +154,15 @@ bool dma_protection_enabled(void);
  *  - 2 - ME HAP disabled
  */
 uint8_t cse_get_me_disable_mode(void);
+
+/* Issues CMD_ME_OVERRIDE_SET EC command to disable the CSME for 1 boot
+ * via FDOPSS after the next do_full_reset().
+ *
+ * Result:
+ *  - 0 - Failed
+ *  - 1 - ME will be disabled
+ */
+bool dasharo_fdopss_override_set(bool enable);
 
 /* Looks Dasharo/"SmmBwp" variable if SMM BIOS Write Protection was
  * enabled at compile time.
