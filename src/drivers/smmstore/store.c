@@ -117,8 +117,17 @@ static int lookup_store(struct region_device *rstore)
 	if (lookup_store_region(&region) != CB_SUCCESS)
 		return -1;
 
-	if (boot_device_ro_subregion(&region, &read_rdev) < 0)
+	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) && smmstore_use_full_flash) {
+		/*
+		 * Only (part of) BIOS region is memory mapped, reading other parts
+		 * of the flash through the mapping accesses unrelated MMIO instead,
+		 * so read through the SPI controller like when writing.
+		 */
+		if (boot_device_rw_subregion(&region, &read_rdev) < 0)
+			return -1;
+	} else if (boot_device_ro_subregion(&region, &read_rdev) < 0) {
 		return -1;
+	}
 
 	if (boot_device_rw_subregion(&region, &write_rdev) < 0)
 		return -1;
