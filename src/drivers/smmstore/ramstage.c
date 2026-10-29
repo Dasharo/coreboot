@@ -36,4 +36,9 @@ void lb_smmstorev2(struct lb_header *header)
 	store->num_blocks = info.num_blocks;
 	store->block_size = info.block_size;
 	store->apm_cmd = APM_CNT_SMMSTORE;
+	/* Full flash access is available only for capsule updates. */
+	if (CONFIG(DRIVERS_EFI_UPDATE_CAPSULES))
+		store->full_flash_small_block_size = SMM_FULL_FLASH_SMALL_BLOCK_SIZE;
+	else
+		store->full_flash_small_block_size = 0;
 }
