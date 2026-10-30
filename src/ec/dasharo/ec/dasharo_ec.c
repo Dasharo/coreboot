@@ -205,7 +205,6 @@ uint8_t dasharo_ec_read_board(uint8_t *data)
 bool dasharo_fdopss_override_set(bool enable)
 {
 	uint8_t data = enable;
-
 	return dasharo_ec_smfi_cmd(CMD_ME_OVERRIDE_SET, sizeof(data), &data) == 0;
 }
 
