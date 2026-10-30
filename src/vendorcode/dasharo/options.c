@@ -369,6 +369,27 @@ __weak bool dasharo_fdopss_override_set(bool enable)
 	return false;
 }
 
+/* In-RAM capsules are passed via CapsuleUpdateData* variables and don't
+ * survive the full reset needed to latch the override. */
+static bool in_ram_capsule_pending(void)
+{
+	static const EFI_GUID capsule_vendor_guid = {
+		0x711C703F, 0xC285, 0x4B10, { 0xA3, 0xB0, 0x36, 0xEC, 0xBD, 0x3C, 0x8B, 0xE2 }
+	};
+	struct region_device rdev;
+	uint64_t data;
+	uint32_t size = sizeof(data);
+
+	if (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES))
+		return false;
+
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
+		return false;
+
+	return efi_fv_get_option(&rdev, &capsule_vendor_guid, "CapsuleUpdateData",
+				 &data, &size) == CB_SUCCESS;
+}
+
 static bool fdopss_override_for_fum(void)
 {
 #if CONFIG(SOC_INTEL_COMMON_BLOCK_FAST_SPI)
@@ -403,6 +424,17 @@ uint8_t cse_get_me_disable_mode(void)
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
 		read_u8_var("MeMode", &var);
 
+	if (!fum_is_active())
+		return var;
+
+	/*
+	 * Open the flash for the update by overriding the descriptor with the
+	 * FDOPSS strap, unless an in-RAM capsule is pending, as it would not
+	 * survive the full reset required to latch the strap.
+	 */
+	if (!in_ram_capsule_pending() && fdopss_override_for_fum())
+		return ME_MODE_DISABLE_FDOPSS;
+
 	/*
 	 * Disable ME via HMRPFO if in Firmware Update Mode
 	 *
@@ -410,11 +442,7 @@ uint8_t cse_get_me_disable_mode(void)
 	 * capsules, because in-RAM capsules do not survive a cold reset
 	 * required for HMRFPO.
 	 */
-	if (fum_is_active() &&
-	    (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot())) {
-		if (fdopss_override_for_fum())
-			return ME_MODE_DISABLE_FDOPSS;
-
+	if (!CONFIG(DRIVERS_EFI_UPDATE_CAPSULES) || dasharo_is_disk_capsules_boot()) {
 		/* Check if already in HMRFPO mode */
 		if (cse_is_hfs1_com_secover_mei_msg())
 			return ME_MODE_DISABLE_HMRFPO;
@@ -746,7 +774,6 @@ static void set_descriptor_lockdown_option(void *unused)
 	uint8_t si_desc_buf[SI_DESC_SIZE];
 	struct region_device desc_rdev, smmstore_rdev;
 	uint8_t descriptor_writeable;
-	uint8_t descriptor_override;
 
 	if (!CONFIG(INTEL_DESCRIPTOR_MODE_CAPABLE) || !CONFIG(SMMSTORE))
 		return;
@@ -779,7 +806,7 @@ static void set_descriptor_lockdown_option(void *unused)
 	 * With a locked descriptor, ME region is accessible only if ME opened it
 	 * (HMRFPO / FDOPSS), this is checked after FSP-S which might have requested it.
 	 */
-	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME) && fast_spi_flash_descriptor_override();
+	uint8_t me_region_writeable = fast_spi_region_rw_accessible(FAST_SPI_REGION_ME) || fast_spi_flash_descriptor_override();
 
 	printk(BIOS_DEBUG, "ME region is %swriteable\n", me_region_writeable ? "" : "not ");
 

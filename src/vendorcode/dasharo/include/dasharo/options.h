@@ -155,6 +155,13 @@ bool dma_protection_enabled(void);
  */
 uint8_t cse_get_me_disable_mode(void);
 
+/* Issues CMD_ME_OVERRIDE_SET EC command to disable the CSME for 1 boot
+ * via FDOPSS after the next do_full_reset().
+ *
+ * Result:
+ *  - 0 - Failed
+ *  - 1 - ME will be disabled
+ */
 bool dasharo_fdopss_override_set(bool enable);
 
 /* Looks Dasharo/"SmmBwp" variable if SMM BIOS Write Protection was
