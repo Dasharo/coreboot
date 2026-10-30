@@ -1,0 +1,97 @@
+#!/bin/sh
+##
+## SPDX-License-Identifier: GPL-2.0-only
+
+# Ask for the Dasharo Upstream-Status trailer and add it to the commit message.
+# Runs as a prepare-commit-msg hook, installed through .pre-commit-config.yaml.
+#
+# Skipped for merges, squashes, during rebases, when the message already has
+# an Upstream-Status trailer or when there is no terminal to ask on. Can be
+# disabled with `git config dasharo.upstreamStatus false` or by setting
+# UPSTREAM_STATUS_SKIP=1 in the environment.
+
+MSG_FILE="$1"
+SOURCE="${2:-${PRE_COMMIT_COMMIT_MSG_SOURCE:-}}"
+
+case "${SOURCE}" in
+merge|squash) exit 0 ;;
+esac
+
+[ "$(git config --type=bool --get dasharo.upstreamStatus)" = "false" ] && exit 0
+[ -n "${UPSTREAM_STATUS_SKIP:-}" ] && exit 0
+
+git_dir="$(git rev-parse --git-dir)"
+[ -d "${git_dir}/rebase-merge" ] || [ -d "${git_dir}/rebase-apply" ] && exit 0
+
+grep -qi '^Upstream-Status:' "${MSG_FILE}" && exit 0
+
+# Hooks have no stdin attached, so talk to the terminal directly.
+(: </dev/tty >/dev/tty) 2>/dev/null || exit 0
+exec 3</dev/tty 4>/dev/tty
+
+ask() {
+	printf '%s' "$1" >&4
+	read -r answer <&3 || answer=""
+}
+
+ask_cl() {
+	while :; do
+		ask "Gerrit change number${1:+ [$1]}: "
+		answer="${answer:-$1}"
+		answer="${answer#CB:}"
+		case "${answer}" in
+		''|*[!0-9]*) printf 'Not a change number: %s\n' "${answer}" >&4 ;;
+		*) return ;;
+		esac
+	done
+}
+
+# Suggest the change number of a commit cherry-picked from upstream Gerrit.
+upstream_cl="$(sed -n 's|^Reviewed-on: https://review.coreboot.org/.*/+/\([0-9]*\).*|\1|p' \
+	"${MSG_FILE}" | tail -n 1)"
+
+subject="$(git stripspace --strip-comments <"${MSG_FILE}" | head -n 1)"
+case "${subject}" in
+Signed-off-by:\ *) subject="" ;;	# no message yet, only `-s`
+esac
+
+cat >&4 <<EOF
+
+Upstream-Status${subject:+ for \"${subject}\"}:
+  1) Pending
+  2) Submitted [CB:<change>]
+  3) Backport [CB:<change>]${upstream_cl:+  (CB:${upstream_cl} detected)}
+  4) Inappropriate [Dasharo downstream]
+  5) Inappropriate [<other reason>]
+  s) skip
+EOF
+
+status=""
+while [ -z "${status}" ]; do
+	ask "Choice: "
+	case "${answer}" in
+	1) status="Pending" ;;
+	2) ask_cl; status="Submitted [CB:${answer}]" ;;
+	3) ask_cl "${upstream_cl}"; status="Backport [CB:${answer}]" ;;
+	4) status="Inappropriate [Dasharo downstream]" ;;
+	5)
+		ask "Reason: "
+		[ -n "${answer}" ] && status="Inappropriate [${answer}]"
+		;;
+	s|S) exit 0 ;;
+	*) printf 'Invalid choice: %s\n' "${answer}" >&4 ;;
+	esac
+done
+
+trailer="Upstream-Status: ${status}"
+
+if [ -z "$(git stripspace --strip-comments <"${MSG_FILE}")" ]; then
+	# No message yet: leave the first lines free for the subject and body.
+	tmp="${MSG_FILE}.upstream-status"
+	{ printf '\n\n%s\n' "${trailer}"; cat "${MSG_FILE}"; } >"${tmp}"
+	mv "${tmp}" "${MSG_FILE}"
+else
+	# Put it first in the trailer block, ahead of Change-Id and Signed-off-by.
+	git -c trailer.where=start interpret-trailers --in-place \
+		--trailer "${trailer}" "${MSG_FILE}"
+fi

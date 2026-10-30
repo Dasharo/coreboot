@@ -1,7 +1,7 @@
 ---
 default_stages: [pre-commit]
 
-default_install_hook_types: [pre-commit, commit-msg]
+default_install_hook_types: [pre-commit, prepare-commit-msg, commit-msg]
 
 ci:
   autoupdate_commit_msg: 'pre-commit: autoupdate hooks'
@@ -44,6 +44,12 @@ repos:
         entry: util/lint/lint lint-stable
         language: script
         types: [file]
+      - id: upstream-status-prompt
+        name: Ask for the Upstream-Status tag
+        entry: util/dasharo/upstream-status-prompt
+        language: script
+        stages: [prepare-commit-msg]
+        always_run: true
 
   - repo: https://github.com/3mdeb/hooks
     rev: v0.1.7
