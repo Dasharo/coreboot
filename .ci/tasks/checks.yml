@@ -137,7 +137,7 @@ tasks:
         RELEASE_DATE=$(git -C 3rdparty/intel-microcode log -1 --pretty=format:%cs)
         branch="update_ucode_${RELEASE_DATE}"
         title="Update µcode ${RELEASE_DATE}"
-        git checkout -B "$BRANCH"
+        git checkout -B "$branch"
 
         git add 3rdparty/intel-microcode
         git -c user.name="Dasharo CI" -c user.email="robot@3mdeb.com" \
