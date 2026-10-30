@@ -16,7 +16,7 @@ tasks:
     cmds:
       - rm -rf osfv
       - |
-        git clone --depth 1 --recurse-submodules --branch using-stability-ci-outside \
+        git clone --depth 1 --recurse-submodules --branch develop \
         https://ci:$GITEA_TOKEN@git.3mdeb.com/Dasharo/open-source-firmware-validation.git \
         osfv
 
