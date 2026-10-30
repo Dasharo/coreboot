@@ -9,7 +9,7 @@ when:
     event: [manual]
   - event: tag
   - event: push
-    branch: rebase/dasharo/rebased/*
+    branch: rebase/dasharo/rebased/**
 
 labels:
   network: ${NETWORK} # must be set to "office" to run tests on hardware
