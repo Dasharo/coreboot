@@ -5,6 +5,9 @@
 #include <dasharo/options.h>
 #include <device/mmio.h>
 #include <drivers/efi/efivars.h>
+/* For EFI_VARIABLE_RUNTIME_ACCESS; same header set as drivers/efi/efivars.c. */
+#include <vendorcode/intel/edk2/UDK2017/MdePkg/Include/Uefi/UefiBaseType.h>
+#include <vendorcode/intel/edk2/UDK2017/MdePkg/Include/Uefi/UefiMultiPhase.h>
 #include <fmap.h>
 #include <option.h>
 #include <pc80/mc146818rtc.h>
@@ -224,6 +227,43 @@ bool dasharo_render_standby_enabled(void)
 	return enabled;
 }
 
+/*
+ * Honour the FUM Request variable only if it could not have been written from
+ * the OS. The payload creates it without EFI_VARIABLE_RUNTIME_ACCESS, so a
+ * copy that carries the bit was either created by an older payload or by an
+ * OS-level writer, and in both cases the request did not go through the setup
+ * menu that the password protects.
+ */
+static bool fum_request_is_trusted(void)
+{
+	struct region_device rdev;
+	uint8_t request;
+	uint32_t size = sizeof(request);
+	uint32_t attributes = 0;
+	enum cb_err ret;
+
+	if (option_defaults_forced())
+		return false;
+
+	if (!CONFIG(SMMSTORE_V2) || smmstore_lookup_region(&rdev))
+		return false;
+
+	ret = efi_fv_get_option_attrs(&rdev, &dasharo_system_features_guid,
+				      "FirmwareUpdateModeRequest", &request, &size,
+				      &attributes);
+	if (ret != CB_SUCCESS || size != sizeof(request))
+		return false;
+
+	if (attributes & EFI_VARIABLE_RUNTIME_ACCESS) {
+		printk(BIOS_WARNING,
+		       "dasharo: ignoring FUM request with runtime access (attributes 0x%x)\n",
+		       attributes);
+		return false;
+	}
+
+	return request != 0;
+}
+
 static bool fum_is_active(void)
 {
 	bool fum = false;
@@ -237,7 +277,7 @@ static bool fum_is_active(void)
 
 	/* Check the FUM Request variable. FUM Active var is created by the payload. */
 	if (CONFIG(DRIVERS_EFI_VARIABLE_STORE))
-		read_bool_var("FirmwareUpdateModeRequest", &fum);
+		fum = fum_request_is_trusted();
 
 	return fum;
 }

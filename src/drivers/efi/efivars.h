@@ -31,6 +31,20 @@ enum cb_err efi_fv_get_option(struct region_device *rdev,
 			      uint32_t *size);
 
 /**
+ * efi_fv_get_option_attrs
+ * Same as efi_fv_get_option(), additionally returning the attributes the
+ * variable was stored with (EFI_VARIABLE_* bits), so that a caller can tell
+ * whether the variable could have been written from the OS at runtime.
+ * @attributes: on output the stored attributes. May be NULL.
+ */
+enum cb_err efi_fv_get_option_attrs(struct region_device *rdev,
+				    const EFI_GUID *guid,
+				    const char *name,
+				    void *dest,
+				    uint32_t *size,
+				    uint32_t *attributes);
+
+/**
  * efi_fv_set_option
  * Use the provided EFI variable store inside the region device as variable store.
  * If the variable exists with the same size and contents, nothing will be written

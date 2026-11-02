@@ -213,6 +213,7 @@ struct efi_find_args {
 	const char *name;
 	uint32_t *size;
 	void *data;
+	uint32_t *attributes;
 };
 
 static bool match(struct region_device *rdev, VARIABLE_HEADER *hdr, size_t hdr_size,
@@ -244,6 +245,8 @@ enum cb_err find_and_copy(struct region_device *rdev, VARIABLE_HEADER *hdr, size
 		return CB_SUCCESS;
 
 	*stop = true;
+	if (fa->attributes)
+		*(fa->attributes) = hdr->Attributes;
 	if (*(fa->size) < hdr->DataSize)
 		return CB_EFI_BUFFER_TOO_SMALL;
 
@@ -426,11 +429,12 @@ enum cb_err efi_fv_print_options(struct region_device *rdev)
  * - rdev is the spi flash region to operate on
  * - the FVH and variable store header must have been initialized by a third party
  */
-enum cb_err efi_fv_get_option(struct region_device *rdev,
-			      const EFI_GUID *guid,
-			      const char *name,
-			      void *dest,
-			      uint32_t *size)
+enum cb_err efi_fv_get_option_attrs(struct region_device *rdev,
+				    const EFI_GUID *guid,
+				    const char *name,
+				    void *dest,
+				    uint32_t *size,
+				    uint32_t *attributes)
 {
 	struct efi_find_args args;
 	bool auth_format;
@@ -445,8 +449,18 @@ enum cb_err efi_fv_get_option(struct region_device *rdev,
 	args.name = name;
 	args.size = size;
 	args.data = dest;
+	args.attributes = attributes;
 
 	return walk_variables(&store_rdev, auth_format, find_and_copy, &args);
+}
+
+enum cb_err efi_fv_get_option(struct region_device *rdev,
+			      const EFI_GUID *guid,
+			      const char *name,
+			      void *dest,
+			      uint32_t *size)
+{
+	return efi_fv_get_option_attrs(rdev, guid, name, dest, size, NULL);
 }
 
 static enum cb_err write_auth_hdr(struct region_device *rdev, const EFI_GUID *guid,
