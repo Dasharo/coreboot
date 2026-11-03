@@ -21,5 +21,7 @@ DefinitionBlock(
 		#include <soc/intel/skylake/acpi/pch.asl>
 	}
 
+	#include "acpi/dshr.asl"
+
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }
