@@ -5,8 +5,10 @@
 /*
  * Dasharo ACPI interface (DSHR0001) backed by the NCT6687D hardware monitor.
  *
- * Registers are accessed through EC port 1 (software port) with the same
- * page/index/data protocol as Linux drivers/hwmon/nct6683.c. The channels
+ * Registers are accessed through EC port 0 with the same page/index/data
+ * protocol as Linux drivers/hwmon/nct6683.c. Port 0 is meant for firmware and
+ * is only used by coreboot during boot. Port 1 is left to the OS: Linux
+ * nct6683 refuses to load if an ACPI OperationRegion overlaps it. The channels
  * are not hardcoded, they are discovered from the monitor configuration:
  * - CPU temperatures: monitors sourced from PECI or from the PCH CPU reading
  * - Board temperatures: monitors sourced from the local sensor, thermal
@@ -46,8 +48,8 @@ Device (DASH)
 	// Version of the ACPI interface
 	Name (DSVR, 1)
 
-	OperationRegion (ECP1, SystemIO, NCT6687D_EC_BASE + 4, 0x03)
-	Field (ECP1, ByteAcc, NoLock, Preserve)
+	OperationRegion (ECP0, SystemIO, NCT6687D_EC_BASE, 0x03)
+	Field (ECP0, ByteAcc, NoLock, Preserve)
 	{
 		PAGE, 8,
 		INDX, 8,
