@@ -14,4 +14,6 @@ DefinitionBlock (
 	#include <acpi/dsdt_top.asl>
 	#include "acpi/platform.asl"
 	#include <soc.asl>
+
+	#include "acpi/dshr.asl"
 } /* End of ASL file */
