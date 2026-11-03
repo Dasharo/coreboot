@@ -4,5 +4,6 @@
 #define SUPERIO_PNP_BASE	0x2e
 #define NCT6687D_SHOW_SP1
 #define NCT6687D_SHOW_EC
+#define NCT6687D_SHOW_DSHR
 
 #include <superio/nuvoton/nct6687d/acpi/superio.asl>
