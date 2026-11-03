@@ -29,5 +29,9 @@ DefinitionBlock(
 				Name (_PRW, Package() { 13, 4 })
 			}
 		}
+
+#if CONFIG(BOARD_DELL_OPTIPLEX_9010)
+		#include "acpi/dshr.asl"
+#endif
 	}
 }
