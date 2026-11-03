@@ -47,5 +47,12 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 
 	mupd->FspmConfig.MmioSize = 2560; /* 2.5 GiB */
 
+	mupd->FspmConfig.OcSupport = 1; // support OC
+	mupd->FspmConfig.OcLock = 0; // enable OC
+	mupd->FspmConfig.UnderVoltProtection = 0; // allow to undervolt
+	mupd->FspmConfig.CoreVoltageMode = 0; // adaptive
+	mupd->FspmConfig.CoreVoltageOffset = 50; //
+	// mupd->FspmConfig.CoreVoltageOverride; //
+
 	memcfg_init(mupd, &mem_config, &dimm_module_spd_info, half_populated);
 }
