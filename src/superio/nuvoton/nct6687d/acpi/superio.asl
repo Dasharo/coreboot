@@ -24,6 +24,8 @@
  * NCT6687D_SHOW_KBC	If defined, the Keyboard Controller will be exposed.
  * NCT6687D_SHOW_GPIO	If defined, GPIO support will be exposed.
  * NCT6687D_SHOW_EC	If defined, the Environment Controller will be exposed.
+ * NCT6687D_SHOW_DSHR	If defined, the Dasharo ACPI interface (DSHR0001) backed
+ *			by the hardware monitor will be exposed, see dshr.asl.
  */
 
 #undef SUPERIO_CHIP_NAME
@@ -172,6 +174,10 @@ Device(SUPERIO_DEV) {
 	#define SUPERIO_PNP_IO0 0x08, 0x08
 	#define SUPERIO_PNP_IRQ0
 	#include <superio/acpi/pnp_generic.asl>
+#endif
+
+#ifdef NCT6687D_SHOW_DSHR
+	#include "dshr.asl"
 #endif
 
 }
