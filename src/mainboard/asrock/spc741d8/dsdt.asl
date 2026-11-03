@@ -24,4 +24,6 @@ DefinitionBlock(
 	{
 		#include <soc/intel/xeon_sp/spr/acpi/pch.asl>
 	}
+
+	#include "acpi/dshr.asl"
 }
