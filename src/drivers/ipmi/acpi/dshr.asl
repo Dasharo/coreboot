@@ -18,6 +18,7 @@
  * separated lists. Undefined lists are empty.
  * DSHR_IPMI_CPU_TEMPS		CPU package temperatures
  * DSHR_IPMI_BOARD_TEMPS	Board temperatures
+ * DSHR_IPMI_CHASSIS_TEMPS	Chassis temperatures, e.g. air outlet
  * DSHR_IPMI_CPU_FANS		CPU fans
  * DSHR_IPMI_CHASSIS_FANS	Chassis fans
  */
@@ -27,6 +28,9 @@
 #endif
 #ifndef DSHR_IPMI_BOARD_TEMPS
 #define DSHR_IPMI_BOARD_TEMPS
+#endif
+#ifndef DSHR_IPMI_CHASSIS_TEMPS
+#define DSHR_IPMI_CHASSIS_TEMPS
 #endif
 #ifndef DSHR_IPMI_CPU_FANS
 #define DSHR_IPMI_CPU_FANS
@@ -50,6 +54,7 @@ Device (DASH)
 
 	Name (CTMP, Package () { DSHR_IPMI_CPU_TEMPS })
 	Name (BTMP, Package () { DSHR_IPMI_BOARD_TEMPS })
+	Name (STMP, Package () { DSHR_IPMI_CHASSIS_TEMPS })
 	Name (CFAN, Package () { DSHR_IPMI_CPU_FANS })
 	Name (SFAN, Package () { DSHR_IPMI_CHASSIS_FANS })
 
@@ -218,6 +223,7 @@ Device (DASH)
 				{
 					Case (DASHARO_TEMPERATURE_CPU_PACKAGE) { Return (SizeOf (CTMP)) }
 					Case (DASHARO_TEMPERATURE_BOARD) { Return (SizeOf (BTMP)) }
+					Case (DASHARO_TEMPERATURE_CHASSIS) { Return (SizeOf (STMP)) }
 					Default { Return (0) }
 				}
 			}
@@ -241,6 +247,7 @@ Device (DASH)
 		{
 			Case (DASHARO_TEMPERATURE_CPU_PACKAGE) { Return (RLST (CTMP, Arg1)) }
 			Case (DASHARO_TEMPERATURE_BOARD) { Return (RLST (BTMP, Arg1)) }
+			Case (DASHARO_TEMPERATURE_CHASSIS) { Return (RLST (STMP, Arg1)) }
 			Default { Return (0) }
 		}
 	}
