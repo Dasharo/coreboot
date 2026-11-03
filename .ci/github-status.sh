@@ -32,8 +32,15 @@ ensure_commit_on_github() {
     echo "Commit does not exist on GH yet, creating a pending status object"
     local _url="https://x-access-token:${GITHUB_COMMIT_STATUS_TOKEN}@github.com/${GITHUB_REPO}.git"
     local _ref="refs/ci-pending/${CI_COMMIT_SHA}"
-    git push -q "$_url" "${CI_COMMIT_SHA}:${_ref}" && return
-    git ls-remote --exit-code "$_url" "$_ref" | grep -q "^${CI_COMMIT_SHA}"
+    local _attempt _delay
+    for _attempt in {0..6}; do
+        git push -q "$_url" "${CI_COMMIT_SHA}:${_ref}" && return
+        git ls-remote --exit-code "$_url" "$_ref" | grep -q "^${CI_COMMIT_SHA}" && return
+        _delay=$(( (1 << _attempt) + RANDOM % 5 ))
+        echo "Push of ${_ref} rejected, retrying in ${_delay}s"
+        sleep "$_delay"
+    done
+    return 1
 }
 
 cmd_init() {
