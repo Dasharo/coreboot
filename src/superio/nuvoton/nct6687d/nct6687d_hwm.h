@@ -3,11 +3,13 @@
 #ifndef SUPERIO_NUVOTON_NCT6687D_HWM_H
 #define SUPERIO_NUVOTON_NCT6687D_HWM_H
 
+#ifndef __ACPI__
 #include <assert.h>
 #include <types.h>
 
 #include "chip.h"
 #include "nct6687d_ec.h"
+#endif
 
 /*
  * EC page number will be concatenated with the register offset to mark
@@ -891,6 +893,7 @@
 
 #define FAN_DEFAULT_VAL_REG			EC_PAGE_REG(12, 0xfd)
 
+#ifndef __ACPI__
 extern uint16_t nct6687d_hwm_base;
 
 static __always_inline void hwm_reg_and_or(uint16_t page_reg, uint8_t and_mask, uint8_t or_mask)
@@ -918,5 +921,6 @@ static __always_inline uint8_t hwm_reg_read(uint16_t page_reg)
 	assert(nct6687d_hwm_base != 0);
 	return nct6687d_ec_read_page(nct6687d_hwm_base, page_reg >> 8, page_reg & 0xff);
 }
+#endif /* __ACPI__ */
 
 #endif /* SUPERIO_NUVOTON_NCT6687D_HWM_H */
