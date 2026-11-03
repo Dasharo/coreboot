@@ -28,5 +28,7 @@ DefinitionBlock(
 
 	#include "acpi/mainboard.asl"
 
+	#include "acpi/dshr.asl"
+
 	#include <southbridge/intel/common/acpi/sleepstates.asl>
 }
