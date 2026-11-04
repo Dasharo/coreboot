@@ -10,8 +10,10 @@
  * defined, so that the configuration mode methods and fields can be used.
  *
  * The EC I/O base is read from LDN 0xb on every call, as the OS may move it.
- * Registers are accessed through EC port 1 (software port) with the same
- * page/index/data protocol as Linux drivers/hwmon/nct6683.c. The channels
+ * Registers are accessed through EC port 0 with the same page/index/data
+ * protocol as Linux drivers/hwmon/nct6683.c. Port 0 is meant for firmware and
+ * is only used by coreboot during boot. Port 1 is left to the OS driver (Linux
+ * nct6683), so the two never share the page/index/data registers. The channels
  * are not hardcoded, they are discovered from the monitor configuration:
  * - CPU temperatures: monitors sourced from PECI, AMD SB-TSI or from the PCH
  *   CPU reading
@@ -57,8 +59,8 @@ Device (DASH)
 	// Read register Arg1, encoded as EC_PAGE_REG (page, index), at EC base Arg0
 	Method (RREG, 2, Serialized)
 	{
-		OperationRegion (ECP1, SystemIO, Arg0 + 4, 0x03)
-		Field (ECP1, ByteAcc, NoLock, Preserve)
+		OperationRegion (ECP0, SystemIO, Arg0, 0x03)
+		Field (ECP0, ByteAcc, NoLock, Preserve)
 		{
 			PAGE, 8,
 			INDX, 8,
