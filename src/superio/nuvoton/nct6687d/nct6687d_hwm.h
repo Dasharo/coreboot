@@ -24,9 +24,11 @@
 #define FAN_RPM_READ_HI_REG(x)			EC_PAGE_REG(1, 0x40 + 2*((x) - 1))
 #define FAN_RPM_READ_LO_REG(x)			EC_PAGE_REG(1, 0x41 + 2*((x) - 1))
 
+/* Current fan output duty, 0-255. One byte per fan, as in Linux nct6683. */
+#define FAN_DUTY_PAGE1_REG(fan)			EC_PAGE_REG(1, 0x60 + ((fan) - 1))
 #define FAN_DUTY_REG(fan) \
 	(((fan) > 8)	? EC_PAGE_REG(8, 0xf0 + ((fan)-8)) \
-			: EC_PAGE_REG(1, 0x60 + 2*((fan) - 1)))
+			: FAN_DUTY_PAGE1_REG(fan))
 
 #define SENSOR_MON_STS_REG			EC_PAGE_REG(1, 0x70)
 #define   TEMP_OVERLOAD				(1 << 1)
