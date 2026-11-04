@@ -505,6 +505,39 @@ void get_battery_config(struct battery_config *bat_cfg)
 	}
 }
 
+bool get_custom_fan_curve(struct custom_fan_curve *curve)
+{
+	struct region_device rdev;
+	uint32_t size = sizeof(*curve);
+	const struct fan_point *p = curve->curve.points;
+	int i;
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE_V2))
+		return false;
+
+	if (option_defaults_forced() || smmstore_lookup_region(&rdev))
+		return false;
+
+	if (efi_fv_get_option(&rdev, &dasharo_system_features_guid, "CustomFanCurve", curve, &size) != CB_SUCCESS
+		|| size != sizeof(*curve))
+	{
+		return false;
+	}
+
+	if (curve->point_count != FAN_CURVE_MAX_POINTS)
+		return false;
+
+	// duty must not exceed 100% and tmperatures must be sorted ascending
+	for (i = 0; i < curve->point_count; i++) {
+		if (p[i].duty > 100)
+			return false;
+		if (i > 0 && (p[i].temp <= p[i - 1].temp))
+			return false;
+	}
+
+	return true;
+}
+
 #define MAX_SERIAL_LENGTH 0x100
 
 bool get_serial_number_from_efivar(char *serial_number)
