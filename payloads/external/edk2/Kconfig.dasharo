@@ -197,6 +197,15 @@ config EDK2_FAN_OFF_CURVE_OPTION
 	  Shows the Fan Off option when selecting Fan Curve in EDK2 power
 	  configuration submenu in Dasharo System Features menu.
 
+config EDK2_CUSTOM_FAN_CURVE_OPTION
+	bool "Show Custom option in the Fan Curve option list"
+	depends on EDK2_FAN_CURVE_OPTION
+	default n
+	help
+	  Shows the Custom option when selecting Fan Curve in EDK2 power
+	  configuration submenu in Dasharo System Features menu and its
+	  editable points.
+
 config EDK2_BATTERY_CONFIG_OPTION
 	bool "Show Battery Threshold options in Dasharo Power Configuration Menu"
 	default n
