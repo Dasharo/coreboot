@@ -22,6 +22,7 @@
  *   sensors
  * - Fans: enabled fan inputs. Inputs set in NCT6687D_DSHR_CPU_FANS (bit 0 =
  *   FANIN1) are reported as CPU fans, the remaining ones as chassis fans.
+ *   The same channels report the current output duty (0-255) of fans 1-8.
  *
  * Controllable through preprocessor defines:
  * NCT6687D_DSHR_CPU_FANS	Bitmask of fan inputs that cool the CPU
@@ -152,6 +153,7 @@ Device (DASH)
 	{
 		Return (
 			(1 << DASHARO_FEATURE_TEMPERATURE) |
+			(1 << DASHARO_FEATURE_FAN_PWM) |
 			(1 << DASHARO_FEATURE_FAN_TACH))
 	}
 
@@ -173,7 +175,7 @@ Device (DASH)
 					Default { Return (0) }
 				}
 			}
-			Case (DASHARO_FEATURE_FAN_TACH)
+			Case (Package () { DASHARO_FEATURE_FAN_PWM, DASHARO_FEATURE_FAN_TACH })
 			{
 				Switch (ToInteger (Arg1))
 				{
@@ -217,5 +219,18 @@ Device (DASH)
 		Local1 = RREG (Local2, FAN_RPM_READ_HI_REG (Local0 + 1)) << 8
 		Local1 |= RREG (Local2, FAN_RPM_READ_LO_REG (Local0 + 1))
 		Return (Local1)
+	}
+
+	// Get fan duty cycle by cap and index
+	Method (GFDC, 2, Serialized)
+	{
+		Local2 = ECBA ()
+		Local0 = FIND (Local2, 1, Arg0, Arg1)
+		// Duty of fans 9 and up is not reported
+		If (Local0 >= 8) {
+			Return (0)
+		}
+
+		Return (RREG (Local2, FAN_DUTY_PAGE1_REG (Local0 + 1)))
 	}
 }
