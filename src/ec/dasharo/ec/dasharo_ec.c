@@ -4,6 +4,7 @@
 #include <arch/io.h>
 #include <cbfs.h>
 #include <console/system76_ec.h>
+#include <dasharo/options.h>
 #include <delay.h>
 #include <device/device.h>
 #include <device/pnp.h>
@@ -91,6 +92,58 @@ uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 	wait_us(SPI_TIMEOUT_10MS, dasharo_ec_read(REG_CMD) == CMD_FINISHED);
 
 	return dasharo_ec_read(REG_RESULT);
+}
+
+struct smfi_cmd_set_fan_curve {
+	uint8_t fan;
+	struct fan_curve curve;
+} __packed;
+
+/* Temperature in degrees C, duty in percent */
+static const struct fan_curve fan_curve_silent = {{
+	{ .temp = 0,   .duty = 20  },
+	{ .temp = 70,  .duty = 25  },
+	{ .temp = 85,  .duty = 45  },
+	{ .temp = 95,  .duty = 100 }
+}};
+
+static const struct fan_curve fan_curve_performance = {{
+	{ .temp = 0,   .duty = 25  },
+	{ .temp = 55,  .duty = 35  },
+	{ .temp = 75,  .duty = 60  },
+	{ .temp = 85,  .duty = 100 }
+}};
+
+void dasharo_ec_set_fan_curve(void)
+{
+	struct smfi_cmd_set_fan_curve cmd;
+	struct custom_fan_curve custom;
+	int i;
+	int n_fans;
+
+	switch (get_fan_curve_option()) {
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		cmd.curve = fan_curve_performance;
+		break;
+	case FAN_CURVE_OPTION_CUSTOM:
+		if (get_custom_fan_curve(&custom)) {
+			cmd.curve = custom.curve;
+			break;
+		}
+		printk(BIOS_WARNING, "EC: custom fan curve missing or invalid, using silent\n");
+		__fallthrough; // fallback to silent if custom fails
+	case FAN_CURVE_OPTION_SILENT:
+	default:
+		cmd.curve = fan_curve_silent;
+		break;
+	}
+
+	n_fans = CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1;
+	for (i = 0; i < n_fans; ++i) {
+		cmd.fan = i;
+		if (dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd), (uint8_t *)&cmd))
+			printk(BIOS_ERR, "EC: fan %d rejected the fan curve\n", i);
+	}
 }
 
 int dasharo_ec_get_bat_threshold(enum bat_threshold_type type)
