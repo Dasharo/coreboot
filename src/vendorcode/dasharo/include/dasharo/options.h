@@ -12,8 +12,12 @@
 #define FAN_CURVE_OPTION_SILENT 0
 #define FAN_CURVE_OPTION_PERFORMANCE 1
 #define FAN_CURVE_OPTION_OFF 2
+#define FAN_CURVE_OPTION_CUSTOM 3
 
 #define FAN_CURVE_OPTION_DEFAULT FAN_CURVE_OPTION_SILENT
+
+/* Capacity of a fan curve, matches edk2's DASHARO_FAN_CURVE_MAX_POINTS */
+#define FAN_CURVE_MAX_POINTS 4
 
 #define SLEEP_TYPE_OPTION_S0IX	0
 #define SLEEP_TYPE_OPTION_S3	1
@@ -62,10 +66,12 @@ struct fan_point {
 } __packed;
 
 struct fan_curve {
-	struct fan_point point1;
-	struct fan_point point2;
-	struct fan_point point3;
-	struct fan_point point4;
+	struct fan_point points[FAN_CURVE_MAX_POINTS];
+} __packed;
+
+struct custom_fan_curve {
+	uint8_t point_count;
+	struct fan_curve curve;
 } __packed;
 
 struct battery_config {
@@ -198,8 +204,22 @@ uint8_t get_sleep_type_option(void);
  * Result:
  *  - 0 - Silent profile
  *  - 1 - Performance profile
+ *  - 2 - Fans off
+ *  - 3 - Custom curve, see get_custom_fan_curve()
  */
 uint8_t get_fan_curve_option(void);
+
+/* Looks up Dasharo/"CustomFanCurve" variable and validates it: the point
+ * count must be the one CMD_FAN_CURVE_SET takes, and the temperatures
+ * must be rising.
+ *
+ * Arguments:
+ *  - curve - filled with the custom curve on success
+ * Result:
+ *  - true - curve is present and valid
+ *  - false - curve missing or invalid, contents of curve are undefined
+ */
+bool get_custom_fan_curve(struct custom_fan_curve *curve);
 
 /* Looks Dasharo/"EnableCamera" variable to checkif camera USB port should be
  * emabled.

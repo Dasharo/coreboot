@@ -13,25 +13,6 @@
 #include <variant/gpio.h>
 #include <variant/ramstage.h>
 
-struct smfi_cmd_set_fan_curve {
-	uint8_t fan;
-	struct fan_curve curve;
-} __packed;
-
-struct fan_curve fan_curve_silent = {
-	{ .temp = 0,   .duty = 20  },
-	{ .temp = 70,  .duty = 25  },
-	{ .temp = 85,  .duty = 45  },
-	{ .temp = 95,  .duty = 100 }
-};
-
-struct fan_curve fan_curve_performance = {
-	{ .temp = 0,   .duty = 25 },
-	{ .temp = 55,  .duty = 35 },
-	{ .temp = 75,  .duty = 60 },
-	{ .temp = 85,  .duty = 100}
-};
-
 const char *smbios_system_sku(void)
 {
 	return "Not Applicable";
@@ -58,30 +39,6 @@ void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 	params->RampUp = 150;
 	params->RampDown = 150;
 	params->RfiMitigation = 1;
-}
-
-static void set_fan_curve(void)
-{
-	int i;
-	uint8_t selection = get_fan_curve_option();
-	struct smfi_cmd_set_fan_curve cmd;
-
-	switch (selection) {
-	case FAN_CURVE_OPTION_SILENT:
-		cmd.curve = fan_curve_silent;
-		break;
-	case FAN_CURVE_OPTION_PERFORMANCE:
-		cmd.curve = fan_curve_performance;
-		break;
-	default:
-		cmd.curve = fan_curve_silent;
-		break;
-	}
-
-	for (i = 0; i < (CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1); ++i) {
-		cmd.fan = i;
-		dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd) / sizeof(uint8_t), (uint8_t *)&cmd);
-	}
 }
 
 static void set_camera_enablement(void)
@@ -136,7 +93,7 @@ static void init_mainboard(void *chip_info)
 	variant_configure_gpios();
 	variant_init();
 
-	set_fan_curve();
+	dasharo_ec_set_fan_curve();
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
