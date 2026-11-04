@@ -17,7 +17,8 @@ Device (DASH) {
 		Return (
 			(1 << DASHARO_FEATURE_TEMPERATURE) |
 			(1 << DASHARO_FEATURE_FAN_PWM) |
-			(1 << DASHARO_FEATURE_FAN_TACH))
+			(1 << DASHARO_FEATURE_FAN_TACH) |
+			(1 << DASHARO_FEATURE_FAN_MODE))
 	}
 
 	// Get feature capabilities
@@ -164,5 +165,62 @@ Device (DASH) {
 		}
 
 		Return (0)
+	}
+
+	// Get fan mode: DASHARO_FAN_PWM_MODE_AUTO or DASHARO_FAN_PWM_MODE_MANUAL
+	Method (GFMD, 0, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (DASHARO_FAN_PWM_MODE_AUTO) }
+
+		Return (\_SB.PCI0.LPCB.EC0.FMN1)
+	}
+
+	// Set fan mode. Returns 0 on success, 1 on failure.
+	Method (SFMD, 1, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
+
+		\_SB.PCI0.LPCB.EC0.FMN1 = ToInteger(Arg0)
+		Return (0)
+	}
+
+	// Set fan duty cycle (0-255) by cap and index. Only accepted in manual
+	// mode, the EC ignores duty writes otherwise. Returns 0 on success,
+	// 1 on failure.
+	Method (SFDC, 3, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
+		If (\_SB.PCI0.LPCB.EC0.FMN1 == DASHARO_FAN_PWM_MODE_AUTO) { Return (1) }
+
+		Switch (ToInteger(Arg0))
+		{
+			Case (DASHARO_FAN_CPU)
+			{
+				If (Arg1 == 0)
+				{
+					\_SB.PCI0.LPCB.EC0.DUT1 = ToInteger(Arg2)
+					Return (0)
+				}
+#if CONFIG_EC_DASHARO_EC_CPU_FAN_COUNT == 2
+				If (Arg1 == 1)
+				{
+					\_SB.PCI0.LPCB.EC0.DUT2 = ToInteger(Arg2)
+					Return (0)
+				}
+#endif
+			}
+#if CONFIG(EC_DASHARO_EC_DGPU)
+			Case (DASHARO_FAN_GPU)
+			{
+				If (Arg1 == 0)
+				{
+					\_SB.PCI0.LPCB.EC0.DUT2 = ToInteger(Arg2)
+					Return (0)
+				}
+			}
+#endif
+		}
+
+		Return (1)
 	}
 }

@@ -48,6 +48,9 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	Offset (0xD9),
 	AIRP, 8,	// Airplane mode LED
 	WINF, 8,	// Enable ACPI brightness controls
+	Offset (0xDB),
+	FMN1, 1,    // Fan 1 manual mode - PWM controlled directly via ACPI: DUT1, DUT2
+	FMN2, 1,    // Fan 2 manual mode
 	Offset (0xE0),
 	S0XH, 1,	// S0ix hook
 	DSPH, 1,	// Display hook
