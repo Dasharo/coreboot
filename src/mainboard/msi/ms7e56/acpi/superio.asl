@@ -4,5 +4,8 @@
 #define SUPERIO_PNP_BASE	0x4e
 #define NCT6687D_SHOW_SP1
 #define NCT6687D_SHOW_EC
+#define NCT6687D_SHOW_DSHR
+/* CPU_FAN and PUMP_FAN */
+#define NCT6687D_DSHR_CPU_FANS	0x03
 
 #include <superio/nuvoton/nct6687d/acpi/superio.asl>
