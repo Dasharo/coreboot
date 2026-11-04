@@ -363,6 +363,9 @@ BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurve
 ifeq ($(CONFIG_EDK2_FAN_OFF_CURVE_OPTION),y)
 BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuShowFanCurveOffOption=TRUE
 endif # CONFIG_EDK2_FAN_OFF_CURVE_OPTION
+ifeq ($(CONFIG_EDK2_CUSTOM_FAN_CURVE_OPTION),y)
+BUILD_STR += --pcd gDasharoSystemFeaturesTokenSpaceGuid.PcdPowerMenuCustomFanCurve=TRUE
+endif # CONFIG_EDK2_CUSTOM_FAN_CURVE_OPTION
 endif # CONFIG_EDK2_FAN_CURVE_OPTION
 
 ifeq ($(CONFIG_EDK2_BATTERY_CONFIG_OPTION),y)

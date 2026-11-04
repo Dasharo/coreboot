@@ -14,25 +14,6 @@
 #include <soc/ramstage.h>
 #include <static.h>
 
-struct smfi_cmd_set_fan_curve {
-	uint8_t fan;
-	struct fan_curve curve;
-} __packed;
-
-struct fan_curve fan_curve_silent = {
-	{ .temp = 0,   .duty = 20  },
-	{ .temp = 70,  .duty = 25  },
-	{ .temp = 85,  .duty = 45  },
-	{ .temp = 95,  .duty = 100 }
-};
-
-struct fan_curve fan_curve_performance = {
-	{ .temp = 0,   .duty = 25 },
-	{ .temp = 55,  .duty = 35 },
-	{ .temp = 75,  .duty = 60 },
-	{ .temp = 85,  .duty = 100}
-};
-
 const char *smbios_system_sku(void)
 {
 	return "Not Applicable";
@@ -46,28 +27,6 @@ smbios_enclosure_type smbios_mainboard_enclosure_type(void)
 smbios_wakeup_type smbios_system_wakeup_type(void)
 {
 	return SMBIOS_WAKEUP_TYPE_POWER_SWITCH;
-}
-
-static void set_fan_curve(void)
-{
-	int i;
-	uint8_t selection = get_fan_curve_option();
-	struct smfi_cmd_set_fan_curve cmd;
-
-	switch (selection) {
-	case FAN_CURVE_OPTION_PERFORMANCE:
-		cmd.curve = fan_curve_performance;
-		break;
-	case FAN_CURVE_OPTION_SILENT:
-	default:
-		cmd.curve = fan_curve_silent;
-		break;
-	}
-
-	for (i = 0; i < (CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1); ++i) {
-		cmd.fan = i;
-		dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd), (uint8_t *)&cmd);
-	}
 }
 
 static void set_camera_enablement(void)
@@ -141,7 +100,7 @@ static void mainboard_init(void *chip_info)
 	dasharo_ec_smfi_cmd(CMD_WIFI_BT_ENABLEMENT_SET, 1, (uint8_t *)&radio_enable);
 
 	variant_configure_gpios();
-	set_fan_curve();
+	dasharo_ec_set_fan_curve();
 	set_camera_enablement();
 	set_battery_thresholds();
 	set_power_on_ac();
