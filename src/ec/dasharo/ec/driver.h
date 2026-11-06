@@ -22,3 +22,6 @@
 /* Fan PWM mode */
 #define DASHARO_FAN_PWM_MODE_AUTO 0
 #define DASHARO_FAN_PWM_MODE_MANUAL 1
+
+/* APM command raising an SMI that saves the fan curve the EC runs to firmware */
+#define DASHARO_APM_FAN_CURVE_SAVE 0xDC

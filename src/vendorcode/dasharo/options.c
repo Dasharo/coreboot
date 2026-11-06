@@ -505,24 +505,10 @@ void get_battery_config(struct battery_config *bat_cfg)
 	}
 }
 
-bool get_custom_fan_curve(struct custom_fan_curve *curve)
+static bool custom_fan_curve_is_valid(const struct custom_fan_curve *curve)
 {
-	struct region_device rdev;
-	uint32_t size = sizeof(*curve);
 	const struct fan_point *p = curve->curve.points;
 	int i;
-
-	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE_V2))
-		return false;
-
-	if (option_defaults_forced() || smmstore_lookup_region(&rdev))
-		return false;
-
-	if (efi_fv_get_option(&rdev, &dasharo_system_features_guid, "CustomFanCurve", curve, &size) != CB_SUCCESS
-		|| size != sizeof(*curve))
-	{
-		return false;
-	}
 
 	if (curve->point_count != FAN_CURVE_MAX_POINTS)
 		return false;
@@ -536,6 +522,45 @@ bool get_custom_fan_curve(struct custom_fan_curve *curve)
 	}
 
 	return true;
+}
+
+bool get_custom_fan_curve(struct custom_fan_curve *curve)
+{
+	struct region_device rdev;
+	uint32_t size = sizeof(*curve);
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE_V2))
+		return false;
+
+	if (option_defaults_forced() || smmstore_lookup_region(&rdev))
+		return false;
+
+	if (efi_fv_get_option(&rdev, &dasharo_system_features_guid, "CustomFanCurve", curve, &size) != CB_SUCCESS
+		|| size != sizeof(*curve))
+	{
+		return false;
+	}
+
+	return custom_fan_curve_is_valid(curve);
+}
+
+bool set_custom_fan_curve(const struct custom_fan_curve *curve)
+{
+	struct region_device rdev;
+	uint8_t selection = FAN_CURVE_OPTION_CUSTOM;
+
+	if (!CONFIG(DRIVERS_EFI_VARIABLE_STORE) || !CONFIG(SMMSTORE_V2))
+		return false;
+
+	if (!custom_fan_curve_is_valid(curve) || smmstore_lookup_region(&rdev))
+		return false;
+
+	if (efi_fv_set_option(&rdev, &dasharo_system_features_guid, "CustomFanCurve",
+			      (void *)curve, sizeof(*curve)) != CB_SUCCESS)
+		return false;
+
+	return efi_fv_set_option(&rdev, &dasharo_system_features_guid, "FanCurveOption",
+				 &selection, sizeof(selection)) == CB_SUCCESS;
 }
 
 #define MAX_SERIAL_LENGTH 0x100
