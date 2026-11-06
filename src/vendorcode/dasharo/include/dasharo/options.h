@@ -221,6 +221,15 @@ uint8_t get_fan_curve_option(void);
  */
 bool get_custom_fan_curve(struct custom_fan_curve *curve);
 
+/* Validates the curve, stores it in Dasharo/"CustomFanCurve" and selects it
+ * in Dasharo/"FanCurveOption".
+ *
+ * Result:
+ *  - true - curve stored and selected
+ *  - false - curve invalid or the variable store is not available
+ */
+bool set_custom_fan_curve(const struct custom_fan_curve *curve);
+
 /* Looks Dasharo/"EnableCamera" variable to checkif camera USB port should be
  * emabled.
  *
