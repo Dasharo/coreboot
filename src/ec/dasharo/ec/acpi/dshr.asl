@@ -183,12 +183,28 @@ Device (DASH) {
 	}
 
 	// Get fan mode by cap and index: DASHARO_FAN_PWM_MODE_AUTO or _MANUAL
-	// TODO: select FMN1/FMN2 by cap and index once the EC has per-fan modes
 	Method (GFMD, 2, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (DASHARO_FAN_PWM_MODE_AUTO) }
 
-		Return (\_SB.PCI0.LPCB.EC0.FMN1)
+		Switch (ToInteger(Arg0))
+		{
+			Case (DASHARO_FAN_CPU)
+			{
+				If (Arg1 == 0) { Return (\_SB.PCI0.LPCB.EC0.FMN1) }
+#if CONFIG_EC_DASHARO_EC_CPU_FAN_COUNT == 2
+				If (Arg1 == 1) { Return (\_SB.PCI0.LPCB.EC0.FMN2) }
+#endif
+			}
+#if CONFIG(EC_DASHARO_EC_DGPU)
+			Case (DASHARO_FAN_GPU)
+			{
+				If (Arg1 == 0) { Return (\_SB.PCI0.LPCB.EC0.FMN2) }
+			}
+#endif
+		}
+
+		Return (DASHARO_FAN_PWM_MODE_AUTO)
 	}
 
 	// Set fan mode by cap and index. Returns 0 on success, 1 on failure.
@@ -196,8 +212,36 @@ Device (DASH) {
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
-		\_SB.PCI0.LPCB.EC0.FMN1 = ToInteger(Arg2)
-		Return (0)
+		Switch (ToInteger(Arg0))
+		{
+			Case (DASHARO_FAN_CPU)
+			{
+				If (Arg1 == 0)
+				{
+					\_SB.PCI0.LPCB.EC0.FMN1 = ToInteger(Arg2)
+					Return (0)
+				}
+#if CONFIG_EC_DASHARO_EC_CPU_FAN_COUNT == 2
+				If (Arg1 == 1)
+				{
+					\_SB.PCI0.LPCB.EC0.FMN2 = ToInteger(Arg2)
+					Return (0)
+				}
+#endif
+			}
+#if CONFIG(EC_DASHARO_EC_DGPU)
+			Case (DASHARO_FAN_GPU)
+			{
+				If (Arg1 == 0)
+				{
+					\_SB.PCI0.LPCB.EC0.FMN2 = ToInteger(Arg2)
+					Return (0)
+				}
+			}
+#endif
+		}
+
+		Return (1)
 	}
 
 	// Set fan duty cycle (0-255) by cap and index. Only accepted in manual
@@ -206,7 +250,7 @@ Device (DASH) {
 	Method (SFDC, 3, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
-		If (\_SB.PCI0.LPCB.EC0.FMN1 == DASHARO_FAN_PWM_MODE_AUTO) { Return (1) }
+		If (GFMD (Arg0, Arg1) == DASHARO_FAN_PWM_MODE_AUTO) { Return (1) }
 
 		Switch (ToInteger(Arg0))
 		{
