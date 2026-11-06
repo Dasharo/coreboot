@@ -54,4 +54,15 @@ Field (ERAM, ByteAcc, Lock, Preserve)
 	Offset (0xE0),
 	S0XH, 1,	// S0ix hook
 	DSPH, 1,	// Display hook
+	Offset (0xE1),
+	FCCM, 8,	// Fan curve commit: bit 0 CPU curve, bit 1 GPU curve
+	FCST, 8,	// Fan curve commit status: 0 accepted, 1 rejected
+	FCT1, 8,	// Fan curve point 1 temperature (degrees C)
+	FCD1, 8,	// Fan curve point 1 duty (percent)
+	FCT2, 8,
+	FCD2, 8,
+	FCT3, 8,
+	FCD3, 8,
+	FCT4, 8,
+	FCD4, 8,
 }
