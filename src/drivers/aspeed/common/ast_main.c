@@ -438,6 +438,23 @@ int ast_driver_load(struct drm_device *dev, unsigned long flags)
 
 	ast_detect_chip(dev, &need_post);
 
+	/*
+	 * coreboot cannot POST the AST2600: its DRAM must be set up by the
+	 * BMC firmware. The firmware reports "DRAM ready" in VGA CRD0 bit 7.
+	 * Without it, accesses to the video memory never complete and the
+	 * boot hangs, so do not touch the device.
+	 */
+	if (ast->chip == AST2600) {
+		uint8_t crd0 = ast_get_index_reg_mask(ast, AST_IO_CRTC_PORT, 0xd0, 0xff);
+
+		if (!(crd0 & 0x80)) {
+			dev_err(dev->pdev, "AST2600 DRAM not ready (CRD0=0x%02x), "
+				"BMC firmware not running? Skipping graphics init\n", crd0);
+			ret = -ENODEV;
+			goto out_free;
+		}
+	}
+
 	if (need_post)
 		ast_post_gpu(dev);
 
