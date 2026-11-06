@@ -18,7 +18,8 @@ Device (DASH) {
 			(1 << DASHARO_FEATURE_TEMPERATURE) |
 			(1 << DASHARO_FEATURE_FAN_PWM) |
 			(1 << DASHARO_FEATURE_FAN_TACH) |
-			(1 << DASHARO_FEATURE_FAN_MODE))
+			(1 << DASHARO_FEATURE_FAN_MODE) |
+			(1 << DASHARO_FEATURE_FAN_POINTS))
 	}
 
 	// Get feature capabilities
@@ -75,6 +76,22 @@ Device (DASH) {
 					Case (DASHARO_FAN_CPU) { Return (1) }
 					Case (DASHARO_FAN_GPU) { Return (1) }
 #else
+					Case (DASHARO_FAN_CPU) { Return (CONFIG_EC_DASHARO_EC_CPU_FAN_COUNT) }
+#endif
+					Default { Return (0) }
+				}
+			}
+
+			// The curve is shared by all fans
+			Case (DASHARO_FEATURE_FAN_POINTS)
+			{
+				Switch (ToInteger(Arg1))
+				{
+#if CONFIG(EC_DASHARO_EC_DGPU)
+					Case (DASHARO_FAN_CPU) { Return (1) }
+					Case (DASHARO_FAN_GPU) { Return (1) }
+#else
+					//
 					Case (DASHARO_FAN_CPU) { Return (CONFIG_EC_DASHARO_EC_CPU_FAN_COUNT) }
 #endif
 					Default { Return (0) }
@@ -282,5 +299,87 @@ Device (DASH) {
 		}
 
 		Return (1)
+	}
+
+	// Custom fan curve shared by all fans. Arg0 and Arg1 are
+	// the cap and index of the fan (unused, shared curve)
+	// Arg2 is the point
+
+	// Get point temperature in degrees C
+	Method (GFPT, 3, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (0) }
+
+		Switch (ToInteger(Arg2))
+		{
+			Case (0) { Return (\_SB.PCI0.LPCB.EC0.FCT1) }
+			Case (1) { Return (\_SB.PCI0.LPCB.EC0.FCT2) }
+			Case (2) { Return (\_SB.PCI0.LPCB.EC0.FCT3) }
+			Case (3) { Return (\_SB.PCI0.LPCB.EC0.FCT4) }
+		}
+
+		Return (0)
+	}
+
+	// Get point duty in percent
+	Method (GFPD, 3, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (0) }
+
+		Switch (ToInteger(Arg2))
+		{
+			Case (0) { Return (\_SB.PCI0.LPCB.EC0.FCD1) }
+			Case (1) { Return (\_SB.PCI0.LPCB.EC0.FCD2) }
+			Case (2) { Return (\_SB.PCI0.LPCB.EC0.FCD3) }
+			Case (3) { Return (\_SB.PCI0.LPCB.EC0.FCD4) }
+		}
+
+		Return (0)
+	}
+
+	// Set point temperature in degrees C (Arg3). Takes effect at the next
+	// CFCV. Returns 0 on success, 1 on failure.
+	Method (SFPT, 4, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
+
+		Switch (ToInteger(Arg2))
+		{
+			Case (0) { \_SB.PCI0.LPCB.EC0.FCT1 = ToInteger(Arg3) }
+			Case (1) { \_SB.PCI0.LPCB.EC0.FCT2 = ToInteger(Arg3) }
+			Case (2) { \_SB.PCI0.LPCB.EC0.FCT3 = ToInteger(Arg3) }
+			Case (3) { \_SB.PCI0.LPCB.EC0.FCT4 = ToInteger(Arg3) }
+			Default { Return (1) }
+		}
+
+		Return (0)
+	}
+
+	// Set point duty in percent (Arg3). Takes effect at the next CFCV.
+	// Returns 0 on success, 1 on failure.
+	Method (SFPD, 4, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
+
+		Switch (ToInteger(Arg2))
+		{
+			Case (0) { \_SB.PCI0.LPCB.EC0.FCD1 = ToInteger(Arg3) }
+			Case (1) { \_SB.PCI0.LPCB.EC0.FCD2 = ToInteger(Arg3) }
+			Case (2) { \_SB.PCI0.LPCB.EC0.FCD3 = ToInteger(Arg3) }
+			Case (3) { \_SB.PCI0.LPCB.EC0.FCD4 = ToInteger(Arg3) }
+			Default { Return (1) }
+		}
+
+		Return (0)
+	}
+
+	// Commit the points by cap and index. The EC validates the curve and
+	// applies it. Returns 0 on success, 1 if the EC rejected it.
+	Method (CFCV, 2, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
+
+		\_SB.PCI0.LPCB.EC0.FCCM = 0x03
+		Return (\_SB.PCI0.LPCB.EC0.FCST)
 	}
 }
