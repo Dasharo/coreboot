@@ -373,13 +373,29 @@ Device (DASH) {
 		Return (0)
 	}
 
-	// Commit the points by cap and index. The EC validates the curve and
-	// applies it. Returns 0 on success, 1 if the EC rejected it.
+	// Commit the fan curve points.
+	// The EC validates the curve and applies it.
 	Method (CFCV, 2, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
 		\_SB.PCI0.LPCB.EC0.FCCM = 0x03
 		Return (\_SB.PCI0.LPCB.EC0.FCST)
+	}
+
+	// APM command port, writes raise an SMI handled by coreboot
+	OperationRegion (APMP, SystemIO, 0xB2, 1)
+	Field (APMP, ByteAcc, NoLock, Preserve)
+	{
+		APMC, 8
+	}
+
+	// Save Fan Curve
+	Method (SFCS, 2, Serialized)
+	{
+		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
+
+		APMC = DASHARO_APM_FAN_CURVE_SAVE
+		Return (0)
 	}
 }
