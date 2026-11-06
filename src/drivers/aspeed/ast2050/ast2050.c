@@ -26,7 +26,10 @@ static void aspeed_ast2050_init(struct device *dev)
 	drm_dev.pdev = dev;
 
 	printk(BIOS_INFO, "ASpeed AST2050: initializing video device\n");
-	ast_driver_load(&drm_dev, 0);
+	if (ast_driver_load(&drm_dev, 0)) {
+		printk(BIOS_ERR, "ASpeed AST2050: device not ready, no video output\n");
+		return;
+	}
 
 	/* Unlock extended configuration registers */
 	outb(0x80, 0x3d4); outb(0xa8, 0x3d5);

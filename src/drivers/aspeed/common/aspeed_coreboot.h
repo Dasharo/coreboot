@@ -43,6 +43,7 @@ typedef u64 phys_addr_t;
 
 #define EIO 5
 #define ENOMEM 12
+#define ENODEV 19
 
 struct firmware {
 	size_t size;
