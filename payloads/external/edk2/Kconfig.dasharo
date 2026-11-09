@@ -12,7 +12,7 @@ config EDK2_PLATFORMS_REPOSITORY
 	default "https://github.com/Dasharo/edk2-platforms"
 
 config EDK2_PLATFORMS_TAG_OR_REV
-	default "1002a59639f111a2f8178b77d1f5fde0ea8d976f"
+	default "f9db60385ceb5a36831cbb1f8174ad287c48f41d"
 
 endif
 
