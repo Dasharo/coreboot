@@ -31,9 +31,12 @@ void variant_devtree_update(void)
 
 static void set_dgpu_only(void)
 {
-	uint8_t initial_option_state = 99;
-	dasharo_read_option(OPT_GPU_MUX_CTRL, &initial_option_state);
-	printk(BIOS_DEBUG, "MUX_CTRL_BIOS state in coreboot: %d", initial_option_state);
+	uint8_t initial_option_state = 99, option_result=0;
+	option_result = dasharo_read_option(OPT_GPU_MUX_CTRL, &initial_option_state);
+	if (initial_option_state == 99 || option_result == (uint8_t)(-1)) {
+		printk(BIOS_ERROR,"set_dgpu_only: Failed to read initial GPU MUX state, initial_option_state=%d\n", initial_option_state);
+	}
+	printk(BIOS_DEBUG, "MUX_CTRL_BIOS state in coreboot: %d\n", initial_option_state);
 
 	/*
 	 * If the MUX_CTRL_BIOS option needs to be changed to match the settings, we need a
@@ -63,7 +66,10 @@ static void set_dgpu_only(void)
 		}
 	}
 
-	printk(BIOS_DEBUG, "dgpu_state = %d, option_index = %d, option_value = %d; global reset not called \n", dasharo_dgpu_state(), cmd.index, initial_option_state);
+	printk(BIOS_DEBUG,
+		"dgpu_state = %d, option_index = %d, option_value = %d; global reset%s called \n",
+		dasharo_dgpu_state(), cmd.index, initial_option_state, initial_option_state>1 ? " not" : ""
+	);
 }
 
 void variant_final(void)
