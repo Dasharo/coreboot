@@ -795,14 +795,19 @@ $(build-dir)/vboot.json: $(src-dir)/vboot.json $(vboot-gitdir) | $(build-dir) $(
 	git_comm_hash=$$(git --git-dir 3rdparty/vboot/.git log -n 1 --format="%cs_%H"); \
 	git_latest_rel=$$(git --git-dir 3rdparty/vboot/.git tag --merged HEAD --sort=-creatordate | head -n1); \
 	sed -i -e "s/<colloquial_version>/$$git_latest_rel/" -e "s/<software_version>/$$git_comm_hash/" $@
-	# vboot is built from source as a per-stage static library rather than a
-	# single blob; hash the ramstage vboot_fw.a as the representative artifact
-	# so the component carries integrity info (CRA Annex I hash carry-through).
-	if [ -s "$(VBOOT_LIB_ramstage)" ]; then \
-		$(build-dir)/goswid add-payload-file -o $@ -i $@ \
-			--name "$(notdir $(VBOOT_LIB_ramstage))" \
-			--hash "$$(sha256sum "$(VBOOT_LIB_ramstage)" | cut -d' ' -f1)"; \
-	fi
+	# vboot is built from source into every stage as a static library, so no
+	# single binary stands for it: the per-stage vboot_fw.a are thin archives
+	# that hold member paths and sizes, not code, and the objects embed the
+	# build directory. For a component-integrity hash (CRA Annex I hash
+	# carry-through) record a sha256 over the exact source tree via
+	# `git archive HEAD`, as for edk2-platforms: deterministic for a given
+	# commit and reproducible by anyone from the public repository.
+	set -e; \
+	git --git-dir $(vboot-gitdir) rev-parse --verify -q HEAD >/dev/null; \
+	src_hash=$$(git --git-dir $(vboot-gitdir) archive HEAD | sha256sum | cut -d' ' -f1); \
+	$(build-dir)/goswid add-payload-file -o $@ -i $@ \
+		--name "vboot-source.tar" \
+		--hash "$$src_hash"
 
 ifeq ($(CONFIG_BUILD_IPXE),y)
 ipxe-gitdir := payloads/external/iPXE/ipxe/.git
