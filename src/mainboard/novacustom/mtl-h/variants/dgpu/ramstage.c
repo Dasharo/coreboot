@@ -69,21 +69,20 @@ static void set_dgpu_only(void)
 void variant_final(void)
 {
 	struct device *dgpu_rp_dev = pcidev_on_root(0x01, 0);
-
-	if (!dgpu_rp_dev)
-		return;
-
-	struct device *dgpu_dev = pcidev_path_behind(dgpu_rp_dev->downstream, PCI_DEVFN(0, 0));
-
-	/*
-	 * The dGPU may fail to come up after changing from iGPU mode to dGPU
-	 * mode. If that happens, we need to kick the platform via global reset.
-	 */
-	if (!dgpu_dev && dasharo_dgpu_state() != IGPU_ONLY) {
-		printk(BIOS_DEBUG, "dGPU did not come up! Kicking the platform to work around it\n");
-		do_global_reset();
+	if (!dgpu_rp_dev) {
+		printk(BIOS_DEBUG, "RP12 not present, skipping dGPU check\n");
 	} else {
-		printk(BIOS_DEBUG, "dGPU is up.\n");
+		struct device *dgpu_dev = pcidev_path_behind(dgpu_rp_dev->downstream, PCI_DEVFN(0, 0));
+		/*
+		 * The dGPU may fail to come up after changing from iGPU mode to dGPU
+		 * mode. If that happens, we need to kick the platform via global reset.
+		 */
+		if (!dgpu_dev && dasharo_dgpu_state() != IGPU_ONLY) {
+			printk(BIOS_DEBUG, "dGPU did not come up! Kicking the platform to work around it\n");
+			do_global_reset();
+		} else {
+			printk(BIOS_DEBUG, "dGPU is up.\n");
+		}
 	}
 
 	set_dgpu_only();
