@@ -52,6 +52,7 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 	mupd->FspmConfig.UnderVoltProtection = 0; // allow to undervolt
 	mupd->FspmConfig.CoreVoltageMode = 0; // adaptive
 	mupd->FspmConfig.CoreVoltageOffset = 50; //
+	mupd->FspmConfig.SaOcSupport = 1;
 	// mupd->FspmConfig.CoreVoltageOverride; //
 
 	memcfg_init(mupd, &mem_config, &dimm_module_spd_info, half_populated);
