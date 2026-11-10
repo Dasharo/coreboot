@@ -121,6 +121,8 @@ static bool pcie_rp_update_dev(
 			dev->enabled = 0;
 			if (dev->downstream)
 				disable_children(dev->downstream);
+		} else {
+			printk(BIOS_INFO, "%s disabled in devicetree at root port #%u (originally %s), removing\n", __func__, rp_idx + 1, dev_path(dev));
 		}
 		return true;
 	} else if (PCI_FUNC(dev->path.pci.devfn) != new_fn) {
