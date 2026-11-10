@@ -4,7 +4,7 @@ config EDK2_REPOSITORY
 	default "https://github.com/Dasharo/edk2"
 
 config EDK2_TAG_OR_REV
-	default "4fa9693f83ebd4a8b6677533f78f48e6fe89dc47"
+	default "0cacb9d1f4fdedfdcd940baefb230b54a19970cf"
 
 if EDK2_USE_EDK2_PLATFORMS
 
