@@ -12,6 +12,28 @@
 #include <smbios.h>
 #include <soc/intel/common/reset.h>
 
+static void print_rp12_link(const char *when)
+{
+	const pci_devfn_t rp = PCI_DEV(0, 1, 0);
+	uint32_t id = pci_s_read_config32(rp, PCI_VENDOR_ID);
+	uint16_t cap;
+
+	if (id == 0xffffffff) {
+		printk(BIOS_DEBUG, "RP12 %s: ID %08x\n", when, id);
+		return;
+	}
+
+	cap = pci_s_find_capability(rp, PCI_CAP_ID_PCIE);
+	if (!cap) {
+		printk(BIOS_DEBUG, "RP12 %s: ID %08x, no PCIe capability\n", when, id);
+		return;
+	}
+
+	printk(BIOS_DEBUG, "RP12 %s: ID %08x, LNKSTA %04x, SLTSTA %04x\n", when, id,
+	       pci_s_read_config16(rp, cap + PCI_EXP_LNKSTA),
+	       pci_s_read_config16(rp, cap + PCI_EXP_SLTSTA));
+}
+
 void variant_devtree_update(void)
 {
 	struct device *i2c_amp_dev = pcidev_on_root(0x19, 1);
@@ -25,6 +47,7 @@ void variant_devtree_update(void)
 	        dgpu_dev->enabled = dasharo_dgpu_state() != IGPU_ONLY;
 	        printk(BIOS_DEBUG, "dgpu_dev->enabled: %d\n", dgpu_dev->enabled);
 	}
+	print_rp12_link("before FSP-S");
 }
 
 #define REG_DATA 2
@@ -75,6 +98,8 @@ static void set_dgpu_only(void)
 void variant_final(void)
 {
 	struct device *dgpu_rp_dev = pcidev_on_root(0x01, 0);
+
+	print_rp12_link("after FSP-S");
 	if (!dgpu_rp_dev) {
 		printk(BIOS_DEBUG, "RP12 not present, skipping dGPU check\n");
 	} else {
