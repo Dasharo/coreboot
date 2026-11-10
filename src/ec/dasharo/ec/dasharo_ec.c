@@ -70,7 +70,7 @@ static inline void dasharo_ec_write(uint8_t addr, uint8_t data)
 uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 {
 	int i;
-
+	bool ec_result = 0;
 	if (len > DASHARO_EC_SIZE - REG_DATA) {
 		printk(BIOS_ERR, "dasharo_ec: Invalid command length\n");
 		return -1;
@@ -78,7 +78,9 @@ uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 
 	// Wait for previous command completion, for up to 10 milliseconds, with a
 	// test period of 1 microsecond
-	wait_us(SPI_TIMEOUT_10MS, dasharo_ec_read(REG_CMD) == CMD_FINISHED);
+	ec_result = wait_us(SPI_TIMEOUT_10MS, dasharo_ec_read(REG_CMD) == CMD_FINISHED);
+	if (!ec_result)
+		printk(BIOS_WARNING, "dasharo_ec_smfi_cmd (%x): previous command not finished after 10ms\n", cmd);
 
 	// Write data first
 	for (i = 0; i < len; ++i)
@@ -89,7 +91,11 @@ uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 
 	// Wait for previous command completion, for up to 10 milliseconds, with a
 	// test period of 1 microsecond
-	wait_us(SPI_TIMEOUT_10MS, dasharo_ec_read(REG_CMD) == CMD_FINISHED);
+	ec_result = wait_us(SPI_TIMEOUT_10MS, dasharo_ec_read(REG_CMD) == CMD_FINISHED);
+	if (!ec_result) {
+		printk(BIOS_WARNING, "dasharo_ec_smfi_cmd (%x): dasharo_ec_read(REG_CMD) == CMD_FINISHED not true after 10ms\n", cmd);
+		return -1;
+	}
 
 	return dasharo_ec_read(REG_RESULT);
 }
