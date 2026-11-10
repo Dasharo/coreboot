@@ -134,7 +134,11 @@ void dasharo_ec_set_bat_threshold(enum bat_threshold_type type, uint8_t value)
 
 uint8_t dasharo_read_option(uint8_t option, uint8_t *value)
 {
-	dasharo_ec_smfi_cmd(CMD_OPTION_GET, 1, (uint8_t *)&option);
+	uint8_t result = dasharo_ec_smfi_cmd(CMD_OPTION_GET, 1, (uint8_t *)&option);
+	if (result == (uint8_t)(-1)) {
+		printk(BIOS_WARNING, "dasharo_read_option: Failed to read option %x\n", option);
+		return -1;
+	}
 	*value = dasharo_ec_read(REG_DATA);
 
 	return (dasharo_ec_read(REG_RESULT));
