@@ -8,6 +8,7 @@ USER root
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
+        gnupg \
         jq \
         pre-commit \
         pre-commit \
