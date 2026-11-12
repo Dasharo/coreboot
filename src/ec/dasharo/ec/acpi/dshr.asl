@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include "../commands.h"
 #include "../driver.h"
 
 Device (DASH) {
@@ -305,82 +306,141 @@ Device (DASH) {
 	// the cap and index of the fan (unused, shared curve)
 	// Arg2 is the point
 
-	// Get point temperature in degrees C
+	OperationRegion (SMFI, SystemIO, 0x0E00, 0x100)
+	Field (SMFI, ByteAcc, NoLock, Preserve)
+	{
+		SCMD, 8,
+		SRES, 8,
+		// 254 bytes of data
+		SDAT, 2032
+	}
+
+	// writes to SMFI will be done multiple times and will sleep to wait for EC
+	// responses, so we need a lock to prevent clashes
+	Mutex (SMFM, 0)
+
+	// SMFI Wait, wait until EC is ready for next command
+	Method (SMFW, 0, Serialized)
+	{
+		Local0 = 10
+		While ((SCMD != CMD_NONE) && (Local0 > 0))
+		{
+			Sleep (1)
+			Local0--
+		}
+
+		Return (SCMD != CMD_NONE)
+	}
+
+	// SMFI Command, send
+	// Arg0 - command number, Arg1 - buffer with the command data
+	// Returns the EC result (0 on success), 1 on timeout
+	Method (SMFC, 2, Serialized)
+	{
+		If (SMFW ()) { Return (1) }
+
+		SDAT = Arg1
+		SCMD = Arg0
+
+		If (SMFW ()) { Return (1) }
+
+		Return (SRES)
+	}
+
+	// Fan Curve Read
+	// Arg0 - curve to read (FAN_CURVE_APPLIED or FAN_CURVE_PENDING)
+	// Returns a buffer: point count, then temp and duty of each point.
+	// The count is 0 on failure.
+	Method (FCRD, 1, Serialized)
+	{
+		Local0 = Buffer (1) { 0 }
+		Local0[0] = Arg0
+
+		If (SMFC (CMD_FAN_CURVE_GET, Local0)) { Return (Buffer (1) { 0 }) }
+
+		Local1 = SDAT
+		Return (Local1)
+	}
+
+	// Fan Curve Get Point
+	// Arg0 - point index, Arg1 - field (0 temp, 1 duty)
+	Method (FCGP, 2, Serialized)
+	{
+		Acquire (SMFM, 0xFFFF)
+		Local0 = FCRD (FAN_CURVE_APPLIED)
+		Release (SMFM)
+
+		If (Arg0 >= DerefOf (Local0[0])) { Return (0) }
+
+		Return (DerefOf (Local0[1 + 2 * Arg0 + Arg1]))
+	}
+
+	// Fan Curve Set Point
+	// Arg0 - point idx, Arg1 - field of the point (0 temp, 1 duty),
+	// Arg2 - value to set (degrees C or duty in percent)
+	Method (FCSP, 3, Serialized)
+	{
+		Acquire (SMFM, 0xFFFF)
+		Local0 = FCRD (FAN_CURVE_PENDING)
+
+		If (Arg0 >= DerefOf (Local0[0]))
+		{
+			Release (SMFM)
+			Return (1)
+		}
+
+		Local0[1 + 2 * Arg0 + Arg1] = Arg2
+		Local1 = SMFC (CMD_FAN_CURVE_PENDING_SET, Local0)
+		Release (SMFM)
+
+		Return (Local1)
+	}
+
+	// Get Fan curve Point Temp, degrees C
 	Method (GFPT, 3, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (0) }
 
-		Switch (ToInteger(Arg2))
-		{
-			Case (0) { Return (\_SB.PCI0.LPCB.EC0.FCT1) }
-			Case (1) { Return (\_SB.PCI0.LPCB.EC0.FCT2) }
-			Case (2) { Return (\_SB.PCI0.LPCB.EC0.FCT3) }
-			Case (3) { Return (\_SB.PCI0.LPCB.EC0.FCT4) }
-		}
-
-		Return (0)
+		Return (FCGP (ToInteger (Arg2), 0))
 	}
 
-	// Get point duty in percent
+	// Get Fan Point Duty in percent
 	Method (GFPD, 3, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (0) }
 
-		Switch (ToInteger(Arg2))
-		{
-			Case (0) { Return (\_SB.PCI0.LPCB.EC0.FCD1) }
-			Case (1) { Return (\_SB.PCI0.LPCB.EC0.FCD2) }
-			Case (2) { Return (\_SB.PCI0.LPCB.EC0.FCD3) }
-			Case (3) { Return (\_SB.PCI0.LPCB.EC0.FCD4) }
-		}
-
-		Return (0)
+		Return (FCGP (ToInteger (Arg2), 1))
 	}
 
-	// Set point temperature in degrees C (Arg3). Takes effect at the next
+	// Set Fan Point Temp in degrees C (Arg3). Takes effect at the next
 	// CFCV. Returns 0 on success, 1 on failure.
 	Method (SFPT, 4, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
-		Switch (ToInteger(Arg2))
-		{
-			Case (0) { \_SB.PCI0.LPCB.EC0.FCT1 = ToInteger(Arg3) }
-			Case (1) { \_SB.PCI0.LPCB.EC0.FCT2 = ToInteger(Arg3) }
-			Case (2) { \_SB.PCI0.LPCB.EC0.FCT3 = ToInteger(Arg3) }
-			Case (3) { \_SB.PCI0.LPCB.EC0.FCT4 = ToInteger(Arg3) }
-			Default { Return (1) }
-		}
-
-		Return (0)
+		Return (FCSP (ToInteger (Arg2), 0, ToInteger (Arg3)))
 	}
 
-	// Set point duty in percent (Arg3). Takes effect at the next CFCV.
+	// Set Fan Point Duty in percent (Arg3). Takes effect at the next CFCV.
 	// Returns 0 on success, 1 on failure.
 	Method (SFPD, 4, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
-		Switch (ToInteger(Arg2))
-		{
-			Case (0) { \_SB.PCI0.LPCB.EC0.FCD1 = ToInteger(Arg3) }
-			Case (1) { \_SB.PCI0.LPCB.EC0.FCD2 = ToInteger(Arg3) }
-			Case (2) { \_SB.PCI0.LPCB.EC0.FCD3 = ToInteger(Arg3) }
-			Case (3) { \_SB.PCI0.LPCB.EC0.FCD4 = ToInteger(Arg3) }
-			Default { Return (1) }
-		}
-
-		Return (0)
+		Return (FCSP (ToInteger (Arg2), 1, ToInteger (Arg3)))
 	}
 
-	// Commit the fan curve points.
+	// Commit the Fan Curve points.
 	// The EC validates the curve and applies it.
 	Method (CFCV, 2, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
-		\_SB.PCI0.LPCB.EC0.FCCM = 0x03
-		Return (\_SB.PCI0.LPCB.EC0.FCST)
+		Acquire (SMFM, 0xFFFF)
+		Local0 = SMFC (CMD_FAN_CURVE_COMMIT, Buffer (1) { 0x03 })
+		Release (SMFM)
+
+		Return (Local0)
 	}
 
 	// APM command port, writes raise an SMI handled by coreboot
@@ -395,7 +455,10 @@ Device (DASH) {
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
+		Acquire (SMFM, 0xFFFF)
 		APMC = DASHARO_APM_FAN_CURVE_SAVE
+		Release (SMFM)
+
 		Return (0)
 	}
 }
