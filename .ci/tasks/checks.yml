@@ -54,6 +54,13 @@ tasks:
     cmds:
       - .ci/capsule-lint.sh
 
+  commit-signatures:
+    desc: Reject unsigned commits and commits signed by Gitea
+    dir: '{{.REPO_ROOT}}'
+    cmds:
+      - task: auth-origin
+      - .ci/commit-signature-check.sh
+
   tag-annotated:
     desc: Verify the pushed tag is annotated
     cmds:

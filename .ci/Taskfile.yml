@@ -19,7 +19,7 @@ includes:
 
 tasks:
   ci:check:
-    desc: Run one source check (CHECK=upstream-status|lint-stable|lint-extended|defconfigs|capsule-lint)
+    desc: Run one source check (CHECK=commit-signatures|upstream-status|lint-stable|lint-extended|defconfigs|capsule-lint)
     requires:
       vars: [CHECK]
     cmds:
