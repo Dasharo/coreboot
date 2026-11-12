@@ -11,8 +11,6 @@
 #define DASHARO_EC_REG_BATTERY_START_THRESHOLD	0xBC
 #define DASHARO_EC_REG_BATTERY_STOP_THRESHOLD	0xBD
 
-#define DASHARO_EC_REG_FAN_CURVE	0xE3
-
 int dasharo_ec_get_lid_state(void);
 
 enum bat_threshold_type {
