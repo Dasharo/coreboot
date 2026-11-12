@@ -96,6 +96,7 @@ uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 
 struct smfi_cmd_set_fan_curve {
 	uint8_t fan;
+	uint8_t point_count;
 	struct fan_curve curve;
 } __packed;
 
@@ -138,12 +139,33 @@ void dasharo_ec_set_fan_curve(void)
 		break;
 	}
 
+	cmd.point_count = FAN_CURVE_MAX_POINTS;
 	n_fans = CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1;
 	for (i = 0; i < n_fans; ++i) {
 		cmd.fan = i;
 		if (dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd), (uint8_t *)&cmd))
 			printk(BIOS_ERR, "EC: fan %d rejected the fan curve\n", i);
 	}
+}
+
+bool dasharo_ec_get_fan_curve(struct custom_fan_curve *curve)
+{
+	uint8_t selector = FAN_CURVE_APPLIED;
+	int i;
+
+	if (dasharo_ec_smfi_cmd(CMD_FAN_CURVE_GET, sizeof(selector), &selector))
+		return false;
+
+	curve->point_count = dasharo_ec_read(REG_DATA);
+	if (curve->point_count > FAN_CURVE_MAX_POINTS)
+		return false;
+
+	for (i = 0; i < curve->point_count; i++) {
+		curve->curve.points[i].temp = dasharo_ec_read(REG_DATA + 1 + 2 * i);
+		curve->curve.points[i].duty = dasharo_ec_read(REG_DATA + 2 + 2 * i);
+	}
+
+	return true;
 }
 
 int dasharo_ec_get_bat_threshold(enum bat_threshold_type type)
