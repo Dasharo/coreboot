@@ -23,7 +23,7 @@ chip soc/intel/skylake
 	register "DspEnable" = "false"
 	register "IoBufferOwnership" = "0"
 	register "SkipExtGfxScan" = "1"
-	register "SaGv" = "SaGv_Enabled"
+	register "SaGv" = "SaGv_Disabled"
 	register "IslVrCmd" = "2"
 	register "PmConfigSlpS3MinAssert" = "2"		# 50ms
 	register "PmConfigSlpS4MinAssert" = "4"		# 4s

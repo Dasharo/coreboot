@@ -8,7 +8,7 @@ chip soc/intel/elkhartlake
 		.tdp_pl2_override = 15,
 	}"
 
-	register "SaGv" = "SaGv_Enabled"
+	register "SaGv" = "SaGv_Disabled"
 	register "eist_enable" = "true"
 
 	# Enable lpss s0ix
