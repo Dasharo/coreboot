@@ -39,6 +39,18 @@ config RESET_OPTIONS_ON_CMOS_CLEAR
 	  Say n if the platform has no reliable indication that the RTC well
 	  lost power, as the settings would then be discarded on every boot.
 
+config RESET_OPTIONS_CMOS_OFFSET
+	hex
+	default 0x70
+	depends on DRIVERS_MC146818
+	help
+	  CMOS RAM flag that keeps a settings reset pending across platform
+	  resets, until the options store was reset.
+
+	  The platform's indication that the CMOS contents were lost does not
+	  survive a reset, and on some SoCs is gone before ramstage already. A
+	  reset done before the payload has run would forget about the reset.
+
 config RESET_OPTIONS_IN_PAYLOAD
 	bool
 	default y if PAYLOAD_EDK2

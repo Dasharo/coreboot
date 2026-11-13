@@ -2,6 +2,7 @@
 
 #include <acpi/acpi.h>
 #include <arch/io.h>
+#include <bootstate.h>
 #include <commonlib/bsd/bcd.h>
 #include <console/console.h>
 #include <dasharo/options.h>
@@ -75,6 +76,29 @@ __weak bool cmos_is_invalid(void)
  */
 __weak void cmos_invalid_ack(void)
 {
+}
+
+/*
+ * A settings reset requested by a CMOS clear, kept in CMOS RAM so that it
+ * survives platform resets until it has been carried out, see cmos_init().
+ */
+bool cmos_options_reset_pending(void)
+{
+	/* Leave the RTC index register alone while the OS may be using it. */
+	if (ENV_SMM)
+		return false;
+
+	return cmos_read(CONFIG_RESET_OPTIONS_CMOS_OFFSET) != 0;
+}
+
+void cmos_set_options_reset_pending(void)
+{
+	cmos_write(1, CONFIG_RESET_OPTIONS_CMOS_OFFSET);
+}
+
+static void cmos_clear_options_reset_pending(void)
+{
+	cmos_write(0, CONFIG_RESET_OPTIONS_CMOS_OFFSET);
 }
 
 #define RTC_CONTROL_DEFAULT (RTC_24H)
@@ -184,26 +208,57 @@ void cmos_init(bool invalid)
 	if (!CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR))
 		return;
 
+	if (ENV_RAMSTAGE && acpi_is_wakeup_s3())
+		return;
+
 	/*
 	 * Use the `invalid` argument rather than cmos_is_invalid(): the caller
 	 * samples the platform indication early enough for it to be
 	 * trustworthy. On Intel SoCs it is the romstage snapshot of
 	 * GEN_PMCON_B, because the live bit does not survive into ramstage.
+	 *
+	 * The snapshot does not survive a reset either, so record the request
+	 * in CMOS RAM, which __cmos_init() may just have zeroed.
 	 */
-	if (invalid && !(ENV_RAMSTAGE && acpi_is_wakeup_s3())) {
-		printk(BIOS_INFO, "RTC: CMOS was cleared, %s firmware settings\n",
-		       CONFIG(RESET_OPTIONS_IN_PAYLOAD) ? "payload will reset" : "resetting");
-		/* Only acknowledge once the options really are gone, so that a
-		   failed erase is retried on the next boot. With the reset done
-		   by the payload this cannot be known yet, so acknowledge now; a
-		   reset interrupted halfway leaves an invalid store, which the
-		   payload resets again on its own. */
-		if (dasharo_reset_options() == CB_SUCCESS)
-			cmos_invalid_ack();
-		else
-			printk(BIOS_ERR, "RTC: Failed to reset firmware settings\n");
+	if (invalid){
+		printk(BIOS_DEBUG, "RTC: saving firmware settings reset flag to CMOS RAM\n");
+		cmos_set_options_reset_pending();
 	}
+
+	if (!cmos_options_reset_pending()) {
+		printk(BIOS_DEBUG, "RTC: no firmware settings flag pending\n");
+		return;
+	}
+
+	printk(BIOS_INFO, "RTC: CMOS was cleared, %s firmware settings\n",
+	       CONFIG(RESET_OPTIONS_IN_PAYLOAD) ? "payload will reset" : "resetting");
+
+	/* Keep the request pending, so that a failed erase is retried on the
+	   next boot. */
+	if (dasharo_reset_options() != CB_SUCCESS) {
+		printk(BIOS_ERR, "RTC: Failed to reset firmware settings\n");
+		return;
+	}
+
+	cmos_invalid_ack();
+
+	/* Clear the reset flag, unless the reset is done by the payload, then
+	 * it needs to wait, see options_reset_handoff()
+	 */
+	if (!CONFIG(RESET_OPTIONS_IN_PAYLOAD))
+		cmos_clear_options_reset_pending();
 }
+
+/*
+ * The payload learns about the reset only from this boot's coreboot table, so
+ * keep the request pending through any reset up to the very last moment.
+ */
+static void options_reset_handoff(void *unused)
+{
+	if (CONFIG(RESET_OPTIONS_IN_PAYLOAD) && cmos_options_reset_pending())
+		cmos_clear_options_reset_pending();
+}
+BOOT_STATE_INIT_ENTRY(BS_PAYLOAD_BOOT, BS_ON_ENTRY, options_reset_handoff, NULL);
 
 /*
  * Upon return the caller is guaranteed 244 microseconds to complete any

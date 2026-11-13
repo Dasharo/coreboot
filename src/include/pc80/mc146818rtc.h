@@ -181,6 +181,8 @@ void cmos_check_update_date(void);
 int cmos_error(void);
 bool cmos_is_invalid(void);
 void cmos_invalid_ack(void);
+bool cmos_options_reset_pending(void);
+void cmos_set_options_reset_pending(void);
 int cmos_lb_cks_valid(void);
 
 /*
@@ -192,7 +194,8 @@ int cmos_lb_cks_valid(void);
  */
 static inline bool option_defaults_forced(void)
 {
-	return CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR) && cmos_is_invalid();
+	return CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR) &&
+	       (cmos_is_invalid() || cmos_options_reset_pending());
 }
 
 int cmos_checksum_valid(int range_start, int range_end, int cks_loc);
