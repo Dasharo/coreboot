@@ -16,7 +16,7 @@ chip soc/intel/cannonlake
 	register "gpe0_dw2" = "0xd"
 
 	# FSP configuration
-	register "SaGv" = "SaGv_Enabled"
+	register "SaGv" = "SaGv_Disabled"
 	register "ScsEmmcHs400Enabled" = "CONFIG(ENABLE_EMMC)"
 
 	# Enable eDP device
