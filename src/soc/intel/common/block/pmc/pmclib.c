@@ -16,6 +16,7 @@
 #include <intelblocks/gpio.h>
 #include <intelblocks/tco.h>
 #include <option.h>
+#include <pc80/mc146818rtc.h>
 #include <reset.h>
 #include <security/vboot/vboot_common.h>
 #include <soc/pci_devs.h>
@@ -533,6 +534,18 @@ int pmc_fill_power_state(struct chipset_power_state *ps)
 			acpi_sleep_states[ps->prev_sleep_state]);
 	else
 		printk(BIOS_DEBUG, "prev_sleep_state %d (unknown state)\n", ps->prev_sleep_state);
+
+	/*
+	 * Record a CMOS-clear settings reset before anything can reset the
+	 * platform, e.g. FSP-M or the CSE. RTC_BATTERY_DEAD might be gone by
+	 * ramstage if it resets
+	 */
+	if (CONFIG(RESET_OPTIONS_ON_CMOS_CLEAR) &&
+		(ps->prev_sleep_state != ACPI_S3) &&
+		cmos_is_invalid()
+	){
+		cmos_set_options_reset_pending();
+	}
 
 	return ps->prev_sleep_state;
 }

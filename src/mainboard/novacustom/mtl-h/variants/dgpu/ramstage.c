@@ -34,7 +34,7 @@ static void set_dgpu_only(void)
 	uint8_t initial_option_state = 99, option_result=0;
 	option_result = dasharo_read_option(OPT_GPU_MUX_CTRL, &initial_option_state);
 	if (initial_option_state == 99 || option_result == (uint8_t)(-1)) {
-		printk(BIOS_ERROR,"set_dgpu_only: Failed to read initial GPU MUX state, initial_option_state=%d\n", initial_option_state);
+		printk(BIOS_ERR,"set_dgpu_only: Failed to read initial GPU MUX state, initial_option_state=%d\n", initial_option_state);
 	}
 	printk(BIOS_DEBUG, "MUX_CTRL_BIOS state in coreboot: %d\n", initial_option_state);
 
