@@ -18,6 +18,7 @@
 
 /* Capacity of a fan curve, matches edk2's DASHARO_FAN_CURVE_MAX_POINTS */
 #define FAN_CURVE_MAX_POINTS 4
+#define FAN_CURVE_MAX_FANS 2
 
 #define SLEEP_TYPE_OPTION_S0IX	0
 #define SLEEP_TYPE_OPTION_S3	1
@@ -67,12 +68,12 @@ struct fan_point {
 } __packed;
 
 struct fan_curve {
+	uint8_t point_count;
 	struct fan_point points[FAN_CURVE_MAX_POINTS];
 } __packed;
 
-struct custom_fan_curve {
-	uint8_t point_count;
-	struct fan_curve curve;
+struct custom_fan_curves {
+	struct fan_curve fans[FAN_CURVE_MAX_FANS];
 } __packed;
 
 struct battery_config {
@@ -210,35 +211,40 @@ uint8_t get_sleep_type_option(void);
 /* Looks Dasharo/"FanCurveOption" variable to check which fan curve EC should
  * apply.
  *
- *
  * Result:
  *  - 0 - Silent profile
  *  - 1 - Performance profile
  *  - 2 - Fans off
- *  - 3 - Custom curve, see get_custom_fan_curve()
+ *  - 3 - Custom curves, see get_custom_fan_curves()
  */
 uint8_t get_fan_curve_option(void);
+uint8_t get_fan2_curve_option(void);
 
-/* Looks up Dasharo/"CustomFanCurve" variable and validates it: the point
- * count must be the one CMD_FAN_CURVE_SET takes, and the temperatures
- * must be rising.
+/* Looks up Dasharo/"CustomFanCurve" variable, which holds one curve per fan,
+ * and validates every curve: the point count must be the one
+ * CMD_FAN_CURVE_SET takes, and the temperatures must be rising.
  *
  * Arguments:
- *  - curve - filled with the custom curve on success
+ *  - curves - filled with the custom curves on success
  * Result:
- *  - true - curve is present and valid
- *  - false - curve missing or invalid, contents of curve are undefined
+ *  - true - curves are present and valid
+ *  - false - curves missing or invalid, contents of curves are undefined
  */
-bool get_custom_fan_curve(struct custom_fan_curve *curve);
+bool get_custom_fan_curves(struct custom_fan_curves *curves);
 
-/* Validates the curve, stores it in Dasharo/"CustomFanCurve" and selects it
- * in Dasharo/"FanCurveOption".
+/* Validates the curves, stores them in Dasharo/"CustomFanCurve" and selects
+ * the custom curve in Dasharo/"FanCurveOption" for the first fan and in
+ * Dasharo/"FanCurveOption2" for the second fan.
  *
+ * Arguments:
+ *  - curves - custom curves of all fans
+ *  - fans_map - fans to select the custom curve for, bit 0 is the first
+ *                  fan, bit 1 the second one
  * Result:
- *  - true - curve stored and selected
- *  - false - curve invalid or the variable store is not available
+ *  - true - curves stored and selected
+ *  - false - a curve is invalid or the variable store is not available
  */
-bool set_custom_fan_curve(const struct custom_fan_curve *curve);
+bool set_custom_fan_curves(const struct custom_fan_curves *curves, uint8_t fans_map);
 
 /* Looks Dasharo/"EnableCamera" variable to checkif camera USB port should be
  * emabled.

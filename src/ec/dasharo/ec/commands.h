@@ -70,6 +70,9 @@
 #define FAN_CURVE_APPLIED 0
 #define FAN_CURVE_PENDING 1
 
+#define FAN_CURVE_FAN1 0
+#define FAN_CURVE_FAN2 1
+
 // Print command. Registers are unique for each command
 #define CMD_PRINT_REG_FLAGS 2
 #define CMD_PRINT_REG_LEN 3
@@ -89,7 +92,6 @@
 
 #ifndef __ACPI__
 
-struct custom_fan_curve;
 
 // Persistent option definitions
 enum {
@@ -105,9 +107,12 @@ enum {
 };
 
 uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data);
-/* Send the fan curve selected by Dasharo/"FanCurveOption" to every fan */
+
+// Read from UEFI, set to EC
 void dasharo_ec_set_fan_curve(void);
-bool dasharo_ec_get_fan_curve(struct custom_fan_curve *curve);
+// Read from EC, save to UEFI
+void dasharo_ec_save_fan_curves(void);
+
 uint8_t dasharo_read_option(uint8_t option, uint8_t *value);
 uint8_t dasharo_ec_read_version(uint8_t *data);
 uint8_t dasharo_ec_read_board(uint8_t *data);

@@ -12,6 +12,7 @@
 #include <pc80/keyboard.h>
 #include <security/vboot/misc.h>
 #include <security/vboot/vboot_common.h>
+#include <string.h>
 #include <timer.h>
 #include "acpi.h"
 #include "commands.h"
@@ -96,76 +97,120 @@ uint8_t dasharo_ec_smfi_cmd(uint8_t cmd, uint8_t len, uint8_t *data)
 
 struct smfi_cmd_set_fan_curve {
 	uint8_t fan;
-	uint8_t point_count;
 	struct fan_curve curve;
 } __packed;
 
 /* Temperature in degrees C, duty in percent */
-static const struct fan_curve fan_curve_silent = {{
-	{ .temp = 0,   .duty = 20  },
-	{ .temp = 70,  .duty = 25  },
-	{ .temp = 85,  .duty = 45  },
-	{ .temp = 95,  .duty = 100 }
-}};
+static const struct fan_curve fan_curve_silent = {
+	.point_count = FAN_CURVE_MAX_POINTS,
+	.points = {
+		{ .temp = 0,   .duty = 20  },
+		{ .temp = 70,  .duty = 25  },
+		{ .temp = 85,  .duty = 45  },
+		{ .temp = 95,  .duty = 100 }
+	}
+};
 
-static const struct fan_curve fan_curve_performance = {{
-	{ .temp = 0,   .duty = 25  },
-	{ .temp = 55,  .duty = 35  },
-	{ .temp = 75,  .duty = 60  },
-	{ .temp = 85,  .duty = 100 }
-}};
+static const struct fan_curve fan_curve_performance = {
+	.point_count = FAN_CURVE_MAX_POINTS,
+	.points = {
+		{ .temp = 0,   .duty = 25  },
+		{ .temp = 55,  .duty = 35  },
+		{ .temp = 75,  .duty = 60  },
+		{ .temp = 85,  .duty = 100 }
+	}
+};
 
+static int fan_curve_count(void)
+{
+	return CONFIG(EC_DASHARO_EC_DGPU) ? 2 : CONFIG_EC_DASHARO_EC_CPU_FAN_COUNT;
+}
+
+static void get_selected_fan_curve(int fan, struct fan_curve *curve)
+{
+	struct custom_fan_curves custom;
+	uint8_t option = fan == FAN_CURVE_FAN1 ? get_fan_curve_option() : get_fan2_curve_option();
+
+	switch (option) {
+	case FAN_CURVE_OPTION_PERFORMANCE:
+		*curve = fan_curve_performance;
+		return;
+	case FAN_CURVE_OPTION_CUSTOM:
+		if (get_custom_fan_curves(&custom)) {
+			*curve = custom.fans[fan];
+			return;
+		}
+		printk(BIOS_WARNING,
+		       "EC: custom curve of fan %d missing or invalid, using silent\n", fan);
+		__fallthrough;
+	case FAN_CURVE_OPTION_SILENT:
+	default:
+		*curve = fan_curve_silent;
+	}
+}
+
+// Get from UEFI and set in EC
 void dasharo_ec_set_fan_curve(void)
 {
 	struct smfi_cmd_set_fan_curve cmd;
-	struct custom_fan_curve custom;
 	int i;
-	int n_fans;
 
-	switch (get_fan_curve_option()) {
-	case FAN_CURVE_OPTION_PERFORMANCE:
-		cmd.curve = fan_curve_performance;
-		break;
-	case FAN_CURVE_OPTION_CUSTOM:
-		if (get_custom_fan_curve(&custom)) {
-			cmd.curve = custom.curve;
-			break;
-		}
-		printk(BIOS_WARNING, "EC: custom fan curve missing or invalid, using silent\n");
-		__fallthrough; // fallback to silent if custom fails
-	case FAN_CURVE_OPTION_SILENT:
-	default:
-		cmd.curve = fan_curve_silent;
-		break;
-	}
-
-	cmd.point_count = FAN_CURVE_MAX_POINTS;
-	n_fans = CONFIG(EC_DASHARO_EC_DGPU) ? 2 : 1;
-	for (i = 0; i < n_fans; ++i) {
+	for (i = 0; i < fan_curve_count(); ++i) {
 		cmd.fan = i;
+		get_selected_fan_curve(i, &cmd.curve);
 		if (dasharo_ec_smfi_cmd(CMD_FAN_CURVE_SET, sizeof(cmd), (uint8_t *)&cmd))
 			printk(BIOS_ERR, "EC: fan %d rejected the fan curve\n", i);
 	}
 }
 
-bool dasharo_ec_get_fan_curve(struct custom_fan_curve *curve)
+static bool dasharo_ec_get_fan_curve(uint8_t fan, struct fan_curve *curve)
 {
-	uint8_t selector = FAN_CURVE_APPLIED;
+	uint8_t request[2] = { fan, FAN_CURVE_APPLIED };
 	int i;
 
-	if (dasharo_ec_smfi_cmd(CMD_FAN_CURVE_GET, sizeof(selector), &selector))
+	if (dasharo_ec_smfi_cmd(CMD_FAN_CURVE_GET, sizeof(request), request))
 		return false;
 
-	curve->point_count = dasharo_ec_read(REG_DATA);
+	curve->point_count = dasharo_ec_read(REG_DATA + 1);
 	if (curve->point_count > FAN_CURVE_MAX_POINTS)
 		return false;
 
 	for (i = 0; i < curve->point_count; i++) {
-		curve->curve.points[i].temp = dasharo_ec_read(REG_DATA + 1 + 2 * i);
-		curve->curve.points[i].duty = dasharo_ec_read(REG_DATA + 2 + 2 * i);
+		curve->points[i].temp = dasharo_ec_read(REG_DATA + 2 + 2 * i);
+		curve->points[i].duty = dasharo_ec_read(REG_DATA + 3 + 2 * i);
 	}
 
 	return true;
+}
+
+// Get from EC and save to UEFI
+void dasharo_ec_save_fan_curves(void)
+{
+	struct custom_fan_curves stored, updated;
+	struct fan_curve curve, selected;
+	bool have_stored = get_custom_fan_curves(&stored);
+	uint8_t changed = 0; // which fan curves changed and need an update
+	int i;
+
+	updated = stored;
+	for (i = 0; i < fan_curve_count(); i++) {
+		if (!dasharo_ec_get_fan_curve(i, &curve))
+			continue;
+
+		// continue if didn't change
+		get_selected_fan_curve(i, &selected);
+		if (!memcmp(&curve, &selected, sizeof(curve)))
+			continue;
+
+		if (!have_stored && !changed)
+			updated.fans[FAN_CURVE_FAN1] = updated.fans[FAN_CURVE_FAN2] = curve;
+
+		updated.fans[i] = curve;
+		changed |= BIT(i);
+	}
+
+	if (changed && !set_custom_fan_curves(&updated, changed))
+		printk(BIOS_ERR, "EC: fan curves not saved\n");
 }
 
 int dasharo_ec_get_bat_threshold(enum bat_threshold_type type)
