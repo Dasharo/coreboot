@@ -21,6 +21,7 @@
 #include <intelblocks/msr.h>
 #include <intelblocks/acpi.h>
 #include <option.h>
+#include <smp/node.h>
 #include <soc/cpu.h>
 #include <soc/msr.h>
 #include <soc/pci_devs.h>
@@ -110,6 +111,12 @@ bool soc_is_nominal_freq_supported(void)
 /* All CPUs including BSP will run the following function. */
 void soc_core_init(struct device *cpu)
 {
+	static bool tme_enable = false;
+
+	/* Avoid access to SPI on AP cores */
+	if (boot_cpu())
+		tme_enable = get_uint_option("intel_tme", CONFIG(INTEL_TME) && is_tme_supported());
+
 	/* Clear out pending MCEs */
 	/* TODO(adurbin): This should only be done on a cold boot. Also, some
 	 * of these banks are core vs package scope. For now every CPU clears
@@ -141,7 +148,7 @@ void soc_core_init(struct device *cpu)
 	/* Enable Turbo */
 	enable_turbo();
 
-	if (get_uint_option("intel_tme", CONFIG(INTEL_TME)) && is_tme_supported())
+	if (tme_enable)
 		set_tme_core_activate();
 }
 
