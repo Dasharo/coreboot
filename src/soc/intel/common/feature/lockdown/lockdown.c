@@ -51,8 +51,12 @@ static void pmc_lockdown_config(int chipset_lockdown)
 					 PM_CFG_XRAM_READ_DISABLE);
 	}
 
-	/* Send PMC IPC to inform about both BIOS Reset and PCI enumeration done */
-	pmc_send_bios_reset_pci_enum_done();
+	/*
+	 * Send PMC IPC to inform about both BIOS Reset and PCI enumeration done.
+	 * PCH-N and PCH-P only.
+	 */
+	if (!CONFIG(SOC_INTEL_ALDERLAKE_PCH_S))
+		pmc_send_bios_reset_pci_enum_done();
 }
 
 static void soc_die_lockdown_cfg(void)
