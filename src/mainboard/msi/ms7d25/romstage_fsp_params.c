@@ -273,7 +273,7 @@ static void check_ddr4_xmp_valid(FSPM_UPD *memupd)
 
 void mainboard_memory_init_params(FSPM_UPD *memupd)
 {
-	bool pciexp_clk_pm = get_uint_option("pciexp_clk_pm", CONFIG(PCIEXP_CLK_PM));
+	bool pciexp_clk_pm = get_uint_option("pciexp_clk_pm", false);
 
 	memupd->FspmConfig.DmiMaxLinkSpeed = 4; // Gen4 speed, undocumented
 	memupd->FspmConfig.DmiAspm = 0;
