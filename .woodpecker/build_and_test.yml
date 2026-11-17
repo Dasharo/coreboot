@@ -260,6 +260,7 @@ steps:
           TEST_CONFIG: "**/?*"
         evaluate: 'QEMU != "true"'
     commands:
+      - export SNIPEIT_CHECKOUT_NOTE="$${CI_STEP_URL}"
       - mkdir -p /root/.osfv
       - printf '%s\n' "$${SNIPEIT_CONFIG}" > /root/.osfv/snipeit.yml
       - chmod 600 /root/.osfv/snipeit.yml
