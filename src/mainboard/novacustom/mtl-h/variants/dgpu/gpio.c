@@ -254,11 +254,39 @@ static const struct pad_config gpio_table[] = {
 #define DGPU_PWRGD GPP_C15
 #define DGPU_NVVDD_EN GPP_F16
 
+#define DGPU_PWRGD_OFF_TIMEOUT_MS	250
+#define DGPU_PWRGD_ON_TIMEOUT_MS	200
+
+static void dgpu_power_on(void)
+{
+	int64_t waited;
+
+	waited = wait_ms(DGPU_PWRGD_OFF_TIMEOUT_MS, !gpio_get(DGPU_PWRGD));
+	if (waited)
+		printk(BIOS_DEBUG, "dGPU: PWRGD low after %lld ms\n", waited);
+	else
+		printk(BIOS_WARNING, "dGPU: PWRGD still high %d ms after power off\n",
+		       DGPU_PWRGD_OFF_TIMEOUT_MS);
+
+	gpio_set(DGPU_RST_N, 0);
+	mdelay(4);
+	gpio_set(DGPU_PWR_EN, 1);
+
+	waited = wait_ms(DGPU_PWRGD_ON_TIMEOUT_MS, gpio_get(DGPU_PWRGD));
+	if (!waited) {
+		gpio_set(DGPU_PWR_EN, 0);
+		printk(BIOS_ERR, "dGPU: PWRGD not high %d ms after PWR_EN, powering off\n",
+		       DGPU_PWRGD_ON_TIMEOUT_MS);
+		return;
+	}
+	printk(BIOS_DEBUG, "dGPU: PWRGD high after %lld ms\n", waited);
+
+	gpio_set(DGPU_RST_N, 1);
+}
+
 /* Pad configuration was generated automatically using intelp2m utility */
 void variant_configure_gpios(void)
 {
-	bool result;
-
 	printk(BIOS_DEBUG, "dGPU at entry: PWR_EN tx %d, RST_N tx %d, PWRGD %d, NVVDD_EN %d\n",
 	       gpio_tx_get(DGPU_PWR_EN), gpio_tx_get(DGPU_RST_N), gpio_get(DGPU_PWRGD),
 	       gpio_get(DGPU_NVVDD_EN));
@@ -266,18 +294,11 @@ void variant_configure_gpios(void)
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
 	mdelay(50);
-	if (dasharo_dgpu_state() != 0 && !gpio_get(DGPU_PWRGD)) {
-		gpio_set(DGPU_RST_N, 0);
-		mdelay(4);
-		gpio_set(DGPU_PWR_EN, 1);
-		result = wait_ms(200, gpio_get(DGPU_PWRGD) == 1);
-		if (result)
-			gpio_set(DGPU_RST_N, 1);
-		else
-			gpio_set(DGPU_PWR_EN, 0);
-	} else {
+	if (dasharo_dgpu_state() != IGPU_ONLY)
+		dgpu_power_on();
+	else
 		gpio_set(DGPU_PWR_EN, 0);
-	}
+
 	printk(BIOS_DEBUG, "DGPU_PWRGD %d\n", gpio_get(DGPU_PWRGD));
 	printk(BIOS_DEBUG, "DGPU_RST_N tx %d\n", gpio_tx_get(DGPU_RST_N));
 	printk(BIOS_DEBUG, "DGPU_PWR_EN tx %d\n", gpio_tx_get(DGPU_PWR_EN));
