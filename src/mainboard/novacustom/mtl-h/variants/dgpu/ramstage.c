@@ -23,6 +23,9 @@ static void print_rp12_link(const char *when)
 		return;
 	}
 
+	printk(BIOS_DEBUG, "RP12 %s: cfg 0x328 %08x, cfg 0x338 %08x\n", when,
+	       pci_s_read_config32(rp, 0x328), pci_s_read_config32(rp, 0x338));
+
 	cap = pci_s_find_capability(rp, PCI_CAP_ID_PCIE);
 	if (!cap) {
 		printk(BIOS_DEBUG, "RP12 %s: ID %08x, no PCIe capability\n", when, id);
