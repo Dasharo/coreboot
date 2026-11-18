@@ -480,8 +480,8 @@ Device (DASH) {
 		APMC, 8
 	}
 
-	// Save Fan Curve
-	Method (SFCS, 2, Serialized)
+	// Save Fan Curves
+	Method (SFCS, 0, Serialized)
 	{
 		If (\_SB.PCI0.LPCB.EC0.ECOK == 0) { Return (1) }
 
