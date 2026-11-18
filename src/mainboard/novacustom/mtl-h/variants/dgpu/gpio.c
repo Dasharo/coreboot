@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <device/pci_def.h>
+#include <device/pci_ops.h>
 #include <mainboard/gpio.h>
 #include <soc/gpio.h>
 #include <gpio.h>
@@ -257,6 +259,25 @@ static const struct pad_config gpio_table[] = {
 #define DGPU_PWRGD_OFF_TIMEOUT_MS	250
 #define DGPU_PWRGD_ON_TIMEOUT_MS	200
 
+#define RP12_DEV PCI_DEV(0, 1, 0)
+#define RP12_CFG_338 0x338
+#define RP12_CFG_338_BIT26 (1 << 26)
+
+static void rp12_clear_cfg_338_bit26(void)
+{
+	uint32_t val;
+
+	if (pci_s_read_config32(RP12_DEV, PCI_VENDOR_ID) == 0xffffffff)
+		return;
+
+	val = pci_s_read_config32(RP12_DEV, RP12_CFG_338);
+	if (!(val & RP12_CFG_338_BIT26))
+		return;
+
+	pci_s_write_config32(RP12_DEV, RP12_CFG_338, val & ~RP12_CFG_338_BIT26);
+	printk(BIOS_INFO, "RP12: cleared config 0x338 bit 26 left set by a previous boot\n");
+}
+
 static void dgpu_power_on(void)
 {
 	int64_t waited;
@@ -268,6 +289,7 @@ static void dgpu_power_on(void)
 		printk(BIOS_WARNING, "dGPU: PWRGD still high %d ms after power off\n",
 		       DGPU_PWRGD_OFF_TIMEOUT_MS);
 
+	rp12_clear_cfg_338_bit26();
 	gpio_set(DGPU_RST_N, 0);
 	mdelay(4);
 	gpio_set(DGPU_PWR_EN, 1);
