@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <console/console.h>
+#include <gpio.h>
+#include <soc/gpio.h>
 #include <soc/meminit.h>
 #include <soc/romstage.h>
 
@@ -33,6 +36,10 @@ void mainboard_memory_init_params(FSPM_UPD *mupd)
 			},
 		},
 	};
+
+	if (CONFIG(EC_DASHARO_EC_DGPU))
+		printk(BIOS_DEBUG, "dGPU before FSP-M: PWR_EN tx %d, RST_N tx %d, PWRGD %d\n",
+		       gpio_tx_get(GPP_D03), gpio_tx_get(GPP_B09), gpio_get(GPP_C15));
 
 	mupd->FspmConfig.PrimaryDisplay = 4;
 	mupd->FspmConfig.RootPortIndex = 11;
