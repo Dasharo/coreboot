@@ -259,6 +259,10 @@ void variant_configure_gpios(void)
 {
 	bool result;
 
+	printk(BIOS_DEBUG, "dGPU at entry: PWR_EN tx %d, RST_N tx %d, PWRGD %d, NVVDD_EN %d\n",
+	       gpio_tx_get(DGPU_PWR_EN), gpio_tx_get(DGPU_RST_N), gpio_get(DGPU_PWRGD),
+	       gpio_get(DGPU_NVVDD_EN));
+
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
 
 	mdelay(50);
@@ -275,8 +279,8 @@ void variant_configure_gpios(void)
 		gpio_set(DGPU_PWR_EN, 0);
 	}
 	printk(BIOS_DEBUG, "DGPU_PWRGD %d\n", gpio_get(DGPU_PWRGD));
-	printk(BIOS_DEBUG, "DGPU_RST_N %d\n", gpio_get(DGPU_RST_N));
-	printk(BIOS_DEBUG, "DGPU_PWR_EN %d\n", gpio_get(DGPU_PWR_EN));
+	printk(BIOS_DEBUG, "DGPU_RST_N tx %d\n", gpio_tx_get(DGPU_RST_N));
+	printk(BIOS_DEBUG, "DGPU_PWR_EN tx %d\n", gpio_tx_get(DGPU_PWR_EN));
 	printk(BIOS_DEBUG, "DGPU_NVVDD_EN %d\n", gpio_get(DGPU_NVVDD_EN));
 	printk(BIOS_DEBUG, "PEG_CLKREQ %d\n", gpio_get(GPP_D18));
 
