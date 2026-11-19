@@ -6,6 +6,7 @@
 #include <device/pci_ops.h>
 #include <cf9_reset.h>
 #include <reset.h>
+#include <amdblocks/reset.h>
 
 #define HT_INIT_CONTROL		0x6c
 #define HTIC_ColdR_Detect	(1 << 4)
@@ -23,4 +24,9 @@ void cf9_reset_prepare(void)
 void do_board_reset(void)
 {
 	system_reset();
+}
+
+void do_cold_reset(void)
+{
+	full_reset();
 }

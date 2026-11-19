@@ -27,7 +27,9 @@ config SOUTHBRIDGE_SPECIFIC_OPTIONS
 	select BOOT_DEVICE_SUPPORTS_WRITES if SOUTHBRIDGE_AMD_PI_AVALON
 	select BOOT_DEVICE_SPI_FLASH_RW_NOMMAP_EARLY if SOUTHBRIDGE_AMD_PI_AVALON
 	select USE_AMDFWTOOL
-	select AMD_FWM_POSITION_FA0000_DEFAULT
+	select AMD_FWM_POSITION_FA0000_DEFAULT if !HUDSON_PSP_FTPM
+	# The PSP secure OS doesn't fit at 0xFA0000
+	select AMD_FWM_POSITION_F20000_DEFAULT if HUDSON_PSP_FTPM
 
 config EHCI_BAR
 	hex
@@ -71,8 +73,26 @@ config HUDSON_PSP
 	bool
 	default y if CPU_AMD_PI_00730F01
 
+config HUDSON_PSP_FTPM
+	bool "Enable AMD PSP firmware TPM (fTPM)"
+	depends on HUDSON_PSP && HAVE_SMI_HANDLER
+	depends on SOUTHBRIDGE_AMD_PI_AVALON
+	select SOC_AMD_COMMON_BLOCK_PSP_GEN1
+	select SOC_AMD_COMMON_BLOCK_PSP_SMI
+	select AMD_CRB_FTPM
+	help
+	  Add the PSP secure OS and fTPM trustlets to the PSP directory and
+	  bring up the PSP mailbox so the TPM 2.0 implemented by the PSP can
+	  be used. The fTPM stores its state in the PSP_NVRAM FMAP region,
+	  which is accessed by the SMI handler on behalf of the PSP.
+
+	  The fTPM only becomes available in ramstage after SMM has been set
+	  up. It can't be used by verstage, so with VBOOT select
+	  VBOOT_MOCK_SECDATA.
+
 config AMDFW_CONFIG_FILE
 	string "AMD PSP Firmware config file"
+	default "src/southbridge/amd/pi/hudson/fw_avl_ftpm.cfg" if HUDSON_PSP_FTPM
 	default "src/southbridge/amd/pi/hudson/fw_avl.cfg" if CPU_AMD_PI_00730F01
 
 config HUDSON_XHCI_FWM_FILE

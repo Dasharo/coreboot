@@ -5,6 +5,7 @@
  */
 
 #include <amdblocks/acpi.h>
+#include <amdblocks/psp.h>
 #include <amdblocks/smm.h>
 #include <amdblocks/smi.h>
 #include <soc/smi.h>
@@ -32,6 +33,10 @@ static void fch_apmc_smi_handler_no_psp(void)
 		if (CONFIG(TPM_PPI_UEFIVAR_BACKED))
 			handle_smi_tpm_ppi();
 		break;
+	case APM_CNT_SMMINFO:
+		if (CONFIG(HUDSON_PSP_FTPM))
+			psp_notify_smm();
+		break;
 	}
 
 	mainboard_smi_apmc(cmd);
@@ -39,6 +44,9 @@ static void fch_apmc_smi_handler_no_psp(void)
 
 static const struct smi_sources_t smi_sources[] = {
 	{ .type = SMITYPE_SMI_CMD_PORT, .handler = fch_apmc_smi_handler_no_psp },
+#if CONFIG(HUDSON_PSP_FTPM)
+	{ .type = SMITYPE_PSP, .handler = psp_smi_handler },
+#endif
 };
 
 void *get_smi_source_handler(int source)

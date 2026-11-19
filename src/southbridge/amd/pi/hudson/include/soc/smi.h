@@ -10,6 +10,7 @@
 #define SMI_GEVENTS			24
 #define NUMBER_SMITYPES			160
 
+#define SMITYPE_PSP			33
 #define SMITYPE_PWRBUTTON_UP		51
 #define SMITYPE_SMI_CMD_PORT		75
 
@@ -39,6 +40,7 @@
 
 #define SMI_REG_SMITRIG0		0x98
 #define  SMITRG0_SMIENB			 (1 << 31)
+#define  SMITRIG0_PSP			 (1 << 25)
 #define  SMITRG0_EOS			 (1 << 28)
 
 #define SMI_REG_CONTROL0		0xa0

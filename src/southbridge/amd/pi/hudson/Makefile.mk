@@ -39,6 +39,9 @@ smm-y += smihandler.c
 smm-y += smi_util.c
 smm-y += lpc_simpledev.c
 
+ramstage-$(CONFIG_HUDSON_PSP_FTPM) += psp.c
+smm-$(CONFIG_HUDSON_PSP_FTPM) += psp_smi.c
+
 CPPFLAGS_common += -I$(src)/southbridge/amd/pi/hudson/include
 
 # ROMSIG At ROMBASE + 0x20000:
@@ -96,6 +99,22 @@ OPT_TRUSTLETKEY_FILE=$(call add_opt_prefix, $(TRUSTLETKEY_FILE), --trustletkey)
 OPT_SMUFIRMWARE2_FILE=$(call add_opt_prefix, $(SMUFIRMWARE2_FILE), --smufirmware2)
 OPT_SMUSCS_FILE=$(call add_opt_prefix, $(SMUSCS_FILE), --smuscs)
 
+ifeq ($(CONFIG_HUDSON_PSP_FTPM),y)
+ifeq ($(CONFIG_AMD_FWM_POSITION_FA0000),y)
+$(error HUDSON_PSP_FTPM: the PSP secure OS doesn't fit at AMD FW position 0xFA0000, select AMD_FWM_POSITION_F20000)
+endif
+ifeq ($(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)),src/southbridge/amd/pi/hudson/fw_avl.cfg)
+$(error HUDSON_PSP_FTPM: fw_avl.cfg lacks the PSP secure OS, set AMDFW_CONFIG_FILE to fw_avl_ftpm.cfg)
+endif
+OPT_PSP_USE_PSPSECUREOS=--use-pspsecureos
+PSP_NVRAM_OFFSET=$(call get_fmap_value,FMAP_SECTION_PSP_NVRAM_START)
+PSP_NVRAM_SIZE=$(call get_fmap_value,FMAP_SECTION_PSP_NVRAM_SIZE)
+OPT_PSP_NVRAM_BASE=--nvram-base $(call _tohex,$(call int-add, \
+	$(call int-subtract, 0x100000000 $(CONFIG_ROM_SIZE)) $(PSP_NVRAM_OFFSET)))
+OPT_PSP_NVRAM_SIZE=--nvram-size $(PSP_NVRAM_SIZE)
+AMDFW_FMAP_DEP=$(obj)/fmap_config.h
+endif
+
 $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_HUDSON_XHCI_FWM_FILE)) \
 			$(call strip_quotes, $(CONFIG_HUDSON_IMC_FWM_FILE)) \
 			$(call strip_quotes, $(CONFIG_HUDSON_GEC_FWM_FILE)) \
@@ -114,10 +133,18 @@ $(obj)/amdfw.rom:	$(call strip_quotes, $(CONFIG_HUDSON_XHCI_FWM_FILE)) \
 			$(call strip_quotes, $(SMUFIRMWARE2_2_FILE)) \
 			$(call strip_quotes, $(SMUFIRMWARE2_2_FN_FILE)) \
 			$(DEP_FILES) \
+			$(AMDFW_FMAP_DEP) \
+			$(obj)/config.h \
+			$(call strip_quotes, $(CONFIG_AMDFW_CONFIG_FILE)) \
 			$(AMDFWTOOL)
 	rm -f $@
 	@printf "    AMDFWTOOL  $(subst $(obj)/,,$(@))\n"
+	$(if $(AMDFW_FMAP_DEP),$(if $(PSP_NVRAM_SIZE),,\
+		$(error PSP fTPM requires a PSP_NVRAM region in the FMAP)))
 	$(AMDFWTOOL) \
+		$(OPT_PSP_USE_PSPSECUREOS) \
+		$(OPT_PSP_NVRAM_BASE) \
+		$(OPT_PSP_NVRAM_SIZE) \
 		$(OPT_HUDSON_XHCI_FWM_FILE) \
 		$(OPT_HUDSON_IMC_FWM_FILE) \
 		$(OPT_HUDSON_GEC_FWM_FILE) \
