@@ -209,4 +209,7 @@ void board_BeforeInitPost(struct sysinfo *cb, AMD_POST_PARAMS *Post)
 		Post->MemConfig.EnableEccFeature = TRUE;
 	else
 		Post->MemConfig.EnableEccFeature = FALSE;
+	/* Higher speeds were never validated, DDR3-1333 fails on 4GB ECC boards */
+	Post->MemConfig.UserTimingMode = TIMING_MODE_LIMITED;
+	Post->MemConfig.MemClockValue = DDR667_FREQUENCY;
 }
