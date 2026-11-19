@@ -56,4 +56,7 @@ chip northbridge/amd/pi/00730F01
 			device ref ehci_2	on end	# USB EHCI2 usb[8:7] - muxed with XHCI
 		end
 	end
+	chip drivers/amd/ftpm
+		device mmio 0x0 on end
+	end
 end

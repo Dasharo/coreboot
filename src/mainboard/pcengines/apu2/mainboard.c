@@ -396,6 +396,27 @@ static void mainboard_enable(struct device *dev)
 		measure_amd_blobs();
 }
 
+/* Only one TPM driver is built, these stand in for the other one */
+__weak struct chip_operations drivers_pc80_tpm_ops = {};
+__weak struct chip_operations drivers_amd_ftpm_ops = {};
+
+static void mainboard_devtree_update(void)
+{
+	struct device *dev;
+
+	for (dev = all_devices; dev; dev = dev->next) {
+		if (dev->chip_ops == &drivers_pc80_tpm_ops && !CONFIG(MEMORY_MAPPED_TPM))
+			dev->enabled = 0;
+		if (dev->chip_ops == &drivers_amd_ftpm_ops && !CONFIG(AMD_CRB_FTPM))
+			dev->enabled = 0;
+	}
+}
+
+static void mainboard_init(void *chip_info)
+{
+	mainboard_devtree_update();
+}
+
 static void mainboard_final(void *chip_info)
 {
 	/* ECC was not working because all memory was marked
@@ -500,6 +521,7 @@ const char *smbios_system_sku(void)
 }
 
 struct chip_operations mainboard_ops = {
+	.init = mainboard_init,
 	.enable_dev = mainboard_enable,
 	.final = mainboard_final,
 };
