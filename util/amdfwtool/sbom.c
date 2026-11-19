@@ -44,7 +44,8 @@ static const uint8_t pubkey_entry_types[] = {
 };
 
 /*
- * No-header entry types (NO_HDR_ENTRY_TYPES from PSPTool).
+ * No-header PSP directory entry types (NO_HDR_ENTRY_TYPES from PSPTool,
+ * PSP directory types only).
  * These entries lack the standard AMD firmware header and are skipped from
  * SBOM generation unless noted as exceptions below.
  *
@@ -53,7 +54,7 @@ static const uint8_t pubkey_entry_types[] = {
  *   0x1a (AMD_SEV_DRIVER)      - add as regular PSP FW if $PS1 magic present
  *   0x21, 0x82, 0x84, 0x8d    - wrapped KEK; use wrapped-KEK template
  */
-static const uint8_t no_hdr_entry_types[] = {
+static const uint8_t no_hdr_psp_entry_types[] = {
 	AMD_FW_PSP_NVRAM,
 	AMD_PSP_FUSE_CHAIN,
 	AMD_WRAPPED_IKEK,
@@ -61,27 +62,16 @@ static const uint8_t no_hdr_entry_types[] = {
 	AMD_FW_RECOVERYAB_A,
 	AMD_FW_BIOS_TABLE,
 	AMD_FW_RECOVERYAB_B,
-	AMD_BIOS_L2_PTR,
 	0x06,
-	AMD_BIOS_APOB,
-	AMD_BIOS_APCB,
-	AMD_BIOS_APCB_BK,
 	AMD_FW_TPMLITE,
 	AMD_SEV_DRIVER,
 	AMD_TOKEN_UNLOCK,
-	AMD_BIOS_APOB_NV,
-	AMD_FW_FHP_DRIVER,
-	AMD_BIOS_UCODE,
-	AMD_BIOS_NV_ST,
-	AMD_BIOS_BIN,
-	AMD_BIOS_SIG,
 	AMD_SEV_DATA,
 	0x46,
 	AMD_RPMC_NVRAM,
 	0x82,
 	0x84,
 	AMD_TA_IKEK,
-	AMD_FW_DPE_DRIVER,
 	0x7c,
 	AMD_FW_FCFG_TABLE,
 };
@@ -149,8 +139,8 @@ static bool type_in_array(const uint8_t *arr, size_t count, uint8_t type)
 
 #define IN_PUBKEY_TYPES(t) \
 	type_in_array(pubkey_entry_types, ARRAY_SIZE(pubkey_entry_types), (t))
-#define IN_NO_HDR_TYPES(t) \
-	type_in_array(no_hdr_entry_types, ARRAY_SIZE(no_hdr_entry_types), (t))
+#define IN_NO_HDR_PSP_TYPES(t) \
+	type_in_array(no_hdr_psp_entry_types, ARRAY_SIZE(no_hdr_psp_entry_types), (t))
 #define IN_KEY_STORE_TYPES(t) \
 	type_in_array(key_store_types, ARRAY_SIZE(key_store_types), (t))
 #define IN_WRAPPED_KEK_TYPES(t) \
@@ -158,10 +148,10 @@ static bool type_in_array(const uint8_t *arr, size_t count, uint8_t type)
 #define IN_BIOS_ENTRY_TYPES(t) \
 	type_in_array(bios_entry_types, ARRAY_SIZE(bios_entry_types), (t))
 
-/* Return true if the first four bytes of filename match the $PS1 magic. */
+/* Return true if filename has the $PS1 magic at offset 16 of its header. */
 static bool has_ps1_magic(const char *filename)
 {
-	char buf[4];
+	char buf[20];
 	int fd;
 	ssize_t n;
 
@@ -170,7 +160,7 @@ static bool has_ps1_magic(const char *filename)
 		return false;
 	n = read(fd, buf, sizeof(buf));
 	close(fd);
-	return (n == 4 && !strncmp(buf, "$PS1", n));
+	return (n == 20 && !strncmp(&buf[16], "$PS1", 4));
 }
 
 /*
@@ -181,7 +171,7 @@ static bool has_ps1_magic(const char *filename)
  *  2. Key store types (0x50, 0x51) - have headers; treat as regular PSP FW.
  *  3. Wrapped KEK types (0x21, 0x82, 0x84, 0x8d) - wrapped KEK template.
  *  4. SEV driver (0x1a) - add as regular PSP FW only if $PS1 magic present.
- *  5. Remaining NO_HDR types - skip.
+ *  5. Remaining no-header PSP types - skip.
  *  6. Public key types - pubkey template.
  *  7. All others - regular PSP FW template.
  */
@@ -207,7 +197,7 @@ static sbom_fw_class_t classify_fw_type(amd_fw_type type, const char *filename)
 	}
 
 	/* Rule 5: all other no-header types are skipped */
-	if (IN_NO_HDR_TYPES(type))
+	if (IN_NO_HDR_PSP_TYPES(type))
 		return FW_SBOM_SKIP;
 
 	/* Rule 6: public key types */
@@ -222,7 +212,7 @@ static sbom_fw_class_t classify_fw_type(amd_fw_type type, const char *filename)
 static sbom_fw_class_t classify_bios_fw_type(amd_bios_type type,
 					     __maybe_unused const char *filename)
 {
-	/* Rule 1: key store types have headers */
+	/* Rule 1: PMU code and data have headers */
 	if (IN_BIOS_ENTRY_TYPES(type))
 		return FW_SBOM_REGULAR;
 
