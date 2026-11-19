@@ -189,6 +189,11 @@ bool psp_get_hsti_state_rom_armor_enforced(void)
  * receiving this command, the PSP will only honor commands where the buffer
  * is in SMM space.
  */
+__weak bool soc_psp_boot_done_needed(void)
+{
+	return true;
+}
+
 static void psp_notify_boot_done(void *unused)
 {
 	int cmd_status;
@@ -197,6 +202,9 @@ static void psp_notify_boot_done(void *unused)
 			.size = sizeof(buffer)
 		}
 	};
+
+	if (!soc_psp_boot_done_needed())
+		return;
 
 	printk(BIOS_DEBUG, "PSP: Notify that POST is finishing... ");
 
