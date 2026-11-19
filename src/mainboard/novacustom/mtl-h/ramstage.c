@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <acpi/acpi.h>
 #include <dasharo/options.h>
 #include <ec/dasharo/ec/commands.h>
 #include <ec/acpi/ec.h>
@@ -10,6 +11,7 @@
 #include <lib.h>
 #include <mainboard/gpio.h>
 #include <mainboard/variants.h>
+#include <pc80/mc146818rtc.h>
 #include <smbios.h>
 #include <soc/ramstage.h>
 #include <static.h>
@@ -255,8 +257,125 @@ struct chip_operations mainboard_ops = {
 	.final = mainboard_final,
 };
 
+#define USB3_TUNE_CMOS_PROFILE	0x70
+#define USB3_TUNE_CMOS_MASK	0x71
+#define USB3_TUNE_MASK_FIXED	0x80
+#define USB3_TUNE_PORT		0
+
+enum usb3_tune_knob {
+	USB3_TUNE_DE_EMPH,
+	USB3_TUNE_DOWNSCALE_AMP,
+	USB3_TUNE_UNIQ_TRAN,
+	USB3_TUNE_CTRL_ADAPT_OFFSET,
+	USB3_TUNE_FILTER_SEL_N,
+	USB3_TUNE_FILTER_SEL_P,
+	USB3_TUNE_OLFPS_PULL_RES,
+	USB3_TUNE_KNOBS,
+};
+
+#define USB3_TUNE_ALL_KNOBS	(BIT(USB3_TUNE_KNOBS) - 1)
+
+static const char *const usb3_tune_knob_names[USB3_TUNE_KNOBS] = {
+	[USB3_TUNE_DE_EMPH]		= "Usb3HsioTxDeEmph",
+	[USB3_TUNE_DOWNSCALE_AMP]	= "Usb3HsioTxDownscaleAmp",
+	[USB3_TUNE_UNIQ_TRAN]		= "Usb3HsioTxRate0-3UniqTran",
+	[USB3_TUNE_CTRL_ADAPT_OFFSET]	= "PchUsb3HsioCtrlAdaptOffsetCfg",
+	[USB3_TUNE_FILTER_SEL_N]	= "PchUsb3HsioFilterSelN",
+	[USB3_TUNE_FILTER_SEL_P]	= "PchUsb3HsioFilterSelP",
+	[USB3_TUNE_OLFPS_PULL_RES]	= "PchUsb3HsioOlfpsCfgPullUpDwnRes",
+};
+
+static const uint8_t usb3_tune_profiles[][USB3_TUNE_KNOBS] = {
+	{ 0x10, 0x00, 0x30, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x18, 0x04, 0x3c, 0x01, 0x01, 0x01, 0x01 },
+	{ 0x20, 0x10, 0x44, 0x02, 0x02, 0x02, 0x02 },
+	{ 0x25, 0x00, 0x54, 0x03, 0x03, 0x03, 0x03 },
+	{ 0x2d, 0x04, 0x5c, 0x00, 0x00, 0x00, 0x00 },
+	{ 0x32, 0x10, 0x68, 0x01, 0x01, 0x01, 0x01 },
+	{ 0x38, 0x00, 0x7f, 0x02, 0x02, 0x02, 0x02 },
+	{ 0x3f, 0x04, 0x4c, 0x03, 0x03, 0x03, 0x03 },
+};
+
+static void usb3_tune_apply(FSP_S_CONFIG *params, enum usb3_tune_knob knob, uint8_t value)
+{
+	const uint8_t p = USB3_TUNE_PORT;
+
+	switch (knob) {
+	case USB3_TUNE_DE_EMPH:
+		params->Usb3HsioTxDeEmphEnable[p] = 1;
+		params->Usb3HsioTxDeEmph[p] = value;
+		break;
+	case USB3_TUNE_DOWNSCALE_AMP:
+		params->Usb3HsioTxDownscaleAmpEnable[p] = 1;
+		params->Usb3HsioTxDownscaleAmp[p] = value;
+		break;
+	case USB3_TUNE_UNIQ_TRAN:
+		params->Usb3HsioTxRate0UniqTranEnable[p] = 1;
+		params->Usb3HsioTxRate0UniqTran[p] = value;
+		params->Usb3HsioTxRate1UniqTranEnable[p] = 1;
+		params->Usb3HsioTxRate1UniqTran[p] = value;
+		params->Usb3HsioTxRate2UniqTranEnable[p] = 1;
+		params->Usb3HsioTxRate2UniqTran[p] = value;
+		params->Usb3HsioTxRate3UniqTranEnable[p] = 1;
+		params->Usb3HsioTxRate3UniqTran[p] = value;
+		break;
+	case USB3_TUNE_CTRL_ADAPT_OFFSET:
+		params->PchUsb3HsioCtrlAdaptOffsetCfgEnable[p] = 1;
+		params->PchUsb3HsioCtrlAdaptOffsetCfg[p] = value;
+		break;
+	case USB3_TUNE_FILTER_SEL_N:
+		params->PchUsb3HsioFilterSelNEnable[p] = 1;
+		params->PchUsb3HsioFilterSelN[p] = value;
+		break;
+	case USB3_TUNE_FILTER_SEL_P:
+		params->PchUsb3HsioFilterSelPEnable[p] = 1;
+		params->PchUsb3HsioFilterSelP[p] = value;
+		break;
+	case USB3_TUNE_OLFPS_PULL_RES:
+		params->PchUsb3HsioOlfpsCfgPullUpDwnResEnable[p] = 1;
+		params->PchUsb3HsioOlfpsCfgPullUpDwnRes[p] = value;
+		break;
+	default:
+		break;
+	}
+}
+
+static void usb3_tune_sweep(FSP_S_CONFIG *params)
+{
+	uint8_t profile = cmos_read(USB3_TUNE_CMOS_PROFILE);
+	uint8_t mask = cmos_read(USB3_TUNE_CMOS_MASK);
+	enum usb3_tune_knob knob;
+
+	if (mask & USB3_TUNE_MASK_FIXED) {
+		profile %= ARRAY_SIZE(usb3_tune_profiles);
+		mask &= USB3_TUNE_ALL_KNOBS;
+	} else {
+		mask = USB3_TUNE_ALL_KNOBS;
+		if (acpi_is_wakeup_s3()) {
+			profile %= ARRAY_SIZE(usb3_tune_profiles);
+		} else {
+			profile = (profile + 1) % ARRAY_SIZE(usb3_tune_profiles);
+			cmos_write(profile, USB3_TUNE_CMOS_PROFILE);
+		}
+	}
+
+	printk(BIOS_INFO, "USB3 tune: %s profile %u/%zu mask 0x%02x port %u\n",
+	       (cmos_read(USB3_TUNE_CMOS_MASK) & USB3_TUNE_MASK_FIXED) ? "bisect" : "sweep",
+	       profile, ARRAY_SIZE(usb3_tune_profiles) - 1, mask, USB3_TUNE_PORT);
+
+	for (knob = 0; knob < USB3_TUNE_KNOBS; knob++) {
+		if (!(mask & BIT(knob)))
+			continue;
+		usb3_tune_apply(params, knob, usb3_tune_profiles[profile][knob]);
+		printk(BIOS_INFO, "USB3 tune:   %s=0x%02x\n", usb3_tune_knob_names[knob],
+		       usb3_tune_profiles[profile][knob]);
+	}
+}
+
 void mainboard_silicon_init_params(FSP_S_CONFIG *params)
 {
+	usb3_tune_sweep(params);
+
 	// Enable reporting CPU C10 state over eSPI
 	params->PchEspiHostC10ReportEnable = 1;
 
