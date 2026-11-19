@@ -13,6 +13,9 @@ uintptr_t psp_ftpm_base_address(void)
 		return 0;
 
 	/* TPM MMIO space starts 0xA0 bytes before MBOX */
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_GEN1))
+		return psp_base + PSPV1_MBOX_OFFSET - 0xA0;
+
 	return psp_base + CONFIG_PSPV2_MBOX_CMD_OFFSET - 0xA0;
 }
 
@@ -25,15 +28,15 @@ bool psp_ftpm_is_active(void)
 {
 	uint32_t caps = 0;
 
+	/* Must have valid MMIO base address */
+	if (!psp_ftpm_base_address())
+		return false;
+
 	/* PSP must report fTPM capability support */
 	if (psp_get_ftpm_capabilties(&caps) != CB_SUCCESS)
 		return false;
 
 	if (!(caps & MBOX_FTPM_CAP_TPM_SUPPORTED))
-		return false;
-
-	/* Must have valid MMIO base address */
-	if (!psp_ftpm_base_address())
 		return false;
 
 	return true;
@@ -55,14 +58,19 @@ void psp_ftpm_needs_recovery(bool *psp_rpmc_nvram,
 			     bool *psp_nvram,
 			     bool *psp_dir)
 {
-	uint32_t psp_caps;
+	uint32_t psp_caps = 0;
 	uint32_t caps;
 
 	*psp_rpmc_nvram = false;
 	*psp_nvram = false;
 	*psp_dir = false;
 
-	if (psp_get_psp_capabilities(&psp_caps) != CB_SUCCESS) {
+	if (!psp_ftpm_base_address())
+		return;
+
+	/* PSP capabilities and RPMC are gen2 only */
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_GEN2) &&
+	    psp_get_psp_capabilities(&psp_caps) != CB_SUCCESS) {
 		printk(BIOS_ERR, "FTPM: Failed to get PSP capabilities\n");
 		return;
 	}
@@ -72,7 +80,7 @@ void psp_ftpm_needs_recovery(bool *psp_rpmc_nvram,
 		return;
 	}
 
-	if ((psp_caps & 0x5) == 0x4) {
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_GEN2) && (psp_caps & 0x5) == 0x4) {
 		printk(BIOS_WARNING, "FTPM: PSP_RPMC_NVRAM region corrupted.\n");
 		*psp_rpmc_nvram = true;
 		*psp_nvram = true;

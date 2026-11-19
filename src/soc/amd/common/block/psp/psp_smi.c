@@ -16,10 +16,16 @@
 #define MBOX_PSP_CMD_SPI_ERASE		0x86
 #define MBOX_PSP_CMD_SPI_RPMC_INC_MC	0x88
 #define MBOX_PSP_CMD_SPI_RPMC_REQ_MC	0x89
+/* Sent by the gen1 PSP before SPI_INFO, needs a successful reply */
+#define MBOX_PSP_CMD_GEN1_0X81		0x81
 
 extern struct {
 	uint8_t buffer[P2C_BUFFER_MAXSIZE];
 }  __aligned(32) p2c_buffer;
+
+extern struct {
+	uint8_t buffer[C2P_BUFFER_MAXSIZE];
+}  __aligned(32) c2p_buffer;
 
 static const uintptr_t p2c_mbox_base = (uintptr_t)&p2c_buffer.buffer;
 
@@ -74,6 +80,12 @@ static void wr_bios_mbox_ready(bool ready)
 void enable_psp_smi(void)
 {
 	wr_bios_mbox_ready(true);
+
+	/* The gen1 PSP only raises SMIs once the P2C mailbox is initialized */
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_GEN1)) {
+		setbits32p(p2c_mbox_base + P2C_MBOX_STATUS_OFFSET, PSPV1_STATUS_INITIALIZED);
+		wbinvd();
+	}
 }
 
 static void disable_psp_smi(void)
@@ -144,6 +156,11 @@ static void handle_psp_command(void)
 	cmd = get_psp_command();
 
 	switch (cmd) {
+	case MBOX_PSP_CMD_GEN1_0X81:
+		if (!CONFIG(SOC_AMD_COMMON_BLOCK_PSP_GEN1))
+			goto unsupported;
+		status = MBOX_PSP_SUCCESS;
+		break;
 	case MBOX_PSP_CMD_SPI_INFO:
 		status = psp_smi_spi_get_info(buffer);
 		break;
@@ -163,6 +180,7 @@ static void handle_psp_command(void)
 		status = psp_smi_spi_rpmc_req_mc(buffer);
 		break;
 	default:
+unsupported:
 		printk(BIOS_ERR, "PSP: Unknown command %d\n", cmd);
 		status = MBOX_PSP_UNSUPPORTED;
 		break;
@@ -191,6 +209,16 @@ void psp_smi_handler(void)
 
 	clear_psp_command();
 	enable_psp_smi();
+
+	/* The gen1 PSP only picks up the result after it gets a command */
+	if (CONFIG(SOC_AMD_COMMON_BLOCK_PSP_GEN1)) {
+		struct mbox_default_buffer *nop = (struct mbox_default_buffer *)c2p_buffer.buffer;
+
+		nop->header.size = sizeof(*nop);
+		nop->header.status = 0;
+		wbinvd();
+		send_psp_command(MBOX_BIOS_CMD_NOP, nop);
+	}
 
 	wbinvd();
 

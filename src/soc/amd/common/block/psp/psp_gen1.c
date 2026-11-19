@@ -10,20 +10,9 @@
 #include <timer.h>
 #include <console/console.h>
 #include <amdblocks/psp.h>
-#include <soc/iomap.h>
-#include <soc/northbridge.h>
 #include <soc/pci_devs.h>
 #include <soc/southbridge.h>
 #include "psp_def.h"
-
-#define PSP_MAILBOX_OFFSET		0x70
-
-/* generic PSP interface status, v1 */
-#define PSPV1_STATUS_INITIALIZED	BIT(0)
-#define PSPV1_STATUS_ERROR		BIT(1)
-#define PSPV1_STATUS_TERMINATED		BIT(2)
-#define PSPV1_STATUS_HALT		BIT(3)
-#define PSPV1_STATUS_RECOVERY		BIT(4)
 
 /*
  * pspv1_mbox consists of hardware registers beginning at PSPx000070
@@ -37,7 +26,7 @@ struct pspv1_mbox {
 	uint64_t cmd_response; /* definition conflicts w/BKDG but matches agesa */
 } __packed;
 
-static void *soc_get_mbox_address(void)
+uintptr_t get_psp_mmio_base(void)
 {
 	uintptr_t psp_mmio;
 
@@ -61,7 +50,17 @@ static void *soc_get_mbox_address(void)
 				~PCI_BASE_ADDRESS_MEM_ATTR_MASK;
 	}
 
-	return (void *)(psp_mmio + PSP_MAILBOX_OFFSET);
+	return psp_mmio;
+}
+
+static void *soc_get_mbox_address(void)
+{
+	const uintptr_t psp_mmio = get_psp_mmio_base();
+
+	if (!psp_mmio)
+		return NULL;
+
+	return (void *)(psp_mmio + PSPV1_MBOX_OFFSET);
 }
 
 static uint32_t rd_mbox_sts(struct pspv1_mbox *mbox)

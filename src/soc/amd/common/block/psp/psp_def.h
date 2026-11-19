@@ -310,6 +310,16 @@ enum mbox_p2c_status {
 	 MBOX_PSP_SPI_BUSY		= 0x0b,
 };
 
+/* PSPv1 mailbox offset in the PSP MMIO BAR */
+#define PSPV1_MBOX_OFFSET	0x70
+
+/* generic PSP interface status, v1 */
+#define PSPV1_STATUS_INITIALIZED	BIT(0)
+#define PSPV1_STATUS_ERROR		BIT(1)
+#define PSPV1_STATUS_TERMINATED		BIT(2)
+#define PSPV1_STATUS_HALT		BIT(3)
+#define PSPV1_STATUS_RECOVERY		BIT(4)
+
 uintptr_t get_psp_mmio_base(void);
 uintptr_t get_ccp_mmio_base(void);
 
