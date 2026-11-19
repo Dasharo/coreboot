@@ -279,7 +279,8 @@ size_t crb_tpm_process_command(const void *tpm2_command, size_t command_size,
 	write8(CRB_REG(CRB_REG_START), CRB_REG_START_START);
 
 	/* Poll for Response */
-	rc = crb_wait_for_reg32(CRB_REG(CRB_REG_START), 3500, CRB_REG_START_START, 0);
+	rc = crb_wait_for_reg32(CRB_REG(CRB_REG_START), CONFIG_AMD_CRB_FTPM_CMD_TIMEOUT_MS,
+				CRB_REG_START_START, 0);
 	if (rc) {
 		printk(BIOS_DEBUG, "%s: Timeout waiting for CMD processing\n", __func__);
 		return -1;

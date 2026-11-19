@@ -4,7 +4,7 @@ config AMD_CRB_FTPM
 	bool
 	default n
 	depends on !CRB_TPM
-	depends on SOC_AMD_COMMON_BLOCK_PSP_GEN2
+	depends on SOC_AMD_COMMON_BLOCK_PSP
 	# The fTPM needs to access the SPI flash, either directly when
 	# ROM Armor is used, or via PSP SMI when ROM Armor is not used.
 	depends on SOC_AMD_COMMON_BLOCK_PSP_SMI || SOC_AMD_COMMON_BLOCK_PSP_ROM_ARMOR3
@@ -12,3 +12,13 @@ config AMD_CRB_FTPM
 	  Mainboard has AMD fTPM with Command Response Buffer support.
 	  The fTPM is based on the CRB interface as defined by TCG,
 	  but with reduced set of registers being implemented.
+
+config AMD_CRB_FTPM_CMD_TIMEOUT_MS
+	int
+	default 60000 if HUDSON_PSP_FTPM
+	default 3500
+	depends on AMD_CRB_FTPM
+	help
+	  Time in milliseconds to wait for the fTPM to complete a command. The
+	  Family 16h Model 30h fTPM has been seen to take over 30 seconds for a
+	  single command while it does background work after startup.
