@@ -173,9 +173,9 @@ int psp_rom_armor_enforce_whitelist(void *param, uint8_t spi_freq)
 		return 0;
 	}
 
-	memset((void *)whitelist_buffer.tseg_addr, 0, 4 * KiB);
-	memcpy((void *)whitelist_buffer.tseg_addr, whitelist, sizeof(*whitelist));
-	whitelist_ptr = (struct psp_rom_armor1_whitelist *)whitelist_buffer.tseg_addr;
+	memset((void *)(uintptr_t)whitelist_buffer.tseg_addr, 0, 4 * KiB);
+	memcpy((void *)(uintptr_t)whitelist_buffer.tseg_addr, whitelist, sizeof(*whitelist));
+	whitelist_ptr = (struct psp_rom_armor1_whitelist *)(uintptr_t)whitelist_buffer.tseg_addr;
 
 	/* Update command frequency used by the controller */
 	for (size_t i = 0;
