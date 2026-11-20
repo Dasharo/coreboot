@@ -17,6 +17,17 @@ DefinitionBlock (
 {
 	#include <acpi/dsdt_top.asl>
 
+	/*
+	 * QEMU ACPI PM (hw/acpi/core.c) is not ICH9:
+	 *   SLP_TYP 1 = S3 (qemu_system_suspend_request)
+	 *   SLP_TYP 0 = S5 (qemu_system_shutdown_request)
+	 * Intel sleepstates.asl uses 5/7 and would shut down or no-op.
+	 */
+#if CONFIG(HAVE_ACPI_RESUME)
+	Name(\_S3, Package () { 0x01, 0x01, 0x00, 0x00 })
+#endif
+	Name(\_S5, Package () { 0x00, 0x00, 0x00, 0x00 })
+
 #include "../qemu-i440fx/acpi/dbug.asl"
 
 	Scope(\_SB) {

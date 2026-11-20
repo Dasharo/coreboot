@@ -1,0 +1,13 @@
+# Minimal qemu-q35 image for ACPI S3 wake detection (no EDK2).
+# Use with: cp configs/config.emulation_qemu_x86_q35_s3_smoke .config && make olddefconfig && make
+# Then: src/mainboard/emulation/qemu-q35/s3-verify.sh build/coreboot.rom
+# TSEG 8MiB + SMM_RESERVED_SIZE=2MiB come from src/cpu/qemu-x86/Kconfig when TSEG SMM is on.
+CONFIG_VENDOR_EMULATION=y
+CONFIG_BOARD_EMULATION_QEMU_X86_Q35=y
+CONFIG_CPU_QEMU_X86_TSEG_SMM=y
+CONFIG_ANY_TOOLCHAIN=y
+CONFIG_UDK_202005_BINDING=y
+CONFIG_DEFAULT_CONSOLE_LOGLEVEL_8=y
+CONFIG_PAYLOAD_NONE=y
+CONFIG_CONSOLE_SERIAL=y
+CONFIG_BOOTBLOCK_CONSOLE=y

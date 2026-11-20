@@ -6,6 +6,10 @@
 #include <device/pci_type.h>
 #include <types.h>
 
+#if CONFIG(SMM_TSEG) && (CONFIG_SMM_TSEG_SIZE <= CONFIG_SMM_RESERVED_SIZE)
+#error "qemu-q35 TSEG must be larger than SMM_RESERVED_SIZE for S3 stage cache"
+#endif
+
 #define HOST_BRIDGE	PCI_DEV(0, 0, 0)
 
 #define EXT_TSEG_MBYTES		0x50
