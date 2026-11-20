@@ -394,6 +394,23 @@ config EDK2_SETUP_MENU_KEY
 	  F12        0x0016
 	  ESC        0x0017
 
+config EDK2_CUSTOM_COLOR_THEME
+	bool "Use a custom setup menu color theme"
+	default n
+	help
+	  Apply the color theme from EDK2_COLOR_THEME_FILE to the TianoCore
+	  setup menu and allow toggling it with Ctrl+P. When disabled, the
+	  setup menu and consoles use only the stock EDK2 colors.
+
+config EDK2_COLOR_THEME_FILE
+	string "Setup menu color theme file"
+	depends on EDK2_CUSTOM_COLOR_THEME
+	default "DasharoPayloadPkg/DasharoColorTheme.dsc.inc"
+	help
+	  DSC include file with the PcdBrowser*Color and
+	  PcdGraphicsConsoleColorPalette* values, relative to the EDK2
+	  workspace or package path.
+
 config EDK2_DISABLE_MTRR_PROGRAMMING
 	bool "Disable MTRR programming in EDK2 Payload"
 	default y
