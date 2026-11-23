@@ -3,11 +3,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-# Reject commits that are unsigned or signed with the Gitea instance key.
-# Every commit must be signed by whoever committed it (the committer, which
-# differs from the author for rebased or cherry-picked patches); commits that Gitea
-# creates or re-signs (web editor, squash/rebase/merge-commit merges) are
-# not allowed.
+# Reject commits whose signature Gitea does not verify as a user's signature.
+#
+# For each commit the script asks Gitea for its signature verification
+# (GET /repos/{owner}/{repo}/git/commits/{sha}). A commit passes only when
+# Gitea reports it as verified and the signer is a Gitea user account. That
+# means the signature is valid and was made with a GPG or SSH key that a user
+# uploaded to Gitea and that matches the committer's e-mail. The committer
+# signs, so for rebased or cherry-picked patches this is not the author.
+#
+# This rejects unsigned commits, bad signatures, keys that nobody uploaded,
+# and commits that Gitea created or re-signed with its own instance key
+# (web editor, squash/rebase/merge-commit merges): Gitea reports those as
+# verified, but with a signer that is not a user account.
 #
 # Usage:
 #   .ci/commit-signature-check.sh [<rev-list arguments>...]
@@ -16,20 +24,23 @@
 # environment. Commits reachable from the upstream mirror branch are always
 # excluded, because upstream coreboot commits are not signed.
 #
-# The public keys do not need to be in the keyring: the issuer key ID is read
-# from the signature itself.
+# Requires: curl, jq, GITEA_TOKEN, CI_FORGE_URL and CI_REPO (owner/name).
+# The commits must already be pushed to that repository.
 
 set -euo pipefail
 
-# Long key IDs (or full fingerprints) of the Gitea signing key(s).
-GITEA_SIGNING_KEYS="${GITEA_SIGNING_KEYS:-3AB17144D0C6EAAC}"
 UPSTREAM_BRANCH="${UPSTREAM_BRANCH:-main}"
 REMOTE="${REMOTE:-origin}"
+: "${GITEA_TOKEN:?GITEA_TOKEN must be set}"
+: "${CI_FORGE_URL:?CI_FORGE_URL must be set}"
+: "${CI_REPO:?CI_REPO must be set (owner/name)}"
 
-if ! command -v gpg >/dev/null 2>&1; then
-    echo "::error::gpg is not installed, cannot determine commit signing keys"
-    exit 1
-fi
+for tool in curl jq; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "::error::$tool is not installed"
+        exit 1
+    fi
+done
 
 is_valid_commit() {
     [[ -n "$1" && ! "$1" =~ ^0+$ ]] && git cat-file -e "$1^{commit}" 2>/dev/null
@@ -79,46 +90,55 @@ if [[ ${#commits[@]} -eq 0 ]]; then
     exit 0
 fi
 
+api="${CI_FORGE_URL%/}/api/v1/repos/${CI_REPO}/git/commits"
+response="$(mktemp)"
+trap 'rm -f "$response"' EXIT
+
 failed=0
 for c in "${commits[@]}"; do
     subject="$(git log -1 --format='%h %s' "$c")"
 
-    # Look at the raw object, so a missing gpg key or broken gpg setup can't
-    # make a signed commit look unsigned or vice versa.
-    if ! git cat-file commit "$c" | sed '/^$/q' | grep -qE '^gpgsig(-sha256)? '; then
-        echo "::error::Unsigned commit: $subject"
+    status="$(curl -sS -o "$response" -w '%{http_code}' \
+        -H "Authorization: token ${GITEA_TOKEN}" \
+        "${api}/${c}?stat=false&files=false&verification=true")" || status=000
+    if [[ "$status" != "200" ]]; then
+        echo "::error::Gitea API returned HTTP ${status} for: $subject"
         failed=1
         continue
     fi
 
-    key="$(git log -1 --format='%GK' "$c" 2>/dev/null || true)"
-    if [[ -z "$key" ]]; then
-        echo "::error::Cannot determine signing key of: $subject"
-        failed=1
-        continue
-    fi
+    # One field per line: whitespace-separated read would merge empty fields.
+    mapfile -t v < <(jq -r '.commit.verification // {} |
+        (.verified // false), (.reason // "" | gsub("\n"; " ")),
+        (.signer.username // ""), (.signer.name // "" | gsub("\n"; " "))' \
+        "$response")
+    verified="${v[0]:-false}" reason="${v[1]:-}"
+    signer_user="${v[2]:-}" signer_name="${v[3]:-}"
 
-    for gitea_key in $GITEA_SIGNING_KEYS; do
-        k="${key^^}"; g="${gitea_key^^}"
-        # Match a long key ID against a fingerprint in either direction.
-        if [[ "$k" == *"$g" || "$g" == *"$k" ]]; then
-            echo "::error::Commit signed by Gitea ($key) instead of its committer: $subject"
-            failed=1
-            break
-        fi
-    done
+    if [[ "$verified" != "true" ]]; then
+        echo "::error::Signature not verified (${reason:-no reason given}): $subject"
+        failed=1
+    elif [[ -z "$signer_user" ]]; then
+        # Signatures made with the instance key verify, but their signer
+        # is not a user account.
+        echo "::error::Commit signed by the Gitea instance key (${signer_name:-unknown}) instead of its committer: $subject"
+        failed=1
+    else
+        echo "OK ${signer_user}: $subject"
+    fi
 done
 
 if [[ $failed -ne 0 ]]; then
     cat <<EOF
 
-Commits must be signed by the person who commits them (git commit -S,
-git rebase -S, git cherry-pick -S), never by Gitea.
-Gitea signs commits made in the web editor and commits it rewrites while
-merging a pull request. Create commits locally, sign them and push them;
-merge pull requests with "Fast-forward only".
+Every commit must carry a signature that Gitea verifies as the committer's:
+sign with a GPG or SSH key uploaded to your Gitea account, using the e-mail
+address you commit with (git commit -S, git rebase -S, git cherry-pick -S).
+Commits must never be signed by Gitea. Gitea signs commits made in the web
+editor and commits it rewrites while merging a pull request. Create commits
+locally, sign them and push them; merge pull requests with "Fast-forward only".
 EOF
     exit 1
 fi
 
-echo "All ${#commits[@]} commit(s) are signed and none is signed by Gitea."
+echo "All ${#commits[@]} commit(s) carry a verified signature of a Gitea user."
