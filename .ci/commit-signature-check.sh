@@ -7,15 +7,18 @@
 #
 # For each commit the script asks Gitea for its signature verification
 # (GET /repos/{owner}/{repo}/git/commits/{sha}). A commit passes only when
-# Gitea reports it as verified and the signer is a Gitea user account. That
-# means the signature is valid and was made with a GPG or SSH key that a user
-# uploaded to Gitea and that matches the committer's e-mail. The committer
-# signs, so for rebased or cherry-picked patches this is not the author.
+# Gitea reports it as verified and the key is not the Gitea instance key.
+# Verified means the signature is valid and was made with a GPG or SSH key
+# that a user uploaded to Gitea and that matches the committer's e-mail. The
+# committer signs, so for rebased or cherry-picked patches this is not the
+# author.
 #
 # This rejects unsigned commits, bad signatures, keys that nobody uploaded,
 # and commits that Gitea created or re-signed with its own instance key
-# (web editor, squash/rebase/merge-commit merges): Gitea reports those as
-# verified, but with a signer that is not a user account.
+# (web editor, squash/rebase/merge-commit merges). Gitea reports those as
+# verified too, with its configured signing name as the signer (e.g.
+# "Gitea"), so they are recognised by the key ID in the verification reason
+# ("<signer> / <key ID>"), which must not be one of GITEA_SIGNING_KEYS.
 #
 # Usage:
 #   .ci/commit-signature-check.sh [<rev-list arguments>...]
@@ -29,6 +32,8 @@
 
 set -euo pipefail
 
+# Long key IDs of the Gitea instance signing key(s), separated by spaces.
+GITEA_SIGNING_KEYS="${GITEA_SIGNING_KEYS:-3AB17144D0C6EAAC}"
 UPSTREAM_BRANCH="${UPSTREAM_BRANCH:-main}"
 REMOTE="${REMOTE:-origin}"
 : "${GITEA_TOKEN:?GITEA_TOKEN must be set}"
@@ -135,14 +140,17 @@ for c in "${commits[@]}"; do
         "$response")
     verified="${v[0]:-false}" reason="${v[1]:-}"
     signer_user="${v[2]:-}" signer_name="${v[3]:-}"
+    # The reason of a verified signature is "<signer> / <key ID>".
+    key="${reason##* / }"
 
     if [[ "$verified" != "true" ]]; then
         echo "::error::Signature not verified (${reason:-no reason given}): $subject"
         failed=1
-    elif [[ -z "$signer_user" ]]; then
-        # Signatures made with the instance key verify, but their signer
-        # is not a user account.
-        echo "::error::Commit signed by the Gitea instance key (${signer_name:-unknown}) instead of its committer: $subject"
+    elif [[ -z "$signer_user" ||
+            " ${GITEA_SIGNING_KEYS^^} " == *" ${key^^} "* ]]; then
+        # Signatures made with the instance key verify too; Gitea reports
+        # the configured signing name as the signer.
+        echo "::error::Commit signed by the Gitea instance key (${signer_name:-unknown} / ${key}) instead of its committer: $subject"
         failed=1
     else
         echo "OK ${signer_user}: $subject"
