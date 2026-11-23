@@ -96,6 +96,8 @@ matrix:
       CAPSULE: "yes"
     - BOARD: "ms7e06_ddr5"
       CAPSULE: "yes"
+    - BOARD: "ms7e56"
+      CAPSULE: "yes"
 
     # Dell
     - BOARD: "optiplex_9010_sff"
@@ -127,9 +129,16 @@ matrix:
       # CAPSULE: "yes" # It's not enabled for some reason here
     - BOARD: "odroid_h4_netcard"
       CAPSULE: "yes"
+    - BOARD: "odroid_h5"
+      CAPSULE: "yes"
 
     # Asrock
     - BOARD: "asrock_spc741d8"
+    - BOARD: "asrock_turind8ud_uefi"
+    - BOARD: "asrock_turind8ud_linuxboot"
+
+    # Gigabyte
+    - BOARD: "mz33_ar1"
 
 skip_clone: true
 
