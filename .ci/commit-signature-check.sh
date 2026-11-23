@@ -90,19 +90,40 @@ if [[ ${#commits[@]} -eq 0 ]]; then
     exit 0
 fi
 
-api="${CI_FORGE_URL%/}/api/v1/repos/${CI_REPO}/git/commits"
+repo_api="${CI_FORGE_URL%/}/api/v1/repos/${CI_REPO}"
+api="${repo_api}/git/commits"
 response="$(mktemp)"
 trap 'rm -f "$response"' EXIT
+
+gitea_get() {
+    curl -sS -o "$response" -w '%{http_code}' \
+        -H "Authorization: token ${GITEA_TOKEN}" "$1" || true  # -w prints 000
+}
+
+api_message() {
+    jq -r '.message // empty' "$response" 2>/dev/null | head -c 300 || true
+}
+
+# Fail early with a clear message if the API or the repository is not
+# reachable with this token; Gitea answers 404 for private repositories the
+# token cannot read.
+status="$(gitea_get "$repo_api")"
+if [[ "$status" != "200" ]]; then
+    echo "::error::Cannot read ${CI_REPO} through the Gitea API"
+    echo "::error::GET ${repo_api} returned HTTP ${status}: $(api_message)"
+    echo "Check that CI_FORGE_URL (${CI_FORGE_URL}) is the Gitea URL and that"
+    echo "GITEA_TOKEN can read ${CI_REPO} through the API (scope read:repository)."
+    exit 1
+fi
 
 failed=0
 for c in "${commits[@]}"; do
     subject="$(git log -1 --format='%h %s' "$c")"
 
-    status="$(curl -sS -o "$response" -w '%{http_code}' \
-        -H "Authorization: token ${GITEA_TOKEN}" \
-        "${api}/${c}?stat=false&files=false&verification=true")" || status=000
+    status="$(gitea_get "${api}/${c}?stat=false&files=false&verification=true")"
     if [[ "$status" != "200" ]]; then
-        echo "::error::Gitea API returned HTTP ${status} for: $subject"
+        echo "::error::GET ${api}/${c} returned HTTP ${status}: $(api_message)"
+        echo "::error::Could not check: $subject"
         failed=1
         continue
     fi
