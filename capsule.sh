@@ -643,6 +643,25 @@ function resign_subcommand() {
     encode_capsule "$tmp_dir" "$out_capsule" metadata
 }
 
+# Prints a 32-bit firmware version (0xMMmmpprr) as a release version:
+# major.minor.patch, with an -rcN suffix unless rc is 0x80 (final release).
+function format_fw_version() {
+    local fw_version=$(( $1 ))
+
+    local ver
+    ver=$(printf '%d.%d.%d' \
+                 $(( (fw_version >> 24) & 0xff )) \
+                 $(( (fw_version >> 16) & 0xff )) \
+                 $(( (fw_version >> 8) & 0xff )))
+
+    local rc=$(( fw_version & 0xff ))
+    if [ "$rc" -ne $(( 0x80 )) ]; then
+        ver+=-rc$rc
+    fi
+
+    echo "$ver"
+}
+
 function create_cabinet_subcommand() {
     local ec_fw
     OPTIND=1
@@ -706,19 +725,14 @@ function create_cabinet_subcommand() {
         # A V2 EC capsule can only be applied by V2 firmware, so require a V2
         # system firmware to be installed first.  In a transitional build,
         # this build's system firmware is the first V2 one.  Otherwise, the
-        # lowest supported version is.  fwupd shows the system firmware
-        # version in the quad format: major.minor.patch.rc, where rc is 0x80
-        # for a final release, so release candidates sort before it.
+        # lowest supported version is.
         if [ "${CONFIG_EDK2_CAPSULES_V2:-n}" = y ]; then
             local min_fw_version=$CONFIG_DRIVERS_EFI_MAIN_FW_LSV
             if [ "${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = y ]; then
                 min_fw_version=$CONFIG_DRIVERS_EFI_MAIN_FW_VERSION
             fi
-            requires=$(printf '  <requires>\n    <firmware compare="ge" version="%d.%d.%d.%d">%s</firmware>\n  </requires>' \
-                              $(( (min_fw_version >> 24) & 0xff )) \
-                              $(( (min_fw_version >> 16) & 0xff )) \
-                              $(( (min_fw_version >> 8) & 0xff )) \
-                              $(( min_fw_version & 0xff )) \
+            requires=$(printf '  <requires>\n    <firmware compare="ge" version="%s">%s</firmware>\n  </requires>' \
+                              "$(format_fw_version "$min_fw_version")" \
                               "$CONFIG_DRIVERS_EFI_MAIN_FW_GUID")
         fi
 
