@@ -643,23 +643,18 @@ function resign_subcommand() {
     encode_capsule "$tmp_dir" "$out_capsule" metadata
 }
 
-# Prints a 32-bit firmware version (0xMMmmpprr) as a release version:
-# major.minor.patch, with an -rcN suffix unless rc is 0x80 (final release).
+# Prints a 32-bit firmware version (0xMMmmpprr) as major.minor.patch, which
+# is how fwupd shows the system firmware version with the dell-bios-msb format
+# set in the system firmware metadata.  The rc byte is left out: fwupd compares
+# a "-rcN" suffix as greater than no suffix, so a requirement on
+# "1.0.2-rc3" would fail even on that firmware.
 function format_fw_version() {
     local fw_version=$(( $1 ))
 
-    local ver
-    ver=$(printf '%d.%d.%d' \
-                 $(( (fw_version >> 24) & 0xff )) \
-                 $(( (fw_version >> 16) & 0xff )) \
-                 $(( (fw_version >> 8) & 0xff )))
-
-    local rc=$(( fw_version & 0xff ))
-    if [ "$rc" -ne $(( 0x80 )) ]; then
-        ver+=-rc$rc
-    fi
-
-    echo "$ver"
+    printf '%d.%d.%d\n' \
+           $(( (fw_version >> 24) & 0xff )) \
+           $(( (fw_version >> 16) & 0xff )) \
+           $(( (fw_version >> 8) & 0xff ))
 }
 
 function create_cabinet_subcommand() {
