@@ -501,6 +501,11 @@ config EDK2_CAPSULES_V2_TRANSITION
 	  compatibility between this and prior releases when it comes to building
 	  capsules.
 
+	  Only the main firmware capsule is affected: it stays in V1 format, so
+	  that the prior release can apply it.  An EC capsule is applied by the
+	  new firmware, after the main firmware update, and is always built in
+	  V2 format.
+
 config EDK2_CAPSULES_ROOT
 	string "Location of an optional capsule root key file"
 	# This location was hard-coded in Makefile, but it's now used by the main

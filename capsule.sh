@@ -242,16 +242,12 @@ function build_capsule() {
     local -n drivers=$5
     local -n certs=$6
     local cap_file=$7
+    local v2_capsule=$8
 
     local cap_flags=( --capflag PersistAcrossReset )
     # Capsules on AMD boards do not survive resets
     if [ "$CONFIG_EDK2_CAPSULE_DOES_NOT_SURVIVE_RESET" = y ]; then
         cap_flags=()
-    fi
-
-    local v2_capsule=no
-    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = yn ]; then
-        v2_capsule=yes
     fi
 
     local json_file
@@ -497,9 +493,21 @@ function make_subcommand() {
         embedded_drivers+=( "${build_dir}/FmpDxe_${guid}.efi" )
     fi
 
+    # The format of a capsule must match the firmware that processes it.  The
+    # V1->V2 transition keeps only the main firmware capsule in V1 format, so
+    # that the old firmware can apply it.  An EC capsule is applied after the
+    # main firmware update, by V2 firmware, so it is always V2.
+    local v2_capsule=no
+    if [ "${CONFIG_EDK2_CAPSULES_V2:-n}" = y ]; then
+        if [ "${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" != y ] ||
+           [ -n "$ec_rom_file" ]; then
+            v2_capsule=yes
+        fi
+    fi
+
     build_capsule "$rom_file" "$guid" "$version" "$lsv" \
                   embedded_drivers cap_certs \
-                  "$cap_file"
+                  "$cap_file" "$v2_capsule"
 
     echo "Created the capsule at '$cap_file'"
 }
@@ -635,6 +643,20 @@ function resign_subcommand() {
     encode_capsule "$tmp_dir" "$out_capsule" metadata
 }
 
+# Prints a 32-bit firmware version (0xMMmmpprr) as major.minor.patch, which
+# is how fwupd shows the system firmware version with the dell-bios-msb format
+# set in the system firmware metadata.  The rc byte is left out: fwupd compares
+# a "-rcN" suffix as greater than no suffix, so a requirement on
+# "1.0.2-rc3" would fail even on that firmware.
+function format_fw_version() {
+    local fw_version=$(( $1 ))
+
+    printf '%d.%d.%d\n' \
+           $(( (fw_version >> 24) & 0xff )) \
+           $(( (fw_version >> 16) & 0xff )) \
+           $(( (fw_version >> 8) & 0xff ))
+}
+
 function create_cabinet_subcommand() {
     local ec_fw
     OPTIND=1
@@ -683,6 +705,7 @@ function create_cabinet_subcommand() {
     local category=X-System
     local version_formats=( quad dell-bios-msb )
     local tag=$CONFIG_LOCALVERSION
+    local requires=
     if [ "$ec_fw" = yes ]; then
         if [ -z "$CONFIG_DRIVERS_EFI_EC_FW_GUID" ]; then
             die '-e is passed but CONFIG_DRIVERS_EFI_EC_FW_GUID is empty'
@@ -693,6 +716,20 @@ function create_cabinet_subcommand() {
         name_suffix=' EC'
         category=X-EmbeddedController
         version_formats=( hex )
+
+        # A V2 EC capsule can only be applied by V2 firmware, so require a V2
+        # system firmware to be installed first.  In a transitional build,
+        # this build's system firmware is the first V2 one.  Otherwise, the
+        # lowest supported version is.
+        if [ "${CONFIG_EDK2_CAPSULES_V2:-n}" = y ]; then
+            local min_fw_version=$CONFIG_DRIVERS_EFI_MAIN_FW_LSV
+            if [ "${CONFIG_EDK2_CAPSULES_V2_TRANSITION:-n}" = y ]; then
+                min_fw_version=$CONFIG_DRIVERS_EFI_MAIN_FW_VERSION
+            fi
+            requires=$(printf '  <requires>\n    <firmware compare="ge" version="%s">%s</firmware>\n  </requires>' \
+                              "$(format_fw_version "$min_fw_version")" \
+                              "$CONFIG_DRIVERS_EFI_MAIN_FW_GUID")
+        fi
 
         # extract[_raw]_ec_version() work on capsules too.
         tag=$(extract_raw_ec_version "$capsule")
@@ -718,6 +755,7 @@ function create_cabinet_subcommand() {
   <provides>
     <firmware type="flashed">${fw_guid}</firmware>
   </provides>
+${requires}
   <url type="homepage">https://docs.dasharo.com/</url>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>LicenseRef-proprietary</project_license>
