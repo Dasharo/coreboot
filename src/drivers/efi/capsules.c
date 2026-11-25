@@ -237,12 +237,16 @@ static bool is_good_capsule(const EFI_CAPSULE_HEADER *capsule)
 static bool is_in_unused_ram(uint64_t base, uint64_t len)
 {
 	if (len == 0) {
-		die("capsules: %s() was passed an empty range: %#010llx:%#010llx.\n",
-		    __func__, base, len);
+		printk(BIOS_ERR,
+		       "capsules: %s() was passed an empty range: %#010llx:%#010llx.\n",
+		       __func__, base, len);
+		return false;
 	}
 	if (base + len < base) {
-		die("capsules: %s() was passed an invalid range: %#010llx:%#010llx.\n",
-		    __func__, base, len);
+		printk(BIOS_ERR,
+		       "capsules: %s() was passed an invalid range: %#010llx:%#010llx.\n",
+		       __func__, base, len);
+		return false;
 	}
 
 	const struct range_entry *r;
