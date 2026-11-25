@@ -641,7 +641,7 @@ static void coalesce_capsules(struct block_descr block_chain, uint8_t *target)
 		uint64_t addr = block.addr;
 		uint64_t data_left = block.len;
 		while (data_left != 0) {
-			uint64_t piece_len = MIN(data_left, 2 * MiB - (addr % 2 * MiB));
+			uint64_t piece_len = MIN(data_left, 2 * MiB - (addr % (2 * MiB)));
 			void *data = map_range(addr, piece_len);
 
 			memcpy(target, data, piece_len);
