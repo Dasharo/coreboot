@@ -163,7 +163,7 @@ void dasharo_ec_set_fan_curve(void)
 	}
 }
 
-static bool dasharo_ec_get_fan_curve(uint8_t fan, struct fan_curve *curve)
+static bool dasharo_ec_get_fan_curve(uint8_t fan, struct fan_curve *curve, bool *host_changed)
 {
 	uint8_t request[2] = { fan, FAN_CURVE_APPLIED };
 	int i;
@@ -180,6 +180,7 @@ static bool dasharo_ec_get_fan_curve(uint8_t fan, struct fan_curve *curve)
 		curve->points[i].duty = dasharo_ec_read(REG_DATA + 3 + 2 * i);
 	}
 
+	*host_changed = dasharo_ec_read(REG_DATA + 2 + 2 * curve->point_count);
 	return true;
 }
 
@@ -187,19 +188,15 @@ static bool dasharo_ec_get_fan_curve(uint8_t fan, struct fan_curve *curve)
 void dasharo_ec_save_fan_curves(void)
 {
 	struct custom_fan_curves stored, updated;
-	struct fan_curve curve, selected;
+	struct fan_curve curve;
 	bool have_stored = get_custom_fan_curves(&stored);
+	bool host_changed;
 	uint8_t changed = 0; // which fan curves changed and need an update
 	int i;
 
 	updated = stored;
 	for (i = 0; i < fan_curve_count(); i++) {
-		if (!dasharo_ec_get_fan_curve(i, &curve))
-			continue;
-
-		// continue if didn't change
-		get_selected_fan_curve(i, &selected);
-		if (!memcmp(&curve, &selected, sizeof(curve)))
+		if (!dasharo_ec_get_fan_curve(i, &curve, &host_changed) || !host_changed)
 			continue;
 
 		if (!have_stored && !changed)
