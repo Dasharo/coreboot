@@ -70,10 +70,21 @@ if [ -n "${CCACHE_DIR}" ]; then
   fi
 fi
 
+# Set EDK2_GIT_CACHE to a host directory to keep a persistent edk2 clone
+# (with submodules) used as a reference when cloning edk2. It is mounted at
+# the same path, because the edk2 workspace refers to it via git alternates.
+EDK2_GIT_CACHE=${EDK2_GIT_CACHE:-}
+GIT_CACHE_ARGS=()
+if [ -n "${EDK2_GIT_CACHE}" ]; then
+  mkdir -p "${EDK2_GIT_CACHE}"
+  GIT_CACHE_ARGS=(-v "${EDK2_GIT_CACHE}:${EDK2_GIT_CACHE}" -e EDK2_GIT_CACHE="${EDK2_GIT_CACHE}")
+fi
+
 function sdk_run {
   docker run --rm -t -u $UID \
     -v $PWD:/build/coreboot \
     "${CCACHE_ARGS[@]}" \
+    "${GIT_CACHE_ARGS[@]}" \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -e GOCACHE=/tmp/go-build \
