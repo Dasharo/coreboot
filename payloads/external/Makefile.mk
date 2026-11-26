@@ -237,6 +237,7 @@ $(obj)/UEFIPAYLOAD.fd: $(DOTCONFIG) $(IPXE_EFI)
 		CONFIG_DRIVERS_EFI_CAPSULE_TRUSTED_PUBLIC_CERT=$(CONFIG_DRIVERS_EFI_CAPSULE_TRUSTED_PUBLIC_CERT) \
 		GCC_IA32_PREFIX=$(patsubst %gcc,%,$(GCC_CC_x86_32)) \
 		GCC_X64_PREFIX=$(patsubst %gcc,%,$(GCC_CC_x86_64)) \
+		CCACHE="$(CCACHE)" \
 		GCC_ARM_PREFIX=$(patsubst %gcc,%,$(GCC_CC_arm)) \
 		GCC_AARCH64_PREFIX=$(patsubst %gcc,%,$(GCC_CC_arm64)) \
 		MFLAGS= MAKEFLAGS= \
@@ -374,6 +375,7 @@ $(obj)/ShimmedUniversalPayload.elf: $(DOTCONFIG)
 		CONFIG_SMMSTORE_V2=$(CONFIG_SMMSTORE_V2) \
 		GCC_IA32_PREFIX=$(patsubst %gcc,%,$(GCC_CC_x86_32)) \
 		GCC_X64_PREFIX=$(patsubst %gcc,%,$(GCC_CC_x86_64)) \
+		CCACHE="$(CCACHE)" \
 		GCC_ARM_PREFIX=$(patsubst %gcc,%,$(GCC_CC_arm)) \
 		GCC_AARCH64_PREFIX=$(patsubst %gcc,%,$(GCC_CC_arm64)) \
 		MFLAGS= MAKEFLAGS=
