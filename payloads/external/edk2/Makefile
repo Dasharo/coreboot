@@ -54,15 +54,14 @@ GCC_BIN := $(CCACHE_WRAP_DIR)/$(notdir $(GCC_X64_PREFIX))
 endif
 
 # With EDK2_GIT_CACHE set to a directory, keep a persistent clone of the
-# edk2 repository (with submodules) there and clone from the network using it
-# as a reference, so only objects missing from the cache are downloaded. The
-# workspace clone borrows objects from the cache via git alternates, so the
-# cache must stay at the same path. Cache update failures are not fatal.
+# edk2 repository (with submodules) there and update it before every build.
+# The workspace borrows objects from it via git alternates, both when cloned
+# and when it already exists, so only objects missing from the cache are
+# downloaded. The cache must therefore stay at the same path. Cache failures
+# are not fatal.
 ifneq ($(EDK2_GIT_CACHE),)
 EDK2_CACHE_REPO := $(EDK2_GIT_CACHE)/$(shell printf '%s' '$(EDK2_REPOSITORY)' | sha1sum | cut -c1-12)
-EDK2_CLONE_ARGS := --reference-if-able $(EDK2_CACHE_REPO) \
-	-c submodule.alternateLocation=superproject \
-	-c submodule.alternateErrorStrategy=info
+EDK2_CLONE_ARGS := --reference-if-able $(EDK2_CACHE_REPO)
 define edk2_update_git_cache
 	echo "    Updating edk2 git cache $(EDK2_CACHE_REPO)"; \
 	mkdir -p $(EDK2_GIT_CACHE) && \
@@ -79,7 +78,18 @@ define edk2_update_git_cache
 		git checkout -q -f --detach $(CONFIG_EDK2_TAG_OR_REV); \
 		git submodule sync -q; \
 		git submodule update -q --init --checkout' || \
-	echo "    WARNING: edk2 git cache update failed, cloning without it";
+	echo "    WARNING: edk2 git cache update failed, continuing without it"
+endef
+# Also covers a workspace cloned before the cache existed. Submodules cloned
+# from now on get the matching module repository of the cache as alternate.
+define edk2_use_git_cache
+	cd $(EDK2_PATH); \
+	alt=$(EDK2_CACHE_REPO)/.git/objects; \
+	if [ -d $$alt ] && ! grep -qxF $$alt .git/objects/info/alternates 2>/dev/null; then \
+		echo $$alt >> .git/objects/info/alternates; \
+	fi; \
+	git config submodule.alternateLocation superproject; \
+	git config submodule.alternateErrorStrategy info
 endef
 endif
 
@@ -658,10 +668,11 @@ $(EDK2_PLATFORMS_PATH): $(WORKSPACE)
 		git submodule update --init --checkout
 
 $(EDK2_PATH): $(WORKSPACE)
+	$(edk2_update_git_cache)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
-		$(edk2_update_git_cache) \
 		git clone $(EDK2_CLONE_ARGS) $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
+	$(edk2_use_git_cache)
 	cd $(EDK2_PATH); \
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
 		git checkout "$(CAPSULE_PCD_INC_REL)" > /dev/null 2>&1 || true; \
