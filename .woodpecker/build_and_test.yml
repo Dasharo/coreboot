@@ -224,6 +224,9 @@ steps:
       CCACHE_DIR: /project-data/coreboot-builds/.ccache
       CCACHE_MAXSIZE: 50G
       DASHARO_SDK: ghcr.io/dasharo/dasharo-sdk:v1.9.7
+      # Persistent edk2 clone (with submodules) on the agent host, used as a
+      # git reference so builds only fetch objects it doesn't have yet.
+      EDK2_GIT_CACHE: /project-data/coreboot-builds/.git-cache
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     when:
