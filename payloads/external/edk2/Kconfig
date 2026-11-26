@@ -105,7 +105,7 @@ if EDK2_USE_EDK2_PLATFORMS
 
 config EDK2_PLATFORMS_REPOSITORY
 	string "URL to git repository for edk2-platforms"
-	default "https://github.com/tianocore/edk2-platforms"
+	default "https://github.com/tianocore/edk2-platforms" if !DASHARO
 	help
 	  URL to the edk2-platfors repository to clone.
 
