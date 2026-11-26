@@ -55,7 +55,7 @@ usage() {
   echo -e "\t\te.g. CONFIG_OVERRIDES='CONFIG_EDK2_TAG_OR_REV="origin/my-branch"'"
 }
 
-DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.6"}
+DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.7"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 # Set CCACHE_DIR to a host directory to enable ccache (CONFIG_CCACHE) and
