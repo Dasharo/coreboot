@@ -6,7 +6,7 @@
 # in the Gitea branch protection rules.
 
 when:
-  - event: [push, pull_request, manual]
+  - event: [push, manual]
 
 clone:
   git:
