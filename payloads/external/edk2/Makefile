@@ -45,6 +45,14 @@ export GCC_AARCH64_PREFIX
 # Use the X64 prefix as GCC_BIN since x86_64-elf-gcc handles IA32 (-m32) too.
 export GCC_BIN := $(GCC_X64_PREFIX)
 
+# With CONFIG_CCACHE, point GCC_BIN at wrappers that run gcc through ccache.
+# Every tool is wrapped (not symlinked) so gcc-ar etc. still see their real
+# path. Code generation still happens at LTO link time and is not cached.
+ifneq ($(CCACHE),)
+CCACHE_WRAP_DIR := $(WORKSPACE)/ccache-bin
+GCC_BIN := $(CCACHE_WRAP_DIR)/$(notdir $(GCC_X64_PREFIX))
+endif
+
 PAYLOAD_NAME=DasharoPayloadPkg
 
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
@@ -751,6 +759,16 @@ print:
 		-e 's/t /Toolchain:      /'
 
 prep: $(EDK2_PATH) $(EDK2_PLATFORMS_PATH) clean checktools logo gop_driver lan_rom ipxe_rom
+ifneq ($(CCACHE),)
+	rm -rf $(CCACHE_WRAP_DIR) && mkdir -p $(CCACHE_WRAP_DIR)
+	for t in gcc gcc-ar objcopy; do \
+		w=$(GCC_BIN)$$t; \
+		printf '#!/bin/sh\nexec %s%s "$$@"\n' \
+			"$$( [ $$t = gcc ] && echo '$(CCACHE) ' )" \
+			"$(GCC_X64_PREFIX)$$t" > $$w; \
+		chmod +x $$w; \
+	done
+endif
 	cd $(WORKSPACE); \
 		source $(EDK2_PATH)/edksetup.sh; \
 		unset CC; $(MAKE) -C $(EDK2_PATH)/BaseTools 2>&1; \
