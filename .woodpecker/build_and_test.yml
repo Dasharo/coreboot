@@ -136,10 +136,13 @@ matrix:
     # Asrock
     - BOARD: "asrock_spc741d8"
     - BOARD: "asrock_turind8ud_uefi"
+      BLOBS: "turin"
     - BOARD: "asrock_turind8ud_linuxboot"
+      BLOBS: "turin"
 
     # Gigabyte
     - BOARD: "mz33_ar1"
+      BLOBS: "turin"
 
 skip_clone: true
 
@@ -208,6 +211,8 @@ steps:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
       PHOENIX_AM5_BLOBS_URL:
         from_secret: zip_dasharo_msi_ms7e56_uefi_v090
+      TURIN_BLOBS_URL:
+        from_secret: zip_dasharo_gigabyte_mz33_ar1_uefi_v090
     commands:
       - task --taskfile .ci/Taskfile.yml ci:blobs BLOBS=${BLOBS}
 
