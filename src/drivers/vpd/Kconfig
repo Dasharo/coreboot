@@ -24,3 +24,22 @@ config SMBIOS_SERIAL_FROM_VPD
 	bool "Load device serial from VPD"
 	depends on VPD && GENERATE_SMBIOS_TABLES
 	default n
+	help
+	  Read the SMBIOS system serial number (type 1) from the
+	  "serial_number" key and the baseboard serial number (type 2) from
+	  the "mlb_serial_number" key in RO_VPD. The baseboard serial falls
+	  back to "serial_number". Either one falls back to the Type2SN EFI
+	  variable, then to MAINBOARD_SERIAL_NUMBER.
+
+	  Mutually exclusive with DRIVERS_GENERIC_CBFS_SERIAL.
+
+config SMBIOS_UUID_FROM_VPD
+	bool "Load system UUID from VPD"
+	depends on VPD && GENERATE_SMBIOS_TABLES
+	default n
+	help
+	  Read the SMBIOS system UUID (type 1) from the "system_uuid" key
+	  in RO_VPD, as a canonical 36-character UUID string. Falls back to
+	  the Type1UUID EFI variable.
+
+	  Mutually exclusive with DRIVERS_GENERIC_CBFS_UUID.
