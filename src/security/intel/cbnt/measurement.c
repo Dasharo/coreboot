@@ -840,6 +840,8 @@ static void measure_tcg_style(uint64_t biosacm_policy)
 			return;
 		}
 
+		post_code_digests.values[j].hash_type = alg;
+		post_code_digests.values[j].hash = post_code_digests.hashes[j].raw;
 		++j;
 	}
 
