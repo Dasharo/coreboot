@@ -53,6 +53,36 @@ CCACHE_WRAP_DIR := $(WORKSPACE)/ccache-bin
 GCC_BIN := $(CCACHE_WRAP_DIR)/$(notdir $(GCC_X64_PREFIX))
 endif
 
+# With EDK2_GIT_CACHE set to a directory, keep a persistent clone of the
+# edk2 repository (with submodules) there and clone from the network using it
+# as a reference, so only objects missing from the cache are downloaded. The
+# workspace clone borrows objects from the cache via git alternates, so the
+# cache must stay at the same path. Cache update failures are not fatal.
+ifneq ($(EDK2_GIT_CACHE),)
+EDK2_CACHE_REPO := $(EDK2_GIT_CACHE)/$(shell printf '%s' '$(EDK2_REPOSITORY)' | sha1sum | cut -c1-12)
+EDK2_CLONE_ARGS := --reference-if-able $(EDK2_CACHE_REPO) \
+	-c submodule.alternateLocation=superproject \
+	-c submodule.alternateErrorStrategy=info
+define edk2_update_git_cache
+	echo "    Updating edk2 git cache $(EDK2_CACHE_REPO)"; \
+	mkdir -p $(EDK2_GIT_CACHE) && \
+	flock $(EDK2_CACHE_REPO).lock sh -ec ' \
+		if [ ! -d $(EDK2_CACHE_REPO) ]; then \
+			rm -rf $(EDK2_CACHE_REPO).tmp; \
+			git clone -q $(EDK2_REPOSITORY) $(EDK2_CACHE_REPO).tmp; \
+			mv $(EDK2_CACHE_REPO).tmp $(EDK2_CACHE_REPO); \
+		fi; \
+		cd $(EDK2_CACHE_REPO); \
+		git config gc.auto 0; \
+		git config maintenance.auto false; \
+		git fetch -q origin; \
+		git checkout -q -f --detach $(CONFIG_EDK2_TAG_OR_REV); \
+		git submodule sync -q; \
+		git submodule update -q --init --checkout' || \
+	echo "    WARNING: edk2 git cache update failed, cloning without it";
+endef
+endif
+
 PAYLOAD_NAME=DasharoPayloadPkg
 
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
@@ -629,7 +659,8 @@ $(EDK2_PLATFORMS_PATH): $(WORKSPACE)
 
 $(EDK2_PATH): $(WORKSPACE)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
-		git clone $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
+		$(edk2_update_git_cache) \
+		git clone $(EDK2_CLONE_ARGS) $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
 	cd $(EDK2_PATH); \
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
