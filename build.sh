@@ -58,10 +58,22 @@ usage() {
 DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.6"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
+# Set CCACHE_DIR to a host directory to enable ccache (CONFIG_CCACHE) and
+# persist the cache across builds. CCACHE_MAXSIZE optionally limits its size.
+CCACHE_DIR=${CCACHE_DIR:-}
+CCACHE_ARGS=()
+if [ -n "${CCACHE_DIR}" ]; then
+  mkdir -p "${CCACHE_DIR}"
+  CCACHE_ARGS=(-v "${CCACHE_DIR}:/home/coreboot/.ccache" -e CCACHE_DIR=/home/coreboot/.ccache)
+  if [ -n "${CCACHE_MAXSIZE:-}" ]; then
+    CCACHE_ARGS+=(-e CCACHE_MAXSIZE="${CCACHE_MAXSIZE}")
+  fi
+fi
 
 function sdk_run {
   docker run --rm -t -u $UID \
     -v $PWD:/build/coreboot \
+    "${CCACHE_ARGS[@]}" \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -e GOCACHE=/tmp/go-build \
@@ -79,6 +91,13 @@ function build_prep {
 
   cp "${DEFCONFIG}" .config
   echo "${CONFIG_OVERRIDES:-}" >> .config
+  if [ -n "${CCACHE_DIR}" ]; then
+    if sdk_run /bin/sh -c "command -v ccache >/dev/null"; then
+      echo "CONFIG_CCACHE=y" >> .config
+    else
+      echo "WARNING: CCACHE_DIR set, but ${DASHARO_SDK} has no ccache; building without it"
+    fi
+  fi
 
   git submodule update --init --checkout $@
 }
