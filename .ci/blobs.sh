@@ -36,6 +36,14 @@ function cmd_clone {
     git -C "$BLOB_PATH" checkout -q FETCH_HEAD
 }
 
+function cmd_phoenix_am5_zip {
+    zip="$(mktemp --suffix=.zip)"
+    trap 'rm -f "$zip"' EXIT
+    curl -fsSL -o "$zip" "$BLOB_URL"
+    mkdir -p "$BLOB_PATH"
+    unzip -q -j -o "$zip" -d "$BLOB_PATH"
+}
+
 function cmd_get {
     curl -fsSL -o "$BLOB_PATH" "$BLOB_URL"
 }
@@ -45,6 +53,9 @@ rm -rf "$BLOB_PATH"
 case "$BLOB_METHOD" in
     clone)
         cmd_clone;
+    ;;
+    phoenix_am5_zip)
+        cmd_phoenix_am5_zip;
     ;;
     get)
         cmd_get;

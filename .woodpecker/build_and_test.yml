@@ -98,6 +98,7 @@ matrix:
       CAPSULE: "yes"
     - BOARD: "ms7e56"
       CAPSULE: "yes"
+      BLOBS: "phoenix_am5"
 
     # Dell
     - BOARD: "optiplex_9010_sff"
@@ -205,6 +206,8 @@ steps:
     environment:
       NCM_BLOBS_TOKEN:
         from_secret: GITEA_BUILDER_TOKEN_REPO_READ
+      PHOENIX_AM5_BLOBS_URL:
+        from_secret: zip_dasharo_msi_ms7e56_uefi_v090
     commands:
       - task --taskfile .ci/Taskfile.yml ci:blobs BLOBS=${BLOBS}
 
