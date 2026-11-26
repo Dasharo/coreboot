@@ -13,6 +13,10 @@ vars:
         ref: 33612cfaa9d21f8048a5f1e7716da3129df0d225
         path: 3rdparty/blobs/mainboard
         token: NCM_BLOBS_TOKEN
+      phoenix_am5:
+        method: phoenix_am5_zip
+        url: '{{.PHOENIX_AM5_BLOBS_URL}}'
+        path: 3rdparty/blobs/soc/amd/PhoenixAM5
 
 # Blob ref can be overriden per-platform in the woodpecker config
 # with an environment variable called "BLOB_REF_<name>", e.g. BLOB_REF_novacustom=<sha>
