@@ -53,6 +53,50 @@ CCACHE_WRAP_DIR := $(WORKSPACE)/ccache-bin
 GCC_BIN := $(CCACHE_WRAP_DIR)/$(notdir $(GCC_X64_PREFIX))
 endif
 
+# With EDK2_GIT_CACHE set to a directory, keep a persistent clone of the
+# edk2 repository (with submodules) there and update it before every build.
+# The workspace borrows objects from it via git alternates, both when cloned
+# and when it already exists, so only objects missing from the cache are
+# downloaded. The workspace then depends on the cache staying at the same
+# path, see build.sh. Auto gc is disabled in the cache and its submodules, so
+# borrowed objects are never pruned. Cache failures are not fatal; waiting
+# for the lock times out after 10 minutes.
+ifneq ($(EDK2_GIT_CACHE),)
+EDK2_CACHE_REPO := $(EDK2_GIT_CACHE)/$(shell printf '%s' '$(EDK2_REPOSITORY)' | sha1sum | cut -c1-12)
+EDK2_CLONE_ARGS := --reference-if-able $(EDK2_CACHE_REPO)
+define edk2_update_git_cache
+	echo "    Updating edk2 git cache $(EDK2_CACHE_REPO)"; \
+	mkdir -p $(EDK2_GIT_CACHE) && \
+	flock -w 600 $(EDK2_CACHE_REPO).lock sh -ec ' \
+		if [ ! -d $(EDK2_CACHE_REPO) ]; then \
+			rm -rf $(EDK2_CACHE_REPO).tmp; \
+			git clone -q $(EDK2_REPOSITORY) $(EDK2_CACHE_REPO).tmp; \
+			mv $(EDK2_CACHE_REPO).tmp $(EDK2_CACHE_REPO); \
+		fi; \
+		cd $(EDK2_CACHE_REPO); \
+		git config gc.auto 0; \
+		git config maintenance.auto false; \
+		git fetch -q origin; \
+		git checkout -q -f --detach $(CONFIG_EDK2_TAG_OR_REV); \
+		git submodule sync -q; \
+		git submodule update -q --init --checkout; \
+		git submodule foreach -q --recursive \
+			"git config gc.auto 0 && git config maintenance.auto false"' || \
+	echo "    WARNING: edk2 git cache update failed, continuing without it"
+endef
+# Also covers a workspace cloned before the cache existed. Submodules cloned
+# from now on get the matching module repository of the cache as alternate.
+define edk2_use_git_cache
+	cd $(EDK2_PATH); \
+	alt=$(EDK2_CACHE_REPO)/.git/objects; \
+	if [ -d $$alt ] && ! grep -qxF $$alt .git/objects/info/alternates 2>/dev/null; then \
+		echo $$alt >> .git/objects/info/alternates; \
+	fi; \
+	git config submodule.alternateLocation superproject; \
+	git config submodule.alternateErrorStrategy info
+endef
+endif
+
 PAYLOAD_NAME=DasharoPayloadPkg
 
 ifeq ($(CONFIG_EDK2_UEFIPAYLOAD),y)
@@ -628,9 +672,20 @@ $(EDK2_PLATFORMS_PATH): $(WORKSPACE)
 		git submodule update --init --checkout
 
 $(EDK2_PATH): $(WORKSPACE)
+	$(edk2_update_git_cache)
 	if [ ! -d "$(EDK2_PATH)" ]; then \
-		git clone $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
+		git clone $(EDK2_CLONE_ARGS) $(CONFIG_EDK2_REPOSITORY) $(EDK2_PATH) -j5; \
 	fi
+	$(edk2_use_git_cache)
+	for f in $$(find $(EDK2_PATH)/.git -path '*/objects/info/alternates'); do \
+		while read -r alt; do \
+			if [ ! -d "$$alt" ]; then \
+				echo "ERROR: edk2 workspace borrows git objects from $$alt, which is missing."; \
+				echo "Set EDK2_GIT_CACHE to that cache again or remove $(WORKSPACE). See build.sh."; \
+				exit 1; \
+			fi; \
+		done < "$$f"; \
+	done
 	cd $(EDK2_PATH); \
 		git checkout -- MdeModulePkg/Logo/Logo.bmp > /dev/null 2>&1 || true; \
 		git checkout "$(CAPSULE_PCD_INC_REL)" > /dev/null 2>&1 || true; \

@@ -70,10 +70,31 @@ if [ -n "${CCACHE_DIR}" ]; then
   fi
 fi
 
+# Set EDK2_GIT_CACHE to a host directory to keep a persistent edk2 clone
+# (with submodules) used as a reference when cloning edk2. It is mounted at
+# the same path, because the edk2 workspace refers to it via git alternates.
+#
+# After one build with EDK2_GIT_CACHE, the workspace in
+# payloads/external/edk2/workspace keeps most of its git objects in the
+# cache, and make distclean doesn't remove it. Later builds need the same
+# EDK2_GIT_CACHE, otherwise the build stops with an error. To detach the
+# workspace from the cache, while the cache is still available, run in
+# payloads/external/edk2/workspace/<repo>:
+#   git submodule foreach --recursive 'git repack -a -d && rm -f "$(git rev-parse --git-dir)/objects/info/alternates"'
+#   git repack -a -d && rm -f .git/objects/info/alternates
+# or remove payloads/external/edk2/workspace to clone it again.
+EDK2_GIT_CACHE=${EDK2_GIT_CACHE:-}
+GIT_CACHE_ARGS=()
+if [ -n "${EDK2_GIT_CACHE}" ]; then
+  mkdir -p "${EDK2_GIT_CACHE}"
+  GIT_CACHE_ARGS=(-v "${EDK2_GIT_CACHE}:${EDK2_GIT_CACHE}" -e EDK2_GIT_CACHE="${EDK2_GIT_CACHE}")
+fi
+
 function sdk_run {
   docker run --rm -t -u $UID \
     -v $PWD:/build/coreboot \
     "${CCACHE_ARGS[@]}" \
+    "${GIT_CACHE_ARGS[@]}" \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -e GOCACHE=/tmp/go-build \
