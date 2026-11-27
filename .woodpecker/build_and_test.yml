@@ -219,21 +219,23 @@ steps:
     environment:
       SSH_AUTH_SOCK: /tmp/no-ssh-agent
       BUILDS_SUBPATH: ${CI_REPO_NAME}/${CI_PIPELINE_NUMBER}-${BOARD}
-      # Host path (same inside this container) shared by all builds on the
-      # agent; build.sh mounts it into the SDK container and enables ccache.
-      CCACHE_DIR: /project-data/coreboot-builds/.ccache
       CCACHE_MAXSIZE: 50G
-      DASHARO_SDK: ghcr.io/dasharo/dasharo-sdk:v1.9.7
-      # Persistent edk2 clone (with submodules) on the agent host, used as a
-      # git reference so builds only fetch objects it doesn't have yet.
-      EDK2_GIT_CACHE: /project-data/coreboot-builds/.git-cache
       GITHUB_TOKEN:
         from_secret: CONTENT_STATUSES_CI_TOKEN
     when:
       - matrix:
           BOARD: "?*"
     commands:
-      - export HOSTPATH="$$(for d in /project-data/coreboot-builds /var/jenkins-home/coreboot-builds; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)/$${BUILDS_SUBPATH}"
+      - export BUILDS_ROOT="$$(for d in /project-data/coreboot-builds /var/jenkins-home/coreboot-builds; do df -P "$$d" | awk -v d="$$d" 'NR==2{print $$4, d}'; done | sort -n | tail -1 | cut -d' ' -f2)"
+      - export HOSTPATH="$${BUILDS_ROOT}/$${BUILDS_SUBPATH}"
+      # Caches shared by all builds on the agent. Created in the build root
+      # chosen by the first build, then kept there, so a builder never ends
+      # up with a second set of caches once free space shifts. Host paths,
+      # mounted at the same location in this container; build.sh mounts
+      # them into the SDK container.
+      - export CACHE_ROOT="$$(for d in /project-data/coreboot-builds /var/jenkins-home/coreboot-builds; do [ -d "$$d/.ccache" ] && echo "$$d" && break; done)"
+      - export CCACHE_DIR="$${CACHE_ROOT:-$${BUILDS_ROOT}}/.ccache"
+      - export EDK2_GIT_CACHE="$${CACHE_ROOT:-$${BUILDS_ROOT}}/.git-cache"
       - |
         task --taskfile .ci/Taskfile.yml ci:build-coreboot \
         BOARD="${BOARD}" HOSTPATH="$${HOSTPATH}" \
