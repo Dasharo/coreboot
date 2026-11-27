@@ -20,11 +20,13 @@ cache_as_ram:
 	/*
 	 * Nothing to do here on qemu, RAM works just fine without any
 	 * initialization.
+	 *
+	 * DCACHE_RAM is real DRAM (q35: 0x10000-0xa0000). Zeroing the unused
+	 * tail would wipe an OS firmware_waking_vector on S3 resume. Only
+	 * clear allocated CAR objects (stack, console, timestamps, BSS).
 	 */
-
-	/* Clear the cache memory region. This will also clear CAR GLOBAL */
 	movl	$_car_region_start, %edi
-	movl	$_car_region_end, %ecx
+	movl	$_car_unallocated_start, %ecx
 	sub	%edi, %ecx
 	shr	$2, %ecx
 	xorl	%eax, %eax
