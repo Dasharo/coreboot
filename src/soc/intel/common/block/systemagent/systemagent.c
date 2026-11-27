@@ -4,12 +4,14 @@
 #include <cbmem.h>
 #include <console/console.h>
 #include <cpu/cpu.h>
+#include <dasharo/options.h>
 #include <device/device.h>
 #include <device/pci.h>
 #include <device/pci_ids.h>
 #include <intelblocks/acpi.h>
 #include <intelblocks/cfg.h>
 #include <intelblocks/systemagent.h>
+#include <intelblocks/vtd.h>
 #include <smbios.h>
 #include <soc/iomap.h>
 #include <soc/nvs.h>
@@ -206,11 +208,31 @@ static void sa_add_dram_resources(struct device *dev, int *resource_count)
 
 	sa_get_mem_map(dev, &sa_map_values[0]);
 
+	uintptr_t uc_base = top_of_ram;
+
 	/*
-	 * top_of_ram -> TOLUD: This contains TSEG which needs to be uncacheable
-	 * for proper operation of the smihandler.
+	 * The DMA buffer reserved by FSP for early DMA protection is located
+	 * at top_of_ram (the PMR low limit). It is regular DRAM accessed by
+	 * snooped DMA, so report it as cacheable reserved memory. Otherwise
+	 * it adds an uncacheable range below TOLUD and costs a variable MTRR.
 	 */
-	mmio_from_to(dev, index++, top_of_ram, sa_map_values[SA_TOLUD_REG]);
+	if (CONFIG(ENABLE_EARLY_DMA_PROTECTION) && dma_protection_enabled()) {
+		size_t dma_size;
+		uintptr_t dma_base = (uintptr_t)vtd_get_dma_buffer(&dma_size);
+
+		/* The buffer must not overlap TSEG, which has to stay uncacheable */
+		if (dma_base == top_of_ram && dma_size &&
+		    dma_base + dma_size <= sa_get_tseg_base()) {
+			reserved_ram_from_to(dev, index++, dma_base, dma_base + dma_size);
+			uc_base = dma_base + dma_size;
+		}
+	}
+
+	/*
+	 * top_of_ram/uc_base -> TOLUD: This contains TSEG which needs to be
+	 * uncacheable for proper operation of the smihandler.
+	 */
+	mmio_from_to(dev, index++, uc_base, sa_map_values[SA_TOLUD_REG]);
 
 	/* 4GiB -> TOUUD */
 	upper_ram_end(dev, index++, sa_map_values[SA_TOUUD_REG]);
