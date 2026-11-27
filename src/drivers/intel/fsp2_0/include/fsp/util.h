@@ -80,6 +80,15 @@ struct hob_resource {
 	uint64_t length;
 } __packed;
 
+/* EFI_HOB_MEMORY_ALLOCATION_HEADER from the PI specification */
+struct hob_memory_allocation {
+	uint8_t name[16];
+	uint64_t addr;
+	uint64_t length;
+	uint32_t memory_type;
+	uint8_t reserved[4];
+} __packed;
+
 union fsp_revision {
 	uint32_t val;
 	struct {
@@ -140,6 +149,8 @@ extern const uint8_t fsp_reserved_memory_guid[16];
 enum cb_err fsp_hob_iterator_init(const struct hob_header **hob_iterator);
 enum cb_err fsp_hob_iterator_get_next_resource(const struct hob_header **hob_iterator,
 					       const struct hob_resource **res);
+enum cb_err fsp_hob_iterator_get_next_memory_allocation(const struct hob_header **hob_iterator,
+						const struct hob_memory_allocation **alloc);
 enum cb_err fsp_hob_iterator_get_next_guid_resource(const struct hob_header **hob_iterator,
 						    const uint8_t guid[16],
 						    const struct hob_resource **res);

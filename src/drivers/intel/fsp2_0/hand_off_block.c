@@ -164,6 +164,17 @@ enum cb_err fsp_hob_iterator_get_next_resource(const struct hob_header **hob_ite
 	return CB_ERR;
 }
 
+enum cb_err fsp_hob_iterator_get_next_memory_allocation(const struct hob_header **hob_iterator,
+						const struct hob_memory_allocation **alloc)
+{
+	const struct hob_header *hob;
+	if (fsp_hob_iterator_get_next(hob_iterator, HOB_TYPE_MEMORY_ALLOCATION, &hob) == CB_SUCCESS) {
+		*alloc = hob_header_to_struct(hob);
+		return CB_SUCCESS;
+	}
+	return CB_ERR;
+}
+
 enum cb_err fsp_hob_iterator_get_next_guid_resource(const struct hob_header **hob_iterator,
 						    const uint8_t guid[16],
 						    const struct hob_resource **res)

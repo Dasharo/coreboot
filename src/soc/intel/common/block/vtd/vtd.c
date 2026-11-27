@@ -260,27 +260,84 @@ static void vtd_engine_enable_dma_protection(uintptr_t vtd_base)
 		printk(BIOS_ERR, "Enabling VT-d PMR DMA protection failed\n");
 }
 
-static const struct hob_resource *find_resource_hob_by_addr(const uint64_t addr)
+/*
+ * Older FSPs report the DMA buffer as a MEMORY_RESERVED resource descriptor HOB
+ * starting at the PMR low limit.
+ */
+static bool find_dma_buffer_in_resource_hobs(uint64_t addr, uint64_t *length)
 {
 	const struct hob_header *hob_iterator;
 	const struct hob_resource *res;
 
 	if (fsp_hob_iterator_init(&hob_iterator) != CB_SUCCESS) {
 		printk(BIOS_ERR, "Failed to find HOB list\n");
-		return NULL;
+		return false;
 	}
 
 	while (fsp_hob_iterator_get_next_resource(&hob_iterator, &res) == CB_SUCCESS) {
-		if ((res->type == EFI_RESOURCE_MEMORY_RESERVED) && (res->addr == addr))
-			return res;
+		if ((res->type == EFI_RESOURCE_MEMORY_RESERVED) && (res->addr == addr)) {
+			*length = res->length;
+			return true;
+		}
 	}
 
-	return NULL;
+	return false;
+}
+
+static bool is_range_in_system_memory(uint64_t addr, uint64_t length)
+{
+	const struct hob_header *hob_iterator;
+	const struct hob_resource *res;
+
+	if (fsp_hob_iterator_init(&hob_iterator) != CB_SUCCESS)
+		return false;
+
+	while (fsp_hob_iterator_get_next_resource(&hob_iterator, &res) == CB_SUCCESS) {
+		if (res->type != EFI_RESOURCE_SYSTEM_MEMORY)
+			continue;
+
+		if (addr >= res->addr && addr + length <= res->addr + res->length)
+			return true;
+	}
+
+	return false;
+}
+
+/*
+ * Newer FSPs report the DMA buffer as part of SYSTEM_MEMORY in the resource
+ * descriptor HOBs and reserve it with a memory allocation HOB starting at the
+ * PMR low limit.
+ */
+static bool find_dma_buffer_in_allocation_hobs(uint64_t addr, uint64_t *length)
+{
+	const struct hob_header *hob_iterator;
+	const struct hob_memory_allocation *alloc;
+
+	if (fsp_hob_iterator_init(&hob_iterator) != CB_SUCCESS) {
+		printk(BIOS_ERR, "Failed to find HOB list\n");
+		return false;
+	}
+
+	while (fsp_hob_iterator_get_next_memory_allocation(&hob_iterator, &alloc) == CB_SUCCESS) {
+		if (alloc->addr != addr || alloc->length == 0)
+			continue;
+
+		if (!is_range_in_system_memory(alloc->addr, alloc->length)) {
+			printk(BIOS_WARNING, "DMA buffer allocation HOB [0x%llx + 0x%llx] "
+			       "not within system memory\n", alloc->addr, alloc->length);
+			continue;
+		}
+
+		*length = alloc->length;
+		return true;
+	}
+
+	return false;
 }
 
 void *vtd_get_dma_buffer(size_t *size)
 {
-	const struct hob_resource *res;
+	uint64_t base, length;
 
 	if (!CONFIG(ENABLE_EARLY_DMA_PROTECTION))
 		goto no_dma_buffer;
@@ -291,16 +348,20 @@ void *vtd_get_dma_buffer(size_t *size)
 	}
 
 	/* PMR low limit will be the DMA buffer base reserved by FSP */
-	res = find_resource_hob_by_addr((uint64_t)pmr_hob->protected_low_limit);
-	if (!res) {
-		printk(BIOS_ERR, "FSP PMR resource HOB not found\n");
+	base = pmr_hob->protected_low_limit;
+
+	if (!find_dma_buffer_in_resource_hobs(base, &length) &&
+	    !find_dma_buffer_in_allocation_hobs(base, &length)) {
+		printk(BIOS_ERR, "FSP DMA buffer HOB not found\n");
 		goto no_dma_buffer;
 	}
 
-	if (size)
-		*size = res->length;
+	printk(BIOS_DEBUG, "FSP DMA buffer: [0x%llx + 0x%llx]\n", base, length);
 
-	return (void *)(uintptr_t)res->addr;
+	if (size)
+		*size = length;
+
+	return (void *)(uintptr_t)base;
 
 no_dma_buffer:
 	if (size)
