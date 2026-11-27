@@ -59,13 +59,34 @@ DASHARO_SDK=${DASHARO_SDK:-"ghcr.io/dasharo/dasharo-sdk:v1.9.6"}
 BUILD_TIMELESS=${BUILD_TIMELESS:-0}
 AIRGAP=${AIRGAP:-0}
 
+# Usage: sdk_run [docker run options... --] command [args...]
 function sdk_run {
+  local docker_args=()
+  if [ "${1:-}" != "${1#-}" ]; then
+    while [ $# -gt 0 ] && [ "$1" != "--" ]; do
+      docker_args+=("$1")
+      shift
+    done
+    if [ $# -eq 0 ]; then
+      echo "sdk_run: missing '--' after docker options" >&2
+      return 1
+    fi
+    shift
+  fi
+
+  # Forward the SSH agent only if one is available
+  local ssh_agent_args=()
+  if [ -n "${SSH_AUTH_SOCK:-}" ] && [ -S "${SSH_AUTH_SOCK}" ]; then
+    ssh_agent_args=(-v "${SSH_AUTH_SOCK}:/ssh-agent" -e SSH_AUTH_SOCK=/ssh-agent)
+  fi
+
   docker run --rm -t -u $UID \
     -v $PWD:/build/coreboot \
     -v $HOME/.ssh:/home/coreboot/.ssh \
     -e BUILD_TIMELESS=${BUILD_TIMELESS} \
     -e GOCACHE=/tmp/go-build \
-    -v "$SSH_AUTH_SOCK:/ssh-agent" -e SSH_AUTH_SOCK=/ssh-agent \
+    ${ssh_agent_args[@]+"${ssh_agent_args[@]}"} \
+    ${docker_args[@]+"${docker_args[@]}"} \
     -w /build/coreboot ${DASHARO_SDK} \
     "$@"
 }
@@ -89,7 +110,7 @@ function build_start {
     # In this situation we assume that provided repository is ready to be used
     # and nothing should be downloaded during build process.
 
-    if [ -d "${EDK2_REPO_PATH}" ]; then
+    if [ -d "${EDK2_REPO_PATH:-}" ]; then
       # Without following sequence workspce would be created by docker with root
       # privilidges and build will fail.
       # Target directory
@@ -98,7 +119,7 @@ function build_start {
       chown -R $(id -u):$(id -g) "$TARGET_DIR"
       chmod -R 755 "$TARGET_DIR"
       sdk_run --network none \
-        ${EDK2_REPO_PATH:+-v $EDK2_REPO_PATH:/home/coreboot/coreboot/${TARGET_DIR}} \
+        -v "${EDK2_REPO_PATH}:/build/coreboot/${TARGET_DIR}" -- \
         /bin/bash -c "make olddefconfig && make -j$(nproc)"
     else
       echo "EDK2_REPO_PATH is not defined in AIRGAP!"
